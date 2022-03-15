@@ -1,13 +1,9 @@
-import * as api from '../../../constants/apiEndpoints';
-import { selectors, url } from '../../../constants/PoliciesPagePatternFly';
+import { selectors } from '../../../constants/PoliciesPagePatternFly';
 import withAuth from '../../../helpers/basicAuth';
 import DndSimulatorDataTransfer from '../../../helpers/dndSimulatorDataTransfer';
 import {
-    searchPolicies,
     visitPolicies,
-    visitPoliciesFromLeftNav,
-    goToFirstPolicy,
-    editPolicy,
+    editFirstPolicyFromTable,
     cloneFirstPolicyFromTable,
     goToStep3,
 } from '../../../helpers/policiesPatternFly';
@@ -23,7 +19,7 @@ function dragFieldIntoSection(fieldSelector) {
             dataTransfer,
         })
         .trigger('drag');
-    cy.get(selectors.booleanPolicySection.policySectionDropTarget)
+    cy.get(selectors.step3.policySection.dropTarget)
         .trigger('dragover', {
             dataTransfer,
         })
@@ -39,12 +35,12 @@ function dragFieldIntoSection(fieldSelector) {
 }
 
 function addPolicyFieldCard(index) {
-    cy.get(selectors.booleanPolicySection.policyKey)
+    cy.get(selectors.step3.policyCriteria.key)
         .eq(index)
         .trigger('mousedown', { which: 1 })
         .trigger('dragstart', { dataTransfer })
         .trigger('drag');
-    cy.get(selectors.booleanPolicySection.policySectionDropTarget)
+    cy.get(selectors.step3.policySection.dropTarget)
         .trigger('dragover', { dataTransfer })
         .trigger('drop', { dataTransfer })
         .trigger('dragend', { dataTransfer })
@@ -53,114 +49,284 @@ function addPolicyFieldCard(index) {
 
 function clickPolicyKeyGroup(categoryName) {
     cy.get(
-        `${selectors.booleanPolicySection.policyKeyGroup}:contains(${categoryName}) ${selectors.booleanPolicySection.collapsibleBtn}`
+        `${selectors.step3.policyCriteria.keyGroup}:contains(${categoryName}) .pf-c-expandable-section__toggle`
     ).click();
 }
 
-describe('Policy wizard, Step 3 Policy Criteria section', () => {
+describe('Policy wizard, Step 3 Policy Criteria', () => {
     withAuth();
-
-    describe('');
 
     beforeEach(() => {
         visitPolicies();
+    });
+
+    it('should not allow user to edit policy criteria for default policies', () => {
+        editFirstPolicyFromTable();
+        goToStep3();
+
+        cy.get(selectors.step3.defaultPolicyAlert).should('exist');
+        cy.get(selectors.step3.policyCriteria.valueTextInput).should('be.disabled');
+        cy.get(selectors.step3.policySection.addBtn).should('not.exist');
+    });
+
+    it('should have nested policy field keys', () => {
         cloneFirstPolicyFromTable();
         goToStep3();
+
+        cy.get(selectors.step3.policyCriteria.keyGroup).should((values) => {
+            expect(values).to.have.length(9);
+        });
+
+        cy.get(`${selectors.step3.policyCriteria.key}:first`).scrollIntoView().should('be.visible');
     });
 
-    it('should have policy section cards', () => {
-        cy.get(selectors.booleanPolicySection.policySectionCard).should('exist');
+    describe('Policy section', () => {
+        beforeEach(() => {
+            cloneFirstPolicyFromTable();
+            goToStep3();
+        });
+
+        it('should allow the user to add and delete a policy section card', () => {
+            // add policy section card
+            cy.get(selectors.step3.policySection.cards).then((sections) => {
+                cy.get(selectors.step3.policySection.addBtn).click();
+                cy.get(selectors.step3.policySection.cards).then((newSections) => {
+                    expect(newSections).to.have.length(sections.length + 1);
+                });
+            });
+            cy.get(selectors.step3.policySection.orDivider).should('exist');
+
+            // delete policy section card
+            cy.get(selectors.step3.policySection.cards).then((sections) => {
+                cy.get(selectors.step3.policySection.deleteBtn).first().click();
+                cy.get(selectors.step3.policySection.cards).then((newSections) => {
+                    expect(newSections).to.have.length(sections.length - 1);
+                });
+            });
+        });
+
+        it('should allow editing a policy section name and retain new name value', () => {
+            cy.get(selectors.step3.policySection.nameEditBtn).click();
+            cy.get(selectors.step3.policySection.nameInput).clear().type('New Section');
+            cy.get(selectors.step3.policySection.nameSaveBtn).click();
+            cy.get(selectors.step3.policySection.name).contains('New Section');
+        });
+
+        it('should allow the user to add/delete a policy field card in the same policy section', () => {
+            // add policy field card
+            cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
+                addPolicyFieldCard(0);
+                cy.get(selectors.step3.policyCriteria.groupCards).then((newCards) => {
+                    expect(newCards).to.have.length(cards.length + 1);
+                });
+            });
+
+            // delete policy field card
+            cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
+                cy.get(selectors.step3.policyCriteria.deleteBtn).eq(0).click();
+                cy.get(selectors.step3.policyCriteria.groupCards).then((newCards) => {
+                    expect(newCards).to.have.length(cards.length - 1);
+                });
+            });
+        });
+
+        it('should allow the user to add multiple non-duplicate policy field cards in the same policy section', () => {
+            cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
+                addPolicyFieldCard(0);
+                addPolicyFieldCard(1);
+                addPolicyFieldCard(2);
+                cy.get(selectors.step3.policyCriteria.groupCards).then((newCards) => {
+                    expect(newCards).to.have.length(cards.length + 3);
+                });
+            });
+        });
+
+        it('should not be able to add duplicate policy field cards in the same policy section', () => {
+            cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
+                addPolicyFieldCard(0);
+                addPolicyFieldCard(0);
+                cy.get(selectors.step3.policyCriteria.groupCards).then((newCards) => {
+                    expect(newCards).to.have.length(cards.length + 1);
+                });
+            });
+        });
     });
 
-    it('should allow the user to add and delete a policy section card', () => {});
+    describe('Policy field card', () => {
+        beforeEach(() => {
+            cloneFirstPolicyFromTable();
+            goToStep3();
 
-    it('should have nested policy field keys', () => {});
+            // starting from clean slate
+            cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
+                if (cards.length > 0) {
+                    cy.get(selectors.step3.policyCriteria.deleteBtn).eq(0).click();
+                }
+            });
+        });
 
-    it('should ', () => {
-        visitPolicies();
+        describe('values', () => {
+            it('should add/delete multiple field values for the same field if applicable', () => {
+                // add field values for Image Registry
+                dragFieldIntoSection(
+                    `${selectors.step3.policyCriteria.key}:contains('Image registry')`
+                );
+                cy.get(selectors.step3.policyCriteria.deleteValueBtn).should('not.exist');
+                cy.get(selectors.step3.policyCriteria.addValueBtn).first().click();
+                cy.get(selectors.step3.policyCriteria.valueInput).then((inputs) => {
+                    expect(inputs).to.have.length(2);
+                    cy.get(selectors.step3.policyCriteria.deleteValueBtn).should('have.length', 2);
+                });
+                cy.get(selectors.step3.policyCriteria.booleanOperator).should('have.length', 1);
+                cy.get(selectors.step3.policyCriteria.booleanOperator).should('not.be.disabled');
 
-        // The following assertions assume that the table is not paginated.
-        cy.get(`${selectors.table.severityCell}:contains("Low")`);
-        cy.get(`${selectors.table.severityCell}:contains("Medium")`);
-        cy.get(`${selectors.table.severityCell}:contains("High")`);
-        cy.get(`${selectors.table.severityCell}:contains("Critical")`);
-    });
+                // delete field value
+                cy.get(selectors.step3.policyCriteria.deleteValueBtn).first().click();
+                cy.get(selectors.step3.policyCriteria.valueInput).then((inputs) => {
+                    expect(inputs).to.have.length(1);
+                    cy.get(selectors.step3.policyCriteria.deleteValueBtn).should('not.exist');
+                    cy.get(selectors.step3.policyCriteria.booleanOperator).should('not.exist');
+                });
+            });
 
-    it('should filter policies by severity', () => {
-        visitPolicies();
+            it('should not add multiple field values for the same field if not applicable', () => {
+                clickPolicyKeyGroup('Storage');
+                dragFieldIntoSection(
+                    `${selectors.step3.policyCriteria.key}:contains('Writable mounted volume')`
+                );
+                cy.get(selectors.step3.policyCriteria.valueRadioGroup).should('exist');
+                cy.get(selectors.step3.policyCriteria.addValueBtn).should('not.exist');
+            });
+        });
 
-        searchPolicies('Severity', 'LOW_SEVERITY');
-        cy.get(`${selectors.table.severityCell}:contains("Low")`);
-        cy.get(`${selectors.table.severityCell}:contains("Medium")`).should('not.exist');
-        cy.get(`${selectors.table.severityCell}:contains("High")`).should('not.exist');
-        cy.get(`${selectors.table.severityCell}:contains("Critical")`).should('not.exist');
-    });
+        describe('negation', () => {
+            it('should negate field if applicable and change wording', () => {
+                dragFieldIntoSection(
+                    `${selectors.step3.policyCriteria.key}:contains('Image registry')`
+                );
+                cy.get(selectors.step3.policyCriteria.valueNegateCheckbox).should('exist');
+                cy.get(selectors.step3.policyCriteria.valueNegateCheckbox).should('not.be.checked');
+                cy.get(selectors.step3.policyCriteria.valueNegateCheckbox).click();
+                cy.get(selectors.step3.policyCriteria.valueNegateCheckbox).should('be.checked');
+                cy.get(selectors.step3.policyCriteria.groupCardTitle).first().contains('not');
+            });
 
-    it('should have expected lifecycle values', () => {
-        visitPolicies();
+            it('should not show negate field if not applicable', () => {
+                clickPolicyKeyGroup('Storage');
+                dragFieldIntoSection(
+                    `${selectors.step3.policyCriteria.key}:contains('Writable mounted volume')`
+                );
+                cy.get(selectors.step3.policyCriteria.valueNegateCheckbox).should('not.exist');
+            });
+        });
 
-        // The following assertions assume that the table is not paginated.
-        cy.get(`${selectors.table.lifecycleCell}:contains("Build")`);
-        cy.get(`${selectors.table.lifecycleCell}:contains("Deploy")`);
-        cy.get(`${selectors.table.lifecycleCell}:contains("Runtime")`);
-    });
+        describe('boolean operator', () => {
+            it('should toggle AND/OR if applicable', () => {
+                dragFieldIntoSection(
+                    `${selectors.step3.policyCriteria.key}:contains('Image registry')`
+                );
+                cy.get(selectors.step3.policyCriteria.addValueBtn).first().click();
+                cy.get(selectors.step3.policyCriteria.booleanOperator).should('not.be.disabled');
+                cy.get(selectors.step3.policyCriteria.booleanOperator).contains('or');
+                cy.get(selectors.step3.policyCriteria.booleanOperator).click();
+                cy.get(selectors.step3.policyCriteria.booleanOperator).contains('and');
+            });
 
-    it('should enable bulk actions dropdown button if checkbox is selected in table head', () => {
-        visitPolicies();
+            it('should have AND/OR toggle disabled if not applicable', () => {
+                clickPolicyKeyGroup('Image contents');
+                dragFieldIntoSection(`${selectors.step3.policyCriteria.key}:contains('Image age')`);
+                cy.get(selectors.step3.policyCriteria.addValueBtn).first().click();
+                cy.get(selectors.step3.policyCriteria.booleanOperator).should('be.disabled');
+                cy.get(selectors.step3.policyCriteria.booleanOperator).contains('or');
+            });
+        });
 
-        cy.get(selectors.table.bulkActionsDropdownButton).should('be.disabled');
+        describe.only('input', () => {
+            it('should populate boolean radio buttons w default value and respect changed values', () => {
+                clickPolicyKeyGroup('Image contents');
+                dragFieldIntoSection(
+                    `${selectors.step3.policyCriteria.key}:contains('Unscanned image')`
+                );
+                cy.get(selectors.step3.policyCriteria.valueRadioGroup).should('exist');
+                cy.get(
+                    `${selectors.step3.policyCriteria.valueRadioGroupItem}:contains('Scanned') button`
+                ).should('not.have.class', 'pf-m-selected');
+                cy.get(
+                    `${selectors.step3.policyCriteria.valueRadioGroupItem}:contains('Not scanned') button`
+                ).should('have.class', 'pf-m-selected');
+                cy.get(
+                    `${selectors.step3.policyCriteria.valueRadioGroupItem}:contains('Scanned') button`
+                ).click();
+                cy.get(
+                    `${selectors.step3.policyCriteria.valueRadioGroupItem}:contains('Scanned') button`
+                ).should('have.class', 'pf-m-selected');
+                cy.get(
+                    `${selectors.step3.policyCriteria.valueRadioGroupItem}:contains('Not scanned') button`
+                ).should('not.have.class', 'pf-m-selected');
+            });
 
-        cy.get(`thead ${selectors.table.selectCheckbox}`).should('not.be.checked').click();
-        cy.get(selectors.table.bulkActionsDropdownButton).should('be.enabled').click();
-        cy.get(`${selectors.table.bulkActionsDropdownItem}:contains("Enable policies")`);
-        cy.get(`${selectors.table.bulkActionsDropdownItem}:contains("Disable policies")`);
-        cy.get(`${selectors.table.bulkActionsDropdownItem}:contains("Delete policies")`);
+            it('should populate boolean radio buttons w existing value', () => {});
 
-        cy.get(`thead ${selectors.table.selectCheckbox}`).click();
-        cy.get(selectors.table.bulkActionsDropdownButton).should('be.disabled');
-    });
+            it('should populate string radio buttons w default value and respect changed values', () => {
+                clickPolicyKeyGroup('Container configuration');
+                dragFieldIntoSection(
+                    `${selectors.step3.policyCriteria.key}:contains('Seccomp profile type')`
+                );
+                cy.get(selectors.step3.policyCriteria.valueRadioGroup).should('exist');
+                cy.get(
+                    `${selectors.step3.policyCriteria.valueRadioGroupItem} button.pf-m-selected`
+                ).should('have.length', 0);
+                cy.get(
+                    `${selectors.step3.policyCriteria.valueRadioGroupItem}:contains('Unconfined') button`
+                ).click();
+                cy.get(
+                    `${selectors.step3.policyCriteria.valueRadioGroupItem}:contains('Unconfined') button`
+                ).should('have.class', 'pf-m-selected');
+                cy.get(
+                    `${selectors.step3.policyCriteria.valueRadioGroupItem} button.pf-m-selected`
+                ).should('have.length', 1);
+            });
 
-    it('should enable bulk actions dropdown button if checkbox is selected in table body row', () => {
-        visitPolicies();
+            it('should populate string radio buttons w existing value', () => {});
 
-        cy.get(selectors.table.bulkActionsDropdownButton).should('be.disabled');
+            it('should populate text input and respect changed values', () => {
+                dragFieldIntoSection(
+                    `${selectors.step3.policyCriteria.key}:contains('Image registry')`
+                );
+                cy.get(selectors.step3.policyCriteria.valueTextInput).should('have.value', '');
+                cy.get(selectors.step3.policyCriteria.valueTextInput).type('test');
+                cy.get(selectors.step3.policyCriteria.valueTextInput).should('have.value', 'test');
+            });
 
-        cy.get(`tbody ${selectors.table.selectCheckbox}:nth(0)`).should('not.be.checked').click();
-        cy.get(selectors.table.bulkActionsDropdownButton).should('be.enabled');
+            it('should populate text input w existing value', () => {});
 
-        cy.get(`tbody ${selectors.table.selectCheckbox}:nth(0)`).click();
-        cy.get(selectors.table.bulkActionsDropdownButton).should('be.disabled');
-    });
+            it.only('should populate select dropdown and respect changed values', () => {
+                clickPolicyKeyGroup('Container configuration');
+                dragFieldIntoSection(
+                    `${selectors.step3.policyCriteria.key}:contains('Drop capabilities')`
+                );
+                cy.get(selectors.step3.policyCriteria.valueSelect).should('exist');
+                cy.get(selectors.step3.policyCriteria.valueSelect).select('CHOWN');
+                cy.get(selectors.step3.policyCriteria.valueSelect).should('have.value', 'CHOWN');
+            });
 
-    it('should make a reasses request', () => {
-        visitPolicies();
+            it('should populate select dropdown w existing value', () => {});
 
-        cy.intercept('POST', api.policies.reassess).as('reassess');
-        cy.get(selectors.table.reassessButton).click();
-        cy.wait('@reassess');
-    });
+            it('should populate policy field input nested group and parse value string to object and respect changed values', () => {
+                clickPolicyKeyGroup('Image contents');
+                dragFieldIntoSection(`${selectors.step3.policyCriteria.key}:contains('CVSS')`);
+                cy.get(selectors.step3.policyCriteria.valueSelect).should('have.value', '');
+                cy.get(selectors.step3.policyCriteria.valueNumberInput).should('have.value', '');
+                cy.get(selectors.step3.policyCriteria.valueSelect).select('Is equal to');
+                cy.get(selectors.step3.policyCriteria.valueNumberInput).type('10');
+                cy.get(selectors.step3.policyCriteria.valueSelect).should(
+                    'have.value',
+                    'Is equal to'
+                );
+                cy.get(selectors.step3.policyCriteria.valueNumberInput).should('have.value', '10');
+            });
 
-    it('should have row action to disable policy if policy has enabled status', () => {
-        visitPolicies();
-
-        // nth(0) selects the first of multiple cells to click.
-        cy.get(
-            `${selectors.table.statusCell}:contains("Enabled"):nth(0) ~ ${selectors.table.actionsToggleButton}`
-        ).click();
-        cy.get(`${selectors.table.actionsItemButton}:contains("Disable policy")`).should(
-            'be.enabled'
-        );
-    });
-
-    it('should have row action to enable policy if policy has disabled status', () => {
-        visitPolicies();
-
-        // nth(0) selects the first of multiple cells to click.
-        cy.get(
-            `${selectors.table.statusCell}:contains("Disabled"):nth(0) ~ ${selectors.table.actionsToggleButton}`
-        ).click();
-        cy.get(`${selectors.table.actionsItemButton}:contains("Enable policy")`).should(
-            'be.enabled'
-        );
+            it('should populate policy field input nested group w existing value', () => {});
+        });
     });
 });

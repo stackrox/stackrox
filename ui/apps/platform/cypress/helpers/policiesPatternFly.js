@@ -55,11 +55,11 @@ export function goToFirstPolicy() {
 }
 
 export function editFirstPolicyFromTable() {
-    doPolicyRowAction(selectors.tableFirstRow, 'Edit');
+    doPolicyRowAction(selectors.table.firstRow, 'Edit');
 }
 
 export function cloneFirstPolicyFromTable() {
-    doPolicyRowAction(selectors.tableFirstRow, 'Clone');
+    doPolicyRowAction(selectors.table.firstRow, 'Clone');
 }
 
 // Actions on policy detail page
@@ -78,7 +78,7 @@ export function editPolicy() {
 // Actions on policy wizard page
 
 export function goToStep3() {
-    cy.get(selectors.wizard.step3Button).click();
+    cy.get(selectors.wizardBtns.step3).click();
 }
 
 export function savePolicy() {}

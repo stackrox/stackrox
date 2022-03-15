@@ -65,12 +65,13 @@ function PolicyCriteriaFieldInput({
                     id={name}
                     isDisabled={readOnly}
                     onChange={handleChangeValue}
+                    data-testid="policy-criteria-value-text-input"
                 />
             );
         case 'radioGroup': {
             const booleanValue = value.value === true || value.value === 'true';
             return (
-                <ToggleGroup>
+                <ToggleGroup data-testid="policy-criteria-value-radio-group">
                     {descriptor.radioButtons?.map(({ text, value: radioValue }) => (
                         <ToggleGroupItem
                             key={text}
@@ -79,22 +80,7 @@ function PolicyCriteriaFieldInput({
                             isDisabled={readOnly}
                             isSelected={booleanValue === radioValue}
                             onChange={handleChangeSelectedValue(radioValue)}
-                        />
-                    ))}
-                </ToggleGroup>
-            );
-        }
-        case 'radioGroupString': {
-            return (
-                <ToggleGroup>
-                    {descriptor.radioButtons?.map(({ text, value: radioValue }) => (
-                        <ToggleGroupItem
-                            key={text}
-                            text={text}
-                            buttonId={text}
-                            isDisabled={readOnly}
-                            isSelected={value.value === radioValue}
-                            onChange={handleChangeSelectedValue(radioValue)}
+                            data-testid="policy-criteria-value-radio-group-item"
                         />
                     ))}
                 </ToggleGroup>
@@ -108,7 +94,7 @@ function PolicyCriteriaFieldInput({
                     id={name}
                     isDisabled={readOnly}
                     onChange={handleChangeValue}
-                    // placeholder={descriptor.placeholder}
+                    data-testid="policy-criteria-value-number-input"
                 />
             );
         case 'select':
@@ -125,6 +111,7 @@ function PolicyCriteriaFieldInput({
                         isDisabled={readOnly}
                         selections={value.value}
                         placeholderText={descriptor.placeholder || 'Select an option'}
+                        data-testid="policy-criteria-value-select"
                     >
                         {descriptor?.options?.map((option) => (
                             <SelectOption key={option.value} value={option.value}>
@@ -150,6 +137,7 @@ function PolicyCriteriaFieldInput({
                         onClear={handleChangeSelectedValue([])}
                         placeholderText={descriptor.placeholder || 'Select one or more options'}
                         variant={SelectVariant.typeaheadMulti}
+                        data-testid="policy-criteria-value-multiselect"
                     >
                         {descriptor.options?.map((option) => (
                             <SelectOption key={option.value} value={option.value}>
