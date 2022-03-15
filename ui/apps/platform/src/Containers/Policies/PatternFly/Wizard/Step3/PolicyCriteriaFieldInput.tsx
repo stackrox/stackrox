@@ -86,6 +86,23 @@ function PolicyCriteriaFieldInput({
                 </ToggleGroup>
             );
         }
+        case 'radioGroupString': {
+            return (
+                <ToggleGroup data-testid="policy-criteria-value-radio-group-string">
+                    {descriptor.radioButtons?.map(({ text, value: radioValue }) => (
+                        <ToggleGroupItem
+                            key={text}
+                            text={text}
+                            buttonId={text}
+                            isDisabled={readOnly}
+                            isSelected={value.value === radioValue}
+                            onChange={handleChangeSelectedValue(radioValue)}
+                            data-testid="policy-criteria-value-radio-group-string-item"
+                        />
+                    ))}
+                </ToggleGroup>
+            );
+        }
         case 'number':
             return (
                 <TextInput
@@ -103,6 +120,7 @@ function PolicyCriteriaFieldInput({
                     label={descriptor.label}
                     fieldId={descriptor.name}
                     className="pf-u-flex-1"
+                    data-testid="policy-criteria-value-select"
                 >
                     <Select
                         onToggle={handleOnToggleSelect}
@@ -111,10 +129,13 @@ function PolicyCriteriaFieldInput({
                         isDisabled={readOnly}
                         selections={value.value}
                         placeholderText={descriptor.placeholder || 'Select an option'}
-                        data-testid="policy-criteria-value-select"
                     >
                         {descriptor?.options?.map((option) => (
-                            <SelectOption key={option.value} value={option.value}>
+                            <SelectOption
+                                key={option.value}
+                                value={option.value}
+                                data-testid="policy-criteria-value-select-option"
+                            >
                                 {option.label}
                             </SelectOption>
                         ))}
@@ -127,6 +148,7 @@ function PolicyCriteriaFieldInput({
                     label={descriptor.label}
                     fieldId={descriptor.name}
                     className="pf-u-flex-1"
+                    data-testid="policy-criteria-value-multiselect"
                 >
                     <Select
                         onToggle={handleOnToggleSelect}
@@ -137,10 +159,13 @@ function PolicyCriteriaFieldInput({
                         onClear={handleChangeSelectedValue([])}
                         placeholderText={descriptor.placeholder || 'Select one or more options'}
                         variant={SelectVariant.typeaheadMulti}
-                        data-testid="policy-criteria-value-multiselect"
                     >
                         {descriptor.options?.map((option) => (
-                            <SelectOption key={option.value} value={option.value}>
+                            <SelectOption
+                                key={option.value}
+                                value={option.value}
+                                data-testid="policy-criteria-value-multiselect-option"
+                            >
                                 {option.label}
                             </SelectOption>
                         ))}

@@ -3,6 +3,7 @@ import withAuth from '../../../helpers/basicAuth';
 import DndSimulatorDataTransfer from '../../../helpers/dndSimulatorDataTransfer';
 import {
     visitPolicies,
+    doPolicyRowAction,
     editFirstPolicyFromTable,
     cloneFirstPolicyFromTable,
     goToStep3,
@@ -65,7 +66,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         goToStep3();
 
         cy.get(selectors.step3.defaultPolicyAlert).should('exist');
-        cy.get(selectors.step3.policyCriteria.valueTextInput).should('be.disabled');
+        cy.get(selectors.step3.policyCriteria.value.numberInput).should('be.disabled');
         cy.get(selectors.step3.policySection.addBtn).should('not.exist');
     });
 
@@ -171,20 +172,20 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
                 );
-                cy.get(selectors.step3.policyCriteria.deleteValueBtn).should('not.exist');
-                cy.get(selectors.step3.policyCriteria.addValueBtn).first().click();
-                cy.get(selectors.step3.policyCriteria.valueInput).then((inputs) => {
+                cy.get(selectors.step3.policyCriteria.value.deleteBtn).should('not.exist');
+                cy.get(selectors.step3.policyCriteria.value.addBtn).first().click();
+                cy.get(selectors.step3.policyCriteria.value.textInput).then((inputs) => {
                     expect(inputs).to.have.length(2);
-                    cy.get(selectors.step3.policyCriteria.deleteValueBtn).should('have.length', 2);
+                    cy.get(selectors.step3.policyCriteria.value.deleteBtn).should('have.length', 2);
                 });
                 cy.get(selectors.step3.policyCriteria.booleanOperator).should('have.length', 1);
                 cy.get(selectors.step3.policyCriteria.booleanOperator).should('not.be.disabled');
 
                 // delete field value
-                cy.get(selectors.step3.policyCriteria.deleteValueBtn).first().click();
-                cy.get(selectors.step3.policyCriteria.valueInput).then((inputs) => {
+                cy.get(selectors.step3.policyCriteria.value.deleteBtn).first().click();
+                cy.get(selectors.step3.policyCriteria.value.textInput).then((inputs) => {
                     expect(inputs).to.have.length(1);
-                    cy.get(selectors.step3.policyCriteria.deleteValueBtn).should('not.exist');
+                    cy.get(selectors.step3.policyCriteria.value.deleteBtn).should('not.exist');
                     cy.get(selectors.step3.policyCriteria.booleanOperator).should('not.exist');
                 });
             });
@@ -194,8 +195,8 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Writable mounted volume')`
                 );
-                cy.get(selectors.step3.policyCriteria.valueRadioGroup).should('exist');
-                cy.get(selectors.step3.policyCriteria.addValueBtn).should('not.exist');
+                cy.get(selectors.step3.policyCriteria.value.radioGroup).should('exist');
+                cy.get(selectors.step3.policyCriteria.value.addBtn).should('not.exist');
             });
         });
 
@@ -204,10 +205,11 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
                 );
-                cy.get(selectors.step3.policyCriteria.valueNegateCheckbox).should('exist');
-                cy.get(selectors.step3.policyCriteria.valueNegateCheckbox).should('not.be.checked');
-                cy.get(selectors.step3.policyCriteria.valueNegateCheckbox).click();
-                cy.get(selectors.step3.policyCriteria.valueNegateCheckbox).should('be.checked');
+                cy.get(selectors.step3.policyCriteria.value.negateCheckbox).should(
+                    'not.be.checked'
+                );
+                cy.get(selectors.step3.policyCriteria.value.negateCheckbox).click();
+                cy.get(selectors.step3.policyCriteria.value.negateCheckbox).should('be.checked');
                 cy.get(selectors.step3.policyCriteria.groupCardTitle).first().contains('not');
             });
 
@@ -216,7 +218,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Writable mounted volume')`
                 );
-                cy.get(selectors.step3.policyCriteria.valueNegateCheckbox).should('not.exist');
+                cy.get(selectors.step3.policyCriteria.value.negateCheckbox).should('not.exist');
             });
         });
 
@@ -225,7 +227,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
                 );
-                cy.get(selectors.step3.policyCriteria.addValueBtn).first().click();
+                cy.get(selectors.step3.policyCriteria.value.addBtn).first().click();
                 cy.get(selectors.step3.policyCriteria.booleanOperator).should('not.be.disabled');
                 cy.get(selectors.step3.policyCriteria.booleanOperator).contains('or');
                 cy.get(selectors.step3.policyCriteria.booleanOperator).click();
@@ -235,98 +237,168 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             it('should have AND/OR toggle disabled if not applicable', () => {
                 clickPolicyKeyGroup('Image contents');
                 dragFieldIntoSection(`${selectors.step3.policyCriteria.key}:contains('Image age')`);
-                cy.get(selectors.step3.policyCriteria.addValueBtn).first().click();
+                cy.get(selectors.step3.policyCriteria.value.addBtn).first().click();
                 cy.get(selectors.step3.policyCriteria.booleanOperator).should('be.disabled');
                 cy.get(selectors.step3.policyCriteria.booleanOperator).contains('or');
             });
         });
 
-        describe.only('input', () => {
+        describe('input', () => {
             it('should populate boolean radio buttons w default value and respect changed values', () => {
                 clickPolicyKeyGroup('Image contents');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Unscanned image')`
                 );
-                cy.get(selectors.step3.policyCriteria.valueRadioGroup).should('exist');
+                cy.get(selectors.step3.policyCriteria.value.radioGroup).should('exist');
                 cy.get(
-                    `${selectors.step3.policyCriteria.valueRadioGroupItem}:contains('Scanned') button`
+                    `${selectors.step3.policyCriteria.value.radioGroupItem}:contains('Scanned') button`
                 ).should('not.have.class', 'pf-m-selected');
                 cy.get(
-                    `${selectors.step3.policyCriteria.valueRadioGroupItem}:contains('Not scanned') button`
+                    `${selectors.step3.policyCriteria.value.radioGroupItem}:contains('Not scanned') button`
                 ).should('have.class', 'pf-m-selected');
                 cy.get(
-                    `${selectors.step3.policyCriteria.valueRadioGroupItem}:contains('Scanned') button`
+                    `${selectors.step3.policyCriteria.value.radioGroupItem}:contains('Scanned') button`
                 ).click();
                 cy.get(
-                    `${selectors.step3.policyCriteria.valueRadioGroupItem}:contains('Scanned') button`
+                    `${selectors.step3.policyCriteria.value.radioGroupItem}:contains('Scanned') button`
                 ).should('have.class', 'pf-m-selected');
                 cy.get(
-                    `${selectors.step3.policyCriteria.valueRadioGroupItem}:contains('Not scanned') button`
+                    `${selectors.step3.policyCriteria.value.radioGroupItem}:contains('Not scanned') button`
                 ).should('not.have.class', 'pf-m-selected');
             });
-
-            it('should populate boolean radio buttons w existing value', () => {});
 
             it('should populate string radio buttons w default value and respect changed values', () => {
                 clickPolicyKeyGroup('Container configuration');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Seccomp profile type')`
                 );
-                cy.get(selectors.step3.policyCriteria.valueRadioGroup).should('exist');
+                cy.get(selectors.step3.policyCriteria.value.radioGroupString).should('exist');
                 cy.get(
-                    `${selectors.step3.policyCriteria.valueRadioGroupItem} button.pf-m-selected`
+                    `${selectors.step3.policyCriteria.value.radioGroupStringItem} button.pf-m-selected`
                 ).should('have.length', 0);
                 cy.get(
-                    `${selectors.step3.policyCriteria.valueRadioGroupItem}:contains('Unconfined') button`
+                    `${selectors.step3.policyCriteria.value.radioGroupStringItem}:contains('Unconfined') button`
                 ).click();
                 cy.get(
-                    `${selectors.step3.policyCriteria.valueRadioGroupItem}:contains('Unconfined') button`
+                    `${selectors.step3.policyCriteria.value.radioGroupStringItem}:contains('Unconfined') button`
                 ).should('have.class', 'pf-m-selected');
                 cy.get(
-                    `${selectors.step3.policyCriteria.valueRadioGroupItem} button.pf-m-selected`
+                    `${selectors.step3.policyCriteria.value.radioGroupStringItem} button.pf-m-selected`
                 ).should('have.length', 1);
             });
-
-            it('should populate string radio buttons w existing value', () => {});
 
             it('should populate text input and respect changed values', () => {
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
                 );
-                cy.get(selectors.step3.policyCriteria.valueTextInput).should('have.value', '');
-                cy.get(selectors.step3.policyCriteria.valueTextInput).type('test');
-                cy.get(selectors.step3.policyCriteria.valueTextInput).should('have.value', 'test');
+                cy.get(selectors.step3.policyCriteria.value.textInput).should('have.value', '');
+                cy.get(selectors.step3.policyCriteria.value.textInput).type('test');
+                cy.get(selectors.step3.policyCriteria.value.textInput).should('have.value', 'test');
             });
 
-            it('should populate text input w existing value', () => {});
-
-            it.only('should populate select dropdown and respect changed values', () => {
+            it('should populate select dropdown and respect changed values', () => {
                 clickPolicyKeyGroup('Container configuration');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Drop capabilities')`
                 );
-                cy.get(selectors.step3.policyCriteria.valueSelect).should('exist');
-                cy.get(selectors.step3.policyCriteria.valueSelect).select('CHOWN');
-                cy.get(selectors.step3.policyCriteria.valueSelect).should('have.value', 'CHOWN');
+                cy.get(selectors.step3.policyCriteria.value.select).should('have.value', '');
+                cy.get(selectors.step3.policyCriteria.value.select).click();
+                cy.get(selectors.step3.policyCriteria.value.selectOption)
+                    .first()
+                    .then((option) => {
+                        cy.wrap(option).click();
+                        cy.get(selectors.step3.policyCriteria.value.select).contains(option.text());
+                    });
             });
 
-            it('should populate select dropdown w existing value', () => {});
+            it('should populate multiselect dropdown and respect changed values', () => {
+                clickPolicyKeyGroup('Storage');
+                dragFieldIntoSection(
+                    `${selectors.step3.policyCriteria.key}:contains('Mount propagation')`
+                );
+                cy.get(selectors.step3.policyCriteria.value.multiselect).should('have.value', '');
+                cy.get(selectors.step3.policyCriteria.value.multiselect).click();
+                cy.get(selectors.step3.policyCriteria.value.multiselectOption)
+                    .first()
+                    .then((option) => {
+                        cy.wrap(option).click();
+                        cy.get(selectors.step3.policyCriteria.value.multiselect).contains(
+                            option.text()
+                        );
+                    });
+            });
 
             it('should populate policy field input nested group and parse value string to object and respect changed values', () => {
                 clickPolicyKeyGroup('Image contents');
                 dragFieldIntoSection(`${selectors.step3.policyCriteria.key}:contains('CVSS')`);
-                cy.get(selectors.step3.policyCriteria.valueSelect).should('have.value', '');
-                cy.get(selectors.step3.policyCriteria.valueNumberInput).should('have.value', '');
-                cy.get(selectors.step3.policyCriteria.valueSelect).select('Is equal to');
-                cy.get(selectors.step3.policyCriteria.valueNumberInput).type('10');
-                cy.get(selectors.step3.policyCriteria.valueSelect).should(
-                    'have.value',
-                    'Is equal to'
-                );
-                cy.get(selectors.step3.policyCriteria.valueNumberInput).should('have.value', '10');
+                cy.get(selectors.step3.policyCriteria.value.select).should('have.value', '');
+                cy.get(selectors.step3.policyCriteria.value.numberInput).should('have.value', '');
+                cy.get(selectors.step3.policyCriteria.value.select).click();
+                cy.get(selectors.step3.policyCriteria.value.selectOption)
+                    .first()
+                    .then((option) => {
+                        cy.wrap(option).click();
+                        cy.get(selectors.step3.policyCriteria.value.select).contains(option.text());
+                    });
+                cy.get(selectors.step3.policyCriteria.value.numberInput).type('10');
+                cy.get(selectors.step3.policyCriteria.value.numberInput).should('have.value', '10');
             });
+        });
+    });
 
-            it('should populate policy field input nested group w existing value', () => {});
+    describe('Existing values', () => {
+        it('should populate boolean radio buttons', () => {
+            doPolicyRowAction(`${selectors.table.rows}:contains('root filesystem')`, 'Clone');
+            goToStep3();
+            cy.get(selectors.step3.policyCriteria.value.radioGroup).should('exist');
+            cy.get(
+                `${selectors.step3.policyCriteria.value.radioGroupItem}:contains('Writable') button`
+            ).should('have.class', 'pf-m-selected');
+            cy.get(
+                `${selectors.step3.policyCriteria.value.radioGroupItem} button.pf-m-selected`
+            ).should('have.length', 1);
+        });
+
+        it('should populate string radio buttons', () => {
+            doPolicyRowAction(`${selectors.table.rows}:contains('seccomp profile')`, 'Clone');
+            goToStep3();
+            cy.get(selectors.step3.policyCriteria.value.radioGroupString).should('exist');
+            cy.get(
+                `${selectors.step3.policyCriteria.value.radioGroupStringItem}:contains('Unconfined') button`
+            ).should('have.class', 'pf-m-selected');
+            cy.get(
+                `${selectors.step3.policyCriteria.value.radioGroupStringItem} button.pf-m-selected`
+            ).should('have.length', 1);
+        });
+
+        it('should populate text input', () => {
+            doPolicyRowAction(`${selectors.table.rows}:contains('Latest tag')`, 'Clone');
+            goToStep3();
+            cy.get(selectors.step3.policyCriteria.value.textInput).should('have.value', 'latest');
+        });
+
+        it('should populate select dropdown', () => {
+            doPolicyRowAction(`${selectors.table.rows}:contains('capability')`, 'Clone');
+            goToStep3();
+            cy.get(selectors.step3.policyCriteria.value.select).contains('SYS_ADMIN');
+        });
+
+        it('should populate multiselect dropdown', () => {
+            doPolicyRowAction(`${selectors.table.rows}:contains('mount propagation')`, 'Clone');
+            goToStep3();
+            cy.get(selectors.step3.policyCriteria.value.multiselect).contains('Bidirectional');
+        });
+
+        it('should populate policy field input nested group', () => {
+            doPolicyRowAction(`${selectors.table.rows}:contains('CVSS >= 6')`, 'Clone');
+            goToStep3();
+            cy.get(selectors.step3.policyCriteria.value.select).contains(
+                'Is greater than or equal to'
+            );
+            cy.get(selectors.step3.policyCriteria.value.numberInput).should(
+                'have.value',
+                '6.000000'
+            );
         });
     });
 });
