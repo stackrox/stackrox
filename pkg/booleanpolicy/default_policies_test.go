@@ -2113,6 +2113,10 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 
 func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 
+	if !features.ImageSignatureVerification.Enabled() {
+		return
+	}
+
 	const (
 		verifier0  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000000"
 		verifier1  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000001"
