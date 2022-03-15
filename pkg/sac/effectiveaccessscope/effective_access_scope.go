@@ -55,6 +55,13 @@ type namespacesScopeSubTree struct {
 	Attributes treeNodeAttributes
 }
 
+func (n *namespacesScopeSubTree) copy() *namespacesScopeSubTree {
+	return &namespacesScopeSubTree{
+		State:      n.State,
+		Attributes: *n.Attributes.copy(),
+	}
+}
+
 // UnrestrictedEffectiveAccessScope returns ScopeTree allowing everything
 // implicitly via marking the root Included.
 func UnrestrictedEffectiveAccessScope() *ScopeTree {
@@ -244,31 +251,36 @@ func (root *ScopeTree) Merge(tree *ScopeTree) {
 	}
 	for key, cluster := range tree.Clusters {
 		rootCluster := root.Clusters[key]
-		if rootCluster == nil {
-			root.Clusters[key] = cluster
+		if rootCluster == nil || cluster.State == Included {
+			root.Clusters[key] = cluster.copy()
 			continue
 		}
 		if rootCluster.State == Included || cluster.State == Excluded {
 			continue
 		}
-		if cluster.State == Included {
-			root.Clusters[key] = cluster
-			continue
-		}
 		// partial
 		for nsName, namespace := range cluster.Namespaces {
-			if namespace.State == Excluded {
-				continue
-			}
 			if namespace.State == Included {
 				if rootCluster.Namespaces == nil {
 					rootCluster.Namespaces = map[string]*namespacesScopeSubTree{}
 				}
-				rootCluster.Namespaces[nsName] = namespace
+				rootCluster.Namespaces[nsName] = namespace.copy()
 			}
 		}
 	}
 	root.bubbleUpStatesAndCompactify(v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
+}
+
+func (cluster *clustersScopeSubTree) copy() *clustersScopeSubTree {
+	namespaces := make(map[string]*namespacesScopeSubTree, len(cluster.Namespaces))
+	for k, v := range cluster.Namespaces {
+		namespaces[k] = v
+	}
+	return &clustersScopeSubTree{
+		State:      cluster.State,
+		Namespaces: namespaces,
+		Attributes: *cluster.Attributes.copy(),
+	}
 }
 
 // populateStateForNamespace adds given namespace as Included or Excluded to

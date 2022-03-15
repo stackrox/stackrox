@@ -1125,11 +1125,11 @@ func TestMergeScopeTree(t *testing.T) {
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 			a.Merge(b)
-			aJson, err := a.ToJSON()
+			aJSON, err := a.ToJSON()
 			assert.NoError(t, err)
-			cJson, err := c.ToJSON()
+			cJSON, err := c.ToJSON()
 			assert.NoError(t, err)
-			assert.JSONEq(t, cJson, aJson)
+			assert.JSONEq(t, cJSON, aJSON)
 		})
 	}
 }
