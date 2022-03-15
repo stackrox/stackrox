@@ -3,6 +3,7 @@ package sac
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
@@ -51,5 +52,5 @@ func (c allowFixedScopesCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerC
 }
 
 func (c allowFixedScopesCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
-	panic("Implement me!")
+	return nil, errors.New("fixed scope checker has no effective access scope")
 }

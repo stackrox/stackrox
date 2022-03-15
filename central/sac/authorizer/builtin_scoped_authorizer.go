@@ -90,7 +90,7 @@ func (a *globalScopeChecker) PerformChecks(_ context.Context) error {
 }
 
 func (a *globalScopeChecker) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
-	panic("not implemented")
+	return nil, errors.New("global scope checker has no effective access scope")
 }
 
 func (a *globalScopeChecker) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {
@@ -184,10 +184,15 @@ func (a *resourceLevelScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
 }
 
 func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
-	// 1. Get all roles and filter them to get only roles with desired access level (here: READ_ACCESS)
-	// 2. For every role get it's effective access scope (EAS)
-	//3. Merge all EAS into a single tree
-	panic("implement me!")
+	eas := effectiveaccessscope.DenyAllEffectiveAccessScope()
+	for _, role := range a.roles {
+		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not get eas for role %q", role.GetRoleName())
+		}
+		eas.Merge(scope)
+	}
+	return eas, nil
 }
 
 func (a *resourceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {

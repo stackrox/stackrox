@@ -235,6 +235,34 @@ func (root *ScopeTree) bubbleUpStatesAndCompactify(detail v1.ComputeEffectiveAcc
 	}
 }
 
+// Merge adds scope tree to the current root so result tree includes nodes that are included at least in one of them.
+func (root *ScopeTree) Merge(tree *ScopeTree) {
+	if tree.State == Included || root.State == Included {
+		root.State = Included
+		return
+	}
+	for key, cluster := range tree.Clusters {
+		rootCluster := root.Clusters[key]
+		if rootCluster.State == Included || cluster.State == Excluded {
+			continue
+		}
+		if cluster.State == Included {
+			rootCluster = cluster
+			continue
+		}
+		// partial
+		for nsName, namespace := range cluster.Namespaces {
+			if namespace.State == Excluded {
+				continue
+			}
+			if namespace.State == Included {
+				rootCluster.Namespaces[nsName] = namespace
+			}
+		}
+		rootCluster.State = Partial
+	}
+}
+
 // populateStateForNamespace adds given namespace as Included or Excluded to
 // parent cluster. Only the last observed namespace is considered if multiple
 // ones with the same <cluster name, namespace name> exist.

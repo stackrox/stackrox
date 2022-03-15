@@ -166,7 +166,7 @@ func (c ScopeChecker) Check(ctx context.Context, pred ScopePredicate) (bool, err
 	return res == Allow, nil
 }
 
-// EffectiveAccessScope fix me.
+// EffectiveAccessScope returns underlying effective access scope.
 func (c ScopeChecker) EffectiveAccessScope(ctx context.Context) (*effectiveaccessscope.ScopeTree, error) {
 	return c.core.EffectiveAccessScope(ctx)
 }

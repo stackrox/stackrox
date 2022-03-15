@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -88,9 +89,25 @@ func (scc *ScopeCheckerCoreImpl) PerformChecks(ctx context.Context) error {
 	return scc.reqTracker.PerformChecks(ctx)
 }
 
-// EffectiveAccessScope fix me.
-func (scc *ScopeCheckerCoreImpl) EffectiveAccessScope(_ context.Context) (*effectiveaccessscope.ScopeTree, error) {
-	panic("Implement me!")
+// EffectiveAccessScope returns EffectiveAccessScope of namespace or cluster sub scope.
+// It returns error if not namespaces or cluster sub scope is defined.
+func (scc *ScopeCheckerCoreImpl) EffectiveAccessScope(ctx context.Context) (*effectiveaccessscope.ScopeTree, error) {
+	var nsOrClusterSubScope ScopeCheckerCore
+	concurrency.WithRLock(&scc.childrenLock, func() {
+		for key, subScope := range scc.children {
+			switch key.ScopeKind() {
+			case ClusterScopeKind:
+				nsOrClusterSubScope = subScope
+			case NamespaceScopeKind:
+				nsOrClusterSubScope = subScope
+				return
+			}
+		}
+	})
+	if nsOrClusterSubScope == nil {
+		return nil, errox.NewErrInvalidArgs("no namespace or cluster sub scope defined")
+	}
+	return nsOrClusterSubScope.EffectiveAccessScope(ctx)
 }
 
 // SetState sets the Allow/Deny/Unknown state of this ScopeCheckerCore, it should only be called by RootScopeCheckerCore
