@@ -5,8 +5,8 @@ import { toast } from 'react-toastify';
 import html2canvas from 'html2canvas';
 
 import { getDate, addBrandedTimestampToString } from 'utils/dateUtils';
-import StackroxLogo from 'images/stackrox-logo.png';
 import { RequestAction, SuccessAction } from 'utils/fetchingReduxRoutines';
+import { getProductBranding } from 'constants/productBranding';
 
 /**
  * Creates a container div HTML element that will wrap around all the content to be exported
@@ -23,11 +23,18 @@ function createPDFContainerElement() {
  * Creates a header HTML element that will contain the StackRox logo, PDF title, and the current time
  *  @param {string} pdfTitle - The title to display in the top right section of the header
  *  @param {string} timestamp - The timestamp to display in the top right section of the header
+ *  @param {string} logoSrc - The full path to the logo image to use as part of the header.
+ *  @param {string} logoAlt - Alt text for the provided logo
  *  @returns {HTMLElement}
  */
-function createPDFHeaderElement(pdfTitle: string, timestamp: string) {
+function createPDFHeaderElement(
+    pdfTitle: string,
+    timestamp: string,
+    logoSrc: string,
+    logoAlt: string
+) {
     const div = `<div class="theme-light flex justify-between bg-primary-800 items-center text-primary-100 h-32">
-            <img alt="stackrox-logo" src=${StackroxLogo} class="h-24" />
+            <img alt=${logoAlt} src=${logoSrc} class="h-20 pl-2" />
             <div class="pr-4 text-right">
                 <div class="text-2xl">${pdfTitle}</div>
                 <div class="pt-2 text-xl">${timestamp}</div>
@@ -121,18 +128,23 @@ function exportPDF(
     startExportingPDF: RequestAction,
     finishExportingPDF: SuccessAction
 ) {
+    const branding = getProductBranding();
     // This hides all the pdf generation behind an exporting screen
     startExportingPDF();
 
-    const pdfTitle = `StackRox ${fileName}`;
+    const pdfTitle = `${branding.basePageTitle} ${fileName}`;
     const currentTimestamp = getDate(new Date());
     const pdfFileName = addBrandedTimestampToString(fileName);
 
     // creates a container element that will include everything necessary to convert to a PDF
     const pdfContainerElement = createPDFContainerElement();
 
-    // add the StackRox header to the container element
-    const pdfHeaderElement = createPDFHeaderElement(pdfTitle, currentTimestamp);
+    const pdfHeaderElement = createPDFHeaderElement(
+        pdfTitle,
+        currentTimestamp,
+        branding.logoSvg,
+        branding.logoAltText
+    );
     pdfContainerElement.appendChild(pdfHeaderElement);
 
     // create a clone of the element to be exported and add it to the body of the container
