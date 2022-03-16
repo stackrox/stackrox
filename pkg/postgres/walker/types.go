@@ -5,6 +5,7 @@ type DataType string
 
 // Defines all the internal types derived from the struct fields
 const (
+	Bytes       DataType = "bytes"
 	Bool        DataType = "bool"
 	Numeric     DataType = "numeric"
 	String      DataType = "string"
@@ -37,6 +38,8 @@ func DataTypeToSQLType(dataType DataType) string {
 		sqlType = "text[]"
 	case EnumArray, IntArray:
 		sqlType = "int[]"
+	case Bytes:
+		sqlType = "varchar"
 	default:
 		panic(dataType)
 	}
