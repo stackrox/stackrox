@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -205,11 +204,9 @@ func tryUnsuppressedQuery(q *v1.Query) *v1.Query {
 			isSearchBySuppressed = true
 			return
 		}
-		if features.VulnRiskManagement.Enabled() {
-			if ok && mfQ.MatchFieldQuery.GetField() == search.VulnerabilityState.String() {
-				isSearchByVulnState = true
-				return
-			}
+		if ok && mfQ.MatchFieldQuery.GetField() == search.VulnerabilityState.String() {
+			isSearchByVulnState = true
+			return
 		}
 	})
 	// If search query is explicitly requesting vulns by its observed state using the legacy way or the new way,

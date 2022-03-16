@@ -25,7 +25,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -129,9 +128,8 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.collectAlerts(pvtConfig)
 	g.removeOrphanedResources()
 	g.removeOrphanedRisks()
-	if features.VulnRiskManagement.Enabled() {
-		g.removeExpiredVulnRequests()
-	}
+	g.removeExpiredVulnRequests()
+
 	log.Info("[Pruning] Finished garbage collection cycle")
 }
 

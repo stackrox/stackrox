@@ -10,13 +10,10 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -32,23 +29,14 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	if !features.VulnRiskManagement.Enabled() {
-		return nil, status.Error(codes.FailedPrecondition, "Vulnerability Risk Management is not enabled")
-	}
 	return ds.searcher.Search(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	if !features.VulnRiskManagement.Enabled() {
-		return nil, status.Error(codes.FailedPrecondition, "Vulnerability Risk Management is not enabled")
-	}
 	return ds.searcher.SearchEdges(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.ImageCVEEdge, error) {
-	if !features.VulnRiskManagement.Enabled() {
-		return nil, status.Error(codes.FailedPrecondition, "Vulnerability Risk Management is not enabled")
-	}
 	edges, err := ds.searcher.SearchRawEdges(ctx, q)
 	if err != nil {
 		return nil, err

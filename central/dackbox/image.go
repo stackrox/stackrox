@@ -10,7 +10,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 var (
@@ -53,7 +52,12 @@ var (
 		//          Image,
 		//          Image (forwards) Components (forwards) CVEs,
 		//          )
-		v1.SearchCategory_IMAGE_VULN_EDGE: getImageCVEEdgeTransformationForImages(),
+		v1.SearchCategory_IMAGE_VULN_EDGE: transformation.ForwardEdgeKeys(
+			DoNothing,
+			transformation.AddPrefix(imageDackBox.Bucket).
+				ThenMapToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
+				Then(transformation.Dedupe())),
 
 		// Combine ( { k1, k2 }
 		//          Image,
@@ -102,31 +106,3 @@ var (
 		v1.SearchCategory_NODE_VULN_EDGE:      ReturnNothing,
 	}
 )
-
-func getImageCVEEdgeTransformationForImages() transformation.OneToMany {
-	if features.VulnRiskManagement.Enabled() {
-		// CombineForward ( { k1, k2 }
-		//          Image,
-		//          Image (forwards) CVEs,
-		//          )
-		return transformation.ForwardEdgeKeys(
-			DoNothing,
-			transformation.AddPrefix(imageDackBox.Bucket).
-				ThenMapToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
-				ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
-				Then(transformation.Dedupe()))
-	}
-
-	// CombineForward ( { k1, k2 }
-	//          Image,
-	//          Image (forwards) Components (forwards) CVEs,
-	//          )
-	return transformation.ForwardEdgeKeys(
-		DoNothing,
-		transformation.AddPrefix(imageDackBox.Bucket).
-			ThenMapToMany(transformation.ForwardFromContext(componentDackBox.Bucket)).
-			ThenMapEachToMany(transformation.ForwardFromContext(cveDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefixUnchecked(cveDackBox.Bucket)).
-			Then(transformation.Dedupe()),
-	)
-}

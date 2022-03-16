@@ -1,6 +1,5 @@
 import * as api from '../../../constants/apiEndpoints';
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 
 const imageEntityPage =
     '/main/vulnerability-management/image/sha256:5469b2315904f5f720034495c3938a4d6f058ec468ce4eca0b1a9291c616c494';
@@ -55,13 +54,8 @@ function getRowActionItem(actionText) {
     return cy.get(`li[role="menuitem"] button:contains("${actionText}")`);
 }
 
-describe('Vulnmanagement Risk Acceptance', () => {
-    before(function beforeHook() {
-        if (hasFeatureFlag('ROX_VULN_RISK_MANAGEMENT')) {
-            this.skip();
-        }
-    });
-
+// TODO(ROX-9746): Enable this test.
+describe.skip('Vulnmanagement Risk Acceptance', () => {
     withAuth();
 
     describe('Observed CVEs', () => {
