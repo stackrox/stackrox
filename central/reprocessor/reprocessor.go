@@ -508,14 +508,17 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 }
 
 func (l *loopImpl) runSignatureVerificationReprocessing() {
-	// TODO: Do we need any signals here?
+	// Signals for testing.
+	l.reprocessingComplete.Reset()
+	l.reprocessingStarted.Signal()
+
 	l.reprocessWatchedImages()
 	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchScansOnly, l.enrichSigVerificationWrapper())
+
+	l.reprocessingStarted.Reset()
+	l.reprocessingComplete.Signal()
 }
 
-// TODO: Is this "wrapper" solution _really_ worth it? Does it make sense to have the enrichment context added in the func?
-// I am unsure. I don't want to duplicate code, so this would be the easiest way to do it.
-// The wrappers are a bit sadge, so idk.
 func (l *loopImpl) enrichSigVerificationWrapper() individualImageReprocessingFunc {
 	return func(ctx context.Context, _ imageEnricher.EnrichmentContext, image *storage.Image) (imageEnricher.EnrichmentResult, error) {
 		return l.imageEnricher.EnrichWithSignatureVerificationData(ctx, image)
@@ -539,7 +542,7 @@ func (l *loopImpl) enrichLoop() {
 			l.runReprocessing(imageEnricher.UseCachesIfPossible)
 		case <-l.signatureVerificationSig.Done():
 			l.signatureVerificationSig.Reset()
-			l.runReprocessing(imageEnricher.ForceRefetchSignaturesOnly)
+			l.runSignatureVerificationReprocessing()
 		case <-l.enrichAndDetectTicker.C:
 			l.runReprocessing(imageEnricher.ForceRefetchScansOnly)
 		}
