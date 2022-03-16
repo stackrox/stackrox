@@ -52,15 +52,14 @@ message GetImageVulnerabilitiesInternalRequest {
     repeated scannerV1.Note notes            = 5;
 }
 
-message VerifyImageSignaturesInternalRequest {
-    string                 image_id         = 1;
-    storage.ImageName      image_name       = 2;
-    storage.ImageSignature image_signature  = 4;
-    bool                   is_cluster_local = 5;
-}
-
-message VerifyImageSignaturesInternalResponse {
-    storage.Image image = 1;
+message EnrichLocalImageInternalRequest {
+    string                  image_id         = 1;
+    storage.ImageName       image_name       = 2;
+    storage.ImageMetadata   metadata         = 3;
+    bool                    is_cluster_local = 4;
+    scannerV1.Components    components       = 5;
+    repeated scannerV1.Note notes            = 6;
+    storage.ImageSignature  image_signature  = 7;
 }
 
 message DeleteImagesRequest {
@@ -156,11 +155,20 @@ service ImageService {
     rpc ScanImageInternal (ScanImageInternalRequest) returns (ScanImageInternalResponse);
 
     // GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
-    rpc GetImageVulnerabilitiesInternal (GetImageVulnerabilitiesInternalRequest) returns (ScanImageInternalResponse);
+    rpc GetImageVulnerabilitiesInternal (GetImageVulnerabilitiesInternalRequest) returns (ScanImageInternalResponse) {
+        option deprecated = true;
+    };
 
+<<<<<<< HEAD
     // VerifyImageSignaturesInternal is used solely by the Sensor ato send signature verification
     // requests.
     rpc VerifyImageSignaturesInternal (VerifyImageSignaturesInternalRequest) returns (VerifyImageSignaturesInternalResponse);
+=======
+    // EnrichLocalImageInternal is used solely by the Sensor to send enrichment requests for local images. This
+    // includes the image's vulnerabilities as well as the signature verification data.
+    rpc EnrichLocalImageInternal (EnrichLocalImageInternalRequest) returns (ScanImageInternalResponse);
+
+>>>>>>> 2fa209b3c (Create new API endpoint which covers enrichment of vulnerabilities and signature verification data.)
     // InvalidateScanAndRegistryCaches removes the image metadata cache.
     rpc InvalidateScanAndRegistryCaches (Empty) returns (Empty) {
         option (google.api.http) = {
