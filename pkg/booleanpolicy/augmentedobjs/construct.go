@@ -136,6 +136,22 @@ func ConstructDeploymentWithNetworkFlowInfo(
 	return obj, nil
 }
 
+func ConstructDeploymentWithNetworkPolicy(deployment *storage.Deployment, images []*storage.Image, netpolAssociation *NetworkPolicyAssociation) (*pathutil.AugmentedObj, error) {
+	obj, err := ConstructDeployment(deployment, images)
+	if err != nil {
+		return nil, err
+	}
+
+	augmentedFlow := pathutil.NewAugmentedObj(netpolAssociation)
+
+	err = obj.AddAugmentedObjAt(augmentedFlow, pathutil.FieldStep(networkPoliciesApplied))
+	if err != nil {
+		return nil, err
+	}
+
+	return obj, nil
+}
+
 // ConstructDeployment constructs the augmented deployment object.
 func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image) (*pathutil.AugmentedObj, error) {
 	obj := pathutil.NewAugmentedObj(deployment)

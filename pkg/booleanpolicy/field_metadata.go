@@ -790,5 +790,13 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{}, operatorsForbidden,
 	)
 
+	f.registerFieldMetadata(fieldnames.MissingIngressNetworkPolicy,
+		querybuilders.ForFieldLabel(augmentedobjs.MissingIngressNetworkPolicyCustomTag), nil,
+		func(_ *validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{}, operatorsForbidden, negationForbidden)
+
 	return f
 }

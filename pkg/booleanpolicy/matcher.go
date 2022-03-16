@@ -49,7 +49,7 @@ type ImageMatcher interface {
 
 // A DeploymentMatcher matches deployments against a policy.
 type DeploymentMatcher interface {
-	MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (Violations, error)
+	MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, opts ...interface{}) (Violations, error)
 }
 
 // A DeploymentWithProcessMatcher matches deployments, and a process, against a policy.

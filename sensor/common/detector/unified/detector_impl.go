@@ -23,8 +23,8 @@ func (d *detectorImpl) ReconcilePolicies(newList []*storage.Policy) {
 	})
 }
 
-func (d *detectorImpl) DetectDeployment(ctx deploytime.DetectionContext, deployment *storage.Deployment, images []*storage.Image) []*storage.Alert {
-	alerts, err := d.deploytimeDetector.Detect(ctx, deployment, images)
+func (d *detectorImpl) DetectDeployment(ctx deploytime.DetectionContext, deployment *storage.Deployment, images []*storage.Image, netpol *augmentedobjs.NetworkPolicyAssociation) []*storage.Alert {
+	alerts, err := d.deploytimeDetector.Detect(ctx, deployment, images, netpol)
 	if err != nil {
 		log.Errorf("Error running detection on deployment %q: %v", deployment.GetName(), err)
 	}

@@ -24,6 +24,7 @@ const (
 	ImageUserKey                    = "imageUser"
 	LineKey                         = "line"
 	LivenessProbeDefinedKey         = "livenessProbeDefined"
+	MissingIngressKey               = "missingIngress"
 	NamespaceKey                    = "namespace"
 	NodePortKey                     = "nodePort"
 	PortKey                         = "port"
@@ -66,6 +67,7 @@ func init() {
 	registerFunc(ImageUserKey, imageUserPrinter)
 	registerFunc(LineKey, linePrinter)
 	registerFunc(LivenessProbeDefinedKey, livenessProbeDefinedPrinter)
+	registerFunc(MissingIngressKey, missingIngressPrinter)
 	registerFunc(NamespaceKey, namespacePrinter)
 	registerFunc(NodePortKey, nodePortPrinter)
 	registerFunc(PortKey, portPrinter)

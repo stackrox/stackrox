@@ -190,7 +190,7 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}
 
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
-	alerts, err := s.detector.Detect(detectionCtx, deployment, images, filter)
+	alerts, err := s.detector.Detect(detectionCtx, deployment, images, nil, filter)
 	if err != nil {
 		return nil, err
 	}

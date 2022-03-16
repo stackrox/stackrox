@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
@@ -25,6 +26,7 @@ const (
 type scanResult struct {
 	action     central.ResourceAction
 	deployment *storage.Deployment
+	netpol     *augmentedobjs.NetworkPolicyAssociation
 	images     []*storage.Image
 }
 
@@ -204,6 +206,14 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	return images
 }
 
+func (e *enricher) getNetpols(deployment *storage.Deployment) *augmentedobjs.NetworkPolicyAssociation {
+	return &augmentedobjs.NetworkPolicyAssociation{
+		MissingIngressNetworkPolicy: true,
+		MissingEgressNetworkPolicy:  false,
+		NetworkPoliciesApplied:      nil,
+	}
+}
+
 func (e *enricher) blockingScan(deployment *storage.Deployment, action central.ResourceAction) {
 	select {
 	case <-e.stopSig.Done():
@@ -212,6 +222,7 @@ func (e *enricher) blockingScan(deployment *storage.Deployment, action central.R
 		action:     action,
 		deployment: deployment,
 		images:     e.getImages(deployment),
+		netpol:     e.getNetpols(deployment),
 	}:
 	}
 }

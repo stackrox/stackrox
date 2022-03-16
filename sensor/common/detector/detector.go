@@ -301,7 +301,7 @@ func (d *detectorImpl) runDetector() {
 		case <-d.detectorStopper.StopDone():
 			return
 		case scanOutput := <-d.enricher.outputChan():
-			alerts := d.unifiedDetector.DetectDeployment(deploytime.DetectionContext{}, scanOutput.deployment, scanOutput.images)
+			alerts := d.unifiedDetector.DetectDeployment(deploytime.DetectionContext{}, scanOutput.deployment, scanOutput.images, scanOutput.netpol)
 
 			sort.Slice(alerts, func(i, j int) bool {
 				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()

@@ -17,6 +17,7 @@ const (
 	baselineResultAugmentKey      = "BaselineResult"
 	envVarAugmentKey              = "EnvironmentVariable"
 	impersonatedEventResultKey    = "ImpersonatedEventResult"
+	networkPoliciesApplied        = "networkPolicyApplied"
 )
 
 // This block enumerates metadata about the augmented objects we use in policies.
@@ -26,7 +27,10 @@ var (
 			AddAugmentedObjectAt([]string{"Containers", processAugmentKey}, ProcessMeta).
 			AddPlainObjectAt([]string{"Containers", "Config", "Env", envVarAugmentKey}, (*envVar)(nil)).
 			AddPlainObjectAt([]string{kubeEventAugKey}, (*storage.KubernetesEvent)(nil)).
-			AddAugmentedObjectAt([]string{networkFlowAugKey}, NetworkFlowMeta)
+			AddAugmentedObjectAt([]string{networkFlowAugKey}, NetworkFlowMeta).
+			AddAugmentedObjectAt([]string{networkPoliciesApplied}, NetworkPoliciesMeta)
+
+	NetworkPoliciesMeta = pathutil.NewAugmentedObjMeta((*NetworkPolicyAssociation)(nil))
 
 	ImageMeta = pathutil.NewAugmentedObjMeta((*storage.Image)(nil)).
 			AddPlainObjectAt([]string{"Metadata", "V1", "Layers", dockerfileLineAugmentKey}, (*dockerfileLine)(nil)).

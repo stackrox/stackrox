@@ -71,7 +71,7 @@ var (
 		fieldnames.VolumeSource:                 {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
 		fieldnames.VolumeType:                   {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
 		fieldnames.WritableHostMount:            {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
-		fieldnames.WritableMountedVolume:        {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
+		fieldnames.MissingIngressNetworkPolicy:  {{required: set.NewStringSet(augmentedobjs.MissingIngressNetworkPolicyCustomTag), printerFuncKey: printer.MissingIngressKey}},
 	}
 
 	// runtime policy fields

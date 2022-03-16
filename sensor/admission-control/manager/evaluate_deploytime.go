@@ -135,7 +135,7 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 
 	getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
-		return s.deploytimeDetector.Detect(detectionCtx, dep, imgs)
+		return s.deploytimeDetector.Detect(detectionCtx, dep, imgs, nil)
 	}
 
 	alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)

@@ -24,7 +24,18 @@ const (
 	KubernetesIsImpersonatedCustomTag  = "Is Impersonated User"
 
 	RuntimeClassCustomTag = "Runtime Class"
+
+	MissingIngressNetworkPolicyCustomTag = "Missing Ingress Network Policy"
+	MissingEgressNetworkPolicyCustomTag  = "Missing Egress Network Policy"
 )
+
+type NetworkPolicyAssociation struct {
+	MissingIngressNetworkPolicy bool `policy:"Missing Ingress Network Policy"`
+	MissingEgressNetworkPolicy bool `policy:"Missing Egress Network Policy"`
+
+	// objects applied to deployment
+	NetworkPoliciesApplied []storage.NetworkPolicy
+}
 
 type dockerfileLine struct {
 	Line string `search:"Dockerfile Line"`

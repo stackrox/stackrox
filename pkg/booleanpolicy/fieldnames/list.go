@@ -73,6 +73,8 @@ var (
 	KubeUserName                  = newFieldName("Kubernetes User Name")
 	KubeUserGroups                = newFieldName("Kubernetes User Groups")
 	SourceIPAddress               = newFieldName("Source IP Address")
+	MissingIngressNetworkPolicy   = newFieldName("Missing Ingress Network Policy")
+	MissingEgressNetworkPolicy    = newFieldName("Missing Egress Network Policy")
 )
 
 func newFieldName(field string) string {

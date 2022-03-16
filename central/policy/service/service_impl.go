@@ -470,7 +470,7 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				return
 			}
 
-			violations, err := compiledPolicy.MatchAgainstDeployment(nil, deployment, images)
+			violations, err := compiledPolicy.MatchAgainstDeployment(nil, deployment, images, nil)
 
 			if err != nil {
 				log.Errorf("failed policy matching: %s", err.Error())

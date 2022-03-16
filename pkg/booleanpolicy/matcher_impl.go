@@ -1,6 +1,8 @@
 package booleanpolicy
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
@@ -234,6 +236,7 @@ func (m *matcherImpl) getViolations(
 	var atLeastOneMatched bool
 	var processIndicatorMatched, kubeOrAuditEventMatched, networkFlowMatched bool
 	for _, eval := range m.evaluators {
+		log.Infof("Matching evaluator: %s", eval.section.SectionName)
 		result, err := matchWithEvaluator(eval, obj)
 		if err != nil {
 			return nil, err
@@ -280,12 +283,29 @@ func (m *matcherImpl) getViolations(
 }
 
 // MatchDeployment runs detection against the deployment and images.
-func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (Violations, error) {
-	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructDeployment(deployment, images)
-	}, nil, nil, nil)
-	if err != nil || violations == nil {
-		return Violations{}, err
+func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, extra ...interface{}) (Violations, error) {
+	if len(extra) > 0 {
+		log.Info("Matching deployment using network policy association")
+		netpol, ok := extra[0].(*augmentedobjs.NetworkPolicyAssociation)
+		if !ok {
+			return Violations{}, fmt.Errorf("!!! failed")
+		}
+		violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
+			return augmentedobjs.ConstructDeploymentWithNetworkPolicy(deployment, images, netpol)
+		}, nil, nil, nil)
+		if err != nil || violations == nil {
+			return Violations{}, err
+		}
+		log.Infof("Generating %d alerts", len(violations.AlertViolations))
+		return *violations, nil
+	} else {
+		violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
+			return augmentedobjs.ConstructDeployment(deployment, images)
+		}, nil, nil, nil)
+		if err != nil || violations == nil {
+			return Violations{}, err
+		}
+		return *violations, nil
 	}
-	return *violations, nil
+
 }
