@@ -1,7 +1,14 @@
 import { useSelector } from 'react-redux';
 import { createSelector } from 'reselect';
 import { selectors } from 'reducers';
-import { Metadata } from 'types/metadataService.proto';
+
+export type Metadata = {
+    version: string;
+    buildFlavor: string;
+    releaseBuild: boolean;
+    licenseStatus: string;
+    versionString?: string;
+};
 
 const selectMetadata = createSelector([selectors.getMetadata], (metadata: Metadata) => metadata);
 

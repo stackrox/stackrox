@@ -17,7 +17,8 @@ import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
 import UnreachableWarning from 'Containers/UnreachableWarning';
 import Labeled from 'Components/Labeled';
 import CollapsibleAnimatedDiv from 'Components/animations/CollapsibleAnimatedDiv';
-import BrandLogo from 'Components/PatternFly/BrandLogo';
+import rhacsLogo from 'images/RHACS-Logo.svg';
+
 import AppWrapper from '../AppWrapper';
 import LoginNotice from './LoginNotice';
 
@@ -227,7 +228,11 @@ class LoginPage extends Component {
                                 {this.renderLoginButton()}
                             </div>
                         </form>
-                        <BrandLogo className="pf-u-p-2xl" />
+                        <img
+                            src={rhacsLogo}
+                            alt="Red Hat Advanced Cluster Security"
+                            className="p-12"
+                        />
                     </div>
                 </main>
             </AppWrapper>

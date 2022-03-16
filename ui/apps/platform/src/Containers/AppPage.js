@@ -8,13 +8,11 @@ import MainPage from 'Containers/MainPage';
 import LoginPage from 'Containers/Login/LoginPage';
 import TestLoginResultsPage from 'Containers/Login/TestLoginResultsPage';
 import AppPageTitle from 'Containers/AppPageTitle';
-import AppPageFavicon from 'Containers/AppPageFavicon';
 
 const AppPage = () => {
     return (
         <>
             <AppPageTitle />
-            <AppPageFavicon />
             <Switch>
                 <ProtectedRoute path={mainPath} component={MainPage} />
                 <Route path={loginPath} component={LoginPage} />

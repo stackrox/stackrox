@@ -16,16 +16,14 @@ describe('General sanity checks', () => {
     withAuth();
 
     describe('should have correct page titles based on URL', () => {
-        // This RegExp allows us to test the format of the page title for specific URLs while
-        // staying independent of the product branding in the environment under test.
-        const productNameRegExp = '(Red Hat Advanced Cluster Security|StackRox)';
+        const baseTitleText = 'Red Hat Advanced Cluster Security';
 
         it('for Dashboard', () => {
             cy.intercept('POST', api.dashboard.summaryCounts).as('summaryCounts');
             cy.visit(dashboardUrl);
             cy.wait('@summaryCounts');
 
-            cy.title().should('match', new RegExp(`Dashboard | ${productNameRegExp}`));
+            cy.title().should('eq', `Dashboard | ${baseTitleText}`);
         });
 
         it('for Network Graph', () => {
@@ -34,7 +32,7 @@ describe('General sanity checks', () => {
             cy.visit(networkUrl);
             cy.wait(['@networkGraph', '@networkPolicies']);
 
-            cy.title().should('match', new RegExp(`Network Graph | ${productNameRegExp}`));
+            cy.title().should('eq', `Network Graph | ${baseTitleText}`);
         });
 
         it('for Violations', () => {
@@ -43,7 +41,7 @@ describe('General sanity checks', () => {
             cy.visit(violationsUrl);
             cy.wait(['@alerts', '@alertsCount']);
 
-            cy.title().should('match', new RegExp(`Violations | ${productNameRegExp}`));
+            cy.title().should('eq', `Violations | ${baseTitleText}`);
         });
 
         it('for Violations with side panel open', () => {
@@ -51,7 +49,7 @@ describe('General sanity checks', () => {
             cy.visit('/main/violations/1234');
             cy.wait('@alertById'); // 404
 
-            cy.title().should('match', new RegExp(`Violations | ${productNameRegExp}`)); // Violation not found.
+            cy.title().should('eq', `Violations | ${baseTitleText}`); // Violation not found.
         });
 
         it('for Compliance Dashboard', () => {
@@ -62,7 +60,7 @@ describe('General sanity checks', () => {
             cy.visit(complianceUrl);
             cy.wait('@getAggregatedResults');
 
-            cy.title().should('match', new RegExp(`Compliance | ${productNameRegExp}`));
+            cy.title().should('eq', `Compliance | ${baseTitleText}`);
         });
 
         it('for Compliance Namespaces', () => {
@@ -71,7 +69,7 @@ describe('General sanity checks', () => {
             cy.visit(`${complianceUrl}/namespaces`);
             cy.wait('@namespaces');
 
-            cy.title().should('match', new RegExp(`Compliance - Namespace | ${productNameRegExp}`));
+            cy.title().should('eq', `Compliance - Namespace | ${baseTitleText}`);
         });
 
         it('for User Profile', () => {
@@ -80,7 +78,7 @@ describe('General sanity checks', () => {
             cy.visit(userUrl);
             cy.wait(['@mypermissions', '@authStatus']);
 
-            cy.title().should('match', new RegExp(`User Profile | ${productNameRegExp}`));
+            cy.title().should('eq', `User Profile | ${baseTitleText}`);
         });
 
         it('for API Docs', () => {
@@ -89,7 +87,7 @@ describe('General sanity checks', () => {
             cy.visit(apidocsUrl);
             cy.wait('@apiDocs', { timeout: 10000 }); // api docs are sloooooow
 
-            cy.title().should('match', new RegExp(`API Reference | ${productNameRegExp}`));
+            cy.title().should('eq', `API Reference | ${baseTitleText}`);
         });
     });
 
