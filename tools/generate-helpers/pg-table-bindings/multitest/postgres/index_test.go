@@ -297,15 +297,15 @@ func (s *IndexSuite) TestInt64() {
 	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
 		s.Int64 = -2
 		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
-			Int64: 100,
+			Int64: -100,
 			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
-				Int64: -200,
+				Int64: -150,
 			}})
 	})
 	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
 		s.Int64 = 7
 		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
-			Int64: -100,
+			Int64: 100,
 			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
 				Int64: -200,
 			}})
@@ -328,15 +328,15 @@ func (s *IndexSuite) TestInt64() {
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1},
 		},
 		{
-			desc:            ">=",
-			q:               search.NewQueryBuilder().AddStrings(search.TestNestedInt64, ">=-200").ProtoQuery(),
-			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1},
+			desc:            "nested",
+			q:               search.NewQueryBuilder().AddStrings(search.TestNestedInt64, "<-50").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
 		},
 		{
-			desc: ">=",
+			desc: "nested and nested2",
 			q: search.NewQueryBuilder().AddStrings(search.TestNestedInt64, ">=0").
 				AddStrings(search.TestNested2Int64, ">=-200").ProtoQuery(),
-			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
 		},
 	})
 }
@@ -582,6 +582,115 @@ func (s *IndexSuite) TestEnumArray() {
 			desc:            "<=",
 			q:               search.NewQueryBuilder().AddStrings(search.TestEnumSlice, "<=ENUM1").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1, testStruct12, testStruct012, testStruct01},
+		},
+	})
+}
+
+type highlightTestCase struct {
+	desc            string
+	q               *v1.Query
+	expectedResults map[*storage.TestMultiKeyStruct]map[string][]string
+	expectErr       bool
+}
+
+func (s *IndexSuite) runHighlightTestCases(cases []highlightTestCase) {
+	for _, c := range cases {
+		s.Run(c.desc, func() {
+			results, err := s.indexer.Search(c.q)
+			if c.expectErr {
+				s.Error(err)
+				return
+			}
+			s.Require().NoError(err)
+
+			actualResults := make(map[string]map[string][]string, len(results))
+			for _, res := range results {
+				actualResults[res.ID] = res.Matches
+			}
+
+			for obj, expectedMatches := range c.expectedResults {
+				id := getID(obj)
+				matchingActual, ok := actualResults[id]
+				if !s.True(ok, "id %s expected but not found", id) {
+					continue
+				}
+				s.Equal(expectedMatches, matchingActual, "mismatch for id %s", id)
+				delete(actualResults, id)
+			}
+			s.Empty(actualResults, "Unexpected results found: %+v", actualResults)
+		})
+	}
+}
+
+func (s *IndexSuite) TestStringHighlights() {
+	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.String_ = "zero"
+	})
+	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.String_ = "one"
+	})
+	s.runHighlightTestCases([]highlightTestCase{
+		{
+			desc: "prefix query, one match",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestString, "ze").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {
+					"multi.string": {"zero"},
+				},
+			},
+		},
+		{
+			desc: "regex query, two matches",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestString, "r/.*o.*").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {
+					"multi.string": {"zero"},
+				},
+				testStruct1: {
+					"multi.string": {"one"},
+				},
+			},
+		},
+	})
+}
+
+func (s *IndexSuite) TestBoolHighlights() {
+	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.Bool = false
+	})
+	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.Bool = true
+	})
+	s.runHighlightTestCases([]highlightTestCase{
+		{
+			desc: "true query",
+			q:    search.NewQueryBuilder().AddBoolsHighlighted(search.TestBool, true).ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct1: {
+					"multi.bool": {"true"},
+				},
+			},
+		},
+		{
+			desc: "false query",
+			q:    search.NewQueryBuilder().AddBoolsHighlighted(search.TestBool, false).ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {
+					"multi.bool": {"false"},
+				},
+			},
+		},
+		{
+			desc: "true or false query",
+			q:    search.NewQueryBuilder().AddBoolsHighlighted(search.TestBool, true, false).ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {
+					"multi.bool": {"false"},
+				},
+				testStruct1: {
+					"multi.bool": {"true"},
+				},
+			},
 		},
 	})
 }

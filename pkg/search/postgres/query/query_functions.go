@@ -12,7 +12,17 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-type queryFunction func(column string, field *pkgSearch.Field, value string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error)
+type queryAndFieldContext struct {
+	qualifiedColumnName string
+	field               *pkgSearch.Field
+	dbField             *walker.Field
+
+	value          string
+	highlight      bool
+	queryModifiers []pkgSearch.QueryModifier
+}
+
+type queryFunction func(ctx *queryAndFieldContext) (*QueryEntry, error)
 
 var datatypeToQueryFunc = map[walker.DataType]queryFunction{
 	walker.String:      newStringQuery,
@@ -25,11 +35,9 @@ var datatypeToQueryFunc = map[walker.DataType]queryFunction{
 	walker.EnumArray:   queryOnArray(newEnumQuery),
 	walker.IntArray:    queryOnArray(newNumericQuery),
 	// Map is handled separately.
-
-	// TODOs
 }
 
-func matchFieldQuery(dbField *walker.Field, field *pkgSearch.Field, value string) (*QueryEntry, error) {
+func matchFieldQuery(dbField *walker.Field, field *pkgSearch.Field, value string, highlight bool) (*QueryEntry, error) {
 	qualifiedColName := dbField.Schema.Table + "." + dbField.ColumnName
 	// Special case: wildcard
 	if stringutils.MatchesAny(value, pkgSearch.WildcardString, pkgSearch.NullString) {
@@ -37,36 +45,55 @@ func matchFieldQuery(dbField *walker.Field, field *pkgSearch.Field, value string
 	}
 
 	if dbField.DataType == walker.Map {
-		return newMapQuery(qualifiedColName, field, value)
+		return newMapQuery(qualifiedColName, value, highlight)
 	}
 
 	trimmedValue, modifiers := pkgSearch.GetValueAndModifiersFromString(value)
-	return datatypeToQueryFunc[dbField.DataType](qualifiedColName, field, trimmedValue, modifiers...)
+	return datatypeToQueryFunc[dbField.DataType](&queryAndFieldContext{
+		qualifiedColumnName: qualifiedColName,
+		field:               field,
+		dbField:             dbField,
+		value:               trimmedValue,
+		highlight:           highlight,
+		queryModifiers:      modifiers,
+	})
 }
 
 func handleExistenceQueries(root string, value string) *QueryEntry {
 	switch value {
 	case pkgSearch.WildcardString:
-		return &QueryEntry{
+		return &QueryEntry{Where: WhereClause{
 			Query: fmt.Sprintf("%s is not null", root),
-		}
+		}}
 	case pkgSearch.NullString:
-		return &QueryEntry{
+		return &QueryEntry{Where: WhereClause{
 			Query: fmt.Sprintf("%s is null", root),
-		}
+		}}
 	default:
 		log.Fatalf("existence query for value %s is not currently handled", value)
 	}
 	return nil
 }
 
-func newStringQuery(columnName string, _ *pkgSearch.Field, value string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
+func newStringQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
+	whereClause, err := newStringQueryWhereClause(ctx.qualifiedColumnName, ctx.value, ctx.queryModifiers...)
+	if err != nil {
+		return nil, err
+	}
+	qe := &QueryEntry{Where: whereClause}
+	if ctx.highlight {
+		qe.SelectedFields = []SelectQueryField{{SelectPath: ctx.qualifiedColumnName, FieldPath: ctx.field.FieldPath, FieldType: ctx.dbField.DataType}}
+	}
+	return qe, nil
+}
+
+func newStringQueryWhereClause(columnName string, value string, queryModifiers ...pkgSearch.QueryModifier) (WhereClause, error) {
 	if len(value) == 0 {
-		return nil, errors.New("value in search query cannot be empty")
+		return WhereClause{}, errors.New("value in search query cannot be empty")
 	}
 
 	if len(queryModifiers) == 0 {
-		return &QueryEntry{
+		return WhereClause{
 			Query:  fmt.Sprintf("%s ilike $$", columnName),
 			Values: []interface{}{value + "%"},
 		}, nil
@@ -81,7 +108,7 @@ func newStringQuery(columnName string, _ *pkgSearch.Field, value string, queryMo
 	}
 
 	if len(queryModifiers) == 0 {
-		return &QueryEntry{
+		return WhereClause{
 			Query:  fmt.Sprintf("NOT (%s ilike $$)", columnName),
 			Values: []interface{}{value + "%"},
 		}, nil
@@ -89,40 +116,49 @@ func newStringQuery(columnName string, _ *pkgSearch.Field, value string, queryMo
 
 	switch queryModifiers[0] {
 	case pkgSearch.Regex:
-		return &QueryEntry{
+		return WhereClause{
 			Query:  fmt.Sprintf("%s %s~* $$", columnName, negationString),
 			Values: []interface{}{value},
 		}, nil
 	case pkgSearch.Equality:
-		return &QueryEntry{
+		return WhereClause{
 			Query:  fmt.Sprintf("%s %s= $$", columnName, negationString),
 			Values: []interface{}{value},
 		}, nil
 	}
 	err := errors.Errorf("unknown query modifier: %s", queryModifiers[0])
 	utils.Should(err)
-	return nil, err
+	return WhereClause{}, err
 }
 
-func newBoolQuery(column string, field *pkgSearch.Field, value string, modifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
-	if len(modifiers) > 0 {
-		return nil, errors.Errorf("modifiers for bool query not allowed: %+v", modifiers)
+func newBoolQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
+	if len(ctx.queryModifiers) > 0 {
+		return nil, errors.Errorf("modifiers for bool query not allowed: %+v", ctx.queryModifiers)
 	}
-	res, err := parse.FriendlyParseBool(value)
+	res, err := parse.FriendlyParseBool(ctx.value)
 	if err != nil {
 		return nil, err
 	}
 	// explicitly apply equality check
-	return newStringQuery(column, field, strconv.FormatBool(res), pkgSearch.Equality)
+	ctx.value = strconv.FormatBool(res)
+	ctx.queryModifiers = []pkgSearch.QueryModifier{pkgSearch.Equality}
+	return newStringQuery(ctx)
 }
 
 func queryOnArray(baseQuery queryFunction) queryFunction {
-	return func(column string, field *pkgSearch.Field, value string, queryModifiers ...pkgSearch.QueryModifier) (*QueryEntry, error) {
-		baseQ, err := baseQuery("elem", field, value, queryModifiers...)
+	return func(ctx *queryAndFieldContext) (*QueryEntry, error) {
+		clonedCtx := *ctx
+		clonedCtx.highlight = false
+		clonedCtx.qualifiedColumnName = "elem"
+		baseQ, err := baseQuery(&clonedCtx)
 		if err != nil {
 			return nil, err
 		}
-		baseQ.Query = fmt.Sprintf("exists (select * from unnest(%s) as elem where %s)", column, baseQ.Query)
-		return baseQ, nil
+		// If no highlight, use an exists query since SQL optimizes that (by early exiting)
+		if !ctx.highlight {
+			baseQ.Where.Query = fmt.Sprintf("exists (select * from unnest(%s) as elem where %s)", ctx.qualifiedColumnName, baseQ.Where.Query)
+			return &QueryEntry{Where: baseQ.Where}, nil
+		}
+		return nil, errors.New("highlights not supported yet")
 	}
 }

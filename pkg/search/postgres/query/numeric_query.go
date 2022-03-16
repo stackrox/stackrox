@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/search"
 )
 
 type prefixAndInversion struct {
@@ -66,7 +65,7 @@ func invertNumericPrefix(prefix string) string {
 	return prefixesToInversions[prefix]
 }
 
-func createNumericQuery(root string, _ *search.Field, prefix string, value float64) *QueryEntry {
+func createNumericQuery(root string, prefix string, value float64) WhereClause {
 	var valueStr string
 	if _, fraction := math.Modf(value); fraction > 0 {
 		valueStr = fmt.Sprintf("%0.2f", value)
@@ -77,20 +76,24 @@ func createNumericQuery(root string, _ *search.Field, prefix string, value float
 	if prefix == "" {
 		prefix = "="
 	}
-	return &QueryEntry{
+	return WhereClause{
 		Query:  fmt.Sprintf("%s %s $$", root, prefix),
 		Values: []interface{}{valueStr},
 	}
 }
 
-func newNumericQuery(table string, field *search.Field, value string, modifiers ...search.QueryModifier) (*QueryEntry, error) {
-	if len(modifiers) > 0 {
-		return nil, errors.Errorf("modifiers not supported for numeric query: %+v", modifiers)
+func newNumericQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
+	if len(ctx.queryModifiers) > 0 {
+		return nil, errors.Errorf("modifiers not supported for numeric query: %+v", ctx.queryModifiers)
 	}
-	prefix, trimmedValue := parseNumericPrefix(value)
+	prefix, trimmedValue := parseNumericPrefix(ctx.value)
 	valuePtr, err := parseNumericStringToFloat(trimmedValue)
 	if err != nil {
 		return nil, err
 	}
-	return createNumericQuery(table, field, prefix, valuePtr), nil
+	qe := &QueryEntry{Where: createNumericQuery(ctx.qualifiedColumnName, prefix, valuePtr)}
+	if ctx.highlight {
+		qe.SelectedFields = []SelectQueryField{{SelectPath: ctx.qualifiedColumnName, FieldPath: ctx.field.FieldPath, FieldType: ctx.dbField.DataType}}
+	}
+	return qe, nil
 }

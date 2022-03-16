@@ -1,7 +1,6 @@
 package pgsearch
 
 import (
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -11,45 +10,41 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// QueryEntry is made up of the raw query template and also the values that should be substituted
+// SelectQueryField represents a field that's queried in a select.
+type SelectQueryField struct {
+	SelectPath string // This goes into the "SELECT" portion of the SQL.
+	FieldType  walker.DataType
+	FieldPath  string
+}
+
+// QueryEntry is an entry with clauses added by portions of the query.
 type QueryEntry struct {
+	Where          WhereClause
+	SelectedFields []SelectQueryField
+}
+
+// WhereClause is made up of the raw query template and also the values that should be substituted
+type WhereClause struct {
 	Query  string
 	Values []interface{}
 }
 
 // NewFalseQuery always returns false
 func NewFalseQuery() *QueryEntry {
-	return &QueryEntry{
+	return &QueryEntry{Where: WhereClause{
 		Query: "false",
-	}
+	}}
 }
 
 // NewTrueQuery always returns true
 func NewTrueQuery() *QueryEntry {
-	return &QueryEntry{
+	return &QueryEntry{Where: WhereClause{
 		Query: "true",
-	}
-}
-
-// MatchFieldQuery is a simple query that performs operations on a single field.
-func MatchFieldQuery(schema *walker.Schema, query *v1.MatchFieldQuery, optionsMap searchPkg.OptionsMap) (*QueryEntry, error) {
-	// Need to find base value
-	field, ok := optionsMap.Get(query.GetField())
-	if !ok {
-		log.Infof("Options Map for %s does not have field: %v", schema.Table, query.GetField())
-		return nil, nil
-	}
-	fieldsBySearchLabel := schema.FieldsBySearchLabel()
-	dbField := fieldsBySearchLabel[query.GetField()]
-	if dbField == nil {
-		log.Errorf("Missing field %s in table %s", query.GetField(), schema.Table)
-		return nil, nil
-	}
-	return matchFieldQuery(dbField, field, query.Value)
+	}}
 }
 
 // MatchFieldQueryFromField is a simple query that performs operations on a single field.
-func MatchFieldQueryFromField(dbField *walker.Field, value string, optionsMap searchPkg.OptionsMap) (*QueryEntry, error) {
+func MatchFieldQueryFromField(dbField *walker.Field, value string, highlight bool, optionsMap searchPkg.OptionsMap) (*QueryEntry, error) {
 	if dbField == nil {
 		return nil, nil
 	}
@@ -59,5 +54,5 @@ func MatchFieldQueryFromField(dbField *walker.Field, value string, optionsMap se
 		log.Infof("Options Map for %s does not have field: %v", dbField.Schema.Table, dbField.Search.FieldName)
 		return nil, nil
 	}
-	return matchFieldQuery(dbField, field, value)
+	return matchFieldQuery(dbField, field, value, highlight)
 }
