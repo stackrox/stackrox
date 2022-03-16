@@ -979,6 +979,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"fixedBy: String!",
 		"hostMountPolicy: HostMountPolicy",
 		"imageName: ImageNamePolicy",
+		"imageSignatureVerifiedBy: String!",
 		"lineRule: DockerfileLineRuleField",
 		"permissionPolicy: PermissionPolicy",
 		"portExposurePolicy: PortExposurePolicy",
@@ -8814,6 +8815,11 @@ func (resolver *policyFieldsResolver) HostMountPolicy(ctx context.Context) (*hos
 func (resolver *policyFieldsResolver) ImageName(ctx context.Context) (*imageNamePolicyResolver, error) {
 	value := resolver.data.GetImageName()
 	return resolver.root.wrapImageNamePolicy(value, true, nil)
+}
+
+func (resolver *policyFieldsResolver) ImageSignatureVerifiedBy(ctx context.Context) string {
+	value := resolver.data.GetImageSignatureVerifiedBy()
+	return value
 }
 
 func (resolver *policyFieldsResolver) LineRule(ctx context.Context) (*dockerfileLineRuleFieldResolver, error) {
