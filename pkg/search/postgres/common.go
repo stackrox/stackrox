@@ -50,13 +50,11 @@ type selectQuery struct {
 }
 
 type query struct {
-	Select                       selectQuery
-	From                         string
-	Where                        string
-	WithClauses                  string
-	InnerJoinsBeforeWhereClauses string
-	Pagination                   string
-	Data                         []interface{}
+	Select     selectQuery
+	From       string
+	Where      string
+	Pagination string
+	Data       []interface{}
 }
 
 func (q *query) String() string {
@@ -174,7 +172,6 @@ func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgse
 	for _, entry := range entries {
 		queryStrings = append(queryStrings, entry.Where.Query)
 		newQE.Where.Values = append(newQE.Where.Values, entry.Where.Values...)
-		newQE.WithClauses = append(newQE.WithClauses, entry.WithClauses...)
 		for _, selectedField := range entry.SelectedFields {
 			selectFields[selectedField.SelectPath] = selectedField
 		}
