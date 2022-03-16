@@ -10,10 +10,8 @@ echo "SCRIPT_ROOT          : $SCRIPT_ROOT"
 echo "QA_TESTS_BACKEND_DIR : $QA_TESTS_BACKEND_DIR"
 
 echo "Creating $QA_TESTS_BACKEND_DIR/qa-test-settings.properties"
-# Remember to wrap the key file in single quotes, remove spaces, and replace
-# \n characters with actual newlines (ctrl-v enter).
-#pass show qa-test-settings.properties.v2 \
-#    > "$QA_TESTS_BACKEND_DIR/qa-test-settings.properties"
+pass show qa-test-settings.properties \
+    > "$QA_TESTS_BACKEND_DIR/qa-test-settings.properties"
 
 cd "$QA_TESTS_BACKEND_DIR"
 REGISTRY_USERNAME="$(pass quay-io-ro-username)"; export REGISTRY_USERNAME
