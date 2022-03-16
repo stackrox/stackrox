@@ -8,8 +8,10 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
@@ -70,6 +72,7 @@ type deploymentHandler struct {
 	namespaceStore         *namespaceStore
 	processFilter          filter.Filter
 	config                 config.Handler
+	credentialsManager     awscredentials.RegistryCredentialsManager
 	hierarchy              references.ParentHierarchy
 	rbac                   rbac.Store
 	orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
@@ -80,9 +83,21 @@ type deploymentHandler struct {
 }
 
 // newDeploymentHandler creates and returns a new deployment handler.
-func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore,
-	endpointManager endpointManager, namespaceStore *namespaceStore, rbac rbac.Store, podLister v1listers.PodLister,
-	processFilter filter.Filter, config config.Handler, detector detector.Detector, namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentHandler {
+func newDeploymentHandler(
+	clusterID string,
+	serviceStore *serviceStore,
+	deploymentStore *DeploymentStore,
+	podStore *PodStore,
+	endpointManager endpointManager,
+	namespaceStore *namespaceStore,
+	rbac rbac.Store,
+	podLister v1listers.PodLister,
+	processFilter filter.Filter,
+	config config.Handler,
+	detector detector.Detector,
+	namespaces *orchestratornamespaces.OrchestratorNamespaces,
+	credentialsManager awscredentials.RegistryCredentialsManager,
+) *deploymentHandler {
 	return &deploymentHandler{
 		podLister:              podLister,
 		serviceStore:           serviceStore,
@@ -97,6 +112,7 @@ func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deployme
 		detector:               detector,
 		orchestratorNamespaces: namespaces,
 		clusterID:              clusterID,
+		credentialsManager:     credentialsManager,
 	}
 }
 
@@ -162,7 +178,39 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		d.processFilter.Delete(deploymentWrap.GetId())
 	}
 	d.detector.ProcessDeployment(deploymentWrap.GetDeployment(), action)
+	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
 	events = append(events, deploymentWrap.toEvent(action))
+	return events
+}
+
+// appendIntegrationsOnCredentials if credentials are found for registries used
+// in the deployment, emit Registry Integration events for them.
+//
+// The method doesn't process REMOVE_RESOURCE actions. Notice that this means
+// integrations are only recreated if the deployment exists, so it can be
+// permanently deleted in Central.
+//
+func (d *deploymentHandler) appendIntegrationsOnCredentials(
+	action central.ResourceAction,
+	containers []*storage.Container,
+	events []*central.SensorEvent,
+) []*central.SensorEvent {
+	if d.credentialsManager == nil || action == central.ResourceAction_REMOVE_RESOURCE {
+		return events
+	}
+	registries := set.NewStringSet()
+	for _, c := range containers {
+		if r := c.GetImage().GetName().GetRegistry(); registries.Add(r) {
+			if cfg := d.credentialsManager.GetDockerConfigEntry(r); cfg != nil {
+				events = append(events, &central.SensorEvent{
+					Action: central.ResourceAction_UPDATE_RESOURCE,
+					Resource: &central.SensorEvent_ImageIntegration{
+						ImageIntegration: DockerConfigToImageIntegration(r, *cfg),
+					},
+				})
+			}
+		}
+	}
 	return events
 }
 
