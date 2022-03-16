@@ -157,7 +157,17 @@ var (
 				ThenMapEachToOne(transformation.StripPrefixUnchecked(componentDackBox.Bucket)),
 		),
 
-		v1.SearchCategory_IMAGE_VULN_EDGE: getImageCVEEdgeTransformationForVulns(),
+		// CombineReversed ( { k1, k2 }
+		//          CVEs,
+		//          CVE (backwards) Image,
+		//          )
+		v1.SearchCategory_IMAGE_VULN_EDGE: transformation.ReverseEdgeKeys(
+			DoNothing,
+			transformation.AddPrefix(cveDackBox.Bucket).
+				ThenMapToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)).
+				Then(transformation.Dedupe()),
+		),
 
 		// CVE
 		v1.SearchCategory_VULNERABILITIES: DoNothing,
@@ -194,17 +204,3 @@ var (
 		clusterDackBox.BucketHandler,
 	)
 )
-
-func getImageCVEEdgeTransformationForVulns() transformation.OneToMany {
-	// CombineReversed ( { k1, k2 }
-	//          CVEs,
-	//          CVE (backwards) Image,
-	//          )
-	return transformation.ReverseEdgeKeys(
-		DoNothing,
-		transformation.AddPrefix(cveDackBox.Bucket).
-			ThenMapToMany(transformation.BackwardFromContext(imageDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefixUnchecked(imageDackBox.Bucket)).
-			Then(transformation.Dedupe()),
-	)
-}

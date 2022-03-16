@@ -43,10 +43,6 @@ describe.skip('Images list page and its entity detail page, related entities sub
                     waitForAnimations: false,
                 });
 
-                /*
-
-                @TODO: Uncomment when the tables are made
-
                 cy.get('.pf-c-tabs .pf-c-tabs__item:eq(1):contains("Deferred CVEs")').click({
                     force: true,
                     waitForAnimations: false,
@@ -56,8 +52,6 @@ describe.skip('Images list page and its entity detail page, related entities sub
                     force: true,
                     waitForAnimations: false,
                 });
-
-                */
             }
             if (columnValue !== 'no cves' && columnValue.includes('cve')) {
                 allCVECheck(url.list.images);
