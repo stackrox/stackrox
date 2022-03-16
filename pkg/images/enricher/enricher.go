@@ -95,8 +95,8 @@ type ImageEnricher interface {
 	EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error)
 }
 
-// CveSuppressor provides enrichment for suppressed CVEs for an image's components.
-type CveSuppressor interface {
+// CVESuppressor provides enrichment for suppressed CVEs for an image's components.
+type CVESuppressor interface {
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
 }
 
@@ -112,7 +112,7 @@ type signatureVerifierForIntegrations func(ctx context.Context, integrations []*
 
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(cvesSuppressor CveSuppressor, cvesSuppressorV2 CveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
+func New(cvesSuppressor CVESuppressor, cvesSuppressorV2 CVESuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
 	imageGetter ImageGetter, healthReporter integrationhealth.Reporter,
 	signatureIntegrationGetter SignatureIntegrationGetter) ImageEnricher {
 	enricher := &enricherImpl{

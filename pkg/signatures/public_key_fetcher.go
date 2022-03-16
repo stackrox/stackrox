@@ -35,7 +35,7 @@ func init() {
 	insecureDefaultTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 }
 
-// FetchSignature implements the SignatureFetcher interface.
+// FetchSignatures implements the SignatureFetcher interface.
 // The signature associated with the image will be fetched from the given registry.
 // It will return the storage.ImageSignature and an error that indicated whether the fetching should be retried or not.
 // NOTE: No error will be returned when the image has no signature available. All occurring errors will be logged.

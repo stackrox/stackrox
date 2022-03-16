@@ -39,8 +39,8 @@ var (
 )
 
 type enricherImpl struct {
-	cvesSuppressor   CveSuppressor
-	cvesSuppressorV2 CveSuppressor
+	cvesSuppressor   CVESuppressor
+	cvesSuppressorV2 CVESuppressor
 	integrations     integration.Set
 
 	errorsPerRegistry  map[registryTypes.ImageRegistry]int32
@@ -128,12 +128,11 @@ func (e *enricherImpl) EnrichImage(enrichContext EnrichmentContext, image *stora
 	}
 
 	// Signals whether any updates to the image were made throughout the enrichment flow.
-	updated := false
+	var updated bool
 
 	// Update the image with existing values depending on the FetchOption provided or whether any are available.
 	// This makes sure that we fetch any existing image only once from database.
-	useExistingScanIfPossible := e.updateImageFromDatabase(
-		ctx, image, enrichContext.FetchOpt)
+	useExistingScanIfPossible := e.updateImageFromDatabase(ctx, image, enrichContext.FetchOpt)
 
 	didUpdateMetadata, err := e.enrichWithMetadata(ctx, enrichContext, image)
 	errorList.AddError(err)
