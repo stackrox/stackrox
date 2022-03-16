@@ -49,8 +49,8 @@ The following tools are necessary to test code and build image(s):
 * Various Go linters and RocksDB dependencies that can be installed using `make reinstall-dev-tools`.
 * UI build tooling as specified in [ui/README.md](ui/README.md#Build-Tooling).
 * Docker (make sure you `docker login` to your company [DockerHub account](https://hub.docker.com/settings/security))
-* rocksdb (Follow [guide](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/227344410/Tools+languages+XCode+Docker+Brew+Java+Go#Tools%2Flanguages%3AXCode%2CDocker%2CBrew%2CJava%2CGo-InstallRocksDB) on Confluence to install)
-* xcode command line tools (macOS only)
+* RocksDB (follow [Mac](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-darwin.md#install-rocksdb) or [Linux](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-linux.md#install-rocksdb) guide)
+* Xcode command line tools (macOS only)
 * [Bats](https://github.com/sstephenson/bats) is used to run certain shell tests.
   You can obtain it with `brew install bats` or `npm install -g bats`.
 * [oc OpenShift](https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/) cli tool
@@ -108,7 +108,7 @@ $ git clone git@github.com:stackrox/stackrox.git
 
 To sweeten your experience, install [the workflow scripts](#productivity) beforehand.
 
-First install RocksDB using the guide in Confluence. For [Mac](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/227344410/Tools+languages+XCode+Docker+Brew+Java+Go#Tools%2Flanguages%3AXCode%2CDocker%2CBrew%2CJava%2CGo-InstallRocksDB) or [Linux](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/2404155411/Tools+languages#Tools%2Flanguages-InstallRocksDBdependencies)
+First install RocksDB. Follow [Mac](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-darwin.md#install-rocksdb) or [Linux](https://github.com/stackrox/dev-docs/blob/main/docs/getting-started/getting-started-linux.md#install-rocksdb) guidelines
 ```bash
 $ cd $GOPATH/src/github.com/stackrox/stackrox
 $ make install-dev-tools
@@ -251,7 +251,7 @@ If you would like to debug local or even remote deployment, follow the procedure
     of the screen.
  6. Set some code breakpoints, trigger corresponding actions and happy debugging!
 
-See <https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/1840382021/Debugging+go+code+running+in+Kubernetes> for
+See [Debugging go code running in Kubernetes](https://github.com/stackrox/dev-docs/blob/main/docs/knowledge-base/%5BBE%5D%20Debugging-go-code-running-in-Kubernetes.md) for
 more info.
 </details>
 
