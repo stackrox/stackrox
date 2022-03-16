@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Grid, GridItem } from '@patternfly/react-core';
 
+import { getProductBranding } from 'constants/productBranding';
 import { SystemConfig, TelemetryConfig } from 'Containers/SystemConfig/SystemConfigTypes';
 import ConfigBannerDetailWidget from './ConfigBannerDetailWidget';
 import ConfigLoginDetailWidget from './ConfigLoginDetailWidget';
@@ -13,6 +14,7 @@ export type DetailsProps = {
 };
 
 function Details({ systemConfig, telemetryConfig }: DetailsProps): ReactElement {
+    const { type } = getProductBranding();
     return (
         <Grid hasGutter>
             <GridItem span={12}>
@@ -27,9 +29,14 @@ function Details({ systemConfig, telemetryConfig }: DetailsProps): ReactElement 
             <GridItem sm={12} md={6}>
                 <ConfigLoginDetailWidget publicConfig={systemConfig?.publicConfig} />
             </GridItem>
-            <GridItem sm={12} md={6}>
-                <ConfigTelemetryDetailWidget telemetryConfig={telemetryConfig} editable={false} />
-            </GridItem>
+            {type === 'RHACS_BRANDING' && (
+                <GridItem sm={12} md={6}>
+                    <ConfigTelemetryDetailWidget
+                        telemetryConfig={telemetryConfig}
+                        editable={false}
+                    />
+                </GridItem>
+            )}
         </Grid>
     );
 }
