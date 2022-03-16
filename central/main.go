@@ -272,10 +272,7 @@ func startServices() {
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
 	gatherer.Singleton().Start()
-
-	if features.VulnRiskManagement.Enabled() {
-		vulnRequestManager.Singleton().Start()
-	}
+	vulnRequestManager.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -341,10 +338,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		summaryService.Singleton(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
-	}
-
-	if features.VulnRiskManagement.Enabled() {
-		servicesToRegister = append(servicesToRegister, vulnRequestService.Singleton())
+		vulnRequestService.Singleton(),
 	}
 
 	if features.VulnReporting.Enabled() {
@@ -715,10 +709,7 @@ func waitForTerminationSignal() {
 		{suppress.Singleton(), "cve unsuppress loop"},
 		{pruning.Singleton(), "gargage collector"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
-	}
-
-	if features.VulnRiskManagement.Enabled() {
-		stoppables = append(stoppables, stoppableWithName{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"})
+		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 	}
 
 	if features.VulnReporting.Enabled() {

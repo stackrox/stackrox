@@ -47,13 +47,6 @@ func Singleton() DataStore {
 		// Which role format is used is determined solely by the feature flag.
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage)
 
-		// extend default roles if vuln risk management feature flag is enabled
-		if features.VulnRiskManagement.Enabled() {
-			for r, a := range vulnRiskManagementDefaultRoles {
-				defaultRoles[r] = a
-			}
-		}
-
 		if features.VulnReporting.Enabled() {
 			for r, a := range vulnReportingDefaultRoles {
 				defaultRoles[r] = a
@@ -121,9 +114,6 @@ var defaultRoles = map[string]roleAttributes{
 			permissions.Modify(resources.ServiceIdentity),
 		},
 	},
-}
-
-var vulnRiskManagementDefaultRoles = map[string]roleAttributes{
 	rolePkg.VulnMgmtApprover: {
 		idSuffix:    "vulnmgmtapprover",
 		description: "For users: use it to provide access to approve vulnerability deferrals or false positive requests",

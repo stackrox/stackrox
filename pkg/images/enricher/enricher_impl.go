@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
@@ -141,9 +140,7 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 	}
 
 	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
-	if features.VulnRiskManagement.Enabled() {
-		e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
-	}
+	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 
 	return EnrichmentResult{
 		ImageUpdated: updatedMetadata || (scanResult != ScanNotDone),

@@ -136,10 +136,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
-	}
-
-	if features.VulnRiskManagement.Enabled() {
-		components = append(components, reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache))
+		reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache),
 	}
 
 	sensorNamespace, err := satoken.LoadNamespaceFromFile()
