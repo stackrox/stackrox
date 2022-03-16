@@ -37,7 +37,7 @@ jq -rc '.' < ~/creds/shane-rs361.json \
     | { echo -n \'; cat -; echo -n \'; }
 ```
 
-    {"type":"service_account","project_id":"stackrox-ci","private_key_id":"76da3877bd9c7096d06ca259a50941c36f1bd476","private_key":"-----BEGIN PRIVATE KEY-----
+    '{"type":"service_account","project_id":"stackrox-ci","private_key_id":"76da3877bd9c7096d06ca259a50941c36f1bd476","private_key":"-----BEGIN PRIVATE KEY-----
     MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDoRUp2VcZ0x3UR
     A5HxOmbMxkKJYMhhIeRk78K9hveTEqxq80j6bGyqjh3ZlAH0hIHcpLzjKimHAnRs
     << clipped >>
@@ -45,7 +45,7 @@ jq -rc '.' < ~/creds/shane-rs361.json \
     /PbilgASXMR8+nTj4ZPrm4EakxXt7dhFCIDOsHbGOa8MLsGjg4dDhTxtEAbFQqtc
     z6IAm97Cpg+dFK43Fu0TMD2n
     -----END PRIVATE KEY-----
-    ","client_email":"shane-rs361@stackrox-ci.iam.gserviceaccount.com","client_id":"109083408863444657465","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"https://www.googleapis.com/robot/v1/metadata/x509/shane-rs361%40stackrox-ci.iam.gserviceaccount.com"}
+    ","client_email":"shane-rs361@stackrox-ci.iam.gserviceaccount.com","client_id":"109083408863444657465","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"https://www.googleapis.com/robot/v1/metadata/x509/shane-rs361%40stackrox-ci.iam.gserviceaccount.com"}'
 
 
 Setup Service Account
