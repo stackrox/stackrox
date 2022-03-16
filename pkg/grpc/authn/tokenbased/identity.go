@@ -18,7 +18,6 @@ type roleBasedIdentity struct {
 	friendlyName  string
 	fullName      string
 	resolvedRoles []permissions.ResolvedRole
-	notBefore     time.Time
 	expiry        time.Time
 	attributes    map[string][]string
 	authProvider  authproviders.Provider
@@ -57,12 +56,8 @@ func (i *roleBasedIdentity) User() *storage.UserInfo {
 	}
 }
 
-func (i *roleBasedIdentity) Expiry() time.Time {
-	return i.expiry
-}
-
-func (i *roleBasedIdentity) NotBefore() time.Time {
-	return i.notBefore
+func (i *roleBasedIdentity) ValidityPeriod() (time.Time, time.Time) {
+	return time.Time{}, i.expiry
 }
 
 func (i *roleBasedIdentity) ExternalAuthProvider() authproviders.Provider {

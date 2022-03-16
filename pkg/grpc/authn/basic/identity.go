@@ -59,12 +59,8 @@ func (i identity) User() *storage.UserInfo {
 	}
 }
 
-func (i identity) NotBefore() time.Time {
-	return time.Time{}
-}
-
-func (i identity) Expiry() time.Time {
-	return timeutil.MaxProtoValid
+func (i identity) ValidityPeriod() (time.Time, time.Time) {
+	return time.Time{}, timeutil.MaxProtoValid
 }
 
 func (i identity) ExternalAuthProvider() authproviders.Provider {

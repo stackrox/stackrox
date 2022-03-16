@@ -23,9 +23,8 @@ type Identity interface {
 
 	Service() *storage.ServiceIdentity
 	Attributes() map[string][]string
-
-	NotBefore() time.Time
-	Expiry() time.Time
+	// ValidityPeriod returns the bounds (begin, end) at which the identity remains valid.
+	ValidityPeriod() (time.Time, time.Time)
 
 	ExternalAuthProvider() authproviders.Provider
 }

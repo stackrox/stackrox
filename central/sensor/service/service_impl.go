@@ -107,8 +107,9 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	}
 
 	if expiryStatus, err := getCertExpiryStatus(identity); err != nil {
+		notBefore, notAfter := identity.ValidityPeriod()
 		log.Warnf("Failed to convert expiry status of sensor cert (NotBefore: %v, Expiry: %v) from cluster %s to proto: %v",
-			identity.NotBefore(), identity.Expiry(), cluster.GetId(), err)
+			notBefore, notAfter, cluster.GetId(), err)
 	} else if expiryStatus != nil {
 		if err := s.clusters.UpdateClusterCertExpiryStatus(clusterDSSAC, cluster.GetId(), expiryStatus); err != nil {
 			log.Warnf("Failed to update cluster expiry status for cluster %s: %v", cluster.GetId(), err)
@@ -127,10 +128,9 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 }
 
 func getCertExpiryStatus(identity authn.Identity) (*storage.ClusterCertExpiryStatus, error) {
-	expiry := identity.Expiry()
-	notBefore := identity.NotBefore()
+	notBefore, notAfter := identity.ValidityPeriod()
 
-	if expiry.IsZero() && notBefore.IsZero() {
+	if notAfter.IsZero() && notBefore.IsZero() {
 		return nil, nil
 	}
 
@@ -138,8 +138,8 @@ func getCertExpiryStatus(identity authn.Identity) (*storage.ClusterCertExpirySta
 
 	var multiErr error
 
-	if !expiry.IsZero() {
-		expiryTimestamp, err := types.TimestampProto(expiry)
+	if !notAfter.IsZero() {
+		expiryTimestamp, err := types.TimestampProto(notAfter)
 		if err != nil {
 			multiErr = multierror.Append(multiErr, err)
 		} else {
