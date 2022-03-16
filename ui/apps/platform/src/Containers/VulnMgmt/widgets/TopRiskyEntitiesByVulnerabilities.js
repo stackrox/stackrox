@@ -24,6 +24,7 @@ import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
 import { entitySortFieldsMap, cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
+import { entityPriorityField } from 'Containers/VulnMgmt/VulnMgmt.constants';
 
 const ENTITY_COUNT = 25;
 const VULN_COUNT = 50;
@@ -353,7 +354,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
         vulnQuery: queryService.objectToWhereClause(vulnQuery),
         entityPagination: queryService.getPagination(
             {
-                id: 'Priority',
+                id: entityPriorityField[selectedEntityType],
                 desc: false,
             },
             WIDGET_PAGINATION_START_OFFSET,
