@@ -19,6 +19,7 @@ import (
 
 // Top Level Resolvers.
 ///////////////////////
+// osward change for PR
 
 func (resolver *Resolver) componentV2(ctx context.Context, args IDQuery) (ComponentResolver, error) {
 	component, exists, err := resolver.ImageComponentDataStore.Get(ctx, string(*args.ID))
