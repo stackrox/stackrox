@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
-source "qa-tests-backend-single-step/scripts/common.sh"
-source "qa-tests-backend-single-step/scripts/config.sh"
+source "scripts/common.sh"
+source "scripts/config.sh"
 
 function docker_login {
   docker login docker.io
@@ -14,6 +14,7 @@ function docker_login {
 }
 
 function stackrox_teardown {
+  cd "$STACKROX_SOURCE_ROOT"
   assert_file_exists "$STACKROX_TEARDOWN_SCRIPT"
   "$STACKROX_TEARDOWN_SCRIPT" <<<"yes"
 
@@ -34,8 +35,9 @@ function stackrox_teardown {
   fi
 }
 
+# https://help-internal.stackrox.com/docs/get-started/quick-start/
 function stackrox_deploy_via_helm {
-  # https://help-internal.stackrox.com/docs/get-started/quick-start/
+  cd "$STACKROX_SOURCE_ROOT"
   helm plugin update diff >/dev/null  # https://github.com/databus23/helm-diff
 
   if cluster_is_openshift; then
@@ -45,8 +47,9 @@ function stackrox_deploy_via_helm {
   fi
 }
 
+# operates against current kube context
 function port-forward-central {
-  # operates against current kube context
+  cd "$STACKROX_SOURCE_ROOT"
   pkill -f 'port-forward.*stackrox.*svc/central' || true
   sleep 3
   nohup kubectl port-forward -n stackrox svc/central 8443:443 &> /tmp/central.log &
@@ -66,10 +69,10 @@ function port-forward-central {
 
 
 # __MAIN__
-cd "$STACKROX_SOURCE_ROOT"  # all paths should be relative to here
-
-kubectl config current-context \
-  | grep "default/api-sb-03-14-osdgcp-lxkx-s2-devshift-org:6443/admin"
+CURRENT_KUBE_CONTEXT=$(kubectl config current-context)
+REQUIRED_KUBE_CONTEXT="default/api-sb-03-15-osdgcp-fu0z-s2-devshift-org:6443/admin"
+[[ "$CURRENT_KUBE_CONTEXT" == "$REQUIRED_KUBE_CONTEXT" ]] \
+  || error "kubecontext mismatch [$CURRENT_KUBE_CONTEXT] [$REQUIRED_KUBE_CONTEXT]"
 export LOAD_BALANCER="lb"
 export MONITORING_SUPPORT=true
 
