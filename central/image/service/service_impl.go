@@ -58,6 +58,7 @@ var (
 		},
 		idcheck.SensorsOnly(): {
 			"/v1.ImageService/GetImageVulnerabilitiesInternal",
+			"/v1.ImageService/EnrichLocalImageInternal",
 		},
 		user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
 			"/v1.ImageService/DeleteImages",
