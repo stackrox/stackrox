@@ -82,3 +82,9 @@ func (d *DockerConfigEntry) UnmarshalJSON(data []byte) error {
 	d.Username, d.Password, err = decodeDockerConfigFieldAuth(tmp.Auth)
 	return err
 }
+
+// CreateFromAuthString decodes the given docker auth string into a DockerConfigEntry.
+func CreateFromAuthString(auth string) (d DockerConfigEntry, err error) {
+	d.Username, d.Password, err = decodeDockerConfigFieldAuth(auth)
+	return
+}
