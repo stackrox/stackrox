@@ -54,14 +54,26 @@ function clickPolicyKeyGroup(categoryName) {
     ).click();
 }
 
+function goToPoliciesAndCloneToStep3() {
+    visitPolicies();
+    cloneFirstPolicyFromTable();
+    goToStep3();
+}
+
+function clearPolicyCriteriaCards() {
+    // starting from clean slate
+    cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
+        if (cards.length > 0) {
+            cy.get(selectors.step3.policyCriteria.deleteBtn).eq(0).click();
+        }
+    });
+}
+
 describe('Policy wizard, Step 3 Policy Criteria', () => {
     withAuth();
 
-    beforeEach(() => {
-        visitPolicies();
-    });
-
     it('should not allow user to edit policy criteria for default policies', () => {
+        visitPolicies();
         editFirstPolicyFromTable();
         goToStep3();
 
@@ -71,8 +83,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
     });
 
     it('should have nested policy field keys', () => {
-        cloneFirstPolicyFromTable();
-        goToStep3();
+        goToPoliciesAndCloneToStep3();
 
         cy.get(selectors.step3.policyCriteria.keyGroup).should((values) => {
             expect(values).to.have.length(9);
@@ -82,12 +93,9 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
     });
 
     describe('Policy section', () => {
-        beforeEach(() => {
-            cloneFirstPolicyFromTable();
-            goToStep3();
-        });
-
         it('should allow the user to add and delete a policy section card', () => {
+            goToPoliciesAndCloneToStep3();
+
             // add policy section card
             cy.get(selectors.step3.policySection.cards).then((sections) => {
                 cy.get(selectors.step3.policySection.addBtn).click();
@@ -107,6 +115,8 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         });
 
         it('should allow editing a policy section name and retain new name value', () => {
+            goToPoliciesAndCloneToStep3();
+
             cy.get(selectors.step3.policySection.nameEditBtn).click();
             cy.get(selectors.step3.policySection.nameInput).clear().type('New Section');
             cy.get(selectors.step3.policySection.nameSaveBtn).click();
@@ -114,6 +124,8 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         });
 
         it('should allow the user to add/delete a policy field card in the same policy section', () => {
+            goToPoliciesAndCloneToStep3();
+
             // add policy field card
             cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
                 addPolicyFieldCard(0);
@@ -132,6 +144,8 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         });
 
         it('should allow the user to add multiple non-duplicate policy field cards in the same policy section', () => {
+            goToPoliciesAndCloneToStep3();
+
             cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
                 addPolicyFieldCard(0);
                 addPolicyFieldCard(1);
@@ -143,6 +157,8 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         });
 
         it('should not be able to add duplicate policy field cards in the same policy section', () => {
+            goToPoliciesAndCloneToStep3();
+
             cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
                 addPolicyFieldCard(0);
                 addPolicyFieldCard(0);
@@ -154,20 +170,11 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
     });
 
     describe('Policy field card', () => {
-        beforeEach(() => {
-            cloneFirstPolicyFromTable();
-            goToStep3();
-
-            // starting from clean slate
-            cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
-                if (cards.length > 0) {
-                    cy.get(selectors.step3.policyCriteria.deleteBtn).eq(0).click();
-                }
-            });
-        });
-
         describe('values', () => {
             it('should add/delete multiple field values for the same field if applicable', () => {
+                goToPoliciesAndCloneToStep3();
+                clearPolicyCriteriaCards();
+
                 // add field values for Image Registry
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
@@ -191,6 +198,9 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             });
 
             it('should not add multiple field values for the same field if not applicable', () => {
+                goToPoliciesAndCloneToStep3();
+                clearPolicyCriteriaCards();
+
                 clickPolicyKeyGroup('Storage');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Writable mounted volume')`
@@ -202,6 +212,9 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
 
         describe('negation', () => {
             it('should negate field if applicable and change wording', () => {
+                goToPoliciesAndCloneToStep3();
+                clearPolicyCriteriaCards();
+
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
                 );
@@ -214,6 +227,9 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             });
 
             it('should not show negate field if not applicable', () => {
+                goToPoliciesAndCloneToStep3();
+                clearPolicyCriteriaCards();
+
                 clickPolicyKeyGroup('Storage');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Writable mounted volume')`
@@ -224,6 +240,9 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
 
         describe('boolean operator', () => {
             it('should toggle AND/OR if applicable', () => {
+                goToPoliciesAndCloneToStep3();
+                clearPolicyCriteriaCards();
+
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
                 );
@@ -235,6 +254,9 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             });
 
             it('should have AND/OR toggle disabled if not applicable', () => {
+                goToPoliciesAndCloneToStep3();
+                clearPolicyCriteriaCards();
+
                 clickPolicyKeyGroup('Image contents');
                 dragFieldIntoSection(`${selectors.step3.policyCriteria.key}:contains('Image age')`);
                 cy.get(selectors.step3.policyCriteria.value.addBtn).first().click();
@@ -245,6 +267,9 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
 
         describe('input', () => {
             it('should populate boolean radio buttons w default value and respect changed values', () => {
+                goToPoliciesAndCloneToStep3();
+                clearPolicyCriteriaCards();
+
                 clickPolicyKeyGroup('Image contents');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Unscanned image')`
@@ -268,6 +293,9 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             });
 
             it('should populate string radio buttons w default value and respect changed values', () => {
+                goToPoliciesAndCloneToStep3();
+                clearPolicyCriteriaCards();
+
                 clickPolicyKeyGroup('Container configuration');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Seccomp profile type')`
@@ -288,6 +316,9 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             });
 
             it('should populate text input and respect changed values', () => {
+                goToPoliciesAndCloneToStep3();
+                clearPolicyCriteriaCards();
+
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
                 );
@@ -297,6 +328,9 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             });
 
             it('should populate select dropdown and respect changed values', () => {
+                goToPoliciesAndCloneToStep3();
+                clearPolicyCriteriaCards();
+
                 clickPolicyKeyGroup('Container configuration');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Drop capabilities')`
@@ -312,6 +346,9 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             });
 
             it('should populate multiselect dropdown and respect changed values', () => {
+                goToPoliciesAndCloneToStep3();
+                clearPolicyCriteriaCards();
+
                 clickPolicyKeyGroup('Storage');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Mount propagation')`
@@ -329,6 +366,9 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             });
 
             it('should populate policy field input nested group and parse value string to object and respect changed values', () => {
+                goToPoliciesAndCloneToStep3();
+                clearPolicyCriteriaCards();
+
                 clickPolicyKeyGroup('Image contents');
                 dragFieldIntoSection(`${selectors.step3.policyCriteria.key}:contains('CVSS')`);
                 cy.get(selectors.step3.policyCriteria.value.select).should('have.value', '');
@@ -348,6 +388,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
 
     describe('Existing values', () => {
         it('should populate boolean radio buttons', () => {
+            visitPolicies();
             doPolicyRowAction(`${selectors.table.rows}:contains('root filesystem')`, 'Clone');
             goToStep3();
             cy.get(selectors.step3.policyCriteria.value.radioGroup).should('exist');
@@ -360,6 +401,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         });
 
         it('should populate string radio buttons', () => {
+            visitPolicies();
             doPolicyRowAction(`${selectors.table.rows}:contains('seccomp profile')`, 'Clone');
             goToStep3();
             cy.get(selectors.step3.policyCriteria.value.radioGroupString).should('exist');
@@ -372,24 +414,28 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         });
 
         it('should populate text input', () => {
+            visitPolicies();
             doPolicyRowAction(`${selectors.table.rows}:contains('Latest tag')`, 'Clone');
             goToStep3();
             cy.get(selectors.step3.policyCriteria.value.textInput).should('have.value', 'latest');
         });
 
         it('should populate select dropdown', () => {
+            visitPolicies();
             doPolicyRowAction(`${selectors.table.rows}:contains('capability')`, 'Clone');
             goToStep3();
             cy.get(selectors.step3.policyCriteria.value.select).contains('SYS_ADMIN');
         });
 
         it('should populate multiselect dropdown', () => {
+            visitPolicies();
             doPolicyRowAction(`${selectors.table.rows}:contains('mount propagation')`, 'Clone');
             goToStep3();
             cy.get(selectors.step3.policyCriteria.value.multiselect).contains('Bidirectional');
         });
 
         it('should populate policy field input nested group', () => {
+            visitPolicies();
             doPolicyRowAction(`${selectors.table.rows}:contains('CVSS >= 6')`, 'Clone');
             goToStep3();
             cy.get(selectors.step3.policyCriteria.value.select).contains(
