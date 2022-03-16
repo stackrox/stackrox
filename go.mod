@@ -133,7 +133,7 @@ require (
 	k8s.io/kubectl v0.22.5
 	k8s.io/kubelet v0.22.7
 	k8s.io/utils v0.0.0-20211208161948-7d6a63dca704
-	sigs.k8s.io/controller-runtime v0.10.2
+	sigs.k8s.io/controller-runtime v0.10.3
 	sigs.k8s.io/yaml v1.3.0
 )
 
