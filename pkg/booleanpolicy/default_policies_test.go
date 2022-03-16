@@ -2195,7 +2195,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		c := testCase
 
 		suite.Run(fmt.Sprintf("ImageMatcher %+v", c), func() {
-			imgMatcher, err := BuildImageMatcher(policyWithSingleFieldAndValues(fieldnames.ImageSignatureVerified, c.values, c.negate, storage.BooleanOperator_OR))
+			imgMatcher, err := BuildImageMatcher(policyWithSingleFieldAndValues(fieldnames.ImageSignatureVerifiedBy, c.values, c.negate, storage.BooleanOperator_OR))
 			suite.NoError(err)
 			matchedImages := set.NewStringSet()
 			for _, img := range images {

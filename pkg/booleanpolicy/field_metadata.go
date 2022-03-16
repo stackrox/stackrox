@@ -394,7 +394,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
 
-	f.registerFieldMetadata(fieldnames.ImageSignatureVerified,
+	f.registerFieldMetadata(fieldnames.ImageSignatureVerifiedBy,
 		querybuilders.ForFieldLabel(augmentedobjs.ImageSignatureVerifiedCustomTag),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
