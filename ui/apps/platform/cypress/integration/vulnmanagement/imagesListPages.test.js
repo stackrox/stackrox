@@ -4,6 +4,7 @@ import {
     hasExpectedHeaderColumns,
     allChecksForEntities,
     allCVECheck,
+    allFixableCheck,
 } from '../../helpers/vmWorkflowUtils';
 import * as api from '../../constants/apiEndpoints';
 
@@ -52,6 +53,8 @@ describe.skip('Images list page and its entity detail page, related entities sub
                     force: true,
                     waitForAnimations: false,
                 });
+
+                allFixableCheck(url.list.images);
             }
             if (columnValue !== 'no cves' && columnValue.includes('cve')) {
                 allCVECheck(url.list.images);

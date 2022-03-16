@@ -54,7 +54,8 @@ function getRowActionItem(actionText) {
     return cy.get(`li[role="menuitem"] button:contains("${actionText}")`);
 }
 
-describe('Vulnmanagement Risk Acceptance', () => {
+// TODO(ROX-9746): Enable this test.
+describe.skip('Vulnmanagement Risk Acceptance', () => {
     withAuth();
 
     describe('Observed CVEs', () => {
