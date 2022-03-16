@@ -4846,10 +4846,18 @@ jobs:
           path: /tmp/artifact_dir/howto-locate-artifacts.html
           destination: howto-locate-artifacts.html
 
+  hello-world:
+    docker:
+      - image: cimg/base:2020.01
+    steps:
+      - run: echo "ello"
+
 workflows:
   version: 2
 
   initial:
+    when:
+      equal: [ "e2e-tests", << pipeline.parameters.workflow_name >> ]
     jobs:
       - slack-notify:
           filters:
@@ -5194,4 +5202,11 @@ workflows:
       equal: [ "designated_image_test", << pipeline.parameters.workflow_name >> ]
     jobs:
       - designated-image-tests:
+          context: quay-rhacs-eng-readonly
+
+  hello_world:
+    when:
+      equal: [ "hello-world", << pipeline.parameters.workflow_name >> ]
+    jobs:
+      - hello-world:
           context: quay-rhacs-eng-readonly
