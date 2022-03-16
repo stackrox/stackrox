@@ -52,7 +52,7 @@ Setup Service Account
 ---------------------
 
 Only needed once to enable CI runs. Adding this info since it was useful in troubleshoting
-dotenv format issues for RS-#61.
+dotenv format issues for [RS-361](https://issues.redhat.com/browse/RS-361).
 
 ```
 PROJECT_ID="stackrox-ci"
