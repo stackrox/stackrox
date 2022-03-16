@@ -28,6 +28,9 @@ import (
     "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
+    {{if .Type | isGloballyScoped -}}
+    "github.com/stackrox/rox/pkg/sac"
+    {{- end }}
 )
 
 const (
@@ -376,11 +379,41 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
 func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "{{.TrimmedType}}")
 
+    {{ if .PermissionChecker -}}
+    if ok, err := {{ .PermissionChecker }}.UpsertAllowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- else if .Type | isGloballyScoped }}
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- end}}
+
     return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "{{.TrimmedType}}")
+
+    {{ if .PermissionChecker -}}
+    if ok, err := {{ .PermissionChecker }}.UpsertManyAllowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- else if .Type | isGloballyScoped }}
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- end}}
 
     if len(objs) < batchAfter {
         return s.upsert(ctx, objs...)
@@ -394,6 +427,17 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "{{.TrimmedType}}")
 
+    {{ if .PermissionChecker -}}
+    if ok, err := {{ .PermissionChecker }}.CountAllowed(ctx); err != nil || !ok {
+        return 0, err
+    }
+    {{- else if .Type | isGloballyScoped }}
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
+        return 0, err
+    }
+    {{- end }}
+
 	row := s.db.QueryRow(ctx, countStmt)
 	var count int
 	if err := row.Scan(&count); err != nil {
@@ -406,6 +450,21 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "{{.TrimmedType}}")
 
+    {{ if .PermissionChecker -}}
+    if ok, err := {{ .PermissionChecker }}.ExistsAllowed(ctx); err != nil {
+        return false, err
+    } else if !ok {
+        return false, nil
+    }
+    {{- else if .Type | isGloballyScoped }}
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+        return false, err
+    } else if !ok {
+        return false, nil
+    }
+    {{- end}}
+
 	row := s.db.QueryRow(ctx, existsStmt, {{template "argList" $pks}})
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -417,6 +476,21 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
+
+    {{ if .PermissionChecker -}}
+    if ok, err := {{ .PermissionChecker }}.GetAllowed(ctx); err != nil {
+        return nil, false, err
+    } else if !ok {
+        return nil, false, nil
+    }
+    {{- else if .Type | isGloballyScoped }}
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+        return nil, false, err
+    } else if !ok {
+        return nil, false, nil
+    }
+    {{- end}}
 
 	conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
 	if err != nil {
@@ -451,7 +525,22 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
+	{{ if .PermissionChecker -}}
+    if ok, err := {{ .PermissionChecker }}.DeleteAllowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- else if .Type | isGloballyScoped }}
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- end}}
+
+    conn, release, err := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
 	if err != nil {
 	    return err
 	}
@@ -469,6 +558,21 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.Type}}IDs")
+
+    {{ if .PermissionChecker -}}
+    if ok, err := {{ .PermissionChecker }}.GetIDsAllowed(ctx); err != nil {
+        return nil, err
+    } else if !ok {
+        return nil, nil
+    }
+    {{- else if .Type | isGloballyScoped }}
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+        return nil, err
+    } else if !ok {
+        return nil, nil
+    }
+    {{- end}}
 
 	rows, err := s.db.Query(ctx, getIDsStmt)
 	if err != nil {
@@ -489,6 +593,21 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "{{.TrimmedType}}")
+
+    {{ if .PermissionChecker -}}
+    if ok, err := {{ .PermissionChecker }}.GetManyAllowed(ctx); err != nil {
+        return nil, nil, err
+    } else if !ok {
+        return nil, nil, nil
+    }
+    {{- else if .Type | isGloballyScoped }}
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+        return nil, nil, err
+    } else if !ok {
+        return nil, nil, nil
+    }
+    {{- end}}
 
 	conn, release, err := s.acquireConn(ctx, ops.GetMany, "{{.TrimmedType}}")
 	if err != nil {
@@ -538,6 +657,21 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
 // Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.TrimmedType}}")
+
+    {{ if .PermissionChecker -}}
+    if ok, err := {{ .PermissionChecker }}.DeleteManyAllowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- else if .Type | isGloballyScoped }}
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        return sac.ErrResourceAccessDenied
+    }
+    {{- end}}
 
 	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "{{.TrimmedType}}")
 	if err != nil {
