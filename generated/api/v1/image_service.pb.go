@@ -1332,7 +1332,7 @@ type ImageServiceClient interface {
 	ScanImage(ctx context.Context, in *ScanImageRequest, opts ...grpc.CallOption) (*storage.Image, error)
 	// ScanImageInternal is used solely by the Sensor and Admission Controller to send scan requests
 	ScanImageInternal(ctx context.Context, in *ScanImageInternalRequest, opts ...grpc.CallOption) (*ScanImageInternalResponse, error)
-	// GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
+	// Deprecated: GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
 	GetImageVulnerabilitiesInternal(ctx context.Context, in *GetImageVulnerabilitiesInternalRequest, opts ...grpc.CallOption) (*ScanImageInternalResponse, error)
 	// EnrichLocalImageInternal is used solely by the Sensor to send enrichment requests for local images. This
 	// includes the image's vulnerabilities as well as the signature verification data.
@@ -1481,7 +1481,7 @@ type ImageServiceServer interface {
 	ScanImage(context.Context, *ScanImageRequest) (*storage.Image, error)
 	// ScanImageInternal is used solely by the Sensor and Admission Controller to send scan requests
 	ScanImageInternal(context.Context, *ScanImageInternalRequest) (*ScanImageInternalResponse, error)
-	// GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
+	// Deprecated: GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
 	GetImageVulnerabilitiesInternal(context.Context, *GetImageVulnerabilitiesInternalRequest) (*ScanImageInternalResponse, error)
 	// EnrichLocalImageInternal is used solely by the Sensor to send enrichment requests for local images. This
 	// includes the image's vulnerabilities as well as the signature verification data.
