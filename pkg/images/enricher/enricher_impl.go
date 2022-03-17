@@ -130,10 +130,6 @@ func (e *enricherImpl) EnrichImage(enrichContext EnrichmentContext, image *stora
 	// Signals whether any updates to the image were made throughout the enrichment flow.
 	var updated bool
 
-	// Update the image with existing values depending on the FetchOption provided or whether any are available.
-	// This makes sure that we fetch any existing image only once from database.
-	useExistingScanIfPossible := e.updateImageFromDatabase(ctx, image, enrichContext.FetchOpt)
-
 	didUpdateMetadata, err := e.enrichWithMetadata(ctx, enrichContext, image)
 	errorList.AddError(err)
 	if image.GetMetadata() == nil {
@@ -142,6 +138,10 @@ func (e *enricherImpl) EnrichImage(enrichContext EnrichmentContext, image *stora
 		delete(imageNoteSet, storage.Image_MISSING_METADATA)
 	}
 	updated = updated || didUpdateMetadata
+
+	// Update the image with existing values depending on the FetchOption provided or whether any are available.
+	// This makes sure that we fetch any existing image only once from database.
+	useExistingScanIfPossible := e.updateImageFromDatabase(ctx, image, enrichContext.FetchOpt)
 
 	scanResult, err := e.enrichWithScan(ctx, enrichContext, image, useExistingScanIfPossible)
 	errorList.AddError(err)
