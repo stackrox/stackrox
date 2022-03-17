@@ -89,8 +89,9 @@ func (s *signatureDataStoreTestSuite) TestUpdateSignatureIntegration() {
 
 	// 1. Modifications to integration are visible via GetSignatureIntegration
 	savedIntegration.Name = "name2"
-	err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
+	hasUpdatedKeys, err := s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
 	s.NoError(err)
+	s.False(hasUpdatedKeys)
 
 	acquiredIntegration, found, err := s.dataStore.GetSignatureIntegration(s.hasReadCtx, savedIntegration.GetId())
 	s.True(found)
@@ -99,13 +100,35 @@ func (s *signatureDataStoreTestSuite) TestUpdateSignatureIntegration() {
 
 	// 2. Cannot update non-existing integration
 	nonExistingIntegration := newSignatureIntegration("idonotexist")
-	err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, nonExistingIntegration)
+	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, nonExistingIntegration)
 	s.Error(err)
 	s.ErrorIs(err, errox.InvalidArgs)
+	s.False(hasUpdatedKeys)
 
 	// 3. Need write permission to update integration
-	err = s.dataStore.UpdateSignatureIntegration(s.hasReadCtx, signatureIntegration)
+	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasReadCtx, signatureIntegration)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+	s.False(hasUpdatedKeys)
+
+	// 4. Signal updated keys when keys differ
+	savedIntegration.GetCosign().GetPublicKeys()[0].PublicKeyPemEnc = `-----BEGIN PUBLIC KEY-----
+MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQMDMgAE+Y+qPqI3geo2hQH8eK7Rn+YWG09T
+ejZ5QFoj9fmxFrUyYhFap6XmTdJtEi8myBmW
+-----END PUBLIC KEY-----`
+	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
+	s.NoError(err)
+	s.True(hasUpdatedKeys)
+
+	// 5. Don't signal updated keys when keys are the same
+	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
+	s.NoError(err)
+	s.False(hasUpdatedKeys)
+
+	// 6. Don't signal updated keys when only the name is changed
+	savedIntegration.GetCosign().GetPublicKeys()[0].Name = "rename of public key"
+	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
+	s.NoError(err)
+	s.False(hasUpdatedKeys)
 }
 
 func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegration() {
