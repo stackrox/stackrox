@@ -108,7 +108,6 @@ func (s *IndexSuite) runTestCases(cases []testCase) {
 			s.ElementsMatch(actualIDs, expectedIDs)
 		})
 	}
-
 }
 
 func (s *IndexSuite) TestString() {
@@ -1034,6 +1033,169 @@ func (s *IndexSuite) TestIntArrayHighlights() {
 			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
 				testStruct0: {"multi.int_slice": {"-2"}},
 				testStruct1: {"multi.int_slice": {"7", "3"}},
+			},
+		},
+	})
+}
+
+func (s *IndexSuite) TestEnumArrayHighlights() {
+	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.Enums = []storage.TestMultiKeyStruct_Enum{storage.TestMultiKeyStruct_ENUM0}
+	})
+	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.Enums = []storage.TestMultiKeyStruct_Enum{storage.TestMultiKeyStruct_ENUM1}
+	})
+	testStruct01 := s.getStruct(2, func(s *storage.TestMultiKeyStruct) {
+		s.Enums = []storage.TestMultiKeyStruct_Enum{storage.TestMultiKeyStruct_ENUM0, storage.TestMultiKeyStruct_ENUM1}
+	})
+	testStruct012 := s.getStruct(3, func(s *storage.TestMultiKeyStruct) {
+		s.Enums = []storage.TestMultiKeyStruct_Enum{storage.TestMultiKeyStruct_ENUM0, storage.TestMultiKeyStruct_ENUM1, storage.TestMultiKeyStruct_ENUM2}
+	})
+	testStruct12 := s.getStruct(4, func(s *storage.TestMultiKeyStruct) {
+		s.Enums = []storage.TestMultiKeyStruct_Enum{storage.TestMultiKeyStruct_ENUM1, storage.TestMultiKeyStruct_ENUM2}
+	})
+
+	s.runHighlightTestCases([]highlightTestCase{
+		{
+			desc: "exact match",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestEnumSlice, `"ENUM1"`).ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct1:   {"multi.enums": {"ENUM1"}},
+				testStruct01:  {"multi.enums": {"ENUM1"}},
+				testStruct012: {"multi.enums": {"ENUM1"}},
+				testStruct12:  {"multi.enums": {"ENUM1"}},
+			},
+		},
+		{
+			desc: "negation",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestEnumSlice, "!ENUM1").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0:   {"multi.enums": {"ENUM0"}},
+				testStruct01:  {"multi.enums": {"ENUM0"}},
+				testStruct012: {"multi.enums": {"ENUM0", "ENUM2"}},
+				testStruct12:  {"multi.enums": {"ENUM2"}},
+			},
+		},
+		{
+			desc: "regex",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestEnumSlice, "r/E.*1").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct1:   {"multi.enums": {"ENUM1"}},
+				testStruct01:  {"multi.enums": {"ENUM1"}},
+				testStruct012: {"multi.enums": {"ENUM1"}},
+				testStruct12:  {"multi.enums": {"ENUM1"}},
+			},
+		},
+		{
+			desc: "negated regex",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestEnumSlice, "!r/E.*1").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0:   {"multi.enums": {"ENUM0"}},
+				testStruct01:  {"multi.enums": {"ENUM0"}},
+				testStruct012: {"multi.enums": {"ENUM0", "ENUM2"}},
+				testStruct12:  {"multi.enums": {"ENUM2"}},
+			},
+		},
+		{
+			desc: ">",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestEnumSlice, ">ENUM1").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct012: {"multi.enums": {"ENUM2"}},
+				testStruct12:  {"multi.enums": {"ENUM2"}},
+			},
+		},
+		{
+			desc: "<=",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestEnumSlice, "<=ENUM1").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0:   {"multi.enums": {"ENUM0"}},
+				testStruct1:   {"multi.enums": {"ENUM1"}},
+				testStruct12:  {"multi.enums": {"ENUM1"}},
+				testStruct012: {"multi.enums": {"ENUM0", "ENUM1"}},
+				testStruct01:  {"multi.enums": {"ENUM0", "ENUM1"}},
+			},
+		},
+	})
+}
+
+func (s *IndexSuite) TestMapHighlights() {
+	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.Labels = map[string]string{
+			"foo": "bar",
+			"new": "old",
+		}
+	})
+	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.Labels = map[string]string{
+			"one":   "two",
+			"three": "four",
+			"foo":   "car",
+		}
+	})
+
+	testStruct2 := s.getStruct(2, func(s *storage.TestMultiKeyStruct) {
+	})
+
+	s.runHighlightTestCases([]highlightTestCase{
+		{
+			desc: "key exists",
+			q:    search.NewQueryBuilder().AddMapQuery(search.TestLabels, "new", "").MarkHighlighted(search.TestLabels).ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.labels": {"new=old"}},
+			},
+		},
+		{
+			desc: "key does not exist",
+			q:    search.NewQueryBuilder().AddMapQuery(search.TestLabels, "!foo", "").MarkHighlighted(search.TestLabels).ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				// No labels will be printed since it's a "does not exist" query
+				testStruct2: {},
+			},
+		},
+		{
+			desc:      "negated key and value, should get error",
+			q:         search.NewQueryBuilder().AddMapQuery(search.TestLabels, "!foo", "blah").MarkHighlighted(search.TestLabels).ProtoQuery(),
+			expectErr: true,
+		},
+		{
+			desc: "non-empty map",
+			q:    search.NewQueryBuilder().AddMapQuery(search.TestLabels, "", "").MarkHighlighted(search.TestLabels).ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.labels": {"foo=bar", "new=old"}},
+				testStruct1: {"multi.labels": {"foo=car", "one=two", "three=four"}},
+			},
+		},
+		{
+			desc: "value only",
+			q:    search.NewQueryBuilder().AddMapQuery(search.TestLabels, "", "bar").MarkHighlighted(search.TestLabels).ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.labels": {"foo=bar"}},
+			},
+		},
+		{
+			desc: "negated value only",
+			q:    search.NewQueryBuilder().AddMapQuery(search.TestLabels, "", "!bar").MarkHighlighted(search.TestLabels).ProtoQuery(),
+			// Negated value does not mean non-existence of value, it just means there should be at least one element
+			// not matching the value. Unclear what the use-case of this is, but it is supported...
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.labels": {"new=old"}},
+				testStruct1: {"multi.labels": {"foo=car", "one=two", "three=four"}},
+			},
+		},
+		{
+			desc: "key and negated value, doesn't match",
+			q:    search.NewQueryBuilder().AddMapQuery(search.TestLabels, "foo", "!r/.*ar").MarkHighlighted(search.TestLabels).ProtoQuery(),
+			// Negated value does not mean non-existence of value, it just means there should be at least one element
+			// not matching the value. Unclear what the use-case of this is, but it is supported...
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{},
+		},
+		{
+			desc: "key and negated value, matches",
+			q:    search.NewQueryBuilder().AddMapQuery(search.TestLabels, "foo", "!r/c.*").MarkHighlighted(search.TestLabels).ProtoQuery(),
+			// Negated value does not mean non-existence of value, it just means there should be at least one element
+			// not matching the value. Unclear what the use-case of this is, but it is supported...
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.labels": {"foo=bar"}},
 			},
 		},
 	})

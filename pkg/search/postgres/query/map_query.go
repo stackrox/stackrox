@@ -1,12 +1,14 @@
 package pgsearch
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func parseMapQuery(label string) (string, string) {
@@ -17,7 +19,16 @@ func parseMapQuery(label string) (string, string) {
 	return spl[0], spl[1]
 }
 
-func newMapQuery(column string, query string, highlight bool) (*QueryEntry, error) {
+func readMapValue(val interface{}) map[string]string {
+	var mapValue map[string]string
+	if err := json.Unmarshal((*val.(*[]byte)), &mapValue); err != nil {
+		utils.Should(err)
+		return nil
+	}
+	return mapValue
+}
+
+func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 	// Negations in maps are a bit tricky, as are empty strings. We have to consider the following cases.
 	// Note that in everything below, query can be a regex, prefix or exact match query.
 	// = => it means we want a non-empty map
@@ -29,10 +40,7 @@ func newMapQuery(column string, query string, highlight bool) (*QueryEntry, erro
 	// =!<valueQuery> => it means we want one element in the map where value does not match valueQuery
 	// <keyQuery>=!<valueQuery> => it means we want one element in the map with key matching keyQuery and value NOT matching valueQuery
 	// !<keyQuery>=!<valueQuery> => NOT SUPPORTED
-	if highlight {
-		return nil, errors.New("map highlights not supported yet")
-	}
-
+	query := ctx.value
 	key, value := parseMapQuery(query)
 
 	keyNegated := stringutils.ConsumePrefix(&key, search.NegationPrefix)
@@ -42,7 +50,17 @@ func newMapQuery(column string, query string, highlight bool) (*QueryEntry, erro
 		if keyNegated {
 			negationString = "NOT "
 		}
-		return &QueryEntry{Where: WhereClause{Query: fmt.Sprintf("%s(%s ? $$)", negationString, column), Values: []interface{}{key}}}, nil
+		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
+			Query:  fmt.Sprintf("%s(%s ? $$)", negationString, ctx.qualifiedColumnName),
+			Values: []interface{}{key},
+		}, func(i interface{}) interface{} {
+			// If key is negated, no highlight value.
+			if keyNegated {
+				return []string(nil)
+			}
+			asMap := readMapValue(i)
+			return []string{fmt.Sprintf("%s=%s", key, asMap[key])}
+		}), nil
 	}
 	if keyNegated {
 		return nil, fmt.Errorf("unsupported map query %s: cannot negate key and specify non-empty value", query)
@@ -66,21 +84,40 @@ func newMapQuery(column string, query string, highlight bool) (*QueryEntry, erro
 		}
 	}
 
-	combinedQuery := WhereClause{}
+	combinedWhereClause := &WhereClause{}
+	var keyEquivGoFunc, valueEquivGoFunc func(interface{}) bool
 	var queryPortion string
 	if key == "" && value == "" {
 		queryPortion = "true"
 	} else if key != "" && value == "" {
 		queryPortion = keyQuery.Query
-		combinedQuery.Values = keyQuery.Values
+		combinedWhereClause.Values = keyQuery.Values
+		keyEquivGoFunc = keyQuery.equivalentGoFunc
 	} else if key == "" && value != "" {
 		queryPortion = valueQuery.Query
-		combinedQuery.Values = valueQuery.Values
+		combinedWhereClause.Values = valueQuery.Values
+		valueEquivGoFunc = valueQuery.equivalentGoFunc
 	} else {
 		queryPortion = fmt.Sprintf("%s and %s", keyQuery.Query, valueQuery.Query)
-		combinedQuery.Values = append(combinedQuery.Values, keyQuery.Values...)
-		combinedQuery.Values = append(combinedQuery.Values, valueQuery.Values...)
+		combinedWhereClause.Values = append(combinedWhereClause.Values, keyQuery.Values...)
+		combinedWhereClause.Values = append(combinedWhereClause.Values, valueQuery.Values...)
+		keyEquivGoFunc = keyQuery.equivalentGoFunc
+		valueEquivGoFunc = valueQuery.equivalentGoFunc
 	}
-	combinedQuery.Query = fmt.Sprintf("exists (select * from jsonb_each_text(%s) elem where %s)", column, queryPortion)
-	return &QueryEntry{Where: combinedQuery}, nil
+	combinedWhereClause.Query = fmt.Sprintf("exists (select * from jsonb_each_text(%s) elem where %s)", ctx.qualifiedColumnName, queryPortion)
+	return qeWithSelectFieldIfNeeded(ctx, combinedWhereClause, func(i interface{}) interface{} {
+		asMap := readMapValue(i)
+		var out []string
+		for k, v := range asMap {
+			if keyEquivGoFunc != nil && !keyEquivGoFunc(k) {
+				continue
+			}
+			if valueEquivGoFunc != nil && !valueEquivGoFunc(v) {
+				continue
+			}
+			out = append(out, fmt.Sprintf("%s=%s", k, v))
+		}
+		sort.Strings(out)
+		return out
+	}), nil
 }

@@ -25,7 +25,13 @@ func enumEquality(columnName string, enumValues []int32) (WhereClause, error) {
 		Query:  fmt.Sprintf("(%s)", strings.Join(queries, " or ")),
 		Values: values,
 		equivalentGoFunc: func(foundValue interface{}) bool {
-			return foundValue.(float64) > 0
+			asInt := int32(foundValue.(int))
+			for _, enumValue := range enumValues {
+				if enumValue == asInt {
+					return true
+				}
+			}
+			return false
 		},
 	}, nil
 }

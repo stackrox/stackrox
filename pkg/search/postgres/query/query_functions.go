@@ -41,45 +41,49 @@ var datatypeToQueryFunc = map[walker.DataType]queryFunction{
 	walker.Enum:        newEnumQuery,
 	walker.Integer:     newNumericQuery,
 	walker.Numeric:     newNumericQuery,
-	walker.EnumArray:   queryOnArray(newEnumQuery, nil),
+	walker.EnumArray:   queryOnArray(newEnumQuery, getEnumArrayPostTransformFunc),
 	walker.IntArray:    queryOnArray(newNumericQuery, getIntArrayPostTransformFunc),
 	// Map is handled separately.
 }
 
 func matchFieldQuery(dbField *walker.Field, field *pkgSearch.Field, value string, highlight bool) (*QueryEntry, error) {
 	qualifiedColName := dbField.Schema.Table + "." + dbField.ColumnName
-	// Special case: wildcard
-	if stringutils.MatchesAny(value, pkgSearch.WildcardString, pkgSearch.NullString) {
-		return handleExistenceQueries(qualifiedColName, value), nil
-	}
 
-	if dbField.DataType == walker.Map {
-		return newMapQuery(qualifiedColName, value, highlight)
-	}
-
-	trimmedValue, modifiers := pkgSearch.GetValueAndModifiersFromString(value)
-	return datatypeToQueryFunc[dbField.DataType](&queryAndFieldContext{
+	ctx := &queryAndFieldContext{
 		qualifiedColumnName: qualifiedColName,
 		field:               field,
 		dbField:             dbField,
-		value:               trimmedValue,
 		highlight:           highlight,
-		queryModifiers:      modifiers,
-	})
+		value:               value,
+	}
+
+	// Special case: wildcard
+	if stringutils.MatchesAny(value, pkgSearch.WildcardString, pkgSearch.NullString) {
+		return handleExistenceQueries(ctx), nil
+	}
+
+	if dbField.DataType == walker.Map {
+		return newMapQuery(ctx)
+	}
+
+	trimmedValue, modifiers := pkgSearch.GetValueAndModifiersFromString(value)
+	ctx.value = trimmedValue
+	ctx.queryModifiers = modifiers
+	return datatypeToQueryFunc[dbField.DataType](ctx)
 }
 
-func handleExistenceQueries(root string, value string) *QueryEntry {
-	switch value {
+func handleExistenceQueries(ctx *queryAndFieldContext) *QueryEntry {
+	switch ctx.value {
 	case pkgSearch.WildcardString:
-		return &QueryEntry{Where: WhereClause{
-			Query: fmt.Sprintf("%s is not null", root),
-		}}
+		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
+			Query: fmt.Sprintf("%s is not null", ctx.qualifiedColumnName),
+		}, nil)
 	case pkgSearch.NullString:
-		return &QueryEntry{Where: WhereClause{
-			Query: fmt.Sprintf("%s is null", root),
-		}}
+		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
+			Query: fmt.Sprintf("%s is null", ctx.qualifiedColumnName),
+		}, nil)
 	default:
-		log.Fatalf("existence query for value %s is not currently handled", value)
+		log.Fatalf("existence query for value %s is not currently handled", ctx.value)
 	}
 	return nil
 }

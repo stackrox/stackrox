@@ -111,6 +111,26 @@ var (
 				return val.([]string)
 			},
 		},
+		walker.EnumArray: {
+			alloc: func() interface{} {
+				out := make([]int, 0)
+				return &out
+			},
+			printer: func(val interface{}) []string {
+				// The post-transform function does the work of conversion.
+				return val.([]string)
+			},
+		},
+		walker.Map: {
+			alloc: func() interface{} {
+				out := make([]byte, 0)
+				return &out
+			},
+			printer: func(val interface{}) []string {
+				// The post-transform function does the work of conversion.
+				return val.([]string)
+			},
+		},
 	}
 )
 

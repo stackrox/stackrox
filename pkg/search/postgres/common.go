@@ -440,7 +440,9 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 				if field.PostTransform != nil {
 					returnedValue = field.PostTransform(returnedValue)
 				}
-				result.Matches[field.FieldPath] = mustPrintForDataType(field.FieldType, returnedValue)
+				if matches := mustPrintForDataType(field.FieldType, returnedValue); len(matches) > 0 {
+					result.Matches[field.FieldPath] = matches
+				}
 			}
 		}
 		searchResults = append(searchResults, result)
