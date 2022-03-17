@@ -43,7 +43,6 @@ export function ImageSignersCriteriaFieldInput({ name, setValue, value }): React
 
     const columns = [...tableColumnDescriptor.signatureIntegrations.signature];
     const [integrations, setIntegrations] = useState<SignatureIntegration[]>([]);
-    const [preSelected, setPreSelected] = useState<boolean[]>([]);
 
     useEffect(() => {
         fetchSignatureIntegrations()
@@ -54,13 +53,9 @@ export function ImageSignersCriteriaFieldInput({ name, setValue, value }): React
                 setIntegrations([]);
             });
     }, []);
-    useEffect(() => {
-        setPreSelected(
-            integrations.map((integration) => {
-                return value.arrayValue ? value.arrayValue.includes(integration.id) : false;
-            })
-        );
-    }, [integrations]);
+    const preSelected = integrations.map((integration) => {
+        return value.arrayValue ? value.arrayValue.includes(integration.id) : false;
+    });
 
     console.log(preSelected);
     const { selected, onSelect, onSelectAll, allRowsSelected, getSelectedIds } =

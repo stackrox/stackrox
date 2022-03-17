@@ -37,10 +37,10 @@ export function useTableSelectionPreSelected<T extends Base>(
 
     React.useEffect(() => {
         setSelected(preSelected);
-    }, [preSelected]);
+    }, [data]);
     React.useEffect(() => {
         setAllRowsSelected(preSelected.every((val) => val));
-    }, [preSelected]);
+    }, [data]);
 
     const onClearAll = () => {
         setSelected(data.map(() => false));
