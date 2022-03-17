@@ -42,6 +42,7 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 			assert.NotEmpty(t, metaVals.Versions.MainVersion)
 			// TODO: replace this with the check of the scanner tag once we migrate to it instead of version.
 			assert.NotEmpty(t, metaVals.Versions.ScannerVersion)
+			assert.NotEmpty(t, metaVals.FeatureFlags)
 		})
 	}
 }

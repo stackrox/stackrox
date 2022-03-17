@@ -17,7 +17,7 @@ scripts/
 templates/*
 [<- end >]
 [<- end >]
-[< if not .ReleaseBuild >]
+[< if .ReleaseBuild >]
 feature-flag-values.yaml
 [< end >]
 *.swp

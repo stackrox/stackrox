@@ -79,9 +79,9 @@ func (s *embedTestSuite) TestLoadChartForFlavor() {
 	}
 }
 
-func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
+func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlagValuesOnReleaseBuilds() {
 	metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
-	metaVals.FeatureFlags = nil
+	metaVals.ReleaseBuild = true
 
 	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
 	s.Require().NoError(err)
