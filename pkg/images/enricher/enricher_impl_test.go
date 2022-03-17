@@ -9,7 +9,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration/mocks"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -440,9 +439,7 @@ func TestCVESuppression(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, results.ImageUpdated)
 	assert.True(t, img.Scan.Components[0].Vulns[0].Suppressed)
-	if features.VulnRiskManagement.Enabled() {
-		assert.Equal(t, storage.VulnerabilityState_DEFERRED, img.Scan.Components[0].Vulns[0].State)
-	}
+	assert.Equal(t, storage.VulnerabilityState_DEFERRED, img.Scan.Components[0].Vulns[0].State)
 }
 
 func TestZeroIntegrations(t *testing.T) {

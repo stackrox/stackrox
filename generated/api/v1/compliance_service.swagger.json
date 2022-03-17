@@ -984,6 +984,9 @@
     "storageClusterHealthStatus": {
       "type": "object",
       "properties": {
+        "id": {
+          "type": "string"
+        },
         "collectorHealthInfo": {
           "$ref": "#/definitions/storageCollectorHealthInfo"
         },

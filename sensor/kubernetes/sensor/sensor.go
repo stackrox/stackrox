@@ -103,10 +103,8 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	}
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
-
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager)
-
-	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener.New(client, configHandler, policyDetector))
+	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener.New(client, configHandler, policyDetector, k8sNodeName.Setting()))
 
 	upgradeCmdHandler, err := upgrade.NewCommandHandler(configHandler)
 	if err != nil {
@@ -136,10 +134,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
-	}
-
-	if features.VulnRiskManagement.Enabled() {
-		components = append(components, reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache))
+		reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache),
 	}
 
 	sensorNamespace, err := satoken.LoadNamespaceFromFile()

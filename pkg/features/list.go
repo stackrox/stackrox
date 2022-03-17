@@ -27,9 +27,6 @@ var (
 	// ActiveVulnManagement enables detection of active vulnerabilities
 	ActiveVulnManagement = registerFeature("Enable detection of active vulnerabilities", "ROX_ACTIVE_VULN_MANAGEMENT", true)
 
-	// VulnRiskManagement enables the vulnerability risk management workflow that allows accepting risk for vulnerabilities.
-	VulnRiskManagement = registerFeature("Enable Vulnerability Risk Management workflow", "ROX_VULN_RISK_MANAGEMENT", true)
-
 	// SystemHealthPatternFly enables the Pattern Fly version of System Health page. (used in the front-end app only)
 	SystemHealthPatternFly = registerFeature("Enable Pattern Fly version of System Health page", "ROX_SYSTEM_HEALTH_PF", false)
 
@@ -47,4 +44,7 @@ var (
 
 	// PostgresDatastore enables Postgres datastore.
 	PostgresDatastore = registerFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", false)
+
+	// ECRAutoIntegration enables detection of ECR-based deployments to generate auto-integrations from ECR auth tokens.
+	ECRAutoIntegration = registerFeature("Enable ECR auto-integrations when running on AWS nodes", "ROX_ECR_AUTO_INTEGRATION", false)
 )
