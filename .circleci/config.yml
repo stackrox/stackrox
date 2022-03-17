@@ -1016,21 +1016,6 @@ commands:
               gcr.io/stackrox-infra/automation-flavors/eks:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: on_fail
 
-      - run:
-          name: Destroy Kops cluster
-          command: |
-            if [ -z "${CIRCLE_TAG}" ]; then
-              if ! .circleci/pr_has_label.sh ci-kops-tests; then
-                echo "Kops Cluster not created, skipping destroy."
-                exit 0
-              fi
-            fi
-            docker run --rm -t \
-              -v $PWD/kops:/data \
-              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
-          when: on_fail
-
       - destroy-aks-cluster:
           when: on_fail
 
@@ -2574,7 +2559,6 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      KOPS_AUTOMATION_VERSION: 0.0.9
       EKS_AUTOMATION_VERSION: 0.2.17
       # All CI builds go out with commercial product branding.
       # TODO(ROX-9513): a separate CI setup is required for open source/community builds.
@@ -2632,7 +2616,6 @@ jobs:
     executor: custom
     resource_class: medium
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
@@ -2686,7 +2669,6 @@ jobs:
     working_directory: ~/go/src/github.com/stackrox/rox
     environment:
       GOPATH: /home/circleci/go
-      KOPS_AUTOMATION_VERSION: 0.0.9
       EKS_AUTOMATION_VERSION: 0.2.17
     resource_class: large
     steps:
@@ -2748,7 +2730,6 @@ jobs:
     executor: custom
     resource_class: medium
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout-with-submodules
@@ -3031,7 +3012,6 @@ jobs:
     executor: custom
     resource_class: medium
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
@@ -3162,71 +3142,6 @@ jobs:
               -v $PWD/eks/data:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
               gcr.io/stackrox-infra/automation-flavors/eks:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
-          when: on_fail
-
-  provision-kops-api-e2e-tests:
-    machine:
-      image: << pipeline.parameters.ci_machine_image >>
-    environment:
-      - KOPS_AUTOMATION_VERSION: 0.0.9
-    steps:
-      - checkout
-      - check-label-exists-or-skip:
-          label: ci-kops-tests
-          run-on-master: false
-
-      - run:
-          name: Install kubectl
-          working_directory: /tmp
-          command: |
-            wget https://storage.googleapis.com/kubernetes-release/release/v1.13.3/bin/linux/amd64/kubectl
-            sudo install kubectl /usr/bin
-
-      - ci-artifacts/store:
-          path: kops
-          destination: kops
-
-      - *loginToGCR
-      - run:
-          name: Create Kops cluster
-          command: |
-            docker run --rm -t \
-              -v $PWD/kops:/data \
-              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              -e TF_VAR_creation_source=CI \
-              gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
-            sudo chown "$USER" kops/id_rsa*
-
-      - run:
-          name: Add /etc/hosts entry
-          command: echo "$(cat $PWD/kops/master_ip) api.$(cat $PWD/kops/cluster_name)" | sudo tee -a /etc/hosts
-
-      - run:
-          name: Configure Kubeconfig
-          command: |
-            ls -lh $PWD/kops
-            export KUBECONFIG=$PWD/kops/kube.yaml
-            sudo chown "$USER" $PWD/kops/kube.yaml
-            kubectl get nodes
-
-      - ci-artifacts/store:
-          path: kops
-          destination: kops
-
-      - build-liveness-check
-
-      - persist_to_workspace:
-          root: .
-          paths:
-            - kops
-
-      - run:
-          name: Destroy Kops cluster
-          command: |
-            docker run --rm -t \
-              -v $PWD/kops:/data \
-              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: on_fail
 
   provision-aks-api-e2e-tests:
@@ -4003,116 +3918,6 @@ jobs:
               gcr.io/stackrox-infra/automation-flavors/eks:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: always
 
-  kops-api-e2e-tests:
-    executor: custom
-    environment:
-      - KOPS_AUTOMATION_VERSION: 0.0.9
-      - LOCAL_PORT: 8000
-      - COLLECTION_METHOD: kernel-module
-      - MONITORING_SUPPORT: true
-      - SCANNER_SUPPORT: true
-      - ROX_BASELINE_GENERATION_DURATION: 1m
-      - ADMISSION_CONTROLLER: true
-      - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
-      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_REPORTING: true
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
-
-    steps:
-      - checkout
-      - check-label-exists-or-skip:
-          label: ci-kops-tests
-          run-on-master: false
-
-      - setup_remote_docker
-
-      - setup-dep-env:
-          docker-login: true
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - run:
-          name: Add /etc/hosts entry
-          command: echo "$(cat $PWD/kops/master_ip) api.$(cat $PWD/kops/cluster_name)" | sudo tee -a /etc/hosts
-
-      - run:
-          name: Sanity check KUBECONFIG
-          command: |
-            ls -lh $PWD/kops
-            cci-export KUBECONFIG $PWD/kops/kube.yaml
-            kubectl get nodes
-      - remove-existing-stackrox-resources
-
-      - *setupRoxctl
-
-      - run:
-          name: Configure Deployment Environment
-          command: |
-            cci-export CLAIRIFY_IMAGE_TAG 0.5.4
-            cci-export KOPS_HOST "$(cat kops/master)"
-            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
-            cci-export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
-
-      - *setupGoogleAppCreds
-      - *setupLicense
-
-      - *setupDefaultTLSCerts
-
-      - deploy-stackrox:
-          post-central-deploy-steps:
-            - *setupClientTLSCerts
-
-      - deploy-webhook-server
-      - deploy-authz-plugin
-
-      - *getECRDockerPullPassword
-      - *restoreGradle
-      - restore-go-mod-cache
-      - run:
-          name: QA Automation Platform
-          command: |
-            export CLUSTER=K8S
-            export API_HOSTNAME=localhost
-            export API_PORT=${LOCAL_PORT}
-            make -C qa-tests-backend test
-
-      - *storeQATestResults
-      - *storeQASpockReports
-
-      - collect-k8s-logs
-      - *backupCentral
-      - *storeCentralBackupArtifact
-      - *restoreDB
-      - check-stackrox-logs
-      - store-k8s-logs
-      - *storeQALogs
-
-      - run:
-          name: Pack kops volume
-          command: |
-            docker create -v /data --name kops alpine:3.9 /bin/true
-            docker cp kops/id_rsa            kops:/data
-            docker cp kops/id_rsa.pub        kops:/data
-            docker cp kops/terraform.tfstate kops:/data
-            docker cp kops/cluster_name      kops:/data
-            docker cp kops/kops_s3_bucket    kops:/data
-            docker cp kops/delete-cluster-$(cat kops/cluster_name).sh kops:/data
-          when: always
-
-      - *loginToGCR
-      - run:
-          name: Destroy Kops cluster
-          command: |
-            docker run --rm -t \
-              --volumes-from kops \
-              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
-          when: always
-
   aks-api-e2e-tests:
     executor: custom
     environment:
@@ -4129,7 +3934,6 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
-
 
     steps:
       - run-qa-tests:
@@ -4949,14 +4753,6 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-eks-api-e2e-tests
-      - provision-kops-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - kops-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-kops-api-e2e-tests
       # ROX-8306 - Disabled due to Azure account issue
       # - provision-aks-api-e2e-tests:
       #     <<: *runOnAllTagsWithQuayIOPullCtx
