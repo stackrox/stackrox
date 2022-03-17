@@ -39,8 +39,8 @@ function PolicyCriteriaFieldSubInput({
                         type="text"
                         id={name}
                         isDisabled={readOnly}
-                        // placeholder={subComponent.placeholder}
                         onChange={(v) => setValue(v)}
+                        data-testid="policy-criteria-value-text-input"
                     />
                 </FormGroup>
             );
@@ -54,6 +54,7 @@ function PolicyCriteriaFieldSubInput({
                     onChange={(v) => setValue(v)}
                     placeholder="(ex. 5)"
                     className="pf-u-w-25"
+                    data-testid="policy-criteria-value-number-input"
                 />
             );
         case 'select':
@@ -62,6 +63,7 @@ function PolicyCriteriaFieldSubInput({
                     label={subComponent.label}
                     fieldId={name}
                     className="pf-u-flex-1 pf-u-w-0"
+                    data-testid="policy-criteria-value-select"
                 >
                     <Select
                         onToggle={handleOnToggleSelect}
@@ -72,7 +74,11 @@ function PolicyCriteriaFieldSubInput({
                         placeholderText={subComponent.placeholder || 'Select an option'}
                     >
                         {subComponent.options?.map((option) => (
-                            <SelectOption key={option.value} value={option.value}>
+                            <SelectOption
+                                key={option.value}
+                                value={option.value}
+                                data-testid="policy-criteria-value-select-option"
+                            >
                                 {option.label}
                             </SelectOption>
                         ))}

@@ -66,6 +66,7 @@ function PolicyCriteriaForm() {
                     isInline
                     title="Editing policy criteria is disabled for system default policies"
                     className="pf-u-mt-sm pf-u-mb-md"
+                    data-testid="default-policy-alert"
                 >
                     If you need to edit policy criteria, clone this policy or create a new policy.
                 </Alert>
@@ -89,7 +90,11 @@ function PolicyCriteriaForm() {
                     <Flex direction={{ default: 'row' }} className="pf-u-p-lg">
                         <FlexItem flex={{ default: 'flex_1' }}>{headingElements}</FlexItem>
                         <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                            <Button variant="secondary" onClick={addNewPolicySection}>
+                            <Button
+                                variant="secondary"
+                                onClick={addNewPolicySection}
+                                data-testid="add-section-btn"
+                            >
                                 Add condition
                             </Button>
                         </FlexItem>

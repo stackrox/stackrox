@@ -16,7 +16,12 @@ function AndOrOperatorField({ name, readOnly = false }: AndOrOperatorFieldProps)
     }
 
     return (
-        <Button variant="plain" onClick={handleBooleanOperator} isDisabled={readOnly}>
+        <Button
+            variant="plain"
+            onClick={handleBooleanOperator}
+            isDisabled={readOnly}
+            data-testid="policy-criteria-boolean-operator"
+        >
             — {field.value.booleanOperator.toLowerCase()} —
         </Button>
     );
