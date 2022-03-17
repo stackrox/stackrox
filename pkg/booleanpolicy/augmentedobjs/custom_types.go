@@ -31,7 +31,7 @@ const (
 
 type NetworkPolicyAssociation struct {
 	MissingIngressNetworkPolicy bool `policy:"Missing Ingress Network Policy"`
-	MissingEgressNetworkPolicy bool `policy:"Missing Egress Network Policy"`
+	MissingEgressNetworkPolicy  bool `policy:"Missing Egress Network Policy"`
 
 	// objects applied to deployment
 	NetworkPoliciesApplied []storage.NetworkPolicy

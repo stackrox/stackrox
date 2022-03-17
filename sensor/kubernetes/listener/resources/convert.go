@@ -1,34 +1,34 @@
 package resources
 
 import (
-  "fmt"
-  "reflect"
-  "sort"
+	"fmt"
+	"reflect"
+	"sort"
 
-  openshift_appsv1 "github.com/openshift/api/apps/v1"
-  "github.com/pkg/errors"
-  "github.com/stackrox/rox/generated/internalapi/central"
-  "github.com/stackrox/rox/generated/storage"
-  "github.com/stackrox/rox/pkg/containers"
-  "github.com/stackrox/rox/pkg/features"
-  imageUtils "github.com/stackrox/rox/pkg/images/utils"
-  roxlabels "github.com/stackrox/rox/pkg/labels"
-  "github.com/stackrox/rox/pkg/logging"
-  "github.com/stackrox/rox/pkg/protoconv/k8s"
-  "github.com/stackrox/rox/pkg/protoconv/resources"
-  "github.com/stackrox/rox/pkg/set"
-  "github.com/stackrox/rox/pkg/sync"
-  "github.com/stackrox/rox/pkg/utils"
-  "github.com/stackrox/rox/pkg/uuid"
-  "github.com/stackrox/rox/sensor/common/imageutil"
-  "github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
-  "github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
-  "k8s.io/api/batch/v1beta1"
-  v1 "k8s.io/api/core/v1"
-  metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-  "k8s.io/apimachinery/pkg/labels"
-  "k8s.io/apimachinery/pkg/util/intstr"
-  v1listers "k8s.io/client-go/listers/core/v1"
+	openshift_appsv1 "github.com/openshift/api/apps/v1"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/containers"
+	"github.com/stackrox/rox/pkg/features"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
+	roxlabels "github.com/stackrox/rox/pkg/labels"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv/k8s"
+	"github.com/stackrox/rox/pkg/protoconv/resources"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/imageutil"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
+	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
+	"k8s.io/api/batch/v1beta1"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	v1listers "k8s.io/client-go/listers/core/v1"
 )
 
 const (
@@ -55,14 +55,14 @@ func getK8sComponentID(clusterID string, component string) string {
 }
 
 type deploymentWrap struct {
-  *storage.Deployment
-  registryOverride string
-  original         interface{}
-  portConfigs      map[portRef]*storage.PortConfig
-  pods             []*v1.Pod
-  networkPolicies  []*storage.NetworkPolicy
+	*storage.Deployment
+	registryOverride string
+	original         interface{}
+	portConfigs      map[portRef]*storage.PortConfig
+	pods             []*v1.Pod
+	networkPolicies  []*storage.NetworkPolicy
 
-  mutex sync.RWMutex
+	mutex sync.RWMutex
 }
 
 // This checks if a reflect value is a Zero value, which means the field did not exist
@@ -71,22 +71,22 @@ func doesFieldExist(value reflect.Value) bool {
 }
 
 func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAction, deploymentType, clusterID string,
-  lister v1listers.PodLister, namespaceStore *namespaceStore, npStore *NetworkPolicyStore, hierarchy references.ParentHierarchy, registryOverride string,
-  namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentWrap {
-  wrap := newWrap(obj, deploymentType, clusterID, registryOverride)
-  fmt.Printf("newDeploymentEventFromResource: wrap: %+v\n", wrap)
-  if wrap == nil {
-    return nil
-  }
+	lister v1listers.PodLister, namespaceStore *namespaceStore, npStore *NetworkPolicyStore, hierarchy references.ParentHierarchy, registryOverride string,
+	namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentWrap {
+	wrap := newWrap(obj, deploymentType, clusterID, registryOverride)
+	fmt.Printf("newDeploymentEventFromResource: wrap: %+v\n", wrap)
+	if wrap == nil {
+		return nil
+	}
 
-  if ok, err := wrap.populateNonStaticFields(obj, action, lister, namespaceStore, npStore, hierarchy, namespaces); err != nil {
-    // Panic on dev because we should always be able to parse the deployments
-    _ = utils.Should(err)
-    return nil
-  } else if !ok {
-    return nil
-  }
-  return wrap
+	if ok, err := wrap.populateNonStaticFields(obj, action, lister, namespaceStore, npStore, hierarchy, namespaces); err != nil {
+		// Panic on dev because we should always be able to parse the deployments
+		_ = utils.Should(err)
+		return nil
+	} else if !ok {
+		return nil
+	}
+	return wrap
 }
 
 func newWrap(obj interface{}, kind, clusterID, registryOverride string) *deploymentWrap {
@@ -121,88 +121,88 @@ func (w *deploymentWrap) populateK8sComponentIfNecessary(o *v1.Pod) *metav1.Labe
 }
 
 func checkIfNewPodSpecRequired(podSpec *v1.PodSpec, pods []*v1.Pod) bool {
-  containerSet := set.NewStringSet()
-  for _, c := range podSpec.Containers {
-    containerSet.Add(c.Name)
-  }
-  var updated bool
-  for _, p := range pods {
-    if p.GetDeletionTimestamp() != nil {
-      continue
-    }
-    for _, c := range p.Spec.Containers {
-      if containerSet.Contains(c.Name) {
-        continue
-      }
-      updated = true
-      containerSet.Add(c.Name)
-      podSpec.Containers = append(podSpec.Containers, c)
-    }
-  }
-  return updated
+	containerSet := set.NewStringSet()
+	for _, c := range podSpec.Containers {
+		containerSet.Add(c.Name)
+	}
+	var updated bool
+	for _, p := range pods {
+		if p.GetDeletionTimestamp() != nil {
+			continue
+		}
+		for _, c := range p.Spec.Containers {
+			if containerSet.Contains(c.Name) {
+				continue
+			}
+			updated = true
+			containerSet.Add(c.Name)
+			podSpec.Containers = append(podSpec.Containers, c)
+		}
+	}
+	return updated
 }
 
 func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *central.ResourceAction, lister v1listers.PodLister,
-  namespaceStore *namespaceStore, npStore *NetworkPolicyStore, hierarchy references.ParentHierarchy,
-  namespaces *orchestratornamespaces.OrchestratorNamespaces) (bool, error) {
-  fmt.Printf("populateNonStaticFields: obj: %+v\n", obj)
+	namespaceStore *namespaceStore, npStore *NetworkPolicyStore, hierarchy references.ParentHierarchy,
+	namespaces *orchestratornamespaces.OrchestratorNamespaces) (bool, error) {
+	fmt.Printf("populateNonStaticFields: obj: %+v\n", obj)
 
-  w.original = obj
-  objValue := reflect.Indirect(reflect.ValueOf(obj))
-  spec := objValue.FieldByName("Spec")
-  if !doesFieldExist(spec) {
-    return false, fmt.Errorf("obj %+v does not have a Spec field", objValue)
-  }
+	w.original = obj
+	objValue := reflect.Indirect(reflect.ValueOf(obj))
+	spec := objValue.FieldByName("Spec")
+	if !doesFieldExist(spec) {
+		return false, fmt.Errorf("obj %+v does not have a Spec field", objValue)
+	}
 
-  var (
-    podSpec       v1.PodSpec
-    podLabels     map[string]string
-    labelSelector *metav1.LabelSelector
-    err           error
-  )
+	var (
+		podSpec       v1.PodSpec
+		podLabels     map[string]string
+		labelSelector *metav1.LabelSelector
+		err           error
+	)
 
-  switch o := obj.(type) {
-  case *openshift_appsv1.DeploymentConfig:
-    if o.Spec.Template == nil {
-      return false, fmt.Errorf("spec obj %+v does not have a Template field or is not a pointer pod spec", spec)
-    }
-    podLabels = o.Spec.Template.Labels
-    podSpec = o.Spec.Template.Spec
+	switch o := obj.(type) {
+	case *openshift_appsv1.DeploymentConfig:
+		if o.Spec.Template == nil {
+			return false, fmt.Errorf("spec obj %+v does not have a Template field or is not a pointer pod spec", spec)
+		}
+		podLabels = o.Spec.Template.Labels
+		podSpec = o.Spec.Template.Spec
 
-    labelSelector, err = w.getLabelSelector(spec)
-    if err != nil {
-      return false, errors.Wrap(err, "error getting label selector")
-    }
+		labelSelector, err = w.getLabelSelector(spec)
+		if err != nil {
+			return false, errors.Wrap(err, "error getting label selector")
+		}
 
-  // Pods don't have the abstractions that higher level objects have so maintain it's lifecycle independently
-  case *v1.Pod:
-    if o.Status.Phase == v1.PodSucceeded || o.Status.Phase == v1.PodFailed {
-      *action = central.ResourceAction_REMOVE_RESOURCE
-    }
+	// Pods don't have the abstractions that higher level objects have so maintain it's lifecycle independently
+	case *v1.Pod:
+		if o.Status.Phase == v1.PodSucceeded || o.Status.Phase == v1.PodFailed {
+			*action = central.ResourceAction_REMOVE_RESOURCE
+		}
 
-    // Standalone Pods do not have a PodTemplate, like the other deployment
-    // types do. So, we need to directly access the Pod's Spec field,
-    // instead of looking for it inside a PodTemplate.
-    podLabels = o.Labels
-    labelSelector = w.populateK8sComponentIfNecessary(o)
-  case *v1beta1.CronJob:
-    // Cron jobs have a Job spec that then have a Pod Template underneath
-    podLabels = o.Spec.JobTemplate.Spec.Template.GetLabels()
-    podSpec = o.Spec.JobTemplate.Spec.Template.Spec
-    labelSelector = o.Spec.JobTemplate.Spec.Selector
-  default:
-    podTemplate, err := resources.SpecToPodTemplateSpec(spec)
-    if err != nil {
-      return false, errors.Wrapf(err, "spec obj %+v cannot be converted to a pod template spec", spec)
-    }
-    podLabels = podTemplate.Labels
-    podSpec = podTemplate.Spec
+		// Standalone Pods do not have a PodTemplate, like the other deployment
+		// types do. So, we need to directly access the Pod's Spec field,
+		// instead of looking for it inside a PodTemplate.
+		podLabels = o.Labels
+		labelSelector = w.populateK8sComponentIfNecessary(o)
+	case *v1beta1.CronJob:
+		// Cron jobs have a Job spec that then have a Pod Template underneath
+		podLabels = o.Spec.JobTemplate.Spec.Template.GetLabels()
+		podSpec = o.Spec.JobTemplate.Spec.Template.Spec
+		labelSelector = o.Spec.JobTemplate.Spec.Selector
+	default:
+		podTemplate, err := resources.SpecToPodTemplateSpec(spec)
+		if err != nil {
+			return false, errors.Wrapf(err, "spec obj %+v cannot be converted to a pod template spec", spec)
+		}
+		podLabels = podTemplate.Labels
+		podSpec = podTemplate.Spec
 
-    labelSelector, err = w.getLabelSelector(spec)
-    if err != nil {
-      return false, errors.Wrap(err, "error getting label selector")
-    }
-  }
+		labelSelector, err = w.getLabelSelector(spec)
+		if err != nil {
+			return false, errors.Wrap(err, "error getting label selector")
+		}
+	}
 
 	labelSel, err := k8s.ToRoxLabelSelector(labelSelector)
 	if err != nil {
@@ -214,37 +214,37 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 	w.AutomountServiceAccountToken = true
 	if podSpec.AutomountServiceAccountToken != nil {
 		w.AutomountServiceAccountToken = *podSpec.AutomountServiceAccountToken
-  }
+	}
 
-  w.populateNamespaceID(namespaceStore, namespaces)
+	w.populateNamespaceID(namespaceStore, namespaces)
 
-  if labelSelector == nil {
-    labelSelector = &metav1.LabelSelector{
-      MatchLabels: podLabels,
-    }
-  }
+	if labelSelector == nil {
+		labelSelector = &metav1.LabelSelector{
+			MatchLabels: podLabels,
+		}
+	}
 
-  if *action != central.ResourceAction_REMOVE_RESOURCE {
-    // If we have a standalone pod, we cannot use the labels to try and select that pod so we must directly populate the pod data
-    // We need to special case kube-proxy because we are consolidating it into a deployment
-    if pod, ok := obj.(*v1.Pod); ok && w.Type != k8sStandalonePodType {
-      w.populateDataFromPods(pod)
-    } else {
-      pods, err := w.getPods(hierarchy, labelSelector, lister)
-      if err != nil {
-        return false, err
-      }
-      if updated := checkIfNewPodSpecRequired(&podSpec, pods); updated {
-        resources.NewDeploymentWrap(w.Deployment, w.registryOverride).PopulateDeploymentFromPodSpec(podSpec)
-      }
-      w.populateDataFromPods(pods...)
-    }
-  }
+	if *action != central.ResourceAction_REMOVE_RESOURCE {
+		// If we have a standalone pod, we cannot use the labels to try and select that pod so we must directly populate the pod data
+		// We need to special case kube-proxy because we are consolidating it into a deployment
+		if pod, ok := obj.(*v1.Pod); ok && w.Type != k8sStandalonePodType {
+			w.populateDataFromPods(pod)
+		} else {
+			pods, err := w.getPods(hierarchy, labelSelector, lister)
+			if err != nil {
+				return false, err
+			}
+			if updated := checkIfNewPodSpecRequired(&podSpec, pods); updated {
+				resources.NewDeploymentWrap(w.Deployment, w.registryOverride).PopulateDeploymentFromPodSpec(podSpec)
+			}
+			w.populateDataFromPods(pods...)
+		}
+	}
 
-  w.populateNetworkPolicies(npStore)
-  w.populatePorts()
+	w.populateNetworkPolicies(npStore)
+	w.populatePorts()
 
-  return true, nil
+	return true, nil
 }
 
 func (w *deploymentWrap) GetDeployment() *storage.Deployment {
@@ -370,69 +370,69 @@ func (w *deploymentWrap) getLabelSelector(spec reflect.Value) (*metav1.LabelSele
 
 func (w *deploymentWrap) populateNamespaceID(namespaceStore *namespaceStore,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces) {
-  if namespaceID, found := namespaceStore.lookupNamespaceID(w.GetNamespace()); found {
-    w.NamespaceId = namespaceID
-    w.OrchestratorComponent = namespaces.IsOrchestratorNamespace(w.GetNamespace())
-  } else {
-    log.Errorf("no namespace ID found for namespace %s and deployment %q", w.GetNamespace(), w.GetName())
-  }
+	if namespaceID, found := namespaceStore.lookupNamespaceID(w.GetNamespace()); found {
+		w.NamespaceId = namespaceID
+		w.OrchestratorComponent = namespaces.IsOrchestratorNamespace(w.GetNamespace())
+	} else {
+		log.Errorf("no namespace ID found for namespace %s and deployment %q", w.GetNamespace(), w.GetName())
+	}
 }
 
 func (w *deploymentWrap) populatePorts() {
-  w.mutex.Lock()
-  defer w.mutex.Unlock()
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
 
-  w.portConfigs = make(map[portRef]*storage.PortConfig)
-  for _, c := range w.GetContainers() {
-    for _, p := range c.GetPorts() {
-      w.portConfigs[portRef{Port: intstr.FromInt(int(p.ContainerPort)), Protocol: v1.Protocol(p.Protocol)}] = p
-      if p.Name != "" {
-        w.portConfigs[portRef{Port: intstr.FromString(p.Name), Protocol: v1.Protocol(p.Protocol)}] = p
-      }
-    }
-  }
+	w.portConfigs = make(map[portRef]*storage.PortConfig)
+	for _, c := range w.GetContainers() {
+		for _, p := range c.GetPorts() {
+			w.portConfigs[portRef{Port: intstr.FromInt(int(p.ContainerPort)), Protocol: v1.Protocol(p.Protocol)}] = p
+			if p.Name != "" {
+				w.portConfigs[portRef{Port: intstr.FromString(p.Name), Protocol: v1.Protocol(p.Protocol)}] = p
+			}
+		}
+	}
 }
 
 func (w *deploymentWrap) populateNetworkPolicies(npStore *NetworkPolicyStore) {
-  w.mutex.Lock()
-  defer w.mutex.Unlock()
-  fmt.Printf("populateNetworkPolicies: processing depl(%s)\n", w.GetDeployment().Name)
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	fmt.Printf("populateNetworkPolicies: processing depl(%s)\n", w.GetDeployment().Name)
 
-  nps := w.GetDeployment().GetNetworkPolicies()
-  if nps == nil {
-    nps = make([]*storage.NetworkPolicy, 0)
-  }
-  for _, policy := range npStore.GetAll() {
-    if policy.GetNamespace() != w.GetDeployment().Namespace {
-      fmt.Printf("populateNetworkPolicies: namespace mismatch policy.ns(%s) != depl.ns(%s)\n", policy.GetNamespace(), w.GetDeployment().Namespace)
-      continue
-    }
-    policySelector := policy.GetSpec().GetPodSelector()
-    podLabels := w.GetDeployment().GetPodLabels()
-    if roxlabels.MatchLabels(policySelector, podLabels) {
-      fmt.Printf("populateNetworkPolicies: policy/depl: %s/%s - MATCH\n", policy.GetName(), w.GetDeployment().Name)
-      w.networkPolicies = append(w.networkPolicies, policy)
-      nps = append(nps, w.NetworkPolicies...)
-    } else {
-      fmt.Printf("populateNetworkPolicies: policy/depl: %s/%s - XXX\n", policy.GetName(), w.GetDeployment().Name)
-      fmt.Printf("populateNetworkPolicies: policySelector: %+v\n", policySelector.MatchLabels)
-      fmt.Printf("populateNetworkPolicies: podLabels: %+v\n", podLabels)
-    }
-  }
-  w.GetDeployment().NetworkPolicies = nps
+	nps := w.GetDeployment().GetNetworkPolicies()
+	if nps == nil {
+		nps = make([]*storage.NetworkPolicy, 0)
+	}
+	for _, policy := range npStore.GetAll() {
+		if policy.GetNamespace() != w.GetDeployment().Namespace {
+			fmt.Printf("populateNetworkPolicies: namespace mismatch policy.ns(%s) != depl.ns(%s)\n", policy.GetNamespace(), w.GetDeployment().Namespace)
+			continue
+		}
+		policySelector := policy.GetSpec().GetPodSelector()
+		podLabels := w.GetDeployment().GetPodLabels()
+		if roxlabels.MatchLabels(policySelector, podLabels) {
+			fmt.Printf("populateNetworkPolicies: policy/depl: %s/%s - MATCH\n", policy.GetName(), w.GetDeployment().Name)
+			w.networkPolicies = append(w.networkPolicies, policy)
+			nps = append(nps, w.NetworkPolicies...)
+		} else {
+			fmt.Printf("populateNetworkPolicies: policy/depl: %s/%s - XXX\n", policy.GetName(), w.GetDeployment().Name)
+			fmt.Printf("populateNetworkPolicies: policySelector: %+v\n", policySelector.MatchLabels)
+			fmt.Printf("populateNetworkPolicies: podLabels: %+v\n", podLabels)
+		}
+	}
+	w.GetDeployment().NetworkPolicies = nps
 }
 
 func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorEvent {
-  w.mutex.RLock()
-  defer w.mutex.RUnlock()
+	w.mutex.RLock()
+	defer w.mutex.RUnlock()
 
-  return &central.SensorEvent{
-    Id:     w.GetId(),
-    Action: action,
-    Resource: &central.SensorEvent_Deployment{
-      Deployment: w.Deployment.Clone(),
-    },
-  }
+	return &central.SensorEvent{
+		Id:     w.GetId(),
+		Action: action,
+		Resource: &central.SensorEvent_Deployment{
+			Deployment: w.Deployment.Clone(),
+		},
+	}
 }
 
 // anyNonHostPort is derived from `filterHostExposure(...)`. Therefore, if `filterHostExposure(...)` is updated,

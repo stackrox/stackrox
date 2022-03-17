@@ -1,21 +1,21 @@
 package listener
 
 import (
-  "fmt"
-  "reflect"
+	"fmt"
+	"reflect"
 
-  "github.com/pkg/errors"
-  "github.com/stackrox/rox/generated/internalapi/central"
-  "github.com/stackrox/rox/pkg/concurrency"
-  "github.com/stackrox/rox/pkg/kubernetes"
-  "github.com/stackrox/rox/pkg/sync"
-  "github.com/stackrox/rox/pkg/utils"
-  "github.com/stackrox/rox/sensor/kubernetes/listener/resources"
-  coreV1 "k8s.io/api/core/v1"
-  networkingV1 "k8s.io/api/networking/v1"
-  v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-  "k8s.io/apimachinery/pkg/types"
-  "k8s.io/client-go/tools/cache"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	coreV1 "k8s.io/api/core/v1"
+	networkingV1 "k8s.io/api/networking/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/cache"
 )
 
 // resourceEventHandlerImpl processes OnAdd, OnUpdate, and OnDelete events, and joins the results to an output
@@ -34,20 +34,20 @@ type resourceEventHandlerImpl struct {
 }
 
 func (h *resourceEventHandlerImpl) OnAdd(obj interface{}) {
-  // If we are listing the initial objects, then we treat them as updates so enforcement isn't done
-  if np, ok := obj.(*networkingV1.NetworkPolicy); ok {
-    fmt.Printf("### OnAdd NetworkPolicy: %s\n", np.Name)
-  } else if p, ok := obj.(*coreV1.Pod); ok {
-    fmt.Printf("### OnAdd pod: %s\n", p.Name)
-  } else {
-    fmt.Printf("### OnAdd obj=%s\n", reflect.TypeOf(obj))
-  }
-  if h.treatCreatesAsUpdates != nil && h.treatCreatesAsUpdates.Get() {
-    h.sendResourceEvent(obj, nil, central.ResourceAction_UPDATE_RESOURCE)
-  } else {
-    h.sendResourceEvent(obj, nil, central.ResourceAction_CREATE_RESOURCE)
-  }
-  h.registerObject(obj)
+	// If we are listing the initial objects, then we treat them as updates so enforcement isn't done
+	if np, ok := obj.(*networkingV1.NetworkPolicy); ok {
+		fmt.Printf("### OnAdd NetworkPolicy: %s\n", np.Name)
+	} else if p, ok := obj.(*coreV1.Pod); ok {
+		fmt.Printf("### OnAdd pod: %s\n", p.Name)
+	} else {
+		fmt.Printf("### OnAdd obj=%s\n", reflect.TypeOf(obj))
+	}
+	if h.treatCreatesAsUpdates != nil && h.treatCreatesAsUpdates.Get() {
+		h.sendResourceEvent(obj, nil, central.ResourceAction_UPDATE_RESOURCE)
+	} else {
+		h.sendResourceEvent(obj, nil, central.ResourceAction_CREATE_RESOURCE)
+	}
+	h.registerObject(obj)
 }
 
 func (h *resourceEventHandlerImpl) OnUpdate(oldObj, newObj interface{}) {

@@ -1,22 +1,22 @@
 package detector
 
 import (
-  "context"
-  "time"
+	"context"
+	"time"
 
-  "github.com/cenkalti/backoff/v3"
-  v1 "github.com/stackrox/rox/generated/api/v1"
-  "github.com/stackrox/rox/generated/internalapi/central"
-  "github.com/stackrox/rox/generated/storage"
-  "github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
-  "github.com/stackrox/rox/pkg/concurrency"
-  "github.com/stackrox/rox/pkg/expiringcache"
-  "github.com/stackrox/rox/pkg/features"
-  "github.com/stackrox/rox/pkg/images/types"
-  "github.com/stackrox/rox/sensor/common/detector/metrics"
-  "github.com/stackrox/rox/sensor/common/imagecacheutils"
-  "github.com/stackrox/rox/sensor/common/scan"
-  "google.golang.org/grpc/status"
+	"github.com/cenkalti/backoff/v3"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/sensor/common/detector/metrics"
+	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/scan"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -207,21 +207,21 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 }
 
 func (e *enricher) getNetpols(deployment *storage.Deployment) *augmentedobjs.NetworkPolicyAssociation {
-  containsIngress := false
-  containsEgress := false
+	containsIngress := false
+	containsEgress := false
 
-  deploymentPolicies := deployment.GetNetworkPolicies()
-  deploymentPoliciesCopy := make([]storage.NetworkPolicy, 0, len(deploymentPolicies))
-  for _, np := range deploymentPolicies {
-    containsIngress = containsIngress || np.Spec.GetIngress() != nil && len(np.Spec.GetIngress()) > 0
-    containsEgress = containsEgress || np.Spec.GetIngress() != nil && len(np.Spec.GetEgress()) > 0
-    deploymentPoliciesCopy = append(deploymentPoliciesCopy, *np)
-  }
-  return &augmentedobjs.NetworkPolicyAssociation{
-    MissingIngressNetworkPolicy: !containsIngress,
-    MissingEgressNetworkPolicy:  !containsEgress,
-    NetworkPoliciesApplied:      deploymentPoliciesCopy,
-  }
+	deploymentPolicies := deployment.GetNetworkPolicies()
+	deploymentPoliciesCopy := make([]storage.NetworkPolicy, 0, len(deploymentPolicies))
+	for _, np := range deploymentPolicies {
+		containsIngress = containsIngress || np.Spec.GetIngress() != nil && len(np.Spec.GetIngress()) > 0
+		containsEgress = containsEgress || np.Spec.GetIngress() != nil && len(np.Spec.GetEgress()) > 0
+		deploymentPoliciesCopy = append(deploymentPoliciesCopy, *np)
+	}
+	return &augmentedobjs.NetworkPolicyAssociation{
+		MissingIngressNetworkPolicy: !containsIngress,
+		MissingEgressNetworkPolicy:  !containsEgress,
+		NetworkPoliciesApplied:      deploymentPoliciesCopy,
+	}
 }
 
 func (e *enricher) blockingScan(deployment *storage.Deployment, action central.ResourceAction) {
