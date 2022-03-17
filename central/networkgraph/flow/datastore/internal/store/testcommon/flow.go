@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/net/context"
 )
 
 // NewFlowStoreTest creates a new flow test suite that can be shared between cluster store impls
@@ -15,6 +16,7 @@ func NewFlowStoreTest(store store.ClusterStore) *FlowStoreTestSuite {
 	return &FlowStoreTestSuite{
 		store:  store,
 		tested: nil,
+		ctx:    context.Background(),
 	}
 }
 
@@ -24,6 +26,7 @@ type FlowStoreTestSuite struct {
 
 	store  store.ClusterStore
 	tested store.FlowStore
+	ctx    context.Context
 }
 
 // SetupSuite runs before any tests
@@ -68,29 +71,29 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	var err error
 
 	updateTS := timestamp.Now() - 1000000
-	err = suite.tested.UpsertFlows(flows, updateTS)
+	err = suite.tested.UpsertFlows(suite.ctx, flows, updateTS)
 	suite.NoError(err, "upsert should succeed on first insert")
 
-	readFlows, readUpdateTS, err := suite.tested.GetAllFlows(nil)
+	readFlows, readUpdateTS, err := suite.tested.GetAllFlows(suite.ctx, nil)
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows)
 	suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 
-	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(protoconv.ConvertTimeToTimestamp(t2))
+	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(suite.ctx, protoconv.ConvertTimeToTimestamp(t2))
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows[1:])
 	suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 
-	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(protoconv.ConvertTimeToTimestamp(time.Now()))
+	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(suite.ctx, protoconv.ConvertTimeToTimestamp(time.Now()))
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows[2:])
 	suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 
 	updateTS += 1337
-	err = suite.tested.UpsertFlows(flows, updateTS)
+	err = suite.tested.UpsertFlows(suite.ctx, flows, updateTS)
 	suite.NoError(err, "upsert should succeed on second insert")
 
-	err = suite.tested.RemoveFlow(&storage.NetworkFlowProperties{
+	err = suite.tested.RemoveFlow(suite.ctx, &storage.NetworkFlowProperties{
 		SrcEntity:  flows[0].GetProps().GetSrcEntity(),
 		DstEntity:  flows[0].GetProps().GetDstEntity(),
 		DstPort:    flows[0].GetProps().GetDstPort(),
@@ -98,7 +101,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	})
 	suite.NoError(err, "remove should succeed when present")
 
-	err = suite.tested.RemoveFlow(&storage.NetworkFlowProperties{
+	err = suite.tested.RemoveFlow(suite.ctx, &storage.NetworkFlowProperties{
 		SrcEntity:  flows[0].GetProps().GetSrcEntity(),
 		DstEntity:  flows[0].GetProps().GetDstEntity(),
 		DstPort:    flows[0].GetProps().GetDstPort(),
@@ -107,21 +110,21 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.NoError(err, "remove should succeed when not present")
 
 	var actualFlows []*storage.NetworkFlow
-	actualFlows, readUpdateTS, err = suite.tested.GetAllFlows(nil)
+	actualFlows, readUpdateTS, err = suite.tested.GetAllFlows(suite.ctx, nil)
 	suite.NoError(err)
 	suite.ElementsMatch(actualFlows, flows[1:])
 	suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 
 	updateTS += 42
-	err = suite.tested.UpsertFlows(flows, updateTS)
+	err = suite.tested.UpsertFlows(suite.ctx, flows, updateTS)
 	suite.NoError(err, "upsert should succeed")
 
-	actualFlows, readUpdateTS, err = suite.tested.GetAllFlows(nil)
+	actualFlows, readUpdateTS, err = suite.tested.GetAllFlows(suite.ctx, nil)
 	suite.NoError(err)
 	suite.ElementsMatch(actualFlows, flows)
 	suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 
-	node1Flows, readUpdateTS, err := suite.tested.GetMatchingFlows(func(props *storage.NetworkFlowProperties) bool {
+	node1Flows, readUpdateTS, err := suite.tested.GetMatchingFlows(suite.ctx, func(props *storage.NetworkFlowProperties) bool {
 		if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetDstEntity().GetId() == "someNode1" {
 			return true
 		}
@@ -168,35 +171,35 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 		},
 	}
 	updateTS := timestamp.Now() - 1000000
-	err := suite.tested.UpsertFlows(flows, updateTS)
+	err := suite.tested.UpsertFlows(suite.ctx, flows, updateTS)
 	suite.NoError(err)
 
 	// Match none delete none
-	err = suite.tested.RemoveMatchingFlows(func(props *storage.NetworkFlowProperties) bool {
+	err = suite.tested.RemoveMatchingFlows(suite.ctx, func(props *storage.NetworkFlowProperties) bool {
 		return false
 	}, nil)
 	suite.NoError(err)
 
-	currFlows, _, err := suite.tested.GetAllFlows(nil)
+	currFlows, _, err := suite.tested.GetAllFlows(suite.ctx, nil)
 	suite.NoError(err)
 	suite.ElementsMatch(flows, currFlows)
 
 	// Match dst port 1
-	err = suite.tested.RemoveMatchingFlows(func(props *storage.NetworkFlowProperties) bool {
+	err = suite.tested.RemoveMatchingFlows(suite.ctx, func(props *storage.NetworkFlowProperties) bool {
 		return props.DstPort == 1
 	}, nil)
 	suite.NoError(err)
 
-	currFlows, _, err = suite.tested.GetAllFlows(nil)
+	currFlows, _, err = suite.tested.GetAllFlows(suite.ctx, nil)
 	suite.NoError(err)
 	suite.ElementsMatch(flows[1:], currFlows)
 
-	err = suite.tested.RemoveMatchingFlows(nil, func(flow *storage.NetworkFlow) bool {
+	err = suite.tested.RemoveMatchingFlows(suite.ctx, nil, func(flow *storage.NetworkFlow) bool {
 		return flow.LastSeenTimestamp.Compare(protoconv.ConvertTimeToTimestamp(t2)) == 0
 	})
 	suite.NoError(err)
 
-	currFlows, _, err = suite.tested.GetAllFlows(nil)
+	currFlows, _, err = suite.tested.GetAllFlows(suite.ctx, nil)
 	suite.NoError(err)
 	suite.ElementsMatch(flows[2:], currFlows)
 }

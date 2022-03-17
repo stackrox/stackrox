@@ -4,10 +4,9 @@ package postgres
 
 import (
 	"context"
-	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
@@ -16,15 +15,21 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 const (
 	countStmt  = "SELECT COUNT(*) FROM networkflow"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkflow WHERE Props_SrcEntity_Id = $1 AND Props_DstEntity_Id = $2 AND Props_DstPort = $3)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkflow WHERE Props_SrcEntity_Id = $1 AND Props_DstEntity_Id = $2 AND Props_DstPort = $3 AND Props_L4Protocol = $4 AND ClusterId = $5)"
 
-	getStmt    = "SELECT serialized FROM networkflow WHERE Props_SrcEntity_Id = $1 AND Props_DstEntity_Id = $2 AND Props_DstPort = $3"
-	deleteStmt = "DELETE FROM networkflow WHERE Props_SrcEntity_Id = $1 AND Props_DstEntity_Id = $2 AND Props_DstPort = $3"
-	walkStmt   = "SELECT serialized FROM networkflow"
+	getStmt    = "SELECT Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp FROM networkflow WHERE Props_SrcEntity_Id = $1 AND Props_DstEntity_Id = $2 AND Props_DstPort = $3 AND Props_L4Protocol = $4 AND ClusterId = $5"
+	deleteStmt = "DELETE FROM networkflow WHERE Props_SrcEntity_Id = $1 AND Props_DstEntity_Id = $2 AND Props_DstPort = $3 AND Props_L4Protocol = $4 AND ClusterId = $5"
+	walkStmt   = "SELECT Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow"
+
+	getSinceStmt    = "SELECT Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE LastSeenTimestamp >= $1 and ClusterId = $2"
+	deleteDeploymentStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2))"
+	deleteOrphanByTimeStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND LastSeenTimestamp IS NOT NULL AND LastSeenTimestamp < $2"
 )
 
 var (
@@ -38,29 +43,54 @@ var (
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
-	batchSize = 1000
+	batchSize = 10000
+
+	// orphanWindow, no need to use function to strip them out after the fact.  Can do so in the delete call.
+	orphanWindow       = -30 * time.Minute
+
 )
 
 func init() {
 	globaldb.RegisterTable(table, "NetworkFlow")
 }
 
-type Store interface {
+type FlowStore interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort int) (bool, error)
-	Get(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort int) (*storage.NetworkFlow, bool, error)
-	Upsert(ctx context.Context, obj *storage.NetworkFlow) error
-	UpsertMany(ctx context.Context, objs []*storage.NetworkFlow) error
-	Delete(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort int) error
+	Exists(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) (bool, error)
+	Get(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) (*storage.NetworkFlow, bool, error)
+	Upsert(ctx context.Context, lastUpdateTS timestamp.MicroTS, obj *storage.NetworkFlow) error
+	UpsertMany(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs []*storage.NetworkFlow) error
+	UpsertManyInd(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs []*storage.NetworkFlow) error
+	Delete(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) error
 
 	Walk(ctx context.Context, fn func(obj *storage.NetworkFlow) error) error
 
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
+
+	// Stuff from flow.go we are going to need for this store.
+	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
+	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
+	//
+	// Todo:  UpsertFlows looks like any old pg upsert.  this one passes in the time.  I wonder if I need that as a parameter?
+	// Todo:  After looking around at network flows decided to pass it in as a parameter to make conversion simpler.
+	// Todo:  Will transition to the name updateMany
+	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
+	// Same as Delete except it takes in the object vs the IDs.  Keep an eye on it.
+	RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error
+	//
+	RemoveFlowsForDeployment(ctx context.Context, id string) error
+
+	// can probably not use the functions
+	// valueMatchFn checks to see if time difference vs now is greater than orphanWindow i.e. 30 minutes
+	// keyMatchFn checks to see if either the source or destination are orphaned.  Orphaned means it is type deployment and the id does not exist in deployments.
+	// Though that appears to be dackbox so that is gross.  May have to keep the keyMatchFn for now and replace with a join when deployments are moved to a table?
+	RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error
 }
 
-type storeImpl struct {
+type flowStoreImpl struct {
 	db *pgxpool.Pool
+	clusterID string
 }
 
 func createTableNetworkflow(ctx context.Context, db *pgxpool.Pool) {
@@ -70,7 +100,6 @@ create table if not exists networkflow (
     Props_SrcEntity_Id varchar,
     Props_SrcEntity_Deployment_Name varchar,
     Props_SrcEntity_Deployment_Namespace varchar,
-    Props_SrcEntity_Deployment_Cluster varchar,
     Props_SrcEntity_ExternalSource_Name varchar,
     Props_SrcEntity_ExternalSource_Cidr varchar,
     Props_SrcEntity_ExternalSource_Default bool,
@@ -78,15 +107,14 @@ create table if not exists networkflow (
     Props_DstEntity_Id varchar,
     Props_DstEntity_Deployment_Name varchar,
     Props_DstEntity_Deployment_Namespace varchar,
-    Props_DstEntity_Deployment_Cluster varchar,
     Props_DstEntity_ExternalSource_Name varchar,
     Props_DstEntity_ExternalSource_Cidr varchar,
     Props_DstEntity_ExternalSource_Default bool,
     Props_DstPort integer,
     Props_L4Protocol integer,
     LastSeenTimestamp timestamp,
-    serialized bytea,
-    PRIMARY KEY(Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort)
+    ClusterId varchar,
+    PRIMARY KEY(Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId)
 )
 `
 
@@ -97,21 +125,21 @@ create table if not exists networkflow (
 
 	indexes := []string{
 
-		"create index if not exists networkflow_LastSeenTimestamp on networkflow using brin(LastSeenTimestamp) WITH (pages_per_range = 32)",
+		"create index if not exists networkflow_Props_SrcEntity_Type on networkflow using btree(Props_SrcEntity_Type)",
+
+		"create index if not exists networkflow_Props_DstEntity_Type on networkflow using btree(Props_DstEntity_Type)",
+
+		"create index if not exists networkflow_LastSeenTimestamp on networkflow using brin(LastSeenTimestamp)  WITH (pages_per_range = 32)",
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
 		}
 	}
+
 }
 
-func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, obj *storage.NetworkFlow) error {
-
-	serialized, marshalErr := obj.Marshal()
-	if marshalErr != nil {
-		return marshalErr
-	}
+func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, lastUpdateTS timestamp.MicroTS, obj *storage.NetworkFlow) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -119,7 +147,6 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, obj *storage.NetworkF
 		obj.GetProps().GetSrcEntity().GetId(),
 		obj.GetProps().GetSrcEntity().GetDeployment().GetName(),
 		obj.GetProps().GetSrcEntity().GetDeployment().GetNamespace(),
-		obj.GetProps().GetSrcEntity().GetDeployment().GetCluster(),
 		obj.GetProps().GetSrcEntity().GetExternalSource().GetName(),
 		obj.GetProps().GetSrcEntity().GetExternalSource().GetCidr(),
 		obj.GetProps().GetSrcEntity().GetExternalSource().GetDefault(),
@@ -127,17 +154,17 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, obj *storage.NetworkF
 		obj.GetProps().GetDstEntity().GetId(),
 		obj.GetProps().GetDstEntity().GetDeployment().GetName(),
 		obj.GetProps().GetDstEntity().GetDeployment().GetNamespace(),
-		obj.GetProps().GetDstEntity().GetDeployment().GetCluster(),
 		obj.GetProps().GetDstEntity().GetExternalSource().GetName(),
 		obj.GetProps().GetDstEntity().GetExternalSource().GetCidr(),
 		obj.GetProps().GetDstEntity().GetExternalSource().GetDefault(),
 		obj.GetProps().GetDstPort(),
 		obj.GetProps().GetL4Protocol(),
-		pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
-		serialized,
+		pgutils.NilOrTime(lastUpdateTS.GogoProtobuf()),
+		clusterID,
 	}
 
-	finalStr := "INSERT INTO networkflow (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_SrcEntity_Deployment_Name, Props_SrcEntity_Deployment_Namespace, Props_SrcEntity_Deployment_Cluster, Props_SrcEntity_ExternalSource_Name, Props_SrcEntity_ExternalSource_Cidr, Props_SrcEntity_ExternalSource_Default, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstEntity_Deployment_Name, Props_DstEntity_Deployment_Namespace, Props_DstEntity_Deployment_Cluster, Props_DstEntity_ExternalSource_Name, Props_DstEntity_ExternalSource_Cidr, Props_DstEntity_ExternalSource_Default, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) ON CONFLICT(Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort) DO UPDATE SET Props_SrcEntity_Type = EXCLUDED.Props_SrcEntity_Type, Props_SrcEntity_Id = EXCLUDED.Props_SrcEntity_Id, Props_SrcEntity_Deployment_Name = EXCLUDED.Props_SrcEntity_Deployment_Name, Props_SrcEntity_Deployment_Namespace = EXCLUDED.Props_SrcEntity_Deployment_Namespace, Props_SrcEntity_Deployment_Cluster = EXCLUDED.Props_SrcEntity_Deployment_Cluster, Props_SrcEntity_ExternalSource_Name = EXCLUDED.Props_SrcEntity_ExternalSource_Name, Props_SrcEntity_ExternalSource_Cidr = EXCLUDED.Props_SrcEntity_ExternalSource_Cidr, Props_SrcEntity_ExternalSource_Default = EXCLUDED.Props_SrcEntity_ExternalSource_Default, Props_DstEntity_Type = EXCLUDED.Props_DstEntity_Type, Props_DstEntity_Id = EXCLUDED.Props_DstEntity_Id, Props_DstEntity_Deployment_Name = EXCLUDED.Props_DstEntity_Deployment_Name, Props_DstEntity_Deployment_Namespace = EXCLUDED.Props_DstEntity_Deployment_Namespace, Props_DstEntity_Deployment_Cluster = EXCLUDED.Props_DstEntity_Deployment_Cluster, Props_DstEntity_ExternalSource_Name = EXCLUDED.Props_DstEntity_ExternalSource_Name, Props_DstEntity_ExternalSource_Cidr = EXCLUDED.Props_DstEntity_ExternalSource_Cidr, Props_DstEntity_ExternalSource_Default = EXCLUDED.Props_DstEntity_ExternalSource_Default, Props_DstPort = EXCLUDED.Props_DstPort, Props_L4Protocol = EXCLUDED.Props_L4Protocol, LastSeenTimestamp = EXCLUDED.LastSeenTimestamp, serialized = EXCLUDED.serialized"
+	// Todo: probably think about doing nothing for most of these and only updating the time if the new one is greater???
+	finalStr := "INSERT INTO networkflow (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_SrcEntity_Deployment_Name, Props_SrcEntity_Deployment_Namespace, Props_SrcEntity_ExternalSource_Name, Props_SrcEntity_ExternalSource_Cidr, Props_SrcEntity_ExternalSource_Default, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstEntity_Deployment_Name, Props_DstEntity_Deployment_Namespace, Props_DstEntity_ExternalSource_Name, Props_DstEntity_ExternalSource_Cidr, Props_DstEntity_ExternalSource_Default, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) ON CONFLICT(Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) DO UPDATE SET Props_SrcEntity_Type = EXCLUDED.Props_SrcEntity_Type, Props_SrcEntity_Id = EXCLUDED.Props_SrcEntity_Id, Props_SrcEntity_Deployment_Name = EXCLUDED.Props_SrcEntity_Deployment_Name, Props_SrcEntity_Deployment_Namespace = EXCLUDED.Props_SrcEntity_Deployment_Namespace, Props_SrcEntity_ExternalSource_Name = EXCLUDED.Props_SrcEntity_ExternalSource_Name, Props_SrcEntity_ExternalSource_Cidr = EXCLUDED.Props_SrcEntity_ExternalSource_Cidr, Props_SrcEntity_ExternalSource_Default = EXCLUDED.Props_SrcEntity_ExternalSource_Default, Props_DstEntity_Type = EXCLUDED.Props_DstEntity_Type, Props_DstEntity_Id = EXCLUDED.Props_DstEntity_Id, Props_DstEntity_Deployment_Name = EXCLUDED.Props_DstEntity_Deployment_Name, Props_DstEntity_Deployment_Namespace = EXCLUDED.Props_DstEntity_Deployment_Namespace, Props_DstEntity_ExternalSource_Name = EXCLUDED.Props_DstEntity_ExternalSource_Name, Props_DstEntity_ExternalSource_Cidr = EXCLUDED.Props_DstEntity_ExternalSource_Cidr, Props_DstEntity_ExternalSource_Default = EXCLUDED.Props_DstEntity_ExternalSource_Default, Props_DstPort = EXCLUDED.Props_DstPort, Props_L4Protocol = EXCLUDED.Props_L4Protocol, LastSeenTimestamp = EXCLUDED.LastSeenTimestamp, ClusterId = EXCLUDED.ClusterId"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -146,22 +173,54 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, obj *storage.NetworkF
 	return nil
 }
 
-func (s *storeImpl) copyIntoNetworkflow(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkFlow) error {
+func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
 
-	copyCols := strings.Split("props_srcentity_type,props_srcentity_id,props_srcentity_deployment_name,props_srcentity_deployment_namespace,props_srcentity_deployment_cluster,props_srcentity_externalsource_name,props_srcentity_externalsource_cidr,props_srcentity_externalsource_default,props_dstentity_type,props_dstentity_id,props_dstentity_deployment_name,props_dstentity_deployment_namespace,props_dstentity_deployment_cluster,props_dstentity_externalsource_name,props_dstentity_externalsource_cidr,props_dstentity_externalsource_default,props_dstport,props_l4protocol,lastseentimestamp,serialized", ",")
+	copyCols := []string{
+
+		"props_srcentity_type",
+
+		"props_srcentity_id",
+
+		"props_srcentity_deployment_name",
+
+		"props_srcentity_deployment_namespace",
+
+		"props_srcentity_externalsource_name",
+
+		"props_srcentity_externalsource_cidr",
+
+		"props_srcentity_externalsource_default",
+
+		"props_dstentity_type",
+
+		"props_dstentity_id",
+
+		"props_dstentity_deployment_name",
+
+		"props_dstentity_deployment_namespace",
+
+		"props_dstentity_externalsource_name",
+
+		"props_dstentity_externalsource_cidr",
+
+		"props_dstentity_externalsource_default",
+
+		"props_dstport",
+
+		"props_l4protocol",
+
+		"lastseentimestamp",
+
+		"clusterid",
+	}
 
 	for idx, obj := range objs {
 		// Todo: Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj.String())
-
-		serialized, marshalErr := obj.Marshal()
-		if marshalErr != nil {
-			return marshalErr
-		}
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
 
@@ -172,8 +231,6 @@ func (s *storeImpl) copyIntoNetworkflow(ctx context.Context, tx pgx.Tx, objs ...
 			obj.GetProps().GetSrcEntity().GetDeployment().GetName(),
 
 			obj.GetProps().GetSrcEntity().GetDeployment().GetNamespace(),
-
-			obj.GetProps().GetSrcEntity().GetDeployment().GetCluster(),
 
 			obj.GetProps().GetSrcEntity().GetExternalSource().GetName(),
 
@@ -189,8 +246,6 @@ func (s *storeImpl) copyIntoNetworkflow(ctx context.Context, tx pgx.Tx, objs ...
 
 			obj.GetProps().GetDstEntity().GetDeployment().GetNamespace(),
 
-			obj.GetProps().GetDstEntity().GetDeployment().GetCluster(),
-
 			obj.GetProps().GetDstEntity().GetExternalSource().GetName(),
 
 			obj.GetProps().GetDstEntity().GetExternalSource().GetCidr(),
@@ -201,12 +256,12 @@ func (s *storeImpl) copyIntoNetworkflow(ctx context.Context, tx pgx.Tx, objs ...
 
 			obj.GetProps().GetL4Protocol(),
 
-			pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
+			pgutils.NilOrTime(lastUpdateTS.GogoProtobuf()),
 
-			serialized,
+			s.clusterID,
 		})
 
-		err = s.Delete(ctx, obj.GetProps().GetSrcEntity().GetId(), obj.GetProps().GetDstEntity().GetId(), int(obj.GetProps().GetDstPort()))
+		_, err = tx.Exec(ctx, deleteStmt, obj.GetProps().GetSrcEntity().GetId(), obj.GetProps().GetDstEntity().GetId(), obj.GetProps().GetDstPort(), obj.GetProps().GetL4Protocol(), s.clusterID)
 		if err != nil {
 			return err
 		}
@@ -216,30 +271,32 @@ func (s *storeImpl) copyIntoNetworkflow(ctx context.Context, tx pgx.Tx, objs ...
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{strings.ToLower("networkflow")}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkflow"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
 			}
 
 			// clear the input rows for the next batch
-			inputRows = [][]interface{}{}
+			inputRows = inputRows[:0]
 		}
 	}
 
-	return nil
+	return err
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
+// Todo:  maybe a better way.  probably need to default ClusterID to 0 or something
+func New(ctx context.Context, db *pgxpool.Pool, clusterID string) FlowStore {
 	createTableNetworkflow(ctx, db)
 
-	return &storeImpl{
+	return &flowStoreImpl{
 		db: db,
+		clusterID: clusterID,
 	}
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFlow) error {
+func (s *flowStoreImpl) copyFrom(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
 	conn, release := s.acquireConn(ctx, ops.Get, "NetworkFlow")
 	defer release()
 
@@ -248,7 +305,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFlow) 
 		return err
 	}
 
-	if err := s.copyIntoNetworkflow(ctx, tx, objs...); err != nil {
+	if err := s.copyFromNetworkflow(ctx, tx, lastUpdateTS, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -260,47 +317,61 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFlow) 
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow) error {
+func (s *flowStoreImpl) upsert(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
 	conn, release := s.acquireConn(ctx, ops.Get, "NetworkFlow")
 	defer release()
 
+	tx, err := conn.Begin(ctx)
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
+
 		if err != nil {
 			return err
 		}
 
-		if err := insertIntoNetworkflow(ctx, tx, obj); err != nil {
+		if err := insertIntoNetworkflow(ctx, tx, s.clusterID, lastUpdateTS, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
 			return err
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
-		}
+
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
 	}
 	return nil
 }
 
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NetworkFlow) error {
+func (s *flowStoreImpl) Upsert(ctx context.Context, lastUpdateTS timestamp.MicroTS, obj *storage.NetworkFlow) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NetworkFlow")
 
-	return s.upsert(ctx, obj)
+	return s.upsert(ctx, lastUpdateTS, obj)
 }
 
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkFlow) error {
+func (s *flowStoreImpl) UpsertMany(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs []*storage.NetworkFlow) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
 
 	if len(objs) < batchAfter {
-		return s.upsert(ctx, objs...)
+		return s.upsert(ctx, lastUpdateTS, objs...)
 	} else {
-		return s.copyFrom(ctx, objs...)
+		return s.copyFrom(ctx, lastUpdateTS, objs...)
 	}
 }
 
+func (s *flowStoreImpl) UpsertManyInd(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs []*storage.NetworkFlow) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
+
+	return s.upsert(ctx, lastUpdateTS, objs...)
+}
+
+func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
+
+	return s.upsert(ctx, lastUpdateTS, flows...)
+}
+
 // Count returns the number of objects in the store
-func (s *storeImpl) Count(ctx context.Context) (int, error) {
+func (s *flowStoreImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "NetworkFlow")
 
 	row := s.db.QueryRow(ctx, countStmt)
@@ -312,10 +383,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort int) (bool, error) {
+func (s *flowStoreImpl) Exists(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NetworkFlow")
 
-	row := s.db.QueryRow(ctx, existsStmt, propsSrcEntityId, propsDstEntityId, propsDstPort)
+	row := s.db.QueryRow(ctx, existsStmt, propsSrcEntityId, propsDstEntityId, propsDstPort, propsL4Protocol, s.clusterID)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -324,26 +395,38 @@ func (s *storeImpl) Exists(ctx context.Context, propsSrcEntityId string, propsDs
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort int) (*storage.NetworkFlow, bool, error) {
+func (s *flowStoreImpl) Get(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) (*storage.NetworkFlow, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
 
 	conn, release := s.acquireConn(ctx, ops.Get, "NetworkFlow")
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, propsSrcEntityId, propsDstEntityId, propsDstPort)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	row := conn.QueryRow(ctx, getStmt, propsSrcEntityId, propsDstEntityId, propsDstPort, propsL4Protocol, s.clusterID)
+	var srcId string
+	var destId string
+	var port uint32
+	var protocol storage.L4Protocol
+	var lastTime *time.Time
+	if err := row.Scan(&srcId, &destId, &port, &protocol, &lastTime); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.NetworkFlow
-	if err := proto.Unmarshal(data, &msg); err != nil {
-		return nil, false, err
+	//log.Infof("SHREWS => %s", srcId)
+	msg := &storage.NetworkFlow             {
+		Props: &storage.NetworkFlowProperties{
+			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: srcId},
+			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: destId},
+			DstPort:    port,
+			L4Protocol: protocol,
+		},
+		LastSeenTimestamp: protoconv.MustConvertTimeToTimestamp(*lastTime),
+		ClusterId: s.clusterID,
 	}
-	return &msg, true, nil
+
+	return msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *flowStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
@@ -353,34 +436,46 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort int) error {
+func (s *flowStoreImpl) Delete(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
 	conn, release := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	defer release()
 
-	if _, err := conn.Exec(ctx, deleteStmt, propsSrcEntityId, propsDstEntityId, propsDstPort); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, propsSrcEntityId, propsDstEntityId, propsDstPort, propsL4Protocol, s.clusterID); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFlow) error) error {
+func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFlow) error) error {
 	rows, err := s.db.Query(ctx, walkStmt)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
+		//var data []byte
+		var srcId string
+		var destId string
+		var port uint32
+		var protocol storage.L4Protocol
+		var clusterID string
+
+		//if err := rows.Scan(&data); err != nil {
+		//      return err
+		//}
+		if err := rows.Scan(&srcId, &destId, &port, &protocol, &clusterID); err != nil {
 			return err
 		}
 		var msg storage.NetworkFlow
-		if err := proto.Unmarshal(data, &msg); err != nil {
-			return err
-		}
+		msg.Props.SrcEntity.Id = srcId
+		msg.Props.DstEntity.Id = destId
+		msg.Props.DstPort = port
+		msg.Props.L4Protocol = protocol
+		msg.ClusterId = clusterID
+
 		if err := fn(&msg); err != nil {
 			return err
 		}
@@ -388,11 +483,169 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFlow) 
 	return nil
 }
 
+// RemoveFlowsForDeployment removes all flows (source and destination) for the specified Deployment ID from the store
+func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
+
+	conn, release := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	defer release()
+
+	if _, err := conn.Exec(ctx, deleteDeploymentStmt, id); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Get returns the object, if it exists from the store
+func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
+
+	var flows []*storage.NetworkFlow
+
+	var rows pgx.Rows
+	var err error
+
+	// handling case when since is nil.  Assumption is we want everything in that case vs when date is null
+	if since == nil {
+		rows, err = s.db.Query(ctx, walkStmt)
+
+	} else {
+		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since))
+	}
+	if err != nil {
+		return nil, *since, pgutils.ErrNilIfNoRows(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var srcId string
+		var destId string
+		var port uint32
+		var protocol storage.L4Protocol
+		var lastTime *time.Time
+		if err := rows.Scan(&srcId, &destId, &port, &protocol, &lastTime); err != nil{
+			log.Info(err)
+			return nil, *since, pgutils.ErrNilIfNoRows(err)
+		}
+
+		//log.Infof("SHREWS => %s", srcId)
+		flow := &storage.NetworkFlow{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: srcId},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: destId},
+				DstPort:    port,
+				L4Protocol: protocol,
+			},
+			LastSeenTimestamp: protoconv.MustConvertTimeToTimestamp(*lastTime),
+		}
+
+		flows = append(flows, flow)
+	}
+
+	return flows, *since, nil
+}
+
+// GetMatchingFlows iterates over all of the objects in the store and applies the closure
+func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+	var flows []*storage.NetworkFlow
+	var rows pgx.Rows
+	var err error
+
+	// handling case when since is nil.  Assumption is we want everything in that case vs when date is null
+	if since == nil {
+		rows, err = s.db.Query(ctx, walkStmt)
+
+	} else {
+		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since))
+	}
+
+	if err != nil {
+		return nil, *since, pgutils.ErrNilIfNoRows(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		//var data []byte
+		var srcId string
+		var destId string
+		var port uint32
+		var protocol storage.L4Protocol
+		var lastTime *time.Time
+
+		if err := rows.Scan(&srcId, &destId, &port, &protocol, &lastTime); err != nil {
+			return nil, *since, err
+		}
+		flow := &storage.NetworkFlow{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: srcId},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: destId},
+				DstPort:    port,
+				L4Protocol: protocol,
+			},
+			LastSeenTimestamp: protoconv.MustConvertTimeToTimestamp(*lastTime),
+		}
+
+		if pred(flow.Props) {
+			flows = append(flows, flow)
+		}
+
+	}
+	return flows, *since, err
+}
+
+// RemoveFlow removes the specified ID from the store
+func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
+
+	conn, release := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	defer release()
+
+	if _, err := conn.Exec(ctx, deleteStmt, props.GetSrcEntity().GetId(), props.GetDstEntity().GetId(), props.GetDstPort(), props.GetL4Protocol()); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Todo: figure out how to implement this
+func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
+
+	conn, release := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	defer release()
+
+	if valueMatchFn != nil {
+		// Delete based on orphan time
+		// Do this first because I can do this delete easily via SQL, but until there is a deployment table in PG,
+		// I need to loop over all the IDs in the cluster if keyMatchFn is not null.
+		deleteBefore := protoconv.MustConvertTimeToTimestamp(time.Now().Add(orphanWindow))
+
+		if _, err := conn.Exec(ctx, deleteOrphanByTimeStmt, s.clusterID, deleteBefore); err != nil {
+			return err
+		}
+	}
+
+	// now I need to pull EVERYTHING and compare it to the function which just checks to see if a deployment exists.
+	// if the deployment does not exist, delete the row.
+	// Should be able to call GetMatchingFlows with the keyMatchFn to get the flows to delete and then delete them.
+	// Todo:  Need to take a look at transactions
+	if keyMatchFn != nil {
+		deleteFlows, _, err := s.GetMatchingFlows(ctx, keyMatchFn, nil)
+		if err != nil {
+			return nil
+		}
+
+		for _, flow := range deleteFlows {
+			if _, err := conn.Exec(ctx, deleteStmt, flow.GetProps().GetSrcEntity().GetId(), flow.GetProps().GetDstEntity().GetId(), flow.GetProps().GetDstPort(), flow.GetProps().GetL4Protocol(), s.clusterID); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 //// Used for testing
 
 func dropTableNetworkflow(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkflow CASCADE")
-
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
@@ -402,11 +655,11 @@ func Destroy(ctx context.Context, db *pgxpool.Pool) {
 //// Stubs for satisfying legacy interfaces
 
 // AckKeysIndexed acknowledges the passed keys were indexed
-func (s *storeImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
+func (s *flowStoreImpl) AckKeysIndexed(ctx context.Context, keys ...string) error {
 	return nil
 }
 
 // GetKeysToIndex returns the keys that need to be indexed
-func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
+func (s *flowStoreImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }

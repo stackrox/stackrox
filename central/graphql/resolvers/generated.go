@@ -834,6 +834,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NetworkEntityInfo_Type(0)))
 	utils.Must(builder.AddType("NetworkFlow", []string{
+		"clusterId: String!",
 		"lastSeenTimestamp: Time",
 		"props: NetworkFlowProperties",
 	}))
@@ -7886,6 +7887,11 @@ func (resolver *Resolver) wrapNetworkFlows(values []*storage.NetworkFlow, err er
 		output[i] = &networkFlowResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *networkFlowResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
 }
 
 func (resolver *networkFlowResolver) LastSeenTimestamp(ctx context.Context) (*graphql.Time, error) {
