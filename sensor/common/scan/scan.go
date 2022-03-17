@@ -3,17 +3,15 @@ package scan
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
-	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
@@ -47,14 +45,11 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 	// If we received an error, we will try and enrich data locally.
 
 	imgName := ci.GetName()
-	enrichLocalImageErrList := errorhelpers.NewErrorList(fmt.Sprintf("local image enrichment for image %q",
-		imgName))
 
 	// Find the associated registry of the image.
 	matchingRegistry, err := registry.Singleton().GetRegistryForImage(ci.GetName())
 	if err != nil {
-		enrichLocalImageErrList.AddWrap(err, "determining image registry")
-		return nil, enrichLocalImageErrList.ToError()
+		return nil, errors.Wrapf(err, "determining image registry for image %q", imgName)
 	}
 
 	log.Debugf("Received matching registry for image %q: %q", imgName, matchingRegistry.Name())
@@ -63,8 +58,7 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 	// Retrieve the image's metadata.
 	metadata, err := matchingRegistry.Metadata(img)
 	if err != nil {
-		enrichLocalImageErrList.AddWrap(err, "fetching image metadata")
-		return nil, enrichLocalImageErrList.ToError()
+		return nil, errors.Wrapf(err, "fetching image metadata for image %q", imgName)
 	}
 
 	log.Debugf("Received metadata for image %q: %v", imgName, metadata)
@@ -74,11 +68,20 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 
 	// Scan the image via local scanner.
 	scannerResp, err := scanImage(ctx, image, matchingRegistry)
-	enrichLocalImageErrList.AddError(err)
+	if err != nil {
+		return nil, errors.Wrapf(err, "scanning image %q locally", imgName)
+	}
 
 	// Fetch signatures from cluster-local registry.
-	sigs, err := fetchImageSignatures(ctx, image, matchingRegistry)
-	enrichLocalImageErrList.AddError(err)
+	var sigs []*storage.Signature
+	if features.ImageSignatureVerification.Enabled() {
+		sigs, err = signatures.FetchImageSignaturesFromImage(ctx, signatures.NewSignatureFetcher(), image,
+			matchingRegistry)
+		if err != nil {
+			return nil, errors.Wrapf(err, "fetching signature for image %q from registry %q",
+				imgName, matchingRegistry.Name())
+		}
+	}
 
 	// Send local enriched data to central to receive a fully enrich image. This includes image vulnerabilities and
 	// signature verification results.
@@ -90,9 +93,11 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 		Notes:          scannerResp.GetNotes(),
 		ImageSignature: &storage.ImageSignature{Signatures: sigs},
 	})
-	enrichLocalImageErrList.AddError(err)
+	if err != nil {
+		return nil, errors.Wrapf(err, "enriching image %q via central", imgName)
+	}
 
-	return centralResp.GetImage(), enrichLocalImageErrList.ToError()
+	return centralResp.GetImage(), nil
 }
 
 // scanImage will scan the given image and return its components.
@@ -118,46 +123,4 @@ func scanImage(ctx context.Context, image *storage.Image,
 	}
 
 	return scanResp, nil
-}
-
-// fetchImageSignatures will fetch signatures for the given image from the given registry and return them.
-// Will potentially retry on retryable errors, with a maximum of 2 retries.
-// It will return any errors that may occur during fetching signatures.
-func fetchImageSignatures(ctx context.Context, image *storage.Image,
-	registry registryTypes.Registry) ([]*storage.Signature, error) {
-	var fetchedSignatures []*storage.Signature
-	var err error
-	fetcher := signatures.NewSignatureFetcher()
-	err = retry.WithRetry(func() error {
-		fetchedSignatures, err = fetchAndAppendSignatures(ctx, fetcher, image, registry, fetchedSignatures)
-		return err
-	},
-		retry.Tries(2),
-		retry.OnlyRetryableErrors(),
-		retry.BetweenAttempts(func(_ int) {
-			time.Sleep(500 * time.Millisecond)
-		}))
-
-	if err != nil {
-		return nil, err
-	}
-
-	return fetchedSignatures, nil
-}
-
-// fetchAndAppendSignatures is a helper that will fetch signatures from a registry using the
-// signatures.SignatureFetcher and append all fetched signatures to the list. This will always return retryable /
-// non-retryable errors, making it possible to use with retry.WithRetry.
-func fetchAndAppendSignatures(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
-	registry registryTypes.Registry, fetchedSignatures []*storage.Signature) ([]*storage.Signature, error) {
-	sigFetchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-	// FetchSignatures will either return retryable or non-retryable errors, thus we can re-use it here.
-	sigs, err := fetcher.FetchSignatures(sigFetchCtx, image, registry)
-	if err != nil {
-		return nil, err
-	}
-
-	fetchedSignatures = append(fetchedSignatures, sigs...)
-	return fetchedSignatures, nil
 }

@@ -122,11 +122,6 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 		return
 	}
 
-	/*
-		Here we do the signature verification part.
-		Scan and set is a weird place to do it but w/e.
-	*/
-
 	c.image = scannedImage.GetImage()
 }
 
