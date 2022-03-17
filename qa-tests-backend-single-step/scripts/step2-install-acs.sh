@@ -70,7 +70,7 @@ function port-forward-central {
 
 # __MAIN__
 CURRENT_KUBE_CONTEXT=$(kubectl config current-context)
-REQUIRED_KUBE_CONTEXT="default/api-sb-03-15-osdgcp-fu0z-s2-devshift-org:6443/admin"
+REQUIRED_KUBE_CONTEXT="default/api-sb-03-17-osdgcp-eprz-s2-devshift-org:6443/admin"
 [[ "$CURRENT_KUBE_CONTEXT" == "$REQUIRED_KUBE_CONTEXT" ]] \
   || error "kubecontext mismatch [$CURRENT_KUBE_CONTEXT] [$REQUIRED_KUBE_CONTEXT]"
 export LOAD_BALANCER="lb"
@@ -82,6 +82,6 @@ kubectl delete --wait namespace qa &>/dev/null || true
 kubectl create namespace qa
 stackrox_deploy_via_helm
 port-forward-central
-kubectl delete -f "qa-tests-backend-single-step/scripts/scc-qatest-anyuid.yaml" || true
+kubectl delete -f "qa-tests-backend-single-step/scripts/scc-qatest-anyuid.yaml" &>/dev/null || true
 kubectl apply -f "qa-tests-backend-single-step/scripts/scc-qatest-anyuid.yaml"
 echo "Cluster is ready for testing."
