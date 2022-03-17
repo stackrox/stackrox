@@ -17,7 +17,6 @@ const (
 )
 
 var (
-	separator            = []byte("\x00")
 	serviceAccountBucket = []byte("service_accounts")
 	clusterBucket        = []byte("clusters")
 	k8sRoleBucket        = []byte("k8sroles")
@@ -86,7 +85,7 @@ func removedOrphanedObjects(db *types.Databases, bucket []byte, checkIfShouldDel
 	it := db.RocksDB.NewIterator(readOpts)
 	defer it.Close()
 
-	prefix := getBucketPrefix(bucket)
+	prefix := rocksdbmigration.GetBucketPrefix(bucket)
 
 	var deletedCount int
 	wb := gorocksdb.NewWriteBatch()
@@ -126,7 +125,7 @@ func getActiveClusters(db *types.Databases) (set.FrozenStringSet, error) {
 	var clusters []string
 
 	// Adding in the separator to avoid this picking up anything in clusters_health_bucket
-	prefix := getBucketPrefix(clusterBucket)
+	prefix := rocksdbmigration.GetBucketPrefix(clusterBucket)
 
 	it := db.RocksDB.NewIterator(readOpts)
 	defer it.Close()
@@ -138,11 +137,4 @@ func getActiveClusters(db *types.Databases) (set.FrozenStringSet, error) {
 	}
 
 	return set.NewFrozenStringSet(clusters...), nil
-}
-
-func getBucketPrefix(bucket []byte) []byte {
-	prefix := make([]byte, 0, len(bucket)+len(separator))
-	prefix = append(prefix, bucket...)
-	prefix = append(prefix, separator...)
-	return prefix
 }

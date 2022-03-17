@@ -160,8 +160,8 @@ func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
 	}
 
 	clusterHealthStatuses := make(map[string]*storage.ClusterHealthStatus)
-	err = ds.clusterHealthStorage.WalkAllWithID(ctx, func(id string, healthInfo *storage.ClusterHealthStatus) error {
-		clusterHealthStatuses[id] = healthInfo
+	err = ds.clusterHealthStorage.Walk(ctx, func(healthInfo *storage.ClusterHealthStatus) error {
+		clusterHealthStatuses[healthInfo.Id] = healthInfo
 		return nil
 	})
 	if err != nil {
@@ -404,7 +404,8 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 		return err
 	}
 
-	if err := ds.clusterHealthStorage.UpsertWithID(ctx, id, clusterHealthStatus); err != nil {
+	clusterHealthStatus.Id = id
+	if err := ds.clusterHealthStorage.Upsert(ctx, clusterHealthStatus); err != nil {
 		return err
 	}
 

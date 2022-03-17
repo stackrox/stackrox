@@ -24,9 +24,9 @@ type ClusterStore interface {
 type ClusterHealthStore interface {
 	Get(ctx context.Context, id string) (*storage.ClusterHealthStatus, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ClusterHealthStatus, []int, error)
-	UpsertWithID(ctx context.Context, id string, obj *storage.ClusterHealthStatus) error
-	UpsertManyWithIDs(ctx context.Context, ids []string, objs []*storage.ClusterHealthStatus) error
+	Upsert(ctx context.Context, obj *storage.ClusterHealthStatus) error
+	UpsertMany(ctx context.Context, objs []*storage.ClusterHealthStatus) error
 
 	Delete(ctx context.Context, id string) error
-	WalkAllWithID(ctx context.Context, fn func(id string, obj *storage.ClusterHealthStatus) error) error
+	Walk(ctx context.Context, fn func(obj *storage.ClusterHealthStatus) error) error
 }
