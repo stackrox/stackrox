@@ -30,7 +30,7 @@ var (
 // from the cluster-local registry. Afterwards, missing enriched data such as signature verification results and image
 // vulnerabilities will be fetched from central, returning the fully enriched image.
 // It will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
-// nolint:revive
+//nolint:revive
 func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
 	// 1. Check if Central already knows about this image.
 	// If Central already knows about it, then return its results.
