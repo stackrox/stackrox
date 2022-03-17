@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/devbuild"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
@@ -125,10 +125,8 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.
 
 func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *RenderOptions) *charts.MetaValues {
 	envVars := make(map[string]string)
-	if devbuild.IsEnabled() {
-		for _, feature := range features.Flags {
-			envVars[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
-		}
+	for _, feature := range features.Flags {
+		envVars[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
 	}
 
 	command := "kubectl"
@@ -176,5 +174,6 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *Rend
 		ScanInline:                       c.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
 		AdmissionControllerEnabled:       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
 		AdmissionControlEnforceOnUpdates: c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
+		ReleaseBuild:                     buildinfo.ReleaseBuild,
 	}
 }
