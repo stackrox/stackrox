@@ -121,7 +121,9 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 	}
 }
 
-type individualImageReprocessingFunc = func(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
+// imageReprocessingFunc represents the function used for image reprocessing. This enables us to specifically exclude
+// some parts of the enrichment, i.e. when only wanting to re-fetch signature verification results.
+type imageReprocessingFunc func(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
 	image *storage.Image) (imageEnricher.EnrichmentResult, error)
 
 type loopImpl struct {
@@ -294,7 +296,7 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 }
 
 func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
-	reprocessingFunc individualImageReprocessingFunc) (*storage.Image, bool) {
+	reprocessingFunc imageReprocessingFunc) (*storage.Image, bool) {
 	image, exists, err := l.images.GetImage(allAccessCtx, id)
 	if err != nil {
 		log.Errorf("error fetching image %q from the database: %v", id, err)
@@ -304,6 +306,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		return nil, false
 	}
 
+	// TODO(ROX-9687): Replace with injected context for enricher functions.
 	result, err := reprocessingFunc(context.TODO(), imageEnricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 	}, image)
@@ -344,7 +347,7 @@ func (l *loopImpl) waitForIndexing() {
 	}
 }
 
-func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption, reprocessingFunc individualImageReprocessingFunc) {
+func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption, imgReprocessingFunc imageReprocessingFunc) {
 	if l.stopSig.IsDone() {
 		return
 	}
@@ -375,7 +378,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			defer sema.Release(1)
 			defer wg.Add(-1)
 
-			image, successfullyProcessed := l.reprocessImage(id, fetchOpt, reprocessingFunc)
+			image, successfullyProcessed := l.reprocessImage(id, fetchOpt, imgReprocessingFunc)
 			if !successfullyProcessed {
 				return
 			}
@@ -494,7 +497,7 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 
 	l.reprocessNodes()
 	l.reprocessWatchedImages()
-	l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImageWrapper())
+	l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImage())
 
 	l.reprocessingStarted.Reset()
 	l.reprocessingComplete.Signal()
@@ -506,20 +509,20 @@ func (l *loopImpl) runSignatureVerificationReprocessing() {
 	l.reprocessingStarted.Signal()
 
 	l.reprocessWatchedImages()
-	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchScansOnly, l.forceEnrichSignatureVerificationResults())
+	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchScansOnly, l.forceEnrichImageSignatureVerificationResults())
 
 	l.reprocessingStarted.Reset()
 	l.reprocessingComplete.Signal()
 }
 
-func (l *loopImpl) forceEnrichSignatureVerificationResults() individualImageReprocessingFunc {
+func (l *loopImpl) forceEnrichImageSignatureVerificationResults() imageReprocessingFunc {
 	return func(ctx context.Context, _ imageEnricher.EnrichmentContext, image *storage.Image) (imageEnricher.EnrichmentResult, error) {
 		return l.imageEnricher.EnrichWithSignatureVerificationData(ctx, image)
 	}
 }
 
 // TODO(ROX-9687): Remove when context is added to all image enricher functions.
-func (l *loopImpl) enrichImageWrapper() individualImageReprocessingFunc {
+func (l *loopImpl) enrichImage() imageReprocessingFunc {
 	return func(_ context.Context, enrichCtx imageEnricher.EnrichmentContext, image *storage.Image) (imageEnricher.EnrichmentResult, error) {
 		return l.imageEnricher.EnrichImage(enrichCtx, image)
 	}
