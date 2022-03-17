@@ -91,7 +91,10 @@ create table if not exists networkentity (
 		panic("error creating table: " + table)
 	}
 
-	indexes := []string{}
+	indexes := []string{
+
+		"create index if not exists networkentity_Info_Type on networkentity using btree(Info_Type)",
+	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)

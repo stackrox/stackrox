@@ -2,6 +2,7 @@ package rocksdb
 
 import (
 	"bytes"
+	"context"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -29,7 +30,7 @@ var (
 )
 
 // GetAllFlows returns all the flows in the store.
-func (s *flowStoreImpl) GetAllFlows(since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
+func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return nil, types.Timestamp{}, err
@@ -40,7 +41,7 @@ func (s *flowStoreImpl) GetAllFlows(since *types.Timestamp) (flows []*storage.Ne
 	return flows, ts, err
 }
 
-func (s *flowStoreImpl) GetMatchingFlows(pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
+func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "NetworkFlow")
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return nil, types.Timestamp{}, err
@@ -51,7 +52,7 @@ func (s *flowStoreImpl) GetMatchingFlows(pred func(*storage.NetworkFlowPropertie
 }
 
 // UpsertFlow updates an flow to the store, adding it if not already present.
-func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS timestamp.MicroTS) error {
+func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdatedTS timestamp.MicroTS) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.UpsertAll, "NetworkFlow")
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return err
@@ -80,7 +81,7 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 }
 
 // RemoveFlow removes an flow from the store if it is present.
-func (s *flowStoreImpl) RemoveFlow(props *storage.NetworkFlowProperties) error {
+func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return err
@@ -92,7 +93,7 @@ func (s *flowStoreImpl) RemoveFlow(props *storage.NetworkFlowProperties) error {
 	return s.db.Delete(writeOptions, id)
 }
 
-func (s *flowStoreImpl) RemoveFlowsForDeployment(id string) error {
+func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
 		return err
 	}
@@ -120,7 +121,7 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(id string) error {
 	return s.db.Write(writeOptions, batch)
 }
 
-func (s *flowStoreImpl) RemoveMatchingFlows(keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
+func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkFlow")
 
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {

@@ -126,6 +126,8 @@ create table if not exists networkbaseline_Peers (
 	indexes := []string{
 
 		"create index if not exists networkbaselinePeers_idx on networkbaseline_Peers using btree(idx)",
+
+		"create index if not exists networkbaselinePeers_Entity_Info_Type on networkbaseline_Peers using btree(Entity_Info_Type)",
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
@@ -225,6 +227,8 @@ create table if not exists networkbaseline_ForbiddenPeers (
 	indexes := []string{
 
 		"create index if not exists networkbaselineForbiddenPeers_idx on networkbaseline_ForbiddenPeers using btree(idx)",
+
+		"create index if not exists networkbaselineForbiddenPeers_Entity_Info_Type on networkbaseline_ForbiddenPeers using btree(Entity_Info_Type)",
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
