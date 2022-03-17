@@ -1,6 +1,6 @@
 #!/bin/bash
 # Run E2E tests (Groovy + Spock + Fabric8 + Gradle)
-set -eux
+set -eu
 source "scripts/common.sh"
 source "scripts/config.sh"
 cd "$STACKROX_SOURCE_ROOT"  # all paths should be relative to here
@@ -41,7 +41,7 @@ sleep 2
 kubectl port-forward -n stackrox svc/central 8000:443 &> /tmp/central.log &
 sleep 3
 
-# The Groovy e2e api tests require these two variables are set
+# Required vars for Groovy e2e api tests
 export API_HOSTNAME="localhost"
 export API_PORT="8000"
 

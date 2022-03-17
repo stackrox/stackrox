@@ -59,7 +59,7 @@ function port-forward-central {
     cat /tmp/central.log
   }
 
-  # The Groovy e2e api tests require these two variables are set
+  # Required vars for Groovy e2e api tests
   export API_HOSTNAME="localhost"
   export API_PORT="8443"
 
