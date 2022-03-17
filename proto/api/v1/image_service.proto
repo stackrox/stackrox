@@ -153,7 +153,7 @@ service ImageService {
     // ScanImageInternal is used solely by the Sensor and Admission Controller to send scan requests
     rpc ScanImageInternal (ScanImageInternalRequest) returns (ScanImageInternalResponse);
 
-    // GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
+    // Deprecated: GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
     rpc GetImageVulnerabilitiesInternal (GetImageVulnerabilitiesInternalRequest) returns (ScanImageInternalResponse) {
         option deprecated = true;
     };

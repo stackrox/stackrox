@@ -119,7 +119,7 @@ func (e *enricherImpl) enrichWithVulnerabilities(scannerName string, dataSource 
 
 func (e *enricherImpl) EnrichWithSignatureVerificationData(ctx context.Context, image *storage.Image) (EnrichmentResult, error) {
 	if !features.ImageSignatureVerification.Enabled() {
-		return EnrichmentResult{}, errors.New("image signature verification feature is not enabled")
+		return EnrichmentResult{}, nil
 	}
 
 	updated, err := e.enrichWithSignatureVerificationData(ctx, EnrichmentContext{}, image)
@@ -482,6 +482,17 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 	img *storage.Image) (bool, error) {
 	// If no external metadata should be taken into account, we skip the verification.
 	if enrichmentContext.FetchOpt == NoExternalMetadata {
+		return false, nil
+	}
+
+	// Short-circuit if no signature is available.
+	if len(img.GetSignature().GetSignatures()) == 0 {
+		// If no signature is given but there are signature verification results on the image, make sure we delete
+		// the stale signature verification results.
+		if len(img.GetSignatureVerificationData().GetResults()) != 0 {
+			img.SignatureVerificationData = nil
+			return true, nil
+		}
 		return false, nil
 	}
 

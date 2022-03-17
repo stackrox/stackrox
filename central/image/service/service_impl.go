@@ -321,6 +321,14 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 }
 
 func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.EnrichLocalImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
+		s, err := status.New(codes.Unavailable, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
+		if pkgUtils.Should(err) == nil {
+			return nil, s.Err()
+		}
+	}
+	defer s.internalScanSemaphore.Release(1)
+
 	imgID := request.GetImageId()
 	if imgID != "" {
 		img, exists, err := s.datastore.GetImage(ctx, imgID)
