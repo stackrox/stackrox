@@ -44,7 +44,7 @@ test_upgrade() {
 
     preamble
     setup_deployment_env false false
-    install_built_roxctl_in_gopath
+    install_roxctl_in_gopath
     remove_existing_stackrox_resources
 
     info "Deploying central"

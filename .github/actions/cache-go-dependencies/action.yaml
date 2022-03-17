@@ -1,0 +1,24 @@
+name: Cache Go Dependencies
+description: Cache Go Dependencies
+runs:
+  using: composite
+  steps:
+    - name: Determine Go cache paths
+      id: cache-paths
+      run: |
+        echo "::set-output name=GOCACHE::$(go env GOCACHE)"
+        echo "::set-output name=GOMODCACHE::$(go env GOMODCACHE)"
+      shell: bash
+
+    - name: Cache Go Dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ${{ steps.cache-paths.outputs.GOCACHE }}
+          ${{ steps.cache-paths.outputs.GOMODCACHE }}
+          /github/home/.cache/go-build
+          /github/home/.cache/golangci-lint
+          /github/home/.cache/staticcheck
+        key: go-v2-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-v2-
