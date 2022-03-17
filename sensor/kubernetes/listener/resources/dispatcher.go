@@ -63,20 +63,21 @@ func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister, prof
 	rbacUpdater := rbac.NewStore()
 	portExposureReconciler := newPortExposureReconciler(deploymentStore, serviceStore)
 	registryStore := registry.Singleton()
+	netPolicyStore := newNetworkPolicyStore()
 
 	return &registryImpl{
-		deploymentHandler: newDeploymentHandler(clusterID, serviceStore, deploymentStore, podStore, endpointManager, nsStore,
-			rbacUpdater, podLister, processFilter, configHandler, detector, namespaces),
+    deploymentHandler: newDeploymentHandler(clusterID, serviceStore, deploymentStore, podStore, endpointManager, nsStore,
+      netPolicyStore, rbacUpdater, podLister, processFilter, configHandler, detector, namespaces),
 
-		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater),
-		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore),
-		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
-		osRouteDispatcher:         newRouteDispatcher(serviceStore, portExposureReconciler),
-		secretDispatcher:          newSecretDispatcher(registryStore),
-		networkPolicyDispatcher:   newNetworkPolicyDispatcher(),
-		nodeDispatcher:            newNodeDispatcher(serviceStore, deploymentStore, nodeStore, endpointManager),
-		serviceAccountDispatcher:  newServiceAccountDispatcher(),
-		clusterOperatorDispatcher: newClusterOperatorDispatcher(namespaces),
+    rbacDispatcher:            rbac.NewDispatcher(rbacUpdater),
+    namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore),
+    serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
+    osRouteDispatcher:         newRouteDispatcher(serviceStore, portExposureReconciler),
+    secretDispatcher:          newSecretDispatcher(registryStore),
+    networkPolicyDispatcher:   newNetworkPolicyDispatcher(netPolicyStore),
+    nodeDispatcher:            newNodeDispatcher(serviceStore, deploymentStore, nodeStore, endpointManager),
+    serviceAccountDispatcher:  newServiceAccountDispatcher(),
+    clusterOperatorDispatcher: newClusterOperatorDispatcher(namespaces),
 
 		complianceOperatorResultDispatcher:              complianceOperatorDispatchers.NewResultDispatcher(),
 		complianceOperatorRulesDispatcher:               complianceOperatorDispatchers.NewRulesDispatcher(),

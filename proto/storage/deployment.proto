@@ -9,11 +9,12 @@ import "storage/labels.proto";
 import "storage/image.proto";
 import "storage/taints.proto";
 import "storage/rbac.proto";
+import "storage/network_policy.proto";
 import "gogoproto/gogo.proto";
 
 package storage;
 
-// Next available tag: 35
+// Next available tag: 36
 message Deployment {
     string id                                  = 1 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" sql:"pk"'];
     string name                                = 2 [(gogoproto.moretags) = 'search:"Deployment,store"'];
@@ -46,6 +47,7 @@ message Deployment {
     string runtime_class                       = 34 [(gogoproto.moretags) = "policy:\"Runtime Class\""];
     repeated Toleration tolerations            = 22 [(gogoproto.moretags) = "search:\"-\""];
     repeated PortConfig ports                  = 24 [(gogoproto.moretags) = "policy:\"Ports\""];
+    repeated NetworkPolicy networkPolicies     = 35 [(gogoproto.moretags) = "policy:\"NetworkPolicies\""];
 
     int64 state_timestamp                      = 27 [(gogoproto.moretags) = "hash:\"ignore\" sensorhash:\"ignore\""]; // Internal use only
     float risk_score                           = 29 [(gogoproto.moretags) = "search:\"Deployment Risk Score,hidden\" policy:\",ignore\""];

@@ -1563,6 +1563,12 @@
             "$ref": "#/definitions/storagePortConfig"
           }
         },
+        "networkPolicies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageNetworkPolicy"
+          }
+        },
         "stateTimestamp": {
           "type": "string",
           "format": "int64"
@@ -1578,7 +1584,7 @@
           }
         }
       },
-      "title": "Next available tag: 35"
+      "title": "Next available tag: 36"
     },
     "storageDynamicClusterConfig": {
       "type": "object",
@@ -1734,6 +1740,20 @@
         }
       }
     },
+    "storageIPBlock": {
+      "type": "object",
+      "properties": {
+        "cidr": {
+          "type": "string"
+        },
+        "except": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "storageImageName": {
       "type": "object",
       "properties": {
@@ -1817,6 +1837,149 @@
         "MANAGER_TYPE_KUBERNETES_OPERATOR"
       ],
       "default": "MANAGER_TYPE_UNKNOWN"
+    },
+    "storageNetworkPolicy": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "spec": {
+          "$ref": "#/definitions/storageNetworkPolicySpec"
+        },
+        "yaml": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "storageNetworkPolicyEgressRule": {
+      "type": "object",
+      "properties": {
+        "ports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageNetworkPolicyPort"
+          }
+        },
+        "to": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageNetworkPolicyPeer"
+          }
+        }
+      }
+    },
+    "storageNetworkPolicyIngressRule": {
+      "type": "object",
+      "properties": {
+        "ports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageNetworkPolicyPort"
+          }
+        },
+        "from": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageNetworkPolicyPeer"
+          }
+        }
+      }
+    },
+    "storageNetworkPolicyPeer": {
+      "type": "object",
+      "properties": {
+        "podSelector": {
+          "$ref": "#/definitions/storageLabelSelector"
+        },
+        "namespaceSelector": {
+          "$ref": "#/definitions/storageLabelSelector"
+        },
+        "ipBlock": {
+          "$ref": "#/definitions/storageIPBlock"
+        }
+      }
+    },
+    "storageNetworkPolicyPort": {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "$ref": "#/definitions/storageProtocol"
+        },
+        "port": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "portName": {
+          "type": "string"
+        }
+      }
+    },
+    "storageNetworkPolicySpec": {
+      "type": "object",
+      "properties": {
+        "podSelector": {
+          "$ref": "#/definitions/storageLabelSelector"
+        },
+        "ingress": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageNetworkPolicyIngressRule"
+          }
+        },
+        "egress": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageNetworkPolicyEgressRule"
+          }
+        },
+        "policyTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageNetworkPolicyType"
+          }
+        }
+      }
+    },
+    "storageNetworkPolicyType": {
+      "type": "string",
+      "enum": [
+        "UNSET_NETWORK_POLICY_TYPE",
+        "INGRESS_NETWORK_POLICY_TYPE",
+        "EGRESS_NETWORK_POLICY_TYPE"
+      ],
+      "default": "UNSET_NETWORK_POLICY_TYPE"
     },
     "storageNode": {
       "type": "object",
@@ -2017,6 +2180,16 @@
         }
       },
       "title": "Next Available Tag: 6"
+    },
+    "storageProtocol": {
+      "type": "string",
+      "enum": [
+        "UNSET_PROTOCOL",
+        "TCP_PROTOCOL",
+        "UDP_PROTOCOL",
+        "SCTP_PROTOCOL"
+      ],
+      "default": "UNSET_PROTOCOL"
     },
     "storageProviderMetadata": {
       "type": "object",

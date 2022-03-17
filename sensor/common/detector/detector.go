@@ -1,35 +1,35 @@
 package detector
 
 import (
-	"sort"
+  "sort"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/detection/deploytime"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/admissioncontroller"
-	"github.com/stackrox/rox/sensor/common/detector/baseline"
-	networkBaselineEval "github.com/stackrox/rox/sensor/common/detector/networkbaseline"
-	"github.com/stackrox/rox/sensor/common/detector/unified"
-	"github.com/stackrox/rox/sensor/common/enforcer"
-	"github.com/stackrox/rox/sensor/common/externalsrcs"
-	"github.com/stackrox/rox/sensor/common/imagecacheutils"
-	"github.com/stackrox/rox/sensor/common/store"
-	"github.com/stackrox/rox/sensor/common/updater"
-	"google.golang.org/grpc"
+  "github.com/gogo/protobuf/types"
+  "github.com/pkg/errors"
+  v1 "github.com/stackrox/rox/generated/api/v1"
+  "github.com/stackrox/rox/generated/internalapi/central"
+  "github.com/stackrox/rox/generated/internalapi/sensor"
+  "github.com/stackrox/rox/generated/storage"
+  "github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+  "github.com/stackrox/rox/pkg/centralsensor"
+  "github.com/stackrox/rox/pkg/concurrency"
+  "github.com/stackrox/rox/pkg/detection/deploytime"
+  "github.com/stackrox/rox/pkg/errorhelpers"
+  "github.com/stackrox/rox/pkg/expiringcache"
+  "github.com/stackrox/rox/pkg/logging"
+  "github.com/stackrox/rox/pkg/networkgraph"
+  "github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+  "github.com/stackrox/rox/pkg/sync"
+  "github.com/stackrox/rox/sensor/common"
+  "github.com/stackrox/rox/sensor/common/admissioncontroller"
+  "github.com/stackrox/rox/sensor/common/detector/baseline"
+  networkBaselineEval "github.com/stackrox/rox/sensor/common/detector/networkbaseline"
+  "github.com/stackrox/rox/sensor/common/detector/unified"
+  "github.com/stackrox/rox/sensor/common/enforcer"
+  "github.com/stackrox/rox/sensor/common/externalsrcs"
+  "github.com/stackrox/rox/sensor/common/imagecacheutils"
+  "github.com/stackrox/rox/sensor/common/store"
+  "github.com/stackrox/rox/sensor/common/updater"
+  "google.golang.org/grpc"
 )
 
 var (
@@ -50,66 +50,66 @@ type Detector interface {
 }
 
 // New returns a new detector
-func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
-	deploymentStore store.DeploymentStore, cache expiringcache.Cache, auditLogEvents chan *sensor.AuditEvents,
-	auditLogUpdater updater.Component) Detector {
-	return &detectorImpl{
-		unifiedDetector: unified.NewDetector(),
+func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager, deploymentStore store.DeploymentStore,
+  cache expiringcache.Cache, auditLogEvents chan *sensor.AuditEvents,
+  auditLogUpdater updater.Component) Detector {
+  return &detectorImpl{
+    unifiedDetector: unified.NewDetector(),
 
-		output:                    make(chan *central.MsgFromSensor),
-		auditEventsChan:           auditLogEvents,
-		deploymentAlertOutputChan: make(chan outputResult),
-		deploymentProcessingMap:   make(map[string]int64),
+    output:                    make(chan *central.MsgFromSensor),
+    auditEventsChan:           auditLogEvents,
+    deploymentAlertOutputChan: make(chan outputResult),
+    deploymentProcessingMap:   make(map[string]int64),
 
-		enricher:            newEnricher(cache),
-		deploymentStore:     deploymentStore,
-		extSrcsStore:        externalsrcs.StoreInstance(),
-		baselineEval:        baseline.NewBaselineEvaluator(),
-		networkbaselineEval: networkBaselineEval.NewNetworkBaselineEvaluator(),
-		deduper:             newDeduper(),
-		enforcer:            enforcer,
+    enricher:            newEnricher(cache),
+    deploymentStore:     deploymentStore,
+    extSrcsStore:        externalsrcs.StoreInstance(),
+    baselineEval:        baseline.NewBaselineEvaluator(),
+    networkbaselineEval: networkBaselineEval.NewNetworkBaselineEvaluator(),
+    deduper:             newDeduper(),
+    enforcer:            enforcer,
 
-		admCtrlSettingsMgr: admCtrlSettingsMgr,
-		auditLogUpdater:    auditLogUpdater,
+    admCtrlSettingsMgr: admCtrlSettingsMgr,
+    auditLogUpdater:    auditLogUpdater,
 
-		detectorStopper:   concurrency.NewStopper(),
-		auditStopper:      concurrency.NewStopper(),
-		serializerStopper: concurrency.NewStopper(),
-		alertStopSig:      concurrency.NewSignal(),
-	}
+    detectorStopper:   concurrency.NewStopper(),
+    auditStopper:      concurrency.NewStopper(),
+    serializerStopper: concurrency.NewStopper(),
+    alertStopSig:      concurrency.NewSignal(),
+  }
 }
 
 type detectorImpl struct {
-	unifiedDetector unified.Detector
+  unifiedDetector unified.Detector
 
-	output                    chan *central.MsgFromSensor
-	auditEventsChan           chan *sensor.AuditEvents
-	deploymentAlertOutputChan chan outputResult
+  output                    chan *central.MsgFromSensor
+  auditEventsChan           chan *sensor.AuditEvents
+  deploymentAlertOutputChan chan outputResult
 
-	deploymentProcessingMap  map[string]int64
-	deploymentProcessingLock sync.RWMutex
+  deploymentProcessingMap  map[string]int64
+  deploymentProcessingLock sync.RWMutex
 
-	// This lock ensures that processing is done one at a time
-	// When a policy is updated, we will reflush the deployments cache back through detection
-	deploymentDetectionLock sync.Mutex
+  // This lock ensures that processing is done one at a time
+  // When a policy is updated, we will reflush the deployments cache back through detection
+  deploymentDetectionLock sync.Mutex
 
-	enricher            *enricher
-	deploymentStore     store.DeploymentStore
-	extSrcsStore        externalsrcs.Store
-	baselineEval        baseline.Evaluator
-	networkbaselineEval networkBaselineEval.Evaluator
-	enforcer            enforcer.Enforcer
-	deduper             *deduper
+  enricher            *enricher
+  deploymentStore     store.DeploymentStore
+  extSrcsStore        externalsrcs.Store
+  baselineEval        baseline.Evaluator
+  networkbaselineEval networkBaselineEval.Evaluator
+  enforcer            enforcer.Enforcer
+  deduper             *deduper
 
-	admCtrlSettingsMgr admissioncontroller.SettingsManager
-	auditLogUpdater    updater.Component
+  admCtrlSettingsMgr admissioncontroller.SettingsManager
+  auditLogUpdater    updater.Component
 
-	detectorStopper   concurrency.Stopper
-	auditStopper      concurrency.Stopper
-	serializerStopper concurrency.Stopper
-	alertStopSig      concurrency.Signal
+  detectorStopper   concurrency.Stopper
+  auditStopper      concurrency.Stopper
+  serializerStopper concurrency.Stopper
+  alertStopSig      concurrency.Signal
 
-	admissionCacheNeedsFlush bool
+  admissionCacheNeedsFlush bool
 }
 
 func (d *detectorImpl) Start() error {
@@ -211,7 +211,7 @@ func (d *detectorImpl) processPolicySync(sync *central.PolicySync) error {
 	// Take deployment lock and flush
 	concurrency.WithLock(&d.deploymentDetectionLock, func() {
 		for _, deployment := range d.deploymentStore.GetAll() {
-			d.processDeploymentNoLock(deployment, central.ResourceAction_UPDATE_RESOURCE)
+      d.processDeploymentNoLock(deployment, central.ResourceAction_UPDATE_RESOURCE)
 		}
 	})
 
@@ -385,7 +385,7 @@ func (d *detectorImpl) ProcessDeployment(deployment *storage.Deployment, action 
 	d.deploymentDetectionLock.Lock()
 	defer d.deploymentDetectionLock.Unlock()
 
-	d.processDeploymentNoLock(deployment, action)
+  d.processDeploymentNoLock(deployment, action)
 }
 
 func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
@@ -398,36 +398,36 @@ func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
 }
 
 func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, action central.ResourceAction) {
-	switch action {
-	case central.ResourceAction_REMOVE_RESOURCE:
-		d.baselineEval.RemoveDeployment(deployment.GetId())
-		d.deduper.removeDeployment(deployment.GetId())
+  switch action {
+  case central.ResourceAction_REMOVE_RESOURCE:
+    d.baselineEval.RemoveDeployment(deployment.GetId())
+    d.deduper.removeDeployment(deployment.GetId())
 
-		go func() {
-			// Push an empty AlertResults object to the channel which will mark deploytime alerts as stale
-			// This allows us to not worry about synchronizing alert msgs with deployment msgs
-			select {
-			case <-d.alertStopSig.Done():
-				return
-			case d.deploymentAlertOutputChan <- outputResult{
-				results: &central.AlertResults{DeploymentId: deployment.GetId()},
-				action:  action,
-			}:
-			}
-		}()
-	case central.ResourceAction_CREATE_RESOURCE:
-		d.deduper.addDeployment(deployment)
-		d.markDeploymentForProcessing(deployment.GetId())
-		go d.enricher.blockingScan(deployment, action)
-	case central.ResourceAction_UPDATE_RESOURCE:
-		// Check if the deployment has changes that require detection, which is more expensive than hashing
-		// If not, then just return
-		if !d.deduper.needsProcessing(deployment) {
-			return
-		}
-		d.markDeploymentForProcessing(deployment.GetId())
-		go d.enricher.blockingScan(deployment, action)
-	}
+    go func() {
+      // Push an empty AlertResults object to the channel which will mark deploy time alerts as stale
+      // This allows us to not worry about synchronizing alert msgs with deployment msgs
+      select {
+      case <-d.alertStopSig.Done():
+        return
+      case d.deploymentAlertOutputChan <- outputResult{
+        results: &central.AlertResults{DeploymentId: deployment.GetId()},
+        action:  action,
+      }:
+      }
+    }()
+  case central.ResourceAction_CREATE_RESOURCE:
+    d.deduper.addDeployment(deployment)
+    d.markDeploymentForProcessing(deployment.GetId())
+    go d.enricher.blockingScan(deployment, action)
+  case central.ResourceAction_UPDATE_RESOURCE:
+    // Check if the deployment has changes that require detection, which is more expensive than hashing
+    // If not, then just return
+    if !d.deduper.needsProcessing(deployment) {
+      return
+    }
+    d.markDeploymentForProcessing(deployment.GetId())
+    go d.enricher.blockingScan(deployment, action)
+  }
 }
 
 func (d *detectorImpl) SetCentralGRPCClient(cc grpc.ClientConnInterface) {
