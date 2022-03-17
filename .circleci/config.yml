@@ -4753,15 +4753,14 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-eks-api-e2e-tests
-      # ROX-8306 - Disabled due to Azure account issue
-      # - provision-aks-api-e2e-tests:
-      #     <<: *runOnAllTagsWithQuayIOPullCtx
-      # - aks-api-e2e-tests:
-      #     <<: *runOnAllTagsWithQuayIOPullCtx
-      #     requires:
-      #       - build
-      #       - build-scale-monitoring-and-mock-server
-      #       - provision-aks-api-e2e-tests
+      - provision-aks-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - aks-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-aks-api-e2e-tests
       - provision-openshift-4-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - openshift-4-api-e2e-tests:
