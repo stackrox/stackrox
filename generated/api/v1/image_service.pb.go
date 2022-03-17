@@ -13,7 +13,7 @@ import (
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	io "io"
-	math "math
+	math "math"
 	math_bits "math/bits"
 )
 
@@ -56,11 +56,7 @@ func (x WatchImageResponse_ErrorType) String() string {
 }
 
 func (WatchImageResponse_ErrorType) EnumDescriptor() ([]byte, []int) {
-<<<<<<< HEAD
-	return fileDescriptor_b4306cfe43028263, []int{10, 0}
-=======
 	return fileDescriptor_b4306cfe43028263, []int{11, 0}
->>>>>>> 2fa209b3c (Create new API endpoint which covers enrichment of vulnerabilities and signature verification data.)
 }
 
 type GetImageRequest struct {
@@ -1419,7 +1415,6 @@ func (c *imageServiceClient) GetImageVulnerabilitiesInternal(ctx context.Context
 	return out, nil
 }
 
-
 func (c *imageServiceClient) EnrichLocalImageInternal(ctx context.Context, in *EnrichLocalImageInternalRequest, opts ...grpc.CallOption) (*ScanImageInternalResponse, error) {
 	out := new(ScanImageInternalResponse)
 	err := c.cc.Invoke(ctx, "/v1.ImageService/EnrichLocalImageInternal", in, out, opts...)
@@ -1528,11 +1523,9 @@ func (*UnimplementedImageServiceServer) ScanImageInternal(ctx context.Context, r
 func (*UnimplementedImageServiceServer) GetImageVulnerabilitiesInternal(ctx context.Context, req *GetImageVulnerabilitiesInternalRequest) (*ScanImageInternalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetImageVulnerabilitiesInternal not implemented")
 }
-
 func (*UnimplementedImageServiceServer) EnrichLocalImageInternal(ctx context.Context, req *EnrichLocalImageInternalRequest) (*ScanImageInternalResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EnrichLocalImageInternal not implemented")
 }
-
 func (*UnimplementedImageServiceServer) InvalidateScanAndRegistryCaches(ctx context.Context, req *Empty) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InvalidateScanAndRegistryCaches not implemented")
 }
@@ -1660,7 +1653,6 @@ func _ImageService_GetImageVulnerabilitiesInternal_Handler(srv interface{}, ctx 
 	}
 	return interceptor(ctx, in, info, handler)
 }
-
 
 func _ImageService_EnrichLocalImageInternal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EnrichLocalImageInternalRequest)
@@ -1799,7 +1791,6 @@ var _ImageService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _ImageService_GetImageVulnerabilitiesInternal_Handler,
 		},
 		{
-
 			MethodName: "EnrichLocalImageInternal",
 			Handler:    _ImageService_EnrichLocalImageInternal_Handler,
 		},
@@ -3810,7 +3801,6 @@ func (m *GetImageVulnerabilitiesInternalRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *EnrichLocalImageInternalRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4107,7 +4097,6 @@ func (m *EnrichLocalImageInternalRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-
 func (m *DeleteImagesRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
