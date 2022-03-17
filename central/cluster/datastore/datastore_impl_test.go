@@ -123,7 +123,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.clusters.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
 	suite.netEntityDataStore.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
 	suite.clusters.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
-	suite.healthStatuses.EXPECT().WalkAllWithID(gomock.Any(), gomock.Any()).Return(nil)
+	suite.healthStatuses.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().AddClusters(nil).Return(nil)
 
 	var err error
@@ -947,6 +947,7 @@ func (suite *ClusterDataStoreTestSuite) TestUpdateClusterHealth() {
 			name:      "no previous health status exists",
 			oldHealth: &storage.ClusterHealthStatus{},
 			newHealth: &storage.ClusterHealthStatus{
+				Id:                 "6",
 				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 				LastContact:        ts1,
 			},
@@ -963,7 +964,7 @@ func (suite *ClusterDataStoreTestSuite) TestUpdateClusterHealth() {
 
 	for _, c := range cases {
 		suite.healthStatuses.EXPECT().Get(suite.hasWriteCtx, c.cluster.GetId()).Return(c.oldHealth, true, nil)
-		suite.healthStatuses.EXPECT().UpsertWithID(suite.hasWriteCtx, c.cluster.GetId(), c.newHealth)
+		suite.healthStatuses.EXPECT().Upsert(suite.hasWriteCtx, c.newHealth)
 		if !c.skipIndex {
 			suite.clusters.EXPECT().Get(suite.hasWriteCtx, c.cluster.GetId()).Return(c.cluster, true, nil)
 			cluster := c.cluster
