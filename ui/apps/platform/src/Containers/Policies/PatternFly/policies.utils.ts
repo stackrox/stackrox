@@ -478,6 +478,37 @@ export function postFormatExclusionField(policy): Policy {
     return serverPolicy;
 }
 
+export function postFormatImageSigningPolicyGroup(policy): Policy {
+    if (!policy.policySections) {
+        return policy;
+    }
+
+    const serverPolicy = cloneDeep(policy);
+    // iterating through each value in a policy group in a policy section to format to a flat value string
+    policy.policySections.forEach((policySection, sectionIdx) => {
+        const { policyGroups } = policySection;
+        policyGroups.forEach((policyGroup, groupIdx) => {
+            const { values } = policyGroup;
+            if (policyGroup.fieldName === 'Trust image signers') {
+                const valueObj = values[0].value as ValueObj;
+                if (valueObj) {
+                    const { arrayValue = [] } = valueObj;
+                    arrayValue.forEach((value, valueIdx) => {
+                        serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
+                            valueIdx
+                        ] = {
+                            value,
+                        };
+                    });
+                }
+                delete serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].fieldKey;
+            }
+        });
+    });
+
+    return serverPolicy;
+}
+
 export function getClientWizardPolicy(policy): Policy {
     let formattedPolicy = preFormatExclusionField(policy);
     formattedPolicy = preFormatNestedPolicyFields(formattedPolicy);
@@ -486,6 +517,7 @@ export function getClientWizardPolicy(policy): Policy {
 
 export function getServerPolicy(policy): Policy {
     let serverPolicy = postFormatExclusionField(policy);
+    serverPolicy = postFormatImageSigningPolicyGroup(serverPolicy);
     serverPolicy = postFormatNestedPolicyFields(serverPolicy);
     return serverPolicy;
 }

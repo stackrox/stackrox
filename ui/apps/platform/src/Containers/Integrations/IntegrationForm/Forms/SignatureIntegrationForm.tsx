@@ -20,17 +20,7 @@ import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
 import { IntegrationFormProps } from '../integrationFormTypes';
 import useIntegrationForm from '../useIntegrationForm';
-
-export type SignatureIntegration = {
-    id: string;
-    name: string;
-    cosign: {
-        publicKeys: {
-            name: string;
-            publicKeyPemEnc: string;
-        }[];
-    };
-};
+import { SignatureIntegration } from '../../../../services/SignatureIntegrationsService';
 
 export const validationSchema = yup.object().shape({
     id: yup.string().trim(),

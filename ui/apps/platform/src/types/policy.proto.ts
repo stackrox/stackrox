@@ -107,6 +107,7 @@ export type ValueObj = {
     source?: string;
     key?: string;
     value?: string;
+    arrayValue?: string[];
 };
 
 export type PolicyGroup = {

@@ -64,14 +64,14 @@ curl -s -o "${bundle_root}/postgres-contrib.rpm" \
 # =============================================================================
 
 # Files should have owner/group equal to root:root
-if tar --version | grep -q "gnu" ; then
+if gtar --version | grep -q "gnu" ; then
   tar_chown_args=("--owner=root:0" "--group=root:0")
 else
   tar_chown_args=("--uid=root:0" "--gid=root:0")
 fi
 
 # Create output bundle of all files in $bundle_root
-tar cz "${tar_chown_args[@]}" --file "$OUTPUT_BUNDLE" --directory "${bundle_root}" .
+gtar cz "${tar_chown_args[@]}" --file "$OUTPUT_BUNDLE" --directory "${bundle_root}" .
 
 # Create checksum
 sha512sum "${OUTPUT_BUNDLE}" > "${OUTPUT_BUNDLE}.sha512"

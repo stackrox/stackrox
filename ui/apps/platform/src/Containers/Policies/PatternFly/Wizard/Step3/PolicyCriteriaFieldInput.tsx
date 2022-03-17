@@ -1,19 +1,20 @@
 import React from 'react';
 import { useField } from 'formik';
 import {
-    TextInput,
-    ToggleGroup,
-    ToggleGroupItem,
     FormGroup,
     Select,
     SelectOption,
     SelectVariant,
+    TextInput,
+    ToggleGroup,
+    ToggleGroupItem,
 } from '@patternfly/react-core';
 
 import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
+import { ImageSignersCriteriaFieldInput } from './ImageSignersCriteriaFieldInput';
 
-type PolicyCriteriaFieldInputProps = {
+export type PolicyCriteriaFieldInputProps = {
     descriptor: Descriptor;
     readOnly?: boolean;
     name: string;
@@ -174,6 +175,15 @@ function PolicyCriteriaFieldInput({
                 </>
             );
             /* eslint-enable react/no-array-index-key */
+        }
+        case 'signaturePolicyCriteria': {
+            return (
+                <ImageSignersCriteriaFieldInput
+                    name={descriptor.name}
+                    setValue={setValue}
+                    value={value}
+                />
+            );
         }
     }
     /* eslint-enable default-case */

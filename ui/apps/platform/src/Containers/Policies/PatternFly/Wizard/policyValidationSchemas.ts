@@ -68,6 +68,7 @@ const validationSchemaStep3 = yup.object().shape({
                                 .of(
                                     yup.object().shape({
                                         value: yup.string(), // dryrun validates whether value is required
+                                        arrayValue: yup.array().of(yup.string()),
                                     })
                                 )
                                 .min(1)

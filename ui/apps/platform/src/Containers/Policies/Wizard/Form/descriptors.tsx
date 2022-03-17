@@ -181,14 +181,20 @@ export type DescriptorType =
     | 'radioGroup'
     | 'radioGroupString'
     | 'select'
-    | 'text';
+    | 'text'
+    | 'signaturePolicyCriteria';
 
 export type Descriptor =
     | GroupDescriptor
     | NumberDescriptor
     | RadioGroupDescriptor
     | SelectDescriptor
-    | TextDescriptor;
+    | TextDescriptor
+    | SignatureDescriptor;
+
+export type SignatureDescriptor = {
+    type: 'signaturePolicyCriteria';
+} & BaseDescriptor;
 
 export type GroupDescriptor = {
     type: 'group';
@@ -221,6 +227,16 @@ export type TextDescriptor = {
 } & BaseDescriptor;
 
 export const policyConfigurationDescriptor: Descriptor[] = [
+    {
+        label: 'Trust image signers',
+        name: 'Trust image signers',
+        shortName: 'Trust image signers',
+        longName: 'Trust image signers',
+        negatedName: 'Not trust image signers',
+        category: policyCriteriaCategories.IMAGE_REGISTRY,
+        type: 'signaturePolicyCriteria',
+        canBooleanLogic: true,
+    },
     {
         label: 'Image registry',
         name: 'Image Registry',
