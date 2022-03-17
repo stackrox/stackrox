@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
@@ -30,14 +29,8 @@ const (
 	deleteManyStmt = "DELETE FROM networkbaseline WHERE DeploymentId = ANY($1::text[])"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "networkbaseline"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "NetworkBaseline")
+	globaldb.RegisterTable("networkbaseline", "NetworkBaseline")
 }
 
 type Store interface {

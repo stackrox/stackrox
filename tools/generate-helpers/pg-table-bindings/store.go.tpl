@@ -26,7 +26,6 @@ import (
     "github.com/stackrox/rox/central/globaldb"
     "github.com/stackrox/rox/central/metrics"
     "github.com/stackrox/rox/generated/storage"
-    "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
 )
@@ -47,14 +46,8 @@ const (
 {{- end }}
 )
 
-var (
-    log = logging.LoggerForModule()
-
-    table = "{{.Table}}"
-)
-
 func init() {
-    globaldb.RegisterTable(table, "{{.TrimmedType}}")
+    globaldb.RegisterTable("{{.Table}}", "{{.TrimmedType}}")
 }
 
 type Store interface {

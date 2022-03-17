@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
@@ -30,14 +29,8 @@ const (
 	deleteManyStmt = "DELETE FROM cluster_health_status WHERE Id = ANY($1::text[])"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "cluster_health_status"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "ClusterHealthStatus")
+	globaldb.RegisterTable("cluster_health_status", "ClusterHealthStatus")
 }
 
 type Store interface {

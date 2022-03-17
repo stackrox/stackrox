@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
@@ -26,14 +25,8 @@ const (
 	walkStmt   = "SELECT serialized FROM multikey"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "multikey"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "TestMultiKeyStruct")
+	globaldb.RegisterTable("multikey", "TestMultiKeyStruct")
 }
 
 type Store interface {

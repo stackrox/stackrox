@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
@@ -26,14 +25,8 @@ const (
 	walkStmt   = "SELECT serialized FROM clusters"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "clusters"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "Cluster")
+	globaldb.RegisterTable("clusters", "Cluster")
 }
 
 type Store interface {
