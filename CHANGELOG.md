@@ -11,6 +11,13 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - This change is *not* backwards compatible; if an existing Custom Resource sets the value to > 25 seconds, then it will fail validation in case operator is downgraded. This change is accepted because the operator is still in v1alpha1 and subject to change.
 - The admission webhook timeout is now set to the admission controller timeout plus 2 seconds.
 
+## [69.1]
+
+- A version of Scanner and ScannerDB will be installed in each OpenShift cluster to support images stored in the OpenShift Internal Image Registry.
+  - The images are "slimmed" down versions of Scanner and ScannerDB
+    - scanner-slim and scanner-db-slim
+  - They require the same resources as the normal Scanner and ScannerDB.
+
 ## [69.0]
 
 - `collector` image with `-slim` in the image tag is no longer published (`collector-slim` with suffix in the image name will continue to be published).

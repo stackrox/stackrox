@@ -1,0 +1,10 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: SecuredCluster
+metadata:
+  namespace: stackrox
+  name: stackrox-secured-cluster-services
+spec:
+  clusterName: secured-cluster-1
+  scanner:
+    scannerComponent: AutoSense
+  centralEndpoint: central-stackrox.apps.rt-03-15-red-manufacturer-see.openshift.infra.rox.systems:443
