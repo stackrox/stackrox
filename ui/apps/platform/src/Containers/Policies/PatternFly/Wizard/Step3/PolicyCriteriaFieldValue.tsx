@@ -21,7 +21,7 @@ function PolicyCriteriaFieldValue({
     readOnly = false,
 }: FieldValueProps) {
     return (
-        <div data-testid="policy-field-value">
+        <div data-testid="policy-criteria-value">
             <Flex
                 direction={{ default: 'row' }}
                 flexWrap={{ default: 'nowrap' }}
@@ -30,7 +30,11 @@ function PolicyCriteriaFieldValue({
                 <PolicyCriteriaFieldInput descriptor={descriptor} name={name} readOnly={readOnly} />
                 {/* only show remove button if there is more than one value */}
                 {!readOnly && length > 1 && (
-                    <Button onClick={handleRemoveValue} variant="tertiary">
+                    <Button
+                        onClick={handleRemoveValue}
+                        variant="tertiary"
+                        data-testid="delete-policy-criteria-value-btn"
+                    >
                         <TimesIcon />
                     </Button>
                 )}

@@ -18,6 +18,8 @@ export const selectors = {
         selectCheckbox: '.pf-c-table__check input[type="checkbox"]',
         actionsToggleButton: 'td.pf-c-table__action button.pf-c-dropdown__toggle',
         actionsItemButton: 'td.pf-c-table__action ul li[role="menuitem"] button',
+        firstRow: '[data-testid="policies-table"] tbody tr:nth(0)',
+        rows: '[data-testid="policies-table"] tbody tr',
     },
     page: {
         actionsToggleButton: 'button.pf-c-dropdown__toggle:contains("Actions")',
@@ -28,7 +30,48 @@ export const selectors = {
         title: 'ul.pf-c-alert-group .pf-c-alert__title',
         description: 'ul.pf-c-alert-group .pf-c-alert__description',
     },
-    wizard: {},
+    wizardBtns: {
+        step3: '.pf-c-wizard__nav-link:contains("criteria")',
+    },
+    step3: {
+        defaultPolicyAlert: '[data-testid="default-policy-alert"]',
+        policySection: {
+            addBtn: '[data-testid="add-section-btn"]',
+            deleteBtn: '[data-testid="delete-section-btn"]',
+            cards: '.policy-section-card-body',
+            name: '[data-testid="policy-section-name"]',
+            nameEditBtn: '.policy-section-card-header [data-testid="edit-section-name-btn"]',
+            nameSaveBtn: '.policy-section-card-header [data-testid="save-section-name-btn"]',
+            nameInput: '.policy-section-card-header input',
+            orDivider: 'div.or-divider-container',
+            dropTarget: '[data-testid="policy-section-drop-target"]',
+        },
+        policyCriteria: {
+            keyGroup: '[data-testid="policy-criteria-key-group"]',
+            key: '.policy-criteria-key',
+            groupCards: '[data-testid="policy-criteria-group-card"]',
+            groupCardTitle:
+                '[data-testid="policy-criteria-group-card"] .pf-c-card__header .pf-c-card__title',
+            value: {
+                textInput: '[data-testid="policy-criteria-value-text-input"]',
+                numberInput: '[data-testid="policy-criteria-value-number-input"]',
+                select: '[data-testid="policy-criteria-value-select"]',
+                selectOption: '[data-testid="policy-criteria-value-select-option"]',
+                radioGroup: '[data-testid="policy-criteria-value-radio-group"]',
+                radioGroupItem: '[data-testid="policy-criteria-value-radio-group-item"]',
+                radioGroupString: '[data-testid="policy-criteria-value-radio-group-string"]',
+                radioGroupStringItem:
+                    '[data-testid="policy-criteria-value-radio-group-string-item"]',
+                negateCheckbox: '[data-testid="policy-criteria-value-negate-checkbox"]',
+                multiselect: '[data-testid="policy-criteria-value-multiselect"]',
+                multiselectOption: '[data-testid="policy-criteria-value-multiselect-option"]',
+                addBtn: '[data-testid="add-policy-criteria-value-btn"]',
+                deleteBtn: '[data-testid="delete-policy-criteria-value-btn"]',
+            },
+            deleteBtn: '[data-testid="delete-policy-criteria-btn"]',
+            booleanOperator: '[data-testid="policy-criteria-boolean-operator"]',
+        },
+    },
     importUploadModal: {
         titleText: '.pf-c-modal-box__title-text:contains("Import policy JSON")',
         fileInput: '.pf-c-file-upload input[type="file"]',
