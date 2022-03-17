@@ -96,7 +96,7 @@ export function ImageSignersCriteriaFieldInput({ name, setValue, value }): React
             <Modal
                 title="Select trusted image signers"
                 isOpen={isModalOpen}
-                variant={ModalVariant.small}
+                variant={ModalVariant.large}
                 onClose={() => {
                     setIsModalOpen(false);
                 }}
