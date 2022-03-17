@@ -1,25 +1,25 @@
 package resources
 
 import (
-  "fmt"
-  "reflect"
-  "sort"
+	"fmt"
+	"reflect"
+	"sort"
 
-  "github.com/gogo/protobuf/types"
-  "github.com/pkg/errors"
-  "github.com/stackrox/rox/generated/internalapi/central"
-  "github.com/stackrox/rox/generated/storage"
-  "github.com/stackrox/rox/pkg/process/filter"
-  "github.com/stackrox/rox/pkg/utils"
-  "github.com/stackrox/rox/pkg/uuid"
-  "github.com/stackrox/rox/sensor/common/config"
-  "github.com/stackrox/rox/sensor/common/detector"
-  "github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
-  "github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
-  "github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
-  v1 "k8s.io/api/core/v1"
-  metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-  v1listers "k8s.io/client-go/listers/core/v1"
+	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
+	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
+	v1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1listers "k8s.io/client-go/listers/core/v1"
 )
 
 var (
@@ -46,87 +46,87 @@ func newDeploymentDispatcher(deploymentType string, handler *deploymentHandler) 
 
 // ProcessEvent processes a deployment resource events, and returns the sensor events to emit in response.
 func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent {
-  // Check owner references and build graph
-  // Every single object should implement this interface
-  metaObj, ok := obj.(metaV1.Object)
-  if !ok {
-    log.Errorf("could not process %+v as it does not implement metaV1.Object", obj)
-    return nil
-  }
+	// Check owner references and build graph
+	// Every single object should implement this interface
+	metaObj, ok := obj.(metaV1.Object)
+	if !ok {
+		log.Errorf("could not process %+v as it does not implement metaV1.Object", obj)
+		return nil
+	}
 
-  fmt.Printf("deploymentDispatcherImpl.ProcessEvent: obj: %+v\n", obj)
+	fmt.Printf("deploymentDispatcherImpl.ProcessEvent: obj: %+v\n", obj)
 
-  if action == central.ResourceAction_REMOVE_RESOURCE {
-    d.handler.hierarchy.Remove(string(metaObj.GetUID()))
-    return d.handler.processWithType(obj, oldObj, action, d.deploymentType)
-  }
-  d.handler.hierarchy.Add(metaObj)
-  return d.handler.processWithType(obj, oldObj, action, d.deploymentType)
+	if action == central.ResourceAction_REMOVE_RESOURCE {
+		d.handler.hierarchy.Remove(string(metaObj.GetUID()))
+		return d.handler.processWithType(obj, oldObj, action, d.deploymentType)
+	}
+	d.handler.hierarchy.Add(metaObj)
+	return d.handler.processWithType(obj, oldObj, action, d.deploymentType)
 }
 
 // deploymentHandler handles deployment resource events and does the actual processing.
 type deploymentHandler struct {
-  podLister              v1listers.PodLister
-  serviceStore           *serviceStore
-  deploymentStore        *DeploymentStore
-  networkPoliciesStore   *NetworkPolicyStore
-  podStore               *PodStore
-  endpointManager        endpointManager
-  namespaceStore         *namespaceStore
-  processFilter          filter.Filter
-  config                 config.Handler
-  hierarchy              references.ParentHierarchy
-  rbac                   rbac.Store
-  orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
+	podLister              v1listers.PodLister
+	serviceStore           *serviceStore
+	deploymentStore        *DeploymentStore
+	networkPoliciesStore   *NetworkPolicyStore
+	podStore               *PodStore
+	endpointManager        endpointManager
+	namespaceStore         *namespaceStore
+	processFilter          filter.Filter
+	config                 config.Handler
+	hierarchy              references.ParentHierarchy
+	rbac                   rbac.Store
+	orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
 
-  detector detector.Detector
+	detector detector.Detector
 
-  clusterID string
+	clusterID string
 }
 
 // newDeploymentHandler creates and returns a new deployment handler.
 func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore,
-  endpointManager endpointManager, namespaceStore *namespaceStore, networkPoliciesStore *NetworkPolicyStore, rbac rbac.Store, podLister v1listers.PodLister,
-  processFilter filter.Filter, config config.Handler, detector detector.Detector, namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentHandler {
-  return &deploymentHandler{
-    podLister:              podLister,
-    serviceStore:           serviceStore,
-    deploymentStore:        deploymentStore,
-    networkPoliciesStore:   networkPoliciesStore,
-    podStore:               podStore,
-    endpointManager:        endpointManager,
-    namespaceStore:         namespaceStore,
-    processFilter:          processFilter,
-    config:                 config,
-    hierarchy:              references.NewParentHierarchy(),
-    rbac:                   rbac,
-    detector:               detector,
-    orchestratorNamespaces: namespaces,
-    clusterID:              clusterID,
-  }
+	endpointManager endpointManager, namespaceStore *namespaceStore, networkPoliciesStore *NetworkPolicyStore, rbac rbac.Store, podLister v1listers.PodLister,
+	processFilter filter.Filter, config config.Handler, detector detector.Detector, namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentHandler {
+	return &deploymentHandler{
+		podLister:              podLister,
+		serviceStore:           serviceStore,
+		deploymentStore:        deploymentStore,
+		networkPoliciesStore:   networkPoliciesStore,
+		podStore:               podStore,
+		endpointManager:        endpointManager,
+		namespaceStore:         namespaceStore,
+		processFilter:          processFilter,
+		config:                 config,
+		hierarchy:              references.NewParentHierarchy(),
+		rbac:                   rbac,
+		detector:               detector,
+		orchestratorNamespaces: namespaces,
+		clusterID:              clusterID,
+	}
 }
 
 func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
-  fmt.Printf("### deploymentHandler.processWithType: obj type: %s\n", reflect.TypeOf(obj))
+	fmt.Printf("### deploymentHandler.processWithType: obj type: %s\n", reflect.TypeOf(obj))
 
-  deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore, d.networkPoliciesStore,
-    d.hierarchy, d.config.GetConfig().GetRegistryOverride(), d.orchestratorNamespaces)
-  // Note: deploymentWrap may be nil. Typically, this means that this is not a top-level object that we track --
-  // either it's an object we don't track, or we track its parent.
-  // (For example, we don't track replicasets if they are owned by a deployment.)
-  // We don't immediately return if deploymentWrap == nil though,
-  // because IF the object is a pod, we want to process the pod event.
-  objAsPod, _ := obj.(*v1.Pod)
+	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore, d.networkPoliciesStore,
+		d.hierarchy, d.config.GetConfig().GetRegistryOverride(), d.orchestratorNamespaces)
+	// Note: deploymentWrap may be nil. Typically, this means that this is not a top-level object that we track --
+	// either it's an object we don't track, or we track its parent.
+	// (For example, we don't track replicasets if they are owned by a deployment.)
+	// We don't immediately return if deploymentWrap == nil though,
+	// because IF the object is a pod, we want to process the pod event.
+	objAsPod, _ := obj.(*v1.Pod)
 
-  var events []*central.SensorEvent
-  // If the object is a pod, process the pod event.
-  if objAsPod != nil {
-    var owningDeploymentID string
-    uid := string(objAsPod.GetUID())
-    if deploymentWrap != nil {
-      // The pod is a top-level object, so it is its own owner.
-      owningDeploymentID = uid
-    } else {
+	var events []*central.SensorEvent
+	// If the object is a pod, process the pod event.
+	if objAsPod != nil {
+		var owningDeploymentID string
+		uid := string(objAsPod.GetUID())
+		if deploymentWrap != nil {
+			// The pod is a top-level object, so it is its own owner.
+			owningDeploymentID = uid
+		} else {
 			// Fetch the owning deploymentIDs from the hierarchy.
 			owningDeploymentIDs := d.hierarchy.TopLevelParents(uid)
 			switch owningDeploymentIDs.Cardinality() {

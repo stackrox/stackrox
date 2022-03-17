@@ -35,41 +35,41 @@ func (n *NetworkPolicyStore) Get(id string) *storage.NetworkPolicy {
 	if policy, found := n.netPolicies[id]; found {
 		return policy
 	}
-  return nil
+	return nil
 }
 
 func (n *NetworkPolicyStore) addNetPolicy(np *storage.NetworkPolicy) {
-  n.lock.Lock()
-  defer n.lock.Unlock()
+	n.lock.Lock()
+	defer n.lock.Unlock()
 
-  n.netPolicies[np.GetId()] = np
-  n.netPolicyNamesToIDs[np.GetName()] = np.GetId()
+	n.netPolicies[np.GetId()] = np
+	n.netPolicyNamesToIDs[np.GetName()] = np.GetId()
 }
 
 func (n *NetworkPolicyStore) deleteNetPolicy(np *storage.NetworkPolicy) {
-  n.lock.Lock()
-  defer n.lock.Unlock()
+	n.lock.Lock()
+	defer n.lock.Unlock()
 
-  delete(n.netPolicies, np.GetId())
-  delete(n.netPolicyNamesToIDs, np.GetName())
+	delete(n.netPolicies, np.GetId())
+	delete(n.netPolicyNamesToIDs, np.GetName())
 }
 
 func (n *NetworkPolicyStore) update(np *storage.NetworkPolicy) {
-  n.lock.Lock()
-  defer n.lock.Unlock()
+	n.lock.Lock()
+	defer n.lock.Unlock()
 
-  if updatedPolicy, found := n.netPolicies[np.GetId()]; found {
-    n.netPolicies[updatedPolicy.GetId()] = np
-    n.netPolicyNamesToIDs[updatedPolicy.GetName()] = np.GetId()
-  } else {
-    n.addNetPolicy(np)
-  }
+	if updatedPolicy, found := n.netPolicies[np.GetId()]; found {
+		n.netPolicies[updatedPolicy.GetId()] = np
+		n.netPolicyNamesToIDs[updatedPolicy.GetName()] = np.GetId()
+	} else {
+		n.addNetPolicy(np)
+	}
 }
 
 func (n *NetworkPolicyStore) lookupNetPolicyID(name string) (string, bool) {
-  n.lock.RLock()
-  defer n.lock.RUnlock()
+	n.lock.RLock()
+	defer n.lock.RUnlock()
 
-  id, found := n.netPolicyNamesToIDs[name]
-  return id, found
+	id, found := n.netPolicyNamesToIDs[name]
+	return id, found
 }
