@@ -229,7 +229,7 @@ $ kubectl delete ns bundle-test
 
 ### Launch the Operator with OLM and Index
 
-Note this assumes OLM is already in place.
+Note this assumes OLM is already in place. Also make sure you have `kubectl-kuttl` [installed](https://kuttl.dev/docs/cli.html).
 
 So far only tested on an OpenShift cluster.
 
@@ -238,9 +238,31 @@ So far only tested on an OpenShift cluster.
 
 # undeploy
 
-kubectl delete index-test
-
+kubectl delete namespace index-test
 ```
+
+To test a release candidate on an infractl openshift cluster:
+
+```bash
+# Check docker credentials are stored ok.
+docker-credential-osxkeychain get <<<"docker.io"
+# If not update as follows replacing DOCKER_USER and DOCKER_PASS.
+docker-credential-osxkeychain store <<<'{"ServerURL":"docker.io","Username":"DOCKER_USER","Secret":"DOCKER_PASS"}'
+
+# Store credentials
+## For namespace "stackrox": so they are available to central services and secured cluster services.
+make stackrox-image-pull-secret
+## For namespace "index-test": so they are available to the operator.
+kubectl -n index-test create secret docker-registry operator-pull-secret \
+  --docker-server=https://index.docker.io/v1/ \
+  --docker-email=ignored@email.com \
+  --docker-username="${DOCKER_USER}" --docker-password="${DOCKER_PASS}"
+
+# Use some version in https://hub.docker.com/repository/docker/stackrox/stackrox-operator-index
+VERSION='3.69.0-rc.11'
+./hack/olm-operator-install.sh index-test ${VERSION}
+```
+
 
 ## Extending the StackRox Custom Resource Definitions
 
