@@ -119,7 +119,7 @@ func (e *enricherImpl) enrichWithVulnerabilities(scannerName string, dataSource 
 
 func (e *enricherImpl) EnrichWithSignatureVerificationData(ctx context.Context, image *storage.Image) (EnrichmentResult, error) {
 	if !features.ImageSignatureVerification.Enabled() {
-		return EnrichmentResult{}, nil
+		return EnrichmentResult{}, errors.New("the image signature verification feature is not enabled")
 	}
 
 	updated, err := e.enrichWithSignatureVerificationData(ctx, EnrichmentContext{}, image)
