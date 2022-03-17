@@ -120,12 +120,16 @@ func generateSelectFields(entry *pgsearch.QueryEntry, primaryKeys []walker.Field
 		pathsInSelectClause = append(pathsInSelectClause, qualifyColumn(pk.Schema.Table, pk.ColumnName))
 	}
 
-	for _, selectedField := range entry.SelectedFields {
-		pathsInSelectClause = append(pathsInSelectClause, selectedField.SelectPath)
+	if entry != nil {
+		for _, selectedField := range entry.SelectedFields {
+			pathsInSelectClause = append(pathsInSelectClause, selectedField.SelectPath)
+		}
 	}
 
 	sel.Query = fmt.Sprintf("select %s", strings.Join(pathsInSelectClause, ","))
-	sel.Fields = entry.SelectedFields
+	if entry != nil {
+		sel.Fields = entry.SelectedFields
+	}
 	return sel
 }
 
@@ -150,13 +154,16 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, schema *walker.S
 		return nil, err
 	}
 
-	return &query{
+	query := &query{
 		Select:     selQuery,
 		From:       fromClause,
-		Where:      queryEntry.Where.Query,
 		Pagination: pagination,
-		Data:       queryEntry.Where.Values,
-	}, nil
+	}
+	if queryEntry != nil {
+		query.Where = queryEntry.Where.Query
+		query.Data = queryEntry.Where.Values
+	}
+	return query, nil
 }
 
 func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgsearch.QueryEntry {
