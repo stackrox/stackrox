@@ -28,5 +28,5 @@ config-templates/scanner/
 values-scanner.yaml.example
 internal/defaults/70-scanner.yaml
 [< end >]
-[</* Ignore tls secret in secured cluster because only slim mode is supported */>]
+[</* Ignore tls secret unconditionally in secured cluster because only slim mode is supported */>]
 templates/02-scanner-03-tls-secret.yaml
