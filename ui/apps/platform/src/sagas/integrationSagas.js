@@ -23,38 +23,6 @@ const fetchIntegrationsActionMap = {
     apitoken: apiTokenActions.fetchAPITokens.request(),
 };
 
-function getFriendlyErrorMessage(type, response) {
-    let errorMessage = '';
-
-    switch (type) {
-        case 'awsSecurityHub': {
-            if (response?.data?.error?.includes('403')) {
-                errorMessage = 'Credentials are incorrect. Please re-enter them and try again.';
-            } else if (response?.data?.error?.includes('AccessDenied')) {
-                errorMessage =
-                    'Access denied. The account number does not match the credentials provided. Please re-enter the account number and try again.';
-            } else if (response?.data?.error?.includes('not subscribed')) {
-                errorMessage =
-                    'Chosen region is not subscribed to StackRox Security Hub integration. Please subscribe through AWS Console, or choose a region that is subscribed.';
-            } else if (
-                response?.data?.error?.includes('InvalidSignature') ||
-                response?.data?.error?.includes('UnrecognizedClient')
-            ) {
-                errorMessage = '403 Access Denied. Please check your inputs and try again.';
-            } else {
-                errorMessage =
-                    'An error has occurred. Please check the central logs for more information.';
-            }
-            break;
-        }
-        default: {
-            errorMessage = response?.data?.error || 'An unknown error has occurred.';
-        }
-    }
-
-    return errorMessage;
-}
-
 // Call fetchIntegration with the given source, and pass the response/failure
 // with the given action type.
 function* fetchIntegrationWrapper(source, action) {
@@ -137,42 +105,8 @@ function* watchFetchRequest() {
     }
 }
 
-function* saveIntegration(action) {
-    const { source, sourceType, integration, options, displayName } = action.params;
-    try {
-        if (source === 'authProviders') {
-            yield call(AuthService.saveAuthProvider, integration);
-            if (sourceType === 'apitoken') {
-                yield put(fetchIntegrationsActionMap[sourceType]);
-            } else {
-                yield put(fetchIntegrationsActionMap[source]);
-            }
-        } else {
-            if (integration.id) {
-                yield call(service.saveIntegration, source, integration, options);
-            } else {
-                yield call(service.createIntegration, source, integration);
-            }
-            yield put(fetchIntegrationsActionMap[source]);
-        }
-        yield put(
-            notificationActions.addNotification(
-                `Successfully integrated ${displayName || integration.type}`
-            )
-        );
-        yield put(notificationActions.removeOldestNotification());
-        yield put(actions.setCreateState(false));
-    } catch (error) {
-        if (error.response) {
-            yield put(notificationActions.addNotification(error.response.data.error));
-            yield put(notificationActions.removeOldestNotification());
-        } else {
-            Raven.captureException(error);
-        }
-    }
-}
-
 function* deleteIntegrations({ source, sourceType, ids }) {
+    console.log('deleteIntegrations'); // eslint-disable-line no-console
     try {
         if (source === 'authProviders') {
             yield call(AuthService.deleteAuthProviders, ids);
@@ -195,24 +129,6 @@ function* deleteIntegrations({ source, sourceType, ids }) {
     }
 }
 
-function* testIntegration(action) {
-    const { source, integration, options } = action;
-    try {
-        yield call(service.testIntegration, source, integration, options);
-        yield put(notificationActions.addNotification('Integration test was successful'));
-        yield put(notificationActions.removeOldestNotification());
-    } catch (error) {
-        if (error.response) {
-            const errorMessage = getFriendlyErrorMessage(integration?.type, error?.response);
-
-            yield put(notificationActions.addNotification(errorMessage));
-            yield put(notificationActions.removeOldestNotification());
-        } else {
-            Raven.captureException(error);
-        }
-    }
-}
-
 function* triggerBackup(action) {
     const { id } = action;
     try {
@@ -229,14 +145,6 @@ function* triggerBackup(action) {
     }
 }
 
-function* watchSaveRequest() {
-    yield takeLatest(types.SAVE_INTEGRATION.REQUEST, saveIntegration);
-}
-
-function* watchTestRequest() {
-    yield takeLatest(types.TEST_INTEGRATION, testIntegration);
-}
-
 function* watchDeleteRequest() {
     yield takeLatest(types.DELETE_INTEGRATIONS, deleteIntegrations);
 }
@@ -249,8 +157,6 @@ export default function* integrations() {
     yield all([
         fork(watchLocation),
         fork(watchFetchRequest),
-        fork(watchSaveRequest),
-        fork(watchTestRequest),
         fork(watchDeleteRequest),
         fork(watchBackupRequest),
     ]);
