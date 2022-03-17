@@ -329,9 +329,8 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		}
 		// This is safe even if img is nil.
 		scanTime := img.GetScan().GetScanTime()
-		// If the scan exists, and reprocessing has not run since and the image has signature and signature verification
-		// data associated with it, return the image.
-		// Otherwise, run the enrichment pipeline to ensure we do not return stale data.
+		// Central does not reprocess cluster-local images. If the image exists and not too much time has passed,
+		// then return the image. Otherwise, run the enrichment pipeline to ensure we do not return stale data.
 		if exists && (timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now())) &&
 			(img.GetSignature() != nil && img.GetSignatureVerificationData() != nil) {
 			return internalScanRespFromImage(img), nil
@@ -343,7 +342,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		Name:           request.GetImageName(),
 		Signature:      request.GetImageSignature(),
 		Metadata:       request.GetMetadata(),
-		IsClusterLocal: request.GetIsClusterLocal(),
+		IsClusterLocal: true,
 	}
 
 	if _, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes()); err != nil {
