@@ -380,9 +380,25 @@ func valueFromStringPtrInterface(value interface{}) string {
 }
 
 // RunSearchRequest executes a request again the database
-func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) ([]searchPkg.Result, error) {
+func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) (searchResults []searchPkg.Result, err error) {
+	var query *query
+	// Add this to be safe and convert panics to errors,
+	// since we do a lot of casting and other operations that could potentially panic in this code.
+	// Panics are expected ONLY in the event of a programming error, all foreseeable errors are handled
+	// the usual way.
+	defer func() {
+		if r := recover(); r != nil {
+			if query != nil {
+				log.Errorf("Query issue: %s %+v: %v", query, query.Data, r)
+			} else {
+				log.Errorf("Unexpected error running search request: %v", r)
+			}
+			debug.PrintStack()
+			err = fmt.Errorf("unexpected error running search request: %v", r)
+		}
+	}()
 	schema := mapping.GetTableFromCategory(category)
-	query, err := populatePath(q, optionsMap, schema, GET)
+	query, err = populatePath(q, optionsMap, schema, GET)
 	if err != nil {
 		return nil, err
 	}
@@ -395,8 +411,6 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 		return nil, err
 	}
 	defer rows.Close()
-
-	var searchResults []searchPkg.Result
 
 	numPrimaryKeys := len(schema.LocalPrimaryKeys())
 	highlightedResults := make([]interface{}, len(query.Select.Fields)+numPrimaryKeys)
@@ -422,7 +436,11 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 		if len(query.Select.Fields) > 0 {
 			result.Matches = make(map[string][]string)
 			for i, field := range query.Select.Fields {
-				result.Matches[field.FieldPath] = mustPrintForDataType(field.FieldType, highlightedResults[i+numPrimaryKeys])
+				returnedValue := highlightedResults[i+numPrimaryKeys]
+				if field.PostTransform != nil {
+					returnedValue = field.PostTransform(returnedValue)
+				}
+				result.Matches[field.FieldPath] = mustPrintForDataType(field.FieldType, returnedValue)
 			}
 		}
 		searchResults = append(searchResults, result)

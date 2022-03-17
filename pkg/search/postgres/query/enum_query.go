@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 )
 
-func enumEquality(columnName string, field *pkgSearch.Field, enumValues []int32) (WhereClause, error) {
+func enumEquality(columnName string, enumValues []int32) (WhereClause, error) {
 	var queries []string
 	var values []interface{}
 	for _, s := range enumValues {
@@ -24,6 +24,9 @@ func enumEquality(columnName string, field *pkgSearch.Field, enumValues []int32)
 	return WhereClause{
 		Query:  fmt.Sprintf("(%s)", strings.Join(queries, " or ")),
 		Values: values,
+		equivalentGoFunc: func(foundValue interface{}) bool {
+			return foundValue.(float64) > 0
+		},
 	}, nil
 }
 
@@ -32,9 +35,11 @@ func newEnumQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	qe := &QueryEntry{Where: whereClause}
-	if ctx.highlight {
-		qe.SelectedFields = []SelectQueryField{{SelectPath: ctx.qualifiedColumnName, FieldType: ctx.dbField.DataType, FieldPath: ctx.field.FieldPath}}
+	qe := qeWithSelectFieldIfNeeded(ctx, &whereClause, func(i interface{}) interface{} {
+		return enumregistry.Lookup(ctx.field.FieldPath, int32(*(i.(*int))))
+	})
+	qe.enumStringifyFunc = func(i int32) string {
+		return enumregistry.Lookup(ctx.field.FieldPath, i)
 	}
 	return qe, nil
 }
@@ -88,24 +93,34 @@ func newEnumQueryWhereClause(columnName string, field *pkgSearch.Field, value st
 
 		// Equality means no numeric cast required, and could benefit from hash indexes
 		if equality {
-			return enumEquality(columnName, field, enumValues)
+			return enumEquality(columnName, enumValues)
 		}
 
 		var queries []string
 		var values []interface{}
+		var equivalentGoFuncs []func(interface{}) bool
 		for _, s := range enumValues {
 			entry := createNumericQuery(columnName, prefix, float64(s))
 			queries = append(queries, entry.Query)
 			values = append(values, entry.Values...)
+			equivalentGoFuncs = append(equivalentGoFuncs, entry.equivalentGoFunc)
 		}
 		return WhereClause{
 			Query:  fmt.Sprintf("(%s)", strings.Join(queries, " or ")),
 			Values: values,
+			equivalentGoFunc: func(foundValue interface{}) bool {
+				for _, f := range equivalentGoFuncs {
+					if f(foundValue) {
+						return true
+					}
+				}
+				return false
+			},
 		}, nil
 	}
 
 	if len(enumValues) == 0 {
 		return WhereClause{}, fmt.Errorf("could not find corresponding enum at field %q with value %q and modifiers %+v", field.FieldPath, value, queryModifiers)
 	}
-	return enumEquality(columnName, field, enumValues)
+	return enumEquality(columnName, enumValues)
 }

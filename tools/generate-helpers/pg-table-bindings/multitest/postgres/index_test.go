@@ -341,6 +341,33 @@ func (s *IndexSuite) TestInt64() {
 	})
 }
 
+func (s *IndexSuite) TestIntArray() {
+	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.IntSlice = []int64{-2, 5}
+	})
+	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.IntSlice = []int64{7, 3}
+	})
+
+	s.runTestCases([]testCase{
+		{
+			desc:            "exact match",
+			q:               search.NewQueryBuilder().AddStrings(search.TestInt64Slice, "-2").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
+		},
+		{
+			desc:            ">",
+			q:               search.NewQueryBuilder().AddStrings(search.TestInt64Slice, ">5").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct1},
+		},
+		{
+			desc:            ">=",
+			q:               search.NewQueryBuilder().AddStrings(search.TestInt64Slice, ">=-2").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct1},
+		},
+	})
+}
+
 func (s *IndexSuite) TestFloat() {
 	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
 		s.Float = -2
@@ -690,6 +717,323 @@ func (s *IndexSuite) TestBoolHighlights() {
 				testStruct1: {
 					"multi.bool": {"true"},
 				},
+			},
+		},
+	})
+}
+
+func (s *IndexSuite) TestStringSliceHighlights() {
+	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.StringSlice = []string{"yeah", "no"}
+	})
+	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.StringSlice = []string{"whatever", "blah", "yeahyeah"}
+	})
+
+	s.runHighlightTestCases([]highlightTestCase{
+		{
+			desc: "exact match",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestStringSlice, `"yeah"`).ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {
+					"multi.string_slice": {"yeah"},
+				},
+			},
+		},
+		{
+			desc: "regex",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestStringSlice, "r/.*e.*").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {
+					"multi.string_slice": {"yeah"},
+				},
+				testStruct1: {
+					"multi.string_slice": {"whatever", "yeahyeah"},
+				},
+			},
+		},
+	})
+}
+
+func (s *IndexSuite) TestTimeHighlights() {
+	testStruct2029Mar09Noon := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.Timestamp = ts2029Mar09Noon
+	})
+	testStruct2022Mar09Noon := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.Timestamp = ts2022Mar09Noon
+	})
+	testStruct2022Feb09Noon := s.getStruct(2, func(s *storage.TestMultiKeyStruct) {
+		s.Timestamp = ts2022Feb09Noon
+	})
+	testStruct2021Mar09Noon := s.getStruct(3, func(s *storage.TestMultiKeyStruct) {
+		s.Timestamp = ts2021Mar09Noon
+	})
+	testStruct2020Mar09Noon := s.getStruct(4, func(s *storage.TestMultiKeyStruct) {
+		s.Timestamp = ts2020Mar09Noon
+	})
+	_ = testStruct2029Mar09Noon
+
+	s.runHighlightTestCases([]highlightTestCase{
+		{
+			desc: "exact match (should evaluate if it's within the day) - matches",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestTimestamp, "03/09/2022 UTC").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct2022Mar09Noon: {"multi.timestamp.seconds": {"2022-03-09 12:00:00"}},
+			},
+		},
+		{
+			desc:            "exact match (should evaluate if it's within the day) - no match",
+			q:               search.NewQueryBuilder().AddStringsHighlighted(search.TestTimestamp, "03/08/2022").ProtoQuery(),
+			expectedResults: nil,
+		},
+		{
+			desc: "< date",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestTimestamp, "< 03/09/2022").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct2021Mar09Noon: {"multi.timestamp.seconds": {"2021-03-09 12:00:00"}},
+				testStruct2020Mar09Noon: {"multi.timestamp.seconds": {"2020-03-09 12:00:00"}},
+				testStruct2022Feb09Noon: {"multi.timestamp.seconds": {"2022-02-09 12:00:00"}},
+			},
+		},
+		{
+			desc: "< date time (this time, includes Mar 10th at noon)",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestTimestamp, "< 03/09/2022 1:00 PM").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct2021Mar09Noon: {"multi.timestamp.seconds": {"2021-03-09 12:00:00"}},
+				testStruct2020Mar09Noon: {"multi.timestamp.seconds": {"2020-03-09 12:00:00"}},
+				testStruct2022Feb09Noon: {"multi.timestamp.seconds": {"2022-02-09 12:00:00"}},
+				testStruct2022Mar09Noon: {"multi.timestamp.seconds": {"2022-03-09 12:00:00"}},
+			},
+		},
+		{
+			desc: "> duration (this test will fail in 2029, but hopefully it's not still being run then)",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestTimestamp, "> 1d").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct2021Mar09Noon: {"multi.timestamp.seconds": {"2021-03-09 12:00:00"}},
+				testStruct2020Mar09Noon: {"multi.timestamp.seconds": {"2020-03-09 12:00:00"}},
+				testStruct2022Feb09Noon: {"multi.timestamp.seconds": {"2022-02-09 12:00:00"}},
+				testStruct2022Mar09Noon: {"multi.timestamp.seconds": {"2022-03-09 12:00:00"}},
+			},
+		},
+	})
+}
+
+func (s *IndexSuite) TestEnumHighlights() {
+	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.Enum = storage.TestMultiKeyStruct_ENUM0
+	})
+	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.Enum = storage.TestMultiKeyStruct_ENUM1
+	})
+	testStruct2 := s.getStruct(2, func(s *storage.TestMultiKeyStruct) {
+		s.Enum = storage.TestMultiKeyStruct_ENUM2
+	})
+
+	s.runHighlightTestCases([]highlightTestCase{
+		{
+			desc: "exact match",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestEnum, `"ENUM1"`).ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct1: {"multi.enum": {"ENUM1"}},
+			},
+		},
+		{
+			desc: "negation",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestEnum, "!ENUM1").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.enum": {"ENUM0"}},
+				testStruct2: {"multi.enum": {"ENUM2"}},
+			},
+		},
+		{
+			desc: "regex",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestEnum, "r/E.*1").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct1: {"multi.enum": {"ENUM1"}},
+			},
+		},
+		{
+			desc: "negated regex",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestEnum, "!r/E.*1").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.enum": {"ENUM0"}},
+				testStruct2: {"multi.enum": {"ENUM2"}},
+			},
+		},
+		{
+			desc: ">",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestEnum, ">ENUM1").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct2: {"multi.enum": {"ENUM2"}},
+			},
+		},
+		{
+			desc: "<=",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestEnum, "<=ENUM1").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.enum": {"ENUM0"}},
+				testStruct1: {"multi.enum": {"ENUM1"}},
+			},
+		},
+	})
+}
+
+func (s *IndexSuite) TestUint64Highlights() {
+	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.Uint64 = 2
+	})
+	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.Uint64 = 7
+	})
+
+	s.runHighlightTestCases([]highlightTestCase{
+		{
+			desc: "exact match",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestUint64, "2").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.uint64": {"2"}},
+			},
+		},
+		{
+			desc: ">",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestUint64, ">5").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct1: {"multi.uint64": {"7"}},
+			},
+		},
+		{
+			desc: ">=",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestUint64, ">=2").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.uint64": {"2"}},
+				testStruct1: {"multi.uint64": {"7"}},
+			},
+		},
+	})
+}
+
+func (s *IndexSuite) TestInt64Highlights() {
+	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.Int64 = -2
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			Int64: -100,
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				Int64: -150,
+			}})
+	})
+	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.Int64 = 7
+		s.Nested = append(s.Nested, &storage.TestMultiKeyStruct_Nested{
+			Int64: 100,
+			Nested2: &storage.TestMultiKeyStruct_Nested_Nested2{
+				Int64: -200,
+			}})
+	})
+
+	s.runHighlightTestCases([]highlightTestCase{
+		{
+			desc: "exact match",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt64, "-2").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.int64": {"-2"}},
+			},
+		},
+		{
+			desc: ">",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt64, ">5").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct1: {"multi.int64": {"7"}},
+			},
+		},
+		{
+			desc: ">=",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt64, ">=-2").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.int64": {"-2"}},
+				testStruct1: {"multi.int64": {"7"}},
+			},
+		},
+		{
+			desc: "nested",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestNestedInt64, "<-50").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.nested.int64": {"-100"}},
+			},
+		},
+		{
+			desc: "nested and nested2",
+			q: search.NewQueryBuilder().AddStringsHighlighted(search.TestNestedInt64, ">=0").
+				AddStringsHighlighted(search.TestNested2Int64, ">=-200").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct1: {"multi.nested.nested2.int64": {"-200"}, "multi.nested.int64": {"100"}},
+			},
+		},
+	})
+}
+
+func (s *IndexSuite) TestFloatHighlights() {
+	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.Float = -2
+	})
+	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.Float = 7.5
+	})
+
+	s.runHighlightTestCases([]highlightTestCase{
+		{
+			desc: "exact match",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestFloat, "-2").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.float": {"-2"}},
+			},
+		},
+		{
+			desc: ">",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestFloat, ">7.3").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct1: {"multi.float": {"7.5"}},
+			},
+		},
+		{
+			desc: ">=",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestFloat, ">=-2").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.float": {"-2"}},
+				testStruct1: {"multi.float": {"7.5"}},
+			},
+		},
+	})
+}
+
+func (s *IndexSuite) TestIntArrayHighlights() {
+	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.IntSlice = []int64{-2, -5}
+	})
+	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.IntSlice = []int64{7, 3}
+	})
+
+	s.runHighlightTestCases([]highlightTestCase{
+		{
+			desc: "exact match",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt64Slice, "-2").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.int_slice": {"-2"}},
+			},
+		},
+		{
+			desc: ">",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt64Slice, ">5").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct1: {"multi.int_slice": {"7"}},
+			},
+		},
+		{
+			desc: ">=",
+			q:    search.NewQueryBuilder().AddStringsHighlighted(search.TestInt64Slice, ">=-2").ProtoQuery(),
+			expectedResults: map[*storage.TestMultiKeyStruct]map[string][]string{
+				testStruct0: {"multi.int_slice": {"-2"}},
+				testStruct1: {"multi.int_slice": {"7", "3"}},
 			},
 		},
 	})

@@ -23,10 +23,10 @@ func newTimeQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 	if t, ok := parseTimeString(trimmedValue); ok {
 		// If the date query is a singular datetime with no prefix, then need to create a numeric query with the min = date. max = date + 1
 		if prefix == "" {
-			return &QueryEntry{Where: WhereClause{
+			return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
 				Query:  fmt.Sprintf("%s >= $$ and %s < $$", ctx.qualifiedColumnName, ctx.qualifiedColumnName),
 				Values: []interface{}{t.Format(sqlTimeStampFormat), t.Add(dayDuration).Format(sqlTimeStampFormat)},
-			}}, nil
+			}, nil), nil
 		}
 		formattedTime = t.Format(sqlTimeStampFormat)
 	} else if d, ok := parseDuration(trimmedValue); ok {
@@ -39,10 +39,10 @@ func newTimeQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 		return nil, fmt.Errorf("invalid time query (prefix: %s, value: %s). Must be of the format (01/02/2006 or 1d)", prefix, trimmedValue)
 	}
 
-	return &QueryEntry{Where: WhereClause{
+	return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
 		Query:  fmt.Sprintf("%s %s $$", ctx.qualifiedColumnName, prefix),
 		Values: []interface{}{formattedTime},
-	}}, nil
+	}, nil), nil
 }
 
 func parseDuration(d string) (time.Duration, bool) {

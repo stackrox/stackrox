@@ -65,6 +65,51 @@ func invertNumericPrefix(prefix string) string {
 	return prefixesToInversions[prefix]
 }
 
+func getValueAsFloat64(foundValue interface{}) (float64, bool) {
+	switch foundValue := foundValue.(type) {
+	case float64:
+		return foundValue, true
+	case int:
+		return float64(foundValue), true
+	}
+	return 0, false
+}
+
+func getComparator(prefix string) func(a, b float64) bool {
+	switch prefix {
+	case "<":
+		return func(a, b float64) bool {
+			return a < b
+		}
+	case ">":
+		return func(a, b float64) bool {
+			return a > b
+		}
+	case "<=":
+		return func(a, b float64) bool {
+			return a <= b
+		}
+	case ">=":
+		return func(a, b float64) bool {
+			return a >= b
+		}
+	}
+	return func(a, b float64) bool {
+		return a == b
+	}
+}
+
+func getEquivalentGoFuncForNumericQuery(prefix string, value float64) func(foundValue interface{}) bool {
+	comparator := getComparator(prefix)
+	return func(foundValue interface{}) bool {
+		asFloat, ok := getValueAsFloat64(foundValue)
+		if !ok {
+			return false
+		}
+		return comparator(asFloat, value)
+	}
+}
+
 func createNumericQuery(root string, prefix string, value float64) WhereClause {
 	var valueStr string
 	if _, fraction := math.Modf(value); fraction > 0 {
@@ -73,12 +118,13 @@ func createNumericQuery(root string, prefix string, value float64) WhereClause {
 		valueStr = fmt.Sprintf("%0.0f", value)
 	}
 
-	if prefix == "" {
+	if prefix == "" || prefix == "==" {
 		prefix = "="
 	}
 	return WhereClause{
-		Query:  fmt.Sprintf("%s %s $$", root, prefix),
-		Values: []interface{}{valueStr},
+		Query:            fmt.Sprintf("%s %s $$", root, prefix),
+		Values:           []interface{}{valueStr},
+		equivalentGoFunc: getEquivalentGoFuncForNumericQuery(prefix, value),
 	}
 }
 
@@ -91,9 +137,6 @@ func newNumericQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	qe := &QueryEntry{Where: createNumericQuery(ctx.qualifiedColumnName, prefix, valuePtr)}
-	if ctx.highlight {
-		qe.SelectedFields = []SelectQueryField{{SelectPath: ctx.qualifiedColumnName, FieldPath: ctx.field.FieldPath, FieldType: ctx.dbField.DataType}}
-	}
-	return qe, nil
+	whereClause := createNumericQuery(ctx.qualifiedColumnName, prefix, valuePtr)
+	return qeWithSelectFieldIfNeeded(ctx, &whereClause, nil), nil
 }
