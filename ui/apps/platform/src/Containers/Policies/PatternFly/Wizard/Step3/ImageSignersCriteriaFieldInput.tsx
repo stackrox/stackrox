@@ -18,7 +18,7 @@ import {
     fetchSignatureIntegrations,
     SignatureIntegration,
 } from '../../../../../services/SignatureIntegrationsService';
-import useTableSelection from '../../../../../hooks/useTableSelection';
+import { useTableSelectionPreSelected } from '../../../../../hooks/useTableSelection';
 
 type TableCellProps = {
     row: SignatureIntegration;
@@ -41,16 +41,9 @@ function TableCellValue({ row, column }: TableCellProps): React.ReactElement {
 export function ImageSignersCriteriaFieldInput({ name, setValue, value }): React.ReactElement {
     const [isModalOpen, setIsModalOpen] = React.useState(false);
 
-    function handleCancelModal() {
-        setIsModalOpen(false);
-    }
-
-    function handleOpenModal() {
-        setIsModalOpen(true);
-    }
-
     const columns = [...tableColumnDescriptor.signatureIntegrations.signature];
     const [integrations, setIntegrations] = useState<SignatureIntegration[]>([]);
+    const [preSelected, setPreSelected] = useState<boolean[]>([]);
 
     useEffect(() => {
         fetchSignatureIntegrations()
@@ -61,10 +54,18 @@ export function ImageSignersCriteriaFieldInput({ name, setValue, value }): React
                 setIntegrations([]);
             });
     }, []);
+    useEffect(() => {
+        setPreSelected(
+            integrations.map((integration) => {
+                return value.arrayValue ? value.arrayValue.includes(integration.id) : false;
+            })
+        );
+    }, [integrations]);
 
+    console.log(preSelected);
     const { selected, onSelect, onSelectAll, allRowsSelected, getSelectedIds } =
         // pass an array with pre-selected values([true, false, true])
-        useTableSelection<SignatureIntegration>(integrations);
+        useTableSelectionPreSelected<SignatureIntegration>(integrations, preSelected);
 
     // enabled if selection changed
     function onConfirmHandler() {
@@ -78,19 +79,27 @@ export function ImageSignersCriteriaFieldInput({ name, setValue, value }): React
                 id={name}
                 isDisabled
                 value={
-                    value.arrayValue?.length === 0
-                        ? 'Select trusted image signers'
-                        : `Selected ${value.arrayValue.length} trusted image signers`
+                    value.arrayValue?.length > 0
+                        ? `Selected ${value.arrayValue?.length} trusted image signers`
+                        : 'Select trusted image signers'
                 }
             />
-            <Button key="open" variant={ButtonVariant.primary} onClick={handleOpenModal}>
+            <Button
+                key="open"
+                variant={ButtonVariant.primary}
+                onClick={() => {
+                    setIsModalOpen(true);
+                }}
+            >
                 Select
             </Button>
             <Modal
                 title="Select trusted image signers"
                 isOpen={isModalOpen}
                 variant={ModalVariant.small}
-                onClose={handleCancelModal}
+                onClose={() => {
+                    setIsModalOpen(false);
+                }}
                 data-testid="select-image-signers"
                 aria-label="Select image signers"
                 hasNoBodyWrapper
@@ -164,7 +173,13 @@ export function ImageSignersCriteriaFieldInput({ name, setValue, value }): React
                     </PageSection>
                 </ModalBoxBody>
                 <ModalBoxFooter>
-                    <Button key="cancel" variant="link" onClick={handleCancelModal}>
+                    <Button
+                        key="cancel"
+                        variant="link"
+                        onClick={() => {
+                            setIsModalOpen(false);
+                        }}
+                    >
                         Cancel
                     </Button>
                     <Button key="confirm" variant="danger" onClick={onConfirmHandler}>

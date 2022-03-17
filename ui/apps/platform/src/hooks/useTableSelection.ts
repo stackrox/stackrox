@@ -20,14 +20,24 @@ type Base = {
 };
 
 function useTableSelection<T extends Base>(data: T[]): UseTableSelection {
-    const [allRowsSelected, setAllRowsSelected] = React.useState(false);
-    const [selected, setSelected] = React.useState(data.map(() => false));
+    return useTableSelectionPreSelected(
+        data,
+        data.map(() => false)
+    );
+}
+
+export function useTableSelectionPreSelected<T extends Base>(
+    data: T[],
+    preSelected: boolean[]
+): UseTableSelection {
+    const [allRowsSelected, setAllRowsSelected] = React.useState(preSelected.every((val) => val));
+    const [selected, setSelected] = React.useState(preSelected);
     const numSelected = selected.reduce((acc, sel) => (sel ? acc + 1 : acc), 0);
     const hasSelections = numSelected > 0;
 
     React.useEffect(() => {
-        setSelected(data.map(() => false));
-    }, [data]);
+        setSelected(preSelected);
+    }, [preSelected]);
 
     const onClearAll = () => {
         setSelected(data.map(() => false));
