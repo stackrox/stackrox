@@ -344,13 +344,6 @@ func (l *loopImpl) waitForIndexing() {
 	}
 }
 
-// TODO(ROX-XXXX): Remove when context is added to all image enricher functions.
-func (l *loopImpl) enrichImageWrapper() individualImageReprocessingFunc {
-	return func(_ context.Context, enrichCtx imageEnricher.EnrichmentContext, image *storage.Image) (imageEnricher.EnrichmentResult, error) {
-		return l.imageEnricher.EnrichImage(enrichCtx, image)
-	}
-}
-
 func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption, reprocessingFunc individualImageReprocessingFunc) {
 	if l.stopSig.IsDone() {
 		return
@@ -513,17 +506,23 @@ func (l *loopImpl) runSignatureVerificationReprocessing() {
 	l.reprocessingStarted.Signal()
 
 	l.reprocessWatchedImages()
-	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchScansOnly, l.enrichSigVerificationWrapper())
+	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchScansOnly, l.forceEnrichSignatureVerificationResults())
 
 	l.reprocessingStarted.Reset()
 	l.reprocessingComplete.Signal()
 }
 
-func (l *loopImpl) enrichSigVerificationWrapper() individualImageReprocessingFunc {
+func (l *loopImpl) forceEnrichSignatureVerificationResults() individualImageReprocessingFunc {
 	return func(ctx context.Context, _ imageEnricher.EnrichmentContext, image *storage.Image) (imageEnricher.EnrichmentResult, error) {
 		return l.imageEnricher.EnrichWithSignatureVerificationData(ctx, image)
 	}
+}
 
+// TODO(ROX-9687): Remove when context is added to all image enricher functions.
+func (l *loopImpl) enrichImageWrapper() individualImageReprocessingFunc {
+	return func(_ context.Context, enrichCtx imageEnricher.EnrichmentContext, image *storage.Image) (imageEnricher.EnrichmentResult, error) {
+		return l.imageEnricher.EnrichImage(enrichCtx, image)
+	}
 }
 
 func (l *loopImpl) enrichLoop() {
