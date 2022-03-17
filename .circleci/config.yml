@@ -504,7 +504,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-cci-0.3.33
+      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-cci-0.3.32
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -754,6 +754,19 @@ commands:
                 fi
             fi
           when: always
+
+  install-ossls:
+    steps:
+      - run:
+          name: Install ossls
+          working_directory: /tmp
+          command: |
+            wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.5/fetch_linux_amd64
+            sudo install fetch_linux_amd64 /usr/bin/fetch
+            export GITHUB_OAUTH_TOKEN="$GITHUB_TOKEN"
+            fetch --repo="https://github.com/stackrox/ossls" --tag="0.10.1" --release-asset="ossls_linux_amd64" .
+            sudo install ossls_linux_amd64 /usr/bin/ossls
+            ossls version
 
   setup-egress-proxies:
     steps:
@@ -2767,6 +2780,8 @@ jobs:
 
       - *refreshAlpineBaseImage
 
+      - install-ossls
+
       - restore-go-mod-cache
       - setup-go-build-env
 
@@ -2846,6 +2861,8 @@ jobs:
             make --quiet tag
 
       - setup_remote_docker
+
+      - install-ossls
 
       - restore-go-mod-cache
       - setup-go-build-env
