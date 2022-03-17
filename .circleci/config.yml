@@ -4819,8 +4819,7 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-openshift-rosa-api-e2e-tests
-            - pre-build-cli
-            - pre-build-go-binaries
+            - build
           context:
             - com-redhat-cloud
             - quay-rhacs-eng-readonly
@@ -4848,8 +4847,7 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-openshift-aro-api-e2e-tests
-            - pre-build-cli
-            - pre-build-go-binaries
+            - build
           context:
             - com-redhat-cloud
             - quay-rhacs-eng-readonly
