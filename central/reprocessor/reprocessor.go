@@ -204,7 +204,9 @@ func (l *loopImpl) ReprocessSignatureVerifications() {
 	// Signal that we should reprocess signature verifications for all images. This will only trigger a reprocess with
 	// refetch of signature verification results.
 	// If the signal is already triggered, then the current signal is effectively deduped.
-	l.signatureVerificationSig.Signal()
+	if features.ImageSignatureVerification.Enabled() {
+		l.signatureVerificationSig.Signal()
+	}
 }
 
 func (l *loopImpl) sendDeployments(deploymentIDs []string) {
@@ -504,15 +506,9 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 }
 
 func (l *loopImpl) runSignatureVerificationReprocessing() {
-	// Signals for testing.
-	l.reprocessingComplete.Reset()
-	l.reprocessingStarted.Signal()
-
 	l.reprocessWatchedImages()
-	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchScansOnly, l.forceEnrichImageSignatureVerificationResults())
+	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly, l.forceEnrichImageSignatureVerificationResults())
 
-	l.reprocessingStarted.Reset()
-	l.reprocessingComplete.Signal()
 }
 
 func (l *loopImpl) forceEnrichImageSignatureVerificationResults() imageReprocessingFunc {
