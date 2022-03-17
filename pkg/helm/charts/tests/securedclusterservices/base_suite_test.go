@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	metaUtil "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
@@ -93,6 +92,8 @@ config:
   exposeMonitoring: true
 
 enableOpenShiftMonitoring: true
+scanner:
+  disable: false
 `
 )
 
@@ -171,10 +172,8 @@ func (s *baseSuite) ParseObjects(objYAMLs map[string]string) []unstructured.Unst
 func (s *baseSuite) TestAllGeneratableExplicit() {
 	// Ensures that allValuesExplicit causes all templates to be rendered non-empty, including the one
 	// containing generated values.
-	// TODO(ROX-8793): The tests will be enabled in a follow-up ticket because the current implementation breaks helm chart rendering.
-	if !buildinfo.ReleaseBuild {
-		s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "false")
-	}
+
+	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
 
 	_, rendered := s.LoadAndRender(allValuesExplicit)
 	s.Require().NotEmpty(rendered)

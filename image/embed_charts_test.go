@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
@@ -126,9 +125,7 @@ func (s *embedTestSuite) TestLoadSecuredClusterScanner() {
 		s.Run(name, func() {
 			metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
 			metaVals.KubectlOutput = testCase.kubectlOutput
-			if !buildinfo.ReleaseBuild {
-				metaVals.FeatureFlags[features.LocalImageScanning.EnvVar()] = testCase.enableLocalScannerFeatureFlag
-			}
+			metaVals.FeatureFlags[features.LocalImageScanning.EnvVar()] = testCase.enableLocalScannerFeatureFlag
 
 			loadedChart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
 			s.Require().NoError(err)
@@ -147,7 +144,7 @@ func (s *embedTestSuite) TestLoadSecuredClusterScanner() {
 
 			// Release builds should not contain scanner files currently
 			// TODO: Remove release build check if golang release unit tests fail after feature flag is enabled by default
-			if testCase.expectScannerFilesExist && !buildinfo.ReleaseBuild {
+			if testCase.expectScannerFilesExist {
 				s.NotEmpty(foundScannerTpls, "Did not found any scanner manifests but expected them.")
 			} else {
 				s.Empty(foundScannerTpls, "Found unexpected scanner manifests %q in SecuredCluster loadedChart", foundScannerTpls)
