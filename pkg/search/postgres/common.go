@@ -305,7 +305,7 @@ func compileQueryToPostgres(
 				Values: []interface{}{subBQ.DocIdQuery.GetIds()},
 			}}, nil
 		case *v1.BaseQuery_MatchFieldQuery:
-			qe, err := pgsearch.MatchFieldQueryFromField(
+			qe, err := pgsearch.MatchFieldQuery(
 				queryFields[subBQ.MatchFieldQuery.GetField()],
 				subBQ.MatchFieldQuery.GetValue(),
 				subBQ.MatchFieldQuery.GetHighlight(), optionsMap,
@@ -320,7 +320,7 @@ func compileQueryToPostgres(
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
 			var entries []*pgsearch.QueryEntry
 			for _, q := range subBQ.MatchLinkedFieldsQuery.Query {
-				qe, err := pgsearch.MatchFieldQueryFromField(queryFields[q.GetField()], q.GetValue(), q.GetHighlight(), optionsMap)
+				qe, err := pgsearch.MatchFieldQuery(queryFields[q.GetField()], q.GetValue(), q.GetHighlight(), optionsMap)
 				if err != nil {
 					return nil, err
 				}

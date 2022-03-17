@@ -8,6 +8,9 @@ import (
 	"github.com/jackc/pgtype"
 )
 
+// See the documentation on the PostTransform field of the SelectQueryField struct
+// for more clarity on the purpose of these post transform funcs.
+
 func getStringArrayPostTransformFunc(entry *QueryEntry) (func(val interface{}) interface{}, error) {
 	filterFunc := entry.Where.equivalentGoFunc
 	if filterFunc == nil {

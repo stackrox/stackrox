@@ -19,8 +19,20 @@ type SelectQueryField struct {
 	// PostTransform is a function that will be applied to the returned rows from SQL before
 	// further processing.
 	// The input will be of the type directly returned from the postgres rows.Scan function.
-	// The output must be of the same type as the input.
 	// It will be nil if there is no transform to be applied.
+	// Currently, the PostTransform is only used on arrays, so that we only highlight values
+	// that match the queries.
+	// For example, if we have the following table:
+	// key | string_array_column
+	// 0   | {"ab", "abc", "cd"}
+	// 1   | {"xyz"}
+	// And we have a query that's looking for a prefix of "a".
+	// If we do "select string_array_column from table where string_array_column like 'a%'", we get
+	// key | string_array_column
+	// 0   | {"ab", "abc", "cd"}
+	// However, this includes "cd", which does NOT match the query, which is not ideal for highlights.
+	// Therefore, we do a post-transform where we apply the query to the returned rows in Go,
+	// so that the final result seen by the user includes only {"ab", "abc"}.
 	PostTransform func(interface{}) interface{}
 }
 
@@ -43,7 +55,9 @@ type WhereClause struct {
 	Values []interface{}
 
 	// equivalentGoFunc returns the equivalent Go function to the Where clause.
-	// It is used in cases where we may want to do post-filtering.
+	// It is used in cases where we want to do some post-processing in Go space
+	// because doing it in SQL is too hairy.
+	// See the documentation of PostTransform in SelectQueryField for more details.
 	// It will not always be set.
 	equivalentGoFunc func(foundValue interface{}) bool
 }
@@ -62,8 +76,8 @@ func NewTrueQuery() *QueryEntry {
 	}}
 }
 
-// MatchFieldQueryFromField is a simple query that performs operations on a single field.
-func MatchFieldQueryFromField(dbField *walker.Field, value string, highlight bool, optionsMap searchPkg.OptionsMap) (*QueryEntry, error) {
+// MatchFieldQuery is a simple query that performs operations on a single field.
+func MatchFieldQuery(dbField *walker.Field, value string, highlight bool, optionsMap searchPkg.OptionsMap) (*QueryEntry, error) {
 	if dbField == nil {
 		return nil, nil
 	}
