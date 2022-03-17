@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -76,23 +77,24 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 	return integration, nil
 }
 
-func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) error {
+func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (bool, error) {
 	if err := sac.VerifyAuthzOK(signatureSAC.WriteAllowed(ctx)); err != nil {
-		return err
+		return false, err
 	}
 	if err := ValidateSignatureIntegration(integration); err != nil {
-		return errox.NewErrInvalidArgs(err.Error())
+		return false, errox.NewErrInvalidArgs(err.Error())
 	}
 
 	// Protect against TOCTOU race condition.
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	if err := d.verifyIntegrationIDExists(ctx, integration.GetId()); err != nil {
-		return err
+	hasUpdatedPublicKeys, err := d.verifyIntegrationIDExistsAndCheckForChangedPublicKeys(ctx, integration)
+	if err != nil {
+		return false, err
 	}
 
-	return d.storage.Upsert(ctx, integration)
+	return hasUpdatedPublicKeys, d.storage.Upsert(ctx, integration)
 }
 
 func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id string) error {
@@ -111,13 +113,30 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 }
 
 func (d *datastoreImpl) verifyIntegrationIDExists(ctx context.Context, id string) error {
-	_, found, err := d.storage.Get(ctx, id)
+	_, err := d.getSignatureIntegrationByID(ctx, id)
 	if err != nil {
 		return err
-	} else if !found {
-		return errox.NotFound.Newf("signature integration id=%s doesn't exist", id)
 	}
 	return nil
+}
+
+func (d *datastoreImpl) getSignatureIntegrationByID(ctx context.Context, id string) (*storage.SignatureIntegration, error) {
+	integration, found, err := d.storage.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	} else if !found {
+		return nil, errox.NotFound.Newf("signature integration id=%s doesn't exist", id)
+	}
+	return integration, nil
+}
+
+func (d *datastoreImpl) verifyIntegrationIDExistsAndCheckForChangedPublicKeys(ctx context.Context,
+	updatedIntegration *storage.SignatureIntegration) (bool, error) {
+	existingIntegration, err := d.getSignatureIntegrationByID(ctx, updatedIntegration.GetId())
+	if err != nil {
+		return false, err
+	}
+	return !getPublicKeyPEMSet(existingIntegration).Equal(getPublicKeyPEMSet(updatedIntegration)), nil
 }
 
 func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(ctx context.Context, id string) error {
@@ -128,4 +147,12 @@ func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(ctx context.Context, id 
 		return errox.AlreadyExists.Newf("signature integration id=%s already exists", id)
 	}
 	return nil
+}
+
+func getPublicKeyPEMSet(integration *storage.SignatureIntegration) set.StringSet {
+	publicKeySet := set.NewStringSet()
+	for _, key := range integration.GetCosign().GetPublicKeys() {
+		publicKeySet.Add(key.GetPublicKeyPemEnc())
+	}
+	return publicKeySet
 }
