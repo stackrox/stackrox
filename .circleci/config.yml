@@ -813,33 +813,8 @@ commands:
     - run:
         name: Verify that docs are up to date
         command: |
-          [[ "$CIRCLE_TAG" =~ << pipeline.parameters.release_rc_tag_bash_regex >> ]] || {
-            echo "Skipping step as this is not a release or RC build ..."
-            exit 0
-          }
-          version="${BASH_REMATCH[1]}"
-          <<# parameters.only-on-release >>
-          [[ -z "${BASH_REMATCH[3]}" ]] || {
-            echo "Skipping as this is an RC build"
-            exit 0
-          }
-          <</ parameters.only-on-release >>
-
-          expected_content_branch="rhacs-docs-${version}"
-          actual_content_branch="$(git config -f .gitmodules submodule.docs/content.branch)"
-          [[ "$actual_content_branch" == "$expected_content_branch" ]] || {
-            echo >&2 "Expected docs/content submodule to point to branch ${expected_content_branch}, got: ${actual_content_branch}"
-            exit 1
-          }
-
-          echo "Verifying that there is no newer commit on the branch ..."
-          git submodule update --remote docs/content
-          git diff --exit-code HEAD || {
-            echo >&2 "The docs/content submodule is out of date for the ${expected_content_branch} branch; please run"
-            echo >&2 "  git submodule update --remote docs/content"
-            echo >&2 "and commit the result."
-            exit 1
-          }
+          source scripts/ci/lib.sh
+          check_docs "$CIRCLE_TAG" "<< parameters.only-on-release >>"
 
   check-scanner-and-collector-release-step:
     parameters:

@@ -10,6 +10,9 @@ set -u
 
 source "$SCRIPTS_ROOT/scripts/lib.sh"
 
+# Caution when editing: make sure groups would correspond to BASH_REMATCH use.
+RELEASE_RC_TAG_BASH_REGEX='^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
+
 ensure_CI() {
     if ! is_CI; then
         die "A CI environment is required."
@@ -186,6 +189,49 @@ push_matching_collector_scanner_images() {
         "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}"
         "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}"
     done
+}
+
+check_docs() {
+    info "Check docs version"
+
+    if [[ "$#" -lt 1 ]]; then
+        die "missing arg. usage: check_docs <tag>"
+    fi
+
+    local tag="$1"
+    local only_run_on_releases="${2:-false}"
+
+    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || {
+        info "Skipping step as this is not a release or RC build"
+        exit 0
+    }
+
+    if [[ "$only_run_on_releases" == "true" ]]; then
+        [[ -z "${BASH_REMATCH[3]}" ]] || {
+            info "Skipping as this is an RC build"
+            exit 0
+        }
+    fi
+
+    local version="${BASH_REMATCH[1]}"
+    local expected_content_branch="rhacs-docs-${version}"
+    local actual_content_branch
+    actual_content_branch="$(git config -f .gitmodules submodule.docs/content.branch)"
+    [[ "$actual_content_branch" == "$expected_content_branch" ]] || {
+        echo >&2 "Expected docs/content submodule to point to branch ${expected_content_branch}, got: ${actual_content_branch}"
+        exit 1
+    }
+
+    git submodule update --remote docs/content
+    git diff --exit-code HEAD || {
+        echo >&2 "The docs/content submodule is out of date for the ${expected_content_branch} branch; please run"
+        echo >&2 "  git submodule update --remote docs/content"
+        echo >&2 "and commit the result."
+        exit 1
+    }
+
+    info "The docs version is as expected"
+    exit 0
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
