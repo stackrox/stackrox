@@ -12,12 +12,12 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
+	baseTable  = "namespaces"
 	countStmt  = "SELECT COUNT(*) FROM namespaces"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM namespaces WHERE Id = $1)"
 
@@ -30,14 +30,8 @@ const (
 	deleteManyStmt = "DELETE FROM namespaces WHERE Id = ANY($1::text[])"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "namespaces"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "NamespaceMetadata")
+	globaldb.RegisterTable(baseTable, "NamespaceMetadata")
 }
 
 type Store interface {

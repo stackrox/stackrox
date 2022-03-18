@@ -12,12 +12,12 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
+	baseTable  = "processwhitelistresults"
 	countStmt  = "SELECT COUNT(*) FROM processwhitelistresults"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM processwhitelistresults WHERE DeploymentId = $1)"
 
@@ -30,14 +30,8 @@ const (
 	deleteManyStmt = "DELETE FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "processwhitelistresults"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "ProcessBaselineResults")
+	globaldb.RegisterTable(baseTable, "ProcessBaselineResults")
 }
 
 type Store interface {
