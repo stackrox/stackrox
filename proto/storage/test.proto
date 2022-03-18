@@ -66,6 +66,8 @@ message TestSingleKeyStruct {
       string oneofstring      = 14;
       OneOfNested oneofnested = 15;
     }
+
+    bytes bytess = 16;
 }
 
 message TestMultiKeyStruct {

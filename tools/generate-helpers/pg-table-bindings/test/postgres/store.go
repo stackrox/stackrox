@@ -73,6 +73,7 @@ create table if not exists singlekey (
     Oneofstring varchar,
     Oneofnested_Nested varchar,
     Oneofnested_Nested2_Nested2 varchar,
+    Bytess varchar,
     serialized bytea,
     PRIMARY KEY(Key)
 )
@@ -149,10 +150,11 @@ func insertIntoSinglekey(ctx context.Context, tx pgx.Tx, obj *storage.TestSingle
 		obj.GetOneofstring(),
 		obj.GetOneofnested().GetNested(),
 		obj.GetOneofnested().GetNested2().GetNested2(),
+		obj.GetBytess(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO singlekey (Key, Name, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, Embedded_Embedded, Oneofstring, Oneofnested_Nested, Oneofnested_Nested2_Nested2, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(Key) DO UPDATE SET Key = EXCLUDED.Key, Name = EXCLUDED.Name, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, Embedded_Embedded = EXCLUDED.Embedded_Embedded, Oneofstring = EXCLUDED.Oneofstring, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, Oneofnested_Nested2_Nested2 = EXCLUDED.Oneofnested_Nested2_Nested2, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO singlekey (Key, Name, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, Embedded_Embedded, Oneofstring, Oneofnested_Nested, Oneofnested_Nested2_Nested2, Bytess, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(Key) DO UPDATE SET Key = EXCLUDED.Key, Name = EXCLUDED.Name, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, Embedded_Embedded = EXCLUDED.Embedded_Embedded, Oneofstring = EXCLUDED.Oneofstring, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, Oneofnested_Nested2_Nested2 = EXCLUDED.Oneofnested_Nested2_Nested2, Bytess = EXCLUDED.Bytess, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
