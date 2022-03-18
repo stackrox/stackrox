@@ -73,8 +73,8 @@ fi
 tar cz "${tar_chown_args[@]}" --file "$OUTPUT_BUNDLE" --directory "${bundle_root}" .
 
 # Create checksum
-sha512sum "${OUTPUT_BUNDLE}" > "${OUTPUT_BUNDLE}.sha512"
-sha512sum --check "${OUTPUT_BUNDLE}.sha512"
+#sha512sum "${OUTPUT_BUNDLE}" > "${OUTPUT_BUNDLE}.sha512"
+#sha512sum --check "${OUTPUT_BUNDLE}.sha512"
 
 # Clean up after success
 rm -r "${bundle_root}"
