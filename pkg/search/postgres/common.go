@@ -141,11 +141,19 @@ func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, schema *walker.S
 	}
 	froms, joinsMap := getJoins(schema, tables...)
 
-	fromClause := stringutils.JoinNonEmpty(", ", froms...)
 	queryEntry, err := compileQueryToPostgres(schema, q, optionsMap, dbFields, joinsMap)
 	if err != nil {
 		return nil, err
 	}
+	// If a non-empty query was passed, but we couldn't find a query, that means that the query is invalid
+	// for this category. (For example, searching secrets by "Policy:"). In this case, we return a query that matches nothing.
+	// This behaviour is helpful, for example, in Global Search, where a query that is invalid for a
+	// certain category will just return no elements of that category.
+	if q.GetQuery() != nil && queryEntry == nil {
+		return nil, nil
+	}
+
+	fromClause := stringutils.JoinNonEmpty(", ", froms...)
 	selQuery := generateSelectFields(queryEntry, schema.LocalPrimaryKeys(), selectType)
 	pagination, err := getPaginationQuery(q.Pagination, schema, dbFields)
 	if err != nil {
@@ -405,6 +413,10 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 	query, err = populatePath(q, optionsMap, schema, GET)
 	if err != nil {
 		return nil, err
+	}
+	// A nil-query implies no results.
+	if query == nil {
+		return nil, nil
 	}
 
 	queryStr := query.String()
