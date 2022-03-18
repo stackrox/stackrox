@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTER_VULNERABILITIES, walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), "cluster_cves"))
+	mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTER_VULNERABILITIES, walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), baseTable))
 }
 
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
