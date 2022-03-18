@@ -12,6 +12,7 @@ export type UseTableSelection = {
     ) => void;
     onSelectAll: (event: React.FormEvent<HTMLInputElement>, isSelected: boolean) => void;
     onClearAll: () => void;
+    onCancelAll: () => void;
     getSelectedIds: () => string[];
 };
 
@@ -19,19 +20,31 @@ type Base = {
     id: string;
 };
 
-function useTableSelection<T extends Base>(data: T[]): UseTableSelection {
-    const [allRowsSelected, setAllRowsSelected] = React.useState(false);
-    const [selected, setSelected] = React.useState(data.map(() => false));
+function useTableSelection<T extends Base>(
+    data: T[],
+    // determines whether value should be pre-selected or not
+    preSelectedFunc: (T) => boolean = () => false
+): UseTableSelection {
+    const [allRowsSelected, setAllRowsSelected] = React.useState(
+        data.map(preSelectedFunc).every((val) => val)
+    );
+    const [selected, setSelected] = React.useState(data.map(preSelectedFunc));
     const numSelected = selected.reduce((acc, sel) => (sel ? acc + 1 : acc), 0);
     const hasSelections = numSelected > 0;
 
     React.useEffect(() => {
-        setSelected(data.map(() => false));
+        setSelected(data.map(preSelectedFunc));
+        setAllRowsSelected(data.map(preSelectedFunc).every((val) => val));
     }, [data]);
 
     const onClearAll = () => {
         setSelected(data.map(() => false));
         setAllRowsSelected(false);
+    };
+
+    const onCancelAll = () => {
+        setSelected(data.map(preSelectedFunc));
+        setAllRowsSelected(data.map(preSelectedFunc).every((val) => val));
     };
 
     const onSelect = (event, isSelected: boolean, rowId: number) => {
@@ -78,6 +91,7 @@ function useTableSelection<T extends Base>(data: T[]): UseTableSelection {
         onSelect,
         onSelectAll,
         onClearAll,
+        onCancelAll,
         getSelectedIds,
     };
 }
