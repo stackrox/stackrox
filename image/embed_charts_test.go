@@ -143,7 +143,6 @@ func (s *embedTestSuite) TestLoadSecuredClusterScanner() {
 			}
 
 			// Release builds should not contain scanner files currently
-			// TODO: Remove release build check if golang release unit tests fail after feature flag is enabled by default
 			if testCase.expectScannerFilesExist {
 				s.NotEmpty(foundScannerTpls, "Did not found any scanner manifests but expected them.")
 			} else {
