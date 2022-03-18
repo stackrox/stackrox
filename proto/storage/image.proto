@@ -45,8 +45,10 @@ message Image {
     }
 
     enum Note {
-        MISSING_METADATA    = 0;
-        MISSING_SCAN_DATA   = 1;
+        MISSING_METADATA                    = 0;
+        MISSING_SCAN_DATA                   = 1;
+        MISSING_SIGNATURE                   = 2;
+        MISSING_SIGNATURE_VERIFICATION_DATA = 3;
     }
     repeated Note                   notes                       = 14;
 }
