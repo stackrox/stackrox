@@ -6,6 +6,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -1199,4 +1200,62 @@ func (s *IndexSuite) TestMapHighlights() {
 			},
 		},
 	})
+}
+
+func (s *IndexSuite) TestPagination() {
+	var testStructs []*storage.TestMultiKeyStruct
+	for i := 0; i < 8; i++ {
+		testStructs = append(testStructs, s.getStruct(i, func(s *storage.TestMultiKeyStruct) {
+			s.String_ = fmt.Sprintf("string-%d", i)
+			s.Int64 = int64(rand.Int31())
+			if i%3 != 0 {
+				s.Bool = true
+			}
+		}))
+	}
+
+	for _, testCase := range []struct {
+		desc                   string
+		pagination             *v1.QueryPagination
+		orderedExpectedMatches []int
+	}{
+		{
+			"sort ascending",
+			&v1.QueryPagination{
+				Limit:       0,
+				Offset:      0,
+				SortOptions: []*v1.QuerySortOption{{Field: "Test String"}},
+			},
+			[]int{1, 2, 4, 5, 7},
+		},
+		{
+			"sort descending",
+			&v1.QueryPagination{
+				Limit:       0,
+				Offset:      0,
+				SortOptions: []*v1.QuerySortOption{{Field: "Test String", Reversed: true}},
+			},
+			[]int{7, 5, 4, 2, 1},
+		},
+	} {
+		s.Run(testCase.desc, func() {
+			q := search.NewQueryBuilder().AddBools(search.TestBool, true).ProtoQuery()
+			q.Pagination = testCase.pagination
+			results, err := s.indexer.Search(q)
+			s.Require().NoError(err)
+
+			actualMatches := make([]int, 0, len(results))
+			for resultIdx, r := range results {
+				for i, s := range testStructs {
+					if r.ID == s.Key1+"+"+s.Key2 {
+						actualMatches = append(actualMatches, i)
+						break
+					}
+				}
+				s.Require().True(len(actualMatches) == resultIdx+1, "couldn't find id from result %+v", r)
+			}
+			s.Equal(testCase.orderedExpectedMatches, actualMatches)
+		})
+	}
+
 }

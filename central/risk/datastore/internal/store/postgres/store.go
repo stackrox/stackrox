@@ -385,24 +385,27 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Risk,
 		return nil, nil, err
 	}
 	defer rows.Close()
-	elems := make([]*storage.Risk, 0, len(ids))
-	foundSet := make(map[string]struct{})
+	resultsByID := make(map[string]*storage.Risk)
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, nil, err
 		}
-		var msg storage.Risk
-		if err := proto.Unmarshal(data, &msg); err != nil {
+		msg := &storage.Risk{}
+		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
 		}
-		foundSet[msg.GetId()] = struct{}{}
-		elems = append(elems, &msg)
+		resultsByID[msg.GetId()] = msg
 	}
-	missingIndices := make([]int, 0, len(ids)-len(foundSet))
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.Risk, 0, len(resultsByID))
 	for i, id := range ids {
-		if _, ok := foundSet[id]; !ok {
+		if result, ok := resultsByID[id]; !ok {
 			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
 		}
 	}
 	return elems, missingIndices, nil
