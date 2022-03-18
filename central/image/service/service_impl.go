@@ -200,26 +200,17 @@ func (s *serviceImpl) saveImage(img *storage.Image) error {
 
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
-		s, err := status.New(codes.Unavailable, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
-		if pkgUtils.Should(err) == nil {
-			return nil, s.Err()
-		}
+	existingImg, exists, err := s.acquireScanSemaphoreAndExistingImage(ctx, request.GetImage().GetId())
+	if err != nil {
+		return nil, err
 	}
+
 	defer s.internalScanSemaphore.Release(1)
 
-	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
-	// images
-	if request.GetImage().GetId() != "" {
-		img, exists, err := s.datastore.GetImage(ctx, request.GetImage().GetId())
-		if err != nil {
-			return nil, err
-		}
-		// If the scan exists, return the scan.
-		// Otherwise, run the enrichment pipeline.
-		if exists {
-			return internalScanRespFromImage(img), nil
-		}
+	// If the scan exists, return the scan.
+	// Otherwise, run the enrichment pipeline.
+	if exists {
+		return internalScanRespFromImage(existingImg), nil
 	}
 
 	// If no ID, then don't use caches as they could return stale data
