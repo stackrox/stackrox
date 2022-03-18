@@ -53,7 +53,7 @@ func (i *identity) Service() *storage.ServiceIdentity {
 }
 
 func (i identity) ValidityPeriod() (time.Time, time.Time) {
-	return i.info.NotBefore, i.info.NotAfter
+	return time.Time{}, i.info.NotAfter
 }
 
 func (i *identity) ExternalAuthProvider() authproviders.Provider {
