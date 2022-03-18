@@ -1,8 +1,6 @@
 package resources
 
 import (
-	"fmt"
-	"reflect"
 	"sort"
 
 	"github.com/gogo/protobuf/types"
@@ -53,8 +51,6 @@ func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action 
 		log.Errorf("could not process %+v as it does not implement metaV1.Object", obj)
 		return nil
 	}
-
-	fmt.Printf("deploymentDispatcherImpl.ProcessEvent: obj: %+v\n", obj)
 
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		d.handler.hierarchy.Remove(string(metaObj.GetUID()))
@@ -107,8 +103,6 @@ func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deployme
 }
 
 func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
-	fmt.Printf("### deploymentHandler.processWithType: obj type: %s\n", reflect.TypeOf(obj))
-
 	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore, d.networkPoliciesStore,
 		d.hierarchy, d.config.GetConfig().GetRegistryOverride(), d.orchestratorNamespaces)
 	// Note: deploymentWrap may be nil. Typically, this means that this is not a top-level object that we track --

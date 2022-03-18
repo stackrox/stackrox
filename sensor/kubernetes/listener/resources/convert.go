@@ -74,7 +74,6 @@ func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAct
 	lister v1listers.PodLister, namespaceStore *namespaceStore, npStore *NetworkPolicyStore, hierarchy references.ParentHierarchy, registryOverride string,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentWrap {
 	wrap := newWrap(obj, deploymentType, clusterID, registryOverride)
-	fmt.Printf("newDeploymentEventFromResource: wrap: %+v\n", wrap)
 	if wrap == nil {
 		return nil
 	}
@@ -145,7 +144,6 @@ func checkIfNewPodSpecRequired(podSpec *v1.PodSpec, pods []*v1.Pod) bool {
 func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *central.ResourceAction, lister v1listers.PodLister,
 	namespaceStore *namespaceStore, npStore *NetworkPolicyStore, hierarchy references.ParentHierarchy,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces) (bool, error) {
-	fmt.Printf("populateNonStaticFields: obj: %+v\n", obj)
 
 	w.original = obj
 	objValue := reflect.Indirect(reflect.ValueOf(obj))

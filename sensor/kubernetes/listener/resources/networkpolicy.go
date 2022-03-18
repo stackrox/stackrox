@@ -26,13 +26,10 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, _ interface{}, action centra
 
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE:
-		fmt.Printf("Adding NetworkPolicy '%s' to store\n", k8sNP.Name)
 		h.npStore.addNetPolicy(netPolicy)
 	case central.ResourceAction_REMOVE_RESOURCE:
-		fmt.Printf("Deleting NetworkPolicy '%s' from store\n", k8sNP.Name)
 		h.npStore.deleteNetPolicy(netPolicy)
 	case central.ResourceAction_UPDATE_RESOURCE:
-		fmt.Printf("Updating NetworkPolicy '%s' in store\n", k8sNP.Name)
 		h.npStore.update(netPolicy)
 	default:
 		fmt.Printf("Unknown action to NetworkPolicy '%s': %v\n", k8sNP.Name, action)

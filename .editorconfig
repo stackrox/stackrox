@@ -2,4 +2,4 @@
 indent_style = tab
 
 [**.go]
-indent_size = tab
+indent_style = tab
