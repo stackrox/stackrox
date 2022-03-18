@@ -82,9 +82,10 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
+		netPolicyStore := newNetworkPolicyStore() // TODO: mock this?
 		ph := references.NewParentHierarchy()
 		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", testClusterID, nil,
-			mockNamespaceStore, ph, "", orchestratornamespaces.Singleton())
+			mockNamespaceStore, netPolicyStore, ph, "", orchestratornamespaces.Singleton())
 		assert.Equal(t, c.expectedAction, c.action)
 	}
 }
@@ -647,8 +648,9 @@ func TestConvert(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
+			netPolicyStore := newNetworkPolicyStore() // TODO: mock this?
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID,
-				c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "",
+				c.podLister, mockNamespaceStore, netPolicyStore, hierarchyFromPodLister(c.podLister), "",
 				orchestratornamespaces.Singleton()).GetDeployment()
 			if actual != nil {
 				actual.StateTimestamp = 0

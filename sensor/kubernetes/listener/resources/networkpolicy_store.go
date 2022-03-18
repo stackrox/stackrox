@@ -23,6 +23,7 @@ func newNetworkPolicyStore() *NetworkPolicyStore {
 	}
 }
 
+// GetAll returns all Network Policies
 func (n *NetworkPolicyStore) GetAll() []*storage.NetworkPolicy {
 	rel := make([]*storage.NetworkPolicy, 0, len(n.netPolicies))
 	for _, policy := range n.netPolicies {
@@ -31,6 +32,7 @@ func (n *NetworkPolicyStore) GetAll() []*storage.NetworkPolicy {
 	return rel
 }
 
+// Get retrieves Network Policy by ID
 func (n *NetworkPolicyStore) Get(id string) *storage.NetworkPolicy {
 	if policy, found := n.netPolicies[id]; found {
 		return policy
@@ -64,12 +66,4 @@ func (n *NetworkPolicyStore) update(np *storage.NetworkPolicy) {
 	} else {
 		n.addNetPolicy(np)
 	}
-}
-
-func (n *NetworkPolicyStore) lookupNetPolicyID(name string) (string, bool) {
-	n.lock.RLock()
-	defer n.lock.RUnlock()
-
-	id, found := n.netPolicyNamesToIDs[name]
-	return id, found
 }

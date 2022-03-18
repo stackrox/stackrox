@@ -136,6 +136,7 @@ func ConstructDeploymentWithNetworkFlowInfo(
 	return obj, nil
 }
 
+// ConstructDeploymentWithNetworkPolicy comment TODO
 func ConstructDeploymentWithNetworkPolicy(deployment *storage.Deployment, images []*storage.Image, netpolAssociation *NetworkPolicyAssociation) (*pathutil.AugmentedObj, error) {
 	obj, err := ConstructDeployment(deployment, images)
 	if err != nil {

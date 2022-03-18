@@ -1,8 +1,6 @@
 package booleanpolicy
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
@@ -288,7 +286,7 @@ func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, deployment *storag
 		log.Info("Matching deployment using network policy association")
 		netpol, ok := extra[0].(*augmentedobjs.NetworkPolicyAssociation)
 		if !ok {
-			return Violations{}, fmt.Errorf("!!! failed")
+			return Violations{}, errors.New("!!! failed")
 		}
 		violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 			return augmentedobjs.ConstructDeploymentWithNetworkPolicy(deployment, images, netpol)
@@ -298,14 +296,12 @@ func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, deployment *storag
 		}
 		log.Infof("Generating %d alerts", len(violations.AlertViolations))
 		return *violations, nil
-	} else {
-		violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-			return augmentedobjs.ConstructDeployment(deployment, images)
-		}, nil, nil, nil)
-		if err != nil || violations == nil {
-			return Violations{}, err
-		}
-		return *violations, nil
 	}
-
+	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
+		return augmentedobjs.ConstructDeployment(deployment, images)
+	}, nil, nil, nil)
+	if err != nil || violations == nil {
+		return Violations{}, err
+	}
+	return *violations, nil
 }

@@ -29,6 +29,7 @@ const (
 	MissingEgressNetworkPolicyCustomTag  = "Missing Egress Network Policy"
 )
 
+// NetworkPolicyAssociation comment TODO
 type NetworkPolicyAssociation struct {
 	MissingIngressNetworkPolicy bool `policy:"Missing Ingress Network Policy"`
 	MissingEgressNetworkPolicy  bool `policy:"Missing Egress Network Policy"`
