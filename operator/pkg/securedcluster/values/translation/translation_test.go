@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	testingUtils "github.com/stackrox/rox/operator/pkg/values/testing"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
@@ -539,6 +540,11 @@ func (s TranslationTestSuite) TestTranslate() {
 			delete(got["meta"].(map[string]interface{}), "configFingerprintOverride")
 			if len(got["meta"].(map[string]interface{})) == 0 {
 				delete(got, "meta")
+			}
+
+			// TODO(ROX-8466): Remove if feature flag gets enabled
+			if buildinfo.ReleaseBuild {
+				delete(wantAsValues, "scanner")
 			}
 
 			assert.Equal(t, wantAsValues, got)

@@ -27,6 +27,7 @@ spec:
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
     spec:
+      serviceAccountName: central-db
       initContainers:
       - name: init-db
         image: {{ ._rox.central.image.fullRef | replace "main" "central-db" | quote }}
@@ -78,7 +79,6 @@ spec:
           name: disk
         - name: central-db-tls-volume
           mountPath: /run/secrets/stackrox.io/certs
-      serviceAccountName: central
       securityContext:
         fsGroup: 70
       volumes:

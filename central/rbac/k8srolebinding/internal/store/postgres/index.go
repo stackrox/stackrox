@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_ROLEBINDINGS, walker.Walk(reflect.TypeOf((*storage.K8SRoleBinding)(nil)), "rolebindings"))
+	mapping.RegisterCategoryToTable(v1.SearchCategory_ROLEBINDINGS, walker.Walk(reflect.TypeOf((*storage.K8SRoleBinding)(nil)), baseTable))
 }
 
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {

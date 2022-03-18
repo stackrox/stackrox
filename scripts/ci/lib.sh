@@ -115,6 +115,79 @@ get_central_diagnostics() {
     ls -l "${output_dir}"
 }
 
+push_main_and_roxctl_images() {
+    info "Pushing main and roxctl images"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: push_main_and_roxctl_images <branch>"
+    fi
+
+    require_environment "DOCKER_IO_PUSH_USERNAME"
+    require_environment "DOCKER_IO_PUSH_PASSWORD"
+    require_environment "QUAY_RHACS_ENG_RW_USERNAME"
+    require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
+
+    local branch="$1"
+
+    docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "docker.io/stackrox/main:$(make --quiet tag)" | cat
+    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "docker.io/stackrox/roxctl:$(make --quiet tag)" | cat
+    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "docker.io/stackrox/central-db:$(make --quiet tag)" | cat
+    if [[ "$branch" == "master" ]]; then
+        docker tag "docker.io/stackrox/main:$(make --quiet tag)" docker.io/stackrox/main:latest
+        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" docker.io/stackrox/main:latest
+
+        docker tag "docker.io/stackrox/roxctl:$(make --quiet tag)" docker.io/stackrox/roxctl:latest
+        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" docker.io/stackrox/roxctl:latest
+
+        docker tag "docker.io/stackrox/central-db:$(make --quiet tag)" docker.io/stackrox/central-db:latest
+        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" docker.io/stackrox/central-db:latest
+    fi
+
+    QUAY_REPO="rhacs-eng"
+    docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/main:$(make --quiet tag)" | cat
+    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" | cat
+    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/central-db:$(make --quiet tag)" | cat
+    if [[ "$branch" == "master" ]]; then
+        docker tag "quay.io/$QUAY_REPO/main:$(make --quiet tag)" "quay.io/$QUAY_REPO/main:latest"
+        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/main:latest"
+
+        docker tag "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" "quay.io/$QUAY_REPO/roxctl:latest"
+        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/roxctl:latest"
+
+        docker tag "quay.io/$QUAY_REPO/central-db:$(make --quiet tag)" "quay.io/$QUAY_REPO/central-db:latest"
+        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/central-db:latest"
+    fi
+}
+
+push_matching_collector_scanner_images() {
+    info "Pushing collector & scanner images tagged with main-version to docker.io/stackrox and quay.io/rhacs-eng"
+
+    require_environment "DOCKER_IO_PUSH_USERNAME"
+    require_environment "DOCKER_IO_PUSH_PASSWORD"
+    require_environment "QUAY_RHACS_ENG_RW_USERNAME"
+    require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
+
+    docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+    docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+
+    MAIN_TAG="$(make --quiet tag)"
+    SCANNER_VERSION="$(make --quiet scanner-tag)"
+    COLLECTOR_VERSION="$(make --quiet collector-tag)"
+
+    REGISTRIES=( "docker.io/stackrox" "quay.io/rhacs-eng" )
+    for TARGET_REGISTRY in "${REGISTRIES[@]}"; do
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner:${MAIN_TAG}"
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}"
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/scanner-slim:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner-slim:${MAIN_TAG}"
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/scanner-db-slim:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db-slim:${MAIN_TAG}"
+
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}"
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}"
+    done
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         die "When invoked at the command line a method is required."

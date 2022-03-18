@@ -6,6 +6,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+- The default Admission Controller "fail open" timeout has been changed from 3 seconds to 20 seconds in Helm templates.
+- The maximum Admission Controller "fail open" timeout has been set at 25 seconds in Helm template verification performed by the Operator.
+  - This change is *not* backwards compatible; if an existing Custom Resource sets the value to > 25 seconds, then it will fail validation in case operator is downgraded. This change is accepted because the operator is still in v1alpha1 and subject to change.
+- The admission webhook timeout is now set to the admission controller timeout plus 2 seconds.
+
 ## [69.0]
 
 - `collector` image with `-slim` in the image tag is no longer published (`collector-slim` with suffix in the image name will continue to be published).
@@ -35,10 +40,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Note that this only affects users who are storing their policies externally and keeping those policies in sync with Central. There is no action required for users who are not taking this approach.
   - Support for system policies with `policyVersion` unset will be removed in 3.71. All such externally stored policies must be converted to policy version 1.0 or higher. To do so, import the policies into the system, and then export the previously imported policies. The exported policies will now be in supported policy version format (>=1.0), which can be ensured by checking the `policyVersion` field.
 - Vulnerability Risk Assessment: Deferral update requests that are in pending state can now be canceled.
-- A version of Scanner and ScannerDB will be installed in each OpenShift cluster to support images stored in the OpenShift Internal Image Registry.
-  - The images are "slimmed" down versions of Scanner and ScannerDB
-    - scanner-slim and scanner-db-slim
-  - They require the same resources as the normal Scanner and ScannerDB.
 
 ## [68.0]
 

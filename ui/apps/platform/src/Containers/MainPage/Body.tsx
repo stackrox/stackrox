@@ -72,9 +72,6 @@ function Body(): ReactElement {
         knownBackendFlags.ROX_SYSTEM_HEALTH_PF
     );
     const isVulnReportingEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
-    const isVulnRiskAcceptanceEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_VULN_RISK_MANAGEMENT
-    );
     return (
         <div
             className={`flex flex-col h-full w-full relative overflow-auto ${
@@ -106,7 +103,6 @@ function Body(): ReactElement {
                     <ProtectedRoute
                         path={vulnManagementRiskAcceptancePath}
                         component={AsyncVulnMgmtRiskAcceptancePage}
-                        featureFlagEnabled={isVulnRiskAcceptanceEnabled}
                     />
                     <ProtectedRoute path={vulnManagementPath} component={AsyncVulnMgmtPage} />
                     <ProtectedRoute

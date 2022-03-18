@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import pluralize from 'pluralize';
 import cloneDeep from 'lodash/cloneDeep';
 import { Card, Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
@@ -8,15 +8,12 @@ import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import CVETable from 'Containers/Images/CVETable';
-import workflowStateContext from 'Containers/workflowStateContext';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import entityTypes from 'constants/entityTypes';
 import DateTimeField from 'Components/DateTimeField';
 import { entityToColumns } from 'constants/listColumns';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import useTabs from 'hooks/patternfly/useTabs';
 
 import DeferredCVEs from 'Containers/VulnMgmt/RiskAcceptance/DeferredCVEs';
@@ -24,7 +21,6 @@ import ObservedCVEs from 'Containers/VulnMgmt/RiskAcceptance/ObservedCVEs';
 import FalsePositiveCVEs from 'Containers/VulnMgmt/RiskAcceptance/FalsePositiveCVEs';
 import ScanDataMessage from './ScanDataMessage';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
-import TableWidgetFixableCves from '../TableWidgetFixableCves';
 import TableWidget from '../TableWidget';
 
 const emptyImage = {
@@ -50,10 +46,6 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: 'OBSERVED_CVES',
     });
-    const workflowState = useContext(workflowStateContext);
-    const isVulnRiskManagementEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_VULN_RISK_MANAGEMENT
-    );
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyImage, ...data };
@@ -169,58 +161,48 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                     <div className="flex pdf-page pdf-stretch pdf-new rounded relative mb-4 ml-4 mr-4 pb-20">
                         {/* TODO: replace these 3 repeated Fixable CVEs tabs with tabs for
                             Observed, Deferred, and False Postive CVEs tables */}
-                        {isVulnRiskManagementEnabled ? (
-                            <div className="w-full">
-                                <Card isFlat>
-                                    <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
-                                        <Tab
-                                            eventKey="OBSERVED_CVES"
-                                            tabContentId="OBSERVED_CVES"
-                                            title={<TabTitleText>Observed CVEs</TabTitleText>}
-                                        />
-                                        <Tab
-                                            eventKey="DEFERRED_CVES"
-                                            tabContentId="DEFERRED_CVES"
-                                            title={<TabTitleText>Deferred CVEs</TabTitleText>}
-                                        />
-                                        <Tab
-                                            eventKey="FALSE_POSITIVE_CVES"
-                                            tabContentId="FALSE_POSITIVE_CVES"
-                                            title={<TabTitleText>False positive CVEs</TabTitleText>}
-                                        />
-                                    </Tabs>
-                                    <TabContent
+                        <div className="w-full">
+                            <Card isFlat>
+                                <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
+                                    <Tab
                                         eventKey="OBSERVED_CVES"
-                                        id="OBSERVED_CVES"
-                                        hidden={activeKeyTab !== 'OBSERVED_CVES'}
-                                    >
-                                        <ObservedCVEs imageId={data.id} />
-                                    </TabContent>
-                                    <TabContent
+                                        tabContentId="OBSERVED_CVES"
+                                        title={<TabTitleText>Observed CVEs</TabTitleText>}
+                                    />
+                                    <Tab
                                         eventKey="DEFERRED_CVES"
-                                        id="DEFERRED_CVES"
-                                        hidden={activeKeyTab !== 'DEFERRED_CVES'}
-                                    >
-                                        <DeferredCVEs imageId={data.id} />
-                                    </TabContent>
-                                    <TabContent
+                                        tabContentId="DEFERRED_CVES"
+                                        title={<TabTitleText>Deferred CVEs</TabTitleText>}
+                                    />
+                                    <Tab
                                         eventKey="FALSE_POSITIVE_CVES"
-                                        id="FALSE_POSITIVE_CVES"
-                                        hidden={activeKeyTab !== 'FALSE_POSITIVE_CVES'}
-                                    >
-                                        <FalsePositiveCVEs imageId={data.id} />
-                                    </TabContent>
-                                </Card>
-                            </div>
-                        ) : (
-                            <TableWidgetFixableCves
-                                workflowState={workflowState}
-                                entityContext={entityContext}
-                                entityType={entityTypes.IMAGE}
-                                name={safeData?.name?.fullName}
-                                id={safeData?.id}
-                            />
-                        )}
+                                        tabContentId="FALSE_POSITIVE_CVES"
+                                        title={<TabTitleText>False positive CVEs</TabTitleText>}
+                                    />
+                                </Tabs>
+                                <TabContent
+                                    eventKey="OBSERVED_CVES"
+                                    id="OBSERVED_CVES"
+                                    hidden={activeKeyTab !== 'OBSERVED_CVES'}
+                                >
+                                    <ObservedCVEs imageId={data.id} />
+                                </TabContent>
+                                <TabContent
+                                    eventKey="DEFERRED_CVES"
+                                    id="DEFERRED_CVES"
+                                    hidden={activeKeyTab !== 'DEFERRED_CVES'}
+                                >
+                                    <DeferredCVEs imageId={data.id} />
+                                </TabContent>
+                                <TabContent
+                                    eventKey="FALSE_POSITIVE_CVES"
+                                    id="FALSE_POSITIVE_CVES"
+                                    hidden={activeKeyTab !== 'FALSE_POSITIVE_CVES'}
+                                >
+                                    <FalsePositiveCVEs imageId={data.id} />
+                                </TabContent>
+                            </Card>
+                        </div>
                     </div>
                 </CollapsibleSection>
             </div>

@@ -66,6 +66,8 @@ message TestSingleKeyStruct {
       string oneofstring      = 14;
       OneOfNested oneofnested = 15;
     }
+
+    bytes bytess = 16;
 }
 
 message TestMultiKeyStruct {
@@ -98,6 +100,7 @@ message TestMultiKeyStruct {
   repeated Enum enums                 = 11 [(gogoproto.moretags) = 'search:"Test Enum Slice"'];
 
   string string = 16 [(gogoproto.moretags) = 'search:"Test String"'];
+  repeated int64 int_slice = 17 [(gogoproto.moretags) = 'search:"Test Int64 Slice"'];
 
   message Embedded {
     string embedded = 1;

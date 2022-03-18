@@ -145,6 +145,12 @@ setup_proxy_tests() {
     export PROXY_CERTS_DIR="$PROXY_CERTS_DIR"
     "$TEST_ROOT/scripts/ci/proxy/deploy.sh"
 
+    # Try preventing kubectl port-forward from hitting the FD limit, see
+    # https://github.com/kubernetes/kubernetes/issues/74551#issuecomment-910520361
+    # Note: this might fail if we don't have the correct privileges. Unfortunately,
+    # we cannot `sudo ulimit` because it is a shell builtin.
+    ulimit -n 65535 || true
+
     nohup kubectl -n proxies port-forward svc/nginx-proxy-plain-http 10080:80 </dev/null &>/dev/null &
     nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-multiplexed 10443:443 </dev/null &>/dev/null &
     nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-multiplexed-tls-be 11443:443 </dev/null &>/dev/null &

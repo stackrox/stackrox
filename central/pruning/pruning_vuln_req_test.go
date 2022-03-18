@@ -9,19 +9,13 @@ import (
 	"github.com/stackrox/rox/central/vulnerabilityrequest/cache"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestExpiredVulnReqsPruning(t *testing.T) {
-	env := envisolator.NewEnvIsolator(t)
-	env.Setenv(features.VulnRiskManagement.EnvVar(), "true")
-	defer env.RestoreAll()
-
 	db := rocksdbtest.RocksDBForT(t)
 	defer rocksdbtest.TearDownRocksDB(db)
 

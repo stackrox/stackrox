@@ -504,7 +504,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-cci-0.3.32
+      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-cci-0.3.35
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -754,19 +754,6 @@ commands:
                 fi
             fi
           when: always
-
-  install-ossls:
-    steps:
-      - run:
-          name: Install ossls
-          working_directory: /tmp
-          command: |
-            wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.5/fetch_linux_amd64
-            sudo install fetch_linux_amd64 /usr/bin/fetch
-            export GITHUB_OAUTH_TOKEN="$GITHUB_TOKEN"
-            fetch --repo="https://github.com/stackrox/ossls" --tag="0.10.1" --release-asset="ossls_linux_amd64" .
-            sudo install ossls_linux_amd64 /usr/bin/ossls
-            ossls version
 
   setup-egress-proxies:
     steps:
@@ -1027,21 +1014,6 @@ commands:
               -v $PWD/eks/data:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
               gcr.io/stackrox-infra/automation-flavors/eks:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
-          when: on_fail
-
-      - run:
-          name: Destroy Kops cluster
-          command: |
-            if [ -z "${CIRCLE_TAG}" ]; then
-              if ! .circleci/pr_has_label.sh ci-kops-tests; then
-                echo "Kops Cluster not created, skipping destroy."
-                exit 0
-              fi
-            fi
-            docker run --rm -t \
-              -v $PWD/kops:/data \
-              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: on_fail
 
       - destroy-aks-cluster:
@@ -2475,11 +2447,7 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - AUTH0_SUPPORT: false
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -2588,8 +2556,12 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.2.17
+      EKS_AUTOMATION_VERSION: 0.2.17
+      # All CI builds go out with commercial product branding.
+      # TODO(ROX-9513): a separate CI setup is required for open source/community builds.
+      # Note that the `REACT_APP` prefix is a convention used by React tooling that is required to inject this env
+      # variable into the build. See https://create-react-app.dev/docs/adding-custom-environment-variables/
+      REACT_APP_ROX_PRODUCT_BRANDING: RHACS_BRANDING
     steps:
       - checkout
       - attach_workspace:
@@ -2640,7 +2612,6 @@ jobs:
     executor: custom
     resource_class: medium
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
@@ -2694,7 +2665,6 @@ jobs:
     working_directory: ~/go/src/github.com/stackrox/rox
     environment:
       GOPATH: /home/circleci/go
-      KOPS_AUTOMATION_VERSION: 0.0.9
       EKS_AUTOMATION_VERSION: 0.2.17
     resource_class: large
     steps:
@@ -2756,7 +2726,6 @@ jobs:
     executor: custom
     resource_class: medium
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout-with-submodules
@@ -2774,8 +2743,6 @@ jobs:
           at: /go/src/github.com/stackrox/rox
 
       - *refreshAlpineBaseImage
-
-      - install-ossls
 
       - restore-go-mod-cache
       - setup-go-build-env
@@ -2800,57 +2767,14 @@ jobs:
       - run:
           name: Push new Docker image
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-            ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/main:$(make --quiet tag)" | cat
-            ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/roxctl:$(make --quiet tag)" | cat
-            ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/central-db:$(make --quiet tag)" | cat
-            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
-              docker tag "docker.io/stackrox/main:$(make --quiet tag)" docker.io/stackrox/main:latest
-              ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/main:latest
-
-              docker tag "docker.io/stackrox/roxctl:$(make --quiet tag)" docker.io/stackrox/roxctl:latest
-              ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/roxctl:latest
-
-              docker tag "docker.io/stackrox/central-db:$(make --quiet tag)" docker.io/stackrox/central-db:latest
-              ./scripts/ci/push-as-manifest-list.sh docker.io/stackrox/central-db:latest
-            fi
-
-            QUAY_REPO="rhacs-eng"
-            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
-            ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:$(make --quiet tag)" | cat
-            ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" | cat
-            ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/central-db:$(make --quiet tag)" | cat
-            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
-              docker tag "quay.io/$QUAY_REPO/main:$(make --quiet tag)" "quay.io/$QUAY_REPO/main:latest"
-              ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:latest"
-
-              docker tag "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" "quay.io/$QUAY_REPO/roxctl:latest"
-              ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/roxctl:latest"
-
-              docker tag "quay.io/$QUAY_REPO/central-db:$(make --quiet tag)" "quay.io/$QUAY_REPO/central-db:latest"
-              ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/central-db:latest"
-            fi
+            source ./scripts/ci/lib.sh
+            push_main_and_roxctl_images "${CIRCLE_BRANCH}"
 
       - run:
           name: Push collector & scanner images tagged with main-version to docker.io/stackrox and quay.io/rhacs-eng
           command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
-
-            MAIN_TAG="$(make --quiet tag)"
-            SCANNER_VERSION="$(make --quiet scanner-tag)"
-            COLLECTOR_VERSION="$(make --quiet collector-tag)"
-
-            REGISTRIES=( "docker.io/stackrox" "quay.io/rhacs-eng" )
-            for TARGET_REGISTRY in "${REGISTRIES[@]}"; do
-              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"         "${TARGET_REGISTRY}/scanner:${MAIN_TAG}"
-              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}"      "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}"
-              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-slim:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner-slim:${MAIN_TAG}"
-              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db-slim:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db-slim:${MAIN_TAG}"
-
-              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}"
-              ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}"
-            done
+            source ./scripts/ci/lib.sh
+            push_matching_collector_scanner_images
 
       - run:
           name: Publish new versions of NPM packages if any
@@ -2899,8 +2823,6 @@ jobs:
             make --quiet tag
 
       - setup_remote_docker
-
-      - install-ossls
 
       - restore-go-mod-cache
       - setup-go-build-env
@@ -3052,6 +2974,21 @@ jobs:
       - provision-gke-cluster:
           cluster-id: api-e2e-tests
 
+  provision-gke-postgres-api-e2e-tests:
+    executor: custom
+    resource_class: small
+    environment:
+      - GCP_IMAGE_TYPE: "COS"
+    steps:
+      - checkout
+      - check-backend-changes
+      - check-to-run:
+          label: ci-postgres-tests
+          run-on-master: false
+          run-on-tags: false
+      - provision-gke-cluster:
+          cluster-id: postgres-api-e2e-tests
+
   provision-gke-kernel-api-e2e-tests:
     executor: custom
     resource_class: small
@@ -3086,7 +3023,6 @@ jobs:
     executor: custom
     resource_class: medium
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
@@ -3217,71 +3153,6 @@ jobs:
               -v $PWD/eks/data:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
               gcr.io/stackrox-infra/automation-flavors/eks:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
-          when: on_fail
-
-  provision-kops-api-e2e-tests:
-    machine:
-      image: << pipeline.parameters.ci_machine_image >>
-    environment:
-      - KOPS_AUTOMATION_VERSION: 0.0.9
-    steps:
-      - checkout
-      - check-label-exists-or-skip:
-          label: ci-kops-tests
-          run-on-master: false
-
-      - run:
-          name: Install kubectl
-          working_directory: /tmp
-          command: |
-            wget https://storage.googleapis.com/kubernetes-release/release/v1.13.3/bin/linux/amd64/kubectl
-            sudo install kubectl /usr/bin
-
-      - ci-artifacts/store:
-          path: kops
-          destination: kops
-
-      - *loginToGCR
-      - run:
-          name: Create Kops cluster
-          command: |
-            docker run --rm -t \
-              -v $PWD/kops:/data \
-              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              -e TF_VAR_creation_source=CI \
-              gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
-            sudo chown "$USER" kops/id_rsa*
-
-      - run:
-          name: Add /etc/hosts entry
-          command: echo "$(cat $PWD/kops/master_ip) api.$(cat $PWD/kops/cluster_name)" | sudo tee -a /etc/hosts
-
-      - run:
-          name: Configure Kubeconfig
-          command: |
-            ls -lh $PWD/kops
-            export KUBECONFIG=$PWD/kops/kube.yaml
-            sudo chown "$USER" $PWD/kops/kube.yaml
-            kubectl get nodes
-
-      - ci-artifacts/store:
-          path: kops
-          destination: kops
-
-      - build-liveness-check
-
-      - persist_to_workspace:
-          root: .
-          paths:
-            - kops
-
-      - run:
-          name: Destroy Kops cluster
-          command: |
-            docker run --rm -t \
-              -v $PWD/kops:/data \
-              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: on_fail
 
   provision-aks-api-e2e-tests:
@@ -3522,13 +3393,8 @@ jobs:
       - LOAD_BALANCER: lb
       - ROX_PLAINTEXT_ENDPOINTS: "8080,grpc@8081"
       - ROXDEPLOY_CONFIG_FILE_MAP: "scripts/ci/endpoints/endpoints.yaml"
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - SENSOR_HELM_DEPLOY: true
-      - ROX_ACTIVE_VULN_MANAGEMENT: true
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -3681,14 +3547,10 @@ jobs:
       - SCANNER_SUPPORT: true
       - LOAD_BALANCER: lb
       - OUTPUT_FORMAT: helm
-      - ROX_EVENT_TIMELINE_UI: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_SYSTEM_HEALTH_PF: true
       - ROX_POLICIES_PATTERNFLY: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
+      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
 
     steps:
       - checkout
@@ -3753,11 +3615,7 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -3767,6 +3625,32 @@ jobs:
           determine-whether-to-run:
             - check-label-to-skip-tests:
                 label: ci-no-qa-tests
+
+  gke-postgres-api-e2e-tests:
+    executor: custom
+    environment:
+      - LOCAL_PORT: 443
+      - COLLECTION_METHOD: ebpf
+      - GCP_IMAGE_TYPE: "COS"
+      - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: true
+      - ROX_BASELINE_GENERATION_DURATION: 1m
+      - LOAD_BALANCER: lb
+      - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
+      - ROX_POSTGRES_DATASTORE: true
+
+    steps:
+      - run-qa-tests:
+          cluster-id: postgres-api-e2e-tests
+          sensor-deploy-flavor: helm
+          determine-whether-to-run:
+            - check-to-run:
+                label: ci-postgres-tests
+                run-on-master: false
+                run-on-tags: false
           use-websocket: true
 
   gke-kernel-api-e2e-tests:
@@ -3780,14 +3664,9 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_ROCKSDB: true
       - OUTPUT_FORMAT: helm
       - SENSOR_HELM_DEPLOY: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -3924,16 +3803,11 @@ jobs:
       - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
-      - ROX_BASELINE_GENERATION_DURATION: 1m
-      - ROX_SENSOR_DETECTION: true
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
-      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - SENSOR_HELM_DEPLOY: true
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_BASELINE_GENERATION_DURATION: 1m
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -3952,14 +3826,9 @@ jobs:
       - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
-      - ROX_SENSOR_DETECTION: true
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -3982,11 +3851,7 @@ jobs:
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -4065,117 +3930,6 @@ jobs:
               gcr.io/stackrox-infra/automation-flavors/eks:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: always
 
-  kops-api-e2e-tests:
-    executor: custom
-    environment:
-      - KOPS_AUTOMATION_VERSION: 0.0.9
-      - LOCAL_PORT: 8000
-      - COLLECTION_METHOD: kernel-module
-      - MONITORING_SUPPORT: true
-      - SCANNER_SUPPORT: true
-      - ROX_BASELINE_GENERATION_DURATION: 1m
-      - ADMISSION_CONTROLLER: true
-      - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
-      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
-
-    steps:
-      - checkout
-      - check-label-exists-or-skip:
-          label: ci-kops-tests
-          run-on-master: false
-
-      - setup_remote_docker
-
-      - setup-dep-env:
-          docker-login: true
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - run:
-          name: Add /etc/hosts entry
-          command: echo "$(cat $PWD/kops/master_ip) api.$(cat $PWD/kops/cluster_name)" | sudo tee -a /etc/hosts
-
-      - run:
-          name: Sanity check KUBECONFIG
-          command: |
-            ls -lh $PWD/kops
-            cci-export KUBECONFIG $PWD/kops/kube.yaml
-            kubectl get nodes
-      - remove-existing-stackrox-resources
-
-      - *setupRoxctl
-
-      - run:
-          name: Configure Deployment Environment
-          command: |
-            cci-export CLAIRIFY_IMAGE_TAG 0.5.4
-            cci-export KOPS_HOST "$(cat kops/master)"
-            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            cci-export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
-            cci-export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
-
-      - *setupGoogleAppCreds
-      - *setupLicense
-
-      - *setupDefaultTLSCerts
-
-      - deploy-stackrox:
-          post-central-deploy-steps:
-            - *setupClientTLSCerts
-
-      - deploy-webhook-server
-      - deploy-authz-plugin
-
-      - *getECRDockerPullPassword
-      - *restoreGradle
-      - restore-go-mod-cache
-      - run:
-          name: QA Automation Platform
-          command: |
-            export CLUSTER=K8S
-            export API_HOSTNAME=localhost
-            export API_PORT=${LOCAL_PORT}
-            make -C qa-tests-backend test
-
-      - *storeQATestResults
-      - *storeQASpockReports
-
-      - collect-k8s-logs
-      - *backupCentral
-      - *storeCentralBackupArtifact
-      - *restoreDB
-      - check-stackrox-logs
-      - store-k8s-logs
-      - *storeQALogs
-
-      - run:
-          name: Pack kops volume
-          command: |
-            docker create -v /data --name kops alpine:3.9 /bin/true
-            docker cp kops/id_rsa            kops:/data
-            docker cp kops/id_rsa.pub        kops:/data
-            docker cp kops/terraform.tfstate kops:/data
-            docker cp kops/cluster_name      kops:/data
-            docker cp kops/kops_s3_bucket    kops:/data
-            docker cp kops/delete-cluster-$(cat kops/cluster_name).sh kops:/data
-          when: always
-
-      - *loginToGCR
-      - run:
-          name: Destroy Kops cluster
-          command: |
-            docker run --rm -t \
-              --volumes-from kops \
-              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
-          when: always
-
   aks-api-e2e-tests:
     executor: custom
     environment:
@@ -4187,13 +3941,8 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_DETECTION_BASELINE_SIMULATION: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
-
 
     steps:
       - run-qa-tests:
@@ -4229,14 +3978,8 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_GRAPH_PORTS: true
-      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
-      - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
-
 
     steps:
       - run-qa-tests:
@@ -4460,13 +4203,8 @@ jobs:
       LOAD_BALANCER: lb
       ADMISSION_CONTROLLER: "true"
       ADMISSION_CONTROLLER_UPDATES: "true"
-      ROX_NETWORK_DETECTION_BASELINE_SIMULATION: "true"
-      ROX_NETWORK_DETECTION_BLOCKED_FLOWS: "true"
       ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      ROX_INACTIVE_IMAGE_SCANNING_UI: "true"
       IS_RACE_BUILD: "true"
-      ROX_VULN_RISK_MANAGEMENT: "true"
-      ROX_VULN_REPORTING: "true"
       ROX_VERIFY_IMAGE_SIGNATURE: "true"
 
 
@@ -4787,12 +4525,7 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_GRAPH_PORTS: true
-      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
-      - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
 
@@ -4833,12 +4566,7 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_GRAPH_PORTS: true
-      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
-      - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VULN_RISK_MANAGEMENT: true
-      - ROX_VULN_REPORTING: true
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
@@ -4970,6 +4698,14 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-e2e-tests
+      - provision-gke-postgres-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-postgres-api-e2e-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-gke-postgres-api-e2e-tests
       - provision-gke-kernel-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - gke-kernel-api-e2e-tests:
@@ -5017,14 +4753,6 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-eks-api-e2e-tests
-      - provision-kops-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - kops-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-kops-api-e2e-tests
       # ROX-8306 - Disabled due to Azure account issue
       # - provision-aks-api-e2e-tests:
       #     <<: *runOnAllTagsWithQuayIOPullCtx
@@ -5092,8 +4820,7 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-openshift-rosa-api-e2e-tests
-            - pre-build-cli
-            - pre-build-go-binaries
+            - build
           context:
             - com-redhat-cloud
             - quay-rhacs-eng-readonly
@@ -5121,8 +4848,7 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-openshift-aro-api-e2e-tests
-            - pre-build-cli
-            - pre-build-go-binaries
+            - build
           context:
             - com-redhat-cloud
             - quay-rhacs-eng-readonly
@@ -5170,7 +4896,8 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "0 9 * * *"
+          # still overnight from US PoV, but early enough for the early risers in Europe to not have to wait for the results
+          cron: "0 5 * * *"
           filters:
             branches:
               only: master
