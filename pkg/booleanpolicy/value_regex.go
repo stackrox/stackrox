@@ -31,6 +31,9 @@ var (
 	auditEventResourceValueRegex             = createRegex(`(?i:SECRETS|CONFIGMAPS)`)
 	kubernetesNameRegex                      = createRegex(`(?i:[a-z0-9])(?i:[-:a-z0-9]*[a-z0-9])?`)
 	ipAddressValueRegex                      = createRegex(fmt.Sprintf(`(%s)|(%s)`, ipv4Regex, ipv6Regex))
+	// TODO(ROX-9716): refactor to reference the same constant here and in
+	// central/signatureintegration/datastore/validate.go
+	signatureIntegrationIDValueRegex = createRegex("io\\.stackrox\\.signatureintegration\\.[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 )
 
 func createRegex(s string) *regexp.Regexp {

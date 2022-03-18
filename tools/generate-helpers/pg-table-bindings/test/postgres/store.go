@@ -12,12 +12,12 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
+	baseTable  = "singlekey"
 	countStmt  = "SELECT COUNT(*) FROM singlekey"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM singlekey WHERE Key = $1)"
 
@@ -30,14 +30,8 @@ const (
 	deleteManyStmt = "DELETE FROM singlekey WHERE Key = ANY($1::text[])"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "singlekey"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "TestSingleKeyStruct")
+	globaldb.RegisterTable(baseTable, "TestSingleKeyStruct")
 }
 
 type Store interface {

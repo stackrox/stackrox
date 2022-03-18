@@ -12,6 +12,7 @@ const (
 	DockerfileLineCustomTag            = "Dockerfile Line"
 	EnvironmentVarCustomTag            = "Environment Variable"
 	ImageScanCustomTag                 = "Image Scan"
+	ImageSignatureVerifiedCustomTag    = "Image Signature Verified By"
 	NotInNetworkBaselineCustomTag      = "Not In Network Baseline"
 	NotInProcessBaselineCustomTag      = "Not In Baseline"
 	KubernetesAPIVerbCustomTag         = "Kubernetes API Verb"
@@ -68,4 +69,8 @@ type NetworkFlowDetails struct {
 
 type envVar struct {
 	EnvVar string `search:"Environment Variable"`
+}
+
+type imageSignatureVerification struct {
+	VerifiedBy string `search:"Image Signature Verified By"`
 }

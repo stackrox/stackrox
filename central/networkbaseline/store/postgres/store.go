@@ -12,12 +12,12 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
+	baseTable  = "networkbaseline"
 	countStmt  = "SELECT COUNT(*) FROM networkbaseline"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkbaseline WHERE DeploymentId = $1)"
 
@@ -30,14 +30,8 @@ const (
 	deleteManyStmt = "DELETE FROM networkbaseline WHERE DeploymentId = ANY($1::text[])"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "networkbaseline"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "NetworkBaseline")
+	globaldb.RegisterTable(baseTable, "NetworkBaseline")
 }
 
 type Store interface {

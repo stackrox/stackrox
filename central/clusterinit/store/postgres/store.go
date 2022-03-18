@@ -12,12 +12,12 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
+	baseTable  = "clusterinitbundles"
 	countStmt  = "SELECT COUNT(*) FROM clusterinitbundles"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM clusterinitbundles WHERE Id = $1)"
 
@@ -30,14 +30,8 @@ const (
 	deleteManyStmt = "DELETE FROM clusterinitbundles WHERE Id = ANY($1::text[])"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "clusterinitbundles"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "InitBundleMeta")
+	globaldb.RegisterTable(baseTable, "InitBundleMeta")
 }
 
 type Store interface {

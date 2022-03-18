@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	gcrRemote "github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/sigstore/cosign/pkg/cosign"
 	ociremote "github.com/sigstore/cosign/pkg/oci/remote"
 	"github.com/stackrox/rox/generated/storage"
@@ -34,12 +35,12 @@ func init() {
 	insecureDefaultTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 }
 
-// FetchSignature implements the SignatureFetcher interface.
+// FetchSignatures implements the SignatureFetcher interface.
 // The signature associated with the image will be fetched from the given registry.
 // It will return the storage.ImageSignature and an error that indicated whether the fetching should be retried or not.
 // NOTE: No error will be returned when the image has no signature available. All occurring errors will be logged.
-func (c *cosignPublicKeySignatureFetcher) FetchSignature(ctx context.Context, image *storage.Image,
-	registry registryTypes.ImageRegistry) (*storage.ImageSignature, error) {
+func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, image *storage.Image,
+	registry registryTypes.ImageRegistry) ([]*storage.Signature, error) {
 	// Since cosign makes heavy use of google/go-containerregistry, we need to parse the image's full name as a
 	// name.Reference.
 	imgFullName := image.GetName().GetFullName()
@@ -60,7 +61,7 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignature(ctx context.Context, im
 	//  https://github.com/sigstore/cosign/blob/44f3814667ba6a398aef62814cabc82aee4896e5/pkg/cosign/fetch.go#L84-L86
 	if err != nil && !strings.Contains(err.Error(), "no signatures associated") {
 		log.Errorf("Fetching signature for image %q: %v", imgFullName, err)
-		return nil, retry.MakeRetryable(err)
+		return nil, makeTransientErrorRetryable(err)
 	}
 
 	// Short-circuit if no signatures are associated with the image.
@@ -95,9 +96,18 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignature(ctx context.Context, im
 		return nil, nil
 	}
 
-	return &storage.ImageSignature{
-		Signatures: cosignSignatures,
-	}, nil
+	return cosignSignatures, nil
+}
+
+// makeTransientErrorRetryable ensures that only transient errors are made retryable.
+// Note: This takes into account the definition of the transport.Error, you can find more here:
+// https://github.com/google/go-containerregistry/blob/f1fa40b162a1601a863364e8a2f63bbb9e4ff36e/pkg/v1/remote/transport/error.go#L90
+func makeTransientErrorRetryable(err error) error {
+	// We don't expect any transient errors that are coming from cosign at the moment.
+	if transportErr, ok := err.(*transport.Error); ok && transportErr.Temporary() {
+		return retry.MakeRetryable(err)
+	}
+	return err
 }
 
 func optionsFromRegistry(registry registryTypes.ImageRegistry) []gcrRemote.Option {

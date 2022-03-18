@@ -37,7 +37,7 @@ var (
 	VulnReporting = registerFeature("Enable creation of scheduled vulnerability reports to be sent via email notifier", "ROX_VULN_REPORTING", true)
 
 	// LocalImageScanning enables OpenShift local-image scanning.
-	LocalImageScanning = registerFeature("Enable OpenShift local-image scanning", "ROX_LOCAL_IMAGE_SCANNING", true)
+	LocalImageScanning = registerFeature("Enable OpenShift local-image scanning", "ROX_LOCAL_IMAGE_SCANNING", false)
 
 	// ImageSignatureVerification enables image signature verification.
 	ImageSignatureVerification = registerFeature("Enable Image Signature Verification workflow", "ROX_VERIFY_IMAGE_SIGNATURE", false)
