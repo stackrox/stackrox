@@ -132,7 +132,7 @@ func GetConfig() *Config {
 		var err error
 		config, err = readConfig()
 		if err != nil {
-			log.Errorf("error reading config file %v", err)
+			log.Errorf("Error reading config file: %v", err)
 		}
 	})
 	return config
