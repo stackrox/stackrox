@@ -1237,6 +1237,57 @@ func (s *IndexSuite) TestPagination() {
 			},
 			[]int{7, 5, 4, 2, 1},
 		},
+		{
+			"limit",
+			&v1.QueryPagination{
+				Limit:       3,
+				SortOptions: []*v1.QuerySortOption{{Field: "Test String"}},
+			},
+			[]int{1, 2, 4},
+		},
+		{
+			"limit descending",
+			&v1.QueryPagination{
+				Limit:       3,
+				SortOptions: []*v1.QuerySortOption{{Field: "Test String", Reversed: true}},
+			},
+			[]int{7, 5, 4},
+		},
+		{
+			"offset",
+			&v1.QueryPagination{
+				Limit:       0,
+				Offset:      2,
+				SortOptions: []*v1.QuerySortOption{{Field: "Test String"}},
+			},
+			[]int{4, 5, 7},
+		},
+		{
+			"offset descending",
+			&v1.QueryPagination{
+				Offset:      2,
+				SortOptions: []*v1.QuerySortOption{{Field: "Test String", Reversed: true}},
+			},
+			[]int{4, 2, 1},
+		},
+		{
+			"limit + offset",
+			&v1.QueryPagination{
+				Limit:       2,
+				Offset:      2,
+				SortOptions: []*v1.QuerySortOption{{Field: "Test String"}},
+			},
+			[]int{4, 5},
+		},
+		{
+			"limit + offset descending",
+			&v1.QueryPagination{
+				Limit:       2,
+				Offset:      2,
+				SortOptions: []*v1.QuerySortOption{{Field: "Test String", Reversed: true}},
+			},
+			[]int{4, 2},
+		},
 	} {
 		s.Run(testCase.desc, func() {
 			q := search.NewQueryBuilder().AddBools(search.TestBool, true).ProtoQuery()
