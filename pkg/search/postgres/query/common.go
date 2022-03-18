@@ -14,7 +14,7 @@ var (
 type SelectQueryField struct {
 	SelectPath string // This goes into the "SELECT" portion of the SQL.
 	FieldType  walker.DataType
-	FieldPath  string
+	FieldPath  string // This is the search.Field.FieldPath for this field.
 
 	// PostTransform is a function that will be applied to the returned rows from SQL before
 	// further processing.

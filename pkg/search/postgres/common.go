@@ -124,12 +124,10 @@ func generateSelectFields(entry *pgsearch.QueryEntry, primaryKeys []walker.Field
 		for _, selectedField := range entry.SelectedFields {
 			pathsInSelectClause = append(pathsInSelectClause, selectedField.SelectPath)
 		}
+		sel.Fields = entry.SelectedFields
 	}
 
 	sel.Query = fmt.Sprintf("select %s", strings.Join(pathsInSelectClause, ","))
-	if entry != nil {
-		sel.Fields = entry.SelectedFields
-	}
 	return sel
 }
 
@@ -174,19 +172,18 @@ func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgse
 		return entries[0]
 	}
 	var queryStrings []string
-	selectFields := make(map[string]pgsearch.SelectQueryField)
+	seenSelectFields := set.NewStringSet()
 	newQE := &pgsearch.QueryEntry{}
 	for _, entry := range entries {
 		queryStrings = append(queryStrings, entry.Where.Query)
 		newQE.Where.Values = append(newQE.Where.Values, entry.Where.Values...)
 		for _, selectedField := range entry.SelectedFields {
-			selectFields[selectedField.SelectPath] = selectedField
+			if seenSelectFields.Add(selectedField.SelectPath) {
+				newQE.SelectedFields = append(newQE.SelectedFields, selectedField)
+			}
 		}
 	}
 	newQE.Where.Query = fmt.Sprintf("(%s)", strings.Join(queryStrings, separator))
-	for _, field := range selectFields {
-		newQE.SelectedFields = append(newQE.SelectedFields, field)
-	}
 	return newQE
 }
 
