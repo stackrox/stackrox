@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	baseTable  = "namespaces"
 	countStmt  = "SELECT COUNT(*) FROM namespaces"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM namespaces WHERE Id = $1)"
 
@@ -30,7 +31,7 @@ const (
 )
 
 func init() {
-	globaldb.RegisterTable("namespaces", "NamespaceMetadata")
+	globaldb.RegisterTable(baseTable, "NamespaceMetadata")
 }
 
 type Store interface {

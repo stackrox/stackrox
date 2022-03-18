@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	baseTable  = "multikey"
 	countStmt  = "SELECT COUNT(*) FROM multikey"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM multikey WHERE Key1 = $1 AND Key2 = $2)"
 
@@ -26,7 +27,7 @@ const (
 )
 
 func init() {
-	globaldb.RegisterTable("multikey", "TestMultiKeyStruct")
+	globaldb.RegisterTable(baseTable, "TestMultiKeyStruct")
 }
 
 type Store interface {

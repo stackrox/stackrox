@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	baseTable  = "signatureintegrations"
 	countStmt  = "SELECT COUNT(*) FROM signatureintegrations"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM signatureintegrations WHERE Id = $1)"
 
@@ -30,7 +31,7 @@ const (
 )
 
 func init() {
-	globaldb.RegisterTable("signatureintegrations", "SignatureIntegration")
+	globaldb.RegisterTable(baseTable, "SignatureIntegration")
 }
 
 type Store interface {

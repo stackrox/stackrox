@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	baseTable  = "processbaselines"
 	countStmt  = "SELECT COUNT(*) FROM processbaselines"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM processbaselines WHERE Id = $1)"
 
@@ -30,7 +31,7 @@ const (
 )
 
 func init() {
-	globaldb.RegisterTable("processbaselines", "ProcessBaseline")
+	globaldb.RegisterTable(baseTable, "ProcessBaseline")
 }
 
 type Store interface {

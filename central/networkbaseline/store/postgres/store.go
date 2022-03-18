@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	baseTable  = "networkbaseline"
 	countStmt  = "SELECT COUNT(*) FROM networkbaseline"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkbaseline WHERE DeploymentId = $1)"
 
@@ -30,7 +31,7 @@ const (
 )
 
 func init() {
-	globaldb.RegisterTable("networkbaseline", "NetworkBaseline")
+	globaldb.RegisterTable(baseTable, "NetworkBaseline")
 }
 
 type Store interface {

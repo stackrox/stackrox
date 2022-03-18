@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	baseTable  = "apitokens"
 	countStmt  = "SELECT COUNT(*) FROM apitokens"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM apitokens WHERE Id = $1)"
 
@@ -30,7 +31,7 @@ const (
 )
 
 func init() {
-	globaldb.RegisterTable("apitokens", "TokenMetadata")
+	globaldb.RegisterTable(baseTable, "TokenMetadata")
 }
 
 type Store interface {

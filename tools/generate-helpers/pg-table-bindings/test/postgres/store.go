@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	baseTable  = "singlekey"
 	countStmt  = "SELECT COUNT(*) FROM singlekey"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM singlekey WHERE Key = $1)"
 
@@ -30,7 +31,7 @@ const (
 )
 
 func init() {
-	globaldb.RegisterTable("singlekey", "TestSingleKeyStruct")
+	globaldb.RegisterTable(baseTable, "TestSingleKeyStruct")
 }
 
 type Store interface {

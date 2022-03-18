@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	baseTable  = "clusterinitbundles"
 	countStmt  = "SELECT COUNT(*) FROM clusterinitbundles"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM clusterinitbundles WHERE Id = $1)"
 
@@ -30,7 +31,7 @@ const (
 )
 
 func init() {
-	globaldb.RegisterTable("clusterinitbundles", "InitBundleMeta")
+	globaldb.RegisterTable(baseTable, "InitBundleMeta")
 }
 
 type Store interface {

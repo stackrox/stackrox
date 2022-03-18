@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	baseTable  = "risk"
 	countStmt  = "SELECT COUNT(*) FROM risk"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM risk WHERE Id = $1)"
 
@@ -30,7 +31,7 @@ const (
 )
 
 func init() {
-	globaldb.RegisterTable("risk", "Risk")
+	globaldb.RegisterTable(baseTable, "Risk")
 }
 
 type Store interface {

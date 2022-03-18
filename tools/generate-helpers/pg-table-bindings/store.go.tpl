@@ -31,6 +31,7 @@ import (
 )
 
 const (
+        baseTable = "{{.Table}}"
         countStmt = "SELECT COUNT(*) FROM {{.Table}}"
         existsStmt = "SELECT EXISTS(SELECT 1 FROM {{.Table}} WHERE {{template "whereMatch" $pks}})"
 
@@ -47,7 +48,7 @@ const (
 )
 
 func init() {
-    globaldb.RegisterTable("{{.Table}}", "{{.TrimmedType}}")
+    globaldb.RegisterTable(baseTable, "{{.TrimmedType}}")
 }
 
 type Store interface {

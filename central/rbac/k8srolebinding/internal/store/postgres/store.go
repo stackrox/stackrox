@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	baseTable  = "rolebindings"
 	countStmt  = "SELECT COUNT(*) FROM rolebindings"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM rolebindings WHERE Id = $1)"
 
@@ -30,7 +31,7 @@ const (
 )
 
 func init() {
-	globaldb.RegisterTable("rolebindings", "K8SRoleBinding")
+	globaldb.RegisterTable(baseTable, "K8SRoleBinding")
 }
 
 type Store interface {

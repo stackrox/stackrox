@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	baseTable  = "watchedimages"
 	countStmt  = "SELECT COUNT(*) FROM watchedimages"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM watchedimages WHERE Name = $1)"
 
@@ -30,7 +31,7 @@ const (
 )
 
 func init() {
-	globaldb.RegisterTable("watchedimages", "WatchedImage")
+	globaldb.RegisterTable(baseTable, "WatchedImage")
 }
 
 type Store interface {

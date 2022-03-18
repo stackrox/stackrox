@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_INDICATORS, walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), "process_indicators"))
+	mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_INDICATORS, walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), baseTable))
 }
 
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {

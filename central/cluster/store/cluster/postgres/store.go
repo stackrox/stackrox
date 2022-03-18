@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	baseTable  = "clusters"
 	countStmt  = "SELECT COUNT(*) FROM clusters"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM clusters WHERE Id = $1 AND HealthStatus_Id = $2)"
 
@@ -26,7 +27,7 @@ const (
 )
 
 func init() {
-	globaldb.RegisterTable("clusters", "Cluster")
+	globaldb.RegisterTable(baseTable, "Cluster")
 }
 
 type Store interface {

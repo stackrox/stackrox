@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	baseTable  = "networkentity"
 	countStmt  = "SELECT COUNT(*) FROM networkentity"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkentity WHERE Info_Id = $1)"
 
@@ -30,7 +31,7 @@ const (
 )
 
 func init() {
-	globaldb.RegisterTable("networkentity", "NetworkEntity")
+	globaldb.RegisterTable(baseTable, "NetworkEntity")
 }
 
 type Store interface {

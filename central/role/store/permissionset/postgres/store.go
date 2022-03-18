@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	baseTable  = "permissionsets"
 	countStmt  = "SELECT COUNT(*) FROM permissionsets"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM permissionsets WHERE Id = $1)"
 
@@ -30,7 +31,7 @@ const (
 )
 
 func init() {
-	globaldb.RegisterTable("permissionsets", "PermissionSet")
+	globaldb.RegisterTable(baseTable, "PermissionSet")
 }
 
 type Store interface {
