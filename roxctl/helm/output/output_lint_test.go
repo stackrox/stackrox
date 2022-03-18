@@ -5,11 +5,13 @@ import (
 	"os"
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"github.com/stretchr/testify/assert"
@@ -93,7 +95,7 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 				if tt.flavor != "" {
 					tt.flavorProvided = true
 				}
-				err = outputHelmChart(chartName, outputDir, true, tt.flavor, tt.flavorProvided, tt.rhacs, env.Logger())
+				err = executeHelpOutputCommand(chartName, outputDir, true, tt.flavor, tt.flavorProvided, tt.rhacs, env)
 				if tt.wantErr {
 					assert.Error(s.T(), err)
 				} else {
@@ -132,7 +134,7 @@ func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor strin
 	testIO, _, _, _ := environment.TestIO()
 	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 
-	err = outputHelmChart(chartName, outputDir, true, imageFlavor, imageFlavor != "", rhacs, env.Logger())
+	err = executeHelpOutputCommand(chartName, outputDir, true, imageFlavor, imageFlavor != "", rhacs, env)
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
 
 	for _, ns := range lintNamespaces {
@@ -140,6 +142,39 @@ func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor strin
 			testChartInNamespaceLint(t, outputDir, ns)
 		})
 	}
+}
+
+func executeHelpOutputCommand(chartName, outputDir string, removeOutputDir bool, imageFlavor string, flavorProvided, rhacs bool, env environment.Environment) error {
+	cmd := helmOutputCommand{
+		outputDir:       outputDir,
+		removeOutputDir: removeOutputDir,
+		rhacs:           rhacs,
+		imageFlavor:     imageFlavor,
+		chartName:       chartName,
+		flavorProvided:  flavorProvided,
+		env:             env,
+	}
+
+	c := &cobra.Command{Use: "test"}
+	c.PersistentFlags().Bool(flags.ImageDefaultsFlagName, flavorProvided, "")
+	// if err := c.Flags().Parse([]string{flags.ImageDefaultsFlagName}); err != nil {
+	//	return err
+	//}
+	// if err := c.Flags().Set(flags.ImageDefaultsFlagName, ""); err != nil {
+	//	return err
+	//}
+	//provided := c.Flags().Changed(flags.ImageDefaultsFlagName)
+	//if err := c.Flags().Bool(flags.ImageDefaultsFlagName, flavorProvided, ""); err != nil {
+	//	return err
+	//}
+	args := []string{chartName}
+	if err := cmd.Construct(args, c); err != nil {
+		return err
+	}
+	if err := cmd.Validate(); err != nil {
+		return err
+	}
+	return cmd.outputHelmChart()
 }
 
 func testChartInNamespaceLint(t *testing.T, chartDir string, namespace string) {
