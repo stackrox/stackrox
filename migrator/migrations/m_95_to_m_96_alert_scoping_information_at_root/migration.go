@@ -62,9 +62,11 @@ func copyAlertScopingInformationToRoot(db *types.Databases) error {
 			alert.ClusterName = entity.ClusterName
 			alert.Namespace = entity.Namespace
 			alert.NamespaceId = entity.NamespaceId
-			// case *storage.Alert_Image:
-			// 	// Extraction of image scope information is too complex and is already left aside in the datastore layer.
-			// default:
+		case *storage.Alert_Image:
+			alert.ClusterId = ""
+			alert.ClusterName = ""
+			alert.Namespace = ""
+			alert.NamespaceId = ""
 		}
 
 		data, err := proto.Marshal(&alert)
