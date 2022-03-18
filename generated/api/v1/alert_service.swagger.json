@@ -570,16 +570,20 @@
           "type": "string"
         },
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "description": "This field is deprecated and can be found at the root of Alert. It will be removed from here in a future release."
         },
         "clusterName": {
-          "type": "string"
+          "type": "string",
+          "description": "This field is deprecated and can be found at the root of Alert. It will be removed from here in a future release."
         },
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "description": "This field is deprecated and can be found at the root of Alert. It will be removed from here in a future release."
         },
         "namespaceId": {
-          "type": "string"
+          "type": "string",
+          "description": "This field is deprecated and can be found at the root of Alert. It will be removed from here in a future release."
         }
       },
       "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)"
@@ -869,6 +873,18 @@
         },
         "lifecycleStage": {
           "$ref": "#/definitions/storageLifecycleStage"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "namespaceId": {
+          "type": "string"
         },
         "deployment": {
           "$ref": "#/definitions/storageAlertDeployment",
