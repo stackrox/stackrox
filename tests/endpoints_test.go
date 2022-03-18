@@ -255,12 +255,14 @@ func (c *endpointsTestCase) runGRPCTest(t *testing.T, testCtx *endpointsTestCont
 }
 
 func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestContext, useHTTP2 bool) {
-	targetHost := c.validServerNames[0]
+	assert.True(t, c.skipTLS == (len(c.validServerNames) == 0), "invalid test case: either skipTLS is set or validServerNames are provided")
 
 	var scheme string
 	var transport http.RoundTripper
+	var targetHost string
 	if c.skipTLS {
 		scheme = "http"
+		targetHost = c.endpoint()
 		if useHTTP2 {
 			transport = &http2.Transport{
 				AllowHTTP: true,
@@ -271,6 +273,7 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 		}
 	} else {
 		scheme = "https"
+		targetHost = c.validServerNames[0]
 		tlsConfig := testCtx.tlsConfig(c.clientCert, targetHost, true)
 		if useHTTP2 {
 			transport = &http2.Transport{
