@@ -1,7 +1,6 @@
 package pgsearch
 
 import (
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -11,45 +10,74 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// QueryEntry is made up of the raw query template and also the values that should be substituted
+// SelectQueryField represents a field that's queried in a select.
+type SelectQueryField struct {
+	SelectPath string // This goes into the "SELECT" portion of the SQL.
+	FieldType  walker.DataType
+	FieldPath  string // This is the search.Field.FieldPath for this field.
+
+	// PostTransform is a function that will be applied to the returned rows from SQL before
+	// further processing.
+	// The input will be of the type directly returned from the postgres rows.Scan function.
+	// It will be nil if there is no transform to be applied.
+	// Currently, the PostTransform is only used on arrays, so that we only highlight values
+	// that match the queries.
+	// For example, if we have the following table:
+	// key | string_array_column
+	// 0   | {"ab", "abc", "cd"}
+	// 1   | {"xyz"}
+	// And we have a query that's looking for a prefix of "a".
+	// If we do "select string_array_column from table where string_array_column like 'a%'", we get
+	// key | string_array_column
+	// 0   | {"ab", "abc", "cd"}
+	// However, this includes "cd", which does NOT match the query, which is not ideal for highlights.
+	// Therefore, we do a post-transform where we apply the query to the returned rows in Go,
+	// so that the final result seen by the user includes only {"ab", "abc"}.
+	PostTransform func(interface{}) interface{}
+}
+
+// QueryEntry is an entry with clauses added by portions of the query.
 type QueryEntry struct {
+	Where          WhereClause
+	SelectedFields []SelectQueryField
+
+	// This is populated only in the case of enums, so that callers know how to
+	// convert the returned enum value to a string.
+	// This is a bit ugly, but enums are such a special-case that it seems
+	// better to treat them explicitly rather than making this a more generic
+	// post-process func.
+	enumStringifyFunc func(int32) string
+}
+
+// WhereClause is made up of the raw query template and also the values that should be substituted
+type WhereClause struct {
 	Query  string
 	Values []interface{}
+
+	// equivalentGoFunc returns the equivalent Go function to the Where clause.
+	// It is used in cases where we want to do some post-processing in Go space
+	// because doing it in SQL is too hairy.
+	// See the documentation of PostTransform in SelectQueryField for more details.
+	// It will not always be set.
+	equivalentGoFunc func(foundValue interface{}) bool
 }
 
 // NewFalseQuery always returns false
 func NewFalseQuery() *QueryEntry {
-	return &QueryEntry{
+	return &QueryEntry{Where: WhereClause{
 		Query: "false",
-	}
+	}}
 }
 
 // NewTrueQuery always returns true
 func NewTrueQuery() *QueryEntry {
-	return &QueryEntry{
+	return &QueryEntry{Where: WhereClause{
 		Query: "true",
-	}
+	}}
 }
 
 // MatchFieldQuery is a simple query that performs operations on a single field.
-func MatchFieldQuery(schema *walker.Schema, query *v1.MatchFieldQuery, optionsMap searchPkg.OptionsMap) (*QueryEntry, error) {
-	// Need to find base value
-	field, ok := optionsMap.Get(query.GetField())
-	if !ok {
-		log.Infof("Options Map for %s does not have field: %v", schema.Table, query.GetField())
-		return nil, nil
-	}
-	fieldsBySearchLabel := schema.FieldsBySearchLabel()
-	dbField := fieldsBySearchLabel[query.GetField()]
-	if dbField == nil {
-		log.Errorf("Missing field %s in table %s", query.GetField(), schema.Table)
-		return nil, nil
-	}
-	return matchFieldQuery(dbField, field, query.Value)
-}
-
-// MatchFieldQueryFromField is a simple query that performs operations on a single field.
-func MatchFieldQueryFromField(dbField *walker.Field, value string, optionsMap searchPkg.OptionsMap) (*QueryEntry, error) {
+func MatchFieldQuery(dbField *walker.Field, value string, highlight bool, optionsMap searchPkg.OptionsMap) (*QueryEntry, error) {
 	if dbField == nil {
 		return nil, nil
 	}
@@ -59,5 +87,5 @@ func MatchFieldQueryFromField(dbField *walker.Field, value string, optionsMap se
 		log.Infof("Options Map for %s does not have field: %v", dbField.Schema.Table, dbField.Search.FieldName)
 		return nil, nil
 	}
-	return matchFieldQuery(dbField, field, value)
+	return matchFieldQuery(dbField, field, value, highlight)
 }
