@@ -11,7 +11,6 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { useParams, Link } from 'react-router-dom';
-import resolvePath from 'object-resolve-path';
 import pluralize from 'pluralize';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -22,24 +21,7 @@ import usePageState from '../hooks/usePageState';
 import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
 import DownloadCAConfigBundle from '../ClusterInitBundles/DownloadCAConfigBundle';
-
-type TableCellProps = {
-    row: Integration;
-    column: {
-        Header: string;
-        accessor: (data) => string | string;
-    };
-};
-
-function TableCellValue({ row, column }: TableCellProps): React.ReactElement {
-    let value: string;
-    if (typeof column.accessor === 'function') {
-        value = column.accessor(row).toString();
-    } else {
-        value = resolvePath(row, column.accessor).toString();
-    }
-    return <div>{value || '-'}</div>;
-}
+import TableCellValue from '../../../Components/TableCellValue/TableCellValue';
 
 function getNewButtonText(type) {
     if (type === 'apitoken') {

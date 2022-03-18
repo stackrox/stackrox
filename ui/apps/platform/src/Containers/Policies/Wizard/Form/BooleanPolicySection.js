@@ -13,17 +13,24 @@ import {
     policyConfigurationDescriptor,
     networkDetectionDescriptor,
     auditLogDescriptor,
+    imageSigningCriteriaDescriptor,
 } from './descriptors';
+import useFeatureFlagEnabled from '../../../../hooks/useFeatureFlagEnabled';
 
 function BooleanPolicySection({ readOnly, hasHeader, hasAuditLogEventSource, criteriaLocked }) {
     const [descriptor, setDescriptor] = useState([]);
+    const isImageSigningEnabled = useFeatureFlagEnabled('ROX_VERIFY_IMAGE_SIGNATURE');
     useEffect(() => {
         if (hasAuditLogEventSource) {
             setDescriptor(auditLogDescriptor);
         } else {
-            setDescriptor([...policyConfigurationDescriptor, ...networkDetectionDescriptor]);
+            let descriptors = [...policyConfigurationDescriptor, ...networkDetectionDescriptor];
+            descriptors = isImageSigningEnabled
+                ? [...descriptors, imageSigningCriteriaDescriptor]
+                : descriptors;
+            setDescriptor(descriptors);
         }
-    }, [hasAuditLogEventSource]);
+    }, [hasAuditLogEventSource, isImageSigningEnabled]);
 
     if (readOnly || criteriaLocked) {
         return (

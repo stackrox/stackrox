@@ -7,11 +7,13 @@ import {
     networkDetectionDescriptor,
     auditLogDescriptor,
     Descriptor,
+    imageSigningCriteriaDescriptor,
 } from 'Containers/Policies/Wizard/Form/descriptors';
 import { Policy } from 'types/policy.proto';
 import PolicySection from './PolicySection';
 
 import './BooleanPolicyLogicSection.css';
+import useFeatureFlagEnabled from '../../../../../hooks/useFeatureFlagEnabled';
 
 type BooleanPolicyLogicSectionProps = {
     readOnly?: boolean;
@@ -21,13 +23,18 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
     const [descriptor, setDescriptor] = React.useState<Descriptor[]>([]);
     const { values } = useFormikContext<Policy>();
 
+    const isImageSigningEnabled = useFeatureFlagEnabled('ROX_VERIFY_IMAGE_SIGNATURE');
     React.useEffect(() => {
         if (values.eventSource === 'AUDIT_LOG_EVENT') {
             setDescriptor(auditLogDescriptor);
         } else {
-            setDescriptor([...policyConfigurationDescriptor, ...networkDetectionDescriptor]);
+            let descriptors = [...policyConfigurationDescriptor, ...networkDetectionDescriptor];
+            descriptors = isImageSigningEnabled
+                ? [...descriptors, imageSigningCriteriaDescriptor]
+                : descriptors;
+            setDescriptor(descriptors);
         }
-    }, [values.eventSource]);
+    }, [values.eventSource, isImageSigningEnabled]);
 
     return (
         <>

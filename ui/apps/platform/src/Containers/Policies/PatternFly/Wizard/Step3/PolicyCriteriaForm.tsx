@@ -9,12 +9,14 @@ import {
     networkDetectionDescriptor,
     auditLogDescriptor,
     Descriptor,
+    imageSigningCriteriaDescriptor,
 } from 'Containers/Policies/Wizard/Form/descriptors';
 import { Policy } from 'types/policy.proto';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
 import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
 
 import './PolicyCriteriaForm.css';
+import useFeatureFlagEnabled from '../../../../../hooks/useFeatureFlagEnabled';
 
 const MAX_POLICY_SECTIONS = 16;
 
@@ -35,13 +37,18 @@ function PolicyCriteriaForm() {
         }
     }
 
+    const isImageSigningEnabled = useFeatureFlagEnabled('ROX_VERIFY_IMAGE_SIGNATURE');
     React.useEffect(() => {
         if (values.eventSource === 'AUDIT_LOG_EVENT') {
             setDescriptor(auditLogDescriptor);
         } else {
-            setDescriptor([...policyConfigurationDescriptor, ...networkDetectionDescriptor]);
+            let descriptors = [...policyConfigurationDescriptor, ...networkDetectionDescriptor];
+            descriptors = isImageSigningEnabled
+                ? [...descriptors, imageSigningCriteriaDescriptor]
+                : descriptors;
+            setDescriptor(descriptors);
         }
-    }, [values.eventSource]);
+    }, [values.eventSource, isImageSigningEnabled]);
 
     const headingElements = (
         <>
