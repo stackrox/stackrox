@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 const (
@@ -30,8 +32,12 @@ const (
 	deleteManyStmt = "DELETE FROM watchedimages WHERE Name = ANY($1::text[])"
 )
 
+var (
+	schema = walker.Walk(reflect.TypeOf((*storage.WatchedImage)(nil)), baseTable)
+)
+
 func init() {
-	globaldb.RegisterTable(baseTable, "WatchedImage")
+	globaldb.RegisterTable(schema)
 }
 
 type Store interface {

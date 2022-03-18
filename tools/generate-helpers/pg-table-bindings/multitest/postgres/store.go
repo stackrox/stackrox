@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 const (
@@ -26,8 +28,12 @@ const (
 	walkStmt   = "SELECT serialized FROM multikey"
 )
 
+var (
+	schema = walker.Walk(reflect.TypeOf((*storage.TestMultiKeyStruct)(nil)), baseTable)
+)
+
 func init() {
-	globaldb.RegisterTable(baseTable, "TestMultiKeyStruct")
+	globaldb.RegisterTable(schema)
 }
 
 type Store interface {

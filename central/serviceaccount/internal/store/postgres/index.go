@@ -2,7 +2,6 @@
 package postgres
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -11,7 +10,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 	search "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/postgres"
@@ -19,7 +17,7 @@ import (
 )
 
 func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_SERVICE_ACCOUNTS, walker.Walk(reflect.TypeOf((*storage.ServiceAccount)(nil)), baseTable))
+	mapping.RegisterCategoryToTable(v1.SearchCategory_SERVICE_ACCOUNTS, schema)
 }
 
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
