@@ -1,13 +1,12 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_BUNDLE_IMAGE=ubi8
 ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=8.5
 
-FROM ${BASE_REGISTRY}/${BASE_BUNDLE_IMAGE}:${BASE_TAG} AS extracted_bundle
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
 
 COPY bundle.tar.gz /
 WORKDIR /bundle
-RUN tar -zxf /bundle.tar.gz
+RUN microdnf install tar gzip && tar -zxf /bundle.tar.gz
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
@@ -41,6 +40,7 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     rpm --import RPM-GPG-KEY-CentOS-Official && \
     microdnf upgrade && \
     rpm -i /tmp/snappy.rpm && \
+    microdnf install lz4 bzip2 && \
     microdnf clean all && \
     rm /tmp/snappy.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
