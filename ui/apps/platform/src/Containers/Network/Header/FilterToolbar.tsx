@@ -16,18 +16,18 @@ function FilterToolbar({ isDisabled }: FilterToolbarProps) {
     return (
         <Flex
             data-testid="network-graph-toolbar"
-            className="theme-light pf-u-px-lg pf-u-py-sm"
+            className="theme-light pf-u-px-md pf-u-px-lg-on-xl pf-u-py-sm"
             direction={{ default: 'row' }}
             alignItems={{ default: 'alignItemsCenter' }}
         >
-            <FlexItem flex={{ default: 'flexNone' }}>
+            <FlexItem>
                 <ClusterSelect isDisabled={isDisabled} />
             </FlexItem>
             <Divider component="div" isVertical />
             <FlexItem flex={{ default: 'flex_1' }}>
                 <NetworkSearch isDisabled={isDisabled} />
             </FlexItem>
-            <FlexItem flex={{ default: 'flexNone' }}>
+            <FlexItem>
                 <TimeWindowSelector isDisabled={isDisabled} />
             </FlexItem>
         </Flex>
