@@ -32,6 +32,6 @@ runs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
-    - name: Reolve mods for protos
+    - name: Resolve mods for protos
       run: go mod tidy
       shell: bash

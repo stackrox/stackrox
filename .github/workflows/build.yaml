@@ -34,7 +34,7 @@ jobs:
         run: |
             make --quiet tag | tee CI_TAG_TMP
             mv CI_TAG_TMP CI_TAG
-            # when 'make --quiet tag' fails it can output a newline and exit with 0
+            # check for a valid tag - when 'make --quiet tag' fails it can output a newline and exit with 0
             (( $(stat -c%s CI_TAG) > 1 )) || { echo "An invalid tag was created:"; cat CI_TAG; exit 1; }
 
       - uses: actions/upload-artifact@v3
