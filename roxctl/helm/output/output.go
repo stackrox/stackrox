@@ -80,7 +80,7 @@ func (cfg *helmOutputCommand) Construct(args []string, cmd *cobra.Command) error
 // Validate will validate the injected values and check whether it's possible to execute the operation with the
 // provided values
 func (cfg *helmOutputCommand) Validate() error {
-	//Check that chart template prefix exists
+	// Check that chart template prefix exists
 	chartTemplatePathPrefix := common.ChartTemplates[cfg.chartName]
 	if chartTemplatePathPrefix == "" {
 		return errors.New("unknown chart, see --help for list of supported chart names")
