@@ -1166,7 +1166,9 @@
       "type": "string",
       "enum": [
         "MISSING_METADATA",
-        "MISSING_SCAN_DATA"
+        "MISSING_SCAN_DATA",
+        "MISSING_SIGNATURE",
+        "MISSING_SIGNATURE_VERIFICATION_DATA"
       ],
       "default": "MISSING_METADATA"
     },
