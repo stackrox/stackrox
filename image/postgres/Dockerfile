@@ -18,8 +18,7 @@ ARG ROX_IMAGE_FLAVOR
 ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
 
 ENV PG_MAJOR=14
-ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/" \
-    POSTGRES_PASSWORD_FILE="/run/secrets/stackrox.io/secrets/password"
+ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/"
 
 COPY signatures/RPM-GPG-KEY-PGDG-14 /
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
