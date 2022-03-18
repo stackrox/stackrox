@@ -20,8 +20,10 @@ func parseMapQuery(label string) (string, string) {
 }
 
 func readMapValue(val interface{}) map[string]string {
+	// Maps are stored in a jsonb column, which we get back as a byte array.
+	// We know that supported maps are only map[string]string, so we unmarshal accordingly.
 	var mapValue map[string]string
-	if err := json.Unmarshal((*val.(*[]byte)), &mapValue); err != nil {
+	if err := json.Unmarshal(*val.(*[]byte), &mapValue); err != nil {
 		utils.Should(err)
 		return nil
 	}
