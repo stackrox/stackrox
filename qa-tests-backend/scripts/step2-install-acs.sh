@@ -47,26 +47,6 @@ function stackrox_deploy_via_helm {
   fi
 }
 
-# operates against current kube context
-function port-forward-central {
-  cd "$STACKROX_SOURCE_ROOT"
-  pkill -f 'port-forward.*stackrox.*svc/central' || true
-  sleep 3
-  nohup kubectl port-forward -n stackrox svc/central 8443:443 &> /tmp/central.log &
-  sleep 5
-  pgrep -fl 'port-forward.*stackrox.*svc/central' || {
-    warning "Port forwarding to central has failed"
-    cat /tmp/central.log
-  }
-
-  # Required vars for Groovy e2e api tests
-  export API_HOSTNAME="localhost"
-  export API_PORT="8443"
-
-  nc -vz "$API_HOSTNAME" "$API_PORT" \
-    || error "FAILED: [nc -vz $API_HOSTNAME $API_PORT]"
-}
-
 
 # __MAIN__
 CURRENT_KUBE_CONTEXT=$(kubectl config current-context)
@@ -81,7 +61,8 @@ stackrox_teardown
 kubectl delete --wait namespace qa &>/dev/null || true
 kubectl create namespace qa
 stackrox_deploy_via_helm
-port-forward-central
-kubectl delete -f "qa-tests-backend-single-step/scripts/scc-qatest-anyuid.yaml" &>/dev/null || true
-kubectl apply -f "qa-tests-backend-single-step/scripts/scc-qatest-anyuid.yaml"
+
+cd "$STACKROX_SOURCE_ROOT/qa-tests-backend"
+kubectl delete -f "src/k8s/scc-qatest-anyuid.yaml" &>/dev/null || true
+kubectl apply -f "src/k8s/scc-qatest-anyuid.yaml"
 echo "Cluster is ready for testing."

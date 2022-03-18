@@ -38,13 +38,14 @@ export QUAY_USERNAME QUAY_PASSWORD
 export KUBECONFIG="/tmp/kubeconfig"
 pkill -f 'port-forward.*svc/central' || true
 sleep 2
-kubectl port-forward -n stackrox svc/central 8000:443 &> /tmp/central.log &
+kubectl port-forward -n stackrox svc/central 8443:443 &> /tmp/central.log &
 sleep 3
 
 # Required vars for Groovy e2e api tests
 export API_HOSTNAME="localhost"
-export API_PORT="8000"
+export API_PORT="8443"
 
+# Verify API connectivity
 nc -vz "$API_HOSTNAME" "$API_PORT" \
     || error "FAILED: [nc -vz $API_HOSTNAME $API_PORT]"
 
@@ -52,7 +53,8 @@ PASSWORD_FILE_PATH="$GOPATH/src/github.com/stackrox/stackrox/deploy/openshift/ce
 ROX_USERNAME="admin"
 ROX_PASSWORD=$(cat "$PASSWORD_FILE_PATH")
 export ROX_USERNAME ROX_PASSWORD
-echo "Access Central console at localhost:8000"
+
+echo "Access Central console at http://$API_HOST:$API_PORT"
 echo "Login with ($ROX_USERNAME, $ROX_PASSWORD)"
 
 gradle test --tests='ImageScanningTest'

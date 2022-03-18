@@ -109,8 +109,6 @@ function verify_cluster_access_osd {
 }
 
 function verify_cluster_access_rosa {
-  # TODO(sbostick): not tested under this devbox yet...
-  # working on OSD but wanted to put this snippet here
   rosa login --token="$OPENSHIFT_CLUSTER_MANAGER_API_TOKEN"
   echo "logging in openshift client"
   oc_login_command=$(grep "oc login https.*username.*password" "$SCRATCH/log/rosa-create-admin.log")
