@@ -1,11 +1,12 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import * as Icon from 'react-feather';
+import { SelectOption } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
 import { timeWindows } from 'constants/timeWindows';
+import Select from 'Components/PatternFly/Select';
 
 type TimeWindowSelectorProps = {
     setActivityTimeWindow: (timeWindow) => void;
@@ -18,33 +19,18 @@ function TimeWindowSelector({
     activityTimeWindow,
     isDisabled = false,
 }: TimeWindowSelectorProps) {
-    function selectTimeWindow(event) {
-        const timeWindow = event.target.value;
-        setActivityTimeWindow(timeWindow);
+    function selectTimeWindow(event, selection) {
+        setActivityTimeWindow(selection);
     }
 
     return (
-        <div
-            className={`flex relative whitespace-nowrap border-2 rounded-sm mr-2 ml-2 min-h-10 bg-base-100 border-base-300 hover:border-base-400 ${
-                isDisabled ? 'disabled' : ''
-            }`}
-        >
-            <div className="absolute inset-y-0 ml-2 flex items-center cursor-pointer z-0 pointer-events-none">
-                <Icon.Clock className="h-4 w-4 text-base-500" />
-            </div>
-            <select
-                className="pl-8 pr-8 truncate text-lg bg-base-100 py-2 text-sm text-base-600 border-0 hover:border-base-300 cursor-pointer"
-                onChange={selectTimeWindow}
-                value={activityTimeWindow}
-                disabled={isDisabled}
-            >
-                {timeWindows.map((window) => (
-                    <option key={window} value={window}>
-                        {window}
-                    </option>
-                ))}
-            </select>
-        </div>
+        <Select onSelect={selectTimeWindow} selections={activityTimeWindow} isDisabled={isDisabled}>
+            {timeWindows.map((window) => (
+                <SelectOption key={window} value={window}>
+                    {window}
+                </SelectOption>
+            ))}
+        </Select>
     );
 }
 

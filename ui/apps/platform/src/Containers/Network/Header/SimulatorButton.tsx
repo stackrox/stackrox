@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { withRouter, useHistory } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
-import * as Icon from 'react-feather';
+import { Button } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
@@ -42,21 +42,15 @@ function SimulatorButton({
         }
     }
 
-    const className = creatingOrSimulating
-        ? 'bg-success-200 border-success-500 hover:border-success-600 hover:text-success-600 text-success-500'
-        : 'bg-base-200 hover:border-base-400 hover:text-base-700 border-base-300';
-    const iconColor = creatingOrSimulating ? '#53c6a9' : '#d2d5ed';
     return (
-        <button
-            type="button"
+        <Button
             data-testid={`simulator-button-${creatingOrSimulating ? 'on' : 'off'}`}
-            className={`flex items-center flex-shrink-0 border-2 rounded-sm text-sm pl-2 pr-2 h-10 ${className}`}
             onClick={toggleSimulation}
             disabled={isDisabled}
+            variant="primary"
         >
-            <Icon.Circle className="h-2 w-2" fill={iconColor} stroke={iconColor} />
-            <span className="pl-2">Network Policy Simulator</span>
-        </button>
+            Network Policy Simulator
+        </Button>
     );
 }
 

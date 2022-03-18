@@ -11,6 +11,8 @@ import {
 } from 'Containers/Navigation/OrchestratorComponentsToggle';
 import ReduxSearchInput from 'Containers/Search/ReduxSearchInput';
 
+import './NetworkSearch.css';
+
 function NetworkSearch({
     searchOptions,
     searchModifiers,
@@ -33,7 +35,8 @@ function NetworkSearch({
 
     return (
         <ReduxSearchInput
-            className="w-full pl-2"
+            className="w-full network-search"
+            placeholder="Add one or more deployment filters"
             searchOptions={searchOptions}
             searchModifiers={searchModifiers}
             setSearchOptions={setSearchOptions}
