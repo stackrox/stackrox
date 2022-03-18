@@ -2578,9 +2578,8 @@ jobs:
       EKS_AUTOMATION_VERSION: 0.2.17
       # All CI builds go out with commercial product branding.
       # TODO(ROX-9513): a separate CI setup is required for open source/community builds.
-      # Note that the `REACT_APP` prefix is a convention used by
-      # React tooling that is required to inject this env variable into
-      # the build.
+      # Note that the `REACT_APP` prefix is a convention used by React tooling that is required to inject this env
+      # variable into the build. See https://create-react-app.dev/docs/adding-custom-environment-variables/
       REACT_APP_ROX_PRODUCT_BRANDING: RHACS_BRANDING
     steps:
       - checkout
