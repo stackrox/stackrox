@@ -153,9 +153,7 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
 	return nil
 }
 
-func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
-	return
-}
+func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(_ *storage.Image) {}
 
 func (ds *datastoreImpl) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
 	ds.cveSuppressionLock.RLock()

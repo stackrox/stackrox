@@ -167,9 +167,7 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 	}
 }
 
-func (ds *datastoreImpl) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
-	return
-}
+func (ds *datastoreImpl) EnrichNodeWithSuppressedCVEs(_ *storage.Node) {}
 
 func (ds *datastoreImpl) Delete(ctx context.Context, _ ...string) error {
 	return errors.New("image vulnerabilities can be deleted only when all associated images are removed")

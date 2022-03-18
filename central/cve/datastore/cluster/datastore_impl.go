@@ -64,13 +64,9 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
 	return errors.New("vulnerability snoozing/un-snoozing is not supported cluster (k8s/istio) vulnerabilities")
 }
 
-func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(_ *storage.Image) {
-	return
-}
+func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(_ *storage.Image) {}
 
-func (ds *datastoreImpl) EnrichNodeWithSuppressedCVEs(_ *storage.Node) {
-	return
-}
+func (ds *datastoreImpl) EnrichNodeWithSuppressedCVEs(_ *storage.Node) {}
 
 func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
 	return ds.storage.DeleteMany(ctx, ids)
