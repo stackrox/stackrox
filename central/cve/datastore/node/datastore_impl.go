@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/datastore/common"
 	"github.com/stackrox/rox/central/cve/datastore/node/internal/store/postgres"
-	"github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/cve/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +21,6 @@ var (
 
 type datastoreImpl struct {
 	storage  postgres.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 
 	cveSuppressionLock  sync.RWMutex
