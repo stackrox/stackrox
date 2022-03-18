@@ -1,8 +1,9 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8/ubi
+ARG BASE_BUNDLE_IMAGE=ubi8
+ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=8.5
 
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
+FROM ${BASE_REGISTRY}/${BASE_BUNDLE_IMAGE}:${BASE_TAG} AS extracted_bundle
 
 COPY bundle.tar.gz /
 WORKDIR /bundle
@@ -38,9 +39,9 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s entrypoint-wrapper.sh /stackrox/sensor-upgrader && \
     ln -s /assets/downloads/cli/roxctl-linux /stackrox/roxctl && \
     rpm --import RPM-GPG-KEY-CentOS-Official && \
-    dnf upgrade -y && \
-    dnf install -y lz4 bzip2 /tmp/snappy.rpm && \
-    dnf clean all && \
+    microdnf upgrade && \
+    rpm -i /tmp/snappy.rpm && \
+    microdnf clean all && \
     rm /tmp/snappy.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
