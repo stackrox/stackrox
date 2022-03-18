@@ -12,12 +12,12 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
+	baseTable  = "rolebindings"
 	countStmt  = "SELECT COUNT(*) FROM rolebindings"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM rolebindings WHERE Id = $1)"
 
@@ -30,14 +30,8 @@ const (
 	deleteManyStmt = "DELETE FROM rolebindings WHERE Id = ANY($1::text[])"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "rolebindings"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "K8SRoleBinding")
+	globaldb.RegisterTable(baseTable, "K8SRoleBinding")
 }
 
 type Store interface {

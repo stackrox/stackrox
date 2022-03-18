@@ -12,12 +12,12 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
+	baseTable  = "multikey"
 	countStmt  = "SELECT COUNT(*) FROM multikey"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM multikey WHERE Key1 = $1 AND Key2 = $2)"
 
@@ -26,14 +26,8 @@ const (
 	walkStmt   = "SELECT serialized FROM multikey"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "multikey"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "TestMultiKeyStruct")
+	globaldb.RegisterTable(baseTable, "TestMultiKeyStruct")
 }
 
 type Store interface {
