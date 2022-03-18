@@ -12,12 +12,12 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
+	baseTable  = "integrationhealth"
 	countStmt  = "SELECT COUNT(*) FROM integrationhealth"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM integrationhealth WHERE Id = $1)"
 
@@ -30,14 +30,8 @@ const (
 	deleteManyStmt = "DELETE FROM integrationhealth WHERE Id = ANY($1::text[])"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "integrationhealth"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "IntegrationHealth")
+	globaldb.RegisterTable(baseTable, "IntegrationHealth")
 }
 
 type Store interface {

@@ -65,6 +65,7 @@ require (
 	github.com/hashicorp/go-version v1.4.0
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/heroku/docker-registry-client v0.0.0
+	github.com/jackc/pgtype v1.10.0
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/joelanford/helm-operator v0.0.7
 	github.com/joshdk/go-junit v0.0.0-20210226021600-6145f504ca0d

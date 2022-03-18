@@ -353,7 +353,11 @@ function PoliciesTable({
                 hasOverflowScroll
                 id="policies-table"
             >
-                <TableComposable isStickyHeader>
+                <TableComposable
+                    isStickyHeader
+                    aria-label="Policies table"
+                    data-testid="policies-table"
+                >
                     <Thead>
                         <Tr>
                             <Th
