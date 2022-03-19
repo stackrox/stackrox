@@ -1,7 +1,6 @@
 package printer
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -44,7 +43,7 @@ func (j *JSONPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error)
 		return printers.NewJSONPrinter(printers.WithJSONEscapeHTML(j.EscapeHTMLCharacters),
 			printers.WithJSONCompact(j.Compact)), nil
 	default:
-		return nil, errox.InvalidArgs.New(fmt.Sprintf("invalid output format %q used for JSON printer", format))
+		return nil, errox.InvalidArgs.Newf("invalid output format %q used for JSON printer", format)
 	}
 }
 
