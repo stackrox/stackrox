@@ -92,15 +92,17 @@ func getPaginationQuery(pagination *v1.QueryPagination, schema *walker.Schema, q
 			fmt.Sprintf("%s %s", qualifyColumn(dbField.Schema.Table, dbField.ColumnName), direction),
 		)
 	}
-	var orderBy string
-	if len(orderByClauses) != 0 {
-		orderBy = fmt.Sprintf("order by %s", strings.Join(orderByClauses, ", "))
+	var paginationClause strings.Builder
+	if len(orderByClauses) > 0 {
+		paginationClause.WriteString(fmt.Sprintf("order by %s", strings.Join(orderByClauses, ", ")))
 	}
-	if pagination.GetLimit() == 0 {
-		return orderBy, nil
+	if pagination.GetLimit() > 0 {
+		paginationClause.WriteString(fmt.Sprintf(" LIMIT %d", pagination.GetLimit()))
 	}
-	orderBy += fmt.Sprintf(" LIMIT %d OFFSET %d", pagination.GetLimit(), pagination.GetOffset())
-	return orderBy, nil
+	if pagination.GetOffset() > 0 {
+		paginationClause.WriteString(fmt.Sprintf(" OFFSET %d", pagination.GetOffset()))
+	}
+	return paginationClause.String(), nil
 }
 
 func generateSelectFields(entry *pgsearch.QueryEntry, primaryKeys []walker.Field, selectType QueryType) selectQuery {
