@@ -76,8 +76,8 @@ func (e *RoxError) New(message string) *RoxError {
 }
 
 // Newf creates an error based on the existing RoxError, but with the
-// personalized formatted error message. Essentially, it allows to preserve the
-// error's base error in the chain but hide its message.
+// personalized formatted error message. Essentially, it allows for preserving
+// the error's base error in the chain but hide its message.
 //
 // Example:
 //     ErrRecordNotFound := errox.NotFound.Newf("record <%d> not found", recordIndex)
