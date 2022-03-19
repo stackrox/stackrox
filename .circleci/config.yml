@@ -2705,7 +2705,7 @@ jobs:
     steps:
       - checkout-with-submodules
       - check-docs-step:
-          only-on-release: true
+          only-on-release: false
       - check-scanner-and-collector-release-step:
           fail-on-rc: false
 
