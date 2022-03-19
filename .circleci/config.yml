@@ -814,7 +814,7 @@ commands:
         name: Verify that docs are up to date
         command: |
           source scripts/ci/lib.sh
-          check_docs "$CIRCLE_TAG" "<< parameters.only-on-release >>"
+          check_docs "${CIRCLE_TAG:-}" "<< parameters.only-on-release >>"
 
   check-scanner-and-collector-release-step:
     parameters:
