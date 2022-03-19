@@ -1,7 +1,6 @@
 package printer
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -106,7 +105,7 @@ func (j *JUnitPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error
 	case "junit":
 		return printers.NewJUnitPrinter(j.suiteName, j.jsonPathExpressions), nil
 	default:
-		return nil, errox.InvalidArgs.New(fmt.Sprintf("invalid output format used for JUnit Printer %q", format))
+		return nil, errox.InvalidArgs.Newf("invalid output format used for JUnit Printer %q", format)
 	}
 }
 
@@ -123,7 +122,7 @@ func (j *JUnitPrinterFactory) validate() error {
 		if _, exists := j.jsonPathExpressions[key]; !exists {
 			// since the jsonPathExpression map is NOT expected to be set by the user, return an ErrInvariantViolation
 			// instead
-			return errox.InvariantViolation.New(fmt.Sprintf("missing required JSON Path expression for key %q", key))
+			return errox.InvariantViolation.Newf("missing required JSON Path expression for key %q", key)
 		}
 	}
 

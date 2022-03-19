@@ -5,13 +5,12 @@ package tests
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	googleStorage "cloud.google.com/go/storage"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/retry"
@@ -112,7 +111,7 @@ func TestGCSExternalBackup(t *testing.T) {
 	err = retry.WithRetry(func() error {
 		numBackups := countNumBackups(t, client, prefix)
 		if numBackups != 2 {
-			return errors.New(fmt.Sprintf("Backup is not pruned: got %d", numBackups))
+			return errors.Errorf("Backup is not pruned: got %d", numBackups)
 		}
 		return nil
 	},
