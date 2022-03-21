@@ -1,15 +1,16 @@
 {{/*
     srox.autoSenseOpenshiftVersion $
 
-    This function detects the OpenShift version automatically based cluster the Helm chart is installed onto.
+    This function detects the OpenShift version automatically based on the cluster the Helm chart is installed onto.
     It writes the result to ._rox.env.openshift as an integer.
     Possible results are:
      - 3 (OpenShift 3)
      - 4 (OpenShift 4)
      - 0 (Non-Openshift cluster)
 
-    If "true" is passed for $._rox.env.openshift the OpenShift version is decided based on the Kubernetes version.
-    If the Kubernetes version is not available (i.e. when using Helm template) auto-sensing falls back on OpenShift 3.
+    If "true" is passed for $._rox.env.openshift the OpenShift version is detected based on the Kubernetes cluster version.
+    If the Kubernetes version is not available (i.e. when using Helm template) auto-sensing falls back on OpenShift 3 to be
+    backward compatible.
   */}}
 
 {{ define "srox.autoSenseOpenshiftVersion" }}
