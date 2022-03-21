@@ -150,6 +150,11 @@ func (s *IndexSuite) TestString() {
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct2},
 		},
 		{
+			desc:            "exact match (but case insensitive)",
+			q:               search.NewQueryBuilder().AddExactMatches(search.FieldLabel("tEST stRING"), "fir").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct2},
+		},
+		{
 			desc:            "prefix",
 			q:               search.NewQueryBuilder().AddStrings(search.TestString, "fir").ProtoQuery(),
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct2},
