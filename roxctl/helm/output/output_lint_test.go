@@ -3,6 +3,7 @@ package output
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -150,24 +151,23 @@ func executeHelpOutputCommand(chartName, outputDir string, removeOutputDir bool,
 		removeOutputDir: removeOutputDir,
 		rhacs:           rhacs,
 		imageFlavor:     imageFlavor,
-		chartName:       chartName,
-		flavorProvided:  flavorProvided,
 		env:             env,
 	}
 
 	c := &cobra.Command{Use: "test"}
-	c.PersistentFlags().Bool(flags.ImageDefaultsFlagName, flavorProvided, "")
-	// if err := c.Flags().Parse([]string{flags.ImageDefaultsFlagName}); err != nil {
-	//	return err
-	//}
-	// if err := c.Flags().Set(flags.ImageDefaultsFlagName, ""); err != nil {
-	//	return err
-	//}
-	//provided := c.Flags().Changed(flags.ImageDefaultsFlagName)
-	//if err := c.Flags().Bool(flags.ImageDefaultsFlagName, flavorProvided, ""); err != nil {
-	//	return err
-	//}
+
+	// Add and set `ImageDefaultsFlagName` flag if provided in the test scope
+	if flavorProvided {
+		c.Flags().Bool(flags.ImageDefaultsFlagName, flavorProvided, "")
+		if err := c.Flags().Set(flags.ImageDefaultsFlagName, strconv.FormatBool(flavorProvided)); err != nil {
+			return err
+		}
+	}
+
+	// `chartName` is parsed from args
 	args := []string{chartName}
+
+	// Execute command flow
 	if err := cmd.Construct(args, c); err != nil {
 		return err
 	}

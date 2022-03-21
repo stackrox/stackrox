@@ -83,7 +83,7 @@ func (cfg *helmOutputCommand) Validate() error {
 	// Check that chart template prefix exists
 	chartTemplatePathPrefix := common.ChartTemplates[cfg.chartName]
 	if chartTemplatePathPrefix == "" {
-		return errors.New("unknown chart, see --help for list of supported chart names")
+		return errox.NewErrInvalidArgs("unknown chart, see --help for list of supported chart names")
 	}
 	cfg.chartTemplatePathPrefix = chartTemplatePathPrefix
 
@@ -100,7 +100,7 @@ func (cfg *helmOutputCommand) Validate() error {
 			cfg.logger.ErrfLn("Removed output directory %s", cfg.outputDir)
 		} else {
 			cfg.logger.ErrfLn("Directory %q already exists, use --remove or select a different directory with --output-dir.", cfg.outputDir)
-			return errox.AlreadyExists.New(fmt.Sprintf("directory %q", cfg.outputDir))
+			return errox.AlreadyExists.New(fmt.Sprintf("directory %q already exists", cfg.outputDir))
 		}
 	} else if !os.IsNotExist(err) {
 		return errors.Wrapf(err, "failed to check if directory %q exists", cfg.outputDir)
@@ -110,9 +110,6 @@ func (cfg *helmOutputCommand) Validate() error {
 }
 
 func (cfg *helmOutputCommand) outputHelmChart() error {
-	fmt.Fprintln(os.Stdout, "CFG....")
-	fmt.Printf("%+v\n", cfg)
-
 	// load chart template meta values
 	chartMetaValues, err := cfg.getChartMetaValues(buildinfo.ReleaseBuild)
 	if err != nil {
