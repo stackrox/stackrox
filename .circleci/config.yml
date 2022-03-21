@@ -4786,6 +4786,7 @@ jobs:
                     --password "$CLUSTER_PASSWORD" \
                     --insecure-skip-tls-verify=true
                   oc get nodes
+                  oc apply -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
           destroy-cluster:
             - nop-steps-stanza
       - destroy-osd-aws-cluster
@@ -4831,6 +4832,7 @@ jobs:
                     --password "$CLUSTER_PASSWORD" \
                     --insecure-skip-tls-verify=true
                   oc get nodes
+                  oc apply -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
           destroy-cluster:
             - nop-steps-stanza
       - destroy-osd-gcp-cluster
