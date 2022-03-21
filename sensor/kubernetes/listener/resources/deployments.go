@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/config"
-	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -75,7 +74,7 @@ type deploymentHandler struct {
 	rbac                   rbac.Store
 	orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
 
-	detector detector.Detector
+	detector Detection
 
 	clusterID string
 }
@@ -83,7 +82,7 @@ type deploymentHandler struct {
 // newDeploymentHandler creates and returns a new deployment handler.
 func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore,
 	endpointManager endpointManager, namespaceStore *namespaceStore, networkPoliciesStore *NetworkPolicyStore, rbac rbac.Store,
-	podLister v1listers.PodLister, processFilter filter.Filter, config config.Handler, detector detector.Detector,
+	podLister v1listers.PodLister, processFilter filter.Filter, config config.Handler, detector Detection,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentHandler {
 	return &deploymentHandler{
 		podLister:              podLister,
@@ -104,7 +103,7 @@ func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deployme
 }
 
 func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
-	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore, d.networkPoliciesStore,
+	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore,
 		d.hierarchy, d.config.GetConfig().GetRegistryOverride(), d.orchestratorNamespaces)
 	// Note: deploymentWrap may be nil. Typically, this means that this is not a top-level object that we track --
 	// either it's an object we don't track, or we track its parent.

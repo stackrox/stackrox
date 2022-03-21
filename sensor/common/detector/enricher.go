@@ -211,7 +211,7 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 
 func (e *enricher) getNetpols(deployment *storage.Deployment) *augmentedobjs.NetworkPolicyAssociation {
 	npStore := resources.NetworkPolicyStoreSingleton()
-	matchingNPs := make([]*storage.NetworkPolicy, 0)
+	matchingNPs := make([]storage.NetworkPolicy, 0)
 
 	fmt.Printf("getNetpols: searching network policies for deployment: %s\n", deployment.Name)
 	// full scan for all policies currently known
@@ -223,7 +223,7 @@ func (e *enricher) getNetpols(deployment *storage.Deployment) *augmentedobjs.Net
 		podLabels := deployment.GetPodLabels()
 		if labels.MatchLabels(policySelector, podLabels) {
 			fmt.Printf("getNetpols: policy/depl: %s/%s - MATCH\n", policy.GetName(), deployment.Name)
-			matchingNPs = append(matchingNPs, policy)
+			matchingNPs = append(matchingNPs, *policy)
 		} else {
 			fmt.Printf("getNetpols: policy/depl: %s/%s - NOPE\n", policy.GetName(), deployment.Name)
 			fmt.Printf("getNetpols: policySelector: %+v\n", policySelector.MatchLabels)
@@ -241,7 +241,7 @@ func (e *enricher) getNetpols(deployment *storage.Deployment) *augmentedobjs.Net
 	return &augmentedobjs.NetworkPolicyAssociation{
 		MissingIngressNetworkPolicy: !containsIngress,
 		MissingEgressNetworkPolicy:  !containsEgress,
-		NetworkPoliciesApplied:      nil,
+		NetworkPoliciesApplied:      matchingNPs,
 	}
 }
 

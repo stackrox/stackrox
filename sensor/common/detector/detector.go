@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/updater"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"google.golang.org/grpc"
 )
 
@@ -78,6 +79,8 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		alertStopSig:      concurrency.NewSignal(),
 	}
 }
+
+var _ resources.Detection = (*detectorImpl)(nil)
 
 type detectorImpl struct {
 	unifiedDetector unified.Detector
