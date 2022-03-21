@@ -125,7 +125,7 @@ spec:
         - name: ROX_SCANNER_GRPC_ENDPOINT
           value: {{ printf "scanner.%s.svc:8443" .Release.Namespace }}
         [<- end >]
-        {{- end}}
+        {{- end }}
         [<- if not .KubectlOutput >]
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
