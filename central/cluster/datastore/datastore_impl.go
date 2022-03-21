@@ -11,7 +11,8 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	"github.com/stackrox/rox/central/cluster/index"
-	"github.com/stackrox/rox/central/cluster/store"
+	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
+	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/cluster_health_status"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
@@ -63,8 +64,8 @@ var (
 
 type datastoreImpl struct {
 	indexer              index.Indexer
-	clusterStorage       store.ClusterStore
-	clusterHealthStorage store.ClusterHealthStore
+	clusterStorage       clusterStore.Store
+	clusterHealthStorage clusterHealthStore.Store
 	notifier             notifierProcessor.Processor
 	searcher             search.Searcher
 
