@@ -8,20 +8,20 @@ import (
 
 // BuildClusterLevelSACQueryFilter builds a Scoped Access Control query filter that can be
 // injected in search queries for resource types that have direct cluster scope level.
-func BuildClusterLevelSACQueryFilter(scopeTree *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
-	if scopeTree == nil {
+func BuildClusterLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
+	if root == nil {
 		return nil, ErrResourceAccessDenied
 	}
-	if scopeTree.State == effectiveaccessscope.Included {
+	if root.State == effectiveaccessscope.Included {
 		return nil, nil
 	}
-	if scopeTree.State == effectiveaccessscope.Excluded {
+	if root.State == effectiveaccessscope.Excluded {
 		return nil, ErrResourceAccessDenied
 	}
-	clusterIDs := scopeTree.GetClusterIDs()
+	clusterIDs := root.GetClusterIDs()
 	clusterFilters := make([]*v1.Query, 0, len(clusterIDs))
 	for _, clusterID := range clusterIDs {
-		clusterAccessScope := scopeTree.GetClusterByID(clusterID)
+		clusterAccessScope := root.GetClusterByID(clusterID)
 		if clusterAccessScope.State == effectiveaccessscope.Included {
 			clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID)
 			clusterFilters = append(clusterFilters, clusterQuery.ProtoQuery())
@@ -35,20 +35,20 @@ func BuildClusterLevelSACQueryFilter(scopeTree *effectiveaccessscope.ScopeTree) 
 
 // BuildClusterNamespaceLevelSACQueryFilter builds a Scoped Access Control query filter that can be
 // injected in search queries for resource types that have direct namespace scope level.
-func BuildClusterNamespaceLevelSACQueryFilter(scopeTree *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
-	if scopeTree == nil {
+func BuildClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
+	if root == nil {
 		return nil, ErrResourceAccessDenied
 	}
-	if scopeTree.State == effectiveaccessscope.Excluded {
+	if root.State == effectiveaccessscope.Excluded {
 		return nil, ErrResourceAccessDenied
 	}
-	if scopeTree.State == effectiveaccessscope.Included {
+	if root.State == effectiveaccessscope.Included {
 		return nil, nil
 	}
-	clusterIDs := scopeTree.GetClusterIDs()
+	clusterIDs := root.GetClusterIDs()
 	clusterFilters := make([]*v1.Query, 0, len(clusterIDs))
 	for _, clusterID := range clusterIDs {
-		clusterAccessScope := scopeTree.GetClusterByID(clusterID)
+		clusterAccessScope := root.GetClusterByID(clusterID)
 		if clusterAccessScope.State == effectiveaccessscope.Included {
 			clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID)
 			clusterFilters = append(clusterFilters, clusterQuery.ProtoQuery())
@@ -73,4 +73,16 @@ func BuildClusterNamespaceLevelSACQueryFilter(scopeTree *effectiveaccessscope.Sc
 		return nil, ErrResourceAccessDenied
 	}
 	return search.DisjunctionQuery(clusterFilters...), nil
+}
+
+func getMatchNoneQuery() *v1.Query {
+	return &v1.Query{
+		Query: &v1.Query_BaseQuery{
+			BaseQuery: &v1.BaseQuery{
+				Query: &v1.BaseQuery_MatchNoneQuery{
+					MatchNoneQuery: &v1.MatchNoneQuery{},
+				},
+			},
+		},
+	}
 }
