@@ -1,12 +1,12 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { SelectOption } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
 import { timeWindows } from 'constants/timeWindows';
-import Select from 'Components/PatternFly/Select';
+import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 type TimeWindowSelectorProps = {
     setActivityTimeWindow: (timeWindow) => void;
@@ -19,12 +19,20 @@ function TimeWindowSelector({
     activityTimeWindow,
     isDisabled = false,
 }: TimeWindowSelectorProps) {
-    function selectTimeWindow(event, selection) {
+    const { closeSelect, isOpen, onToggle } = useSelectToggle();
+    function selectTimeWindow(_event, selection) {
+        closeSelect();
         setActivityTimeWindow(selection);
     }
 
     return (
-        <Select onSelect={selectTimeWindow} selections={activityTimeWindow} isDisabled={isDisabled}>
+        <Select
+            isOpen={isOpen}
+            onToggle={onToggle}
+            onSelect={selectTimeWindow}
+            selections={activityTimeWindow}
+            isDisabled={isDisabled}
+        >
             {timeWindows.map((window) => (
                 <SelectOption key={window} value={window}>
                     {window}

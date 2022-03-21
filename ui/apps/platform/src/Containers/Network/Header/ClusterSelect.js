@@ -2,13 +2,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { SelectOption } from '@patternfly/react-core';
+import { Select, SelectOption } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import { actions as graphActions, networkGraphClusters } from 'reducers/network/graph';
 import { actions as clusterActions } from 'reducers/clusters';
 import { actions as pageActions } from 'reducers/network/page';
-import Select from 'Components/PatternFly/Select';
+import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 const ClusterSelect = ({
     selectClusterId,
@@ -17,8 +17,10 @@ const ClusterSelect = ({
     selectedClusterId,
     isDisabled,
 }) => {
+    const { closeSelect, isOpen, onToggle } = useSelectToggle();
     function changeCluster(_e, clusterId) {
         selectClusterId(clusterId);
+        closeSelect();
         closeSidePanel();
     }
 
@@ -28,6 +30,8 @@ const ClusterSelect = ({
 
     return (
         <Select
+            isOpen={isOpen}
+            onToggle={onToggle}
             isDisabled={isDisabled}
             selections={selectedClusterId}
             placeholderText="Select a cluster"
