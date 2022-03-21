@@ -32,6 +32,15 @@ func (v *ValuesBuilder) Build() (chartutil.Values, error) {
 	return ToHelmValues(v.getData())
 }
 
+// PathValue translates values to Helm and returns the data under the given key
+func (v *ValuesBuilder) PathValue(path string) (interface{}, error) {
+	vals, err := ToHelmValues(v)
+	if err != nil {
+		return nil, err
+	}
+	return vals.PathValue(path)
+}
+
 // getData allows deferring allocation of ValuesBuilder.data map until it is actually needed.
 func (v *ValuesBuilder) getData() map[string]interface{} {
 	if v.data == nil {

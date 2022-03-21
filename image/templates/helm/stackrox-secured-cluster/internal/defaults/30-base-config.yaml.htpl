@@ -49,6 +49,9 @@ auditLogs:
   disableCollection: {{ ne ._rox.env.openshift 4 }}
 
 enableOpenShiftMonitoring: false
+
+localImageScanning:
+  enabled: false
 ---
 sensor:
   exposeMonitoring: {{ ._rox.exposeMonitoring }}

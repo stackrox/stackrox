@@ -35,7 +35,7 @@ func reconcile(ctx context.Context, s *platform.SecuredCluster, client ctrlClien
 		return nil
 	}
 
-	enabled, err := scanner.AutoSenseLocalScannerSupport(ctx, client, *s)
+	enabled, err := scanner.AutoSenseLocalScannerConfig(ctx, client, *s)
 	if err != nil {
 		return err
 	}

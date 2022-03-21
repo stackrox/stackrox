@@ -108,7 +108,12 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	}
 
 	if features.LocalImageScanning.Enabled() {
-		v.AddChild("scanner", t.getLocalScannerComponentValues(ctx, sc))
+		autoSenseResult, err := scanner.AutoSenseLocalScannerConfig(ctx, t.client, sc)
+		if err != nil {
+			v.SetError(err)
+		}
+		v.AddChild("scanner", t.getLocalScannerComponentValues(sc, autoSenseResult))
+		v.AddChild("localImageScanning", t.getLocalImageScanningValues(autoSenseResult))
 	}
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
@@ -303,16 +308,19 @@ func (t Translator) getComplianceContainerValues(compliance *platform.ContainerS
 	return &cv
 }
 
-func (t Translator) getLocalScannerComponentValues(ctx context.Context, securedCluster platform.SecuredCluster) *translation.ValuesBuilder {
+// getLocalImageScanningValues returns the values to configure the local image scanning feature in sensor.
+func (t Translator) getLocalImageScanningValues(scannerDeploymentEnabled scanner.AutoSenseResult) *translation.ValuesBuilder {
+	sv := translation.NewValuesBuilder()
+	sv.SetBool("enabled", &scannerDeploymentEnabled.EnableLocalImageScanning)
+	return &sv
+}
+
+// getLocalScannerComponentValues configures the scanner k8s resources.
+func (t Translator) getLocalScannerComponentValues(securedCluster platform.SecuredCluster, scannerDeploymentEnabled scanner.AutoSenseResult) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 	s := securedCluster.Spec.Scanner
 
-	enabled, err := scanner.AutoSenseLocalScannerSupport(ctx, t.client, securedCluster)
-	if err != nil {
-		sv.SetError(err)
-	} else {
-		sv.SetBoolValue("disable", !enabled)
-	}
+	sv.SetBoolValue("disable", !scannerDeploymentEnabled.DeployScannerResources)
 
 	translation.SetScannerAnalyzerValues(&sv, s.Analyzer)
 	translation.SetScannerDBValues(&sv, s.DB)

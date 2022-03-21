@@ -21,9 +21,9 @@ var securedCluster = platform.SecuredCluster{
 func TestAutoSenseLocalScannerSupportShouldBeEnabled(t *testing.T) {
 	client := testutils.NewFakeClientBuilder(t).Build()
 
-	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
+	config, err := AutoSenseLocalScannerConfig(context.Background(), client, securedCluster)
 	require.NoError(t, err)
-	assert.True(t, enabled, "Expected Scanner to be enabled if Central is not present")
+	assert.True(t, config.EnableLocalImageScanning && config.DeployScannerResources, "Expected Scanner to be enabled if Central is not present")
 }
 
 func TestAutoSenseIsDisabledWithCentralPresentShouldBeDisabled(t *testing.T) {
@@ -35,9 +35,10 @@ func TestAutoSenseIsDisabledWithCentralPresentShouldBeDisabled(t *testing.T) {
 		Spec: platform.CentralSpec{},
 	}).Build()
 
-	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
+	config, err := AutoSenseLocalScannerConfig(context.Background(), client, securedCluster)
 	require.NoError(t, err)
-	require.False(t, enabled, "Expected Scanner to be disabled if Central is present")
+	assert.False(t, config.DeployScannerResources, "Expected Scanner resource deployment to be disabled if Central is present")
+	assert.True(t, config.EnableLocalImageScanning, "Expected Local Image Scanning feature to be enabled.")
 }
 
 func TestAutoSenseIsEnabledWithCentralInADifferentNamespace(t *testing.T) {
@@ -49,7 +50,7 @@ func TestAutoSenseIsEnabledWithCentralInADifferentNamespace(t *testing.T) {
 		Spec: platform.CentralSpec{},
 	}).Build()
 
-	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
+	config, err := AutoSenseLocalScannerConfig(context.Background(), client, securedCluster)
 	require.NoError(t, err)
-	require.True(t, enabled, "Expected Scanner to be enabled if Central is deployed in a different namespace")
+	require.True(t, config.EnableLocalImageScanning && config.DeployScannerResources, "Expected Scanner to be enabled if Central is deployed in a different namespace")
 }
