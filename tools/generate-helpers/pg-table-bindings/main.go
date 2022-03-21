@@ -136,8 +136,10 @@ func main() {
 		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
 			return err
 		}
-		if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
-			return err
+		if !props.SkipMutators {
+			if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
+				return err
+			}
 		}
 		if props.SearchCategory != "" {
 			if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
