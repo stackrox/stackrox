@@ -139,8 +139,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 	}
 
 	if c.NoHTTP2 && tlsConf != nil {
-		tlsConf = tlsConf.Clone()
-		tlsConf.NextProtos = sliceutils.StringDifference(tlsConf.NextProtos, []string{"h2", alpn.PureGRPCALPNString})
+		tlsConf = removeHTTP2Protocols(tlsConf)
 	}
 
 	if tlsConf != nil {
@@ -207,6 +206,24 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 	}
 
 	return lis.Addr(), result, nil
+}
+
+func removeHTTP2Protocols(tlsConf *tls.Config) *tls.Config {
+	http1Conf := tlsConf.Clone()
+	http1Conf.NextProtos = sliceutils.StringDifference(http1Conf.NextProtos, []string{"h2", alpn.PureGRPCALPNString})
+
+	getConfigForClient := http1Conf.GetConfigForClient
+	if getConfigForClient != nil {
+		http1Conf.GetConfigForClient = func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
+			clientConf, err := getConfigForClient(hello)
+			if err != nil {
+				return nil, err
+			}
+			return removeHTTP2Protocols(clientConf), nil
+		}
+	}
+
+	return http1Conf
 }
 
 // asEndpoint returns an all-interface endpoint of form `:<port>` if `portOrEndpoint` is a port only (does not contain

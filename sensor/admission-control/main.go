@@ -13,7 +13,7 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/mtls/certwatch"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/satoken"
@@ -93,11 +93,16 @@ func mainCmd() error {
 		alerts.NewAlertSender(sensorConn, mgr.Alerts()).Start(concurrency.AsContext(mgr.Stopped()))
 	}
 
+	certHolder, err := certwatch.NonCAConfigHolder()
+	if err != nil {
+		log.Errorf("Error creating TLS configuration holder: %v", err)
+	}
+
 	serverConfig := pkgGRPC.Config{
 		Endpoints: []*pkgGRPC.EndpointConfig{
 			{
 				ListenEndpoint: webhookEndpoint,
-				TLS:            verifier.NonCA{},
+				TLS:            certHolder,
 				ServeHTTP:      true,
 				NoHTTP2:        true,
 			},

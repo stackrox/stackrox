@@ -7,6 +7,7 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/mtls/verifier"
 )
 
 var (
@@ -23,7 +24,20 @@ type TLSConfigHolder struct {
 	liveTLSConfig unsafe.Pointer
 }
 
-// NewTLSConfigHolder instantiates a new instance of TLSConfigHolder
+// NonCAConfigHolder creates a new instance of TLSConfigHolder with default root TLS config.
+// It is intended for applications which pick up a certificate from the file system, rather than
+// issuing one to itself, and serve it (in other words, non-central).
+func NonCAConfigHolder() (*TLSConfigHolder, error) {
+	cfg := verifier.DefaultTLSServerConfig()
+	certHolder := NewTLSConfigHolder(cfg)
+	err := WatchMTLSCertDir(certHolder)
+	if err != nil {
+		return nil, err
+	}
+	return certHolder, nil
+}
+
+// NewTLSConfigHolder creates a new instance of TLSConfigHolder
 func NewTLSConfigHolder(rootCfg *tls.Config) *TLSConfigHolder {
 	return &TLSConfigHolder{
 		rootTLSConfig: rootCfg,
@@ -76,7 +90,7 @@ func (c *TLSConfigHolder) AddServerCertSource(serverCertSource *[]tls.Certificat
 	c.serverCertSources = append(c.serverCertSources, serverCertSource)
 }
 
-// AddClientCertSource adds client cert source.
-func (c *TLSConfigHolder) AddClientCertSource(clientCertSource *[]*x509.Certificate) {
-	c.clientCASources = append(c.clientCASources, clientCertSource)
+// AddClientCASource adds client CA source.
+func (c *TLSConfigHolder) AddClientCASource(clientCASource *[]*x509.Certificate) {
+	c.clientCASources = append(c.clientCASources, clientCASource)
 }

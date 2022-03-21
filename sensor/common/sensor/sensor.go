@@ -22,7 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/kocache"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/mtls/certwatch"
 	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
@@ -173,13 +173,18 @@ func (s *Sensor) Start() {
 		log.Panicf("Error creating mTLS-based service identity extractor: %v", err)
 	}
 
+	certHolder, err := certwatch.NonCAConfigHolder()
+	if err != nil {
+		log.Panicf("Error creating TLS configuration holder: %v", err)
+	}
+
 	conf := pkgGRPC.Config{
 		CustomRoutes:       customRoutes,
 		IdentityExtractors: []authn.IdentityExtractor{mtlsServiceIDExtractor},
 		Endpoints: []*pkgGRPC.EndpointConfig{
 			{
 				ListenEndpoint: publicAPIEndpoint,
-				TLS:            verifier.NonCA{},
+				TLS:            certHolder,
 				ServeGRPC:      true,
 				ServeHTTP:      true,
 			},
@@ -197,7 +202,7 @@ func (s *Sensor) Start() {
 		Endpoints: []*pkgGRPC.EndpointConfig{
 			{
 				ListenEndpoint: publicWebhookEndpoint,
-				TLS:            verifier.NonCA{},
+				TLS:            certHolder,
 				ServeHTTP:      true,
 			},
 		},

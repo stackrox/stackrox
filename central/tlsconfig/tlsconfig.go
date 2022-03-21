@@ -75,27 +75,6 @@ func GetDefaultCertChain() ([][]byte, error) {
 	return certDERsFromFile, nil
 }
 
-// loadDefaultCertificate load the default tls certificate
-func loadDefaultCertificate(dir string) (*tls.Certificate, error) {
-	certFile := filepath.Join(dir, TLSCertFileName)
-	keyFile := filepath.Join(dir, TLSKeyFileName)
-
-	if filesExist, err := fileutils.AllExist(certFile, keyFile); err != nil || !filesExist {
-		return nil, err
-	}
-
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		return nil, err
-	}
-	cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing leaf certificate")
-	}
-
-	return &cert, nil
-}
-
 func loadInternalCertificateFromFiles() (*tls.Certificate, error) {
 	if filesExist, err := fileutils.AllExist(mtls.CertFilePath(), mtls.KeyFilePath()); err != nil || !filesExist {
 		return nil, err

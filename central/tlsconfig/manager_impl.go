@@ -3,6 +3,7 @@ package tlsconfig
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -56,7 +57,12 @@ func newManager(namespace string) (*managerImpl, error) {
 		internalCerts:            internalCerts,
 	}
 
-	certwatch.WatchCertDir(DefaultCertPath, loadDefaultCertificate, mgr.UpdateDefaultCert)
+	certwatch.WatchCertDir(
+		DefaultCertPath,
+		filepath.Join(DefaultCertPath, TLSCertFileName),
+		filepath.Join(DefaultCertPath, TLSKeyFileName),
+		mgr.UpdateDefaultCert,
+		nil)
 
 	return mgr, nil
 }
@@ -142,8 +148,7 @@ func (m *managerImpl) updateConfigurersNoLock() {
 // we compute a complete one. We can't change the contents of the config afterwards, so instead we tell the tls
 // package to ask us every new connection what our config really should be, and pass them the latest cached config.
 func (m *managerImpl) TLSConfigurer(opts Options) (verifier.TLSConfigurer, error) {
-	// certPool and certs will be filled in dynamically
-	rootCfg := verifier.DefaultTLSServerConfig(nil, nil)
+	rootCfg := verifier.DefaultTLSServerConfig()
 
 	rootCfg.NameToCertificate = nil
 	if opts.RequireClientCert {
@@ -165,9 +170,9 @@ func (m *managerImpl) TLSConfigurer(opts Options) (verifier.TLSConfigurer, error
 	for _, clientCA := range opts.ClientCAs {
 		switch clientCA {
 		case UserCAsSource:
-			configurer.AddClientCertSource(&m.userTrustRoots)
+			configurer.AddClientCASource(&m.userTrustRoots)
 		case ServiceCASource:
-			configurer.AddClientCertSource(&m.internalTrustRoots)
+			configurer.AddClientCASource(&m.internalTrustRoots)
 		default:
 			return nil, errors.Errorf("invalid client CA source %v", clientCA)
 		}
