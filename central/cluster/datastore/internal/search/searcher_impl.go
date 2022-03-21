@@ -6,7 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/cluster/index"
 	"github.com/stackrox/rox/central/cluster/index/mappings"
-	"github.com/stackrox/rox/central/cluster/store"
+	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	cveSAC "github.com/stackrox/rox/central/cve/sac"
 	"github.com/stackrox/rox/central/dackbox"
 	deploymentSAC "github.com/stackrox/rox/central/deployment/sac"
@@ -35,7 +35,7 @@ var (
 )
 
 type searcherImpl struct {
-	clusterStorage    store.ClusterStore
+	clusterStorage    clusterStore.Store
 	indexer           index.Indexer
 	formattedSearcher search.Searcher
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/cluster/index"
-	"github.com/stackrox/rox/central/cluster/store"
+	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	"github.com/stackrox/rox/central/ranking"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,7 +21,7 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given clusterStorage and indexer.
-func New(storage store.ClusterStore, indexer index.Indexer, graphProvider graph.Provider, clusterRanker *ranking.Ranker) Searcher {
+func New(storage clusterStore.Store, indexer index.Indexer, graphProvider graph.Provider, clusterRanker *ranking.Ranker) Searcher {
 	return &searcherImpl{
 		clusterStorage:    storage,
 		indexer:           indexer,

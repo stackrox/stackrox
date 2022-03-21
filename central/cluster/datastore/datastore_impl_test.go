@@ -12,7 +12,8 @@ import (
 	"github.com/pkg/errors"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterIndexMocks "github.com/stackrox/rox/central/cluster/index/mocks"
-	clusterMocks "github.com/stackrox/rox/central/cluster/store/mocks"
+	clusterStoreMocks "github.com/stackrox/rox/central/cluster/store/cluster/mocks"
+	clusterHealthStoreMocks "github.com/stackrox/rox/central/cluster/store/cluster_health_status/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
@@ -61,8 +62,8 @@ type ClusterDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
-	clusters                *clusterMocks.MockClusterStore
-	healthStatuses          *clusterMocks.MockClusterHealthStore
+	clusters                *clusterStoreMocks.MockStore
+	healthStatuses          *clusterHealthStoreMocks.MockStore
 	indexer                 *clusterIndexMocks.MockIndexer
 	clusterDataStore        DataStore
 	namespaceDataStore      *namespaceMocks.MockDataStore
@@ -98,8 +99,8 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.Cluster)))
 
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.clusters = clusterMocks.NewMockClusterStore(suite.mockCtrl)
-	suite.healthStatuses = clusterMocks.NewMockClusterHealthStore(suite.mockCtrl)
+	suite.clusters = clusterStoreMocks.NewMockStore(suite.mockCtrl)
+	suite.healthStatuses = clusterHealthStoreMocks.NewMockStore(suite.mockCtrl)
 	suite.indexer = clusterIndexMocks.NewMockIndexer(suite.mockCtrl)
 
 	suite.namespaceDataStore = namespaceMocks.NewMockDataStore(suite.mockCtrl)

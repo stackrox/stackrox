@@ -135,7 +135,7 @@ message Cluster {
     DynamicClusterConfig      dynamic_config                   = 18;
     TolerationsConfig         tolerations_config               = 19;
     int64                     priority                         = 20;
-    ClusterHealthStatus       health_status                    = 22;
+    ClusterHealthStatus       health_status                    = 22 [(gogoproto.moretags) = 'sql:"ignore_pk"'];
     bool                      slim_collector                   = 23;
     // The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed.
     CompleteClusterConfig     helm_config                      = 24;
