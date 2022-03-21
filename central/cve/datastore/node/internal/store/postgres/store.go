@@ -4,11 +4,8 @@ package postgres
 
 import (
 	"context"
-<<<<<<< HEAD
-	"reflect"
-=======
 	"fmt"
->>>>>>> c95a9b179 (WIP)
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
