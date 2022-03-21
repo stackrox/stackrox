@@ -41,7 +41,7 @@ const (
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
-	batchSize = 1000
+	batchSize = 10000
 )
 
 var (
@@ -440,8 +440,8 @@ func (s *storeImpl) copyFromSimpleaccessscopes(ctx context.Context, tx pgx.Tx, o
 
 	var err error
 
-	// this is a copy so first we must delete the rows and re-add them
-	// which is essentially the desired behaviour of an upsert.
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
 	copyCols := []string{
@@ -458,7 +458,7 @@ func (s *storeImpl) copyFromSimpleaccessscopes(ctx context.Context, tx pgx.Tx, o
 	}
 
 	for idx, obj := range objs {
-		// Todo: Figure out how to more cleanly template around this issue.
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
@@ -539,7 +539,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesIncludedNamespaces(ctx context.Con
 	}
 
 	for idx, obj := range objs {
-		// Todo: Figure out how to more cleanly template around this issue.
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
@@ -586,7 +586,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectors(ctx context.
 	}
 
 	for idx, obj := range objs {
-		// Todo: Figure out how to more cleanly template around this issue.
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
@@ -644,7 +644,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectorsRequirements(
 	}
 
 	for idx, obj := range objs {
-		// Todo: Figure out how to more cleanly template around this issue.
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
@@ -695,7 +695,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesNamespaceLabelSelectors(ctx contex
 	}
 
 	for idx, obj := range objs {
-		// Todo: Figure out how to more cleanly template around this issue.
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
@@ -753,7 +753,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesNamespaceLabelSelectorsRequirement
 	}
 
 	for idx, obj := range objs {
-		// Todo: Figure out how to more cleanly template around this issue.
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{

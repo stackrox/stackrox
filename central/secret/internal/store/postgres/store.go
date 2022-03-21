@@ -41,7 +41,7 @@ const (
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
-	batchSize = 1000
+	batchSize = 10000
 )
 
 var (
@@ -436,8 +436,8 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 
 	var err error
 
-	// this is a copy so first we must delete the rows and re-add them
-	// which is essentially the desired behaviour of an upsert.
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
 	var deletes []string
 
 	copyCols := []string{
@@ -466,7 +466,7 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 	}
 
 	for idx, obj := range objs {
-		// Todo: Figure out how to more cleanly template around this issue.
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		serialized, marshalErr := obj.Marshal()
@@ -603,7 +603,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 	}
 
 	for idx, obj := range objs {
-		// Todo: Figure out how to more cleanly template around this issue.
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
@@ -707,7 +707,7 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.T
 	}
 
 	for idx, obj := range objs {
-		// Todo: Figure out how to more cleanly template around this issue.
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
@@ -760,7 +760,7 @@ func (s *storeImpl) copyFromSecretsContainerRelationships(ctx context.Context, t
 	}
 
 	for idx, obj := range objs {
-		// Todo: Figure out how to more cleanly template around this issue.
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
@@ -811,7 +811,7 @@ func (s *storeImpl) copyFromSecretsDeploymentRelationships(ctx context.Context, 
 	}
 
 	for idx, obj := range objs {
-		// Todo: Figure out how to more cleanly template around this issue.
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
