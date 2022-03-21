@@ -209,6 +209,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 
 	imgID := request.GetImage().GetId()
 
+	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
 	if imgID != "" {
 		existingImg, exists, err := s.datastore.GetImage(ctx, imgID)
 		if err != nil {
@@ -284,6 +285,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 
 	imgID := request.GetImageId()
 
+	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
 	if imgID != "" {
 		existingImg, exists, err := s.datastore.GetImage(ctx, imgID)
 		if err != nil {
@@ -338,6 +340,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	defer s.internalScanSemaphore.Release(1)
 
 	imgID := request.GetImageId()
+	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
 	if imgID != "" {
 		existingImg, exists, err := s.datastore.GetImage(ctx, imgID)
 		if err != nil {
