@@ -2,9 +2,13 @@ package walker
 
 import (
 	"fmt"
+
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	serializedField = Field{
 		Name: "serialized",
 		ObjectGetter: ObjectGetter{
@@ -25,6 +29,13 @@ type Schema struct {
 	Children     []*Schema
 	Type         string
 	ObjectGetter string
+
+	// This indicates the name of the parent schema in which current schema is embedded (in proto). A schema can be
+	// embedded exactly one porent. For the top-most schema this field is unset.
+	//
+	// We use `Parents` and `Children` which mean (referenced table and referencing table) in SQL world,
+	// but in our context it reflects the nesting of proto messages.
+	EmbeddedIn string
 }
 
 // FieldsBySearchLabel returns the resulting fields in the schema by their field label
@@ -188,6 +199,20 @@ func (s *Schema) LocalPrimaryKeys() []Field {
 		}
 	}
 	return pks
+}
+
+// WithReference adds the specified schema as a reference to this schema and returns it. The referencing receiver
+// schema is not a direct field in proto object of the specified reference.
+func (s *Schema) WithReference(ref *Schema) *Schema {
+	for _, p := range s.Parents {
+		if p.Table == ref.Table {
+			log.Errorf("%s already has a reference registered with table name %s", s.Table, ref.Table)
+			return s
+		}
+	}
+	s.Parents = append(s.Parents, ref)
+	ref.Children = append(ref.Children, s)
+	return s
 }
 
 // NoPrimaryKey returns true if the current schema does not have a primary key defined

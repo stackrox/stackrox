@@ -201,6 +201,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 				Table:        tableName(schema.Table, field.Name),
 				Type:         elemType.String(),
 				ObjectGetter: ctx.Getter(field.Name),
+				EmbeddedIn:   schema.Table,
 			}
 			idxField := Field{
 				Schema: childSchema,

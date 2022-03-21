@@ -55,8 +55,14 @@ const (
 )
 
 var (
-    schema = walker.Walk(reflect.TypeOf((*{{.Type}})(nil)), baseTable)
     log = logging.LoggerForModule()
+    schema = walker.Walk(reflect.TypeOf((*{{.Type}})(nil)), baseTable)
+    {{- $schema := .Schema }}
+    {{- range $idx, $ref := $schema.Parents}}
+        {{- if ne $ref.Table $schema.EmbeddedIn -}}.
+        WithReference(walker.Walk(reflect.TypeOf(({{$ref.Type}})(nil)), "{{$ref.Table}}"))
+        {{- end }}
+    {{- end }}
 )
 
 func init() {

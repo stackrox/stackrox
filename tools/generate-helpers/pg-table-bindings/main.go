@@ -48,6 +48,13 @@ type properties struct {
 	Singular       string
 	WriteOptions   bool
 	OptionsPath    string
+
+	// RefTables indicate the any additional referentiol relationships. These are non-embedding relations, that is,
+	// this table is not embedded into referenced table to construct the proto message.
+	RefTables []string
+
+	// RefTypes indicate the object type for the referenced table schemas.
+	RefTypes []string
 }
 
 func renderFile(templateMap map[string]interface{}, temp *template.Template, templateFileName string) error {
@@ -84,6 +91,8 @@ func main() {
 	c.Flags().StringVar(&props.Singular, "singular", "", "the singular name of the object")
 	c.Flags().StringVar(&props.OptionsPath, "options-path", "/index/mappings", "path to write out the options to")
 	c.Flags().StringVar(&props.SearchCategory, "search-category", "", "the search category to index under")
+	c.Flags().StringSliceVar(&props.RefTables, "referenced-tables", []string{}, "additional foreign key references for this table")
+	c.Flags().StringSliceVar(&props.RefTypes, "referenced-types", []string{}, "the proto object type of the referenced tables")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
@@ -96,6 +105,18 @@ func main() {
 		schema := walker.Walk(mt, props.Table)
 		if schema.NoPrimaryKey() {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
+		}
+
+		if len(props.RefTables) != len(props.RefTypes) {
+			log.Fatal("Proto object type of each referenced table must be provided")
+		}
+
+		for idx, refTable := range props.RefTables {
+			refMsgType := proto.MessageType(props.RefTypes[idx])
+			if refMsgType == nil {
+				log.Fatalf("could not find message for type: %s", props.RefTypes[idx])
+			}
+			schema.WithReference(walker.Walk(refMsgType, refTable))
 		}
 
 		templateMap := map[string]interface{}{
@@ -118,6 +139,7 @@ func main() {
 				return err
 			}
 		}
+
 		return nil
 	}
 	if err := c.Execute(); err != nil {
