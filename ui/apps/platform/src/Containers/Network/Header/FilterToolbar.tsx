@@ -1,5 +1,13 @@
 import React from 'react';
-import { Divider, Flex, FlexItem } from '@patternfly/react-core';
+import {
+    Divider,
+    Flex,
+    FlexItem,
+    Toolbar,
+    ToolbarGroup,
+    ToolbarItem,
+    ToolbarItemVariant,
+} from '@patternfly/react-core';
 
 import NetworkSearch from './NetworkSearch';
 import ClusterSelect from './ClusterSelect';
@@ -14,23 +22,23 @@ function FilterToolbar({ isDisabled }: FilterToolbarProps) {
     // is to prevent rendering the NetworkSearch component with dark mode styles, which are not supported
     // in the PatternFly UI. Once we have a pure PF equivalent of the NetworkSearch component we can remove this.
     return (
-        <Flex
+        <Toolbar
             data-testid="network-graph-toolbar"
             className="theme-light pf-u-px-md pf-u-px-lg-on-xl pf-u-py-sm"
-            direction={{ default: 'row' }}
-            alignItems={{ default: 'alignItemsCenter' }}
         >
-            <FlexItem>
-                <ClusterSelect isDisabled={isDisabled} />
-            </FlexItem>
-            <Divider component="div" isVertical />
-            <FlexItem flex={{ default: 'flex_1' }}>
-                <NetworkSearch isDisabled={isDisabled} />
-            </FlexItem>
-            <FlexItem>
-                <TimeWindowSelector isDisabled={isDisabled} />
-            </FlexItem>
-        </Flex>
+            <ToolbarGroup spacer={{ default: 'spacerNone' }}>
+                <ToolbarItem>
+                    <ClusterSelect isDisabled={isDisabled} />
+                </ToolbarItem>
+                <ToolbarItem variant={ToolbarItemVariant.separator} />
+                <ToolbarItem className="pf-u-flex-grow-1">
+                    <NetworkSearch isDisabled={isDisabled} />
+                </ToolbarItem>
+                <ToolbarItem>
+                    <TimeWindowSelector isDisabled={isDisabled} />
+                </ToolbarItem>
+            </ToolbarGroup>
+        </Toolbar>
     );
 }
 
