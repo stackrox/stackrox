@@ -54,7 +54,7 @@ ROX_USERNAME="admin"
 ROX_PASSWORD=$(cat "$PASSWORD_FILE_PATH")
 export ROX_USERNAME ROX_PASSWORD
 
-echo "Access Central console at http://$API_HOST:$API_PORT"
+echo "Access Central console at http://$API_HOSTNAME:$API_PORT"
 echo "Login with ($ROX_USERNAME, $ROX_PASSWORD)"
 
 gradle test --tests='ImageScanningTest'

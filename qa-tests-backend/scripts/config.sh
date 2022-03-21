@@ -1,6 +1,8 @@
 #!/bin/bash
-export CLUSTER_NAME="sb-03-09-osdgcp"
-export MAIN_IMAGE_TAG="3.68.0"
+
+#export MAIN_IMAGE_TAG="3.68.0"
+# https://app.circleci.com/pipelines/github/stackrox/stackrox/7557/workflows/3446e686-5b5e-4ab3-90a6-1c06a8201626/jobs/331096
+export MAIN_IMAGE_TAG="3.69.x-155-g5aef8de98c"
 export KUBECONFIG="/tmp/kubeconfig"
 export STACKROX_SOURCE_ROOT="$GOPATH/src/github.com/stackrox/stackrox"
 export WORKFLOW_SOURCE_ROOT="$GOPATH/src/github.com/stackrox/workflow"

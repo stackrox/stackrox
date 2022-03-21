@@ -2,8 +2,6 @@
 set -eu
 exit 1
 
-pass qa-test-settings.properties
-
 
 # Validate /gcp/stackrox-ci/sa/ci-gcr-scanner creds
 PROJECT_ID="stackrox-ci"
@@ -13,15 +11,13 @@ CREDS_IDENT="qa-tests-backend/GOOGLE_CREDENTIALS_GCR_SCANNER.json"
 KEY_FILE="/tmp/GOOGLE_CREDENTIALS_GCR_SCANNER.json"
 pass $CREDS_IDENT > $KEY_FILE
 jq -r . < $KEY_FILE
-gcloud auth activate-service-account "$SERVICE_ACCOUNT_ID" --project="$PROJECT_ID" --key-file="$KEY_FILE"
-gcloud auth list
 docker logout us.gcr.io
-docker pull us.gcr.io/stackrox-ci/qa/registry-image:0.3
 gcloud auth configure-docker us.gcr.io
-docker login us.gcr.io
+#gcloud auth activate-service-account "$SERVICE_ACCOUNT_ID" --project="$PROJECT_ID" --key-file="$KEY_FILE"
+#docker login us.gcr.io
+pass "$CREDS_IDENT" | docker login -u _json_key --password-stdin https://us.gcr.io
 docker image rm us.gcr.io/stackrox-ci/qa/registry-image:0.3
 docker pull us.gcr.io/stackrox-ci/qa/registry-image:0.3
-
 
 # Validate /gcp/stackrox-ci/sa/ci-gcr-no-access-test creds
 PROJECT_ID="stackrox-ci"
@@ -31,11 +27,22 @@ CREDS_IDENT="qa-tests-backend/GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY.json"
 KEY_FILE="/tmp/GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY.json"
 pass $CREDS_IDENT > $KEY_FILE
 jq -r . < $KEY_FILE
-gcloud auth activate-service-account "$SERVICE_ACCOUNT_ID" --project="$PROJECT_ID" --key-file="$KEY_FILE"
-gcloud auth list
 docker logout us.gcr.io
-docker pull us.gcr.io/stackrox-ci/qa/registry-image:0.3
 gcloud auth configure-docker us.gcr.io
-docker login us.gcr.io
+#gcloud auth activate-service-account "$SERVICE_ACCOUNT_ID" --project="$PROJECT_ID" --key-file="$KEY_FILE"
+#docker login us.gcr.io
+pass "$CREDS_IDENT" | docker login -u _json_key --password-stdin https://us.gcr.io
 docker image rm us.gcr.io/stackrox-ci/qa/registry-image:0.3
 docker pull us.gcr.io/stackrox-ci/qa/registry-image:0.3
+
+# Switch back to own user creds
+gcloud auth login shane@stackrox.com
+
+# Validate properties file with Python dotenv module
+pass qa-test-settings.properties > /tmp/qa-test-settings.properties
+dotenv --file /tmp/qa-test-settings.properties get GOOGLE_CREDENTIALS_GCR_SCANNER | jq -r '.'
+dotenv --file /tmp/qa-test-settings.properties get GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY | jq -r '.'
+
+# Validate properties file with Groovy dotenv module
+pass qa-test-settings.properties > /tmp/qa-test-settings.properties
+echo TODO

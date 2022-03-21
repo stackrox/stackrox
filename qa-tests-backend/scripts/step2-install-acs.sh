@@ -49,10 +49,10 @@ function stackrox_deploy_via_helm {
 
 
 # __MAIN__
+export KUBECONFIG=/tmp/kubeconfig
 CURRENT_KUBE_CONTEXT=$(kubectl config current-context)
-REQUIRED_KUBE_CONTEXT="default/api-sb-03-17-osdgcp-eprz-s2-devshift-org:6443/admin"
-[[ "$CURRENT_KUBE_CONTEXT" == "$REQUIRED_KUBE_CONTEXT" ]] \
-  || error "kubecontext mismatch [$CURRENT_KUBE_CONTEXT] [$REQUIRED_KUBE_CONTEXT]"
+[[ "$CURRENT_KUBE_CONTEXT" =~ default/api-.*-devshift-org:6443/admin ]] \
+  || error "Unexpected kube econtext [$CURRENT_KUBE_CONTEXT]"
 export LOAD_BALANCER="lb"
 export MONITORING_SUPPORT=true
 
