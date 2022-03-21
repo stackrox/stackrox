@@ -56,13 +56,13 @@ func (s *ClustersStoreSuite) TestStore() {
 	cluster := &storage.Cluster{}
 	s.NoError(testutils.FullInit(cluster, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundCluster, exists, err := store.Get(ctx, cluster.GetId(), cluster.GetHealthStatus().GetId())
+	foundCluster, exists, err := store.Get(ctx, cluster.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundCluster)
 
 	s.NoError(store.Upsert(ctx, cluster))
-	foundCluster, exists, err = store.Get(ctx, cluster.GetId(), cluster.GetHealthStatus().GetId())
+	foundCluster, exists, err = store.Get(ctx, cluster.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(cluster, foundCluster)
@@ -71,18 +71,18 @@ func (s *ClustersStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(clusterCount, 1)
 
-	clusterExists, err := store.Exists(ctx, cluster.GetId(), cluster.GetHealthStatus().GetId())
+	clusterExists, err := store.Exists(ctx, cluster.GetId())
 	s.NoError(err)
 	s.True(clusterExists)
 	s.NoError(store.Upsert(ctx, cluster))
 
-	foundCluster, exists, err = store.Get(ctx, cluster.GetId(), cluster.GetHealthStatus().GetId())
+	foundCluster, exists, err = store.Get(ctx, cluster.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(cluster, foundCluster)
 
-	s.NoError(store.Delete(ctx, cluster.GetId(), cluster.GetHealthStatus().GetId()))
-	foundCluster, exists, err = store.Get(ctx, cluster.GetId(), cluster.GetHealthStatus().GetId())
+	s.NoError(store.Delete(ctx, cluster.GetId()))
+	foundCluster, exists, err = store.Get(ctx, cluster.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundCluster)
