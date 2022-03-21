@@ -13,6 +13,20 @@ source "$SCRIPTS_ROOT/scripts/lib.sh"
 # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
 RELEASE_RC_TAG_BASH_REGEX='^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
 
+is_release_version() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: is_release_version <version>"
+    fi
+    [[ "$1" =~ $RELEASE_RC_TAG_BASH_REGEX && -z "${BASH_REMATCH[3]}" ]]
+}
+
+is_RC_version() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: is_RC_version <version>"
+    fi
+    [[ "$1" =~ $RELEASE_RC_TAG_BASH_REGEX && -n "${BASH_REMATCH[3]}" ]]
+}
+
 ensure_CI() {
     if ! is_CI; then
         die "A CI environment is required."
@@ -232,6 +246,43 @@ check_docs() {
 
     info "The docs version is as expected"
     exit 0
+}
+
+check_scanner_and_collector() {
+    info "Check on release builds that COLLECTOR_VERSION and SCANNER_VERSION are release"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: check_scanner_and_collector <fail-on-rc>"
+    fi
+
+    local fail_on_rc="$1"
+    local main_release_like=0
+    local main_rc=0
+    local main_tag
+    main_tag="$(make --quiet tag)"
+    if is_release_version "$main_tag"; then
+        main_release_like=1
+    fi
+    if is_RC_version "$main_tag"; then
+        main_release_like=1
+        main_rc=1
+    fi
+
+    local release_mismatch=0
+    if ! is_release_version "$(make --quiet collector-tag)" && [[ "$main_release_like" == "1" ]]; then
+        echo >&2 "Collector tag does not look like a release tag. Please update COLLECTOR_VERSION file before releasing."
+        release_mismatch=1
+    fi
+    if ! is_release_version "$(make --quiet scanner-tag)" && [[ "$main_release_like" == "1" ]]; then
+        echo >&2 "Scanner tag does not look like a release tag. Please update SCANNER_VERSION file before releasing."
+        release_mismatch=1
+    fi
+
+    if [[ "$release_mismatch" == "1" && ( "$main_rc" == "0" || "$fail_on_rc" == "true" ) ]]; then
+        # Note that the script avoids doing early exits in order for the most of its logic to be executed drung
+        # regular pipeline runs so that it does not get rusty by the time of the release.
+        exit 1
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
