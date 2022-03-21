@@ -6,6 +6,9 @@
     <JSCodeStyleSettings version="0">
       <option name="IMPORT_PREFER_ABSOLUTE_PATH" value="TRUE" />
     </JSCodeStyleSettings>
+    <TypeScriptCodeStyleSettings version="0">
+      <option name="IMPORT_PREFER_ABSOLUTE_PATH" value="TRUE" />
+    </TypeScriptCodeStyleSettings>
     <yaml>
       <option name="INDENT_SEQUENCE_VALUE" value="false" />
     </yaml>
