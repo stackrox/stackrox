@@ -450,7 +450,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 	rows, err := db.Query(context.Background(), replaceVars(queryStr), query.Data...)
 	if err != nil {
 		debug.PrintStack()
-		log.Errorf("Query issue: %s %+v: %v", query, query.Data, err)
+		log.Errorf("Query issue: %s %+v: %v", query.String(), query.Data, err)
 		return nil, err
 	}
 	defer rows.Close()

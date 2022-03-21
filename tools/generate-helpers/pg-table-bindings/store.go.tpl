@@ -219,6 +219,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     return s.upsert(ctx, obj)
 }
 
+
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "{{.TrimmedType}}")
 
@@ -247,6 +248,14 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, {{template "paramList" $pks) (*{{.Type}}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
+
+    conn, release := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
+    defer release()
+
 }
 
 // Get returns the object, if it exists from the store
