@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -115,11 +116,12 @@ create table if not exists networkflow (
     LastSeenTimestamp timestamp,
     ClusterId varchar,
     PRIMARY KEY(Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId)
-)
+) PARTITION BY HASH (ClusterId, Props_SrcEntity_Id, Props_DstEntity_Id)
 `
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
+		log.Info(err)
 		panic("error creating table: " + table)
 	}
 
@@ -134,6 +136,18 @@ create table if not exists networkflow (
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
+		}
+	}
+
+
+	// now create the partitions
+	for i := 0; i < 87; i++ {
+		partition := " create table if not exists networkflow_" + strconv.Itoa(i) + " PARTITION OF networkflow FOR VALUES WITH (MODULUS 87, REMAINDER " + strconv.Itoa(i) + ")"
+
+		_, err := db.Exec(ctx, partition)
+		if err != nil {
+			log.Info(err)
+			panic("error creating table: " + table)
 		}
 	}
 
@@ -289,6 +303,9 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, last
 // Todo:  maybe a better way.  probably need to default ClusterID to 0 or something
 func New(ctx context.Context, db *pgxpool.Pool, clusterID string) FlowStore {
 	createTableNetworkflow(ctx, db)
+
+	// Todo:  If we want to partition on cluster id, we will need to check to see if partition exists
+	// and create it if it does not before returning the store.
 
 	return &flowStoreImpl{
 		db: db,

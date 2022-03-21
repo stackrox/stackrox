@@ -132,7 +132,15 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	s.Equal(networkFlowCount, 200)
 
 	// been working with 600 but that is slow
-	entityCount := 15
+	entityCount := 100
+
+	// Build a few cluster IDs
+	clusters := []string{
+		"cluster_1",
+		"cluster_2",
+		"cluster_3",
+		"cluster_4",
+	}
 
 	// Build a bunch of srcs
 	var srcs []*storage.NetworkEntityInfo
@@ -174,6 +182,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 		for j, dst := range dsts {
 			for _, port := range ports {
 				//day := (k % 4) * -24
+				clusterId := clusters[j % 4]
 				flow := &storage.NetworkFlow		{
 					Props: &storage.NetworkFlowProperties{
 						SrcEntity:  src,
@@ -182,6 +191,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 						L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 					},
 					LastSeenTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
+					ClusterId: clusterId,
 				}
 
 				flows = append(flows, flow)
