@@ -10,10 +10,10 @@ import {
     imageSigningCriteriaDescriptor,
 } from 'Containers/Policies/Wizard/Form/descriptors';
 import { Policy } from 'types/policy.proto';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import PolicySection from './PolicySection';
 
 import './BooleanPolicyLogicSection.css';
-import useFeatureFlagEnabled from '../../../../../hooks/useFeatureFlagEnabled';
 
 type BooleanPolicyLogicSectionProps = {
     readOnly?: boolean;
@@ -28,10 +28,13 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
         if (values.eventSource === 'AUDIT_LOG_EVENT') {
             setDescriptor(auditLogDescriptor);
         } else {
-            let descriptors = [...policyConfigurationDescriptor, ...networkDetectionDescriptor];
-            descriptors = isImageSigningEnabled
-                ? [...descriptors, imageSigningCriteriaDescriptor]
-                : descriptors;
+            const descriptors = isImageSigningEnabled
+                ? [
+                      ...policyConfigurationDescriptor,
+                      ...networkDetectionDescriptor,
+                      imageSigningCriteriaDescriptor,
+                  ]
+                : [...policyConfigurationDescriptor, ...networkDetectionDescriptor];
             setDescriptor(descriptors);
         }
     }, [values.eventSource, isImageSigningEnabled]);

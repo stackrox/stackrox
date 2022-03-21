@@ -12,11 +12,11 @@ import {
     imageSigningCriteriaDescriptor,
 } from 'Containers/Policies/Wizard/Form/descriptors';
 import { Policy } from 'types/policy.proto';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
 import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
 
 import './PolicyCriteriaForm.css';
-import useFeatureFlagEnabled from '../../../../../hooks/useFeatureFlagEnabled';
 
 const MAX_POLICY_SECTIONS = 16;
 
@@ -42,10 +42,13 @@ function PolicyCriteriaForm() {
         if (values.eventSource === 'AUDIT_LOG_EVENT') {
             setDescriptor(auditLogDescriptor);
         } else {
-            let descriptors = [...policyConfigurationDescriptor, ...networkDetectionDescriptor];
-            descriptors = isImageSigningEnabled
-                ? [...descriptors, imageSigningCriteriaDescriptor]
-                : descriptors;
+            const descriptors = isImageSigningEnabled
+                ? [
+                      ...policyConfigurationDescriptor,
+                      ...networkDetectionDescriptor,
+                      imageSigningCriteriaDescriptor,
+                  ]
+                : [...policyConfigurationDescriptor, ...networkDetectionDescriptor];
             setDescriptor(descriptors);
         }
     }, [values.eventSource, isImageSigningEnabled]);

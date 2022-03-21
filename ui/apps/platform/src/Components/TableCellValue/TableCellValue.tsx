@@ -1,7 +1,7 @@
 import React from 'react';
 import resolvePath from 'object-resolve-path';
-import { Integration } from '../../Containers/Integrations/utils/integrationUtils';
-import { SignatureIntegration } from '../../services/SignatureIntegrationsService';
+import { Integration } from 'Containers/Integrations/utils/integrationUtils';
+import { SignatureIntegration } from 'services/SignatureIntegrationsService';
 
 type TableCellProps = {
     row: Integration | SignatureIntegration;

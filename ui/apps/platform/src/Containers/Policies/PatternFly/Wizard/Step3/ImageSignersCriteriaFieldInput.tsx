@@ -11,15 +11,15 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import isEqual from 'lodash/isEqual';
-import LinkShim from '../../../../../Components/PatternFly/LinkShim';
-import { integrationsPath } from '../../../../../routePaths';
-import tableColumnDescriptor from '../../../../Integrations/utils/tableColumnDescriptor';
+import LinkShim from 'Components/PatternFly/LinkShim';
+import { integrationsPath } from 'routePaths';
 import {
     fetchSignatureIntegrations,
     SignatureIntegration,
-} from '../../../../../services/SignatureIntegrationsService';
-import useTableSelection from '../../../../../hooks/useTableSelection';
-import TableCellValue from '../../../../../Components/TableCellValue/TableCellValue';
+} from 'services/SignatureIntegrationsService';
+import useTableSelection from 'hooks/useTableSelection';
+import TableCellValue from 'Components/TableCellValue/TableCellValue';
+import tableColumnDescriptor from 'Containers/Integrations/utils/tableColumnDescriptor';
 
 function ImageSignersCriteriaFieldInput({ setValue, value, readOnly = false }): React.ReactElement {
     const [isModalOpen, setIsModalOpen] = useState(false);

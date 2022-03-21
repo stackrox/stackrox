@@ -7,6 +7,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
 import { Message } from '@stackrox/ui-components';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import PolicyBuilderKeys from './PolicyBuilderKeys';
 import PolicySections from './PolicySections';
 import {
@@ -15,7 +16,6 @@ import {
     auditLogDescriptor,
     imageSigningCriteriaDescriptor,
 } from './descriptors';
-import useFeatureFlagEnabled from '../../../../hooks/useFeatureFlagEnabled';
 
 function BooleanPolicySection({ readOnly, hasHeader, hasAuditLogEventSource, criteriaLocked }) {
     const [descriptor, setDescriptor] = useState([]);
@@ -24,10 +24,13 @@ function BooleanPolicySection({ readOnly, hasHeader, hasAuditLogEventSource, cri
         if (hasAuditLogEventSource) {
             setDescriptor(auditLogDescriptor);
         } else {
-            let descriptors = [...policyConfigurationDescriptor, ...networkDetectionDescriptor];
-            descriptors = isImageSigningEnabled
-                ? [...descriptors, imageSigningCriteriaDescriptor]
-                : descriptors;
+            const descriptors = isImageSigningEnabled
+                ? [
+                      ...policyConfigurationDescriptor,
+                      ...networkDetectionDescriptor,
+                      imageSigningCriteriaDescriptor,
+                  ]
+                : [...policyConfigurationDescriptor, ...networkDetectionDescriptor];
             setDescriptor(descriptors);
         }
     }, [hasAuditLogEventSource, isImageSigningEnabled]);
