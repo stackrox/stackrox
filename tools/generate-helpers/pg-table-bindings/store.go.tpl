@@ -47,8 +47,12 @@ const (
 {{- end }}
 )
 
+var (
+    schema = walker.Walk(reflect.TypeOf((*{{.Type}})(nil)), baseTable)
+)
+
 func init() {
-    globaldb.RegisterTable(baseTable, "{{.TrimmedType}}")
+    globaldb.RegisterTable(schema)
 }
 
 type Store interface {
