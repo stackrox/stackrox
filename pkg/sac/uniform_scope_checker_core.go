@@ -3,6 +3,7 @@ package sac
 import (
 	"context"
 
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
@@ -38,7 +39,7 @@ func (s uniformScopeCheckerCore) PerformChecks(ctx context.Context) error {
 	return nil
 }
 
-func (s uniformScopeCheckerCore) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
+func (s uniformScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
 	if s {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}

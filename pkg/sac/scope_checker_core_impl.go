@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sync"
@@ -90,7 +91,7 @@ func (scc *ScopeCheckerCoreImpl) PerformChecks(ctx context.Context) error {
 }
 
 // EffectiveAccessScope always returns error as plugin does not support it.
-func (scc *ScopeCheckerCoreImpl) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
+func (scc *ScopeCheckerCoreImpl) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
 	return nil, errors.New("not supported: use built-in authorizer")
 }
 

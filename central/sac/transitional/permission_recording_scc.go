@@ -112,6 +112,6 @@ func (s *permissionRecordingSCC) UsedPermissions() permissions.PermissionMap {
 	return s.rec.UsedPermissions()
 }
 
-func (s *permissionRecordingSCC) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
-	return s.wrapped.EffectiveAccessScope()
+func (s *permissionRecordingSCC) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
+	return s.wrapped.EffectiveAccessScope(resource)
 }

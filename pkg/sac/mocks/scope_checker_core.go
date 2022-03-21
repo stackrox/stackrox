@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	permissions "github.com/stackrox/rox/pkg/auth/permissions"
 	sac "github.com/stackrox/rox/pkg/sac"
 	effectiveaccessscope "github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
@@ -37,18 +38,18 @@ func (m *MockScopeCheckerCore) EXPECT() *MockScopeCheckerCoreMockRecorder {
 }
 
 // EffectiveAccessScope mocks base method.
-func (m *MockScopeCheckerCore) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
+func (m *MockScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EffectiveAccessScope")
+	ret := m.ctrl.Call(m, "EffectiveAccessScope", resource)
 	ret0, _ := ret[0].(*effectiveaccessscope.ScopeTree)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // EffectiveAccessScope indicates an expected call of EffectiveAccessScope.
-func (mr *MockScopeCheckerCoreMockRecorder) EffectiveAccessScope() *gomock.Call {
+func (mr *MockScopeCheckerCoreMockRecorder) EffectiveAccessScope(resource interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EffectiveAccessScope", reflect.TypeOf((*MockScopeCheckerCore)(nil).EffectiveAccessScope))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EffectiveAccessScope", reflect.TypeOf((*MockScopeCheckerCore)(nil).EffectiveAccessScope), resource)
 }
 
 // PerformChecks mocks base method.

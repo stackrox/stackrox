@@ -3,6 +3,7 @@ package sac
 import (
 	"context"
 
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
@@ -31,6 +32,6 @@ func ErrorAccessScopeCheckerCore(err error) ScopeCheckerCore {
 	}
 }
 
-func (s errScopeCheckerCore) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
+func (s errScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
 	return effectiveaccessscope.DenyAllEffectiveAccessScope(), s.err
 }

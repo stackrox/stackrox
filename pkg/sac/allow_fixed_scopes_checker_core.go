@@ -3,6 +3,7 @@ package sac
 import (
 	"context"
 
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
@@ -50,7 +51,7 @@ func (c allowFixedScopesCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerC
 	return denyAllScopeCheckerCore
 }
 
-func (c allowFixedScopesCheckerCore) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
+func (c allowFixedScopesCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
 	// TODO(ROX-9537): Implement it
 	panic("Implement me: ROX-9537")
 }
