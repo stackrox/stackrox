@@ -29,7 +29,7 @@ function filterElementsWithValueProp(
 function Select({
     children,
     onSelect,
-    variant,
+    variant = 'single',
     ...props
 }: Omit<PFSelectProps, 'isOpen' | 'onToggle' | 'onFilter'>) {
     const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -53,6 +53,7 @@ function Select({
     return (
         <PFSelect
             {...props}
+            variant={variant}
             isOpen={isOpen}
             onToggle={onToggle}
             onFilter={onFilter}
