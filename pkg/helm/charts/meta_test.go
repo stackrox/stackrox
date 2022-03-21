@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -42,7 +43,7 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 			assert.NotEmpty(t, metaVals.Versions.MainVersion)
 			// TODO: replace this with the check of the scanner tag once we migrate to it instead of version.
 			assert.NotEmpty(t, metaVals.Versions.ScannerVersion)
-			assert.NotEmpty(t, metaVals.FeatureFlags)
+			assert.Len(t, metaVals.FeatureFlags, len(features.Flags))
 		})
 	}
 }
