@@ -473,7 +473,8 @@ go-unit-tests: build-prep test-prep
 .PHONY: go-postgres-unit-tests
 go-postgres-unit-tests: build-prep test-prep
 	set -o pipefail ; \
-	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -race -cover -coverprofile test-output/coverage.out -v \
+	@# The -p 1 below is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
+	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git ls-files -- '*postgres/*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
 		| tee test-output/test.log
 
