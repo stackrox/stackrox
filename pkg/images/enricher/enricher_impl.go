@@ -573,7 +573,7 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 			return false, errors.Wrapf(err, "waiting for rate limiter for registry %q", matchingReg.Name())
 		}
 		// FetchImageSignaturesFromImage will try fetching of signatures with retries.
-		sigs, err := signatures.FetchImageSignaturesFromImage(ctx, e.signatureFetcher, img, matchingReg)
+		sigs, err := signatures.FetchImageSignaturesWithRetry(ctx, e.signatureFetcher, img, matchingReg)
 		fetchedSignatures = append(fetchedSignatures, sigs...)
 		// Skip other matching registries if we have a successful fetch of signatures, irrespective of whether
 		// signatures were found or not. Retrying this for other registries won't change the fact that signatures are

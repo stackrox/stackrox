@@ -74,7 +74,7 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 	// Fetch signatures from cluster-local registry.
 	var sigs []*storage.Signature
 	if features.ImageSignatureVerification.Enabled() {
-		sigs, err = signatures.FetchImageSignaturesFromImage(ctx, signatures.NewSignatureFetcher(), image,
+		sigs, err = signatures.FetchImageSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image,
 			matchingRegistry)
 		if err != nil {
 			return nil, errors.Wrapf(err, "fetching signature for image %q from registry %q",
