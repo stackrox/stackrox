@@ -17,7 +17,7 @@ const ClusterSelect = ({
     selectedClusterId,
     isDisabled,
 }) => {
-    function changeCluster(e, clusterId) {
+    function changeCluster(_e, clusterId) {
         selectClusterId(clusterId);
         closeSidePanel();
     }
