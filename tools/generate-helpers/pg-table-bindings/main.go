@@ -55,6 +55,9 @@ type properties struct {
 
 	// RefTypes indicate the object type for the referenced table schemas.
 	RefTypes []string
+
+	// When set to true, auto-generation skips generation of mutating funcs such as inserts, updates, deletes.
+	SkipMutators bool
 }
 
 func renderFile(templateMap map[string]interface{}, temp *template.Template, templateFileName string) error {
@@ -93,6 +96,7 @@ func main() {
 	c.Flags().StringVar(&props.SearchCategory, "search-category", "", "the search category to index under")
 	c.Flags().StringSliceVar(&props.RefTables, "referenced-tables", []string{}, "additional foreign key references for this table")
 	c.Flags().StringSliceVar(&props.RefTypes, "referenced-types", []string{}, "the proto object type of the referenced tables")
+	c.Flags().BoolVar(&props.SkipMutators, "skip-mutators", true, "skip generation of mutating functions")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
@@ -126,6 +130,7 @@ func main() {
 			"Schema":         schema,
 			"SearchCategory": fmt.Sprintf("SearchCategory_%s", props.SearchCategory),
 			"OptionsPath":    path.Join(packagenames.Rox, props.OptionsPath),
+			"SkipMutators":   props.SkipMutators,
 		}
 
 		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {

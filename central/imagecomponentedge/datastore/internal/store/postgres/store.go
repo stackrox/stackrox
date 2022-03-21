@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
@@ -51,9 +50,6 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, imageId string, operatingName string, componentName string, componentVersion string) (bool, error)
 	Get(ctx context.Context, imageId string, operatingName string, componentName string, componentVersion string) (*storage.ImageComponentEdge, bool, error)
-	Upsert(ctx context.Context, obj *storage.ImageComponentEdge) error
-	UpsertMany(ctx context.Context, objs []*storage.ImageComponentEdge) error
-	Delete(ctx context.Context, imageId string, operatingName string, componentName string, componentVersion string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.ImageComponentEdge) error) error
 
@@ -98,6 +94,7 @@ create table if not exists image_component_relation (
 
 }
 
+<<<<<<< HEAD
 func insertIntoImageComponentRelation(ctx context.Context, tx pgx.Tx, obj *storage.ImageComponentEdge, images_Id string, images_OperatingSystem string, image_component_Id string, image_component_Name string, image_component_Version string, idx int) error {
 
 	values := []interface{}{
@@ -198,6 +195,8 @@ func (s *storeImpl) copyFromImageComponentRelation(ctx context.Context, tx pgx.T
 	return err
 }
 
+=======
+>>>>>>> 4cabd0fe2 (skip mutators on relations)
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableImageComponentRelation(ctx, db)
@@ -207,6 +206,7 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	}
 }
 
+<<<<<<< HEAD
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ImageComponentEdge) error {
 	conn, release := s.acquireConn(ctx, ops.Get, "ImageComponentEdge")
 	defer release()
@@ -267,6 +267,8 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ImageCompone
 	}
 }
 
+=======
+>>>>>>> 4cabd0fe2 (skip mutators on relations)
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "ImageComponentEdge")
@@ -318,19 +320,6 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 		panic(err)
 	}
 	return conn, conn.Release
-}
-
-// Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, imageId string, operatingName string, componentName string, componentVersion string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ImageComponentEdge")
-
-	conn, release := s.acquireConn(ctx, ops.Remove, "ImageComponentEdge")
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, imageId, operatingName, componentName, componentVersion); err != nil {
-		return err
-	}
-	return nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
