@@ -489,6 +489,10 @@
         "sensorCertExpiry": {
           "type": "string",
           "format": "date-time"
+        },
+        "sensorCertNotBefore": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

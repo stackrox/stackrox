@@ -105,7 +105,7 @@ func TestNumberDelta(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := createNumericQuery("blah", nil, c.prefix, c.value)
+			actual := createNumericQuery("blah", c.prefix, c.value)
 			assert.Equal(t, c.expectedQuery, actual.Query)
 			assert.Equal(t, []interface{}{c.expectedValue}, actual.Values)
 		})

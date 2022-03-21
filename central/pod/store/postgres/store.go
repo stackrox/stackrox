@@ -12,12 +12,12 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
+	baseTable  = "pods"
 	countStmt  = "SELECT COUNT(*) FROM pods"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM pods WHERE Id = $1)"
 
@@ -30,14 +30,8 @@ const (
 	deleteManyStmt = "DELETE FROM pods WHERE Id = ANY($1::text[])"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "pods"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "Pod")
+	globaldb.RegisterTable(baseTable, "Pod")
 }
 
 type Store interface {
@@ -483,24 +477,27 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Pod, 
 		return nil, nil, err
 	}
 	defer rows.Close()
-	elems := make([]*storage.Pod, 0, len(ids))
-	foundSet := make(map[string]struct{})
+	resultsByID := make(map[string]*storage.Pod)
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, nil, err
 		}
-		var msg storage.Pod
-		if err := proto.Unmarshal(data, &msg); err != nil {
+		msg := &storage.Pod{}
+		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
 		}
-		foundSet[msg.GetId()] = struct{}{}
-		elems = append(elems, &msg)
+		resultsByID[msg.GetId()] = msg
 	}
-	missingIndices := make([]int, 0, len(ids)-len(foundSet))
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.Pod, 0, len(resultsByID))
 	for i, id := range ids {
-		if _, ok := foundSet[id]; !ok {
+		if result, ok := resultsByID[id]; !ok {
 			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
 		}
 	}
 	return elems, missingIndices, nil

@@ -145,7 +145,7 @@ spec:
           readOnly: true
         {{- if ._rox.central.enableCentralDB }}
         - name: central-db-password
-          mountPath: /run/secrets/stackrox.io/secrets
+          mountPath: /run/secrets/stackrox.io/db-password
         {{- end }}
         {{- range $extraMount := (default list ._rox.central.extraMounts) }}
         - name: {{ $extraMount.name }}

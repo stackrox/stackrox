@@ -12,12 +12,12 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
+	baseTable  = "namespaces"
 	countStmt  = "SELECT COUNT(*) FROM namespaces"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM namespaces WHERE Id = $1)"
 
@@ -30,14 +30,8 @@ const (
 	deleteManyStmt = "DELETE FROM namespaces WHERE Id = ANY($1::text[])"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "namespaces"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "NamespaceMetadata")
+	globaldb.RegisterTable(baseTable, "NamespaceMetadata")
 }
 
 type Store interface {
@@ -269,24 +263,27 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Names
 		return nil, nil, err
 	}
 	defer rows.Close()
-	elems := make([]*storage.NamespaceMetadata, 0, len(ids))
-	foundSet := make(map[string]struct{})
+	resultsByID := make(map[string]*storage.NamespaceMetadata)
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, nil, err
 		}
-		var msg storage.NamespaceMetadata
-		if err := proto.Unmarshal(data, &msg); err != nil {
+		msg := &storage.NamespaceMetadata{}
+		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
 		}
-		foundSet[msg.GetId()] = struct{}{}
-		elems = append(elems, &msg)
+		resultsByID[msg.GetId()] = msg
 	}
-	missingIndices := make([]int, 0, len(ids)-len(foundSet))
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.NamespaceMetadata, 0, len(resultsByID))
 	for i, id := range ids {
-		if _, ok := foundSet[id]; !ok {
+		if result, ok := resultsByID[id]; !ok {
 			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
 		}
 	}
 	return elems, missingIndices, nil

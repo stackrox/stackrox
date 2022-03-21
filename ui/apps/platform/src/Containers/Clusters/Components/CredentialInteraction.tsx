@@ -11,6 +11,7 @@ import {
     isCertificateExpiringSoon,
     isUpToDateStateObject,
 } from '../cluster.helpers';
+import { CertExpiryStatus } from '../clusterTypes';
 
 /*
  * The heading is a simple explanation of what did not happen because of the error.
@@ -42,9 +43,7 @@ const labelClassName = 'leading-tight ml-2';
  */
 
 type CredentialInteractionProps = {
-    certExpiryStatus: {
-        sensorCertExpiry: string; // ISO 8601
-    };
+    certExpiryStatus: CertExpiryStatus;
     upgradeStatus: {
         upgradability: string;
         mostRecentProcess: {
@@ -106,7 +105,7 @@ function CredentialInteraction({
                     </div>
                 </div>
             );
-        } else if (isCertificateExpiringSoon(certExpiryStatus.sensorCertExpiry, currentDatetime)) {
+        } else if (isCertificateExpiringSoon(certExpiryStatus, currentDatetime)) {
             const onChangeHowToReissue = (event) => {
                 setHowToReissue(event.target.value);
             };

@@ -42,7 +42,8 @@ func (s *serviceImpl) GetAuthStatus(ctx context.Context, request *v1.Empty) (*v1
 }
 
 func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
-	exp, err := types.TimestampProto(id.Expiry())
+	_, notValidAfter := id.ValidityPeriod()
+	exp, err := types.TimestampProto(notValidAfter)
 	if err != nil {
 		return nil, errors.Errorf("expiration time: %s", err)
 	}

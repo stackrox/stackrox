@@ -60,6 +60,11 @@ central:
     loadBalancer:
       enabled: true
   enableCentralDB: true
+  dbPassword:
+    value: "central db password"
+  dbServiceTLS:
+    cert: "central db cert"
+    key: "central db key"
 scanner:
   dbPassword:
     value: "db password"

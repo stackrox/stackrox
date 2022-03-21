@@ -12,12 +12,12 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
+	baseTable  = "multikey"
 	countStmt  = "SELECT COUNT(*) FROM multikey"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM multikey WHERE Key1 = $1 AND Key2 = $2)"
 
@@ -26,14 +26,8 @@ const (
 	walkStmt   = "SELECT serialized FROM multikey"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "multikey"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "TestMultiKeyStruct")
+	globaldb.RegisterTable(baseTable, "TestMultiKeyStruct")
 }
 
 type Store interface {
@@ -69,6 +63,7 @@ create table if not exists multikey (
     Enum integer,
     Enums int[],
     String_ varchar,
+    IntSlice int[],
     Embedded_Embedded varchar,
     Oneofstring varchar,
     Oneofnested_Nested varchar,
@@ -147,13 +142,14 @@ func insertIntoMultikey(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKe
 		obj.GetEnum(),
 		obj.GetEnums(),
 		obj.GetString_(),
+		obj.GetIntSlice(),
 		obj.GetEmbedded().GetEmbedded(),
 		obj.GetOneofstring(),
 		obj.GetOneofnested().GetNested(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO multikey (Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, String_, Embedded_Embedded, Oneofstring, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(Key1, Key2) DO UPDATE SET Key1 = EXCLUDED.Key1, Key2 = EXCLUDED.Key2, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, String_ = EXCLUDED.String_, Embedded_Embedded = EXCLUDED.Embedded_Embedded, Oneofstring = EXCLUDED.Oneofstring, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO multikey (Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, String_, IntSlice, Embedded_Embedded, Oneofstring, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(Key1, Key2) DO UPDATE SET Key1 = EXCLUDED.Key1, Key2 = EXCLUDED.Key2, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, String_ = EXCLUDED.String_, IntSlice = EXCLUDED.IntSlice, Embedded_Embedded = EXCLUDED.Embedded_Embedded, Oneofstring = EXCLUDED.Oneofstring, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err

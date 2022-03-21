@@ -63,7 +63,9 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                     onChange={onEditSectionName}
                                 />
                             ) : (
-                                <div className="pf-u-py-sm">{sectionName}</div>
+                                <div className="pf-u-py-sm" data-testid="policy-section-name">
+                                    {sectionName}
+                                </div>
                             )}
                         </FlexItem>
                     </Flex>
@@ -75,12 +77,17 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                             className="pf-u-px-sm"
                             onClick={() => setIsEditingName(!isEditingName)}
                         >
-                            {isEditingName ? <CheckIcon /> : <PencilAltIcon />}
+                            {isEditingName ? (
+                                <CheckIcon data-testid="save-section-name-btn" />
+                            ) : (
+                                <PencilAltIcon data-testid="edit-section-name-btn" />
+                            )}
                         </Button>
                         <Divider component="div" isVertical />
                         <Button
                             variant="plain"
                             className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
+                            data-testid="delete-section-btn"
                             onClick={onDeleteSection}
                         >
                             <TrashIcon />

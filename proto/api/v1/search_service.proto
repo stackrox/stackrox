@@ -8,7 +8,7 @@ import "api/v1/pagination.proto";
 
 package v1;
 
-// Next available tag: 32
+// Next available tag: 37
 enum SearchCategory {
     SEARCH_UNSET              = 0;
     ALERTS                    = 1;
@@ -39,6 +39,9 @@ enum SearchCategory {
     SUBJECTS                  = 18;
     RISKS                     = 19;
     VULNERABILITIES           = 21;
+    CLUSTER_VULNERABILITIES   = 34;
+    IMAGE_VULNERABILITIES     = 35;
+    NODE_VULNERABILITIES      = 36;
     COMPONENT_VULN_EDGE       = 22;
     CLUSTER_VULN_EDGE         = 24;
     NETWORK_ENTITY            = 26;

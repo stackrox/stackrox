@@ -65,12 +65,13 @@ function PolicyCriteriaFieldInput({
                     id={name}
                     isDisabled={readOnly}
                     onChange={handleChangeValue}
+                    data-testid="policy-criteria-value-text-input"
                 />
             );
         case 'radioGroup': {
             const booleanValue = value.value === true || value.value === 'true';
             return (
-                <ToggleGroup>
+                <ToggleGroup data-testid="policy-criteria-value-radio-group">
                     {descriptor.radioButtons?.map(({ text, value: radioValue }) => (
                         <ToggleGroupItem
                             key={text}
@@ -79,6 +80,7 @@ function PolicyCriteriaFieldInput({
                             isDisabled={readOnly}
                             isSelected={booleanValue === radioValue}
                             onChange={handleChangeSelectedValue(radioValue)}
+                            data-testid="policy-criteria-value-radio-group-item"
                         />
                     ))}
                 </ToggleGroup>
@@ -86,7 +88,7 @@ function PolicyCriteriaFieldInput({
         }
         case 'radioGroupString': {
             return (
-                <ToggleGroup>
+                <ToggleGroup data-testid="policy-criteria-value-radio-group-string">
                     {descriptor.radioButtons?.map(({ text, value: radioValue }) => (
                         <ToggleGroupItem
                             key={text}
@@ -95,6 +97,7 @@ function PolicyCriteriaFieldInput({
                             isDisabled={readOnly}
                             isSelected={value.value === radioValue}
                             onChange={handleChangeSelectedValue(radioValue)}
+                            data-testid="policy-criteria-value-radio-group-string-item"
                         />
                     ))}
                 </ToggleGroup>
@@ -108,7 +111,7 @@ function PolicyCriteriaFieldInput({
                     id={name}
                     isDisabled={readOnly}
                     onChange={handleChangeValue}
-                    // placeholder={descriptor.placeholder}
+                    data-testid="policy-criteria-value-number-input"
                 />
             );
         case 'select':
@@ -117,6 +120,7 @@ function PolicyCriteriaFieldInput({
                     label={descriptor.label}
                     fieldId={descriptor.name}
                     className="pf-u-flex-1"
+                    data-testid="policy-criteria-value-select"
                 >
                     <Select
                         onToggle={handleOnToggleSelect}
@@ -127,7 +131,11 @@ function PolicyCriteriaFieldInput({
                         placeholderText={descriptor.placeholder || 'Select an option'}
                     >
                         {descriptor?.options?.map((option) => (
-                            <SelectOption key={option.value} value={option.value}>
+                            <SelectOption
+                                key={option.value}
+                                value={option.value}
+                                data-testid="policy-criteria-value-select-option"
+                            >
                                 {option.label}
                             </SelectOption>
                         ))}
@@ -140,6 +148,7 @@ function PolicyCriteriaFieldInput({
                     label={descriptor.label}
                     fieldId={descriptor.name}
                     className="pf-u-flex-1"
+                    data-testid="policy-criteria-value-multiselect"
                 >
                     <Select
                         onToggle={handleOnToggleSelect}
@@ -152,7 +161,11 @@ function PolicyCriteriaFieldInput({
                         variant={SelectVariant.typeaheadMulti}
                     >
                         {descriptor.options?.map((option) => (
-                            <SelectOption key={option.value} value={option.value}>
+                            <SelectOption
+                                key={option.value}
+                                value={option.value}
+                                data-testid="policy-criteria-value-multiselect-option"
+                            >
                                 {option.label}
                             </SelectOption>
                         ))}

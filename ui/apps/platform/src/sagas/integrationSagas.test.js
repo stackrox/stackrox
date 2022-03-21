@@ -31,22 +31,6 @@ describe('Integrations Sagas', () => {
             .silentRun();
     });
 
-    it('should fetch notifiers for policies page once', () => {
-        const notifiers = { notifiers: ['notifier1'] };
-        const fetchMock = jest.fn().mockReturnValueOnce({ response: notifiers });
-
-        return expectSaga(saga)
-            .provide([[call(fetchIntegration, 'notifiers'), dynamic(fetchMock)]])
-            .put(actions.fetchNotifiers.success(notifiers))
-            .dispatch(createLocationChange('/main/policies'))
-            .dispatch(createLocationChange('/main/policies/123'))
-            .dispatch(createLocationChange('/main/policies/321'))
-            .silentRun()
-            .then(() => {
-                expect(fetchMock.mock.calls.length).toBe(1);
-            });
-    });
-
     it("shouldn't fetch image integrations / notifiers when location changes to violations, dashboard, etc.", () => {
         const fetchImageIntegrationsMock = jest.fn();
         const fetchNotifiersMock = jest.fn();

@@ -97,3 +97,8 @@ func (e *ErrorList) String() string {
 func (e *ErrorList) ErrorStrings() []string {
 	return e.errors
 }
+
+// Empty returns whether the list of error strings is empty.
+func (e *ErrorList) Empty() bool {
+	return len(e.errors) == 0
+}

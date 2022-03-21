@@ -25,11 +25,6 @@ enum VulnerabilitySeverity {
 
 // Next Tag: 19
 message CVE {
-    enum ScoreVersion {
-        V2 = 0; // No unset for automatic backwards compatibility
-        V3 = 1;
-        UNKNOWN = 2;
-    }
     enum CVEType {
         UNKNOWN_CVE   = 0;
         IMAGE_CVE     = 1;
@@ -38,20 +33,37 @@ message CVE {
         NODE_CVE      = 4;
         OPENSHIFT_CVE = 5;
     }
-
+    message DistroSpecific {
+        VulnerabilitySeverity     severity              = 1;
+        float                     cvss                  = 2;
+        ScoreVersion              score_version         = 3;
+        CVSSV2                    cvss_v2               = 4;
+        CVSSV3                    cvss_v3               = 5;
+    }
+    enum ScoreVersion {
+        V2 = 0; // No unset for automatic backwards compatibility
+        V3 = 1;
+        UNKNOWN = 2;
+    }
     message Reference {
         string          URI  = 1;
         repeated string tags = 2;
     }
 
-    string                    id                    = 1 [(gogoproto.moretags) = "search:\"CVE,store\""];
+    string                    id                    = 1 [(gogoproto.moretags) = 'search:"CVE,store" sql:"pk"'];
     float                     cvss                  = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
     float                     impact_score          = 14 [(gogoproto.moretags) = "search:\"Impact Score\""];
+
     // For internal purposes only. This will only be populated prior to upsert into datastore.
-    CVEType                   type                  = 3;
-    repeated CVEType          types                 = 18 [(gogoproto.moretags) = "search:\"CVE Type,store\""];
+    // Cluster cves are split between k8s and istio. The type info is a relationship attribute and not a property of cve itself.
+    // TODO: Move type to relationship objects.
+
+    CVEType                   type                  = 3 [(gogoproto.moretags) = 'sql:"-"'];
+    repeated CVEType          types                 = 18 [(gogoproto.moretags) = 'search:"CVE Type" sql:"-"'];
+
     string                    summary               = 4;
     string                    link                  = 5;
+    // This indicates the timestamp when the cve was first published in the cve feeds.
     google.protobuf.Timestamp published_on          = 6 [(gogoproto.moretags) = "search:\"CVE Published On\""];
     // Time when the CVE was first seen in the system.
     google.protobuf.Timestamp created_at            = 15 [(gogoproto.moretags) = "search:\"CVE Created Time\""];
@@ -62,18 +74,15 @@ message CVE {
     CVSSV2                    cvss_v2               = 10;
     CVSSV3                    cvss_v3               = 11;
 
+    // TODO: Move suppression field out of CVE object. Maybe create equivalent dummy vulnerability requests.
+    // Unfortunately, although there exists image SAC check on legacy suppress APIs,
+    // one can snooze node and cluster type vulns, so we will have to carry over the support for node and cluster cves.
+
     bool                      suppressed            = 12 [(gogoproto.moretags) = "search:\"CVE Snoozed\""];
     google.protobuf.Timestamp suppress_activation   = 16;
     google.protobuf.Timestamp suppress_expiry       = 17 [(gogoproto.moretags) = "search:\"CVE Snooze Expiry,hidden\""];
 
-    message DistroSpecific {
-        VulnerabilitySeverity     severity              = 1;
-        float                     cvss                  = 2;
-        ScoreVersion              score_version         = 3;
-        CVSSV2                    cvss_v2               = 4;
-        CVSSV3                    cvss_v3               = 5;
-    }
-    map<string, DistroSpecific> distro_specifics    = 19;
+    map<string, DistroSpecific> distro_specifics    = 19 [(gogoproto.moretags) = 'sql:"-"'];
     VulnerabilitySeverity       severity            = 20 [(gogoproto.moretags) = "search:\"Severity\""];
 }
 

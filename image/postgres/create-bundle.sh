@@ -2,7 +2,6 @@
 # Creates a tgz bundle of all binary artifacts needed for scanner-db-rhel
 
 set -euo pipefail
-set -x
 
 die() {
     echo >&2 "$@"
@@ -52,13 +51,13 @@ cp -p "${INPUT_ROOT}"/*.conf "${bundle_root}/etc/"
 
 # Get postgres RPMs directly
 postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_version}-x86_64"
-curl -s -o "${bundle_root}/postgres.rpm" \
+curl -sS --fail -o "${bundle_root}/postgres.rpm" \
     "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
-curl -s -o "${bundle_root}/postgres-server.rpm" \
+curl -sS --fail -o "${bundle_root}/postgres-server.rpm" \
     "${postgres_url}/postgresql${postgres_major}-server-${postgres_minor}.rpm"
-curl -s -o "${bundle_root}/postgres-libs.rpm" \
+curl -sS --fail -o "${bundle_root}/postgres-libs.rpm" \
     "${postgres_url}/postgresql${postgres_major}-libs-${postgres_minor}.rpm"
-curl -s -o "${bundle_root}/postgres-contrib.rpm" \
+curl -sS --fail -o "${bundle_root}/postgres-contrib.rpm" \
     "${postgres_url}/postgresql${postgres_major}-contrib-${postgres_minor}.rpm"
 
 # =============================================================================
@@ -67,7 +66,7 @@ curl -s -o "${bundle_root}/postgres-contrib.rpm" \
 if tar --version | grep -q "gnu" ; then
   tar_chown_args=("--owner=root:0" "--group=root:0")
 else
-  tar_chown_args=("--uid=root:0" "--gid=root:0")
+  tar_chown_args=("--uid=0" "--uname=root" "--gid=0" "--gname=root")
 fi
 
 # Create output bundle of all files in $bundle_root

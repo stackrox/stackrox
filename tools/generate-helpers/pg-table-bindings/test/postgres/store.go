@@ -12,12 +12,12 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
+	baseTable  = "singlekey"
 	countStmt  = "SELECT COUNT(*) FROM singlekey"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM singlekey WHERE Key = $1)"
 
@@ -30,14 +30,8 @@ const (
 	deleteManyStmt = "DELETE FROM singlekey WHERE Key = ANY($1::text[])"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	table = "singlekey"
-)
-
 func init() {
-	globaldb.RegisterTable(table, "TestSingleKeyStruct")
+	globaldb.RegisterTable(baseTable, "TestSingleKeyStruct")
 }
 
 type Store interface {
@@ -79,6 +73,7 @@ create table if not exists singlekey (
     Oneofstring varchar,
     Oneofnested_Nested varchar,
     Oneofnested_Nested2_Nested2 varchar,
+    Bytess varchar,
     serialized bytea,
     PRIMARY KEY(Key)
 )
@@ -155,10 +150,11 @@ func insertIntoSinglekey(ctx context.Context, tx pgx.Tx, obj *storage.TestSingle
 		obj.GetOneofstring(),
 		obj.GetOneofnested().GetNested(),
 		obj.GetOneofnested().GetNested2().GetNested2(),
+		obj.GetBytess(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO singlekey (Key, Name, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, Embedded_Embedded, Oneofstring, Oneofnested_Nested, Oneofnested_Nested2_Nested2, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(Key) DO UPDATE SET Key = EXCLUDED.Key, Name = EXCLUDED.Name, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, Embedded_Embedded = EXCLUDED.Embedded_Embedded, Oneofstring = EXCLUDED.Oneofstring, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, Oneofnested_Nested2_Nested2 = EXCLUDED.Oneofnested_Nested2_Nested2, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO singlekey (Key, Name, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, Embedded_Embedded, Oneofstring, Oneofnested_Nested, Oneofnested_Nested2_Nested2, Bytess, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) ON CONFLICT(Key) DO UPDATE SET Key = EXCLUDED.Key, Name = EXCLUDED.Name, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, Embedded_Embedded = EXCLUDED.Embedded_Embedded, Oneofstring = EXCLUDED.Oneofstring, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, Oneofnested_Nested2_Nested2 = EXCLUDED.Oneofnested_Nested2_Nested2, Bytess = EXCLUDED.Bytess, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -348,24 +344,27 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestS
 		return nil, nil, err
 	}
 	defer rows.Close()
-	elems := make([]*storage.TestSingleKeyStruct, 0, len(ids))
-	foundSet := make(map[string]struct{})
+	resultsByID := make(map[string]*storage.TestSingleKeyStruct)
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, nil, err
 		}
-		var msg storage.TestSingleKeyStruct
-		if err := proto.Unmarshal(data, &msg); err != nil {
+		msg := &storage.TestSingleKeyStruct{}
+		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
 		}
-		foundSet[msg.GetKey()] = struct{}{}
-		elems = append(elems, &msg)
+		resultsByID[msg.GetKey()] = msg
 	}
-	missingIndices := make([]int, 0, len(ids)-len(foundSet))
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.TestSingleKeyStruct, 0, len(resultsByID))
 	for i, id := range ids {
-		if _, ok := foundSet[id]; !ok {
+		if result, ok := resultsByID[id]; !ok {
 			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
 		}
 	}
 	return elems, missingIndices, nil

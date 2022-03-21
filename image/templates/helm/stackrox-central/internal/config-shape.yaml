@@ -68,6 +68,13 @@ central:
       enabled: null # bool
   extraMounts: null # [dict]
   enableCentralDB: null # bool
+  dbPassword:
+    value: null # string
+    generate: null # bool
+  dbServiceTLS:
+    cert: null # string
+    key: null # string
+    generate: null # bool
 
 customize:
   labels: {} # dict

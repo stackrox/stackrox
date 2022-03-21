@@ -27,6 +27,30 @@ spec:
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
     spec:
+      serviceAccountName: central-db
+      initContainers:
+      - name: init-db
+        image: {{ ._rox.central.image.fullRef | replace "main" "central-db" | quote }}
+        env:
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        command:
+        - /bin/sh
+        - -c
+        - |
+          # Initialize DB if it does not exist
+          if [ ! -s "$PGDATA/PG_VERSION" ]; then
+            docker-entrypoint.sh initdb --pwfile /run/secrets/stackrox.io/secrets/password
+          fi
+        volumeMounts:
+        - name: disk
+          mountPath: /var/lib/postgresql/data
+        - name: central-db-password
+          mountPath: /run/secrets/stackrox.io/secrets
+        securityContext:
+          runAsUser: 70
+          runAsGroup: 70
+
       containers:
       - name: central-db
         {{- /* TODO(ROX-9249): Need to provide Central DB configuration. Use the same image registry and tag for Central DB image for now. */}}
@@ -47,22 +71,38 @@ spec:
           requests:
             cpu: 200m
             memory: 200Mi
+        securityContext:
+          runAsUser: 70
+          runAsGroup: 70
         volumeMounts:
         - mountPath: /var/lib/postgresql/data
           name: disk
-        - name: central-db-password
-          mountPath: /run/secrets/stackrox.io/secrets
+        - name: central-db-tls-volume
+          mountPath: /run/secrets/stackrox.io/certs
+      securityContext:
+        fsGroup: 70
       volumes:
       - name: disk
-        {{ if ._rox.central.persistence._pvcCfg -}}
+        {{- if ._rox.central.persistence._pvcCfg }}
         persistentVolumeClaim:
           claimName: central-db
-        {{ else }}
+        {{- else }}
         emptyDir: {}
         {{- end }}
       - name: central-db-password
         secret:
           secretName: central-db-password
+      - name: central-db-tls-volume
+        secret:
+          secretName: central-db-tls
+          defaultMode: 0640
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
 ---
 apiVersion: v1
 kind: Service
@@ -82,6 +122,8 @@ spec:
   selector:
     app: central-db
   type: ClusterIP
+{{- if ._rox.central._dbPassword }}
+{{- if not (kindIs "invalid" ._rox.central._dbPassword.value) }}
 ---
 apiVersion: v1
 kind: Secret
@@ -96,6 +138,8 @@ metadata:
     "helm.sh/resource-policy": keep
 type: Opaque
 stringData:
-  {{- /* TODO(ROX-9249): Create password */}}
-  password: SpTasCsKwRorXdFor$Now8
+  password: |
+    {{- ._rox.central._dbPassword.value | nindent 4 }}
+{{- end }}
+{{- end }}
 {{- end }}

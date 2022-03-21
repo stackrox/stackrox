@@ -36,6 +36,15 @@
   {{ end }}
 {{ end }}
 
+{{/* Central DB password */}}
+{{ if $centralCfg.enableCentralDB }}
+{{ include "srox.configurePassword" (list $ "central.dbPassword") }}
+
+{{/* Central DB Service TLS Certificates */}}
+{{ $centralDBCertSpec := dict "CN" "CENTRAL_DB_SERVICE: Central DB" "dnsBase" "central-db" }}
+{{ include "srox.configureCrypto" (list $ "central.dbServiceTLS" $centralDBCertSpec) }}
+{{ end }}
+
 {{/*
     Setup configuration for persistence backend.
   */}}
