@@ -28,11 +28,11 @@
   min-height: 36px !important;
 }
 
-.react-select__indicator-separator {
+.network-search .react-select__indicator-separator {
   display: none;
 }
 
-.react-select__multi-value__label {
+.network-search .react-select__multi-value__label {
   color: var(--pf-global--Color--100) !important;
   font-size: var(--pf-global--FontSize--xs) !important;
 }
