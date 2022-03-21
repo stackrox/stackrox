@@ -2672,7 +2672,7 @@ jobs:
       - check-docs-step:
           only-on-release: true
       - check-scanner-and-collector-release-step:
-          fail-on-rc: false
+          fail-on-rc: true
 
       - setup_remote_docker:
           version: 20.10.7
