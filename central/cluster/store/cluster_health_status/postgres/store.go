@@ -4,7 +4,11 @@ package postgres
 
 import (
 	"context"
+<<<<<<< HEAD
 	"reflect"
+=======
+	"fmt"
+>>>>>>> c95a9b179 (WIP)
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -86,7 +90,7 @@ create table if not exists cluster_health_status (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{}
