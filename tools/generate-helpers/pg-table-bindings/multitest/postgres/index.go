@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_SEARCH_UNSET, walker.Walk(reflect.TypeOf((*storage.TestMultiKeyStruct)(nil)), "multikey"))
+	mapping.RegisterCategoryToTable(v1.SearchCategory_SEARCH_UNSET, walker.Walk(reflect.TypeOf((*storage.TestMultiKeyStruct)(nil)), baseTable))
 }
 
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {

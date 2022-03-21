@@ -184,6 +184,9 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			case reflect.String:
 				schema.AddFieldWithType(field, StringArray)
 				continue
+			case reflect.Uint8:
+				schema.AddFieldWithType(field, Bytes)
+				continue
 			case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
 				if typeIsEnum(elemType) {
 					schema.AddFieldWithType(field, EnumArray)
@@ -219,10 +222,11 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			// Take all the primary keys of the parent and copy them into the child schema
 			// with references to the parent so we that we can create
 			schema.Children = append(schema.Children, childSchema)
-
 			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored, ignorePK: opts.IgnorePrimaryKey, ignoreUnique: opts.IgnoreUniqueConstraint}, childSchema, structField.Type.Elem().Elem())
 		case reflect.Struct:
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type)
+		case reflect.Uint8:
+			schema.AddFieldWithType(field, Bytes)
 		case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64:
 			if typeIsEnum(structField.Type) {
 				schema.AddFieldWithType(field, Enum)

@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_NAMESPACES, walker.Walk(reflect.TypeOf((*storage.NamespaceMetadata)(nil)), "namespaces"))
+	mapping.RegisterCategoryToTable(v1.SearchCategory_NAMESPACES, walker.Walk(reflect.TypeOf((*storage.NamespaceMetadata)(nil)), baseTable))
 }
 
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {

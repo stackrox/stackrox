@@ -26,12 +26,12 @@ import (
     "github.com/stackrox/rox/central/globaldb"
     "github.com/stackrox/rox/central/metrics"
     "github.com/stackrox/rox/generated/storage"
-    "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
+        baseTable = "{{.Table}}"
         countStmt = "SELECT COUNT(*) FROM {{.Table}}"
         existsStmt = "SELECT EXISTS(SELECT 1 FROM {{.Table}} WHERE {{template "whereMatch" $pks}})"
 
@@ -47,14 +47,8 @@ const (
 {{- end }}
 )
 
-var (
-    log = logging.LoggerForModule()
-
-    table = "{{.Table}}"
-)
-
 func init() {
-    globaldb.RegisterTable(table, "{{.TrimmedType}}")
+    globaldb.RegisterTable(baseTable, "{{.TrimmedType}}")
 }
 
 type Store interface {
@@ -329,24 +323,27 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
 		return nil, nil, err
 	}
 	defer rows.Close()
-	elems := make([]*{{.Type}}, 0, len(ids))
-	foundSet := make(map[{{$singlePK.Type}}]struct{})
+	resultsByID := make(map[{{$singlePK.Type}}]*{{.Type}})
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, nil, err
 		}
-		var msg {{.Type}}
-		if err := proto.Unmarshal(data, &msg); err != nil {
+		msg := &{{.Type}}{}
+		if err := proto.Unmarshal(data, msg); err != nil {
 		    return nil, nil, err
 		}
-		foundSet[{{$singlePK.Getter "msg"}}] = struct{}{}
-		elems = append(elems, &msg)
+		resultsByID[{{$singlePK.Getter "msg"}}] = msg
 	}
-	missingIndices := make([]int, 0, len(ids)-len(foundSet))
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*{{.Type}}, 0, len(resultsByID))
 	for i, id := range ids {
-		if _, ok := foundSet[id]; !ok {
+		if result, ok := resultsByID[id]; !ok {
 			missingIndices = append(missingIndices, i)
+		} else {
+		    elems = append(elems, result)
 		}
 	}
 	return elems, missingIndices, nil

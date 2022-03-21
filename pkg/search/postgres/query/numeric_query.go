@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/search"
 )
 
 type prefixAndInversion struct {
@@ -66,7 +65,52 @@ func invertNumericPrefix(prefix string) string {
 	return prefixesToInversions[prefix]
 }
 
-func createNumericQuery(root string, _ *search.Field, prefix string, value float64) *QueryEntry {
+func getValueAsFloat64(foundValue interface{}) (float64, bool) {
+	switch foundValue := foundValue.(type) {
+	case float64:
+		return foundValue, true
+	case int:
+		return float64(foundValue), true
+	}
+	return 0, false
+}
+
+func getComparator(prefix string) func(a, b float64) bool {
+	switch prefix {
+	case "<":
+		return func(a, b float64) bool {
+			return a < b
+		}
+	case ">":
+		return func(a, b float64) bool {
+			return a > b
+		}
+	case "<=":
+		return func(a, b float64) bool {
+			return a <= b
+		}
+	case ">=":
+		return func(a, b float64) bool {
+			return a >= b
+		}
+	}
+	return func(a, b float64) bool {
+		return a == b
+	}
+}
+
+func getEquivalentGoFuncForNumericQuery(prefix string, value float64) func(foundValue interface{}) bool {
+	comparator := getComparator(prefix)
+	return func(foundValue interface{}) bool {
+		asFloat, ok := getValueAsFloat64(foundValue)
+		if !ok {
+			return false
+		}
+		return comparator(asFloat, value)
+	}
+}
+
+func createNumericQuery(root string, prefix string, value float64) WhereClause {
 	var valueStr string
 	if _, fraction := math.Modf(value); fraction > 0 {
 		valueStr = fmt.Sprintf("%0.2f", value)
@@ -74,23 +118,25 @@ func createNumericQuery(root string, _ *search.Field, prefix string, value float
 		valueStr = fmt.Sprintf("%0.0f", value)
 	}
 
-	if prefix == "" {
+	if prefix == "" || prefix == "==" {
 		prefix = "="
 	}
-	return &QueryEntry{
-		Query:  fmt.Sprintf("%s %s $$", root, prefix),
-		Values: []interface{}{valueStr},
+	return WhereClause{
+		Query:            fmt.Sprintf("%s %s $$", root, prefix),
+		Values:           []interface{}{valueStr},
+		equivalentGoFunc: getEquivalentGoFuncForNumericQuery(prefix, value),
 	}
 }
 
-func newNumericQuery(table string, field *search.Field, value string, modifiers ...search.QueryModifier) (*QueryEntry, error) {
-	if len(modifiers) > 0 {
-		return nil, errors.Errorf("modifiers not supported for numeric query: %+v", modifiers)
+func newNumericQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
+	if len(ctx.queryModifiers) > 0 {
+		return nil, errors.Errorf("modifiers not supported for numeric query: %+v", ctx.queryModifiers)
 	}
-	prefix, trimmedValue := parseNumericPrefix(value)
+	prefix, trimmedValue := parseNumericPrefix(ctx.value)
 	valuePtr, err := parseNumericStringToFloat(trimmedValue)
 	if err != nil {
 		return nil, err
 	}
-	return createNumericQuery(table, field, prefix, valuePtr), nil
+	whereClause := createNumericQuery(ctx.qualifiedColumnName, prefix, valuePtr)
+	return qeWithSelectFieldIfNeeded(ctx, &whereClause, nil), nil
 }

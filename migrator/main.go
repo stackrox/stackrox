@@ -40,9 +40,9 @@ func startProfilingServer() {
 }
 
 func run() error {
-	conf, err := config.ReadConfig()
-	if err != nil {
-		log.WriteToStderrf("error reading configuration: %v. Skipping migrator", err)
+	conf := config.GetConfig()
+	if conf == nil {
+		log.WriteToStderrf("cannot get central configuration. Skipping migrator")
 		return nil
 	}
 

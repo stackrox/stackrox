@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_BASELINES, walker.Walk(reflect.TypeOf((*storage.ProcessBaseline)(nil)), "processbaselines"))
+	mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_BASELINES, walker.Walk(reflect.TypeOf((*storage.ProcessBaseline)(nil)), baseTable))
 }
 
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {

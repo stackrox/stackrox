@@ -1,8 +1,6 @@
 package generate
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
@@ -35,7 +33,7 @@ func (s *sensorGenerateOpenShiftCommand) ConstructOpenShift() error {
 	case 4:
 		s.cluster.Type = storage.ClusterType_OPENSHIFT4_CLUSTER
 	default:
-		return errox.InvalidArgs.New(fmt.Sprintf("invalid OpenShift version %d, supported values are '3' and '4'", s.openshiftVersion))
+		return errox.InvalidArgs.Newf("invalid OpenShift version %d, supported values are '3' and '4'", s.openshiftVersion)
 	}
 
 	if s.admissionControllerEvents == nil {

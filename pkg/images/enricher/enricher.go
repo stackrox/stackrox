@@ -12,6 +12,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/signatures"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
 )
@@ -94,20 +95,26 @@ type ImageEnricher interface {
 	EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error)
 }
 
-type cveSuppressor interface {
+// CVESuppressor provides enrichment for suppressed CVEs for an image's components.
+type CVESuppressor interface {
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
 }
 
-type imageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
+// ImageGetter will be used to retrieve a specific image from the datastore.
+type ImageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
 
-// signatureIntegrationGetter will be used to retrieve all available signature integrations.
-type signatureIntegrationGetter func(ctx context.Context) ([]*storage.SignatureIntegration, error)
+// SignatureIntegrationGetter will be used to retrieve all available signature integrations.
+type SignatureIntegrationGetter func(ctx context.Context) ([]*storage.SignatureIntegration, error)
+
+// signatureVerifierForIntegrations will be used to verify signatures for an image using a list of integrations.
+// This is used for mocking purposes, otherwise it will use signatures.VerifyAgainstSignatureIntegrations.
+type signatureVerifierForIntegrations func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult
 
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
-	imageGetter imageGetter, healthReporter integrationhealth.Reporter,
-	signatureIntegrationGetter signatureIntegrationGetter) ImageEnricher {
+func New(cvesSuppressor CVESuppressor, cvesSuppressorV2 CVESuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
+	imageGetter ImageGetter, healthReporter integrationhealth.Reporter,
+	signatureIntegrationGetter SignatureIntegrationGetter) ImageEnricher {
 	enricher := &enricherImpl{
 		cvesSuppressor:   cvesSuppressor,
 		cvesSuppressorV2: cvesSuppressorV2,
@@ -122,6 +129,9 @@ func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integr
 		metadataCache:   metadataCache,
 
 		signatureIntegrationGetter: signatureIntegrationGetter,
+		signatureVerifier:          signatures.VerifyAgainstSignatureIntegrations,
+		signatureFetcherLimiter:    rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
+		signatureFetcher:           signatures.NewSignatureFetcher(),
 
 		imageGetter: imageGetter,
 

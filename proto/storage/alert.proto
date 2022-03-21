@@ -28,7 +28,7 @@ message Alert {
         }
         repeated Container      containers          = 11;
         map<string, string>     annotations         = 14;
-        bool                    inactive            = 15;
+        bool                    inactive            = 15 [(gogoproto.moretags) = 'search:"Inactive Deployment"'];
     }
 
     // Represents an alert on a kubernetes resource (configmaps, secrets, etc.)

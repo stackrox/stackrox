@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_POLICIES, walker.Walk(reflect.TypeOf((*storage.Policy)(nil)), "policy"))
+	mapping.RegisterCategoryToTable(v1.SearchCategory_POLICIES, walker.Walk(reflect.TypeOf((*storage.Policy)(nil)), baseTable))
 }
 
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
