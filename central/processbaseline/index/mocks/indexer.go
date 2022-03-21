@@ -37,32 +37,32 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddBaseline mocks base method.
-func (m *MockIndexer) AddProcessBaseline(baseline *storage.ProcessBaseline) error {
+// AddProcessBaseline mocks base method.
+func (m *MockIndexer) AddProcessBaseline(processbaseline *storage.ProcessBaseline) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddProcessBaseline", baseline)
+	ret := m.ctrl.Call(m, "AddProcessBaseline", processbaseline)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddBaseline indicates an expected call of AddBaseline.
-func (mr *MockIndexerMockRecorder) AddBaseline(baseline interface{}) *gomock.Call {
+// AddProcessBaseline indicates an expected call of AddProcessBaseline.
+func (mr *MockIndexerMockRecorder) AddProcessBaseline(processbaseline interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessBaseline", reflect.TypeOf((*MockIndexer)(nil).AddProcessBaseline), baseline)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessBaseline", reflect.TypeOf((*MockIndexer)(nil).AddProcessBaseline), processbaseline)
 }
 
-// AddBaselines mocks base method.
-func (m *MockIndexer) AddProcessBaselines(baselines []*storage.ProcessBaseline) error {
+// AddProcessBaselines mocks base method.
+func (m *MockIndexer) AddProcessBaselines(processbaselines []*storage.ProcessBaseline) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddProcessBaselines", baselines)
+	ret := m.ctrl.Call(m, "AddProcessBaselines", processbaselines)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddBaselines indicates an expected call of AddBaselines.
-func (mr *MockIndexerMockRecorder) AddBaselines(baselines interface{}) *gomock.Call {
+// AddProcessBaselines indicates an expected call of AddProcessBaselines.
+func (mr *MockIndexerMockRecorder) AddProcessBaselines(processbaselines interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessBaselines", reflect.TypeOf((*MockIndexer)(nil).AddProcessBaselines), baselines)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessBaselines", reflect.TypeOf((*MockIndexer)(nil).AddProcessBaselines), processbaselines)
 }
 
 // Count mocks base method.
@@ -85,7 +85,7 @@ func (mr *MockIndexerMockRecorder) Count(q interface{}, opts ...interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
 }
 
-// DeleteBaseline mocks base method.
+// DeleteProcessBaseline mocks base method.
 func (m *MockIndexer) DeleteProcessBaseline(id string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteProcessBaseline", id)
@@ -93,13 +93,13 @@ func (m *MockIndexer) DeleteProcessBaseline(id string) error {
 	return ret0
 }
 
-// DeleteBaseline indicates an expected call of DeleteBaseline.
-func (mr *MockIndexerMockRecorder) DeleteBaseline(id interface{}) *gomock.Call {
+// DeleteProcessBaseline indicates an expected call of DeleteProcessBaseline.
+func (mr *MockIndexerMockRecorder) DeleteProcessBaseline(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProcessBaseline", reflect.TypeOf((*MockIndexer)(nil).DeleteProcessBaseline), id)
 }
 
-// DeleteBaselines mocks base method.
+// DeleteProcessBaselines mocks base method.
 func (m *MockIndexer) DeleteProcessBaselines(ids []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteProcessBaselines", ids)
@@ -107,8 +107,8 @@ func (m *MockIndexer) DeleteProcessBaselines(ids []string) error {
 	return ret0
 }
 
-// DeleteBaselines indicates an expected call of DeleteBaselines.
-func (mr *MockIndexerMockRecorder) DeleteBaselines(ids interface{}) *gomock.Call {
+// DeleteProcessBaselines indicates an expected call of DeleteProcessBaselines.
+func (mr *MockIndexerMockRecorder) DeleteProcessBaselines(ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProcessBaselines", reflect.TypeOf((*MockIndexer)(nil).DeleteProcessBaselines), ids)
 }
