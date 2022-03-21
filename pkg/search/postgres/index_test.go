@@ -1,7 +1,7 @@
 //go:build sql_integration
 // +build sql_integration
 
-package postgres
+package postgres_test
 
 import (
 	"context"
@@ -17,8 +17,10 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/timeutil"
+	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/multitest/postgres"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -31,8 +33,10 @@ type IndexSuite struct {
 	envIsolator *envisolator.EnvIsolator
 
 	pool    *pgxpool.Pool
-	store   Store
-	indexer *indexerImpl
+	store   postgres.Store
+	indexer interface {
+		Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
+	}
 }
 
 func TestIndex(t *testing.T) {
@@ -54,9 +58,9 @@ func (s *IndexSuite) SetupTest() {
 	s.pool, err = pgxpool.ConnectConfig(context.Background(), config)
 	s.Require().NoError(err)
 
-	Destroy(ctx, s.pool)
-	s.store = New(ctx, s.pool)
-	s.indexer = NewIndexer(s.pool)
+	postgres.Destroy(ctx, s.pool)
+	s.store = postgres.New(ctx, s.pool)
+	s.indexer = postgres.NewIndexer(s.pool)
 }
 
 func (s *IndexSuite) TearDownTest() {
@@ -458,6 +462,45 @@ func (s *IndexSuite) TestMap() {
 			// Negated value does not mean non-existence of value, it just means there should be at least one element
 			// not matching the value. Unclear what the use-case of this is, but it is supported...
 			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
+		},
+	})
+}
+
+func (s *IndexSuite) TestOneofNested() {
+	testStruct0 := s.getStruct(0, func(s *storage.TestMultiKeyStruct) {
+		s.Oneof = &storage.TestMultiKeyStruct_Oneofnested{Oneofnested: &storage.TestMultiKeyStruct_OneOfNested{Nested: "one"}}
+		s.String_ = "matching"
+	})
+	testStruct1 := s.getStruct(1, func(s *storage.TestMultiKeyStruct) {
+		s.Oneof = &storage.TestMultiKeyStruct_Oneofnested{Oneofnested: &storage.TestMultiKeyStruct_OneOfNested{Nested: "53941897-5c22-40ed-8e45-739683449e46"}}
+	})
+	testStruct2 := s.getStruct(2, func(s *storage.TestMultiKeyStruct) {
+		s.Oneof = &storage.TestMultiKeyStruct_Oneofnested{Oneofnested: &storage.TestMultiKeyStruct_OneOfNested{Nested: "d2040f62-c781-40c0-a17d-455820bc05f8"}}
+	})
+	testStruct3 := s.getStruct(3, func(s *storage.TestMultiKeyStruct) {
+		s.Oneof = &storage.TestMultiKeyStruct_Oneofnested{Oneofnested: &storage.TestMultiKeyStruct_OneOfNested{Nested: "one"}}
+		s.String_ = "nonsense"
+	})
+
+	_, _ = testStruct1, testStruct2
+
+	s.runTestCases([]testCase{
+		{
+			desc:            "basic",
+			q:               search.NewQueryBuilder().AddStrings(search.TestOneofNestedString, "one").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0, testStruct3},
+		},
+		{
+			desc: "conjunction",
+			q: search.NewQueryBuilder().
+				AddStrings(search.TestOneofNestedString, "one").
+				AddStrings(search.TestString, "matching").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct0},
+		},
+		{
+			desc:            "long id",
+			q:               search.NewQueryBuilder().AddStrings(search.TestOneofNestedString, "d2040f62-c781-40c0-a17d-455820bc05f8").ProtoQuery(),
+			expectedResults: []*storage.TestMultiKeyStruct{testStruct2},
 		},
 	})
 }
