@@ -24,6 +24,11 @@ var (
 	ErrNoLocalScanner = errors.New("No local Scanner connection")
 
 	log = logging.LoggerForModule()
+
+	// Used for testing purposes only to not require setting up registry / scanner.
+	scanImg                  = scanImage
+	fetchSignaturesWithRetry = signatures.FetchImageSignaturesWithRetry
+	getMatchingRegistry      = registry.Singleton().GetRegistryForImage
 )
 
 // EnrichLocalImage will enrich a cluster-local image with scan results from local scanner as well as signatures
@@ -46,7 +51,7 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 	imgName := ci.GetName()
 
 	// Find the associated registry of the image.
-	matchingRegistry, err := registry.Singleton().GetRegistryForImage(ci.GetName())
+	matchingRegistry, err := getMatchingRegistry(ci.GetName())
 	if err != nil {
 		return nil, errors.Wrapf(err, "determining image registry for image %q", imgName)
 	}
@@ -66,7 +71,7 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 	imgID := utils.GetSHAFromIDAndMetadata(img.GetId(), metadata)
 
 	// Scan the image via local scanner.
-	scannerResp, err := scanImage(ctx, image, matchingRegistry)
+	scannerResp, err := scanImg(ctx, image, matchingRegistry)
 	if err != nil {
 		return nil, errors.Wrapf(err, "scanning image %q locally", imgName)
 	}
@@ -74,7 +79,7 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 	// Fetch signatures from cluster-local registry.
 	var sigs []*storage.Signature
 	if features.ImageSignatureVerification.Enabled() {
-		sigs, err = signatures.FetchImageSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image,
+		sigs, err = fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image,
 			matchingRegistry)
 		if err != nil {
 			return nil, errors.Wrapf(err, "fetching signature for image %q from registry %q",
