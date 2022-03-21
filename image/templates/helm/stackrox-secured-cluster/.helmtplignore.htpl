@@ -17,7 +17,7 @@ scripts/
 templates/*
 [<- end >]
 [<- end >]
-[< if not .FeatureFlags >]
+[< if .ReleaseBuild >]
 feature-flag-values.yaml
 [< end >]
 *.swp
@@ -28,3 +28,5 @@ config-templates/scanner/
 values-scanner.yaml.example
 internal/defaults/70-scanner.yaml
 [< end >]
+[</* Ignore tls secret unconditionally in secured cluster because only slim mode is supported */>]
+templates/02-scanner-03-tls-secret.yaml
