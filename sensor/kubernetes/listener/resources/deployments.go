@@ -65,6 +65,7 @@ type deploymentHandler struct {
 	podLister              v1listers.PodLister
 	serviceStore           *serviceStore
 	deploymentStore        *DeploymentStore
+	networkPoliciesStore   *NetworkPolicyStore
 	podStore               *PodStore
 	endpointManager        endpointManager
 	namespaceStore         *namespaceStore
@@ -81,12 +82,14 @@ type deploymentHandler struct {
 
 // newDeploymentHandler creates and returns a new deployment handler.
 func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore,
-	endpointManager endpointManager, namespaceStore *namespaceStore, rbac rbac.Store, podLister v1listers.PodLister,
-	processFilter filter.Filter, config config.Handler, detector detector.Detector, namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentHandler {
+	endpointManager endpointManager, namespaceStore *namespaceStore, networkPoliciesStore *NetworkPolicyStore, rbac rbac.Store,
+	podLister v1listers.PodLister, processFilter filter.Filter, config config.Handler, detector detector.Detector,
+	namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentHandler {
 	return &deploymentHandler{
 		podLister:              podLister,
 		serviceStore:           serviceStore,
 		deploymentStore:        deploymentStore,
+		networkPoliciesStore:   networkPoliciesStore,
 		podStore:               podStore,
 		endpointManager:        endpointManager,
 		namespaceStore:         namespaceStore,
@@ -101,7 +104,7 @@ func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deployme
 }
 
 func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
-	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore,
+	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore, d.networkPoliciesStore,
 		d.hierarchy, d.config.GetConfig().GetRegistryOverride(), d.orchestratorNamespaces)
 	// Note: deploymentWrap may be nil. Typically, this means that this is not a top-level object that we track --
 	// either it's an object we don't track, or we track its parent.
