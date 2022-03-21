@@ -2,6 +2,7 @@ package detector
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -13,9 +14,11 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/scan"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"google.golang.org/grpc/status"
 )
 
@@ -207,9 +210,37 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 }
 
 func (e *enricher) getNetpols(deployment *storage.Deployment) *augmentedobjs.NetworkPolicyAssociation {
+	npStore := resources.NetworkPolicyStoreSingleton()
+	matchingNPs := make([]*storage.NetworkPolicy, 0)
+
+	fmt.Printf("getNetpols: searching network policies for deployment: %s\n", deployment.Name)
+	// full scan for all policies currently known
+	for _, policy := range npStore.GetAll() {
+		if policy.GetNamespace() != deployment.GetNamespace() {
+			continue
+		}
+		policySelector := policy.GetSpec().GetPodSelector()
+		podLabels := deployment.GetPodLabels()
+		if labels.MatchLabels(policySelector, podLabels) {
+			fmt.Printf("getNetpols: policy/depl: %s/%s - MATCH\n", policy.GetName(), deployment.Name)
+			matchingNPs = append(matchingNPs, policy)
+		} else {
+			fmt.Printf("getNetpols: policy/depl: %s/%s - NOPE\n", policy.GetName(), deployment.Name)
+			fmt.Printf("getNetpols: policySelector: %+v\n", policySelector.MatchLabels)
+			fmt.Printf("getNetpols: podLabels: %+v\n", podLabels)
+		}
+	}
+
+	containsIngress := false
+	containsEgress := false
+	for _, np := range matchingNPs {
+		containsIngress = containsIngress || np.Spec.GetIngress() != nil && len(np.Spec.GetIngress()) > 0
+		containsEgress = containsEgress || np.Spec.GetIngress() != nil && len(np.Spec.GetEgress()) > 0
+	}
+
 	return &augmentedobjs.NetworkPolicyAssociation{
-		MissingIngressNetworkPolicy: true,
-		MissingEgressNetworkPolicy:  false,
+		MissingIngressNetworkPolicy: !containsIngress,
+		MissingEgressNetworkPolicy:  !containsEgress,
 		NetworkPoliciesApplied:      nil,
 	}
 }
