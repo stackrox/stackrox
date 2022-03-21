@@ -86,4 +86,17 @@ func (s *ServiceaccountsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundServiceAccount)
+
+	var serviceAccounts []*storage.ServiceAccount
+	for i := 0; i < 200; i++ {
+		serviceAccount := &storage.ServiceAccount{}
+		s.NoError(testutils.FullInit(serviceAccount, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		serviceAccounts = append(serviceAccounts, serviceAccount)
+	}
+
+	s.NoError(store.UpsertMany(ctx, serviceAccounts))
+
+	serviceAccountCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(serviceAccountCount, 200)
 }

@@ -86,4 +86,17 @@ func (s *PolicyStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundPolicy)
+
+	var policys []*storage.Policy
+	for i := 0; i < 200; i++ {
+		policy := &storage.Policy{}
+		s.NoError(testutils.FullInit(policy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		policys = append(policys, policy)
+	}
+
+	s.NoError(store.UpsertMany(ctx, policys))
+
+	policyCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(policyCount, 200)
 }

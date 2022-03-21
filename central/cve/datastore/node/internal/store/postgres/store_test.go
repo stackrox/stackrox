@@ -86,4 +86,17 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundCVE)
+
+	var cVEs []*storage.CVE
+	for i := 0; i < 200; i++ {
+		cVE := &storage.CVE{}
+		s.NoError(testutils.FullInit(cVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		cVEs = append(cVEs, cVE)
+	}
+
+	s.NoError(store.UpsertMany(ctx, cVEs))
+
+	cVECount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(cVECount, 200)
 }

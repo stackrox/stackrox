@@ -35,6 +35,22 @@ const (
 	getManyStmt = "SELECT serialized FROM clusters WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM clusters WHERE Id = ANY($1::text[])"
+=======
+	getStmt    = "SELECT serialized FROM clusters WHERE Id = $1 AND HealthStatus_Id = $2"
+	deleteStmt = "DELETE FROM clusters WHERE Id = $1 AND HealthStatus_Id = $2"
+	walkStmt   = "SELECT serialized FROM clusters"
+
+	batchAfter = 100
+
+	// using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	batchSize = 1000
+)
+
+var (
+	log = logging.LoggerForModule()
+>>>>>>> 774c5350d (squash and rebase)
 )
 
 var (
@@ -201,7 +217,7 @@ func insertIntoClusters(ctx context.Context, tx pgx.Tx, obj *storage.Cluster) er
 		obj.GetAdmissionControllerUpdates(),
 		obj.GetAdmissionControllerEvents(),
 		obj.GetStatus().GetSensorVersion(),
-		pgutils.NilOrStringTimestamp(obj.GetStatus().GetDEPRECATEDLastContact()),
+		pgutils.NilOrTime(obj.GetStatus().GetDEPRECATEDLastContact()),
 		obj.GetStatus().GetProviderMetadata().GetRegion(),
 		obj.GetStatus().GetProviderMetadata().GetZone(),
 		obj.GetStatus().GetProviderMetadata().GetGoogle().GetProject(),
@@ -211,7 +227,7 @@ func insertIntoClusters(ctx context.Context, tx pgx.Tx, obj *storage.Cluster) er
 		obj.GetStatus().GetProviderMetadata().GetVerified(),
 		obj.GetStatus().GetOrchestratorMetadata().GetVersion(),
 		obj.GetStatus().GetOrchestratorMetadata().GetOpenshiftVersion(),
-		pgutils.NilOrStringTimestamp(obj.GetStatus().GetOrchestratorMetadata().GetBuildDate()),
+		pgutils.NilOrTime(obj.GetStatus().GetOrchestratorMetadata().GetBuildDate()),
 		obj.GetStatus().GetOrchestratorMetadata().GetApiVersions(),
 		obj.GetStatus().GetUpgradeStatus().GetUpgradability(),
 		obj.GetStatus().GetUpgradeStatus().GetUpgradabilityStatusReason(),
@@ -219,13 +235,14 @@ func insertIntoClusters(ctx context.Context, tx pgx.Tx, obj *storage.Cluster) er
 		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetId(),
 		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetTargetVersion(),
 		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetUpgraderImage(),
-		pgutils.NilOrStringTimestamp(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetInitiatedAt()),
+		pgutils.NilOrTime(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetInitiatedAt()),
 		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeState(),
 		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeStatusDetail(),
-		pgutils.NilOrStringTimestamp(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetSince()),
+		pgutils.NilOrTime(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetSince()),
 		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetType(),
 		pgutils.NilOrStringTimestamp(obj.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry()),
 		pgutils.NilOrStringTimestamp(obj.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore()),
+		pgutils.NilOrTime(obj.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry()),
 		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
 		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
 		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
@@ -248,7 +265,7 @@ func insertIntoClusters(ctx context.Context, tx pgx.Tx, obj *storage.Cluster) er
 		obj.GetHealthStatus().GetCollectorHealthStatus(),
 		obj.GetHealthStatus().GetOverallHealthStatus(),
 		obj.GetHealthStatus().GetAdmissionControlHealthStatus(),
-		pgutils.NilOrStringTimestamp(obj.GetHealthStatus().GetLastContact()),
+		pgutils.NilOrTime(obj.GetHealthStatus().GetLastContact()),
 		obj.GetHealthStatus().GetHealthInfoComplete(),
 		obj.GetSlimCollector(),
 		obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
@@ -291,6 +308,415 @@ func insertIntoClusters(ctx context.Context, tx pgx.Tx, obj *storage.Cluster) er
 	return nil
 }
 
+func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*storage.Cluster) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"type",
+
+		"labels",
+
+		"mainimage",
+
+		"collectorimage",
+
+		"centralapiendpoint",
+
+		"runtimesupport",
+
+		"collectionmethod",
+
+		"admissioncontroller",
+
+		"admissioncontrollerupdates",
+
+		"admissioncontrollerevents",
+
+		"status_sensorversion",
+
+		"status_deprecatedlastcontact",
+
+		"status_providermetadata_region",
+
+		"status_providermetadata_zone",
+
+		"status_providermetadata_google_project",
+
+		"status_providermetadata_google_clustername",
+
+		"status_providermetadata_aws_accountid",
+
+		"status_providermetadata_azure_subscriptionid",
+
+		"status_providermetadata_verified",
+
+		"status_orchestratormetadata_version",
+
+		"status_orchestratormetadata_openshiftversion",
+
+		"status_orchestratormetadata_builddate",
+
+		"status_orchestratormetadata_apiversions",
+
+		"status_upgradestatus_upgradability",
+
+		"status_upgradestatus_upgradabilitystatusreason",
+
+		"status_upgradestatus_mostrecentprocess_active",
+
+		"status_upgradestatus_mostrecentprocess_id",
+
+		"status_upgradestatus_mostrecentprocess_targetversion",
+
+		"status_upgradestatus_mostrecentprocess_upgraderimage",
+
+		"status_upgradestatus_mostrecentprocess_initiatedat",
+
+		"status_upgradestatus_mostrecentprocess_progress_upgradestate",
+
+		"status_upgradestatus_mostrecentprocess_progress_upgradestatusdetail",
+
+		"status_upgradestatus_mostrecentprocess_progress_since",
+
+		"status_upgradestatus_mostrecentprocess_type",
+
+		"status_certexpirystatus_sensorcertexpiry",
+
+		"dynamicconfig_admissioncontrollerconfig_enabled",
+
+		"dynamicconfig_admissioncontrollerconfig_timeoutseconds",
+
+		"dynamicconfig_admissioncontrollerconfig_scaninline",
+
+		"dynamicconfig_admissioncontrollerconfig_disablebypass",
+
+		"dynamicconfig_admissioncontrollerconfig_enforceonupdates",
+
+		"dynamicconfig_registryoverride",
+
+		"dynamicconfig_disableauditlogs",
+
+		"tolerationsconfig_disabled",
+
+		"priority",
+
+		"healthstatus_id",
+
+		"healthstatus_collectorhealthinfo_version",
+
+		"healthstatus_collectorhealthinfo_totaldesiredpods",
+
+		"healthstatus_collectorhealthinfo_totalreadypods",
+
+		"healthstatus_collectorhealthinfo_totalregisterednodes",
+
+		"healthstatus_collectorhealthinfo_statuserrors",
+
+		"healthstatus_admissioncontrolhealthinfo_totaldesiredpods",
+
+		"healthstatus_admissioncontrolhealthinfo_totalreadypods",
+
+		"healthstatus_admissioncontrolhealthinfo_statuserrors",
+
+		"healthstatus_sensorhealthstatus",
+
+		"healthstatus_collectorhealthstatus",
+
+		"healthstatus_overallhealthstatus",
+
+		"healthstatus_admissioncontrolhealthstatus",
+
+		"healthstatus_lastcontact",
+
+		"healthstatus_healthinfocomplete",
+
+		"slimcollector",
+
+		"helmconfig_dynamicconfig_admissioncontrollerconfig_enabled",
+
+		"helmconfig_dynamicconfig_admissioncontrollerconfig_timeoutseconds",
+
+		"helmconfig_dynamicconfig_admissioncontrollerconfig_scaninline",
+
+		"helmconfig_dynamicconfig_admissioncontrollerconfig_disablebypass",
+
+		"helmconfig_dynamicconfig_admissioncontrollerconfig_enforceonupdates",
+
+		"helmconfig_dynamicconfig_registryoverride",
+
+		"helmconfig_dynamicconfig_disableauditlogs",
+
+		"helmconfig_staticconfig_type",
+
+		"helmconfig_staticconfig_mainimage",
+
+		"helmconfig_staticconfig_centralapiendpoint",
+
+		"helmconfig_staticconfig_collectionmethod",
+
+		"helmconfig_staticconfig_collectorimage",
+
+		"helmconfig_staticconfig_admissioncontroller",
+
+		"helmconfig_staticconfig_admissioncontrollerupdates",
+
+		"helmconfig_staticconfig_tolerationsconfig_disabled",
+
+		"helmconfig_staticconfig_slimcollector",
+
+		"helmconfig_staticconfig_admissioncontrollerevents",
+
+		"helmconfig_configfingerprint",
+
+		"helmconfig_clusterlabels",
+
+		"mostrecentsensorid_systemnamespaceid",
+
+		"mostrecentsensorid_defaultnamespaceid",
+
+		"mostrecentsensorid_appnamespace",
+
+		"mostrecentsensorid_appnamespaceid",
+
+		"mostrecentsensorid_appserviceaccountid",
+
+		"mostrecentsensorid_k8snodename",
+
+		"auditlogstate",
+
+		"initbundleid",
+
+		"managedby",
+
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			obj.GetId(),
+
+			obj.GetName(),
+
+			obj.GetType(),
+
+			obj.GetLabels(),
+
+			obj.GetMainImage(),
+
+			obj.GetCollectorImage(),
+
+			obj.GetCentralApiEndpoint(),
+
+			obj.GetRuntimeSupport(),
+
+			obj.GetCollectionMethod(),
+
+			obj.GetAdmissionController(),
+
+			obj.GetAdmissionControllerUpdates(),
+
+			obj.GetAdmissionControllerEvents(),
+
+			obj.GetStatus().GetSensorVersion(),
+
+			pgutils.NilOrTime(obj.GetStatus().GetDEPRECATEDLastContact()),
+
+			obj.GetStatus().GetProviderMetadata().GetRegion(),
+
+			obj.GetStatus().GetProviderMetadata().GetZone(),
+
+			obj.GetStatus().GetProviderMetadata().GetGoogle().GetProject(),
+
+			obj.GetStatus().GetProviderMetadata().GetGoogle().GetClusterName(),
+
+			obj.GetStatus().GetProviderMetadata().GetAws().GetAccountId(),
+
+			obj.GetStatus().GetProviderMetadata().GetAzure().GetSubscriptionId(),
+
+			obj.GetStatus().GetProviderMetadata().GetVerified(),
+
+			obj.GetStatus().GetOrchestratorMetadata().GetVersion(),
+
+			obj.GetStatus().GetOrchestratorMetadata().GetOpenshiftVersion(),
+
+			pgutils.NilOrTime(obj.GetStatus().GetOrchestratorMetadata().GetBuildDate()),
+
+			obj.GetStatus().GetOrchestratorMetadata().GetApiVersions(),
+
+			obj.GetStatus().GetUpgradeStatus().GetUpgradability(),
+
+			obj.GetStatus().GetUpgradeStatus().GetUpgradabilityStatusReason(),
+
+			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetActive(),
+
+			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetId(),
+
+			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetTargetVersion(),
+
+			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetUpgraderImage(),
+
+			pgutils.NilOrTime(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetInitiatedAt()),
+
+			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeState(),
+
+			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeStatusDetail(),
+
+			pgutils.NilOrTime(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetSince()),
+
+			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetType(),
+
+			pgutils.NilOrTime(obj.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry()),
+
+			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
+
+			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
+
+			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
+
+			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
+
+			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
+
+			obj.GetDynamicConfig().GetRegistryOverride(),
+
+			obj.GetDynamicConfig().GetDisableAuditLogs(),
+
+			obj.GetTolerationsConfig().GetDisabled(),
+
+			obj.GetPriority(),
+
+			obj.GetHealthStatus().GetId(),
+
+			obj.GetHealthStatus().GetCollectorHealthInfo().GetVersion(),
+
+			obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalDesiredPods(),
+
+			obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalReadyPods(),
+
+			obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalRegisteredNodes(),
+
+			obj.GetHealthStatus().GetCollectorHealthInfo().GetStatusErrors(),
+
+			obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetTotalDesiredPods(),
+
+			obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetTotalReadyPods(),
+
+			obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetStatusErrors(),
+
+			obj.GetHealthStatus().GetSensorHealthStatus(),
+
+			obj.GetHealthStatus().GetCollectorHealthStatus(),
+
+			obj.GetHealthStatus().GetOverallHealthStatus(),
+
+			obj.GetHealthStatus().GetAdmissionControlHealthStatus(),
+
+			pgutils.NilOrTime(obj.GetHealthStatus().GetLastContact()),
+
+			obj.GetHealthStatus().GetHealthInfoComplete(),
+
+			obj.GetSlimCollector(),
+
+			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
+
+			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
+
+			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
+
+			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
+
+			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
+
+			obj.GetHelmConfig().GetDynamicConfig().GetRegistryOverride(),
+
+			obj.GetHelmConfig().GetDynamicConfig().GetDisableAuditLogs(),
+
+			obj.GetHelmConfig().GetStaticConfig().GetType(),
+
+			obj.GetHelmConfig().GetStaticConfig().GetMainImage(),
+
+			obj.GetHelmConfig().GetStaticConfig().GetCentralApiEndpoint(),
+
+			obj.GetHelmConfig().GetStaticConfig().GetCollectionMethod(),
+
+			obj.GetHelmConfig().GetStaticConfig().GetCollectorImage(),
+
+			obj.GetHelmConfig().GetStaticConfig().GetAdmissionController(),
+
+			obj.GetHelmConfig().GetStaticConfig().GetAdmissionControllerUpdates(),
+
+			obj.GetHelmConfig().GetStaticConfig().GetTolerationsConfig().GetDisabled(),
+
+			obj.GetHelmConfig().GetStaticConfig().GetSlimCollector(),
+
+			obj.GetHelmConfig().GetStaticConfig().GetAdmissionControllerEvents(),
+
+			obj.GetHelmConfig().GetConfigFingerprint(),
+
+			obj.GetHelmConfig().GetClusterLabels(),
+
+			obj.GetMostRecentSensorId().GetSystemNamespaceId(),
+
+			obj.GetMostRecentSensorId().GetDefaultNamespaceId(),
+
+			obj.GetMostRecentSensorId().GetAppNamespace(),
+
+			obj.GetMostRecentSensorId().GetAppNamespaceId(),
+
+			obj.GetMostRecentSensorId().GetAppServiceaccountId(),
+
+			obj.GetMostRecentSensorId().GetK8SNodeName(),
+
+			obj.GetAuditLogState(),
+
+			obj.GetInitBundleId(),
+
+			obj.GetManagedBy(),
+
+			serialized,
+		})
+
+		err = s.Delete(ctx, obj.GetId(), obj.GetHealthStatus().GetId())
+		if err != nil {
+			return err
+		}
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"clusters"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableClusters(ctx, db)
@@ -298,6 +724,27 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Cluster) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "Cluster")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.copyFromClusters(ctx, tx, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Cluster) error {
@@ -332,7 +779,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Cluster) error {
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Cluster) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Cluster")
 
-	return s.upsert(ctx, objs...)
+	if len(objs) < batchAfter {
+		return s.upsert(ctx, objs...)
+	} else {
+		return s.copyFrom(ctx, objs...)
+	}
 }
 
 // Count returns the number of objects in the store

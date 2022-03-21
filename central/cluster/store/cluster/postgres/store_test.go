@@ -86,4 +86,17 @@ func (s *ClustersStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundCluster)
+
+	var clusters []*storage.Cluster
+	for i := 0; i < 200; i++ {
+		cluster := &storage.Cluster{}
+		s.NoError(testutils.FullInit(cluster, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		clusters = append(clusters, cluster)
+	}
+
+	s.NoError(store.UpsertMany(ctx, clusters))
+
+	clusterCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(clusterCount, 200)
 }

@@ -35,6 +35,17 @@ const (
 	getManyStmt = "SELECT serialized FROM apitokens WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM apitokens WHERE Id = ANY($1::text[])"
+
+	batchAfter = 100
+
+	// using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	batchSize = 1000
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 var (
@@ -107,8 +118,8 @@ func insertIntoApitokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetad
 		obj.GetId(),
 		obj.GetName(),
 		obj.GetRoles(),
-		pgutils.NilOrStringTimestamp(obj.GetIssuedAt()),
-		pgutils.NilOrStringTimestamp(obj.GetExpiration()),
+		pgutils.NilOrTime(obj.GetIssuedAt()),
+		pgutils.NilOrTime(obj.GetExpiration()),
 		obj.GetRevoked(),
 		obj.GetRole(),
 		serialized,
@@ -123,6 +134,92 @@ func insertIntoApitokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetad
 	return nil
 }
 
+func (s *storeImpl) copyFromApitokens(ctx context.Context, tx pgx.Tx, objs ...*storage.TokenMetadata) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	// this is a copy so first we must delete the rows and re-add them
+	// which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"roles",
+
+		"issuedat",
+
+		"expiration",
+
+		"revoked",
+
+		"role",
+
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			obj.GetId(),
+
+			obj.GetName(),
+
+			obj.GetRoles(),
+
+			pgutils.NilOrTime(obj.GetIssuedAt()),
+
+			pgutils.NilOrTime(obj.GetExpiration()),
+
+			obj.GetRevoked(),
+
+			obj.GetRole(),
+
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"apitokens"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableApitokens(ctx, db)
@@ -130,6 +227,27 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TokenMetadata) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "TokenMetadata")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.copyFromApitokens(ctx, tx, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TokenMetadata) error {
@@ -164,7 +282,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TokenMetadata) erro
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TokenMetadata) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "TokenMetadata")
 
-	return s.upsert(ctx, objs...)
+	if len(objs) < batchAfter {
+		return s.upsert(ctx, objs...)
+	} else {
+		return s.copyFrom(ctx, objs...)
+	}
 }
 
 // Count returns the number of objects in the store
