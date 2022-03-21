@@ -12,7 +12,6 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -56,7 +55,6 @@ func (s *AlertsStoreSuite) TestStore() {
 
 	alert := &storage.Alert{}
 	s.NoError(testutils.FullInit(alert, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-	alert.Entity = &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{Id: "orig"}}
 
 	foundAlert, exists, err := store.Get(ctx, alert.GetId())
 	s.NoError(err)
@@ -82,14 +80,6 @@ func (s *AlertsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(alert, foundAlert)
-
-	alert.GetDeployment().Id = "other"
-	alert.Id = "new"
-	s.NoError(store.Upsert(ctx, alert))
-
-	indexer := NewIndexer(pool)
-	out, _ := indexer.Search(search.NewQueryBuilder().AddStrings(search.DeploymentID, "orig").ProtoQuery())
-	_ = out
 
 	s.NoError(store.Delete(ctx, alert.GetId()))
 	foundAlert, exists, err = store.Get(ctx, alert.GetId())
