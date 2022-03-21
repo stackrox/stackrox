@@ -62,6 +62,57 @@ func (mr *MockDeploymentStoreMockRecorder) GetAll() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockDeploymentStore)(nil).GetAll))
 }
 
+// MockNetPoliciesStore is a mock of NetPoliciesStore interface.
+type MockNetPoliciesStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockNetPoliciesStoreMockRecorder
+}
+
+// MockNetPoliciesStoreMockRecorder is the mock recorder for MockNetPoliciesStore.
+type MockNetPoliciesStoreMockRecorder struct {
+	mock *MockNetPoliciesStore
+}
+
+// NewMockNetPoliciesStore creates a new mock instance.
+func NewMockNetPoliciesStore(ctrl *gomock.Controller) *MockNetPoliciesStore {
+	mock := &MockNetPoliciesStore{ctrl: ctrl}
+	mock.recorder = &MockNetPoliciesStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockNetPoliciesStore) EXPECT() *MockNetPoliciesStoreMockRecorder {
+	return m.recorder
+}
+
+// Get mocks base method.
+func (m *MockNetPoliciesStore) Get(id string) *storage.NetworkPolicy {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", id)
+	ret0, _ := ret[0].(*storage.NetworkPolicy)
+	return ret0
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockNetPoliciesStoreMockRecorder) Get(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockNetPoliciesStore)(nil).Get), id)
+}
+
+// GetAll mocks base method.
+func (m *MockNetPoliciesStore) GetAll() []*storage.NetworkPolicy {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAll")
+	ret0, _ := ret[0].([]*storage.NetworkPolicy)
+	return ret0
+}
+
+// GetAll indicates an expected call of GetAll.
+func (mr *MockNetPoliciesStoreMockRecorder) GetAll() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockNetPoliciesStore)(nil).GetAll))
+}
+
 // MockPodStore is a mock of PodStore interface.
 type MockPodStore struct {
 	ctrl     *gomock.Controller
