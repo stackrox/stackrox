@@ -166,6 +166,7 @@ func (e *enricherImpl) EnrichImage(enrichContext EnrichmentContext, image *stora
 	updated = updated || scanResult != ScanNotDone
 
 	if features.ImageSignatureVerification.Enabled() {
+		log.Infof("Fetching signatures for image %q", image.GetName().GetFullName())
 		didUpdateSignature, err := e.enrichWithSignature(ctx, enrichContext, image)
 		errorList.AddError(err)
 		if len(image.GetSignature().GetSignatures()) == 0 {
@@ -175,6 +176,9 @@ func (e *enricherImpl) EnrichImage(enrichContext EnrichmentContext, image *stora
 		}
 		updated = updated || didUpdateSignature
 
+		log.Infof("Did verification results for image %q update: %t", image.GetName().GetFullName(),
+			didUpdateSignature)
+
 		didUpdateSigVerificationData, err := e.enrichWithSignatureVerificationData(ctx, enrichContext, image)
 		errorList.AddError(err)
 		if len(image.GetSignatureVerificationData().GetResults()) == 0 {
@@ -183,6 +187,8 @@ func (e *enricherImpl) EnrichImage(enrichContext EnrichmentContext, image *stora
 			delete(imageNoteSet, storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA)
 		}
 		updated = updated || didUpdateSigVerificationData
+
+		log.Infof("Did verification results for image %q update: %t", image.GetName().GetFullName(), didUpdateSigVerificationData)
 	}
 
 	image.Notes = image.Notes[:0]
@@ -192,6 +198,10 @@ func (e *enricherImpl) EnrichImage(enrichContext EnrichmentContext, image *stora
 
 	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
+
+	log.Infof("Signaling image %q to be updated: %t", image.GetName().GetFullName(), updated)
+
+	log.Infof("Errors for image %q: %v", image.GetName().GetFullName(), errorList.ToError())
 
 	return EnrichmentResult{
 		ImageUpdated: updated,
