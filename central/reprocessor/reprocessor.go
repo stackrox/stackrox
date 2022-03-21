@@ -123,7 +123,7 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 
 // imageReprocessingFunc represents the function used for image reprocessing. This enables us to specifically exclude
 // some parts of the enrichment, i.e. when only wanting to re-fetch signature verification results.
-type imageReprocessingFunc func(ctx context.Context, loop *loopImpl, enrichCtx imageEnricher.EnrichmentContext,
+type imageReprocessingFunc func(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
 	image *storage.Image) (imageEnricher.EnrichmentResult, error)
 
 type loopImpl struct {
@@ -309,7 +309,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 	}
 
 	// TODO(ROX-9687): Replace with injected context for enricher functions.
-	result, err := reprocessingFunc(context.TODO(), l, imageEnricher.EnrichmentContext{
+	result, err := reprocessingFunc(context.TODO(), imageEnricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 	}, image)
 
@@ -499,7 +499,7 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 
 	l.reprocessNodes()
 	l.reprocessWatchedImages()
-	l.reprocessImagesAndResyncDeployments(imageFetchOpt, enrichImage)
+	l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImage)
 
 	l.reprocessingStarted.Reset()
 	l.reprocessingComplete.Signal()
@@ -508,19 +508,19 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 func (l *loopImpl) runSignatureVerificationReprocessing() {
 	l.reprocessWatchedImages()
 	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
-		forceEnrichImageSignatureVerificationResults)
+		l.forceEnrichImageSignatureVerificationResults)
 
 }
 
-func forceEnrichImageSignatureVerificationResults(ctx context.Context, loop *loopImpl,
-	_ imageEnricher.EnrichmentContext, image *storage.Image) (imageEnricher.EnrichmentResult, error) {
-	return loop.imageEnricher.EnrichWithSignatureVerificationData(ctx, image)
+func (l *loopImpl) forceEnrichImageSignatureVerificationResults(ctx context.Context, _ imageEnricher.EnrichmentContext,
+	image *storage.Image) (imageEnricher.EnrichmentResult, error) {
+	return l.imageEnricher.EnrichWithSignatureVerificationData(ctx, image)
 }
 
-func enrichImage(_ context.Context, loop *loopImpl,
-	enrichCtx imageEnricher.EnrichmentContext, image *storage.Image) (imageEnricher.EnrichmentResult, error) {
+func (l *loopImpl) enrichImage(_ context.Context, enrichCtx imageEnricher.EnrichmentContext,
+	image *storage.Image) (imageEnricher.EnrichmentResult, error) {
 	// TODO(ROX-9687): Use injected context here.
-	return loop.imageEnricher.EnrichImage(enrichCtx, image)
+	return l.imageEnricher.EnrichImage(enrichCtx, image)
 }
 
 func (l *loopImpl) enrichLoop() {
@@ -541,7 +541,7 @@ func (l *loopImpl) enrichLoop() {
 			l.signatureVerificationSig.Reset()
 			l.runSignatureVerificationReprocessing()
 		case <-l.enrichAndDetectTicker.C:
-			l.runReprocessing(imageEnricher.ForceRefetchScansOnly)
+			l.runReprocessing(imageEnricher.ForceRefetchCachedValuesOnly)
 		}
 	}
 }
