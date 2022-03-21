@@ -54,7 +54,7 @@ function setup() {
 # check_scanner_and_collector() tests
 
 function make() {
-    echo ${tags[$2]}
+    echo "${tags[$2]}"
 }
 
 @test "spots unreleased collector tags when an RC" {
