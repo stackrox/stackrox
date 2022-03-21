@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-    Divider,
-    Flex,
-    FlexItem,
-    Toolbar,
-    ToolbarGroup,
-    ToolbarItem,
-    ToolbarItemVariant,
-} from '@patternfly/react-core';
+import { Toolbar, ToolbarGroup, ToolbarItem, ToolbarItemVariant } from '@patternfly/react-core';
 
 import NetworkSearch from './NetworkSearch';
 import ClusterSelect from './ClusterSelect';

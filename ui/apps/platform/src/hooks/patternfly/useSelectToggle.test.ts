@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react-hooks';
 
-import useSelectToggle from './patternfly/useSelectToggle';
+import useSelectToggle from './useSelectToggle';
 
 describe('useSelectToggle', () => {
     it('should calculate toggle states when defaulting to closed', () => {
@@ -8,24 +8,40 @@ describe('useSelectToggle', () => {
 
         expect(result.current.isOpen).toEqual(false);
 
-        act(() => result.current.onToggle(result.current.isOpen));
+        act(() => {
+            result.current.onToggle(result.current.isOpen);
+        });
         expect(result.current.isOpen).toEqual(true);
-        act(() => result.current.onToggle(result.current.isOpen));
+        act(() => {
+            result.current.onToggle(result.current.isOpen);
+        });
         expect(result.current.isOpen).toEqual(false);
 
-        act(() => result.current.toggleSelect(false));
+        act(() => {
+            result.current.toggleSelect(false);
+        });
         expect(result.current.isOpen).toEqual(false);
-        act(() => result.current.toggleSelect(true));
+        act(() => {
+            result.current.toggleSelect(true);
+        });
         expect(result.current.isOpen).toEqual(true);
 
-        act(() => result.current.openSelect());
+        act(() => {
+            result.current.openSelect();
+        });
         expect(result.current.isOpen).toEqual(true);
-        act(() => result.current.openSelect());
+        act(() => {
+            result.current.openSelect();
+        });
         expect(result.current.isOpen).toEqual(true);
 
-        act(() => result.current.closeSelect());
+        act(() => {
+            result.current.closeSelect();
+        });
         expect(result.current.isOpen).toEqual(false);
-        act(() => result.current.closeSelect());
+        act(() => {
+            result.current.closeSelect();
+        });
         expect(result.current.isOpen).toEqual(false);
     });
 
@@ -34,24 +50,40 @@ describe('useSelectToggle', () => {
 
         expect(result.current.isOpen).toEqual(true);
 
-        act(() => result.current.onToggle(result.current.isOpen));
+        act(() => {
+            result.current.onToggle(result.current.isOpen);
+        });
         expect(result.current.isOpen).toEqual(false);
-        act(() => result.current.onToggle(result.current.isOpen));
+        act(() => {
+            result.current.onToggle(result.current.isOpen);
+        });
         expect(result.current.isOpen).toEqual(true);
 
-        act(() => result.current.toggleSelect(true));
+        act(() => {
+            result.current.toggleSelect(true);
+        });
         expect(result.current.isOpen).toEqual(true);
-        act(() => result.current.toggleSelect(false));
+        act(() => {
+            result.current.toggleSelect(false);
+        });
         expect(result.current.isOpen).toEqual(false);
 
-        act(() => result.current.openSelect());
+        act(() => {
+            result.current.openSelect();
+        });
         expect(result.current.isOpen).toEqual(true);
-        act(() => result.current.openSelect());
+        act(() => {
+            result.current.openSelect();
+        });
         expect(result.current.isOpen).toEqual(true);
 
-        act(() => result.current.closeSelect());
+        act(() => {
+            result.current.closeSelect();
+        });
         expect(result.current.isOpen).toEqual(false);
-        act(() => result.current.closeSelect());
+        act(() => {
+            result.current.closeSelect();
+        });
         expect(result.current.isOpen).toEqual(false);
     });
 });
