@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -80,7 +81,7 @@ create table if not exists k8sroles (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{}
@@ -110,7 +111,7 @@ create table if not exists k8sroles_Rules (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{

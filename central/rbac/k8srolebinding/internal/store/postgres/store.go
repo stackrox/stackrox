@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -81,7 +82,7 @@ create table if not exists rolebindings (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{}
@@ -112,7 +113,7 @@ create table if not exists rolebindings_Subjects (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{

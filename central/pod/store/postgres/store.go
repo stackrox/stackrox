@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -77,7 +78,7 @@ create table if not exists pods (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{}
@@ -114,7 +115,7 @@ create table if not exists pods_LiveInstances (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{
@@ -141,7 +142,7 @@ create table if not exists pods_TerminatedInstances (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{
@@ -181,7 +182,7 @@ create table if not exists pods_TerminatedInstances_Instances (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{

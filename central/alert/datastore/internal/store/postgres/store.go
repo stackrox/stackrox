@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"time"
 
@@ -125,7 +126,7 @@ create table if not exists alerts (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{}
@@ -165,7 +166,7 @@ create table if not exists alerts_Whitelists (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{
@@ -200,7 +201,7 @@ create table if not exists alerts_Exclusions (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{
@@ -231,7 +232,7 @@ create table if not exists alerts_Scope (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{
@@ -259,7 +260,7 @@ create table if not exists alerts_PolicySections (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{
@@ -291,7 +292,7 @@ create table if not exists alerts_PolicySections_PolicyGroups (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{
@@ -322,7 +323,7 @@ create table if not exists alerts_PolicySections_PolicyGroups_Values (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{
@@ -351,7 +352,7 @@ create table if not exists alerts_MitreAttackVectors (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{
@@ -386,7 +387,7 @@ create table if not exists alerts_Containers (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{
@@ -427,7 +428,7 @@ create table if not exists alerts_Violations (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{
@@ -458,7 +459,7 @@ create table if not exists alerts_Violations_Attrs (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{
@@ -505,7 +506,7 @@ create table if not exists alerts_Processes (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{
@@ -536,7 +537,7 @@ create table if not exists alerts_Processes_LineageInfo (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		panic(fmt.Sprintf("error creating table %s: %v", table, err))
 	}
 
 	indexes := []string{
