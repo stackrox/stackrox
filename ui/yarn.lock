@@ -20339,10 +20339,10 @@ yauzl@^2.10.0:
     buffer-crc32 "~0.2.3"
     fd-slicer "~1.1.0"
 
-yup@^1.0.0-beta.2:
-  version "1.0.0-beta.2"
-  resolved "https://registry.yarnpkg.com/yup/-/yup-1.0.0-beta.2.tgz#6c0529b77c4a815b1920f3cee6b5f3f56c99afc3"
-  integrity sha512-ngq3WQG5X09dKsCFV9vdikbJn2siJVtz26CIrW3VT8h42whobkOvYb1xcHULsmMJ23cfoc5h0z1erlfqIJdEng==
+yup@^1.0.0-beta.3:
+  version "1.0.0-beta.3"
+  resolved "https://registry.yarnpkg.com/yup/-/yup-1.0.0-beta.3.tgz#ff9a086a7b4b3f839347d9c33f7ff2101c8bb846"
+  integrity sha512-rM0UOCv1W1vy5lOhIdUJSX0vqRrSlqBEzni5Dp2+apNEBq5rbTC4M/sc/LlAkm5oGWqf1pGkCq6IUFhuCJt7Gg==
   dependencies:
     property-expr "^2.0.4"
     tiny-case "^1.0.2"
