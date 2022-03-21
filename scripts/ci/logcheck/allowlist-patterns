@@ -7,5 +7,5 @@ the database system is starting up
 unexpected status code 520 when retrieving image scan
 # scanner-db has gotten larger and the init container can trigger the autovacuum
 FATAL:  terminating autovacuum process due to administrator command
-# fetching signature was unsuccessful
-Error: Fetching signature for image
+# fetching signature was unsuccessful due to issues with contacting registry, i.e. quay outage.
+Error: Fetching signature for image .* unexpected status code 500
