@@ -3,6 +3,9 @@
     <GoCodeStyleSettings>
       <option name="IMPORT_SORTING" value="GOIMPORTS" />
     </GoCodeStyleSettings>
+    <JSCodeStyleSettings version="0">
+      <option name="IMPORT_PREFER_ABSOLUTE_PATH" value="TRUE" />
+    </JSCodeStyleSettings>
     <yaml>
       <option name="INDENT_SEQUENCE_VALUE" value="false" />
     </yaml>
