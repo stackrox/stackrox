@@ -40,7 +40,7 @@ func (s uniformScopeCheckerCore) PerformChecks(ctx context.Context) error {
 
 func (s uniformScopeCheckerCore) EffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
 	if s {
-		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
-	return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
+	return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 }
