@@ -1,11 +1,11 @@
 import keyBy from 'lodash/keyBy';
 
 import { removeEmptyPolicyFields } from 'utils/policyUtils';
-import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
 import {
     postFormatImageSigningPolicyGroup,
     preFormatImageSigningPolicyGroup,
-} from '../../PatternFly/policies.utils';
+} from 'Containers/Policies/PatternFly/policies.utils';
+import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
 
 function filterAndMapExclusions(exclusions, filterFunc, mapFunc) {
     return exclusions && exclusions.length ? exclusions.filter(filterFunc).map(mapFunc) : [];
