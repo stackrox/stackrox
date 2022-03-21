@@ -106,7 +106,6 @@ function* watchFetchRequest() {
 }
 
 function* deleteIntegrations({ source, sourceType, ids }) {
-    console.log('deleteIntegrations'); // eslint-disable-line no-console
     try {
         if (source === 'authProviders') {
             yield call(AuthService.deleteAuthProviders, ids);
