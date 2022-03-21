@@ -240,9 +240,8 @@ func insertIntoClusters(ctx context.Context, tx pgx.Tx, obj *storage.Cluster) er
 		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeStatusDetail(),
 		pgutils.NilOrTime(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetSince()),
 		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetType(),
-		pgutils.NilOrStringTimestamp(obj.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry()),
-		pgutils.NilOrStringTimestamp(obj.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore()),
 		pgutils.NilOrTime(obj.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry()),
+		pgutils.NilOrTime(obj.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore()),
 		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
 		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
 		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
@@ -389,6 +388,8 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 		"status_upgradestatus_mostrecentprocess_type",
 
 		"status_certexpirystatus_sensorcertexpiry",
+
+		"status_certexpirystatus_sensorcertnotbefore",
 
 		"dynamicconfig_admissioncontrollerconfig_enabled",
 
@@ -584,6 +585,8 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 
 			pgutils.NilOrTime(obj.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry()),
 
+			pgutils.NilOrTime(obj.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore()),
+
 			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
 
 			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
@@ -693,8 +696,7 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 			serialized,
 		})
 
-		err = s.Delete(ctx, obj.GetId(), obj.GetHealthStatus().GetId())
-		if err != nil {
+		if _, err := tx.Exec(ctx, deleteStmt, obj.GetId(), obj.GetHealthStatus().GetId()); err != nil {
 			return err
 		}
 

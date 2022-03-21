@@ -306,8 +306,7 @@ func (s *storeImpl) copyFromMultikey(ctx context.Context, tx pgx.Tx, objs ...*st
 			serialized,
 		})
 
-		err = s.Delete(ctx, obj.GetKey1(), obj.GetKey2())
-		if err != nil {
+		if _, err := tx.Exec(ctx, deleteStmt, obj.GetKey1(), obj.GetKey2()); err != nil {
 			return err
 		}
 

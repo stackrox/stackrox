@@ -239,10 +239,10 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         // Add the id to be deleted.
         deletes = append(deletes, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
         {{else}}
-        err = s.Delete(ctx, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
-        if err != nil {
+        if _, err := tx.Exec(ctx, deleteStmt, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}}); err != nil {
             return err
         }
+
         {{end}}
         {{end}}
 
