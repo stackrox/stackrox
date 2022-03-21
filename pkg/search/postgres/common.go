@@ -133,7 +133,8 @@ func generateSelectFields(entry *pgsearch.QueryEntry, primaryKeys []walker.Field
 	return sel
 }
 
-func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, schema *walker.Schema, selectType QueryType) (*query, error) {
+func standardizeQueryAndPopulatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, schema *walker.Schema, selectType QueryType) (*query, error) {
+	standardizeFieldNamesInQuery(q)
 	// Field can belong to multiple tables. Therefore, find all the tables reachable from starting table, that contain
 	// query fields.
 	dbFields := getTableFieldsForQuery(schema, q)
@@ -435,10 +436,8 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 		}
 	}()
 
-	standardizeFieldNamesInQuery(q)
-
 	schema := mapping.GetTableFromCategory(category)
-	query, err = populatePath(q, optionsMap, schema, GET)
+	query, err = standardizeQueryAndPopulatePath(q, optionsMap, schema, GET)
 	if err != nil {
 		return nil, err
 	}
@@ -497,8 +496,8 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 
 // RunCountRequest executes a request for just the count against the database
 func RunCountRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) (int, error) {
-	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), COUNT)
-	if err != nil {
+	query, err := standardizeQueryAndPopulatePath(q, optionsMap, mapping.GetTableFromCategory(category), COUNT)
+	if err != nil || query == nil {
 		return 0, err
 	}
 
