@@ -35,7 +35,7 @@ function NetworkSearch({
 
     return (
         <ReduxSearchInput
-            className="w-full network-search"
+            className="pf-u-w-100 network-search"
             placeholder="Add one or more deployment filters"
             searchOptions={searchOptions}
             searchModifiers={searchModifiers}
