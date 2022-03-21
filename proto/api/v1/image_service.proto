@@ -56,9 +56,9 @@ message EnrichLocalImageInternalRequest {
     string                  image_id         = 1;
     storage.ImageName       image_name       = 2;
     storage.ImageMetadata   metadata         = 3;
-    scannerV1.Components    components       = 4;
-    repeated scannerV1.Note notes            = 5;
-    storage.ImageSignature  image_signature  = 6;
+    storage.ImageSignature  image_signature  = 4;
+    scannerV1.Components    components       = 5;
+    repeated scannerV1.Note notes            = 6;
 }
 
 message DeleteImagesRequest {
