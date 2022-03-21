@@ -2157,7 +2157,7 @@ jobs:
       - image: postgres:14.2-alpine
         environment:
           POSTGRES_PASSWORD: password
-    resource_class: large
+    resource_class: xlarge
     environment:
       ROX_IMAGE_FLAVOR: stackrox.io
     steps:
