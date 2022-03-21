@@ -1,10 +1,8 @@
-import dateFns from 'date-fns';
-
 import {
     findUpgradeState,
     formatSensorVersion,
+    getCredentialExpirationStatus,
     getUpgradeableClusters,
-    getCredentialExpirationProps,
 } from './cluster.helpers';
 
 describe('cluster helpers', () => {
@@ -442,38 +440,104 @@ describe('cluster helpers', () => {
         });
     });
 
-    describe('get credential expiration props', () => {
-        function callWithExpiryAfterDays(days) {
-            // Add a minute to account for any time that will pass before we call the function.
-            const expiry = dateFns.addMinutes(dateFns.addDays(new Date(), days), 1);
-            const props = getCredentialExpirationProps({ sensorCertExpiry: expiry });
-            expect(props.sensorCertExpiry).toBe(expiry);
-            return props;
-        }
+    describe('get credential expiration status', () => {
+        it('should return HEALTHY when more than a month before expiration', () => {
+            const status = getCredentialExpirationStatus(
+                {
+                    sensorCertNotBefore: '2022-01-01T00:00:00Z',
+                    sensorCertExpiry: '2022-12-31T23:59:59Z',
+                },
+                new Date('2022-03-10T08:51:18Z')
+            );
 
-        it('should return null if null status', () => {
-            expect(getCredentialExpirationProps(null)).toBe(null);
+            expect(status).toBe('HEALTHY');
         });
-        it('should return null if undefined expiry', () => {
-            expect(getCredentialExpirationProps({})).toBe(null);
+        it('should return DEGRADED when less than a month before expiration', () => {
+            const status = getCredentialExpirationStatus(
+                {
+                    sensorCertNotBefore: '2022-01-01T00:00:00Z',
+                    sensorCertExpiry: '2022-12-31T23:59:59Z',
+                },
+                new Date('2022-12-20T09:15:23Z')
+            );
+
+            expect(status).toBe('DEGRADED');
         });
-        it('should return info if expiry is more than 30 days away', () => {
-            const props = callWithExpiryAfterDays(31);
-            expect(props.showExpiringSoon).toBe(false);
-            expect(props.messageType).toBe('info');
-            expect(props.diffInWords).toBe('1 month');
+        it('should return UNHEALTHY when less than a week before expiration', () => {
+            const status = getCredentialExpirationStatus(
+                {
+                    sensorCertNotBefore: '2022-01-01T00:00:00Z',
+                    sensorCertExpiry: '2022-12-31T23:59:59Z',
+                },
+                new Date('2022-12-30T09:15:23Z')
+            );
+
+            expect(status).toBe('UNHEALTHY');
         });
-        it('should return warn if expiry is less than 30 days away, but more than 7 days away', () => {
-            const props = callWithExpiryAfterDays(9);
-            expect(props.showExpiringSoon).toBe(true);
-            expect(props.messageType).toBe('warn');
-            expect(props.diffInWords).toBe('9 days');
+        it('should return UNHEALTHY when expired', () => {
+            const status = getCredentialExpirationStatus(
+                {
+                    sensorCertNotBefore: '2022-12-30T00:00:00Z',
+                    sensorCertExpiry: '2022-12-31T23:59:59Z',
+                },
+                new Date('2023-01-01T09:15:23Z')
+            );
+
+            expect(status).toBe('UNHEALTHY');
         });
-        it('should return error if expiry is less than 7 days away', () => {
-            const props = callWithExpiryAfterDays(6);
-            expect(props.showExpiringSoon).toBe(true);
-            expect(props.messageType).toBe('error');
-            expect(props.diffInWords).toBe('6 days');
+        it('should return HEALTHY when more than an hour before expiration for short lived certs', () => {
+            const status = getCredentialExpirationStatus(
+                {
+                    sensorCertNotBefore: '2022-03-10T00:00:00Z',
+                    sensorCertExpiry: '2022-03-10T03:00:00Z',
+                },
+                new Date('2022-03-10T01:30:45Z')
+            );
+
+            expect(status).toBe('HEALTHY');
+        });
+        it('should return DEGRADED when more than an hour before expiration for short lived certs', () => {
+            const status = getCredentialExpirationStatus(
+                {
+                    sensorCertNotBefore: '2022-03-10T00:00:00Z',
+                    sensorCertExpiry: '2022-03-10T03:00:00Z',
+                },
+                new Date('2022-03-10T02:30:45Z')
+            );
+
+            expect(status).toBe('DEGRADED');
+        });
+        it('should return UNHEALTHY when less than an 15 min before expiration for short lived certs', () => {
+            const status = getCredentialExpirationStatus(
+                {
+                    sensorCertNotBefore: '2022-03-10T00:00:00Z',
+                    sensorCertExpiry: '2022-03-10T03:00:00Z',
+                },
+                new Date('2022-03-10T02:50:45Z')
+            );
+
+            expect(status).toBe('UNHEALTHY');
+        });
+        it('should return UNHEALTHY when the short lived cert expired', () => {
+            const status = getCredentialExpirationStatus(
+                {
+                    sensorCertNotBefore: '2022-03-10T00:00:00Z',
+                    sensorCertExpiry: '2022-03-10T03:00:00Z',
+                },
+                new Date('2022-03-10T04:12:43Z')
+            );
+
+            expect(status).toBe('UNHEALTHY');
+        });
+        it('should return UNHEALTHY when less than a month before expiry and sensorCertNotBefore is undefined', () => {
+            const status = getCredentialExpirationStatus(
+                {
+                    sensorCertExpiry: '2022-12-31T23:59:59Z',
+                },
+                new Date('2022-12-30T12:00:00Z')
+            );
+
+            expect(status).toBe('UNHEALTHY');
         });
     });
 });

@@ -3,18 +3,17 @@ import { ExternalLink } from 'react-feather';
 import { differenceInDays } from 'date-fns';
 
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
-import { getDate, getDayOfWeek, getDistanceStrictAsPhrase } from 'utils/dateUtils';
+import { getTime, getDate, getDayOfWeek, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 import { getCredentialExpirationStatus, healthStatusStyles } from '../cluster.helpers';
+import { CertExpiryStatus } from '../clusterTypes';
 
 const testId = 'credentialExpiration';
 
 type CredentialExpirationProps = {
-    certExpiryStatus?: {
-        sensorCertExpiry: string; // ISO 8601
-    };
+    certExpiryStatus?: CertExpiryStatus;
     isList?: boolean;
 };
 
@@ -30,7 +29,7 @@ function CredentialExpiration({
     const currentDatetime = new Date();
 
     // Adapt health status categories to certificate expiration.
-    const healthStatus = getCredentialExpirationStatus(sensorCertExpiry, currentDatetime);
+    const healthStatus = getCredentialExpirationStatus(certExpiryStatus, currentDatetime);
     const { Icon, bgColor, fgColor } = healthStatusStyles[healthStatus];
     const icon = <Icon className="h-4 w-4" />;
 
@@ -44,37 +43,33 @@ function CredentialExpiration({
     );
 
     let expirationElement = <></>;
+    const diffInDays = differenceInDays(sensorCertExpiry, currentDatetime);
     if (healthStatus === 'HEALTHY') {
-        // A tooltip displays expiration date, which is at least a month in the future.
+        let tooltipText: string;
+        if (diffInDays === 0) {
+            tooltipText = `Expiration time: ${getTime(sensorCertExpiry)}`;
+        } else {
+            tooltipText = `Expiration date: ${getDate(sensorCertExpiry)}`;
+        }
+        // A tooltip displays expiration date or time
         expirationElement = (
-            <Tooltip
-                content={
-                    <TooltipOverlay>{`Expiration date: ${getDate(
-                        sensorCertExpiry
-                    )}`}</TooltipOverlay>
-                }
-            >
+            <Tooltip content={<TooltipOverlay>{tooltipText}</TooltipOverlay>}>
                 <div data-testid={testId}>{distanceElement}</div>
             </Tooltip>
         );
+    } else if (diffInDays === 0) {
+        expirationElement = <div data-testid={testId}>{distanceElement}</div>;
     } else {
-        // date-fns@2: differenceInDays(parseISO(sensorCertExpiry, currentDatetime))
-        const diffInDays = differenceInDays(sensorCertExpiry, currentDatetime);
-
-        if (diffInDays === 0) {
-            expirationElement = <div data-testid={testId}>{distanceElement}</div>;
-        } else {
-            expirationElement = (
-                <div data-testid={testId}>
-                    {distanceElement}{' '}
-                    <span className="whitespace-nowrap">{`on ${
-                        diffInDays > 0 && diffInDays < 7
-                            ? getDayOfWeek(sensorCertExpiry)
-                            : getDate(sensorCertExpiry)
-                    }`}</span>
-                </div>
-            );
-        }
+        expirationElement = (
+            <div data-testid={testId}>
+                {distanceElement}{' '}
+                <span className="whitespace-nowrap">{`on ${
+                    diffInDays > 0 && diffInDays < 7
+                        ? getDayOfWeek(sensorCertExpiry)
+                        : getDate(sensorCertExpiry)
+                }`}</span>
+            </div>
+        );
     }
 
     return (
