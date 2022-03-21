@@ -429,6 +429,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 		return nil, err
 	}
 	defer rows.Close()
+	log.Infof("SEARCH: ran query %s; data %+v", queryStr, query.Data)
 
 	numPrimaryKeys := len(schema.LocalPrimaryKeys())
 	highlightedResults := make([]interface{}, len(query.Select.Fields)+numPrimaryKeys)
