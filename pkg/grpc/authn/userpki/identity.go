@@ -52,8 +52,8 @@ func (i *identity) Service() *storage.ServiceIdentity {
 	return nil
 }
 
-func (i *identity) Expiry() time.Time {
-	return i.info.NotAfter
+func (i identity) ValidityPeriod() (time.Time, time.Time) {
+	return time.Time{}, i.info.NotAfter
 }
 
 func (i *identity) ExternalAuthProvider() authproviders.Provider {

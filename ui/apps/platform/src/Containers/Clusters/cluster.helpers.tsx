@@ -1,18 +1,19 @@
 import React from 'react';
-import { differenceInDays, distanceInWordsStrict } from 'date-fns';
+import { differenceInDays, differenceInMinutes } from 'date-fns';
 import get from 'lodash/get';
 import { DownloadCloud } from 'react-feather';
 import {
     CheckCircleIcon,
-    TimesCircleIcon,
     ExclamationCircleIcon,
-    MinusCircleIcon,
-    ResourcesEmptyIcon,
     InfoCircleIcon,
     InProgressIcon,
+    MinusCircleIcon,
+    ResourcesEmptyIcon,
+    TimesCircleIcon,
 } from '@patternfly/react-icons';
 
 import { getDate } from 'utils/dateUtils';
+import { CertExpiryStatus } from './clusterTypes';
 
 export const runtimeOptions = [
     {
@@ -321,49 +322,55 @@ export function formatCloudProvider(providerMetadata: ProviderMetadata) {
     return 'Not applicable';
 }
 
-const diffDegradedMin = 7; // Unhealthy if less than a week in the future
-const diffHealthyMin = 30; // Degraded if less than a month in the future
+const shortLivedCertMaxDays = 14;
+
+const longLivedCertThresholds = {
+    thresholdDegradedMinutes: 7 * 24 * 60, // Unhealthy if less than a week before expiry
+    thresholdHealthyMinutes: 30 * 24 * 60, // Degraded if less than a month before expiry
+};
+
+const shortLivedCertThresholds = {
+    thresholdDegradedMinutes: 15, // Unhealthy if less than 15 minutes before expiry
+    thresholdHealthyMinutes: 59, // Degraded if less than an hour before expiry
+};
+
+const resolveThresholds = (expiryStatus: CertExpiryStatus) => {
+    const certDurationDays = differenceInDays(
+        expiryStatus.sensorCertExpiry,
+        expiryStatus.sensorCertNotBefore
+    );
+    return certDurationDays <= shortLivedCertMaxDays
+        ? shortLivedCertThresholds
+        : longLivedCertThresholds;
+};
 
 /*
  * Adapt health status categories to certificate expiration.
  */
-export const getCredentialExpirationStatus = (sensorCertExpiry, currentDatetime) => {
-    // date-fns@2: differenceInDays(parseISO(sensorCertExpiry, currentDatetime))
-    const diffInDays = differenceInDays(sensorCertExpiry, currentDatetime);
+export const getCredentialExpirationStatus = (
+    sensorCertExpiryStatus: CertExpiryStatus,
+    currentDatetime
+) => {
+    const { sensorCertExpiry } = sensorCertExpiryStatus;
+    const diffInMinutes = differenceInMinutes(sensorCertExpiry, currentDatetime);
+    const { thresholdDegradedMinutes, thresholdHealthyMinutes } =
+        resolveThresholds(sensorCertExpiryStatus);
 
-    if (diffInDays < diffDegradedMin) {
+    if (diffInMinutes < thresholdDegradedMinutes) {
         return 'UNHEALTHY';
     }
 
-    if (diffInDays < diffHealthyMin) {
+    if (diffInMinutes < thresholdHealthyMinutes) {
         return 'DEGRADED';
     }
 
     return 'HEALTHY';
 };
 
-export const isCertificateExpiringSoon = (sensorCertExpiry, currentDatetime) =>
-    getCredentialExpirationStatus(sensorCertExpiry, currentDatetime) !== 'HEALTHY';
-
-export function getCredentialExpirationProps(certExpiryStatus) {
-    if (certExpiryStatus?.sensorCertExpiry) {
-        const { sensorCertExpiry } = certExpiryStatus;
-        const now = new Date();
-        const diffInWords = distanceInWordsStrict(sensorCertExpiry, now);
-        const diffInDays = differenceInDays(sensorCertExpiry, now);
-        const showExpiringSoon = diffInDays < diffHealthyMin;
-        let messageType;
-        if (diffInDays < diffDegradedMin) {
-            messageType = 'error';
-        } else if (diffInDays < diffHealthyMin) {
-            messageType = 'warn';
-        } else {
-            messageType = 'info';
-        }
-        return { messageType, showExpiringSoon, sensorCertExpiry, diffInWords };
-    }
-    return null;
-}
+export const isCertificateExpiringSoon = (
+    sensorCertExpiryStatus: CertExpiryStatus,
+    currentDatetime
+) => getCredentialExpirationStatus(sensorCertExpiryStatus, currentDatetime) !== 'HEALTHY';
 
 export function formatSensorVersion(sensorVersion: string) {
     return sensorVersion || 'Not Running';
