@@ -152,7 +152,7 @@ func (cfg *helmOutputCommand) getChartMetaValues(release bool) (*charts.MetaValu
 	}
 	imageFlavor, err := defaults.GetImageFlavorByName(cfg.imageFlavor, release)
 	if err != nil {
-		return nil, errox.InvalidArgs.New(fmt.Sprintf("'--%s': %v", flags.ImageDefaultsFlagName, err))
+		return nil, errox.InvalidArgs.New(fmt.Sprintf("invalid arguments: '--%s': %v", flags.ImageDefaultsFlagName, err))
 	}
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
 }
