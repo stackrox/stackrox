@@ -75,24 +75,7 @@ func createTableReportconfigs(ctx context.Context, db *pgxpool.Pool) {
 create table if not exists reportconfigs (
     Id varchar,
     Name varchar,
-    Description varchar,
     Type integer,
-    VulnReportFilters_Fixability integer,
-    VulnReportFilters_SinceLastReport bool,
-    VulnReportFilters_Severities int[],
-    ScopeId varchar,
-    EmailConfig_NotifierId varchar,
-    EmailConfig_MailingLists text[],
-    Schedule_IntervalType integer,
-    Schedule_Hour integer,
-    Schedule_Minute integer,
-    Schedule_Weekly_Day integer,
-    Schedule_DaysOfWeek_Days int[],
-    Schedule_DaysOfMonth_Days int[],
-    LastRunStatus_ReportStatus integer,
-    LastRunStatus_LastRunTime timestamp,
-    LastRunStatus_ErrorMsg varchar,
-    LastSuccessfulRunTime timestamp,
     serialized bytea,
     PRIMARY KEY(Id)
 )
@@ -123,28 +106,11 @@ func insertIntoReportconfigs(ctx context.Context, tx pgx.Tx, obj *storage.Report
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
-		obj.GetDescription(),
 		obj.GetType(),
-		obj.GetVulnReportFilters().GetFixability(),
-		obj.GetVulnReportFilters().GetSinceLastReport(),
-		obj.GetVulnReportFilters().GetSeverities(),
-		obj.GetScopeId(),
-		obj.GetEmailConfig().GetNotifierId(),
-		obj.GetEmailConfig().GetMailingLists(),
-		obj.GetSchedule().GetIntervalType(),
-		obj.GetSchedule().GetHour(),
-		obj.GetSchedule().GetMinute(),
-		obj.GetSchedule().GetWeekly().GetDay(),
-		obj.GetSchedule().GetDaysOfWeek().GetDays(),
-		obj.GetSchedule().GetDaysOfMonth().GetDays(),
-		obj.GetLastRunStatus().GetReportStatus(),
-		pgutils.NilOrTime(obj.GetLastRunStatus().GetLastRunTime()),
-		obj.GetLastRunStatus().GetErrorMsg(),
-		pgutils.NilOrTime(obj.GetLastSuccessfulRunTime()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO reportconfigs (Id, Name, Description, Type, VulnReportFilters_Fixability, VulnReportFilters_SinceLastReport, VulnReportFilters_Severities, ScopeId, EmailConfig_NotifierId, EmailConfig_MailingLists, Schedule_IntervalType, Schedule_Hour, Schedule_Minute, Schedule_Weekly_Day, Schedule_DaysOfWeek_Days, Schedule_DaysOfMonth_Days, LastRunStatus_ReportStatus, LastRunStatus_LastRunTime, LastRunStatus_ErrorMsg, LastSuccessfulRunTime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Type = EXCLUDED.Type, VulnReportFilters_Fixability = EXCLUDED.VulnReportFilters_Fixability, VulnReportFilters_SinceLastReport = EXCLUDED.VulnReportFilters_SinceLastReport, VulnReportFilters_Severities = EXCLUDED.VulnReportFilters_Severities, ScopeId = EXCLUDED.ScopeId, EmailConfig_NotifierId = EXCLUDED.EmailConfig_NotifierId, EmailConfig_MailingLists = EXCLUDED.EmailConfig_MailingLists, Schedule_IntervalType = EXCLUDED.Schedule_IntervalType, Schedule_Hour = EXCLUDED.Schedule_Hour, Schedule_Minute = EXCLUDED.Schedule_Minute, Schedule_Weekly_Day = EXCLUDED.Schedule_Weekly_Day, Schedule_DaysOfWeek_Days = EXCLUDED.Schedule_DaysOfWeek_Days, Schedule_DaysOfMonth_Days = EXCLUDED.Schedule_DaysOfMonth_Days, LastRunStatus_ReportStatus = EXCLUDED.LastRunStatus_ReportStatus, LastRunStatus_LastRunTime = EXCLUDED.LastRunStatus_LastRunTime, LastRunStatus_ErrorMsg = EXCLUDED.LastRunStatus_ErrorMsg, LastSuccessfulRunTime = EXCLUDED.LastSuccessfulRunTime, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO reportconfigs (Id, Name, Type, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -169,41 +135,7 @@ func (s *storeImpl) copyFromReportconfigs(ctx context.Context, tx pgx.Tx, objs .
 
 		"name",
 
-		"description",
-
 		"type",
-
-		"vulnreportfilters_fixability",
-
-		"vulnreportfilters_sincelastreport",
-
-		"vulnreportfilters_severities",
-
-		"scopeid",
-
-		"emailconfig_notifierid",
-
-		"emailconfig_mailinglists",
-
-		"schedule_intervaltype",
-
-		"schedule_hour",
-
-		"schedule_minute",
-
-		"schedule_weekly_day",
-
-		"schedule_daysofweek_days",
-
-		"schedule_daysofmonth_days",
-
-		"lastrunstatus_reportstatus",
-
-		"lastrunstatus_lastruntime",
-
-		"lastrunstatus_errormsg",
-
-		"lastsuccessfulruntime",
 
 		"serialized",
 	}
@@ -223,41 +155,7 @@ func (s *storeImpl) copyFromReportconfigs(ctx context.Context, tx pgx.Tx, objs .
 
 			obj.GetName(),
 
-			obj.GetDescription(),
-
 			obj.GetType(),
-
-			obj.GetVulnReportFilters().GetFixability(),
-
-			obj.GetVulnReportFilters().GetSinceLastReport(),
-
-			obj.GetVulnReportFilters().GetSeverities(),
-
-			obj.GetScopeId(),
-
-			obj.GetEmailConfig().GetNotifierId(),
-
-			obj.GetEmailConfig().GetMailingLists(),
-
-			obj.GetSchedule().GetIntervalType(),
-
-			obj.GetSchedule().GetHour(),
-
-			obj.GetSchedule().GetMinute(),
-
-			obj.GetSchedule().GetWeekly().GetDay(),
-
-			obj.GetSchedule().GetDaysOfWeek().GetDays(),
-
-			obj.GetSchedule().GetDaysOfMonth().GetDays(),
-
-			obj.GetLastRunStatus().GetReportStatus(),
-
-			pgutils.NilOrTime(obj.GetLastRunStatus().GetLastRunTime()),
-
-			obj.GetLastRunStatus().GetErrorMsg(),
-
-			pgutils.NilOrTime(obj.GetLastSuccessfulRunTime()),
 
 			serialized,
 		})

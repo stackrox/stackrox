@@ -75,95 +75,11 @@ func createTableClusters(ctx context.Context, db *pgxpool.Pool) {
 create table if not exists clusters (
     Id varchar,
     Name varchar UNIQUE,
-    Type integer,
     Labels jsonb,
-    MainImage varchar,
-    CollectorImage varchar,
-    CentralApiEndpoint varchar,
-    RuntimeSupport bool,
-    CollectionMethod integer,
-    AdmissionController bool,
-    AdmissionControllerUpdates bool,
-    AdmissionControllerEvents bool,
-    Status_SensorVersion varchar,
-    Status_DEPRECATEDLastContact timestamp,
-    Status_ProviderMetadata_Region varchar,
-    Status_ProviderMetadata_Zone varchar,
-    Status_ProviderMetadata_Google_Project varchar,
-    Status_ProviderMetadata_Google_ClusterName varchar,
-    Status_ProviderMetadata_Aws_AccountId varchar,
-    Status_ProviderMetadata_Azure_SubscriptionId varchar,
-    Status_ProviderMetadata_Verified bool,
-    Status_OrchestratorMetadata_Version varchar,
-    Status_OrchestratorMetadata_OpenshiftVersion varchar,
-    Status_OrchestratorMetadata_BuildDate timestamp,
-    Status_OrchestratorMetadata_ApiVersions text[],
-    Status_UpgradeStatus_Upgradability integer,
-    Status_UpgradeStatus_UpgradabilityStatusReason varchar,
-    Status_UpgradeStatus_MostRecentProcess_Active bool,
-    Status_UpgradeStatus_MostRecentProcess_Id varchar,
-    Status_UpgradeStatus_MostRecentProcess_TargetVersion varchar,
-    Status_UpgradeStatus_MostRecentProcess_UpgraderImage varchar,
-    Status_UpgradeStatus_MostRecentProcess_InitiatedAt timestamp,
-    Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeState integer,
-    Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeStatusDetail varchar,
-    Status_UpgradeStatus_MostRecentProcess_Progress_Since timestamp,
-    Status_UpgradeStatus_MostRecentProcess_Type integer,
-    Status_CertExpiryStatus_SensorCertExpiry timestamp,
-    Status_CertExpiryStatus_SensorCertNotBefore timestamp,
-    DynamicConfig_AdmissionControllerConfig_Enabled bool,
-    DynamicConfig_AdmissionControllerConfig_TimeoutSeconds integer,
-    DynamicConfig_AdmissionControllerConfig_ScanInline bool,
-    DynamicConfig_AdmissionControllerConfig_DisableBypass bool,
-    DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates bool,
-    DynamicConfig_RegistryOverride varchar,
-    DynamicConfig_DisableAuditLogs bool,
-    TolerationsConfig_Disabled bool,
-    Priority integer,
-    HealthStatus_Id varchar,
-    HealthStatus_CollectorHealthInfo_Version varchar,
-    HealthStatus_CollectorHealthInfo_TotalDesiredPods integer,
-    HealthStatus_CollectorHealthInfo_TotalReadyPods integer,
-    HealthStatus_CollectorHealthInfo_TotalRegisteredNodes integer,
-    HealthStatus_CollectorHealthInfo_StatusErrors text[],
-    HealthStatus_AdmissionControlHealthInfo_TotalDesiredPods integer,
-    HealthStatus_AdmissionControlHealthInfo_TotalReadyPods integer,
-    HealthStatus_AdmissionControlHealthInfo_StatusErrors text[],
     HealthStatus_SensorHealthStatus integer,
     HealthStatus_CollectorHealthStatus integer,
     HealthStatus_OverallHealthStatus integer,
     HealthStatus_AdmissionControlHealthStatus integer,
-    HealthStatus_LastContact timestamp,
-    HealthStatus_HealthInfoComplete bool,
-    SlimCollector bool,
-    HelmConfig_DynamicConfig_AdmissionControllerConfig_Enabled bool,
-    HelmConfig_DynamicConfig_AdmissionControllerConfig_TimeoutSeconds integer,
-    HelmConfig_DynamicConfig_AdmissionControllerConfig_ScanInline bool,
-    HelmConfig_DynamicConfig_AdmissionControllerConfig_DisableBypass bool,
-    HelmConfig_DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates bool,
-    HelmConfig_DynamicConfig_RegistryOverride varchar,
-    HelmConfig_DynamicConfig_DisableAuditLogs bool,
-    HelmConfig_StaticConfig_Type integer,
-    HelmConfig_StaticConfig_MainImage varchar,
-    HelmConfig_StaticConfig_CentralApiEndpoint varchar,
-    HelmConfig_StaticConfig_CollectionMethod integer,
-    HelmConfig_StaticConfig_CollectorImage varchar,
-    HelmConfig_StaticConfig_AdmissionController bool,
-    HelmConfig_StaticConfig_AdmissionControllerUpdates bool,
-    HelmConfig_StaticConfig_TolerationsConfig_Disabled bool,
-    HelmConfig_StaticConfig_SlimCollector bool,
-    HelmConfig_StaticConfig_AdmissionControllerEvents bool,
-    HelmConfig_ConfigFingerprint varchar,
-    HelmConfig_ClusterLabels jsonb,
-    MostRecentSensorId_SystemNamespaceId varchar,
-    MostRecentSensorId_DefaultNamespaceId varchar,
-    MostRecentSensorId_AppNamespace varchar,
-    MostRecentSensorId_AppNamespaceId varchar,
-    MostRecentSensorId_AppServiceaccountId varchar,
-    MostRecentSensorId_K8SNodeName varchar,
-    AuditLogState jsonb,
-    InitBundleId varchar,
-    ManagedBy integer,
     serialized bytea,
     PRIMARY KEY(Id)
 )
@@ -194,99 +110,15 @@ func insertIntoClusters(ctx context.Context, tx pgx.Tx, obj *storage.Cluster) er
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
-		obj.GetType(),
 		obj.GetLabels(),
-		obj.GetMainImage(),
-		obj.GetCollectorImage(),
-		obj.GetCentralApiEndpoint(),
-		obj.GetRuntimeSupport(),
-		obj.GetCollectionMethod(),
-		obj.GetAdmissionController(),
-		obj.GetAdmissionControllerUpdates(),
-		obj.GetAdmissionControllerEvents(),
-		obj.GetStatus().GetSensorVersion(),
-		pgutils.NilOrTime(obj.GetStatus().GetDEPRECATEDLastContact()),
-		obj.GetStatus().GetProviderMetadata().GetRegion(),
-		obj.GetStatus().GetProviderMetadata().GetZone(),
-		obj.GetStatus().GetProviderMetadata().GetGoogle().GetProject(),
-		obj.GetStatus().GetProviderMetadata().GetGoogle().GetClusterName(),
-		obj.GetStatus().GetProviderMetadata().GetAws().GetAccountId(),
-		obj.GetStatus().GetProviderMetadata().GetAzure().GetSubscriptionId(),
-		obj.GetStatus().GetProviderMetadata().GetVerified(),
-		obj.GetStatus().GetOrchestratorMetadata().GetVersion(),
-		obj.GetStatus().GetOrchestratorMetadata().GetOpenshiftVersion(),
-		pgutils.NilOrTime(obj.GetStatus().GetOrchestratorMetadata().GetBuildDate()),
-		obj.GetStatus().GetOrchestratorMetadata().GetApiVersions(),
-		obj.GetStatus().GetUpgradeStatus().GetUpgradability(),
-		obj.GetStatus().GetUpgradeStatus().GetUpgradabilityStatusReason(),
-		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetActive(),
-		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetId(),
-		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetTargetVersion(),
-		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetUpgraderImage(),
-		pgutils.NilOrTime(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetInitiatedAt()),
-		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeState(),
-		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeStatusDetail(),
-		pgutils.NilOrTime(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetSince()),
-		obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetType(),
-		pgutils.NilOrTime(obj.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry()),
-		pgutils.NilOrTime(obj.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore()),
-		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
-		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
-		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
-		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
-		obj.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
-		obj.GetDynamicConfig().GetRegistryOverride(),
-		obj.GetDynamicConfig().GetDisableAuditLogs(),
-		obj.GetTolerationsConfig().GetDisabled(),
-		obj.GetPriority(),
-		obj.GetHealthStatus().GetId(),
-		obj.GetHealthStatus().GetCollectorHealthInfo().GetVersion(),
-		obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalDesiredPods(),
-		obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalReadyPods(),
-		obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalRegisteredNodes(),
-		obj.GetHealthStatus().GetCollectorHealthInfo().GetStatusErrors(),
-		obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetTotalDesiredPods(),
-		obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetTotalReadyPods(),
-		obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetStatusErrors(),
 		obj.GetHealthStatus().GetSensorHealthStatus(),
 		obj.GetHealthStatus().GetCollectorHealthStatus(),
 		obj.GetHealthStatus().GetOverallHealthStatus(),
 		obj.GetHealthStatus().GetAdmissionControlHealthStatus(),
-		pgutils.NilOrTime(obj.GetHealthStatus().GetLastContact()),
-		obj.GetHealthStatus().GetHealthInfoComplete(),
-		obj.GetSlimCollector(),
-		obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
-		obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
-		obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
-		obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
-		obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
-		obj.GetHelmConfig().GetDynamicConfig().GetRegistryOverride(),
-		obj.GetHelmConfig().GetDynamicConfig().GetDisableAuditLogs(),
-		obj.GetHelmConfig().GetStaticConfig().GetType(),
-		obj.GetHelmConfig().GetStaticConfig().GetMainImage(),
-		obj.GetHelmConfig().GetStaticConfig().GetCentralApiEndpoint(),
-		obj.GetHelmConfig().GetStaticConfig().GetCollectionMethod(),
-		obj.GetHelmConfig().GetStaticConfig().GetCollectorImage(),
-		obj.GetHelmConfig().GetStaticConfig().GetAdmissionController(),
-		obj.GetHelmConfig().GetStaticConfig().GetAdmissionControllerUpdates(),
-		obj.GetHelmConfig().GetStaticConfig().GetTolerationsConfig().GetDisabled(),
-		obj.GetHelmConfig().GetStaticConfig().GetSlimCollector(),
-		obj.GetHelmConfig().GetStaticConfig().GetAdmissionControllerEvents(),
-		obj.GetHelmConfig().GetConfigFingerprint(),
-		obj.GetHelmConfig().GetClusterLabels(),
-		obj.GetMostRecentSensorId().GetSystemNamespaceId(),
-		obj.GetMostRecentSensorId().GetDefaultNamespaceId(),
-		obj.GetMostRecentSensorId().GetAppNamespace(),
-		obj.GetMostRecentSensorId().GetAppNamespaceId(),
-		obj.GetMostRecentSensorId().GetAppServiceaccountId(),
-		obj.GetMostRecentSensorId().GetK8SNodeName(),
-		obj.GetAuditLogState(),
-		obj.GetInitBundleId(),
-		obj.GetManagedBy(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO clusters (Id, Name, Type, Labels, MainImage, CollectorImage, CentralApiEndpoint, RuntimeSupport, CollectionMethod, AdmissionController, AdmissionControllerUpdates, AdmissionControllerEvents, Status_SensorVersion, Status_DEPRECATEDLastContact, Status_ProviderMetadata_Region, Status_ProviderMetadata_Zone, Status_ProviderMetadata_Google_Project, Status_ProviderMetadata_Google_ClusterName, Status_ProviderMetadata_Aws_AccountId, Status_ProviderMetadata_Azure_SubscriptionId, Status_ProviderMetadata_Verified, Status_OrchestratorMetadata_Version, Status_OrchestratorMetadata_OpenshiftVersion, Status_OrchestratorMetadata_BuildDate, Status_OrchestratorMetadata_ApiVersions, Status_UpgradeStatus_Upgradability, Status_UpgradeStatus_UpgradabilityStatusReason, Status_UpgradeStatus_MostRecentProcess_Active, Status_UpgradeStatus_MostRecentProcess_Id, Status_UpgradeStatus_MostRecentProcess_TargetVersion, Status_UpgradeStatus_MostRecentProcess_UpgraderImage, Status_UpgradeStatus_MostRecentProcess_InitiatedAt, Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeState, Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeStatusDetail, Status_UpgradeStatus_MostRecentProcess_Progress_Since, Status_UpgradeStatus_MostRecentProcess_Type, Status_CertExpiryStatus_SensorCertExpiry, Status_CertExpiryStatus_SensorCertNotBefore, DynamicConfig_AdmissionControllerConfig_Enabled, DynamicConfig_AdmissionControllerConfig_TimeoutSeconds, DynamicConfig_AdmissionControllerConfig_ScanInline, DynamicConfig_AdmissionControllerConfig_DisableBypass, DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates, DynamicConfig_RegistryOverride, DynamicConfig_DisableAuditLogs, TolerationsConfig_Disabled, Priority, HealthStatus_Id, HealthStatus_CollectorHealthInfo_Version, HealthStatus_CollectorHealthInfo_TotalDesiredPods, HealthStatus_CollectorHealthInfo_TotalReadyPods, HealthStatus_CollectorHealthInfo_TotalRegisteredNodes, HealthStatus_CollectorHealthInfo_StatusErrors, HealthStatus_AdmissionControlHealthInfo_TotalDesiredPods, HealthStatus_AdmissionControlHealthInfo_TotalReadyPods, HealthStatus_AdmissionControlHealthInfo_StatusErrors, HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus, HealthStatus_LastContact, HealthStatus_HealthInfoComplete, SlimCollector, HelmConfig_DynamicConfig_AdmissionControllerConfig_Enabled, HelmConfig_DynamicConfig_AdmissionControllerConfig_TimeoutSeconds, HelmConfig_DynamicConfig_AdmissionControllerConfig_ScanInline, HelmConfig_DynamicConfig_AdmissionControllerConfig_DisableBypass, HelmConfig_DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates, HelmConfig_DynamicConfig_RegistryOverride, HelmConfig_DynamicConfig_DisableAuditLogs, HelmConfig_StaticConfig_Type, HelmConfig_StaticConfig_MainImage, HelmConfig_StaticConfig_CentralApiEndpoint, HelmConfig_StaticConfig_CollectionMethod, HelmConfig_StaticConfig_CollectorImage, HelmConfig_StaticConfig_AdmissionController, HelmConfig_StaticConfig_AdmissionControllerUpdates, HelmConfig_StaticConfig_TolerationsConfig_Disabled, HelmConfig_StaticConfig_SlimCollector, HelmConfig_StaticConfig_AdmissionControllerEvents, HelmConfig_ConfigFingerprint, HelmConfig_ClusterLabels, MostRecentSensorId_SystemNamespaceId, MostRecentSensorId_DefaultNamespaceId, MostRecentSensorId_AppNamespace, MostRecentSensorId_AppNamespaceId, MostRecentSensorId_AppServiceaccountId, MostRecentSensorId_K8SNodeName, AuditLogState, InitBundleId, ManagedBy, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57, $58, $59, $60, $61, $62, $63, $64, $65, $66, $67, $68, $69, $70, $71, $72, $73, $74, $75, $76, $77, $78, $79, $80, $81, $82, $83, $84, $85, $86, $87, $88, $89, $90, $91, $92) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Labels = EXCLUDED.Labels, MainImage = EXCLUDED.MainImage, CollectorImage = EXCLUDED.CollectorImage, CentralApiEndpoint = EXCLUDED.CentralApiEndpoint, RuntimeSupport = EXCLUDED.RuntimeSupport, CollectionMethod = EXCLUDED.CollectionMethod, AdmissionController = EXCLUDED.AdmissionController, AdmissionControllerUpdates = EXCLUDED.AdmissionControllerUpdates, AdmissionControllerEvents = EXCLUDED.AdmissionControllerEvents, Status_SensorVersion = EXCLUDED.Status_SensorVersion, Status_DEPRECATEDLastContact = EXCLUDED.Status_DEPRECATEDLastContact, Status_ProviderMetadata_Region = EXCLUDED.Status_ProviderMetadata_Region, Status_ProviderMetadata_Zone = EXCLUDED.Status_ProviderMetadata_Zone, Status_ProviderMetadata_Google_Project = EXCLUDED.Status_ProviderMetadata_Google_Project, Status_ProviderMetadata_Google_ClusterName = EXCLUDED.Status_ProviderMetadata_Google_ClusterName, Status_ProviderMetadata_Aws_AccountId = EXCLUDED.Status_ProviderMetadata_Aws_AccountId, Status_ProviderMetadata_Azure_SubscriptionId = EXCLUDED.Status_ProviderMetadata_Azure_SubscriptionId, Status_ProviderMetadata_Verified = EXCLUDED.Status_ProviderMetadata_Verified, Status_OrchestratorMetadata_Version = EXCLUDED.Status_OrchestratorMetadata_Version, Status_OrchestratorMetadata_OpenshiftVersion = EXCLUDED.Status_OrchestratorMetadata_OpenshiftVersion, Status_OrchestratorMetadata_BuildDate = EXCLUDED.Status_OrchestratorMetadata_BuildDate, Status_OrchestratorMetadata_ApiVersions = EXCLUDED.Status_OrchestratorMetadata_ApiVersions, Status_UpgradeStatus_Upgradability = EXCLUDED.Status_UpgradeStatus_Upgradability, Status_UpgradeStatus_UpgradabilityStatusReason = EXCLUDED.Status_UpgradeStatus_UpgradabilityStatusReason, Status_UpgradeStatus_MostRecentProcess_Active = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_Active, Status_UpgradeStatus_MostRecentProcess_Id = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_Id, Status_UpgradeStatus_MostRecentProcess_TargetVersion = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_TargetVersion, Status_UpgradeStatus_MostRecentProcess_UpgraderImage = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_UpgraderImage, Status_UpgradeStatus_MostRecentProcess_InitiatedAt = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_InitiatedAt, Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeState = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeState, Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeStatusDetail = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeStatusDetail, Status_UpgradeStatus_MostRecentProcess_Progress_Since = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_Progress_Since, Status_UpgradeStatus_MostRecentProcess_Type = EXCLUDED.Status_UpgradeStatus_MostRecentProcess_Type, Status_CertExpiryStatus_SensorCertExpiry = EXCLUDED.Status_CertExpiryStatus_SensorCertExpiry, Status_CertExpiryStatus_SensorCertNotBefore = EXCLUDED.Status_CertExpiryStatus_SensorCertNotBefore, DynamicConfig_AdmissionControllerConfig_Enabled = EXCLUDED.DynamicConfig_AdmissionControllerConfig_Enabled, DynamicConfig_AdmissionControllerConfig_TimeoutSeconds = EXCLUDED.DynamicConfig_AdmissionControllerConfig_TimeoutSeconds, DynamicConfig_AdmissionControllerConfig_ScanInline = EXCLUDED.DynamicConfig_AdmissionControllerConfig_ScanInline, DynamicConfig_AdmissionControllerConfig_DisableBypass = EXCLUDED.DynamicConfig_AdmissionControllerConfig_DisableBypass, DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates = EXCLUDED.DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates, DynamicConfig_RegistryOverride = EXCLUDED.DynamicConfig_RegistryOverride, DynamicConfig_DisableAuditLogs = EXCLUDED.DynamicConfig_DisableAuditLogs, TolerationsConfig_Disabled = EXCLUDED.TolerationsConfig_Disabled, Priority = EXCLUDED.Priority, HealthStatus_Id = EXCLUDED.HealthStatus_Id, HealthStatus_CollectorHealthInfo_Version = EXCLUDED.HealthStatus_CollectorHealthInfo_Version, HealthStatus_CollectorHealthInfo_TotalDesiredPods = EXCLUDED.HealthStatus_CollectorHealthInfo_TotalDesiredPods, HealthStatus_CollectorHealthInfo_TotalReadyPods = EXCLUDED.HealthStatus_CollectorHealthInfo_TotalReadyPods, HealthStatus_CollectorHealthInfo_TotalRegisteredNodes = EXCLUDED.HealthStatus_CollectorHealthInfo_TotalRegisteredNodes, HealthStatus_CollectorHealthInfo_StatusErrors = EXCLUDED.HealthStatus_CollectorHealthInfo_StatusErrors, HealthStatus_AdmissionControlHealthInfo_TotalDesiredPods = EXCLUDED.HealthStatus_AdmissionControlHealthInfo_TotalDesiredPods, HealthStatus_AdmissionControlHealthInfo_TotalReadyPods = EXCLUDED.HealthStatus_AdmissionControlHealthInfo_TotalReadyPods, HealthStatus_AdmissionControlHealthInfo_StatusErrors = EXCLUDED.HealthStatus_AdmissionControlHealthInfo_StatusErrors, HealthStatus_SensorHealthStatus = EXCLUDED.HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus = EXCLUDED.HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus = EXCLUDED.HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus = EXCLUDED.HealthStatus_AdmissionControlHealthStatus, HealthStatus_LastContact = EXCLUDED.HealthStatus_LastContact, HealthStatus_HealthInfoComplete = EXCLUDED.HealthStatus_HealthInfoComplete, SlimCollector = EXCLUDED.SlimCollector, HelmConfig_DynamicConfig_AdmissionControllerConfig_Enabled = EXCLUDED.HelmConfig_DynamicConfig_AdmissionControllerConfig_Enabled, HelmConfig_DynamicConfig_AdmissionControllerConfig_TimeoutSeconds = EXCLUDED.HelmConfig_DynamicConfig_AdmissionControllerConfig_TimeoutSeconds, HelmConfig_DynamicConfig_AdmissionControllerConfig_ScanInline = EXCLUDED.HelmConfig_DynamicConfig_AdmissionControllerConfig_ScanInline, HelmConfig_DynamicConfig_AdmissionControllerConfig_DisableBypass = EXCLUDED.HelmConfig_DynamicConfig_AdmissionControllerConfig_DisableBypass, HelmConfig_DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates = EXCLUDED.HelmConfig_DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates, HelmConfig_DynamicConfig_RegistryOverride = EXCLUDED.HelmConfig_DynamicConfig_RegistryOverride, HelmConfig_DynamicConfig_DisableAuditLogs = EXCLUDED.HelmConfig_DynamicConfig_DisableAuditLogs, HelmConfig_StaticConfig_Type = EXCLUDED.HelmConfig_StaticConfig_Type, HelmConfig_StaticConfig_MainImage = EXCLUDED.HelmConfig_StaticConfig_MainImage, HelmConfig_StaticConfig_CentralApiEndpoint = EXCLUDED.HelmConfig_StaticConfig_CentralApiEndpoint, HelmConfig_StaticConfig_CollectionMethod = EXCLUDED.HelmConfig_StaticConfig_CollectionMethod, HelmConfig_StaticConfig_CollectorImage = EXCLUDED.HelmConfig_StaticConfig_CollectorImage, HelmConfig_StaticConfig_AdmissionController = EXCLUDED.HelmConfig_StaticConfig_AdmissionController, HelmConfig_StaticConfig_AdmissionControllerUpdates = EXCLUDED.HelmConfig_StaticConfig_AdmissionControllerUpdates, HelmConfig_StaticConfig_TolerationsConfig_Disabled = EXCLUDED.HelmConfig_StaticConfig_TolerationsConfig_Disabled, HelmConfig_StaticConfig_SlimCollector = EXCLUDED.HelmConfig_StaticConfig_SlimCollector, HelmConfig_StaticConfig_AdmissionControllerEvents = EXCLUDED.HelmConfig_StaticConfig_AdmissionControllerEvents, HelmConfig_ConfigFingerprint = EXCLUDED.HelmConfig_ConfigFingerprint, HelmConfig_ClusterLabels = EXCLUDED.HelmConfig_ClusterLabels, MostRecentSensorId_SystemNamespaceId = EXCLUDED.MostRecentSensorId_SystemNamespaceId, MostRecentSensorId_DefaultNamespaceId = EXCLUDED.MostRecentSensorId_DefaultNamespaceId, MostRecentSensorId_AppNamespace = EXCLUDED.MostRecentSensorId_AppNamespace, MostRecentSensorId_AppNamespaceId = EXCLUDED.MostRecentSensorId_AppNamespaceId, MostRecentSensorId_AppServiceaccountId = EXCLUDED.MostRecentSensorId_AppServiceaccountId, MostRecentSensorId_K8SNodeName = EXCLUDED.MostRecentSensorId_K8SNodeName, AuditLogState = EXCLUDED.AuditLogState, InitBundleId = EXCLUDED.InitBundleId, ManagedBy = EXCLUDED.ManagedBy, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO clusters (Id, Name, Labels, HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, HealthStatus_SensorHealthStatus = EXCLUDED.HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus = EXCLUDED.HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus = EXCLUDED.HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus = EXCLUDED.HealthStatus_AdmissionControlHealthStatus, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -311,113 +143,7 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 
 		"name",
 
-		"type",
-
 		"labels",
-
-		"mainimage",
-
-		"collectorimage",
-
-		"centralapiendpoint",
-
-		"runtimesupport",
-
-		"collectionmethod",
-
-		"admissioncontroller",
-
-		"admissioncontrollerupdates",
-
-		"admissioncontrollerevents",
-
-		"status_sensorversion",
-
-		"status_deprecatedlastcontact",
-
-		"status_providermetadata_region",
-
-		"status_providermetadata_zone",
-
-		"status_providermetadata_google_project",
-
-		"status_providermetadata_google_clustername",
-
-		"status_providermetadata_aws_accountid",
-
-		"status_providermetadata_azure_subscriptionid",
-
-		"status_providermetadata_verified",
-
-		"status_orchestratormetadata_version",
-
-		"status_orchestratormetadata_openshiftversion",
-
-		"status_orchestratormetadata_builddate",
-
-		"status_orchestratormetadata_apiversions",
-
-		"status_upgradestatus_upgradability",
-
-		"status_upgradestatus_upgradabilitystatusreason",
-
-		"status_upgradestatus_mostrecentprocess_active",
-
-		"status_upgradestatus_mostrecentprocess_id",
-
-		"status_upgradestatus_mostrecentprocess_targetversion",
-
-		"status_upgradestatus_mostrecentprocess_upgraderimage",
-
-		"status_upgradestatus_mostrecentprocess_initiatedat",
-
-		"status_upgradestatus_mostrecentprocess_progress_upgradestate",
-
-		"status_upgradestatus_mostrecentprocess_progress_upgradestatusdetail",
-
-		"status_upgradestatus_mostrecentprocess_progress_since",
-
-		"status_upgradestatus_mostrecentprocess_type",
-
-		"status_certexpirystatus_sensorcertexpiry",
-
-		"status_certexpirystatus_sensorcertnotbefore",
-
-		"dynamicconfig_admissioncontrollerconfig_enabled",
-
-		"dynamicconfig_admissioncontrollerconfig_timeoutseconds",
-
-		"dynamicconfig_admissioncontrollerconfig_scaninline",
-
-		"dynamicconfig_admissioncontrollerconfig_disablebypass",
-
-		"dynamicconfig_admissioncontrollerconfig_enforceonupdates",
-
-		"dynamicconfig_registryoverride",
-
-		"dynamicconfig_disableauditlogs",
-
-		"tolerationsconfig_disabled",
-
-		"priority",
-
-		"healthstatus_id",
-
-		"healthstatus_collectorhealthinfo_version",
-
-		"healthstatus_collectorhealthinfo_totaldesiredpods",
-
-		"healthstatus_collectorhealthinfo_totalreadypods",
-
-		"healthstatus_collectorhealthinfo_totalregisterednodes",
-
-		"healthstatus_collectorhealthinfo_statuserrors",
-
-		"healthstatus_admissioncontrolhealthinfo_totaldesiredpods",
-
-		"healthstatus_admissioncontrolhealthinfo_totalreadypods",
-
-		"healthstatus_admissioncontrolhealthinfo_statuserrors",
 
 		"healthstatus_sensorhealthstatus",
 
@@ -426,68 +152,6 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 		"healthstatus_overallhealthstatus",
 
 		"healthstatus_admissioncontrolhealthstatus",
-
-		"healthstatus_lastcontact",
-
-		"healthstatus_healthinfocomplete",
-
-		"slimcollector",
-
-		"helmconfig_dynamicconfig_admissioncontrollerconfig_enabled",
-
-		"helmconfig_dynamicconfig_admissioncontrollerconfig_timeoutseconds",
-
-		"helmconfig_dynamicconfig_admissioncontrollerconfig_scaninline",
-
-		"helmconfig_dynamicconfig_admissioncontrollerconfig_disablebypass",
-
-		"helmconfig_dynamicconfig_admissioncontrollerconfig_enforceonupdates",
-
-		"helmconfig_dynamicconfig_registryoverride",
-
-		"helmconfig_dynamicconfig_disableauditlogs",
-
-		"helmconfig_staticconfig_type",
-
-		"helmconfig_staticconfig_mainimage",
-
-		"helmconfig_staticconfig_centralapiendpoint",
-
-		"helmconfig_staticconfig_collectionmethod",
-
-		"helmconfig_staticconfig_collectorimage",
-
-		"helmconfig_staticconfig_admissioncontroller",
-
-		"helmconfig_staticconfig_admissioncontrollerupdates",
-
-		"helmconfig_staticconfig_tolerationsconfig_disabled",
-
-		"helmconfig_staticconfig_slimcollector",
-
-		"helmconfig_staticconfig_admissioncontrollerevents",
-
-		"helmconfig_configfingerprint",
-
-		"helmconfig_clusterlabels",
-
-		"mostrecentsensorid_systemnamespaceid",
-
-		"mostrecentsensorid_defaultnamespaceid",
-
-		"mostrecentsensorid_appnamespace",
-
-		"mostrecentsensorid_appnamespaceid",
-
-		"mostrecentsensorid_appserviceaccountid",
-
-		"mostrecentsensorid_k8snodename",
-
-		"auditlogstate",
-
-		"initbundleid",
-
-		"managedby",
 
 		"serialized",
 	}
@@ -507,113 +171,7 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 
 			obj.GetName(),
 
-			obj.GetType(),
-
 			obj.GetLabels(),
-
-			obj.GetMainImage(),
-
-			obj.GetCollectorImage(),
-
-			obj.GetCentralApiEndpoint(),
-
-			obj.GetRuntimeSupport(),
-
-			obj.GetCollectionMethod(),
-
-			obj.GetAdmissionController(),
-
-			obj.GetAdmissionControllerUpdates(),
-
-			obj.GetAdmissionControllerEvents(),
-
-			obj.GetStatus().GetSensorVersion(),
-
-			pgutils.NilOrTime(obj.GetStatus().GetDEPRECATEDLastContact()),
-
-			obj.GetStatus().GetProviderMetadata().GetRegion(),
-
-			obj.GetStatus().GetProviderMetadata().GetZone(),
-
-			obj.GetStatus().GetProviderMetadata().GetGoogle().GetProject(),
-
-			obj.GetStatus().GetProviderMetadata().GetGoogle().GetClusterName(),
-
-			obj.GetStatus().GetProviderMetadata().GetAws().GetAccountId(),
-
-			obj.GetStatus().GetProviderMetadata().GetAzure().GetSubscriptionId(),
-
-			obj.GetStatus().GetProviderMetadata().GetVerified(),
-
-			obj.GetStatus().GetOrchestratorMetadata().GetVersion(),
-
-			obj.GetStatus().GetOrchestratorMetadata().GetOpenshiftVersion(),
-
-			pgutils.NilOrTime(obj.GetStatus().GetOrchestratorMetadata().GetBuildDate()),
-
-			obj.GetStatus().GetOrchestratorMetadata().GetApiVersions(),
-
-			obj.GetStatus().GetUpgradeStatus().GetUpgradability(),
-
-			obj.GetStatus().GetUpgradeStatus().GetUpgradabilityStatusReason(),
-
-			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetActive(),
-
-			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetId(),
-
-			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetTargetVersion(),
-
-			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetUpgraderImage(),
-
-			pgutils.NilOrTime(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetInitiatedAt()),
-
-			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeState(),
-
-			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetUpgradeStatusDetail(),
-
-			pgutils.NilOrTime(obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetProgress().GetSince()),
-
-			obj.GetStatus().GetUpgradeStatus().GetMostRecentProcess().GetType(),
-
-			pgutils.NilOrTime(obj.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry()),
-
-			pgutils.NilOrTime(obj.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore()),
-
-			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
-
-			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
-
-			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
-
-			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
-
-			obj.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
-
-			obj.GetDynamicConfig().GetRegistryOverride(),
-
-			obj.GetDynamicConfig().GetDisableAuditLogs(),
-
-			obj.GetTolerationsConfig().GetDisabled(),
-
-			obj.GetPriority(),
-
-			obj.GetHealthStatus().GetId(),
-
-			obj.GetHealthStatus().GetCollectorHealthInfo().GetVersion(),
-
-			obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalDesiredPods(),
-
-			obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalReadyPods(),
-
-			obj.GetHealthStatus().GetCollectorHealthInfo().GetTotalRegisteredNodes(),
-
-			obj.GetHealthStatus().GetCollectorHealthInfo().GetStatusErrors(),
-
-			obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetTotalDesiredPods(),
-
-			obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetTotalReadyPods(),
-
-			obj.GetHealthStatus().GetAdmissionControlHealthInfo().GetStatusErrors(),
 
 			obj.GetHealthStatus().GetSensorHealthStatus(),
 
@@ -622,68 +180,6 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 			obj.GetHealthStatus().GetOverallHealthStatus(),
 
 			obj.GetHealthStatus().GetAdmissionControlHealthStatus(),
-
-			pgutils.NilOrTime(obj.GetHealthStatus().GetLastContact()),
-
-			obj.GetHealthStatus().GetHealthInfoComplete(),
-
-			obj.GetSlimCollector(),
-
-			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
-
-			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
-
-			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
-
-			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
-
-			obj.GetHelmConfig().GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
-
-			obj.GetHelmConfig().GetDynamicConfig().GetRegistryOverride(),
-
-			obj.GetHelmConfig().GetDynamicConfig().GetDisableAuditLogs(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetType(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetMainImage(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetCentralApiEndpoint(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetCollectionMethod(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetCollectorImage(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetAdmissionController(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetAdmissionControllerUpdates(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetTolerationsConfig().GetDisabled(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetSlimCollector(),
-
-			obj.GetHelmConfig().GetStaticConfig().GetAdmissionControllerEvents(),
-
-			obj.GetHelmConfig().GetConfigFingerprint(),
-
-			obj.GetHelmConfig().GetClusterLabels(),
-
-			obj.GetMostRecentSensorId().GetSystemNamespaceId(),
-
-			obj.GetMostRecentSensorId().GetDefaultNamespaceId(),
-
-			obj.GetMostRecentSensorId().GetAppNamespace(),
-
-			obj.GetMostRecentSensorId().GetAppNamespaceId(),
-
-			obj.GetMostRecentSensorId().GetAppServiceaccountId(),
-
-			obj.GetMostRecentSensorId().GetK8SNodeName(),
-
-			obj.GetAuditLogState(),
-
-			obj.GetInitBundleId(),
-
-			obj.GetManagedBy(),
 
 			serialized,
 		})

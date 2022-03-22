@@ -47,6 +47,19 @@ func (c context) childContext(name string, searchDisabled bool, opts PostgresOpt
 	}
 }
 
+func recursiveChildFiltering(schema *Schema) {
+	for _, c := range schema.Children {
+		recursiveChildFiltering(c)
+	}
+	includedChildren := schema.Children[:0]
+	for _, child := range schema.Children {
+		if len(child.FieldsBySearchLabel()) > 0 {
+			includedChildren = append(includedChildren, child)
+		}
+	}
+	schema.Children = includedChildren
+}
+
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
 func Walk(obj reflect.Type, table string) *Schema {
 	schema := &Schema{
@@ -55,6 +68,10 @@ func Walk(obj reflect.Type, table string) *Schema {
 		TypeName: obj.Elem().Name(),
 	}
 	handleStruct(context{}, schema, obj.Elem())
+
+	// Post-process schema
+	recursiveChildFiltering(schema)
+
 	return schema
 }
 

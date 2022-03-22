@@ -69,14 +69,9 @@ create table if not exists image_components (
     Id varchar,
     Name varchar,
     Version varchar,
-    License_Name varchar,
-    License_Type varchar,
-    License_Url varchar,
-    Priority integer,
     Source integer,
     RiskScore numeric,
     TopCvss numeric,
-    FixedBy varchar,
     OperatingSystem varchar,
     serialized bytea,
     PRIMARY KEY(Id, Name, Version, OperatingSystem)
@@ -109,19 +104,14 @@ func insertIntoImageComponents(ctx context.Context, tx pgx.Tx, obj *storage.Imag
 		obj.GetId(),
 		obj.GetName(),
 		obj.GetVersion(),
-		obj.GetLicense().GetName(),
-		obj.GetLicense().GetType(),
-		obj.GetLicense().GetUrl(),
-		obj.GetPriority(),
 		obj.GetSource(),
 		obj.GetRiskScore(),
 		obj.GetTopCvss(),
-		obj.GetFixedBy(),
 		obj.GetOperatingSystem(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_components (Id, Name, Version, License_Name, License_Type, License_Url, Priority, Source, RiskScore, TopCvss, FixedBy, OperatingSystem, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id, Name, Version, OperatingSystem) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, License_Name = EXCLUDED.License_Name, License_Type = EXCLUDED.License_Type, License_Url = EXCLUDED.License_Url, Priority = EXCLUDED.Priority, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, FixedBy = EXCLUDED.FixedBy, OperatingSystem = EXCLUDED.OperatingSystem, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_components (Id, Name, Version, Source, RiskScore, TopCvss, OperatingSystem, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id, Name, Version, OperatingSystem) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, OperatingSystem = EXCLUDED.OperatingSystem, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -144,21 +134,11 @@ func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs
 
 		"version",
 
-		"license_name",
-
-		"license_type",
-
-		"license_url",
-
-		"priority",
-
 		"source",
 
 		"riskscore",
 
 		"topcvss",
-
-		"fixedby",
 
 		"operatingsystem",
 
@@ -182,21 +162,11 @@ func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs
 
 			obj.GetVersion(),
 
-			obj.GetLicense().GetName(),
-
-			obj.GetLicense().GetType(),
-
-			obj.GetLicense().GetUrl(),
-
-			obj.GetPriority(),
-
 			obj.GetSource(),
 
 			obj.GetRiskScore(),
 
 			obj.GetTopCvss(),
-
-			obj.GetFixedBy(),
 
 			obj.GetOperatingSystem(),
 

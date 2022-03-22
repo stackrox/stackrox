@@ -76,38 +76,9 @@ create table if not exists node_cves (
     Id varchar,
     Cvss numeric,
     ImpactScore numeric,
-    Summary varchar,
-    Link varchar,
     PublishedOn timestamp,
     CreatedAt timestamp,
-    LastModified timestamp,
-    ScoreVersion integer,
-    CvssV2_Vector varchar,
-    CvssV2_AttackVector integer,
-    CvssV2_AccessComplexity integer,
-    CvssV2_Authentication integer,
-    CvssV2_Confidentiality integer,
-    CvssV2_Integrity integer,
-    CvssV2_Availability integer,
-    CvssV2_ExploitabilityScore numeric,
-    CvssV2_ImpactScore numeric,
-    CvssV2_Score numeric,
-    CvssV2_Severity integer,
-    CvssV3_Vector varchar,
-    CvssV3_ExploitabilityScore numeric,
-    CvssV3_ImpactScore numeric,
-    CvssV3_AttackVector integer,
-    CvssV3_AttackComplexity integer,
-    CvssV3_PrivilegesRequired integer,
-    CvssV3_UserInteraction integer,
-    CvssV3_Scope integer,
-    CvssV3_Confidentiality integer,
-    CvssV3_Integrity integer,
-    CvssV3_Availability integer,
-    CvssV3_Score numeric,
-    CvssV3_Severity integer,
     Suppressed bool,
-    SuppressActivation timestamp,
     SuppressExpiry timestamp,
     Severity integer,
     serialized bytea,
@@ -121,36 +92,6 @@ create table if not exists node_cves (
 	}
 
 	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableNodeCvesReferences(ctx, db)
-}
-
-func createTableNodeCvesReferences(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists node_cves_References (
-    node_cves_Id varchar,
-    idx integer,
-    URI varchar,
-    Tags text[],
-    PRIMARY KEY(node_cves_Id, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (node_cves_Id) REFERENCES node_cves(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists nodeCvesReferences_idx on node_cves_References using btree(idx)",
-	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			log.Panicf("Error creating index %s: %v", index, err)
@@ -171,76 +112,15 @@ func insertIntoNodeCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error 
 		obj.GetId(),
 		obj.GetCvss(),
 		obj.GetImpactScore(),
-		obj.GetSummary(),
-		obj.GetLink(),
 		pgutils.NilOrTime(obj.GetPublishedOn()),
 		pgutils.NilOrTime(obj.GetCreatedAt()),
-		pgutils.NilOrTime(obj.GetLastModified()),
-		obj.GetScoreVersion(),
-		obj.GetCvssV2().GetVector(),
-		obj.GetCvssV2().GetAttackVector(),
-		obj.GetCvssV2().GetAccessComplexity(),
-		obj.GetCvssV2().GetAuthentication(),
-		obj.GetCvssV2().GetConfidentiality(),
-		obj.GetCvssV2().GetIntegrity(),
-		obj.GetCvssV2().GetAvailability(),
-		obj.GetCvssV2().GetExploitabilityScore(),
-		obj.GetCvssV2().GetImpactScore(),
-		obj.GetCvssV2().GetScore(),
-		obj.GetCvssV2().GetSeverity(),
-		obj.GetCvssV3().GetVector(),
-		obj.GetCvssV3().GetExploitabilityScore(),
-		obj.GetCvssV3().GetImpactScore(),
-		obj.GetCvssV3().GetAttackVector(),
-		obj.GetCvssV3().GetAttackComplexity(),
-		obj.GetCvssV3().GetPrivilegesRequired(),
-		obj.GetCvssV3().GetUserInteraction(),
-		obj.GetCvssV3().GetScope(),
-		obj.GetCvssV3().GetConfidentiality(),
-		obj.GetCvssV3().GetIntegrity(),
-		obj.GetCvssV3().GetAvailability(),
-		obj.GetCvssV3().GetScore(),
-		obj.GetCvssV3().GetSeverity(),
 		obj.GetSuppressed(),
-		pgutils.NilOrTime(obj.GetSuppressActivation()),
 		pgutils.NilOrTime(obj.GetSuppressExpiry()),
 		obj.GetSeverity(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO node_cves (Id, Cvss, ImpactScore, Summary, Link, PublishedOn, CreatedAt, LastModified, ScoreVersion, CvssV2_Vector, CvssV2_AttackVector, CvssV2_AccessComplexity, CvssV2_Authentication, CvssV2_Confidentiality, CvssV2_Integrity, CvssV2_Availability, CvssV2_ExploitabilityScore, CvssV2_ImpactScore, CvssV2_Score, CvssV2_Severity, CvssV3_Vector, CvssV3_ExploitabilityScore, CvssV3_ImpactScore, CvssV3_AttackVector, CvssV3_AttackComplexity, CvssV3_PrivilegesRequired, CvssV3_UserInteraction, CvssV3_Scope, CvssV3_Confidentiality, CvssV3_Integrity, CvssV3_Availability, CvssV3_Score, CvssV3_Severity, Suppressed, SuppressActivation, SuppressExpiry, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Cvss = EXCLUDED.Cvss, ImpactScore = EXCLUDED.ImpactScore, Summary = EXCLUDED.Summary, Link = EXCLUDED.Link, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, LastModified = EXCLUDED.LastModified, ScoreVersion = EXCLUDED.ScoreVersion, CvssV2_Vector = EXCLUDED.CvssV2_Vector, CvssV2_AttackVector = EXCLUDED.CvssV2_AttackVector, CvssV2_AccessComplexity = EXCLUDED.CvssV2_AccessComplexity, CvssV2_Authentication = EXCLUDED.CvssV2_Authentication, CvssV2_Confidentiality = EXCLUDED.CvssV2_Confidentiality, CvssV2_Integrity = EXCLUDED.CvssV2_Integrity, CvssV2_Availability = EXCLUDED.CvssV2_Availability, CvssV2_ExploitabilityScore = EXCLUDED.CvssV2_ExploitabilityScore, CvssV2_ImpactScore = EXCLUDED.CvssV2_ImpactScore, CvssV2_Score = EXCLUDED.CvssV2_Score, CvssV2_Severity = EXCLUDED.CvssV2_Severity, CvssV3_Vector = EXCLUDED.CvssV3_Vector, CvssV3_ExploitabilityScore = EXCLUDED.CvssV3_ExploitabilityScore, CvssV3_ImpactScore = EXCLUDED.CvssV3_ImpactScore, CvssV3_AttackVector = EXCLUDED.CvssV3_AttackVector, CvssV3_AttackComplexity = EXCLUDED.CvssV3_AttackComplexity, CvssV3_PrivilegesRequired = EXCLUDED.CvssV3_PrivilegesRequired, CvssV3_UserInteraction = EXCLUDED.CvssV3_UserInteraction, CvssV3_Scope = EXCLUDED.CvssV3_Scope, CvssV3_Confidentiality = EXCLUDED.CvssV3_Confidentiality, CvssV3_Integrity = EXCLUDED.CvssV3_Integrity, CvssV3_Availability = EXCLUDED.CvssV3_Availability, CvssV3_Score = EXCLUDED.CvssV3_Score, CvssV3_Severity = EXCLUDED.CvssV3_Severity, Suppressed = EXCLUDED.Suppressed, SuppressActivation = EXCLUDED.SuppressActivation, SuppressExpiry = EXCLUDED.SuppressExpiry, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetReferences() {
-		if err := insertIntoNodeCvesReferences(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from node_cves_References where node_cves_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetReferences()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoNodeCvesReferences(ctx context.Context, tx pgx.Tx, obj *storage.CVE_Reference, node_cves_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		node_cves_Id,
-		idx,
-		obj.GetURI(),
-		obj.GetTags(),
-	}
-
-	finalStr := "INSERT INTO node_cves_References (node_cves_Id, idx, URI, Tags) VALUES($1, $2, $3, $4) ON CONFLICT(node_cves_Id, idx) DO UPDATE SET node_cves_Id = EXCLUDED.node_cves_Id, idx = EXCLUDED.idx, URI = EXCLUDED.URI, Tags = EXCLUDED.Tags"
+	finalStr := "INSERT INTO node_cves (Id, Cvss, ImpactScore, PublishedOn, CreatedAt, Suppressed, SuppressExpiry, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Cvss = EXCLUDED.Cvss, ImpactScore = EXCLUDED.ImpactScore, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, Suppressed = EXCLUDED.Suppressed, SuppressExpiry = EXCLUDED.SuppressExpiry, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -267,69 +147,11 @@ func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*st
 
 		"impactscore",
 
-		"summary",
-
-		"link",
-
 		"publishedon",
 
 		"createdat",
 
-		"lastmodified",
-
-		"scoreversion",
-
-		"cvssv2_vector",
-
-		"cvssv2_attackvector",
-
-		"cvssv2_accesscomplexity",
-
-		"cvssv2_authentication",
-
-		"cvssv2_confidentiality",
-
-		"cvssv2_integrity",
-
-		"cvssv2_availability",
-
-		"cvssv2_exploitabilityscore",
-
-		"cvssv2_impactscore",
-
-		"cvssv2_score",
-
-		"cvssv2_severity",
-
-		"cvssv3_vector",
-
-		"cvssv3_exploitabilityscore",
-
-		"cvssv3_impactscore",
-
-		"cvssv3_attackvector",
-
-		"cvssv3_attackcomplexity",
-
-		"cvssv3_privilegesrequired",
-
-		"cvssv3_userinteraction",
-
-		"cvssv3_scope",
-
-		"cvssv3_confidentiality",
-
-		"cvssv3_integrity",
-
-		"cvssv3_availability",
-
-		"cvssv3_score",
-
-		"cvssv3_severity",
-
 		"suppressed",
-
-		"suppressactivation",
 
 		"suppressexpiry",
 
@@ -355,69 +177,11 @@ func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*st
 
 			obj.GetImpactScore(),
 
-			obj.GetSummary(),
-
-			obj.GetLink(),
-
 			pgutils.NilOrTime(obj.GetPublishedOn()),
 
 			pgutils.NilOrTime(obj.GetCreatedAt()),
 
-			pgutils.NilOrTime(obj.GetLastModified()),
-
-			obj.GetScoreVersion(),
-
-			obj.GetCvssV2().GetVector(),
-
-			obj.GetCvssV2().GetAttackVector(),
-
-			obj.GetCvssV2().GetAccessComplexity(),
-
-			obj.GetCvssV2().GetAuthentication(),
-
-			obj.GetCvssV2().GetConfidentiality(),
-
-			obj.GetCvssV2().GetIntegrity(),
-
-			obj.GetCvssV2().GetAvailability(),
-
-			obj.GetCvssV2().GetExploitabilityScore(),
-
-			obj.GetCvssV2().GetImpactScore(),
-
-			obj.GetCvssV2().GetScore(),
-
-			obj.GetCvssV2().GetSeverity(),
-
-			obj.GetCvssV3().GetVector(),
-
-			obj.GetCvssV3().GetExploitabilityScore(),
-
-			obj.GetCvssV3().GetImpactScore(),
-
-			obj.GetCvssV3().GetAttackVector(),
-
-			obj.GetCvssV3().GetAttackComplexity(),
-
-			obj.GetCvssV3().GetPrivilegesRequired(),
-
-			obj.GetCvssV3().GetUserInteraction(),
-
-			obj.GetCvssV3().GetScope(),
-
-			obj.GetCvssV3().GetConfidentiality(),
-
-			obj.GetCvssV3().GetIntegrity(),
-
-			obj.GetCvssV3().GetAvailability(),
-
-			obj.GetCvssV3().GetScore(),
-
-			obj.GetCvssV3().GetSeverity(),
-
 			obj.GetSuppressed(),
-
-			pgutils.NilOrTime(obj.GetSuppressActivation()),
 
 			pgutils.NilOrTime(obj.GetSuppressExpiry()),
 
@@ -442,64 +206,6 @@ func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*st
 			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"node_cves"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for _, obj := range objs {
-
-		if err = s.copyFromNodeCvesReferences(ctx, tx, obj.GetId(), obj.GetReferences()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromNodeCvesReferences(ctx context.Context, tx pgx.Tx, node_cves_Id string, objs ...*storage.CVE_Reference) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"node_cves_id",
-
-		"idx",
-
-		"uri",
-
-		"tags",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			node_cves_Id,
-
-			idx,
-
-			obj.GetURI(),
-
-			obj.GetTags(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"node_cves_references"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -752,12 +458,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.CVE) error) e
 
 func dropTableNodeCves(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS node_cves CASCADE")
-	dropTableNodeCvesReferences(ctx, db)
-
-}
-
-func dropTableNodeCvesReferences(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS node_cves_References CASCADE")
 
 }
 

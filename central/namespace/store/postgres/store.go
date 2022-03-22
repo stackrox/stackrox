@@ -78,8 +78,6 @@ create table if not exists namespaces (
     ClusterId varchar,
     ClusterName varchar,
     Labels jsonb,
-    CreationTime timestamp,
-    Priority integer,
     Annotations jsonb,
     serialized bytea,
     PRIMARY KEY(Id)
@@ -114,13 +112,11 @@ func insertIntoNamespaces(ctx context.Context, tx pgx.Tx, obj *storage.Namespace
 		obj.GetClusterId(),
 		obj.GetClusterName(),
 		obj.GetLabels(),
-		pgutils.NilOrTime(obj.GetCreationTime()),
-		obj.GetPriority(),
 		obj.GetAnnotations(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO namespaces (Id, Name, ClusterId, ClusterName, Labels, CreationTime, Priority, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, CreationTime = EXCLUDED.CreationTime, Priority = EXCLUDED.Priority, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO namespaces (Id, Name, ClusterId, ClusterName, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -151,10 +147,6 @@ func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx pgx.Tx, objs ...*
 
 		"labels",
 
-		"creationtime",
-
-		"priority",
-
 		"annotations",
 
 		"serialized",
@@ -180,10 +172,6 @@ func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx pgx.Tx, objs ...*
 			obj.GetClusterName(),
 
 			obj.GetLabels(),
-
-			pgutils.NilOrTime(obj.GetCreationTime()),
-
-			obj.GetPriority(),
 
 			obj.GetAnnotations(),
 

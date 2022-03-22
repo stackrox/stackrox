@@ -78,7 +78,7 @@ message Alert {
         reserved 3; // formerly processes
         oneof MessageAttributes {
             KeyValueAttrs key_value_attrs         = 4;
-            NetworkFlowInfo network_flow_info     = 7;
+            NetworkFlowInfo network_flow_info     = 7 [(gogoproto.moretags) = 'search:"-" sql:"-"'];
         }
         // 'type' is for internal use only.
         Type                      type            = 5;

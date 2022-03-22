@@ -64,8 +64,16 @@ func (s *Schema) FieldsBySearchLabel() map[string]*Field {
 	return m
 }
 
+// HasSearchableFields returns true or false if the schema has fields that are searchable
+func (s *Schema) HasSearchableFields() bool {
+	return len(s.FieldsBySearchLabel()) != 0
+}
+
 // AddFieldWithType adds a field to the schema with the specified data type
 func (s *Schema) AddFieldWithType(field Field, dt DataType) {
+	if !field.Include() {
+		return
+	}
 	field.DataType = dt
 	field.SQLType = DataTypeToSQLType(dt)
 	s.Fields = append(s.Fields, field)
@@ -75,7 +83,7 @@ func (s *Schema) AddFieldWithType(field Field, dt DataType) {
 func (s *Schema) Print() {
 	fmt.Println(s.Table)
 	for _, f := range s.Fields {
-		fmt.Printf("  name=%s columnName=%s getter=%+v datatype=%s\n", f.Name, f.ColumnName, f.ObjectGetter, f.DataType)
+		fmt.Printf("  name=%s columnName=%s getter=%+v datatype=%s searchable:%v\n", f.Name, f.ColumnName, f.ObjectGetter, f.DataType, f.Search.Enabled)
 	}
 	fmt.Println()
 	for _, c := range s.Children {
@@ -114,7 +122,14 @@ func (s *Schema) ResolvedFields() []Field {
 		}
 	}
 
-	pks = append(pks, s.Fields...)
+	var includedFields []Field
+	for _, f := range s.Fields {
+		if f.Include() {
+			includedFields = append(includedFields, f)
+		}
+	}
+
+	pks = append(pks, includedFields...)
 	if len(s.Parents) == 0 || s.EmbeddedIn == "" {
 		pks = append(pks, serializedField)
 	}
@@ -324,4 +339,9 @@ func (f Field) Getter(prefix string) string {
 		return value
 	}
 	return prefix + "." + value
+}
+
+// Include returns if the field should be included in the schema
+func (f Field) Include() bool {
+	return f.Options.PrimaryKey || f.Search.Enabled || f.ObjectGetter.variable
 }
