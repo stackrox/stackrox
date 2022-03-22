@@ -86,4 +86,17 @@ func (s *SecretsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundSecret)
+
+	var secrets []*storage.Secret
+	for i := 0; i < 200; i++ {
+		secret := &storage.Secret{}
+		s.NoError(testutils.FullInit(secret, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		secrets = append(secrets, secret)
+	}
+
+	s.NoError(store.UpsertMany(ctx, secrets))
+
+	secretCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(secretCount, 200)
 }

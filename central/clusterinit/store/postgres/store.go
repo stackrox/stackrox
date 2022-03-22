@@ -19,10 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 const (
 	baseTable  = "clusterinitbundles"
 	countStmt  = "SELECT COUNT(*) FROM clusterinitbundles"
@@ -35,10 +31,18 @@ const (
 	getManyStmt = "SELECT serialized FROM clusterinitbundles WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM clusterinitbundles WHERE Id = ANY($1::text[])"
+
+	batchAfter = 100
+
+	// using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	batchSize = 10000
 )
 
 var (
 	schema = walker.Walk(reflect.TypeOf((*storage.InitBundleMeta)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {
@@ -136,11 +140,11 @@ func insertIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, obj *storage.I
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
-		pgutils.NilOrStringTimestamp(obj.GetCreatedAt()),
+		pgutils.NilOrTime(obj.GetCreatedAt()),
 		obj.GetCreatedBy().GetId(),
 		obj.GetCreatedBy().GetAuthProviderId(),
 		obj.GetIsRevoked(),
-		pgutils.NilOrStringTimestamp(obj.GetExpiresAt()),
+		pgutils.NilOrTime(obj.GetExpiresAt()),
 		serialized,
 	}
 
@@ -185,6 +189,150 @@ func insertIntoClusterinitbundlesAttributes(ctx context.Context, tx pgx.Tx, obj 
 	return nil
 }
 
+func (s *storeImpl) copyFromClusterinitbundles(ctx context.Context, tx pgx.Tx, objs ...*storage.InitBundleMeta) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"createdat",
+
+		"createdby_id",
+
+		"createdby_authproviderid",
+
+		"isrevoked",
+
+		"expiresat",
+
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			obj.GetId(),
+
+			obj.GetName(),
+
+			pgutils.NilOrTime(obj.GetCreatedAt()),
+
+			obj.GetCreatedBy().GetId(),
+
+			obj.GetCreatedBy().GetAuthProviderId(),
+
+			obj.GetIsRevoked(),
+
+			pgutils.NilOrTime(obj.GetExpiresAt()),
+
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"clusterinitbundles"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for _, obj := range objs {
+
+		if err = s.copyFromClusterinitbundlesAttributes(ctx, tx, obj.GetId(), obj.GetCreatedBy().GetAttributes()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromClusterinitbundlesAttributes(ctx context.Context, tx pgx.Tx, clusterinitbundles_Id string, objs ...*storage.UserAttribute) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"clusterinitbundles_id",
+
+		"idx",
+
+		"key",
+
+		"value",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			clusterinitbundles_Id,
+
+			idx,
+
+			obj.GetKey(),
+
+			obj.GetValue(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"clusterinitbundles_attributes"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableClusterinitbundles(ctx, db)
@@ -192,6 +340,27 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.InitBundleMeta) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "InitBundleMeta")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.copyFromClusterinitbundles(ctx, tx, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.InitBundleMeta) error {
@@ -226,7 +395,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.InitBundleMeta) err
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.InitBundleMeta) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "InitBundleMeta")
 
-	return s.upsert(ctx, objs...)
+	if len(objs) < batchAfter {
+		return s.upsert(ctx, objs...)
+	} else {
+		return s.copyFrom(ctx, objs...)
+	}
 }
 
 // Count returns the number of objects in the store

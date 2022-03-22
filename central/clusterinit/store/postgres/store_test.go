@@ -86,4 +86,17 @@ func (s *ClusterinitbundlesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundInitBundleMeta)
+
+	var initBundleMetas []*storage.InitBundleMeta
+	for i := 0; i < 200; i++ {
+		initBundleMeta := &storage.InitBundleMeta{}
+		s.NoError(testutils.FullInit(initBundleMeta, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		initBundleMetas = append(initBundleMetas, initBundleMeta)
+	}
+
+	s.NoError(store.UpsertMany(ctx, initBundleMetas))
+
+	initBundleMetaCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(initBundleMetaCount, 200)
 }

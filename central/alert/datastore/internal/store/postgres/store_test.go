@@ -86,4 +86,17 @@ func (s *AlertsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundAlert)
+
+	var alerts []*storage.Alert
+	for i := 0; i < 200; i++ {
+		alert := &storage.Alert{}
+		s.NoError(testutils.FullInit(alert, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		alerts = append(alerts, alert)
+	}
+
+	s.NoError(store.UpsertMany(ctx, alerts))
+
+	alertCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(alertCount, 200)
 }
