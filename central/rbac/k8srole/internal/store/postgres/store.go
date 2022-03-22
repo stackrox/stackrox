@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -30,10 +31,18 @@ const (
 	getManyStmt = "SELECT serialized FROM k8sroles WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM k8sroles WHERE Id = ANY($1::text[])"
+
+	batchAfter = 100
+
+	// using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	batchSize = 10000
 )
 
 var (
 	schema = walker.Walk(reflect.TypeOf((*storage.K8SRole)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {
@@ -80,13 +89,13 @@ create table if not exists k8sroles (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -110,7 +119,7 @@ create table if not exists k8sroles_Rules (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -119,7 +128,7 @@ create table if not exists k8sroles_Rules (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -142,7 +151,7 @@ func insertIntoK8sroles(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole) er
 		obj.GetClusterRole(),
 		obj.GetLabels(),
 		obj.GetAnnotations(),
-		pgutils.NilOrStringTimestamp(obj.GetCreatedAt()),
+		pgutils.NilOrTime(obj.GetCreatedAt()),
 		serialized,
 	}
 
@@ -190,6 +199,170 @@ func insertIntoK8srolesRules(ctx context.Context, tx pgx.Tx, obj *storage.Policy
 	return nil
 }
 
+func (s *storeImpl) copyFromK8sroles(ctx context.Context, tx pgx.Tx, objs ...*storage.K8SRole) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"namespace",
+
+		"clusterid",
+
+		"clustername",
+
+		"clusterrole",
+
+		"labels",
+
+		"annotations",
+
+		"createdat",
+
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			obj.GetId(),
+
+			obj.GetName(),
+
+			obj.GetNamespace(),
+
+			obj.GetClusterId(),
+
+			obj.GetClusterName(),
+
+			obj.GetClusterRole(),
+
+			obj.GetLabels(),
+
+			obj.GetAnnotations(),
+
+			pgutils.NilOrTime(obj.GetCreatedAt()),
+
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"k8sroles"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for _, obj := range objs {
+
+		if err = s.copyFromK8srolesRules(ctx, tx, obj.GetId(), obj.GetRules()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromK8srolesRules(ctx context.Context, tx pgx.Tx, k8sroles_Id string, objs ...*storage.PolicyRule) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"k8sroles_id",
+
+		"idx",
+
+		"verbs",
+
+		"apigroups",
+
+		"resources",
+
+		"nonresourceurls",
+
+		"resourcenames",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			k8sroles_Id,
+
+			idx,
+
+			obj.GetVerbs(),
+
+			obj.GetApiGroups(),
+
+			obj.GetResources(),
+
+			obj.GetNonResourceUrls(),
+
+			obj.GetResourceNames(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"k8sroles_rules"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableK8sroles(ctx, db)
@@ -197,6 +370,27 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.K8SRole) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "K8SRole")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.copyFromK8sroles(ctx, tx, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.K8SRole) error {
@@ -231,7 +425,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.K8SRole) error {
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.K8SRole) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "K8SRole")
 
-	return s.upsert(ctx, objs...)
+	if len(objs) < batchAfter {
+		return s.upsert(ctx, objs...)
+	} else {
+		return s.copyFrom(ctx, objs...)
+	}
 }
 
 // Count returns the number of objects in the store

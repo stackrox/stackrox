@@ -2,12 +2,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
+import { Select, SelectOption } from '@patternfly/react-core';
+
 import { selectors } from 'reducers';
 import { actions as graphActions, networkGraphClusters } from 'reducers/network/graph';
 import { actions as clusterActions } from 'reducers/clusters';
 import { actions as pageActions } from 'reducers/network/page';
-
-import Select from 'Components/ReactSelect';
+import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
 const ClusterSelect = ({
     selectClusterId,
@@ -16,38 +17,41 @@ const ClusterSelect = ({
     selectedClusterId,
     isDisabled,
 }) => {
-    function changeCluster(clusterId) {
+    const { closeSelect, isOpen, onToggle } = useSelectToggle();
+    function changeCluster(_e, clusterId) {
         selectClusterId(clusterId);
+        closeSelect();
         closeSidePanel();
     }
 
     if (!clusters.length) {
         return null;
     }
-    // network policies are only applicable on k8s-based clusters
-    const options = clusters
-        .filter((cluster) => networkGraphClusters[cluster.type])
-        .map((cluster) => ({
-            value: cluster.id,
-            label: cluster.name,
-        }));
-    const clustersProps = {
-        className: 'min-w-48',
-        options,
-        value: selectedClusterId,
-        placeholder: 'Select a cluster',
-        onChange: changeCluster,
-        autoFocus: true,
-        isDisabled,
-    };
-    return <Select {...clustersProps} />;
+
+    return (
+        <Select
+            isOpen={isOpen}
+            onToggle={onToggle}
+            isDisabled={isDisabled}
+            selections={selectedClusterId}
+            placeholderText="Select a cluster"
+            onSelect={changeCluster}
+        >
+            {clusters
+                .filter((cluster) => networkGraphClusters[cluster.type])
+                .map(({ id, name }) => (
+                    <SelectOption key={id} value={id}>
+                        {name}
+                    </SelectOption>
+                ))}
+        </Select>
+    );
 };
 
 ClusterSelect.propTypes = {
     clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
     selectedClusterId: PropTypes.string,
     selectClusterId: PropTypes.func.isRequired,
-    fetchClusters: PropTypes.func.isRequired,
     closeSidePanel: PropTypes.func.isRequired,
     isDisabled: PropTypes.bool,
 };

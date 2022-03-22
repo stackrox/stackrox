@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -30,10 +31,18 @@ const (
 	getManyStmt = "SELECT serialized FROM images WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM images WHERE Id = ANY($1::text[])"
+
+	batchAfter = 100
+
+	// using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	batchSize = 10000
 )
 
 var (
 	schema = walker.Walk(reflect.TypeOf((*storage.Image)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {
@@ -105,13 +114,13 @@ create table if not exists images (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -137,7 +146,7 @@ create table if not exists images_Layers (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -146,7 +155,7 @@ create table if not exists images_Layers (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -168,7 +177,7 @@ create table if not exists images_Results (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -177,7 +186,7 @@ create table if not exists images_Results (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -197,7 +206,7 @@ create table if not exists images_Signatures (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -206,7 +215,7 @@ create table if not exists images_Signatures (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -227,7 +236,7 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image) error 
 		obj.GetName().GetTag(),
 		obj.GetName().GetFullName(),
 		obj.GetMetadata().GetV1().GetDigest(),
-		pgutils.NilOrStringTimestamp(obj.GetMetadata().GetV1().GetCreated()),
+		pgutils.NilOrTime(obj.GetMetadata().GetV1().GetCreated()),
 		obj.GetMetadata().GetV1().GetAuthor(),
 		obj.GetMetadata().GetV1().GetUser(),
 		obj.GetMetadata().GetV1().GetCommand(),
@@ -240,7 +249,7 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image) error 
 		obj.GetMetadata().GetDataSource().GetName(),
 		obj.GetMetadata().GetVersion(),
 		obj.GetScan().GetScannerVersion(),
-		pgutils.NilOrStringTimestamp(obj.GetScan().GetScanTime()),
+		pgutils.NilOrTime(obj.GetScan().GetScanTime()),
 		obj.GetScan().GetOperatingSystem(),
 		obj.GetScan().GetDataSource().GetId(),
 		obj.GetScan().GetDataSource().GetName(),
@@ -248,7 +257,7 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image) error 
 		obj.GetComponents(),
 		obj.GetCves(),
 		obj.GetFixableCves(),
-		pgutils.NilOrStringTimestamp(obj.GetLastUpdated()),
+		pgutils.NilOrTime(obj.GetLastUpdated()),
 		obj.GetNotPullable(),
 		obj.GetIsClusterLocal(),
 		obj.GetPriority(),
@@ -310,7 +319,7 @@ func insertIntoImagesLayers(ctx context.Context, tx pgx.Tx, obj *storage.ImageLa
 		idx,
 		obj.GetInstruction(),
 		obj.GetValue(),
-		pgutils.NilOrStringTimestamp(obj.GetCreated()),
+		pgutils.NilOrTime(obj.GetCreated()),
 		obj.GetAuthor(),
 		obj.GetEmpty(),
 	}
@@ -330,7 +339,7 @@ func insertIntoImagesResults(ctx context.Context, tx pgx.Tx, obj *storage.ImageS
 		// parent primary keys start
 		images_Id,
 		idx,
-		pgutils.NilOrStringTimestamp(obj.GetVerificationTime()),
+		pgutils.NilOrTime(obj.GetVerificationTime()),
 		obj.GetVerifierId(),
 		obj.GetStatus(),
 		obj.GetDescription(),
@@ -364,6 +373,386 @@ func insertIntoImagesSignatures(ctx context.Context, tx pgx.Tx, obj *storage.Sig
 	return nil
 }
 
+func (s *storeImpl) copyFromImages(ctx context.Context, tx pgx.Tx, objs ...*storage.Image) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
+	copyCols := []string{
+
+		"id",
+
+		"name_registry",
+
+		"name_remote",
+
+		"name_tag",
+
+		"name_fullname",
+
+		"metadata_v1_digest",
+
+		"metadata_v1_created",
+
+		"metadata_v1_author",
+
+		"metadata_v1_user",
+
+		"metadata_v1_command",
+
+		"metadata_v1_entrypoint",
+
+		"metadata_v1_volumes",
+
+		"metadata_v1_labels",
+
+		"metadata_v2_digest",
+
+		"metadata_layershas",
+
+		"metadata_datasource_id",
+
+		"metadata_datasource_name",
+
+		"metadata_version",
+
+		"scan_scannerversion",
+
+		"scan_scantime",
+
+		"scan_operatingsystem",
+
+		"scan_datasource_id",
+
+		"scan_datasource_name",
+
+		"scan_notes",
+
+		"components",
+
+		"cves",
+
+		"fixablecves",
+
+		"lastupdated",
+
+		"notpullable",
+
+		"isclusterlocal",
+
+		"priority",
+
+		"riskscore",
+
+		"topcvss",
+
+		"notes",
+
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			obj.GetId(),
+
+			obj.GetName().GetRegistry(),
+
+			obj.GetName().GetRemote(),
+
+			obj.GetName().GetTag(),
+
+			obj.GetName().GetFullName(),
+
+			obj.GetMetadata().GetV1().GetDigest(),
+
+			pgutils.NilOrTime(obj.GetMetadata().GetV1().GetCreated()),
+
+			obj.GetMetadata().GetV1().GetAuthor(),
+
+			obj.GetMetadata().GetV1().GetUser(),
+
+			obj.GetMetadata().GetV1().GetCommand(),
+
+			obj.GetMetadata().GetV1().GetEntrypoint(),
+
+			obj.GetMetadata().GetV1().GetVolumes(),
+
+			obj.GetMetadata().GetV1().GetLabels(),
+
+			obj.GetMetadata().GetV2().GetDigest(),
+
+			obj.GetMetadata().GetLayerShas(),
+
+			obj.GetMetadata().GetDataSource().GetId(),
+
+			obj.GetMetadata().GetDataSource().GetName(),
+
+			obj.GetMetadata().GetVersion(),
+
+			obj.GetScan().GetScannerVersion(),
+
+			pgutils.NilOrTime(obj.GetScan().GetScanTime()),
+
+			obj.GetScan().GetOperatingSystem(),
+
+			obj.GetScan().GetDataSource().GetId(),
+
+			obj.GetScan().GetDataSource().GetName(),
+
+			obj.GetScan().GetNotes(),
+
+			obj.GetComponents(),
+
+			obj.GetCves(),
+
+			obj.GetFixableCves(),
+
+			pgutils.NilOrTime(obj.GetLastUpdated()),
+
+			obj.GetNotPullable(),
+
+			obj.GetIsClusterLocal(),
+
+			obj.GetPriority(),
+
+			obj.GetRiskScore(),
+
+			obj.GetTopCvss(),
+
+			obj.GetNotes(),
+
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"images"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for _, obj := range objs {
+
+		if err = s.copyFromImagesLayers(ctx, tx, obj.GetId(), obj.GetMetadata().GetV1().GetLayers()...); err != nil {
+			return err
+		}
+		if err = s.copyFromImagesResults(ctx, tx, obj.GetId(), obj.GetSignatureVerificationData().GetResults()...); err != nil {
+			return err
+		}
+		if err = s.copyFromImagesSignatures(ctx, tx, obj.GetId(), obj.GetSignature().GetSignatures()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromImagesLayers(ctx context.Context, tx pgx.Tx, images_Id string, objs ...*storage.ImageLayer) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"images_id",
+
+		"idx",
+
+		"instruction",
+
+		"value",
+
+		"created",
+
+		"author",
+
+		"empty",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			images_Id,
+
+			idx,
+
+			obj.GetInstruction(),
+
+			obj.GetValue(),
+
+			pgutils.NilOrTime(obj.GetCreated()),
+
+			obj.GetAuthor(),
+
+			obj.GetEmpty(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"images_layers"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromImagesResults(ctx context.Context, tx pgx.Tx, images_Id string, objs ...*storage.ImageSignatureVerificationResult) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"images_id",
+
+		"idx",
+
+		"verificationtime",
+
+		"verifierid",
+
+		"status",
+
+		"description",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			images_Id,
+
+			idx,
+
+			pgutils.NilOrTime(obj.GetVerificationTime()),
+
+			obj.GetVerifierId(),
+
+			obj.GetStatus(),
+
+			obj.GetDescription(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"images_results"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromImagesSignatures(ctx context.Context, tx pgx.Tx, images_Id string, objs ...*storage.Signature) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"images_id",
+
+		"idx",
+
+		"cosign_rawsignature",
+
+		"cosign_signaturepayload",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			images_Id,
+
+			idx,
+
+			obj.GetCosign().GetRawSignature(),
+
+			obj.GetCosign().GetSignaturePayload(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"images_signatures"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableImages(ctx, db)
@@ -371,6 +760,27 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Image) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "Image")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.copyFromImages(ctx, tx, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Image) error {
@@ -405,7 +815,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Image) error {
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Image) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Image")
 
-	return s.upsert(ctx, objs...)
+	if len(objs) < batchAfter {
+		return s.upsert(ctx, objs...)
+	} else {
+		return s.copyFrom(ctx, objs...)
+	}
 }
 
 // Count returns the number of objects in the store

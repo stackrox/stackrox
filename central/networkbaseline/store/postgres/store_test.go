@@ -86,4 +86,17 @@ func (s *NetworkbaselineStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkBaseline)
+
+	var networkBaselines []*storage.NetworkBaseline
+	for i := 0; i < 200; i++ {
+		networkBaseline := &storage.NetworkBaseline{}
+		s.NoError(testutils.FullInit(networkBaseline, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		networkBaselines = append(networkBaselines, networkBaseline)
+	}
+
+	s.NoError(store.UpsertMany(ctx, networkBaselines))
+
+	networkBaselineCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(networkBaselineCount, 200)
 }
