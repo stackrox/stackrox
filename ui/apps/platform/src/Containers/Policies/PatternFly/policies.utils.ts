@@ -505,11 +505,10 @@ export function postFormatImageSigningPolicyGroup(policy: Policy): Policy {
                 }
             });
         });
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        delete serverPolicy.serverPolicySections;
     }
-
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    delete serverPolicy.serverPolicySections;
     return serverPolicy;
 }
 
