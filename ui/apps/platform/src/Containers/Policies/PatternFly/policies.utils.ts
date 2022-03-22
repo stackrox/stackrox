@@ -405,7 +405,7 @@ export function formatValueStr(valueObj: ValueObj, fieldName: string): string {
     if (nonStandardNumberFields.includes(fieldName)) {
         // TODO: work with API to update contract for returning number comparison fields
         //   until that improves, we short-circuit those fields here
-        valueStr = key !== '=' ? `${key}${value}` : `${value}`;
+        valueStr = key !== '=' ? `${key} ${value}` : `${value}`;
     } else if (source || fieldName === 'Environment Variable') {
         valueStr = `${source || ''}=${key}=${value}`;
     } else if (key) {

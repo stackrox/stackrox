@@ -12,12 +12,9 @@ import {
 } from '@patternfly/react-core';
 
 import { fetchAlert } from 'services/AlertsService';
-import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import PolicyDetailContent from '../../Policies/PatternFly/Detail/PolicyDetailContent';
+import { getClientWizardPolicy } from '../../Policies/PatternFly/policies.utils';
 import DeploymentDetails from './DeploymentDetails';
-import PolicyDetails from './PolicyDetails';
 import EnforcementDetails from './EnforcementDetails';
 import { Alert } from '../types/violationTypes';
 import ViolationNotFoundPage from '../ViolationNotFoundPage';
@@ -30,7 +27,6 @@ function ViolationDetailsPage(): ReactElement {
     const [isFetchingSelectedAlert, setIsFetchingSelectedAlert] = useState(false);
 
     const { alertId } = useParams();
-    const isPoliciesPFEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_POLICIES_PATTERNFLY);
 
     function handleTabClick(_, tabIndex) {
         setActiveTabKey(tabIndex);
@@ -111,17 +107,13 @@ function ViolationDetailsPage(): ReactElement {
                     )}
                     <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
                         <PageSection variant="default">
-                            {isPoliciesPFEnabled ? (
-                                <>
-                                    <Title headingLevel="h3" className="pf-u-mb-md">
-                                        Policy overview
-                                    </Title>
-                                    <Divider component="div" className="pf-u-pb-md" />
-                                    <PolicyDetailContent policy={policy} />
-                                </>
-                            ) : (
-                                <PolicyDetails policy={preFormatPolicyFields(alert.policy)} />
-                            )}
+                            <>
+                                <Title headingLevel="h3" className="pf-u-mb-md">
+                                    Policy overview
+                                </Title>
+                                <Divider component="div" className="pf-u-pb-md" />
+                                <PolicyDetailContent policy={getClientWizardPolicy(policy)} />
+                            </>
                         </PageSection>
                     </Tab>
                 </Tabs>
