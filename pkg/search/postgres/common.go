@@ -133,7 +133,8 @@ func generateSelectFields(entry *pgsearch.QueryEntry, primaryKeys []walker.Field
 	return sel
 }
 
-func populatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, schema *walker.Schema, selectType QueryType) (*query, error) {
+func standardizeQueryAndPopulatePath(q *v1.Query, optionsMap searchPkg.OptionsMap, schema *walker.Schema, selectType QueryType) (*query, error) {
+	standardizeFieldNamesInQuery(q)
 	// Field can belong to multiple tables. Therefore, find all the tables reachable from starting table, that contain
 	// query fields.
 	dbFields := getTableFieldsForQuery(schema, q)
@@ -275,8 +276,9 @@ func recursiveSearchForFields(schemaQ []*walker.Schema, searchFields set.StringS
 
 	for _, f := range curr.Fields {
 		field := f
-		if searchFields.Remove(f.Search.FieldName) {
-			reachableFields[f.Search.FieldName] = &field
+		lowerCaseName := strings.ToLower(f.Search.FieldName)
+		if searchFields.Remove(lowerCaseName) {
+			reachableFields[lowerCaseName] = &field
 		}
 	}
 
@@ -393,6 +395,28 @@ func valueFromStringPtrInterface(value interface{}) string {
 	return *(value.(*string))
 }
 
+func standardizeFieldNamesInQuery(q *v1.Query) {
+	// Lowercase all field names in the query, for standardization.
+	// There are certain places where we operate on the query fields directly as strings,
+	// without access to the options map.
+	// TODO: this could be made cleaner by: a) avoiding the need to pass in optionsMaps by building
+	// them into the schema and b) refactoring the v1.Query object to directly have FieldLabels.
+	searchPkg.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		switch bq := bq.Query.(type) {
+		case *v1.BaseQuery_MatchFieldQuery:
+			bq.MatchFieldQuery.Field = strings.ToLower(bq.MatchFieldQuery.Field)
+		case *v1.BaseQuery_MatchLinkedFieldsQuery:
+			for _, q := range bq.MatchLinkedFieldsQuery.Query {
+				q.Field = strings.ToLower(q.Field)
+			}
+		}
+	})
+
+	for _, sortOption := range q.GetPagination().GetSortOptions() {
+		sortOption.Field = strings.ToLower(sortOption.Field)
+	}
+}
+
 // RunSearchRequest executes a request again the database
 func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) (searchResults []searchPkg.Result, err error) {
 	var query *query
@@ -411,8 +435,9 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 			err = fmt.Errorf("unexpected error running search request: %v", r)
 		}
 	}()
+
 	schema := mapping.GetTableFromCategory(category)
-	query, err = populatePath(q, optionsMap, schema, GET)
+	query, err = standardizeQueryAndPopulatePath(q, optionsMap, schema, GET)
 	if err != nil {
 		return nil, err
 	}
@@ -429,6 +454,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 		return nil, err
 	}
 	defer rows.Close()
+	log.Debugf("SEARCH: ran query %s; data %+v", queryStr, query.Data)
 
 	numPrimaryKeys := len(schema.LocalPrimaryKeys())
 	highlightedResults := make([]interface{}, len(query.Select.Fields)+numPrimaryKeys)
@@ -470,8 +496,8 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 
 // RunCountRequest executes a request for just the count against the database
 func RunCountRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, optionsMap searchPkg.OptionsMap) (int, error) {
-	query, err := populatePath(q, optionsMap, mapping.GetTableFromCategory(category), COUNT)
-	if err != nil {
+	query, err := standardizeQueryAndPopulatePath(q, optionsMap, mapping.GetTableFromCategory(category), COUNT)
+	if err != nil || query == nil {
 		return 0, err
 	}
 
