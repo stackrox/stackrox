@@ -130,9 +130,7 @@ func (e *enricherImpl) EnrichWithSignatureVerificationData(ctx context.Context, 
 }
 
 // EnrichImage enriches an image with the integration set present.
-func (e *enricherImpl) EnrichImage(enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
-	// TODO(ROX-9687): Replace with proper injected context.
-	ctx := context.TODO()
+func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
 	errorList := errorhelpers.NewErrorList("image enrichment")
 
 	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.Notes))

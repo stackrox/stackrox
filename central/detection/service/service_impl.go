@@ -139,7 +139,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	if req.GetNoExternalMetadata() {
 		eCtx.FetchOpt = enricher.NoExternalMetadata
 	}
-	enrichResult, err := s.imageEnricher.EnrichImage(eCtx, img)
+	enrichResult, err := s.imageEnricher.EnrichImage(ctx, eCtx, img)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 }
 
 func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment, policyCategories ...string) (*apiV1.DeployDetectionResponse_Run, error) {
-	images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(enrichmentContext, deployment)
+	images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(ctx, enrichmentContext, deployment)
 	if err != nil {
 		return nil, err
 	}
