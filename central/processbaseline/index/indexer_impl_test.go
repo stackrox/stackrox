@@ -39,7 +39,7 @@ func (suite *ProcessBaselineIndexTestSuite) getAndStoreBaseline() *storage.Proce
 	baseline := fixtures.GetProcessBaselineWithID()
 	suite.NotNil(baseline.GetElements())
 	suite.Len(baseline.GetElements(), 1, "The fixture should return a baseline with exactly one process in it or this test should change")
-	err := suite.indexer.AddBaseline(baseline)
+	err := suite.indexer.AddProcessBaseline(baseline)
 	suite.NoError(err)
 	return baseline
 }
@@ -85,7 +85,7 @@ func (suite *ProcessBaselineIndexTestSuite) TestAddSearchDeleteBaseline() {
 	suite.NoError(err)
 	suite.Equal(baseline.GetId(), results[0].ID)
 
-	err = suite.indexer.DeleteBaseline(baseline.GetId())
+	err = suite.indexer.DeleteProcessBaseline(baseline.GetId())
 	suite.NoError(err)
 	results, err = suite.indexer.Search(q)
 	suite.NoError(err)
