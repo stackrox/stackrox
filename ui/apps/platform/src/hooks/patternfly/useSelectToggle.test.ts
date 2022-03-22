@@ -30,6 +30,7 @@ describe('useSelectToggle', () => {
             result.current.openSelect();
         });
         expect(result.current.isOpen).toEqual(true);
+        // Run effect twice to test idempotency
         act(() => {
             result.current.openSelect();
         });
@@ -39,6 +40,7 @@ describe('useSelectToggle', () => {
             result.current.closeSelect();
         });
         expect(result.current.isOpen).toEqual(false);
+        // Run effect twice to test idempotency
         act(() => {
             result.current.closeSelect();
         });
@@ -72,6 +74,7 @@ describe('useSelectToggle', () => {
             result.current.openSelect();
         });
         expect(result.current.isOpen).toEqual(true);
+        // Run effect twice to test idempotency
         act(() => {
             result.current.openSelect();
         });
@@ -81,6 +84,7 @@ describe('useSelectToggle', () => {
             result.current.closeSelect();
         });
         expect(result.current.isOpen).toEqual(false);
+        // Run effect twice to test idempotency
         act(() => {
             result.current.closeSelect();
         });
