@@ -16,7 +16,7 @@ echo "StackRox image set to $MAIN_IMAGE"
 export CENTRAL_DB_IMAGE_REPO="${CENTRAL_DB_IMAGE_REPO:-stackrox/central-db}"
 echo "CENTRAL_DB_IMAGE_REPO set to $CENTRAL_DB_IMAGE_REPO"
 
-export CENTRAL_DB_IMAGE="${CENTRAL_DB_IMAGE:-${CENTRAL_DB_IMAGE_REPO}:${MAIN_IMAGE_TAG}}}"
+export CENTRAL_DB_IMAGE="${CENTRAL_DB_IMAGE:-${CENTRAL_DB_IMAGE_REPO}:${MAIN_IMAGE_TAG}}"
 echo "StackRox central db image set to $CENTRAL_DB_IMAGE"
 
 export ROXCTL_IMAGE_REPO="${ROXCTL_IMAGE_REPO:-stackrox/roxctl}"
