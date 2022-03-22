@@ -285,6 +285,64 @@ check_scanner_and_collector() {
     fi
 }
 
+mark_collector_release() {
+    info "Create a PR for collector to add this release to its RELEASED_VERSIONS file"
+
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: mark_collector_release <tag> <username>"
+    fi
+
+    ensure_CI
+
+    local tag="$1"
+    local username="$2"
+
+    if ! is_release_version "$tag"; then
+        die "A release version is required. Got $tag"
+    fi
+
+    ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+
+    info "Check out collector source code"
+
+    mkdir -p /tmp/collector
+    git -C /tmp clone --depth=2 --no-single-branch git@github.com:stackrox/collector.git
+
+    info "Create a branch for the PR"
+
+    collector_version="$(cat COLLECTOR_VERSION)"
+    cd /tmp/collector || exit
+    gitbot(){
+        git -c "user.name=RoxBot" -c "user.email=roxbot@stackrox.com" "${@}"
+    }
+    gitbot checkout master && gitbot pull
+
+    branch_name="release-${tag}/update-RELEASED_VERSIONS"
+    if gitbot fetch --quiet origin "${branch_name}"; then
+        gitbot checkout "${branch_name}"
+        gitbot pull --quiet --set-upstream origin "${branch_name}"
+    else
+        gitbot checkout -b "${branch_name}"
+        gitbot push --set-upstream origin "${branch_name}"
+    fi
+
+    info "Update RELEASED_VERSIONS"
+
+    # We need to make sure the file ends with a newline so as not to corrupt it when appending.
+    [[ ! -f RELEASED_VERSIONS ]] || sed --in-place -e '$a'\\ RELEASED_VERSIONS
+    echo "${collector_version} ${tag}  # Rox release ${tag} by ${username} at $(date)" \
+        >>RELEASED_VERSIONS
+    gitbot add RELEASED_VERSIONS
+    gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${tag}"
+    gitbot push origin "${branch_name}"
+
+    # RS-487: These two env vars are required by /scripts/create_update_pr.sh which needs to get
+    # resolved in stackrox/rox-ci-image.
+    require_environment "CIRCLE_USERNAME"
+    require_environment "CIRCLE_PULL_REQUEST"
+    /scripts/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS" "Add entry into the RELEASED_VERSIONS file"
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         die "When invoked at the command line a method is required."

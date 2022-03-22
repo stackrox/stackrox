@@ -4175,39 +4175,10 @@ jobs:
             ssh-keyscan -H github.com >> ~/.ssh/known_hosts
 
       - run:
-          name: Check out collector source code
+          name: Open a collector PR to add this release to RELEASED_VERSIONS
           command: |
-            mkdir -p /tmp/collector
-            git -C /tmp clone --depth=2 --no-single-branch git@github.com:stackrox/collector.git
-
-      - run:
-          name: Add current release version to RELEASED_VERSIONS file
-          command: |
-            collector_version="$(cat COLLECTOR_VERSION)"
-            cd /tmp/collector || exit
-            gitbot(){
-                git -c "user.name=RoxBot" -c "user.email=roxbot@stackrox.com" "${@}"
-            }
-            gitbot checkout master && gitbot pull
-
-            branch_name="release-${CIRCLE_TAG}/update-RELEASED_VERSIONS"
-            if gitbot fetch --quiet origin "${branch_name}"; then
-                gitbot checkout "${branch_name}"
-                gitbot pull --quiet --set-upstream origin "${branch_name}"
-            else
-                gitbot checkout -b "${branch_name}"
-                gitbot push --set-upstream origin "${branch_name}"
-            fi
-
-            # We need to make sure the file ends with a newline so as not to corrupt it when appending.
-            [[ ! -f RELEASED_VERSIONS ]] || sed -i'' -e '$a\' RELEASED_VERSIONS
-            echo "${collector_version} ${CIRCLE_TAG}  # Rox release ${CIRCLE_TAG} by ${CIRCLE_USERNAME} at $(date)" \
-                >>RELEASED_VERSIONS
-            gitbot add RELEASED_VERSIONS
-            gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${CIRCLE_TAG}"
-            gitbot push origin "${branch_name}"
-
-            /scripts/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS" "Add entry into the RELEASED_VERSIONS file"
+            source scripts/ci/lib.sh
+            mark_collector_release "${CIRCLE_TAG}" "${CIRCLE_USERNAME}"
 
   push-release:
     executor: custom
