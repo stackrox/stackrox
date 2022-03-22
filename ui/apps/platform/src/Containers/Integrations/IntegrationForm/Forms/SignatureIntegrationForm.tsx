@@ -16,23 +16,13 @@ import { TrashIcon } from '@patternfly/react-icons';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormMessage from 'Components/PatternFly/FormMessage';
+import { SignatureIntegration } from 'services/SignatureIntegrationsService';
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
 import { IntegrationFormProps } from '../integrationFormTypes';
 import useIntegrationForm from '../useIntegrationForm';
 
-export type SignatureIntegration = {
-    id: string;
-    name: string;
-    cosign: {
-        publicKeys: {
-            name: string;
-            publicKeyPemEnc: string;
-        }[];
-    };
-};
-
-export const validationSchema = yup.object().shape({
+const validationSchema = yup.object().shape({
     id: yup.string().trim(),
     name: yup.string().trim().required('Integration name is required'),
     cosign: yup.object().shape({
@@ -45,7 +35,7 @@ export const validationSchema = yup.object().shape({
     }),
 });
 
-export const defaultValues: SignatureIntegration = {
+const defaultValues: SignatureIntegration = {
     id: '',
     name: '',
     cosign: {
@@ -53,7 +43,7 @@ export const defaultValues: SignatureIntegration = {
     },
 };
 
-export const VerificationExpandableSection = ({ toggleText, children }): ReactElement => {
+const VerificationExpandableSection = ({ toggleText, children }): ReactElement => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     function onToggle() {

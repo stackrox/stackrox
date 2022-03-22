@@ -12,6 +12,7 @@ import {
 
 import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
+import ImageSignersCriteriaFieldInput from './ImageSignersCriteriaFieldInput';
 
 type PolicyCriteriaFieldInputProps = {
     descriptor: Descriptor;
@@ -187,6 +188,15 @@ function PolicyCriteriaFieldInput({
                 </>
             );
             /* eslint-enable react/no-array-index-key */
+        }
+        case 'signaturePolicyCriteria': {
+            return (
+                <ImageSignersCriteriaFieldInput
+                    setValue={setValue}
+                    value={value}
+                    readOnly={readOnly}
+                />
+            );
         }
     }
     /* eslint-enable default-case */

@@ -115,6 +115,8 @@ const memoryResource = (label: string): GroupDescriptor => ({
     canBooleanLogic: true,
 });
 
+export const imageSigningCriteriaName = 'Image Signature Verified By';
+
 // A form descriptor for every option (key) on the policy criteria form page.
 /*
     e.g.
@@ -181,14 +183,20 @@ export type DescriptorType =
     | 'radioGroup'
     | 'radioGroupString'
     | 'select'
-    | 'text';
+    | 'text'
+    | 'signaturePolicyCriteria';
 
 export type Descriptor =
     | GroupDescriptor
     | NumberDescriptor
     | RadioGroupDescriptor
     | SelectDescriptor
-    | TextDescriptor;
+    | TextDescriptor
+    | SignatureDescriptor;
+
+export type SignatureDescriptor = {
+    type: 'signaturePolicyCriteria';
+} & BaseDescriptor;
 
 export type GroupDescriptor = {
     type: 'group';
@@ -219,6 +227,18 @@ export type TextDescriptor = {
     type: 'text';
     placeholder?: string;
 } & BaseDescriptor;
+
+// TODO: merge with policyConfigurationDescriptor after ROX_VERIFY_IMAGE_SIGNATURE enabled by default
+export const imageSigningCriteriaDescriptor: SignatureDescriptor = {
+    label: 'Trust image signers',
+    name: imageSigningCriteriaName,
+    shortName: 'Trust image signers',
+    longName: 'Trust image signers',
+    negatedName: 'Do not trust image signers',
+    category: policyCriteriaCategories.IMAGE_REGISTRY,
+    type: 'signaturePolicyCriteria',
+    canBooleanLogic: true,
+};
 
 export const policyConfigurationDescriptor: Descriptor[] = [
     {
