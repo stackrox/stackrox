@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"time"
 
@@ -14,9 +13,14 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 const (
@@ -78,13 +82,13 @@ create table if not exists risk (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic(fmt.Sprintf("error creating table %s: %v", table, err))
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -105,7 +109,7 @@ create table if not exists risk_Results (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic(fmt.Sprintf("error creating table %s: %v", table, err))
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -114,7 +118,7 @@ create table if not exists risk_Results (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -136,7 +140,7 @@ create table if not exists risk_Results_Factors (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic(fmt.Sprintf("error creating table %s: %v", table, err))
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -145,7 +149,7 @@ create table if not exists risk_Results_Factors (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 

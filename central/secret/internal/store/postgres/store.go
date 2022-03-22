@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"time"
 
@@ -14,9 +13,14 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 const (
@@ -82,13 +86,13 @@ create table if not exists secrets (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic(fmt.Sprintf("error creating table %s: %v", table, err))
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -133,7 +137,7 @@ create table if not exists secrets_Files (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic(fmt.Sprintf("error creating table %s: %v", table, err))
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -142,7 +146,7 @@ create table if not exists secrets_Files (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -164,7 +168,7 @@ create table if not exists secrets_Files_Registries (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic(fmt.Sprintf("error creating table %s: %v", table, err))
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -173,7 +177,7 @@ create table if not exists secrets_Files_Registries (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -193,7 +197,7 @@ create table if not exists secrets_ContainerRelationships (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic(fmt.Sprintf("error creating table %s: %v", table, err))
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -202,7 +206,7 @@ create table if not exists secrets_ContainerRelationships (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -222,7 +226,7 @@ create table if not exists secrets_DeploymentRelationships (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic(fmt.Sprintf("error creating table %s: %v", table, err))
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -231,7 +235,7 @@ create table if not exists secrets_DeploymentRelationships (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
