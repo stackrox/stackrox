@@ -54,9 +54,9 @@ spec:
     - 'downwardAPI'
     - 'persistentVolumeClaim'
     - 'hostPath'
-  {{- if ._rox.central.persistence.hostPath -}}
+  {{- if ._rox.central.persistence.hostPath }}
   allowedHostPaths:
-    {{- /* TODO(ROX-9807): Use a designated path for central-db for now. Need to detach hostPath from central and connect it to central-db */ }}
+    {{- /* TODO(ROX-9807): Use a designated path for central-db for now. Need to move hostPath from central to central-db */}}
     - pathPrefix: {{._rox.central.persistence.hostPath}}-db
   {{- end}}
   hostNetwork: false
