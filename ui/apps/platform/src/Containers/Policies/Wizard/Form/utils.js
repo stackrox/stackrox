@@ -4,7 +4,7 @@ import { removeEmptyPolicyFields } from 'utils/policyUtils';
 import {
     postFormatImageSigningPolicyGroup,
     preFormatImageSigningPolicyGroup,
-} from 'Containers/Policies/PatternFly/policies.utils';
+} from '../../PatternFly/policies.utils';
 import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
 
 function filterAndMapExclusions(exclusions, filterFunc, mapFunc) {

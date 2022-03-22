@@ -19,7 +19,7 @@ import {
 } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
-import { imageSigningCriteriaName } from 'Containers/Policies/Wizard/Form/descriptors';
+import { imageSigningCriteriaName } from '../Wizard/Form/descriptors';
 
 function isValidAction(action: unknown): action is ExtendedPageAction {
     return action === 'clone' || action === 'create' || action === 'edit' || action === 'generate';

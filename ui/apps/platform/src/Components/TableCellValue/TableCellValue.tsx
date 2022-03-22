@@ -1,17 +1,15 @@
 import React from 'react';
 import resolvePath from 'object-resolve-path';
-import { Integration } from 'Containers/Integrations/utils/integrationUtils';
-import { SignatureIntegration } from 'services/SignatureIntegrationsService';
 
-type TableCellProps = {
-    row: Integration | SignatureIntegration;
+type TableCellProps<T> = {
+    row: T;
     column: {
         Header: string;
         accessor: ((data) => string) | string;
     };
 };
 
-function TableCellValue({ row, column }: TableCellProps): React.ReactElement {
+function TableCellValue<T>({ row, column }: TableCellProps<T>): React.ReactElement {
     let value: string;
     if (typeof column.accessor === 'function') {
         value = column.accessor(row).toString();

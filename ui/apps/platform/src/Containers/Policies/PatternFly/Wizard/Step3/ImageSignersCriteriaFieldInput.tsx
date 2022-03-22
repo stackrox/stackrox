@@ -71,7 +71,7 @@ function ImageSignersCriteriaFieldInput({ setValue, value, readOnly = false }): 
                     setIsModalOpen(true);
                 }}
             >
-                Select
+                {readOnly ? 'View' : 'Select'}
             </Button>
             <Modal
                 title="Add trusted image signers to policy criteria"
