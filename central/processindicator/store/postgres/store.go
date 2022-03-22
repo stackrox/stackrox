@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "process_indicators"
 	countStmt  = "SELECT COUNT(*) FROM process_indicators"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM process_indicators WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM process_indicators WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM process_indicators WHERE Id = $1"
-	deleteStmt  = "DELETE FROM process_indicators WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM process_indicators WHERE id = $1"
+	deleteStmt  = "DELETE FROM process_indicators WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM process_indicators"
-	getIDsStmt  = "SELECT Id FROM process_indicators"
-	getManyStmt = "SELECT serialized FROM process_indicators WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM process_indicators"
+	getManyStmt = "SELECT serialized FROM process_indicators WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM process_indicators WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM process_indicators WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,28 +73,28 @@ type storeImpl struct {
 func createTableProcessIndicators(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists process_indicators (
-    Id varchar,
-    DeploymentId varchar,
-    ContainerName varchar,
-    PodId varchar,
-    PodUid varchar,
-    Signal_Id varchar,
-    Signal_ContainerId varchar,
-    Signal_Time timestamp,
-    Signal_Name varchar,
-    Signal_Args varchar,
-    Signal_ExecFilePath varchar,
-    Signal_Pid integer,
-    Signal_Uid integer,
-    Signal_Gid integer,
-    Signal_Lineage text[],
-    Signal_Scraped bool,
-    ClusterId varchar,
-    Namespace varchar,
-    ContainerStartTime timestamp,
-    ImageId varchar,
+    id varchar,
+    deploymentid varchar,
+    containername varchar,
+    podid varchar,
+    poduid varchar,
+    signal_id varchar,
+    signal_containerid varchar,
+    signal_time timestamp,
+    signal_name varchar,
+    signal_args varchar,
+    signal_execfilepath varchar,
+    signal_pid integer,
+    signal_uid integer,
+    signal_gid integer,
+    signal_lineage text[],
+    signal_scraped bool,
+    clusterid varchar,
+    namespace varchar,
+    containerstarttime timestamp,
+    imageid varchar,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -116,12 +116,12 @@ create table if not exists process_indicators (
 func createTableProcessIndicatorsLineageInfo(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists process_indicators_LineageInfo (
-    process_indicators_Id varchar,
+    processindicatorid varchar,
     idx integer,
-    ParentUid integer,
-    ParentExecFilePath varchar,
-    PRIMARY KEY(process_indicators_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (process_indicators_Id) REFERENCES process_indicators(Id) ON DELETE CASCADE
+    parentuid integer,
+    parentexecfilepath varchar,
+    PRIMARY KEY(processindicatorid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (processindicatorid) REFERENCES process_indicators(id) ON DELETE CASCADE
 )
 `
 
@@ -174,7 +174,7 @@ func insertIntoProcessIndicators(ctx context.Context, tx pgx.Tx, obj *storage.Pr
 		serialized,
 	}
 
-	finalStr := "INSERT INTO process_indicators (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Lineage, Signal_Scraped, ClusterId, Namespace, ContainerStartTime, ImageId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_Id = EXCLUDED.Signal_Id, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Pid = EXCLUDED.Signal_Pid, Signal_Uid = EXCLUDED.Signal_Uid, Signal_Gid = EXCLUDED.Signal_Gid, Signal_Lineage = EXCLUDED.Signal_Lineage, Signal_Scraped = EXCLUDED.Signal_Scraped, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ContainerStartTime = EXCLUDED.ContainerStartTime, ImageId = EXCLUDED.ImageId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO process_indicators (id, deploymentid, containername, podid, poduid, signal_id, signal_containerid, signal_time, signal_name, signal_args, signal_execfilepath, signal_pid, signal_uid, signal_gid, signal_lineage, signal_scraped, clusterid, namespace, containerstarttime, imageid, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, deploymentid = EXCLUDED.deploymentid, containername = EXCLUDED.containername, podid = EXCLUDED.podid, poduid = EXCLUDED.poduid, signal_id = EXCLUDED.signal_id, signal_containerid = EXCLUDED.signal_containerid, signal_time = EXCLUDED.signal_time, signal_name = EXCLUDED.signal_name, signal_args = EXCLUDED.signal_args, signal_execfilepath = EXCLUDED.signal_execfilepath, signal_pid = EXCLUDED.signal_pid, signal_uid = EXCLUDED.signal_uid, signal_gid = EXCLUDED.signal_gid, signal_lineage = EXCLUDED.signal_lineage, signal_scraped = EXCLUDED.signal_scraped, clusterid = EXCLUDED.clusterid, namespace = EXCLUDED.namespace, containerstarttime = EXCLUDED.containerstarttime, imageid = EXCLUDED.imageid, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -188,7 +188,7 @@ func insertIntoProcessIndicators(ctx context.Context, tx pgx.Tx, obj *storage.Pr
 		}
 	}
 
-	query = "delete from process_indicators_LineageInfo where process_indicators_Id = $1 AND idx >= $2"
+	query = "delete from process_indicators_LineageInfo where processindicatorid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetSignal().GetLineageInfo()))
 	if err != nil {
 		return err
@@ -196,17 +196,17 @@ func insertIntoProcessIndicators(ctx context.Context, tx pgx.Tx, obj *storage.Pr
 	return nil
 }
 
-func insertIntoProcessIndicatorsLineageInfo(ctx context.Context, tx pgx.Tx, obj *storage.ProcessSignal_LineageInfo, process_indicators_Id string, idx int) error {
+func insertIntoProcessIndicatorsLineageInfo(ctx context.Context, tx pgx.Tx, obj *storage.ProcessSignal_LineageInfo, processindicatorid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		process_indicators_Id,
+		processindicatorid,
 		idx,
 		obj.GetParentUid(),
 		obj.GetParentExecFilePath(),
 	}
 
-	finalStr := "INSERT INTO process_indicators_LineageInfo (process_indicators_Id, idx, ParentUid, ParentExecFilePath) VALUES($1, $2, $3, $4) ON CONFLICT(process_indicators_Id, idx) DO UPDATE SET process_indicators_Id = EXCLUDED.process_indicators_Id, idx = EXCLUDED.idx, ParentUid = EXCLUDED.ParentUid, ParentExecFilePath = EXCLUDED.ParentExecFilePath"
+	finalStr := "INSERT INTO process_indicators_LineageInfo (processindicatorid, idx, parentuid, parentexecfilepath) VALUES($1, $2, $3, $4) ON CONFLICT(processindicatorid, idx) DO UPDATE SET processindicatorid = EXCLUDED.processindicatorid, idx = EXCLUDED.idx, parentuid = EXCLUDED.parentuid, parentexecfilepath = EXCLUDED.parentexecfilepath"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -360,7 +360,7 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 	return err
 }
 
-func (s *storeImpl) copyFromProcessIndicatorsLineageInfo(ctx context.Context, tx pgx.Tx, process_indicators_Id string, objs ...*storage.ProcessSignal_LineageInfo) error {
+func (s *storeImpl) copyFromProcessIndicatorsLineageInfo(ctx context.Context, tx pgx.Tx, processindicatorid string, objs ...*storage.ProcessSignal_LineageInfo) error {
 
 	inputRows := [][]interface{}{}
 
@@ -368,7 +368,7 @@ func (s *storeImpl) copyFromProcessIndicatorsLineageInfo(ctx context.Context, tx
 
 	copyCols := []string{
 
-		"process_indicators_id",
+		"processindicatorid",
 
 		"idx",
 
@@ -383,7 +383,7 @@ func (s *storeImpl) copyFromProcessIndicatorsLineageInfo(ctx context.Context, tx
 
 		inputRows = append(inputRows, []interface{}{
 
-			process_indicators_Id,
+			processindicatorid,
 
 			idx,
 

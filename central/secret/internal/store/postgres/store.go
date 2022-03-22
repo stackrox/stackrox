@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "secrets"
 	countStmt  = "SELECT COUNT(*) FROM secrets"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM secrets WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM secrets WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM secrets WHERE Id = $1"
-	deleteStmt  = "DELETE FROM secrets WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM secrets WHERE id = $1"
+	deleteStmt  = "DELETE FROM secrets WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM secrets"
-	getIDsStmt  = "SELECT Id FROM secrets"
-	getManyStmt = "SELECT serialized FROM secrets WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM secrets"
+	getManyStmt = "SELECT serialized FROM secrets WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM secrets WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM secrets WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,18 +73,18 @@ type storeImpl struct {
 func createTableSecrets(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists secrets (
-    Id varchar,
-    Name varchar,
-    ClusterId varchar,
-    ClusterName varchar,
-    Namespace varchar,
-    Type varchar,
-    Labels jsonb,
-    Annotations jsonb,
-    CreatedAt timestamp,
-    Relationship_Id varchar,
+    id varchar,
+    name varchar,
+    clusterid varchar,
+    clustername varchar,
+    namespace varchar,
+    type varchar,
+    labels jsonb,
+    annotations jsonb,
+    createdat timestamp,
+    relationship_id varchar,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -108,34 +108,34 @@ create table if not exists secrets (
 func createTableSecretsFiles(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists secrets_Files (
-    secrets_Id varchar,
+    secretid varchar,
     idx integer,
-    Name varchar,
-    Type integer,
-    Cert_Subject_CommonName varchar,
-    Cert_Subject_Country varchar,
-    Cert_Subject_Organization varchar,
-    Cert_Subject_OrganizationUnit varchar,
-    Cert_Subject_Locality varchar,
-    Cert_Subject_Province varchar,
-    Cert_Subject_StreetAddress varchar,
-    Cert_Subject_PostalCode varchar,
-    Cert_Subject_Names text[],
-    Cert_Issuer_CommonName varchar,
-    Cert_Issuer_Country varchar,
-    Cert_Issuer_Organization varchar,
-    Cert_Issuer_OrganizationUnit varchar,
-    Cert_Issuer_Locality varchar,
-    Cert_Issuer_Province varchar,
-    Cert_Issuer_StreetAddress varchar,
-    Cert_Issuer_PostalCode varchar,
-    Cert_Issuer_Names text[],
-    Cert_Sans text[],
-    Cert_StartDate timestamp,
-    Cert_EndDate timestamp,
-    Cert_Algorithm varchar,
-    PRIMARY KEY(secrets_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
+    name varchar,
+    type integer,
+    cert_subject_commonname varchar,
+    cert_subject_country varchar,
+    cert_subject_organization varchar,
+    cert_subject_organizationunit varchar,
+    cert_subject_locality varchar,
+    cert_subject_province varchar,
+    cert_subject_streetaddress varchar,
+    cert_subject_postalcode varchar,
+    cert_subject_names text[],
+    cert_issuer_commonname varchar,
+    cert_issuer_country varchar,
+    cert_issuer_organization varchar,
+    cert_issuer_organizationunit varchar,
+    cert_issuer_locality varchar,
+    cert_issuer_province varchar,
+    cert_issuer_streetaddress varchar,
+    cert_issuer_postalcode varchar,
+    cert_issuer_names text[],
+    cert_sans text[],
+    cert_startdate timestamp,
+    cert_enddate timestamp,
+    cert_algorithm varchar,
+    PRIMARY KEY(secretid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (secretid) REFERENCES secrets(id) ON DELETE CASCADE
 )
 `
 
@@ -160,13 +160,13 @@ create table if not exists secrets_Files (
 func createTableSecretsFilesRegistries(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists secrets_Files_Registries (
-    secrets_Id varchar,
-    secrets_Files_idx integer,
+    secretid varchar,
+    secretdatafileidx integer,
     idx integer,
-    Name varchar,
-    Username varchar,
-    PRIMARY KEY(secrets_Id, secrets_Files_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (secrets_Id, secrets_Files_idx) REFERENCES secrets_Files(secrets_Id, idx) ON DELETE CASCADE
+    name varchar,
+    username varchar,
+    PRIMARY KEY(secretid, secretdatafileidx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (secretid, secretdatafileidx) REFERENCES secrets_Files(secretid, idx) ON DELETE CASCADE
 )
 `
 
@@ -190,12 +190,12 @@ create table if not exists secrets_Files_Registries (
 func createTableSecretsContainerRelationships(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists secrets_ContainerRelationships (
-    secrets_Id varchar,
+    secretid varchar,
     idx integer,
-    Id varchar,
-    Path varchar,
-    PRIMARY KEY(secrets_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
+    id varchar,
+    path varchar,
+    PRIMARY KEY(secretid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (secretid) REFERENCES secrets(id) ON DELETE CASCADE
 )
 `
 
@@ -219,12 +219,12 @@ create table if not exists secrets_ContainerRelationships (
 func createTableSecretsDeploymentRelationships(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists secrets_DeploymentRelationships (
-    secrets_Id varchar,
+    secretid varchar,
     idx integer,
-    Id varchar,
-    Name varchar,
-    PRIMARY KEY(secrets_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
+    id varchar,
+    name varchar,
+    PRIMARY KEY(secretid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (secretid) REFERENCES secrets(id) ON DELETE CASCADE
 )
 `
 
@@ -267,7 +267,7 @@ func insertIntoSecrets(ctx context.Context, tx pgx.Tx, obj *storage.Secret) erro
 		serialized,
 	}
 
-	finalStr := "INSERT INTO secrets (Id, Name, ClusterId, ClusterName, Namespace, Type, Labels, Annotations, CreatedAt, Relationship_Id, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, Type = EXCLUDED.Type, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, CreatedAt = EXCLUDED.CreatedAt, Relationship_Id = EXCLUDED.Relationship_Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO secrets (id, name, clusterid, clustername, namespace, type, labels, annotations, createdat, relationship_id, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, clusterid = EXCLUDED.clusterid, clustername = EXCLUDED.clustername, namespace = EXCLUDED.namespace, type = EXCLUDED.type, labels = EXCLUDED.labels, annotations = EXCLUDED.annotations, createdat = EXCLUDED.createdat, relationship_id = EXCLUDED.relationship_id, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -281,7 +281,7 @@ func insertIntoSecrets(ctx context.Context, tx pgx.Tx, obj *storage.Secret) erro
 		}
 	}
 
-	query = "delete from secrets_Files where secrets_Id = $1 AND idx >= $2"
+	query = "delete from secrets_Files where secretid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetFiles()))
 	if err != nil {
 		return err
@@ -292,7 +292,7 @@ func insertIntoSecrets(ctx context.Context, tx pgx.Tx, obj *storage.Secret) erro
 		}
 	}
 
-	query = "delete from secrets_ContainerRelationships where secrets_Id = $1 AND idx >= $2"
+	query = "delete from secrets_ContainerRelationships where secretid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetRelationship().GetContainerRelationships()))
 	if err != nil {
 		return err
@@ -303,7 +303,7 @@ func insertIntoSecrets(ctx context.Context, tx pgx.Tx, obj *storage.Secret) erro
 		}
 	}
 
-	query = "delete from secrets_DeploymentRelationships where secrets_Id = $1 AND idx >= $2"
+	query = "delete from secrets_DeploymentRelationships where secretid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetRelationship().GetDeploymentRelationships()))
 	if err != nil {
 		return err
@@ -311,11 +311,11 @@ func insertIntoSecrets(ctx context.Context, tx pgx.Tx, obj *storage.Secret) erro
 	return nil
 }
 
-func insertIntoSecretsFiles(ctx context.Context, tx pgx.Tx, obj *storage.SecretDataFile, secrets_Id string, idx int) error {
+func insertIntoSecretsFiles(ctx context.Context, tx pgx.Tx, obj *storage.SecretDataFile, secretid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		secrets_Id,
+		secretid,
 		idx,
 		obj.GetName(),
 		obj.GetType(),
@@ -343,7 +343,7 @@ func insertIntoSecretsFiles(ctx context.Context, tx pgx.Tx, obj *storage.SecretD
 		obj.GetCert().GetAlgorithm(),
 	}
 
-	finalStr := "INSERT INTO secrets_Files (secrets_Id, idx, Name, Type, Cert_Subject_CommonName, Cert_Subject_Country, Cert_Subject_Organization, Cert_Subject_OrganizationUnit, Cert_Subject_Locality, Cert_Subject_Province, Cert_Subject_StreetAddress, Cert_Subject_PostalCode, Cert_Subject_Names, Cert_Issuer_CommonName, Cert_Issuer_Country, Cert_Issuer_Organization, Cert_Issuer_OrganizationUnit, Cert_Issuer_Locality, Cert_Issuer_Province, Cert_Issuer_StreetAddress, Cert_Issuer_PostalCode, Cert_Issuer_Names, Cert_Sans, Cert_StartDate, Cert_EndDate, Cert_Algorithm) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26) ON CONFLICT(secrets_Id, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Cert_Subject_CommonName = EXCLUDED.Cert_Subject_CommonName, Cert_Subject_Country = EXCLUDED.Cert_Subject_Country, Cert_Subject_Organization = EXCLUDED.Cert_Subject_Organization, Cert_Subject_OrganizationUnit = EXCLUDED.Cert_Subject_OrganizationUnit, Cert_Subject_Locality = EXCLUDED.Cert_Subject_Locality, Cert_Subject_Province = EXCLUDED.Cert_Subject_Province, Cert_Subject_StreetAddress = EXCLUDED.Cert_Subject_StreetAddress, Cert_Subject_PostalCode = EXCLUDED.Cert_Subject_PostalCode, Cert_Subject_Names = EXCLUDED.Cert_Subject_Names, Cert_Issuer_CommonName = EXCLUDED.Cert_Issuer_CommonName, Cert_Issuer_Country = EXCLUDED.Cert_Issuer_Country, Cert_Issuer_Organization = EXCLUDED.Cert_Issuer_Organization, Cert_Issuer_OrganizationUnit = EXCLUDED.Cert_Issuer_OrganizationUnit, Cert_Issuer_Locality = EXCLUDED.Cert_Issuer_Locality, Cert_Issuer_Province = EXCLUDED.Cert_Issuer_Province, Cert_Issuer_StreetAddress = EXCLUDED.Cert_Issuer_StreetAddress, Cert_Issuer_PostalCode = EXCLUDED.Cert_Issuer_PostalCode, Cert_Issuer_Names = EXCLUDED.Cert_Issuer_Names, Cert_Sans = EXCLUDED.Cert_Sans, Cert_StartDate = EXCLUDED.Cert_StartDate, Cert_EndDate = EXCLUDED.Cert_EndDate, Cert_Algorithm = EXCLUDED.Cert_Algorithm"
+	finalStr := "INSERT INTO secrets_Files (secretid, idx, name, type, cert_subject_commonname, cert_subject_country, cert_subject_organization, cert_subject_organizationunit, cert_subject_locality, cert_subject_province, cert_subject_streetaddress, cert_subject_postalcode, cert_subject_names, cert_issuer_commonname, cert_issuer_country, cert_issuer_organization, cert_issuer_organizationunit, cert_issuer_locality, cert_issuer_province, cert_issuer_streetaddress, cert_issuer_postalcode, cert_issuer_names, cert_sans, cert_startdate, cert_enddate, cert_algorithm) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26) ON CONFLICT(secretid, idx) DO UPDATE SET secretid = EXCLUDED.secretid, idx = EXCLUDED.idx, name = EXCLUDED.name, type = EXCLUDED.type, cert_subject_commonname = EXCLUDED.cert_subject_commonname, cert_subject_country = EXCLUDED.cert_subject_country, cert_subject_organization = EXCLUDED.cert_subject_organization, cert_subject_organizationunit = EXCLUDED.cert_subject_organizationunit, cert_subject_locality = EXCLUDED.cert_subject_locality, cert_subject_province = EXCLUDED.cert_subject_province, cert_subject_streetaddress = EXCLUDED.cert_subject_streetaddress, cert_subject_postalcode = EXCLUDED.cert_subject_postalcode, cert_subject_names = EXCLUDED.cert_subject_names, cert_issuer_commonname = EXCLUDED.cert_issuer_commonname, cert_issuer_country = EXCLUDED.cert_issuer_country, cert_issuer_organization = EXCLUDED.cert_issuer_organization, cert_issuer_organizationunit = EXCLUDED.cert_issuer_organizationunit, cert_issuer_locality = EXCLUDED.cert_issuer_locality, cert_issuer_province = EXCLUDED.cert_issuer_province, cert_issuer_streetaddress = EXCLUDED.cert_issuer_streetaddress, cert_issuer_postalcode = EXCLUDED.cert_issuer_postalcode, cert_issuer_names = EXCLUDED.cert_issuer_names, cert_sans = EXCLUDED.cert_sans, cert_startdate = EXCLUDED.cert_startdate, cert_enddate = EXCLUDED.cert_enddate, cert_algorithm = EXCLUDED.cert_algorithm"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -352,31 +352,31 @@ func insertIntoSecretsFiles(ctx context.Context, tx pgx.Tx, obj *storage.SecretD
 	var query string
 
 	for childIdx, child := range obj.GetImagePullSecret().GetRegistries() {
-		if err := insertIntoSecretsFilesRegistries(ctx, tx, child, secrets_Id, idx, childIdx); err != nil {
+		if err := insertIntoSecretsFilesRegistries(ctx, tx, child, secretid, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from secrets_Files_Registries where secrets_Id = $1 AND secrets_Files_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, secrets_Id, idx, len(obj.GetImagePullSecret().GetRegistries()))
+	query = "delete from secrets_Files_Registries where secretid = $1 AND secretdatafileidx = $2 AND idx >= $3"
+	_, err = tx.Exec(ctx, query, secretid, idx, len(obj.GetImagePullSecret().GetRegistries()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, obj *storage.ImagePullSecret_Registry, secrets_Id string, secrets_Files_idx int, idx int) error {
+func insertIntoSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, obj *storage.ImagePullSecret_Registry, secretid string, secretdatafileidx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		secrets_Id,
-		secrets_Files_idx,
+		secretid,
+		secretdatafileidx,
 		idx,
 		obj.GetName(),
 		obj.GetUsername(),
 	}
 
-	finalStr := "INSERT INTO secrets_Files_Registries (secrets_Id, secrets_Files_idx, idx, Name, Username) VALUES($1, $2, $3, $4, $5) ON CONFLICT(secrets_Id, secrets_Files_idx, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, secrets_Files_idx = EXCLUDED.secrets_Files_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Username = EXCLUDED.Username"
+	finalStr := "INSERT INTO secrets_Files_Registries (secretid, secretdatafileidx, idx, name, username) VALUES($1, $2, $3, $4, $5) ON CONFLICT(secretid, secretdatafileidx, idx) DO UPDATE SET secretid = EXCLUDED.secretid, secretdatafileidx = EXCLUDED.secretdatafileidx, idx = EXCLUDED.idx, name = EXCLUDED.name, username = EXCLUDED.username"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -385,17 +385,17 @@ func insertIntoSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, obj *stora
 	return nil
 }
 
-func insertIntoSecretsContainerRelationships(ctx context.Context, tx pgx.Tx, obj *storage.SecretContainerRelationship, secrets_Id string, idx int) error {
+func insertIntoSecretsContainerRelationships(ctx context.Context, tx pgx.Tx, obj *storage.SecretContainerRelationship, secretid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		secrets_Id,
+		secretid,
 		idx,
 		obj.GetId(),
 		obj.GetPath(),
 	}
 
-	finalStr := "INSERT INTO secrets_ContainerRelationships (secrets_Id, idx, Id, Path) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, Path = EXCLUDED.Path"
+	finalStr := "INSERT INTO secrets_ContainerRelationships (secretid, idx, id, path) VALUES($1, $2, $3, $4) ON CONFLICT(secretid, idx) DO UPDATE SET secretid = EXCLUDED.secretid, idx = EXCLUDED.idx, id = EXCLUDED.id, path = EXCLUDED.path"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -404,17 +404,17 @@ func insertIntoSecretsContainerRelationships(ctx context.Context, tx pgx.Tx, obj
 	return nil
 }
 
-func insertIntoSecretsDeploymentRelationships(ctx context.Context, tx pgx.Tx, obj *storage.SecretDeploymentRelationship, secrets_Id string, idx int) error {
+func insertIntoSecretsDeploymentRelationships(ctx context.Context, tx pgx.Tx, obj *storage.SecretDeploymentRelationship, secretid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		secrets_Id,
+		secretid,
 		idx,
 		obj.GetId(),
 		obj.GetName(),
 	}
 
-	finalStr := "INSERT INTO secrets_DeploymentRelationships (secrets_Id, idx, Id, Name) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, Name = EXCLUDED.Name"
+	finalStr := "INSERT INTO secrets_DeploymentRelationships (secretid, idx, id, name) VALUES($1, $2, $3, $4) ON CONFLICT(secretid, idx) DO UPDATE SET secretid = EXCLUDED.secretid, idx = EXCLUDED.idx, id = EXCLUDED.id, name = EXCLUDED.name"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -534,7 +534,7 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 	return err
 }
 
-func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretDataFile) error {
+func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secretid string, objs ...*storage.SecretDataFile) error {
 
 	inputRows := [][]interface{}{}
 
@@ -542,7 +542,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 
 	copyCols := []string{
 
-		"secrets_id",
+		"secretid",
 
 		"idx",
 
@@ -601,7 +601,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 
 		inputRows = append(inputRows, []interface{}{
 
-			secrets_Id,
+			secretid,
 
 			idx,
 
@@ -672,7 +672,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 
 	for idx, obj := range objs {
 
-		if err = s.copyFromSecretsFilesRegistries(ctx, tx, secrets_Id, idx, obj.GetImagePullSecret().GetRegistries()...); err != nil {
+		if err = s.copyFromSecretsFilesRegistries(ctx, tx, secretid, idx, obj.GetImagePullSecret().GetRegistries()...); err != nil {
 			return err
 		}
 	}
@@ -680,7 +680,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 	return err
 }
 
-func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, secrets_Id string, secrets_Files_idx int, objs ...*storage.ImagePullSecret_Registry) error {
+func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, secretid string, secretdatafileidx int, objs ...*storage.ImagePullSecret_Registry) error {
 
 	inputRows := [][]interface{}{}
 
@@ -688,9 +688,9 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.T
 
 	copyCols := []string{
 
-		"secrets_id",
+		"secretid",
 
-		"secrets_files_idx",
+		"secretdatafileidx",
 
 		"idx",
 
@@ -705,9 +705,9 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.T
 
 		inputRows = append(inputRows, []interface{}{
 
-			secrets_Id,
+			secretid,
 
-			secrets_Files_idx,
+			secretdatafileidx,
 
 			idx,
 
@@ -735,7 +735,7 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.T
 	return err
 }
 
-func (s *storeImpl) copyFromSecretsContainerRelationships(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretContainerRelationship) error {
+func (s *storeImpl) copyFromSecretsContainerRelationships(ctx context.Context, tx pgx.Tx, secretid string, objs ...*storage.SecretContainerRelationship) error {
 
 	inputRows := [][]interface{}{}
 
@@ -743,7 +743,7 @@ func (s *storeImpl) copyFromSecretsContainerRelationships(ctx context.Context, t
 
 	copyCols := []string{
 
-		"secrets_id",
+		"secretid",
 
 		"idx",
 
@@ -758,7 +758,7 @@ func (s *storeImpl) copyFromSecretsContainerRelationships(ctx context.Context, t
 
 		inputRows = append(inputRows, []interface{}{
 
-			secrets_Id,
+			secretid,
 
 			idx,
 
@@ -786,7 +786,7 @@ func (s *storeImpl) copyFromSecretsContainerRelationships(ctx context.Context, t
 	return err
 }
 
-func (s *storeImpl) copyFromSecretsDeploymentRelationships(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretDeploymentRelationship) error {
+func (s *storeImpl) copyFromSecretsDeploymentRelationships(ctx context.Context, tx pgx.Tx, secretid string, objs ...*storage.SecretDeploymentRelationship) error {
 
 	inputRows := [][]interface{}{}
 
@@ -794,7 +794,7 @@ func (s *storeImpl) copyFromSecretsDeploymentRelationships(ctx context.Context, 
 
 	copyCols := []string{
 
-		"secrets_id",
+		"secretid",
 
 		"idx",
 
@@ -809,7 +809,7 @@ func (s *storeImpl) copyFromSecretsDeploymentRelationships(ctx context.Context, 
 
 		inputRows = append(inputRows, []interface{}{
 
-			secrets_Id,
+			secretid,
 
 			idx,
 

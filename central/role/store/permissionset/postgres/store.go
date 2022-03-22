@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "permissionsets"
 	countStmt  = "SELECT COUNT(*) FROM permissionsets"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM permissionsets WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM permissionsets WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM permissionsets WHERE Id = $1"
-	deleteStmt  = "DELETE FROM permissionsets WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM permissionsets WHERE id = $1"
+	deleteStmt  = "DELETE FROM permissionsets WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM permissionsets"
-	getIDsStmt  = "SELECT Id FROM permissionsets"
-	getManyStmt = "SELECT serialized FROM permissionsets WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM permissionsets"
+	getManyStmt = "SELECT serialized FROM permissionsets WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM permissionsets WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM permissionsets WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,12 +73,12 @@ type storeImpl struct {
 func createTablePermissionsets(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists permissionsets (
-    Id varchar,
-    Name varchar UNIQUE,
-    Description varchar,
-    ResourceToAccess jsonb,
+    id varchar,
+    name varchar UNIQUE,
+    description varchar,
+    resourcetoaccess jsonb,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -112,7 +112,7 @@ func insertIntoPermissionsets(ctx context.Context, tx pgx.Tx, obj *storage.Permi
 		serialized,
 	}
 
-	finalStr := "INSERT INTO permissionsets (Id, Name, Description, ResourceToAccess, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, ResourceToAccess = EXCLUDED.ResourceToAccess, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO permissionsets (id, name, description, resourcetoaccess, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, description = EXCLUDED.description, resourcetoaccess = EXCLUDED.resourcetoaccess, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err

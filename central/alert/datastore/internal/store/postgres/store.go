@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "alerts"
 	countStmt  = "SELECT COUNT(*) FROM alerts"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM alerts WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM alerts WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM alerts WHERE Id = $1"
-	deleteStmt  = "DELETE FROM alerts WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM alerts WHERE id = $1"
+	deleteStmt  = "DELETE FROM alerts WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM alerts"
-	getIDsStmt  = "SELECT Id FROM alerts"
-	getManyStmt = "SELECT serialized FROM alerts WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM alerts"
+	getManyStmt = "SELECT serialized FROM alerts WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM alerts WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM alerts WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,62 +73,62 @@ type storeImpl struct {
 func createTableAlerts(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts (
-    Id varchar,
-    Policy_Id varchar,
-    Policy_Name varchar,
-    Policy_Description varchar,
-    Policy_Rationale varchar,
-    Policy_Remediation varchar,
-    Policy_Disabled bool,
-    Policy_Categories text[],
-    Policy_LifecycleStages int[],
-    Policy_EventSource integer,
-    Policy_Severity integer,
-    Policy_EnforcementActions int[],
-    Policy_Notifiers text[],
-    Policy_LastUpdated timestamp,
-    Policy_SORTName varchar,
-    Policy_SORTLifecycleStage varchar,
-    Policy_SORTEnforcement bool,
-    Policy_PolicyVersion varchar,
-    Policy_CriteriaLocked bool,
-    Policy_MitreVectorsLocked bool,
-    Policy_IsDefault bool,
-    LifecycleStage integer,
-    Deployment_Id varchar,
-    Deployment_Name varchar,
-    Deployment_Type varchar,
-    Deployment_Namespace varchar,
-    Deployment_NamespaceId varchar,
-    Deployment_Labels jsonb,
-    Deployment_ClusterId varchar,
-    Deployment_ClusterName varchar,
-    Deployment_Annotations jsonb,
-    Deployment_Inactive bool,
-    Image_Id varchar,
-    Image_Name_Registry varchar,
-    Image_Name_Remote varchar,
-    Image_Name_Tag varchar,
-    Image_Name_FullName varchar,
-    Image_NotPullable bool,
-    Image_IsClusterLocal bool,
-    Resource_ResourceType integer,
-    Resource_Name varchar,
-    Resource_ClusterId varchar,
-    Resource_ClusterName varchar,
-    Resource_Namespace varchar,
-    Resource_NamespaceId varchar,
-    ProcessViolation_Message varchar,
-    Enforcement_Action integer,
-    Enforcement_Message varchar,
-    Time timestamp,
-    FirstOccurred timestamp,
-    ResolvedAt timestamp,
-    State integer,
-    SnoozeTill timestamp,
-    Tags text[],
+    id varchar,
+    policy_id varchar,
+    policy_name varchar,
+    policy_description varchar,
+    policy_rationale varchar,
+    policy_remediation varchar,
+    policy_disabled bool,
+    policy_categories text[],
+    policy_lifecyclestages int[],
+    policy_eventsource integer,
+    policy_severity integer,
+    policy_enforcementactions int[],
+    policy_notifiers text[],
+    policy_lastupdated timestamp,
+    policy_sortname varchar,
+    policy_sortlifecyclestage varchar,
+    policy_sortenforcement bool,
+    policy_policyversion varchar,
+    policy_criterialocked bool,
+    policy_mitrevectorslocked bool,
+    policy_isdefault bool,
+    lifecyclestage integer,
+    deployment_id varchar,
+    deployment_name varchar,
+    deployment_type varchar,
+    deployment_namespace varchar,
+    deployment_namespaceid varchar,
+    deployment_labels jsonb,
+    deployment_clusterid varchar,
+    deployment_clustername varchar,
+    deployment_annotations jsonb,
+    deployment_inactive bool,
+    image_id varchar,
+    image_name_registry varchar,
+    image_name_remote varchar,
+    image_name_tag varchar,
+    image_name_fullname varchar,
+    image_notpullable bool,
+    image_isclusterlocal bool,
+    resource_resourcetype integer,
+    resource_name varchar,
+    resource_clusterid varchar,
+    resource_clustername varchar,
+    resource_namespace varchar,
+    resource_namespaceid varchar,
+    processviolation_message varchar,
+    enforcement_action integer,
+    enforcement_message varchar,
+    time timestamp,
+    firstoccurred timestamp,
+    resolvedat timestamp,
+    state integer,
+    snoozetill timestamp,
+    tags text[],
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -157,18 +157,18 @@ create table if not exists alerts (
 func createTableAlertsWhitelists(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Whitelists (
-    alerts_Id varchar,
+    alertid varchar,
     idx integer,
-    Name varchar,
-    Deployment_Name varchar,
-    Deployment_Scope_Cluster varchar,
-    Deployment_Scope_Namespace varchar,
-    Deployment_Scope_Label_Key varchar,
-    Deployment_Scope_Label_Value varchar,
-    Image_Name varchar,
-    Expiration timestamp,
-    PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    name varchar,
+    deployment_name varchar,
+    deployment_scope_cluster varchar,
+    deployment_scope_namespace varchar,
+    deployment_scope_label_key varchar,
+    deployment_scope_label_value varchar,
+    image_name varchar,
+    expiration timestamp,
+    PRIMARY KEY(alertid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alertid) REFERENCES alerts(id) ON DELETE CASCADE
 )
 `
 
@@ -192,18 +192,18 @@ create table if not exists alerts_Whitelists (
 func createTableAlertsExclusions(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Exclusions (
-    alerts_Id varchar,
+    alertid varchar,
     idx integer,
-    Name varchar,
-    Deployment_Name varchar,
-    Deployment_Scope_Cluster varchar,
-    Deployment_Scope_Namespace varchar,
-    Deployment_Scope_Label_Key varchar,
-    Deployment_Scope_Label_Value varchar,
-    Image_Name varchar,
-    Expiration timestamp,
-    PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    name varchar,
+    deployment_name varchar,
+    deployment_scope_cluster varchar,
+    deployment_scope_namespace varchar,
+    deployment_scope_label_key varchar,
+    deployment_scope_label_value varchar,
+    image_name varchar,
+    expiration timestamp,
+    PRIMARY KEY(alertid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alertid) REFERENCES alerts(id) ON DELETE CASCADE
 )
 `
 
@@ -227,14 +227,14 @@ create table if not exists alerts_Exclusions (
 func createTableAlertsScope(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Scope (
-    alerts_Id varchar,
+    alertid varchar,
     idx integer,
-    Cluster varchar,
-    Namespace varchar,
-    Label_Key varchar,
-    Label_Value varchar,
-    PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    cluster varchar,
+    namespace varchar,
+    label_key varchar,
+    label_value varchar,
+    PRIMARY KEY(alertid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alertid) REFERENCES alerts(id) ON DELETE CASCADE
 )
 `
 
@@ -258,11 +258,11 @@ create table if not exists alerts_Scope (
 func createTableAlertsPolicySections(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_PolicySections (
-    alerts_Id varchar,
+    alertid varchar,
     idx integer,
-    SectionName varchar,
-    PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    sectionname varchar,
+    PRIMARY KEY(alertid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alertid) REFERENCES alerts(id) ON DELETE CASCADE
 )
 `
 
@@ -287,14 +287,14 @@ create table if not exists alerts_PolicySections (
 func createTableAlertsPolicySectionsPolicyGroups(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_PolicySections_PolicyGroups (
-    alerts_Id varchar,
-    alerts_PolicySections_idx integer,
+    alertid varchar,
+    policysectionidx integer,
     idx integer,
-    FieldName varchar,
-    BooleanOperator integer,
-    Negate bool,
-    PRIMARY KEY(alerts_Id, alerts_PolicySections_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id, alerts_PolicySections_idx) REFERENCES alerts_PolicySections(alerts_Id, idx) ON DELETE CASCADE
+    fieldname varchar,
+    booleanoperator integer,
+    negate bool,
+    PRIMARY KEY(alertid, policysectionidx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alertid, policysectionidx) REFERENCES alerts_PolicySections(alertid, idx) ON DELETE CASCADE
 )
 `
 
@@ -319,13 +319,13 @@ create table if not exists alerts_PolicySections_PolicyGroups (
 func createTableAlertsPolicySectionsPolicyGroupsValues(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_PolicySections_PolicyGroups_Values (
-    alerts_Id varchar,
-    alerts_PolicySections_idx integer,
-    alerts_PolicySections_PolicyGroups_idx integer,
+    alertid varchar,
+    policysectionidx integer,
+    policygroupidx integer,
     idx integer,
-    Value varchar,
-    PRIMARY KEY(alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx) REFERENCES alerts_PolicySections_PolicyGroups(alerts_Id, alerts_PolicySections_idx, idx) ON DELETE CASCADE
+    value varchar,
+    PRIMARY KEY(alertid, policysectionidx, policygroupidx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alertid, policysectionidx, policygroupidx) REFERENCES alerts_PolicySections_PolicyGroups(alertid, policysectionidx, idx) ON DELETE CASCADE
 )
 `
 
@@ -349,12 +349,12 @@ create table if not exists alerts_PolicySections_PolicyGroups_Values (
 func createTableAlertsMitreAttackVectors(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_MitreAttackVectors (
-    alerts_Id varchar,
+    alertid varchar,
     idx integer,
-    Tactic varchar,
-    Techniques text[],
-    PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    tactic varchar,
+    techniques text[],
+    PRIMARY KEY(alertid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alertid) REFERENCES alerts(id) ON DELETE CASCADE
 )
 `
 
@@ -378,18 +378,18 @@ create table if not exists alerts_MitreAttackVectors (
 func createTableAlertsContainers(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Containers (
-    alerts_Id varchar,
+    alertid varchar,
     idx integer,
-    Image_Id varchar,
-    Image_Name_Registry varchar,
-    Image_Name_Remote varchar,
-    Image_Name_Tag varchar,
-    Image_Name_FullName varchar,
-    Image_NotPullable bool,
-    Image_IsClusterLocal bool,
-    Name varchar,
-    PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    image_id varchar,
+    image_name_registry varchar,
+    image_name_remote varchar,
+    image_name_tag varchar,
+    image_name_fullname varchar,
+    image_notpullable bool,
+    image_isclusterlocal bool,
+    name varchar,
+    PRIMARY KEY(alertid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alertid) REFERENCES alerts(id) ON DELETE CASCADE
 )
 `
 
@@ -413,24 +413,24 @@ create table if not exists alerts_Containers (
 func createTableAlertsViolations(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Violations (
-    alerts_Id varchar,
+    alertid varchar,
     idx integer,
-    Message varchar,
-    NetworkFlowInfo_Protocol integer,
-    NetworkFlowInfo_Source_Name varchar,
-    NetworkFlowInfo_Source_EntityType integer,
-    NetworkFlowInfo_Source_DeploymentNamespace varchar,
-    NetworkFlowInfo_Source_DeploymentType varchar,
-    NetworkFlowInfo_Source_Port integer,
-    NetworkFlowInfo_Destination_Name varchar,
-    NetworkFlowInfo_Destination_EntityType integer,
-    NetworkFlowInfo_Destination_DeploymentNamespace varchar,
-    NetworkFlowInfo_Destination_DeploymentType varchar,
-    NetworkFlowInfo_Destination_Port integer,
-    Type integer,
-    Time timestamp,
-    PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    message varchar,
+    networkflowinfo_protocol integer,
+    networkflowinfo_source_name varchar,
+    networkflowinfo_source_entitytype integer,
+    networkflowinfo_source_deploymentnamespace varchar,
+    networkflowinfo_source_deploymenttype varchar,
+    networkflowinfo_source_port integer,
+    networkflowinfo_destination_name varchar,
+    networkflowinfo_destination_entitytype integer,
+    networkflowinfo_destination_deploymentnamespace varchar,
+    networkflowinfo_destination_deploymenttype varchar,
+    networkflowinfo_destination_port integer,
+    type integer,
+    time timestamp,
+    PRIMARY KEY(alertid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alertid) REFERENCES alerts(id) ON DELETE CASCADE
 )
 `
 
@@ -455,13 +455,13 @@ create table if not exists alerts_Violations (
 func createTableAlertsViolationsAttrs(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Violations_Attrs (
-    alerts_Id varchar,
-    alerts_Violations_idx integer,
+    alertid varchar,
+    alert_violationidx integer,
     idx integer,
-    Key varchar,
-    Value varchar,
-    PRIMARY KEY(alerts_Id, alerts_Violations_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id, alerts_Violations_idx) REFERENCES alerts_Violations(alerts_Id, idx) ON DELETE CASCADE
+    key varchar,
+    value varchar,
+    PRIMARY KEY(alertid, alert_violationidx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alertid, alert_violationidx) REFERENCES alerts_Violations(alertid, idx) ON DELETE CASCADE
 )
 `
 
@@ -485,30 +485,30 @@ create table if not exists alerts_Violations_Attrs (
 func createTableAlertsProcesses(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Processes (
-    alerts_Id varchar,
+    alertid varchar,
     idx integer,
-    Id varchar,
-    DeploymentId varchar,
-    ContainerName varchar,
-    PodId varchar,
-    PodUid varchar,
-    Signal_Id varchar,
-    Signal_ContainerId varchar,
-    Signal_Time timestamp,
-    Signal_Name varchar,
-    Signal_Args varchar,
-    Signal_ExecFilePath varchar,
-    Signal_Pid integer,
-    Signal_Uid integer,
-    Signal_Gid integer,
-    Signal_Lineage text[],
-    Signal_Scraped bool,
-    ClusterId varchar,
-    Namespace varchar,
-    ContainerStartTime timestamp,
-    ImageId varchar,
-    PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    id varchar,
+    deploymentid varchar,
+    containername varchar,
+    podid varchar,
+    poduid varchar,
+    signal_id varchar,
+    signal_containerid varchar,
+    signal_time timestamp,
+    signal_name varchar,
+    signal_args varchar,
+    signal_execfilepath varchar,
+    signal_pid integer,
+    signal_uid integer,
+    signal_gid integer,
+    signal_lineage text[],
+    signal_scraped bool,
+    clusterid varchar,
+    namespace varchar,
+    containerstarttime timestamp,
+    imageid varchar,
+    PRIMARY KEY(alertid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alertid) REFERENCES alerts(id) ON DELETE CASCADE
 )
 `
 
@@ -533,13 +533,13 @@ create table if not exists alerts_Processes (
 func createTableAlertsProcessesLineageInfo(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists alerts_Processes_LineageInfo (
-    alerts_Id varchar,
-    alerts_Processes_idx integer,
+    alertid varchar,
+    processindicatoridx integer,
     idx integer,
-    ParentUid integer,
-    ParentExecFilePath varchar,
-    PRIMARY KEY(alerts_Id, alerts_Processes_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id, alerts_Processes_idx) REFERENCES alerts_Processes(alerts_Id, idx) ON DELETE CASCADE
+    parentuid integer,
+    parentexecfilepath varchar,
+    PRIMARY KEY(alertid, processindicatoridx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alertid, processindicatoridx) REFERENCES alerts_Processes(alertid, idx) ON DELETE CASCADE
 )
 `
 
@@ -626,7 +626,7 @@ func insertIntoAlerts(ctx context.Context, tx pgx.Tx, obj *storage.Alert) error 
 		serialized,
 	}
 
-	finalStr := "INSERT INTO alerts (Id, Policy_Id, Policy_Name, Policy_Description, Policy_Rationale, Policy_Remediation, Policy_Disabled, Policy_Categories, Policy_LifecycleStages, Policy_EventSource, Policy_Severity, Policy_EnforcementActions, Policy_Notifiers, Policy_LastUpdated, Policy_SORTName, Policy_SORTLifecycleStage, Policy_SORTEnforcement, Policy_PolicyVersion, Policy_CriteriaLocked, Policy_MitreVectorsLocked, Policy_IsDefault, LifecycleStage, Deployment_Id, Deployment_Name, Deployment_Type, Deployment_Namespace, Deployment_NamespaceId, Deployment_Labels, Deployment_ClusterId, Deployment_ClusterName, Deployment_Annotations, Deployment_Inactive, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_NotPullable, Image_IsClusterLocal, Resource_ResourceType, Resource_Name, Resource_ClusterId, Resource_ClusterName, Resource_Namespace, Resource_NamespaceId, ProcessViolation_Message, Enforcement_Action, Enforcement_Message, Time, FirstOccurred, ResolvedAt, State, SnoozeTill, Tags, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Rationale = EXCLUDED.Policy_Rationale, Policy_Remediation = EXCLUDED.Policy_Remediation, Policy_Disabled = EXCLUDED.Policy_Disabled, Policy_Categories = EXCLUDED.Policy_Categories, Policy_LifecycleStages = EXCLUDED.Policy_LifecycleStages, Policy_EventSource = EXCLUDED.Policy_EventSource, Policy_Severity = EXCLUDED.Policy_Severity, Policy_EnforcementActions = EXCLUDED.Policy_EnforcementActions, Policy_Notifiers = EXCLUDED.Policy_Notifiers, Policy_LastUpdated = EXCLUDED.Policy_LastUpdated, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage, Policy_SORTEnforcement = EXCLUDED.Policy_SORTEnforcement, Policy_PolicyVersion = EXCLUDED.Policy_PolicyVersion, Policy_CriteriaLocked = EXCLUDED.Policy_CriteriaLocked, Policy_MitreVectorsLocked = EXCLUDED.Policy_MitreVectorsLocked, Policy_IsDefault = EXCLUDED.Policy_IsDefault, LifecycleStage = EXCLUDED.LifecycleStage, Deployment_Id = EXCLUDED.Deployment_Id, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Type = EXCLUDED.Deployment_Type, Deployment_Namespace = EXCLUDED.Deployment_Namespace, Deployment_NamespaceId = EXCLUDED.Deployment_NamespaceId, Deployment_Labels = EXCLUDED.Deployment_Labels, Deployment_ClusterId = EXCLUDED.Deployment_ClusterId, Deployment_ClusterName = EXCLUDED.Deployment_ClusterName, Deployment_Annotations = EXCLUDED.Deployment_Annotations, Deployment_Inactive = EXCLUDED.Deployment_Inactive, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_NotPullable = EXCLUDED.Image_NotPullable, Image_IsClusterLocal = EXCLUDED.Image_IsClusterLocal, Resource_ResourceType = EXCLUDED.Resource_ResourceType, Resource_Name = EXCLUDED.Resource_Name, Resource_ClusterId = EXCLUDED.Resource_ClusterId, Resource_ClusterName = EXCLUDED.Resource_ClusterName, Resource_Namespace = EXCLUDED.Resource_Namespace, Resource_NamespaceId = EXCLUDED.Resource_NamespaceId, ProcessViolation_Message = EXCLUDED.ProcessViolation_Message, Enforcement_Action = EXCLUDED.Enforcement_Action, Enforcement_Message = EXCLUDED.Enforcement_Message, Time = EXCLUDED.Time, FirstOccurred = EXCLUDED.FirstOccurred, ResolvedAt = EXCLUDED.ResolvedAt, State = EXCLUDED.State, SnoozeTill = EXCLUDED.SnoozeTill, Tags = EXCLUDED.Tags, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO alerts (id, policy_id, policy_name, policy_description, policy_rationale, policy_remediation, policy_disabled, policy_categories, policy_lifecyclestages, policy_eventsource, policy_severity, policy_enforcementactions, policy_notifiers, policy_lastupdated, policy_sortname, policy_sortlifecyclestage, policy_sortenforcement, policy_policyversion, policy_criterialocked, policy_mitrevectorslocked, policy_isdefault, lifecyclestage, deployment_id, deployment_name, deployment_type, deployment_namespace, deployment_namespaceid, deployment_labels, deployment_clusterid, deployment_clustername, deployment_annotations, deployment_inactive, image_id, image_name_registry, image_name_remote, image_name_tag, image_name_fullname, image_notpullable, image_isclusterlocal, resource_resourcetype, resource_name, resource_clusterid, resource_clustername, resource_namespace, resource_namespaceid, processviolation_message, enforcement_action, enforcement_message, time, firstoccurred, resolvedat, state, snoozetill, tags, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, policy_id = EXCLUDED.policy_id, policy_name = EXCLUDED.policy_name, policy_description = EXCLUDED.policy_description, policy_rationale = EXCLUDED.policy_rationale, policy_remediation = EXCLUDED.policy_remediation, policy_disabled = EXCLUDED.policy_disabled, policy_categories = EXCLUDED.policy_categories, policy_lifecyclestages = EXCLUDED.policy_lifecyclestages, policy_eventsource = EXCLUDED.policy_eventsource, policy_severity = EXCLUDED.policy_severity, policy_enforcementactions = EXCLUDED.policy_enforcementactions, policy_notifiers = EXCLUDED.policy_notifiers, policy_lastupdated = EXCLUDED.policy_lastupdated, policy_sortname = EXCLUDED.policy_sortname, policy_sortlifecyclestage = EXCLUDED.policy_sortlifecyclestage, policy_sortenforcement = EXCLUDED.policy_sortenforcement, policy_policyversion = EXCLUDED.policy_policyversion, policy_criterialocked = EXCLUDED.policy_criterialocked, policy_mitrevectorslocked = EXCLUDED.policy_mitrevectorslocked, policy_isdefault = EXCLUDED.policy_isdefault, lifecyclestage = EXCLUDED.lifecyclestage, deployment_id = EXCLUDED.deployment_id, deployment_name = EXCLUDED.deployment_name, deployment_type = EXCLUDED.deployment_type, deployment_namespace = EXCLUDED.deployment_namespace, deployment_namespaceid = EXCLUDED.deployment_namespaceid, deployment_labels = EXCLUDED.deployment_labels, deployment_clusterid = EXCLUDED.deployment_clusterid, deployment_clustername = EXCLUDED.deployment_clustername, deployment_annotations = EXCLUDED.deployment_annotations, deployment_inactive = EXCLUDED.deployment_inactive, image_id = EXCLUDED.image_id, image_name_registry = EXCLUDED.image_name_registry, image_name_remote = EXCLUDED.image_name_remote, image_name_tag = EXCLUDED.image_name_tag, image_name_fullname = EXCLUDED.image_name_fullname, image_notpullable = EXCLUDED.image_notpullable, image_isclusterlocal = EXCLUDED.image_isclusterlocal, resource_resourcetype = EXCLUDED.resource_resourcetype, resource_name = EXCLUDED.resource_name, resource_clusterid = EXCLUDED.resource_clusterid, resource_clustername = EXCLUDED.resource_clustername, resource_namespace = EXCLUDED.resource_namespace, resource_namespaceid = EXCLUDED.resource_namespaceid, processviolation_message = EXCLUDED.processviolation_message, enforcement_action = EXCLUDED.enforcement_action, enforcement_message = EXCLUDED.enforcement_message, time = EXCLUDED.time, firstoccurred = EXCLUDED.firstoccurred, resolvedat = EXCLUDED.resolvedat, state = EXCLUDED.state, snoozetill = EXCLUDED.snoozetill, tags = EXCLUDED.tags, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -640,7 +640,7 @@ func insertIntoAlerts(ctx context.Context, tx pgx.Tx, obj *storage.Alert) error 
 		}
 	}
 
-	query = "delete from alerts_Whitelists where alerts_Id = $1 AND idx >= $2"
+	query = "delete from alerts_Whitelists where alertid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetPolicy().GetWhitelists()))
 	if err != nil {
 		return err
@@ -651,7 +651,7 @@ func insertIntoAlerts(ctx context.Context, tx pgx.Tx, obj *storage.Alert) error 
 		}
 	}
 
-	query = "delete from alerts_Exclusions where alerts_Id = $1 AND idx >= $2"
+	query = "delete from alerts_Exclusions where alertid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetPolicy().GetExclusions()))
 	if err != nil {
 		return err
@@ -662,7 +662,7 @@ func insertIntoAlerts(ctx context.Context, tx pgx.Tx, obj *storage.Alert) error 
 		}
 	}
 
-	query = "delete from alerts_Scope where alerts_Id = $1 AND idx >= $2"
+	query = "delete from alerts_Scope where alertid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetPolicy().GetScope()))
 	if err != nil {
 		return err
@@ -673,7 +673,7 @@ func insertIntoAlerts(ctx context.Context, tx pgx.Tx, obj *storage.Alert) error 
 		}
 	}
 
-	query = "delete from alerts_PolicySections where alerts_Id = $1 AND idx >= $2"
+	query = "delete from alerts_PolicySections where alertid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetPolicy().GetPolicySections()))
 	if err != nil {
 		return err
@@ -684,7 +684,7 @@ func insertIntoAlerts(ctx context.Context, tx pgx.Tx, obj *storage.Alert) error 
 		}
 	}
 
-	query = "delete from alerts_MitreAttackVectors where alerts_Id = $1 AND idx >= $2"
+	query = "delete from alerts_MitreAttackVectors where alertid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetPolicy().GetMitreAttackVectors()))
 	if err != nil {
 		return err
@@ -695,7 +695,7 @@ func insertIntoAlerts(ctx context.Context, tx pgx.Tx, obj *storage.Alert) error 
 		}
 	}
 
-	query = "delete from alerts_Containers where alerts_Id = $1 AND idx >= $2"
+	query = "delete from alerts_Containers where alertid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetDeployment().GetContainers()))
 	if err != nil {
 		return err
@@ -706,7 +706,7 @@ func insertIntoAlerts(ctx context.Context, tx pgx.Tx, obj *storage.Alert) error 
 		}
 	}
 
-	query = "delete from alerts_Violations where alerts_Id = $1 AND idx >= $2"
+	query = "delete from alerts_Violations where alertid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetViolations()))
 	if err != nil {
 		return err
@@ -717,7 +717,7 @@ func insertIntoAlerts(ctx context.Context, tx pgx.Tx, obj *storage.Alert) error 
 		}
 	}
 
-	query = "delete from alerts_Processes where alerts_Id = $1 AND idx >= $2"
+	query = "delete from alerts_Processes where alertid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetProcessViolation().GetProcesses()))
 	if err != nil {
 		return err
@@ -725,11 +725,11 @@ func insertIntoAlerts(ctx context.Context, tx pgx.Tx, obj *storage.Alert) error 
 	return nil
 }
 
-func insertIntoAlertsWhitelists(ctx context.Context, tx pgx.Tx, obj *storage.Exclusion, alerts_Id string, idx int) error {
+func insertIntoAlertsWhitelists(ctx context.Context, tx pgx.Tx, obj *storage.Exclusion, alertid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		alerts_Id,
+		alertid,
 		idx,
 		obj.GetName(),
 		obj.GetDeployment().GetName(),
@@ -741,7 +741,7 @@ func insertIntoAlertsWhitelists(ctx context.Context, tx pgx.Tx, obj *storage.Exc
 		pgutils.NilOrTime(obj.GetExpiration()),
 	}
 
-	finalStr := "INSERT INTO alerts_Whitelists (alerts_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Scope_Cluster = EXCLUDED.Deployment_Scope_Cluster, Deployment_Scope_Namespace = EXCLUDED.Deployment_Scope_Namespace, Deployment_Scope_Label_Key = EXCLUDED.Deployment_Scope_Label_Key, Deployment_Scope_Label_Value = EXCLUDED.Deployment_Scope_Label_Value, Image_Name = EXCLUDED.Image_Name, Expiration = EXCLUDED.Expiration"
+	finalStr := "INSERT INTO alerts_Whitelists (alertid, idx, name, deployment_name, deployment_scope_cluster, deployment_scope_namespace, deployment_scope_label_key, deployment_scope_label_value, image_name, expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(alertid, idx) DO UPDATE SET alertid = EXCLUDED.alertid, idx = EXCLUDED.idx, name = EXCLUDED.name, deployment_name = EXCLUDED.deployment_name, deployment_scope_cluster = EXCLUDED.deployment_scope_cluster, deployment_scope_namespace = EXCLUDED.deployment_scope_namespace, deployment_scope_label_key = EXCLUDED.deployment_scope_label_key, deployment_scope_label_value = EXCLUDED.deployment_scope_label_value, image_name = EXCLUDED.image_name, expiration = EXCLUDED.expiration"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -750,11 +750,11 @@ func insertIntoAlertsWhitelists(ctx context.Context, tx pgx.Tx, obj *storage.Exc
 	return nil
 }
 
-func insertIntoAlertsExclusions(ctx context.Context, tx pgx.Tx, obj *storage.Exclusion, alerts_Id string, idx int) error {
+func insertIntoAlertsExclusions(ctx context.Context, tx pgx.Tx, obj *storage.Exclusion, alertid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		alerts_Id,
+		alertid,
 		idx,
 		obj.GetName(),
 		obj.GetDeployment().GetName(),
@@ -766,7 +766,7 @@ func insertIntoAlertsExclusions(ctx context.Context, tx pgx.Tx, obj *storage.Exc
 		pgutils.NilOrTime(obj.GetExpiration()),
 	}
 
-	finalStr := "INSERT INTO alerts_Exclusions (alerts_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Scope_Cluster = EXCLUDED.Deployment_Scope_Cluster, Deployment_Scope_Namespace = EXCLUDED.Deployment_Scope_Namespace, Deployment_Scope_Label_Key = EXCLUDED.Deployment_Scope_Label_Key, Deployment_Scope_Label_Value = EXCLUDED.Deployment_Scope_Label_Value, Image_Name = EXCLUDED.Image_Name, Expiration = EXCLUDED.Expiration"
+	finalStr := "INSERT INTO alerts_Exclusions (alertid, idx, name, deployment_name, deployment_scope_cluster, deployment_scope_namespace, deployment_scope_label_key, deployment_scope_label_value, image_name, expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(alertid, idx) DO UPDATE SET alertid = EXCLUDED.alertid, idx = EXCLUDED.idx, name = EXCLUDED.name, deployment_name = EXCLUDED.deployment_name, deployment_scope_cluster = EXCLUDED.deployment_scope_cluster, deployment_scope_namespace = EXCLUDED.deployment_scope_namespace, deployment_scope_label_key = EXCLUDED.deployment_scope_label_key, deployment_scope_label_value = EXCLUDED.deployment_scope_label_value, image_name = EXCLUDED.image_name, expiration = EXCLUDED.expiration"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -775,11 +775,11 @@ func insertIntoAlertsExclusions(ctx context.Context, tx pgx.Tx, obj *storage.Exc
 	return nil
 }
 
-func insertIntoAlertsScope(ctx context.Context, tx pgx.Tx, obj *storage.Scope, alerts_Id string, idx int) error {
+func insertIntoAlertsScope(ctx context.Context, tx pgx.Tx, obj *storage.Scope, alertid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		alerts_Id,
+		alertid,
 		idx,
 		obj.GetCluster(),
 		obj.GetNamespace(),
@@ -787,7 +787,7 @@ func insertIntoAlertsScope(ctx context.Context, tx pgx.Tx, obj *storage.Scope, a
 		obj.GetLabel().GetValue(),
 	}
 
-	finalStr := "INSERT INTO alerts_Scope (alerts_Id, idx, Cluster, Namespace, Label_Key, Label_Value) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Cluster = EXCLUDED.Cluster, Namespace = EXCLUDED.Namespace, Label_Key = EXCLUDED.Label_Key, Label_Value = EXCLUDED.Label_Value"
+	finalStr := "INSERT INTO alerts_Scope (alertid, idx, cluster, namespace, label_key, label_value) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(alertid, idx) DO UPDATE SET alertid = EXCLUDED.alertid, idx = EXCLUDED.idx, cluster = EXCLUDED.cluster, namespace = EXCLUDED.namespace, label_key = EXCLUDED.label_key, label_value = EXCLUDED.label_value"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -796,16 +796,16 @@ func insertIntoAlertsScope(ctx context.Context, tx pgx.Tx, obj *storage.Scope, a
 	return nil
 }
 
-func insertIntoAlertsPolicySections(ctx context.Context, tx pgx.Tx, obj *storage.PolicySection, alerts_Id string, idx int) error {
+func insertIntoAlertsPolicySections(ctx context.Context, tx pgx.Tx, obj *storage.PolicySection, alertid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		alerts_Id,
+		alertid,
 		idx,
 		obj.GetSectionName(),
 	}
 
-	finalStr := "INSERT INTO alerts_PolicySections (alerts_Id, idx, SectionName) VALUES($1, $2, $3) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, SectionName = EXCLUDED.SectionName"
+	finalStr := "INSERT INTO alerts_PolicySections (alertid, idx, sectionname) VALUES($1, $2, $3) ON CONFLICT(alertid, idx) DO UPDATE SET alertid = EXCLUDED.alertid, idx = EXCLUDED.idx, sectionname = EXCLUDED.sectionname"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -814,32 +814,32 @@ func insertIntoAlertsPolicySections(ctx context.Context, tx pgx.Tx, obj *storage
 	var query string
 
 	for childIdx, child := range obj.GetPolicyGroups() {
-		if err := insertIntoAlertsPolicySectionsPolicyGroups(ctx, tx, child, alerts_Id, idx, childIdx); err != nil {
+		if err := insertIntoAlertsPolicySectionsPolicyGroups(ctx, tx, child, alertid, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_PolicySections_PolicyGroups where alerts_Id = $1 AND alerts_PolicySections_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, alerts_Id, idx, len(obj.GetPolicyGroups()))
+	query = "delete from alerts_PolicySections_PolicyGroups where alertid = $1 AND policysectionidx = $2 AND idx >= $3"
+	_, err = tx.Exec(ctx, query, alertid, idx, len(obj.GetPolicyGroups()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoAlertsPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, obj *storage.PolicyGroup, alerts_Id string, alerts_PolicySections_idx int, idx int) error {
+func insertIntoAlertsPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, obj *storage.PolicyGroup, alertid string, policysectionidx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		alerts_Id,
-		alerts_PolicySections_idx,
+		alertid,
+		policysectionidx,
 		idx,
 		obj.GetFieldName(),
 		obj.GetBooleanOperator(),
 		obj.GetNegate(),
 	}
 
-	finalStr := "INSERT INTO alerts_PolicySections_PolicyGroups (alerts_Id, alerts_PolicySections_idx, idx, FieldName, BooleanOperator, Negate) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(alerts_Id, alerts_PolicySections_idx, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, alerts_PolicySections_idx = EXCLUDED.alerts_PolicySections_idx, idx = EXCLUDED.idx, FieldName = EXCLUDED.FieldName, BooleanOperator = EXCLUDED.BooleanOperator, Negate = EXCLUDED.Negate"
+	finalStr := "INSERT INTO alerts_PolicySections_PolicyGroups (alertid, policysectionidx, idx, fieldname, booleanoperator, negate) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(alertid, policysectionidx, idx) DO UPDATE SET alertid = EXCLUDED.alertid, policysectionidx = EXCLUDED.policysectionidx, idx = EXCLUDED.idx, fieldname = EXCLUDED.fieldname, booleanoperator = EXCLUDED.booleanoperator, negate = EXCLUDED.negate"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -848,31 +848,31 @@ func insertIntoAlertsPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, 
 	var query string
 
 	for childIdx, child := range obj.GetValues() {
-		if err := insertIntoAlertsPolicySectionsPolicyGroupsValues(ctx, tx, child, alerts_Id, alerts_PolicySections_idx, idx, childIdx); err != nil {
+		if err := insertIntoAlertsPolicySectionsPolicyGroupsValues(ctx, tx, child, alertid, policysectionidx, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_PolicySections_PolicyGroups_Values where alerts_Id = $1 AND alerts_PolicySections_idx = $2 AND alerts_PolicySections_PolicyGroups_idx = $3 AND idx >= $4"
-	_, err = tx.Exec(ctx, query, alerts_Id, alerts_PolicySections_idx, idx, len(obj.GetValues()))
+	query = "delete from alerts_PolicySections_PolicyGroups_Values where alertid = $1 AND policysectionidx = $2 AND policygroupidx = $3 AND idx >= $4"
+	_, err = tx.Exec(ctx, query, alertid, policysectionidx, idx, len(obj.GetValues()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoAlertsPolicySectionsPolicyGroupsValues(ctx context.Context, tx pgx.Tx, obj *storage.PolicyValue, alerts_Id string, alerts_PolicySections_idx int, alerts_PolicySections_PolicyGroups_idx int, idx int) error {
+func insertIntoAlertsPolicySectionsPolicyGroupsValues(ctx context.Context, tx pgx.Tx, obj *storage.PolicyValue, alertid string, policysectionidx int, policygroupidx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		alerts_Id,
-		alerts_PolicySections_idx,
-		alerts_PolicySections_PolicyGroups_idx,
+		alertid,
+		policysectionidx,
+		policygroupidx,
 		idx,
 		obj.GetValue(),
 	}
 
-	finalStr := "INSERT INTO alerts_PolicySections_PolicyGroups_Values (alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx, idx, Value) VALUES($1, $2, $3, $4, $5) ON CONFLICT(alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, alerts_PolicySections_idx = EXCLUDED.alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx = EXCLUDED.alerts_PolicySections_PolicyGroups_idx, idx = EXCLUDED.idx, Value = EXCLUDED.Value"
+	finalStr := "INSERT INTO alerts_PolicySections_PolicyGroups_Values (alertid, policysectionidx, policygroupidx, idx, value) VALUES($1, $2, $3, $4, $5) ON CONFLICT(alertid, policysectionidx, policygroupidx, idx) DO UPDATE SET alertid = EXCLUDED.alertid, policysectionidx = EXCLUDED.policysectionidx, policygroupidx = EXCLUDED.policygroupidx, idx = EXCLUDED.idx, value = EXCLUDED.value"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -881,17 +881,17 @@ func insertIntoAlertsPolicySectionsPolicyGroupsValues(ctx context.Context, tx pg
 	return nil
 }
 
-func insertIntoAlertsMitreAttackVectors(ctx context.Context, tx pgx.Tx, obj *storage.Policy_MitreAttackVectors, alerts_Id string, idx int) error {
+func insertIntoAlertsMitreAttackVectors(ctx context.Context, tx pgx.Tx, obj *storage.Policy_MitreAttackVectors, alertid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		alerts_Id,
+		alertid,
 		idx,
 		obj.GetTactic(),
 		obj.GetTechniques(),
 	}
 
-	finalStr := "INSERT INTO alerts_MitreAttackVectors (alerts_Id, idx, Tactic, Techniques) VALUES($1, $2, $3, $4) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Tactic = EXCLUDED.Tactic, Techniques = EXCLUDED.Techniques"
+	finalStr := "INSERT INTO alerts_MitreAttackVectors (alertid, idx, tactic, techniques) VALUES($1, $2, $3, $4) ON CONFLICT(alertid, idx) DO UPDATE SET alertid = EXCLUDED.alertid, idx = EXCLUDED.idx, tactic = EXCLUDED.tactic, techniques = EXCLUDED.techniques"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -900,11 +900,11 @@ func insertIntoAlertsMitreAttackVectors(ctx context.Context, tx pgx.Tx, obj *sto
 	return nil
 }
 
-func insertIntoAlertsContainers(ctx context.Context, tx pgx.Tx, obj *storage.Alert_Deployment_Container, alerts_Id string, idx int) error {
+func insertIntoAlertsContainers(ctx context.Context, tx pgx.Tx, obj *storage.Alert_Deployment_Container, alertid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		alerts_Id,
+		alertid,
 		idx,
 		obj.GetImage().GetId(),
 		obj.GetImage().GetName().GetRegistry(),
@@ -916,7 +916,7 @@ func insertIntoAlertsContainers(ctx context.Context, tx pgx.Tx, obj *storage.Ale
 		obj.GetName(),
 	}
 
-	finalStr := "INSERT INTO alerts_Containers (alerts_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_NotPullable, Image_IsClusterLocal, Name) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_NotPullable = EXCLUDED.Image_NotPullable, Image_IsClusterLocal = EXCLUDED.Image_IsClusterLocal, Name = EXCLUDED.Name"
+	finalStr := "INSERT INTO alerts_Containers (alertid, idx, image_id, image_name_registry, image_name_remote, image_name_tag, image_name_fullname, image_notpullable, image_isclusterlocal, name) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(alertid, idx) DO UPDATE SET alertid = EXCLUDED.alertid, idx = EXCLUDED.idx, image_id = EXCLUDED.image_id, image_name_registry = EXCLUDED.image_name_registry, image_name_remote = EXCLUDED.image_name_remote, image_name_tag = EXCLUDED.image_name_tag, image_name_fullname = EXCLUDED.image_name_fullname, image_notpullable = EXCLUDED.image_notpullable, image_isclusterlocal = EXCLUDED.image_isclusterlocal, name = EXCLUDED.name"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -925,11 +925,11 @@ func insertIntoAlertsContainers(ctx context.Context, tx pgx.Tx, obj *storage.Ale
 	return nil
 }
 
-func insertIntoAlertsViolations(ctx context.Context, tx pgx.Tx, obj *storage.Alert_Violation, alerts_Id string, idx int) error {
+func insertIntoAlertsViolations(ctx context.Context, tx pgx.Tx, obj *storage.Alert_Violation, alertid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		alerts_Id,
+		alertid,
 		idx,
 		obj.GetMessage(),
 		obj.GetNetworkFlowInfo().GetProtocol(),
@@ -947,7 +947,7 @@ func insertIntoAlertsViolations(ctx context.Context, tx pgx.Tx, obj *storage.Ale
 		pgutils.NilOrTime(obj.GetTime()),
 	}
 
-	finalStr := "INSERT INTO alerts_Violations (alerts_Id, idx, Message, NetworkFlowInfo_Protocol, NetworkFlowInfo_Source_Name, NetworkFlowInfo_Source_EntityType, NetworkFlowInfo_Source_DeploymentNamespace, NetworkFlowInfo_Source_DeploymentType, NetworkFlowInfo_Source_Port, NetworkFlowInfo_Destination_Name, NetworkFlowInfo_Destination_EntityType, NetworkFlowInfo_Destination_DeploymentNamespace, NetworkFlowInfo_Destination_DeploymentType, NetworkFlowInfo_Destination_Port, Type, Time) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Message = EXCLUDED.Message, NetworkFlowInfo_Protocol = EXCLUDED.NetworkFlowInfo_Protocol, NetworkFlowInfo_Source_Name = EXCLUDED.NetworkFlowInfo_Source_Name, NetworkFlowInfo_Source_EntityType = EXCLUDED.NetworkFlowInfo_Source_EntityType, NetworkFlowInfo_Source_DeploymentNamespace = EXCLUDED.NetworkFlowInfo_Source_DeploymentNamespace, NetworkFlowInfo_Source_DeploymentType = EXCLUDED.NetworkFlowInfo_Source_DeploymentType, NetworkFlowInfo_Source_Port = EXCLUDED.NetworkFlowInfo_Source_Port, NetworkFlowInfo_Destination_Name = EXCLUDED.NetworkFlowInfo_Destination_Name, NetworkFlowInfo_Destination_EntityType = EXCLUDED.NetworkFlowInfo_Destination_EntityType, NetworkFlowInfo_Destination_DeploymentNamespace = EXCLUDED.NetworkFlowInfo_Destination_DeploymentNamespace, NetworkFlowInfo_Destination_DeploymentType = EXCLUDED.NetworkFlowInfo_Destination_DeploymentType, NetworkFlowInfo_Destination_Port = EXCLUDED.NetworkFlowInfo_Destination_Port, Type = EXCLUDED.Type, Time = EXCLUDED.Time"
+	finalStr := "INSERT INTO alerts_Violations (alertid, idx, message, networkflowinfo_protocol, networkflowinfo_source_name, networkflowinfo_source_entitytype, networkflowinfo_source_deploymentnamespace, networkflowinfo_source_deploymenttype, networkflowinfo_source_port, networkflowinfo_destination_name, networkflowinfo_destination_entitytype, networkflowinfo_destination_deploymentnamespace, networkflowinfo_destination_deploymenttype, networkflowinfo_destination_port, type, time) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(alertid, idx) DO UPDATE SET alertid = EXCLUDED.alertid, idx = EXCLUDED.idx, message = EXCLUDED.message, networkflowinfo_protocol = EXCLUDED.networkflowinfo_protocol, networkflowinfo_source_name = EXCLUDED.networkflowinfo_source_name, networkflowinfo_source_entitytype = EXCLUDED.networkflowinfo_source_entitytype, networkflowinfo_source_deploymentnamespace = EXCLUDED.networkflowinfo_source_deploymentnamespace, networkflowinfo_source_deploymenttype = EXCLUDED.networkflowinfo_source_deploymenttype, networkflowinfo_source_port = EXCLUDED.networkflowinfo_source_port, networkflowinfo_destination_name = EXCLUDED.networkflowinfo_destination_name, networkflowinfo_destination_entitytype = EXCLUDED.networkflowinfo_destination_entitytype, networkflowinfo_destination_deploymentnamespace = EXCLUDED.networkflowinfo_destination_deploymentnamespace, networkflowinfo_destination_deploymenttype = EXCLUDED.networkflowinfo_destination_deploymenttype, networkflowinfo_destination_port = EXCLUDED.networkflowinfo_destination_port, type = EXCLUDED.type, time = EXCLUDED.time"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -956,31 +956,31 @@ func insertIntoAlertsViolations(ctx context.Context, tx pgx.Tx, obj *storage.Ale
 	var query string
 
 	for childIdx, child := range obj.GetKeyValueAttrs().GetAttrs() {
-		if err := insertIntoAlertsViolationsAttrs(ctx, tx, child, alerts_Id, idx, childIdx); err != nil {
+		if err := insertIntoAlertsViolationsAttrs(ctx, tx, child, alertid, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_Violations_Attrs where alerts_Id = $1 AND alerts_Violations_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, alerts_Id, idx, len(obj.GetKeyValueAttrs().GetAttrs()))
+	query = "delete from alerts_Violations_Attrs where alertid = $1 AND alert_violationidx = $2 AND idx >= $3"
+	_, err = tx.Exec(ctx, query, alertid, idx, len(obj.GetKeyValueAttrs().GetAttrs()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx, obj *storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, alerts_Id string, alerts_Violations_idx int, idx int) error {
+func insertIntoAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx, obj *storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, alertid string, alert_violationidx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		alerts_Id,
-		alerts_Violations_idx,
+		alertid,
+		alert_violationidx,
 		idx,
 		obj.GetKey(),
 		obj.GetValue(),
 	}
 
-	finalStr := "INSERT INTO alerts_Violations_Attrs (alerts_Id, alerts_Violations_idx, idx, Key, Value) VALUES($1, $2, $3, $4, $5) ON CONFLICT(alerts_Id, alerts_Violations_idx, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, alerts_Violations_idx = EXCLUDED.alerts_Violations_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value"
+	finalStr := "INSERT INTO alerts_Violations_Attrs (alertid, alert_violationidx, idx, key, value) VALUES($1, $2, $3, $4, $5) ON CONFLICT(alertid, alert_violationidx, idx) DO UPDATE SET alertid = EXCLUDED.alertid, alert_violationidx = EXCLUDED.alert_violationidx, idx = EXCLUDED.idx, key = EXCLUDED.key, value = EXCLUDED.value"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -989,11 +989,11 @@ func insertIntoAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx, obj *storag
 	return nil
 }
 
-func insertIntoAlertsProcesses(ctx context.Context, tx pgx.Tx, obj *storage.ProcessIndicator, alerts_Id string, idx int) error {
+func insertIntoAlertsProcesses(ctx context.Context, tx pgx.Tx, obj *storage.ProcessIndicator, alertid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		alerts_Id,
+		alertid,
 		idx,
 		obj.GetId(),
 		obj.GetDeploymentId(),
@@ -1017,7 +1017,7 @@ func insertIntoAlertsProcesses(ctx context.Context, tx pgx.Tx, obj *storage.Proc
 		obj.GetImageId(),
 	}
 
-	finalStr := "INSERT INTO alerts_Processes (alerts_Id, idx, Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Lineage, Signal_Scraped, ClusterId, Namespace, ContainerStartTime, ImageId) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_Id = EXCLUDED.Signal_Id, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Pid = EXCLUDED.Signal_Pid, Signal_Uid = EXCLUDED.Signal_Uid, Signal_Gid = EXCLUDED.Signal_Gid, Signal_Lineage = EXCLUDED.Signal_Lineage, Signal_Scraped = EXCLUDED.Signal_Scraped, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ContainerStartTime = EXCLUDED.ContainerStartTime, ImageId = EXCLUDED.ImageId"
+	finalStr := "INSERT INTO alerts_Processes (alertid, idx, id, deploymentid, containername, podid, poduid, signal_id, signal_containerid, signal_time, signal_name, signal_args, signal_execfilepath, signal_pid, signal_uid, signal_gid, signal_lineage, signal_scraped, clusterid, namespace, containerstarttime, imageid) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) ON CONFLICT(alertid, idx) DO UPDATE SET alertid = EXCLUDED.alertid, idx = EXCLUDED.idx, id = EXCLUDED.id, deploymentid = EXCLUDED.deploymentid, containername = EXCLUDED.containername, podid = EXCLUDED.podid, poduid = EXCLUDED.poduid, signal_id = EXCLUDED.signal_id, signal_containerid = EXCLUDED.signal_containerid, signal_time = EXCLUDED.signal_time, signal_name = EXCLUDED.signal_name, signal_args = EXCLUDED.signal_args, signal_execfilepath = EXCLUDED.signal_execfilepath, signal_pid = EXCLUDED.signal_pid, signal_uid = EXCLUDED.signal_uid, signal_gid = EXCLUDED.signal_gid, signal_lineage = EXCLUDED.signal_lineage, signal_scraped = EXCLUDED.signal_scraped, clusterid = EXCLUDED.clusterid, namespace = EXCLUDED.namespace, containerstarttime = EXCLUDED.containerstarttime, imageid = EXCLUDED.imageid"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -1026,31 +1026,31 @@ func insertIntoAlertsProcesses(ctx context.Context, tx pgx.Tx, obj *storage.Proc
 	var query string
 
 	for childIdx, child := range obj.GetSignal().GetLineageInfo() {
-		if err := insertIntoAlertsProcessesLineageInfo(ctx, tx, child, alerts_Id, idx, childIdx); err != nil {
+		if err := insertIntoAlertsProcessesLineageInfo(ctx, tx, child, alertid, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from alerts_Processes_LineageInfo where alerts_Id = $1 AND alerts_Processes_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, alerts_Id, idx, len(obj.GetSignal().GetLineageInfo()))
+	query = "delete from alerts_Processes_LineageInfo where alertid = $1 AND processindicatoridx = $2 AND idx >= $3"
+	_, err = tx.Exec(ctx, query, alertid, idx, len(obj.GetSignal().GetLineageInfo()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoAlertsProcessesLineageInfo(ctx context.Context, tx pgx.Tx, obj *storage.ProcessSignal_LineageInfo, alerts_Id string, alerts_Processes_idx int, idx int) error {
+func insertIntoAlertsProcessesLineageInfo(ctx context.Context, tx pgx.Tx, obj *storage.ProcessSignal_LineageInfo, alertid string, processindicatoridx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		alerts_Id,
-		alerts_Processes_idx,
+		alertid,
+		processindicatoridx,
 		idx,
 		obj.GetParentUid(),
 		obj.GetParentExecFilePath(),
 	}
 
-	finalStr := "INSERT INTO alerts_Processes_LineageInfo (alerts_Id, alerts_Processes_idx, idx, ParentUid, ParentExecFilePath) VALUES($1, $2, $3, $4, $5) ON CONFLICT(alerts_Id, alerts_Processes_idx, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, alerts_Processes_idx = EXCLUDED.alerts_Processes_idx, idx = EXCLUDED.idx, ParentUid = EXCLUDED.ParentUid, ParentExecFilePath = EXCLUDED.ParentExecFilePath"
+	finalStr := "INSERT INTO alerts_Processes_LineageInfo (alertid, processindicatoridx, idx, parentuid, parentexecfilepath) VALUES($1, $2, $3, $4, $5) ON CONFLICT(alertid, processindicatoridx, idx) DO UPDATE SET alertid = EXCLUDED.alertid, processindicatoridx = EXCLUDED.processindicatoridx, idx = EXCLUDED.idx, parentuid = EXCLUDED.parentuid, parentexecfilepath = EXCLUDED.parentexecfilepath"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -1361,7 +1361,7 @@ func (s *storeImpl) copyFromAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 	return err
 }
 
-func (s *storeImpl) copyFromAlertsWhitelists(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Exclusion) error {
+func (s *storeImpl) copyFromAlertsWhitelists(ctx context.Context, tx pgx.Tx, alertid string, objs ...*storage.Exclusion) error {
 
 	inputRows := [][]interface{}{}
 
@@ -1369,7 +1369,7 @@ func (s *storeImpl) copyFromAlertsWhitelists(ctx context.Context, tx pgx.Tx, ale
 
 	copyCols := []string{
 
-		"alerts_id",
+		"alertid",
 
 		"idx",
 
@@ -1396,7 +1396,7 @@ func (s *storeImpl) copyFromAlertsWhitelists(ctx context.Context, tx pgx.Tx, ale
 
 		inputRows = append(inputRows, []interface{}{
 
-			alerts_Id,
+			alertid,
 
 			idx,
 
@@ -1436,7 +1436,7 @@ func (s *storeImpl) copyFromAlertsWhitelists(ctx context.Context, tx pgx.Tx, ale
 	return err
 }
 
-func (s *storeImpl) copyFromAlertsExclusions(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Exclusion) error {
+func (s *storeImpl) copyFromAlertsExclusions(ctx context.Context, tx pgx.Tx, alertid string, objs ...*storage.Exclusion) error {
 
 	inputRows := [][]interface{}{}
 
@@ -1444,7 +1444,7 @@ func (s *storeImpl) copyFromAlertsExclusions(ctx context.Context, tx pgx.Tx, ale
 
 	copyCols := []string{
 
-		"alerts_id",
+		"alertid",
 
 		"idx",
 
@@ -1471,7 +1471,7 @@ func (s *storeImpl) copyFromAlertsExclusions(ctx context.Context, tx pgx.Tx, ale
 
 		inputRows = append(inputRows, []interface{}{
 
-			alerts_Id,
+			alertid,
 
 			idx,
 
@@ -1511,7 +1511,7 @@ func (s *storeImpl) copyFromAlertsExclusions(ctx context.Context, tx pgx.Tx, ale
 	return err
 }
 
-func (s *storeImpl) copyFromAlertsScope(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Scope) error {
+func (s *storeImpl) copyFromAlertsScope(ctx context.Context, tx pgx.Tx, alertid string, objs ...*storage.Scope) error {
 
 	inputRows := [][]interface{}{}
 
@@ -1519,7 +1519,7 @@ func (s *storeImpl) copyFromAlertsScope(ctx context.Context, tx pgx.Tx, alerts_I
 
 	copyCols := []string{
 
-		"alerts_id",
+		"alertid",
 
 		"idx",
 
@@ -1538,7 +1538,7 @@ func (s *storeImpl) copyFromAlertsScope(ctx context.Context, tx pgx.Tx, alerts_I
 
 		inputRows = append(inputRows, []interface{}{
 
-			alerts_Id,
+			alertid,
 
 			idx,
 
@@ -1570,7 +1570,7 @@ func (s *storeImpl) copyFromAlertsScope(ctx context.Context, tx pgx.Tx, alerts_I
 	return err
 }
 
-func (s *storeImpl) copyFromAlertsPolicySections(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.PolicySection) error {
+func (s *storeImpl) copyFromAlertsPolicySections(ctx context.Context, tx pgx.Tx, alertid string, objs ...*storage.PolicySection) error {
 
 	inputRows := [][]interface{}{}
 
@@ -1578,7 +1578,7 @@ func (s *storeImpl) copyFromAlertsPolicySections(ctx context.Context, tx pgx.Tx,
 
 	copyCols := []string{
 
-		"alerts_id",
+		"alertid",
 
 		"idx",
 
@@ -1591,7 +1591,7 @@ func (s *storeImpl) copyFromAlertsPolicySections(ctx context.Context, tx pgx.Tx,
 
 		inputRows = append(inputRows, []interface{}{
 
-			alerts_Id,
+			alertid,
 
 			idx,
 
@@ -1616,7 +1616,7 @@ func (s *storeImpl) copyFromAlertsPolicySections(ctx context.Context, tx pgx.Tx,
 
 	for idx, obj := range objs {
 
-		if err = s.copyFromAlertsPolicySectionsPolicyGroups(ctx, tx, alerts_Id, idx, obj.GetPolicyGroups()...); err != nil {
+		if err = s.copyFromAlertsPolicySectionsPolicyGroups(ctx, tx, alertid, idx, obj.GetPolicyGroups()...); err != nil {
 			return err
 		}
 	}
@@ -1624,7 +1624,7 @@ func (s *storeImpl) copyFromAlertsPolicySections(ctx context.Context, tx pgx.Tx,
 	return err
 }
 
-func (s *storeImpl) copyFromAlertsPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, alerts_Id string, alerts_PolicySections_idx int, objs ...*storage.PolicyGroup) error {
+func (s *storeImpl) copyFromAlertsPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, alertid string, policysectionidx int, objs ...*storage.PolicyGroup) error {
 
 	inputRows := [][]interface{}{}
 
@@ -1632,9 +1632,9 @@ func (s *storeImpl) copyFromAlertsPolicySectionsPolicyGroups(ctx context.Context
 
 	copyCols := []string{
 
-		"alerts_id",
+		"alertid",
 
-		"alerts_policysections_idx",
+		"policysectionidx",
 
 		"idx",
 
@@ -1651,9 +1651,9 @@ func (s *storeImpl) copyFromAlertsPolicySectionsPolicyGroups(ctx context.Context
 
 		inputRows = append(inputRows, []interface{}{
 
-			alerts_Id,
+			alertid,
 
-			alerts_PolicySections_idx,
+			policysectionidx,
 
 			idx,
 
@@ -1682,7 +1682,7 @@ func (s *storeImpl) copyFromAlertsPolicySectionsPolicyGroups(ctx context.Context
 
 	for idx, obj := range objs {
 
-		if err = s.copyFromAlertsPolicySectionsPolicyGroupsValues(ctx, tx, alerts_Id, alerts_PolicySections_idx, idx, obj.GetValues()...); err != nil {
+		if err = s.copyFromAlertsPolicySectionsPolicyGroupsValues(ctx, tx, alertid, policysectionidx, idx, obj.GetValues()...); err != nil {
 			return err
 		}
 	}
@@ -1690,7 +1690,7 @@ func (s *storeImpl) copyFromAlertsPolicySectionsPolicyGroups(ctx context.Context
 	return err
 }
 
-func (s *storeImpl) copyFromAlertsPolicySectionsPolicyGroupsValues(ctx context.Context, tx pgx.Tx, alerts_Id string, alerts_PolicySections_idx int, alerts_PolicySections_PolicyGroups_idx int, objs ...*storage.PolicyValue) error {
+func (s *storeImpl) copyFromAlertsPolicySectionsPolicyGroupsValues(ctx context.Context, tx pgx.Tx, alertid string, policysectionidx int, policygroupidx int, objs ...*storage.PolicyValue) error {
 
 	inputRows := [][]interface{}{}
 
@@ -1698,11 +1698,11 @@ func (s *storeImpl) copyFromAlertsPolicySectionsPolicyGroupsValues(ctx context.C
 
 	copyCols := []string{
 
-		"alerts_id",
+		"alertid",
 
-		"alerts_policysections_idx",
+		"policysectionidx",
 
-		"alerts_policysections_policygroups_idx",
+		"policygroupidx",
 
 		"idx",
 
@@ -1715,11 +1715,11 @@ func (s *storeImpl) copyFromAlertsPolicySectionsPolicyGroupsValues(ctx context.C
 
 		inputRows = append(inputRows, []interface{}{
 
-			alerts_Id,
+			alertid,
 
-			alerts_PolicySections_idx,
+			policysectionidx,
 
-			alerts_PolicySections_PolicyGroups_idx,
+			policygroupidx,
 
 			idx,
 
@@ -1745,7 +1745,7 @@ func (s *storeImpl) copyFromAlertsPolicySectionsPolicyGroupsValues(ctx context.C
 	return err
 }
 
-func (s *storeImpl) copyFromAlertsMitreAttackVectors(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Policy_MitreAttackVectors) error {
+func (s *storeImpl) copyFromAlertsMitreAttackVectors(ctx context.Context, tx pgx.Tx, alertid string, objs ...*storage.Policy_MitreAttackVectors) error {
 
 	inputRows := [][]interface{}{}
 
@@ -1753,7 +1753,7 @@ func (s *storeImpl) copyFromAlertsMitreAttackVectors(ctx context.Context, tx pgx
 
 	copyCols := []string{
 
-		"alerts_id",
+		"alertid",
 
 		"idx",
 
@@ -1768,7 +1768,7 @@ func (s *storeImpl) copyFromAlertsMitreAttackVectors(ctx context.Context, tx pgx
 
 		inputRows = append(inputRows, []interface{}{
 
-			alerts_Id,
+			alertid,
 
 			idx,
 
@@ -1796,7 +1796,7 @@ func (s *storeImpl) copyFromAlertsMitreAttackVectors(ctx context.Context, tx pgx
 	return err
 }
 
-func (s *storeImpl) copyFromAlertsContainers(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Alert_Deployment_Container) error {
+func (s *storeImpl) copyFromAlertsContainers(ctx context.Context, tx pgx.Tx, alertid string, objs ...*storage.Alert_Deployment_Container) error {
 
 	inputRows := [][]interface{}{}
 
@@ -1804,7 +1804,7 @@ func (s *storeImpl) copyFromAlertsContainers(ctx context.Context, tx pgx.Tx, ale
 
 	copyCols := []string{
 
-		"alerts_id",
+		"alertid",
 
 		"idx",
 
@@ -1831,7 +1831,7 @@ func (s *storeImpl) copyFromAlertsContainers(ctx context.Context, tx pgx.Tx, ale
 
 		inputRows = append(inputRows, []interface{}{
 
-			alerts_Id,
+			alertid,
 
 			idx,
 
@@ -1871,7 +1871,7 @@ func (s *storeImpl) copyFromAlertsContainers(ctx context.Context, tx pgx.Tx, ale
 	return err
 }
 
-func (s *storeImpl) copyFromAlertsViolations(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.Alert_Violation) error {
+func (s *storeImpl) copyFromAlertsViolations(ctx context.Context, tx pgx.Tx, alertid string, objs ...*storage.Alert_Violation) error {
 
 	inputRows := [][]interface{}{}
 
@@ -1879,7 +1879,7 @@ func (s *storeImpl) copyFromAlertsViolations(ctx context.Context, tx pgx.Tx, ale
 
 	copyCols := []string{
 
-		"alerts_id",
+		"alertid",
 
 		"idx",
 
@@ -1918,7 +1918,7 @@ func (s *storeImpl) copyFromAlertsViolations(ctx context.Context, tx pgx.Tx, ale
 
 		inputRows = append(inputRows, []interface{}{
 
-			alerts_Id,
+			alertid,
 
 			idx,
 
@@ -1969,7 +1969,7 @@ func (s *storeImpl) copyFromAlertsViolations(ctx context.Context, tx pgx.Tx, ale
 
 	for idx, obj := range objs {
 
-		if err = s.copyFromAlertsViolationsAttrs(ctx, tx, alerts_Id, idx, obj.GetKeyValueAttrs().GetAttrs()...); err != nil {
+		if err = s.copyFromAlertsViolationsAttrs(ctx, tx, alertid, idx, obj.GetKeyValueAttrs().GetAttrs()...); err != nil {
 			return err
 		}
 	}
@@ -1977,7 +1977,7 @@ func (s *storeImpl) copyFromAlertsViolations(ctx context.Context, tx pgx.Tx, ale
 	return err
 }
 
-func (s *storeImpl) copyFromAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx, alerts_Id string, alerts_Violations_idx int, objs ...*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr) error {
+func (s *storeImpl) copyFromAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx, alertid string, alert_violationidx int, objs ...*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr) error {
 
 	inputRows := [][]interface{}{}
 
@@ -1985,9 +1985,9 @@ func (s *storeImpl) copyFromAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx
 
 	copyCols := []string{
 
-		"alerts_id",
+		"alertid",
 
-		"alerts_violations_idx",
+		"alert_violationidx",
 
 		"idx",
 
@@ -2002,9 +2002,9 @@ func (s *storeImpl) copyFromAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx
 
 		inputRows = append(inputRows, []interface{}{
 
-			alerts_Id,
+			alertid,
 
-			alerts_Violations_idx,
+			alert_violationidx,
 
 			idx,
 
@@ -2032,7 +2032,7 @@ func (s *storeImpl) copyFromAlertsViolationsAttrs(ctx context.Context, tx pgx.Tx
 	return err
 }
 
-func (s *storeImpl) copyFromAlertsProcesses(ctx context.Context, tx pgx.Tx, alerts_Id string, objs ...*storage.ProcessIndicator) error {
+func (s *storeImpl) copyFromAlertsProcesses(ctx context.Context, tx pgx.Tx, alertid string, objs ...*storage.ProcessIndicator) error {
 
 	inputRows := [][]interface{}{}
 
@@ -2040,7 +2040,7 @@ func (s *storeImpl) copyFromAlertsProcesses(ctx context.Context, tx pgx.Tx, aler
 
 	copyCols := []string{
 
-		"alerts_id",
+		"alertid",
 
 		"idx",
 
@@ -2091,7 +2091,7 @@ func (s *storeImpl) copyFromAlertsProcesses(ctx context.Context, tx pgx.Tx, aler
 
 		inputRows = append(inputRows, []interface{}{
 
-			alerts_Id,
+			alertid,
 
 			idx,
 
@@ -2154,7 +2154,7 @@ func (s *storeImpl) copyFromAlertsProcesses(ctx context.Context, tx pgx.Tx, aler
 
 	for idx, obj := range objs {
 
-		if err = s.copyFromAlertsProcessesLineageInfo(ctx, tx, alerts_Id, idx, obj.GetSignal().GetLineageInfo()...); err != nil {
+		if err = s.copyFromAlertsProcessesLineageInfo(ctx, tx, alertid, idx, obj.GetSignal().GetLineageInfo()...); err != nil {
 			return err
 		}
 	}
@@ -2162,7 +2162,7 @@ func (s *storeImpl) copyFromAlertsProcesses(ctx context.Context, tx pgx.Tx, aler
 	return err
 }
 
-func (s *storeImpl) copyFromAlertsProcessesLineageInfo(ctx context.Context, tx pgx.Tx, alerts_Id string, alerts_Processes_idx int, objs ...*storage.ProcessSignal_LineageInfo) error {
+func (s *storeImpl) copyFromAlertsProcessesLineageInfo(ctx context.Context, tx pgx.Tx, alertid string, processindicatoridx int, objs ...*storage.ProcessSignal_LineageInfo) error {
 
 	inputRows := [][]interface{}{}
 
@@ -2170,9 +2170,9 @@ func (s *storeImpl) copyFromAlertsProcessesLineageInfo(ctx context.Context, tx p
 
 	copyCols := []string{
 
-		"alerts_id",
+		"alertid",
 
-		"alerts_processes_idx",
+		"processindicatoridx",
 
 		"idx",
 
@@ -2187,9 +2187,9 @@ func (s *storeImpl) copyFromAlertsProcessesLineageInfo(ctx context.Context, tx p
 
 		inputRows = append(inputRows, []interface{}{
 
-			alerts_Id,
+			alertid,
 
-			alerts_Processes_idx,
+			processindicatoridx,
 
 			idx,
 

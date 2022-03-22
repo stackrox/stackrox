@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "watchedimages"
 	countStmt  = "SELECT COUNT(*) FROM watchedimages"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM watchedimages WHERE Name = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM watchedimages WHERE name = $1)"
 
-	getStmt     = "SELECT serialized FROM watchedimages WHERE Name = $1"
-	deleteStmt  = "DELETE FROM watchedimages WHERE Name = $1"
+	getStmt     = "SELECT serialized FROM watchedimages WHERE name = $1"
+	deleteStmt  = "DELETE FROM watchedimages WHERE name = $1"
 	walkStmt    = "SELECT serialized FROM watchedimages"
-	getIDsStmt  = "SELECT Name FROM watchedimages"
-	getManyStmt = "SELECT serialized FROM watchedimages WHERE Name = ANY($1::text[])"
+	getIDsStmt  = "SELECT name FROM watchedimages"
+	getManyStmt = "SELECT serialized FROM watchedimages WHERE name = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM watchedimages WHERE Name = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM watchedimages WHERE name = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,9 +73,9 @@ type storeImpl struct {
 func createTableWatchedimages(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists watchedimages (
-    Name varchar,
+    name varchar,
     serialized bytea,
-    PRIMARY KEY(Name)
+    PRIMARY KEY(name)
 )
 `
 
@@ -106,7 +106,7 @@ func insertIntoWatchedimages(ctx context.Context, tx pgx.Tx, obj *storage.Watche
 		serialized,
 	}
 
-	finalStr := "INSERT INTO watchedimages (Name, serialized) VALUES($1, $2) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO watchedimages (name, serialized) VALUES($1, $2) ON CONFLICT(name) DO UPDATE SET name = EXCLUDED.name, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err

@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "integrationhealth"
 	countStmt  = "SELECT COUNT(*) FROM integrationhealth"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM integrationhealth WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM integrationhealth WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM integrationhealth WHERE Id = $1"
-	deleteStmt  = "DELETE FROM integrationhealth WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM integrationhealth WHERE id = $1"
+	deleteStmt  = "DELETE FROM integrationhealth WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM integrationhealth"
-	getIDsStmt  = "SELECT Id FROM integrationhealth"
-	getManyStmt = "SELECT serialized FROM integrationhealth WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM integrationhealth"
+	getManyStmt = "SELECT serialized FROM integrationhealth WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM integrationhealth WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM integrationhealth WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,14 +73,14 @@ type storeImpl struct {
 func createTableIntegrationhealth(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists integrationhealth (
-    Id varchar,
-    Name varchar,
-    Type integer,
-    Status integer,
-    ErrorMessage varchar,
-    LastTimestamp timestamp,
+    id varchar,
+    name varchar,
+    type integer,
+    status integer,
+    errormessage varchar,
+    lasttimestamp timestamp,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -116,7 +116,7 @@ func insertIntoIntegrationhealth(ctx context.Context, tx pgx.Tx, obj *storage.In
 		serialized,
 	}
 
-	finalStr := "INSERT INTO integrationhealth (Id, Name, Type, Status, ErrorMessage, LastTimestamp, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Status = EXCLUDED.Status, ErrorMessage = EXCLUDED.ErrorMessage, LastTimestamp = EXCLUDED.LastTimestamp, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO integrationhealth (id, name, type, status, errormessage, lasttimestamp, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, type = EXCLUDED.type, status = EXCLUDED.status, errormessage = EXCLUDED.errormessage, lasttimestamp = EXCLUDED.lasttimestamp, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err

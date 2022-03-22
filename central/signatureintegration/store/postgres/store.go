@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "signatureintegrations"
 	countStmt  = "SELECT COUNT(*) FROM signatureintegrations"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM signatureintegrations WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM signatureintegrations WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM signatureintegrations WHERE Id = $1"
-	deleteStmt  = "DELETE FROM signatureintegrations WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM signatureintegrations WHERE id = $1"
+	deleteStmt  = "DELETE FROM signatureintegrations WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM signatureintegrations"
-	getIDsStmt  = "SELECT Id FROM signatureintegrations"
-	getManyStmt = "SELECT serialized FROM signatureintegrations WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM signatureintegrations"
+	getManyStmt = "SELECT serialized FROM signatureintegrations WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM signatureintegrations WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM signatureintegrations WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,10 +73,10 @@ type storeImpl struct {
 func createTableSignatureintegrations(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists signatureintegrations (
-    Id varchar,
-    Name varchar UNIQUE,
+    id varchar,
+    name varchar UNIQUE,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -98,12 +98,12 @@ create table if not exists signatureintegrations (
 func createTableSignatureintegrationsPublicKeys(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists signatureintegrations_PublicKeys (
-    signatureintegrations_Id varchar,
+    signatureintegrationid varchar,
     idx integer,
-    Name varchar,
-    PublicKeyPemEnc varchar,
-    PRIMARY KEY(signatureintegrations_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (signatureintegrations_Id) REFERENCES signatureintegrations(Id) ON DELETE CASCADE
+    name varchar,
+    publickeypemenc varchar,
+    PRIMARY KEY(signatureintegrationid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (signatureintegrationid) REFERENCES signatureintegrations(id) ON DELETE CASCADE
 )
 `
 
@@ -138,7 +138,7 @@ func insertIntoSignatureintegrations(ctx context.Context, tx pgx.Tx, obj *storag
 		serialized,
 	}
 
-	finalStr := "INSERT INTO signatureintegrations (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO signatureintegrations (id, name, serialized) VALUES($1, $2, $3) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func insertIntoSignatureintegrations(ctx context.Context, tx pgx.Tx, obj *storag
 		}
 	}
 
-	query = "delete from signatureintegrations_PublicKeys where signatureintegrations_Id = $1 AND idx >= $2"
+	query = "delete from signatureintegrations_PublicKeys where signatureintegrationid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetCosign().GetPublicKeys()))
 	if err != nil {
 		return err
@@ -160,17 +160,17 @@ func insertIntoSignatureintegrations(ctx context.Context, tx pgx.Tx, obj *storag
 	return nil
 }
 
-func insertIntoSignatureintegrationsPublicKeys(ctx context.Context, tx pgx.Tx, obj *storage.CosignPublicKeyVerification_PublicKey, signatureintegrations_Id string, idx int) error {
+func insertIntoSignatureintegrationsPublicKeys(ctx context.Context, tx pgx.Tx, obj *storage.CosignPublicKeyVerification_PublicKey, signatureintegrationid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		signatureintegrations_Id,
+		signatureintegrationid,
 		idx,
 		obj.GetName(),
 		obj.GetPublicKeyPemEnc(),
 	}
 
-	finalStr := "INSERT INTO signatureintegrations_PublicKeys (signatureintegrations_Id, idx, Name, PublicKeyPemEnc) VALUES($1, $2, $3, $4) ON CONFLICT(signatureintegrations_Id, idx) DO UPDATE SET signatureintegrations_Id = EXCLUDED.signatureintegrations_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, PublicKeyPemEnc = EXCLUDED.PublicKeyPemEnc"
+	finalStr := "INSERT INTO signatureintegrations_PublicKeys (signatureintegrationid, idx, name, publickeypemenc) VALUES($1, $2, $3, $4) ON CONFLICT(signatureintegrationid, idx) DO UPDATE SET signatureintegrationid = EXCLUDED.signatureintegrationid, idx = EXCLUDED.idx, name = EXCLUDED.name, publickeypemenc = EXCLUDED.publickeypemenc"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -252,7 +252,7 @@ func (s *storeImpl) copyFromSignatureintegrations(ctx context.Context, tx pgx.Tx
 	return err
 }
 
-func (s *storeImpl) copyFromSignatureintegrationsPublicKeys(ctx context.Context, tx pgx.Tx, signatureintegrations_Id string, objs ...*storage.CosignPublicKeyVerification_PublicKey) error {
+func (s *storeImpl) copyFromSignatureintegrationsPublicKeys(ctx context.Context, tx pgx.Tx, signatureintegrationid string, objs ...*storage.CosignPublicKeyVerification_PublicKey) error {
 
 	inputRows := [][]interface{}{}
 
@@ -260,7 +260,7 @@ func (s *storeImpl) copyFromSignatureintegrationsPublicKeys(ctx context.Context,
 
 	copyCols := []string{
 
-		"signatureintegrations_id",
+		"signatureintegrationid",
 
 		"idx",
 
@@ -275,7 +275,7 @@ func (s *storeImpl) copyFromSignatureintegrationsPublicKeys(ctx context.Context,
 
 		inputRows = append(inputRows, []interface{}{
 
-			signatureintegrations_Id,
+			signatureintegrationid,
 
 			idx,
 

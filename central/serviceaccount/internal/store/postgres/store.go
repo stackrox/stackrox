@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "serviceaccounts"
 	countStmt  = "SELECT COUNT(*) FROM serviceaccounts"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM serviceaccounts WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM serviceaccounts WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM serviceaccounts WHERE Id = $1"
-	deleteStmt  = "DELETE FROM serviceaccounts WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM serviceaccounts WHERE id = $1"
+	deleteStmt  = "DELETE FROM serviceaccounts WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM serviceaccounts"
-	getIDsStmt  = "SELECT Id FROM serviceaccounts"
-	getManyStmt = "SELECT serialized FROM serviceaccounts WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM serviceaccounts"
+	getManyStmt = "SELECT serialized FROM serviceaccounts WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM serviceaccounts WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM serviceaccounts WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,19 +73,19 @@ type storeImpl struct {
 func createTableServiceaccounts(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists serviceaccounts (
-    Id varchar,
-    Name varchar,
-    Namespace varchar,
-    ClusterName varchar,
-    ClusterId varchar,
-    Labels jsonb,
-    Annotations jsonb,
-    CreatedAt timestamp,
-    AutomountToken bool,
-    Secrets text[],
-    ImagePullSecrets text[],
+    id varchar,
+    name varchar,
+    namespace varchar,
+    clustername varchar,
+    clusterid varchar,
+    labels jsonb,
+    annotations jsonb,
+    createdat timestamp,
+    automounttoken bool,
+    secrets text[],
+    imagepullsecrets text[],
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -126,7 +126,7 @@ func insertIntoServiceaccounts(ctx context.Context, tx pgx.Tx, obj *storage.Serv
 		serialized,
 	}
 
-	finalStr := "INSERT INTO serviceaccounts (Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations, CreatedAt, AutomountToken, Secrets, ImagePullSecrets, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, CreatedAt = EXCLUDED.CreatedAt, AutomountToken = EXCLUDED.AutomountToken, Secrets = EXCLUDED.Secrets, ImagePullSecrets = EXCLUDED.ImagePullSecrets, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO serviceaccounts (id, name, namespace, clustername, clusterid, labels, annotations, createdat, automounttoken, secrets, imagepullsecrets, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, namespace = EXCLUDED.namespace, clustername = EXCLUDED.clustername, clusterid = EXCLUDED.clusterid, labels = EXCLUDED.labels, annotations = EXCLUDED.annotations, createdat = EXCLUDED.createdat, automounttoken = EXCLUDED.automounttoken, secrets = EXCLUDED.secrets, imagepullsecrets = EXCLUDED.imagepullsecrets, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err

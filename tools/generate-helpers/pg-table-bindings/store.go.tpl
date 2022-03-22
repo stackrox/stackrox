@@ -99,8 +99,8 @@ create table if not exists {{$schema.Table}} (
     {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}},
 {{- end}}
     PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys}}){{ if gt (len $schema.Parents) 0 }},{{end}}
-    {{- range $parent, $pks := $schema.ParentKeysAsMap }}
-    CONSTRAINT fk_parent_table FOREIGN KEY ({{template "commaSeparatedColumns" $pks}}) REFERENCES {{$parent}}({{template "commandSeparatedRefs" $pks}}) ON DELETE CASCADE
+    {{- range $idx, $pksGrp := $schema.ParentKeysGroupedByTable }}
+    CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrp.Fields}}) REFERENCES {{$pksGrp.Table}}({{template "commandSeparatedRefs" $pksGrp.Fields}}) ON DELETE CASCADE
     {{- end }}
 )
 `

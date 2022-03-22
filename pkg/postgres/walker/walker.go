@@ -31,6 +31,7 @@ func (c context) Getter(name string) string {
 }
 
 func (c context) Column(name string) string {
+	name = strings.ToLower(name)
 	if c.column == "" {
 		return name
 	}

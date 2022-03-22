@@ -2,9 +2,15 @@ package walker
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	serializedField = Field{
 		Name: "serialized",
 		ObjectGetter: ObjectGetter{
@@ -25,6 +31,12 @@ type Schema struct {
 	Children     []*Schema
 	Type         string
 	ObjectGetter string
+}
+
+// TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,
+type TableFieldsGroup struct {
+	Table  string
+	Fields []Field
 }
 
 // FieldsBySearchLabel returns the resulting fields in the schema by their field label
@@ -68,14 +80,19 @@ func (s *Schema) Print() {
 func tryParentify(field *Field, parentSchema *Schema) {
 	referencedColName := field.ColumnName
 	if field.Reference == "" {
-		field.Name = parentify(parentSchema.Table, field.Name)
-		field.ColumnName = parentify(parentSchema.Table, referencedColName)
+		// These are
+		_, objType := stringutils.Split2(parentSchema.Type, ".")
+		if objType == "" {
+			log.Panicf("non-storage object %s received for sql schema generation", parentSchema.Type)
+		}
+		field.Name = parentify(objType, field.Name)
+		field.ColumnName = parentify(objType, referencedColName)
 	}
 	field.Reference = referencedColName
 }
 
 func parentify(parent, name string) string {
-	return parent + "_" + name
+	return strings.ToLower(parent + name)
 }
 
 // ResolvedFields is the total set of fields for the schema including
@@ -105,24 +122,24 @@ func (s *Schema) ResolvedFields() []Field {
 // as foreign keys for the current schema.
 func (s *Schema) ParentKeys() []Field {
 	var fields []Field
-	pksAsMap := s.ParentKeysAsMap()
-	for _, pks := range pksAsMap {
-		fields = append(fields, pks...)
+	pksGrps := s.ParentKeysGroupedByTable()
+	for _, pks := range pksGrps {
+		fields = append(fields, pks.Fields...)
 	}
 	return fields
 }
 
-// ParentKeysAsMap returns the keys from the parent schemas that should be defined
+// ParentKeysGroupedByTable returns the keys from the parent schemas that should be defined
 // as foreign keys for the current schema mapped by parent schema.
-func (s *Schema) ParentKeysAsMap() map[string][]Field {
-	pks := make(map[string][]Field)
+func (s *Schema) ParentKeysGroupedByTable() []TableFieldsGroup {
+	pks := make([]TableFieldsGroup, 0, len(s.Parents))
 	for _, parent := range s.Parents {
 		currPks := parent.ResolvedPrimaryKeys()
 		for idx := range currPks {
 			pk := &currPks[idx]
 			tryParentify(pk, parent)
 		}
-		pks[parent.Table] = currPks
+		pks = append(pks, TableFieldsGroup{Table: parent.Table, Fields: currPks})
 	}
 	return pks
 }

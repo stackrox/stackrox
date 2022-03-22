@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "clusterinitbundles"
 	countStmt  = "SELECT COUNT(*) FROM clusterinitbundles"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM clusterinitbundles WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM clusterinitbundles WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM clusterinitbundles WHERE Id = $1"
-	deleteStmt  = "DELETE FROM clusterinitbundles WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM clusterinitbundles WHERE id = $1"
+	deleteStmt  = "DELETE FROM clusterinitbundles WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM clusterinitbundles"
-	getIDsStmt  = "SELECT Id FROM clusterinitbundles"
-	getManyStmt = "SELECT serialized FROM clusterinitbundles WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM clusterinitbundles"
+	getManyStmt = "SELECT serialized FROM clusterinitbundles WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM clusterinitbundles WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM clusterinitbundles WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,15 +73,15 @@ type storeImpl struct {
 func createTableClusterinitbundles(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists clusterinitbundles (
-    Id varchar,
-    Name varchar,
-    CreatedAt timestamp,
-    CreatedBy_Id varchar,
-    CreatedBy_AuthProviderId varchar,
-    IsRevoked bool,
-    ExpiresAt timestamp,
+    id varchar,
+    name varchar,
+    createdat timestamp,
+    createdby_id varchar,
+    createdby_authproviderid varchar,
+    isrevoked bool,
+    expiresat timestamp,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -103,12 +103,12 @@ create table if not exists clusterinitbundles (
 func createTableClusterinitbundlesAttributes(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists clusterinitbundles_Attributes (
-    clusterinitbundles_Id varchar,
+    initbundlemetaid varchar,
     idx integer,
-    Key varchar,
-    Value varchar,
-    PRIMARY KEY(clusterinitbundles_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (clusterinitbundles_Id) REFERENCES clusterinitbundles(Id) ON DELETE CASCADE
+    key varchar,
+    value varchar,
+    PRIMARY KEY(initbundlemetaid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (initbundlemetaid) REFERENCES clusterinitbundles(id) ON DELETE CASCADE
 )
 `
 
@@ -148,7 +148,7 @@ func insertIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, obj *storage.I
 		serialized,
 	}
 
-	finalStr := "INSERT INTO clusterinitbundles (Id, Name, CreatedAt, CreatedBy_Id, CreatedBy_AuthProviderId, IsRevoked, ExpiresAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, CreatedAt = EXCLUDED.CreatedAt, CreatedBy_Id = EXCLUDED.CreatedBy_Id, CreatedBy_AuthProviderId = EXCLUDED.CreatedBy_AuthProviderId, IsRevoked = EXCLUDED.IsRevoked, ExpiresAt = EXCLUDED.ExpiresAt, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO clusterinitbundles (id, name, createdat, createdby_id, createdby_authproviderid, isrevoked, expiresat, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, createdat = EXCLUDED.createdat, createdby_id = EXCLUDED.createdby_id, createdby_authproviderid = EXCLUDED.createdby_authproviderid, isrevoked = EXCLUDED.isrevoked, expiresat = EXCLUDED.expiresat, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -162,7 +162,7 @@ func insertIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, obj *storage.I
 		}
 	}
 
-	query = "delete from clusterinitbundles_Attributes where clusterinitbundles_Id = $1 AND idx >= $2"
+	query = "delete from clusterinitbundles_Attributes where initbundlemetaid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetCreatedBy().GetAttributes()))
 	if err != nil {
 		return err
@@ -170,17 +170,17 @@ func insertIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, obj *storage.I
 	return nil
 }
 
-func insertIntoClusterinitbundlesAttributes(ctx context.Context, tx pgx.Tx, obj *storage.UserAttribute, clusterinitbundles_Id string, idx int) error {
+func insertIntoClusterinitbundlesAttributes(ctx context.Context, tx pgx.Tx, obj *storage.UserAttribute, initbundlemetaid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		clusterinitbundles_Id,
+		initbundlemetaid,
 		idx,
 		obj.GetKey(),
 		obj.GetValue(),
 	}
 
-	finalStr := "INSERT INTO clusterinitbundles_Attributes (clusterinitbundles_Id, idx, Key, Value) VALUES($1, $2, $3, $4) ON CONFLICT(clusterinitbundles_Id, idx) DO UPDATE SET clusterinitbundles_Id = EXCLUDED.clusterinitbundles_Id, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value"
+	finalStr := "INSERT INTO clusterinitbundles_Attributes (initbundlemetaid, idx, key, value) VALUES($1, $2, $3, $4) ON CONFLICT(initbundlemetaid, idx) DO UPDATE SET initbundlemetaid = EXCLUDED.initbundlemetaid, idx = EXCLUDED.idx, key = EXCLUDED.key, value = EXCLUDED.value"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -282,7 +282,7 @@ func (s *storeImpl) copyFromClusterinitbundles(ctx context.Context, tx pgx.Tx, o
 	return err
 }
 
-func (s *storeImpl) copyFromClusterinitbundlesAttributes(ctx context.Context, tx pgx.Tx, clusterinitbundles_Id string, objs ...*storage.UserAttribute) error {
+func (s *storeImpl) copyFromClusterinitbundlesAttributes(ctx context.Context, tx pgx.Tx, initbundlemetaid string, objs ...*storage.UserAttribute) error {
 
 	inputRows := [][]interface{}{}
 
@@ -290,7 +290,7 @@ func (s *storeImpl) copyFromClusterinitbundlesAttributes(ctx context.Context, tx
 
 	copyCols := []string{
 
-		"clusterinitbundles_id",
+		"initbundlemetaid",
 
 		"idx",
 
@@ -305,7 +305,7 @@ func (s *storeImpl) copyFromClusterinitbundlesAttributes(ctx context.Context, tx
 
 		inputRows = append(inputRows, []interface{}{
 
-			clusterinitbundles_Id,
+			initbundlemetaid,
 
 			idx,
 

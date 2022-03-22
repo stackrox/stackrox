@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "node_cves"
 	countStmt  = "SELECT COUNT(*) FROM node_cves"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_cves WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_cves WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM node_cves WHERE Id = $1"
-	deleteStmt  = "DELETE FROM node_cves WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM node_cves WHERE id = $1"
+	deleteStmt  = "DELETE FROM node_cves WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM node_cves"
-	getIDsStmt  = "SELECT Id FROM node_cves"
-	getManyStmt = "SELECT serialized FROM node_cves WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM node_cves"
+	getManyStmt = "SELECT serialized FROM node_cves WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM node_cves WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM node_cves WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,45 +73,45 @@ type storeImpl struct {
 func createTableNodeCves(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists node_cves (
-    Id varchar,
-    Cvss numeric,
-    ImpactScore numeric,
-    Summary varchar,
-    Link varchar,
-    PublishedOn timestamp,
-    CreatedAt timestamp,
-    LastModified timestamp,
-    ScoreVersion integer,
-    CvssV2_Vector varchar,
-    CvssV2_AttackVector integer,
-    CvssV2_AccessComplexity integer,
-    CvssV2_Authentication integer,
-    CvssV2_Confidentiality integer,
-    CvssV2_Integrity integer,
-    CvssV2_Availability integer,
-    CvssV2_ExploitabilityScore numeric,
-    CvssV2_ImpactScore numeric,
-    CvssV2_Score numeric,
-    CvssV2_Severity integer,
-    CvssV3_Vector varchar,
-    CvssV3_ExploitabilityScore numeric,
-    CvssV3_ImpactScore numeric,
-    CvssV3_AttackVector integer,
-    CvssV3_AttackComplexity integer,
-    CvssV3_PrivilegesRequired integer,
-    CvssV3_UserInteraction integer,
-    CvssV3_Scope integer,
-    CvssV3_Confidentiality integer,
-    CvssV3_Integrity integer,
-    CvssV3_Availability integer,
-    CvssV3_Score numeric,
-    CvssV3_Severity integer,
-    Suppressed bool,
-    SuppressActivation timestamp,
-    SuppressExpiry timestamp,
-    Severity integer,
+    id varchar,
+    cvss numeric,
+    impactscore numeric,
+    summary varchar,
+    link varchar,
+    publishedon timestamp,
+    createdat timestamp,
+    lastmodified timestamp,
+    scoreversion integer,
+    cvssv2_vector varchar,
+    cvssv2_attackvector integer,
+    cvssv2_accesscomplexity integer,
+    cvssv2_authentication integer,
+    cvssv2_confidentiality integer,
+    cvssv2_integrity integer,
+    cvssv2_availability integer,
+    cvssv2_exploitabilityscore numeric,
+    cvssv2_impactscore numeric,
+    cvssv2_score numeric,
+    cvssv2_severity integer,
+    cvssv3_vector varchar,
+    cvssv3_exploitabilityscore numeric,
+    cvssv3_impactscore numeric,
+    cvssv3_attackvector integer,
+    cvssv3_attackcomplexity integer,
+    cvssv3_privilegesrequired integer,
+    cvssv3_userinteraction integer,
+    cvssv3_scope integer,
+    cvssv3_confidentiality integer,
+    cvssv3_integrity integer,
+    cvssv3_availability integer,
+    cvssv3_score numeric,
+    cvssv3_severity integer,
+    suppressed bool,
+    suppressactivation timestamp,
+    suppressexpiry timestamp,
+    severity integer,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -133,12 +133,12 @@ create table if not exists node_cves (
 func createTableNodeCvesReferences(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists node_cves_References (
-    node_cves_Id varchar,
+    cveid varchar,
     idx integer,
-    URI varchar,
-    Tags text[],
-    PRIMARY KEY(node_cves_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (node_cves_Id) REFERENCES node_cves(Id) ON DELETE CASCADE
+    uri varchar,
+    tags text[],
+    PRIMARY KEY(cveid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (cveid) REFERENCES node_cves(id) ON DELETE CASCADE
 )
 `
 
@@ -208,7 +208,7 @@ func insertIntoNodeCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error 
 		serialized,
 	}
 
-	finalStr := "INSERT INTO node_cves (Id, Cvss, ImpactScore, Summary, Link, PublishedOn, CreatedAt, LastModified, ScoreVersion, CvssV2_Vector, CvssV2_AttackVector, CvssV2_AccessComplexity, CvssV2_Authentication, CvssV2_Confidentiality, CvssV2_Integrity, CvssV2_Availability, CvssV2_ExploitabilityScore, CvssV2_ImpactScore, CvssV2_Score, CvssV2_Severity, CvssV3_Vector, CvssV3_ExploitabilityScore, CvssV3_ImpactScore, CvssV3_AttackVector, CvssV3_AttackComplexity, CvssV3_PrivilegesRequired, CvssV3_UserInteraction, CvssV3_Scope, CvssV3_Confidentiality, CvssV3_Integrity, CvssV3_Availability, CvssV3_Score, CvssV3_Severity, Suppressed, SuppressActivation, SuppressExpiry, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Cvss = EXCLUDED.Cvss, ImpactScore = EXCLUDED.ImpactScore, Summary = EXCLUDED.Summary, Link = EXCLUDED.Link, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, LastModified = EXCLUDED.LastModified, ScoreVersion = EXCLUDED.ScoreVersion, CvssV2_Vector = EXCLUDED.CvssV2_Vector, CvssV2_AttackVector = EXCLUDED.CvssV2_AttackVector, CvssV2_AccessComplexity = EXCLUDED.CvssV2_AccessComplexity, CvssV2_Authentication = EXCLUDED.CvssV2_Authentication, CvssV2_Confidentiality = EXCLUDED.CvssV2_Confidentiality, CvssV2_Integrity = EXCLUDED.CvssV2_Integrity, CvssV2_Availability = EXCLUDED.CvssV2_Availability, CvssV2_ExploitabilityScore = EXCLUDED.CvssV2_ExploitabilityScore, CvssV2_ImpactScore = EXCLUDED.CvssV2_ImpactScore, CvssV2_Score = EXCLUDED.CvssV2_Score, CvssV2_Severity = EXCLUDED.CvssV2_Severity, CvssV3_Vector = EXCLUDED.CvssV3_Vector, CvssV3_ExploitabilityScore = EXCLUDED.CvssV3_ExploitabilityScore, CvssV3_ImpactScore = EXCLUDED.CvssV3_ImpactScore, CvssV3_AttackVector = EXCLUDED.CvssV3_AttackVector, CvssV3_AttackComplexity = EXCLUDED.CvssV3_AttackComplexity, CvssV3_PrivilegesRequired = EXCLUDED.CvssV3_PrivilegesRequired, CvssV3_UserInteraction = EXCLUDED.CvssV3_UserInteraction, CvssV3_Scope = EXCLUDED.CvssV3_Scope, CvssV3_Confidentiality = EXCLUDED.CvssV3_Confidentiality, CvssV3_Integrity = EXCLUDED.CvssV3_Integrity, CvssV3_Availability = EXCLUDED.CvssV3_Availability, CvssV3_Score = EXCLUDED.CvssV3_Score, CvssV3_Severity = EXCLUDED.CvssV3_Severity, Suppressed = EXCLUDED.Suppressed, SuppressActivation = EXCLUDED.SuppressActivation, SuppressExpiry = EXCLUDED.SuppressExpiry, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO node_cves (id, cvss, impactscore, summary, link, publishedon, createdat, lastmodified, scoreversion, cvssv2_vector, cvssv2_attackvector, cvssv2_accesscomplexity, cvssv2_authentication, cvssv2_confidentiality, cvssv2_integrity, cvssv2_availability, cvssv2_exploitabilityscore, cvssv2_impactscore, cvssv2_score, cvssv2_severity, cvssv3_vector, cvssv3_exploitabilityscore, cvssv3_impactscore, cvssv3_attackvector, cvssv3_attackcomplexity, cvssv3_privilegesrequired, cvssv3_userinteraction, cvssv3_scope, cvssv3_confidentiality, cvssv3_integrity, cvssv3_availability, cvssv3_score, cvssv3_severity, suppressed, suppressactivation, suppressexpiry, severity, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, cvss = EXCLUDED.cvss, impactscore = EXCLUDED.impactscore, summary = EXCLUDED.summary, link = EXCLUDED.link, publishedon = EXCLUDED.publishedon, createdat = EXCLUDED.createdat, lastmodified = EXCLUDED.lastmodified, scoreversion = EXCLUDED.scoreversion, cvssv2_vector = EXCLUDED.cvssv2_vector, cvssv2_attackvector = EXCLUDED.cvssv2_attackvector, cvssv2_accesscomplexity = EXCLUDED.cvssv2_accesscomplexity, cvssv2_authentication = EXCLUDED.cvssv2_authentication, cvssv2_confidentiality = EXCLUDED.cvssv2_confidentiality, cvssv2_integrity = EXCLUDED.cvssv2_integrity, cvssv2_availability = EXCLUDED.cvssv2_availability, cvssv2_exploitabilityscore = EXCLUDED.cvssv2_exploitabilityscore, cvssv2_impactscore = EXCLUDED.cvssv2_impactscore, cvssv2_score = EXCLUDED.cvssv2_score, cvssv2_severity = EXCLUDED.cvssv2_severity, cvssv3_vector = EXCLUDED.cvssv3_vector, cvssv3_exploitabilityscore = EXCLUDED.cvssv3_exploitabilityscore, cvssv3_impactscore = EXCLUDED.cvssv3_impactscore, cvssv3_attackvector = EXCLUDED.cvssv3_attackvector, cvssv3_attackcomplexity = EXCLUDED.cvssv3_attackcomplexity, cvssv3_privilegesrequired = EXCLUDED.cvssv3_privilegesrequired, cvssv3_userinteraction = EXCLUDED.cvssv3_userinteraction, cvssv3_scope = EXCLUDED.cvssv3_scope, cvssv3_confidentiality = EXCLUDED.cvssv3_confidentiality, cvssv3_integrity = EXCLUDED.cvssv3_integrity, cvssv3_availability = EXCLUDED.cvssv3_availability, cvssv3_score = EXCLUDED.cvssv3_score, cvssv3_severity = EXCLUDED.cvssv3_severity, suppressed = EXCLUDED.suppressed, suppressactivation = EXCLUDED.suppressactivation, suppressexpiry = EXCLUDED.suppressexpiry, severity = EXCLUDED.severity, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -222,7 +222,7 @@ func insertIntoNodeCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error 
 		}
 	}
 
-	query = "delete from node_cves_References where node_cves_Id = $1 AND idx >= $2"
+	query = "delete from node_cves_References where cveid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetReferences()))
 	if err != nil {
 		return err
@@ -230,17 +230,17 @@ func insertIntoNodeCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error 
 	return nil
 }
 
-func insertIntoNodeCvesReferences(ctx context.Context, tx pgx.Tx, obj *storage.CVE_Reference, node_cves_Id string, idx int) error {
+func insertIntoNodeCvesReferences(ctx context.Context, tx pgx.Tx, obj *storage.CVE_Reference, cveid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		node_cves_Id,
+		cveid,
 		idx,
 		obj.GetURI(),
 		obj.GetTags(),
 	}
 
-	finalStr := "INSERT INTO node_cves_References (node_cves_Id, idx, URI, Tags) VALUES($1, $2, $3, $4) ON CONFLICT(node_cves_Id, idx) DO UPDATE SET node_cves_Id = EXCLUDED.node_cves_Id, idx = EXCLUDED.idx, URI = EXCLUDED.URI, Tags = EXCLUDED.Tags"
+	finalStr := "INSERT INTO node_cves_References (cveid, idx, uri, tags) VALUES($1, $2, $3, $4) ON CONFLICT(cveid, idx) DO UPDATE SET cveid = EXCLUDED.cveid, idx = EXCLUDED.idx, uri = EXCLUDED.uri, tags = EXCLUDED.tags"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -462,7 +462,7 @@ func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*st
 	return err
 }
 
-func (s *storeImpl) copyFromNodeCvesReferences(ctx context.Context, tx pgx.Tx, node_cves_Id string, objs ...*storage.CVE_Reference) error {
+func (s *storeImpl) copyFromNodeCvesReferences(ctx context.Context, tx pgx.Tx, cveid string, objs ...*storage.CVE_Reference) error {
 
 	inputRows := [][]interface{}{}
 
@@ -470,7 +470,7 @@ func (s *storeImpl) copyFromNodeCvesReferences(ctx context.Context, tx pgx.Tx, n
 
 	copyCols := []string{
 
-		"node_cves_id",
+		"cveid",
 
 		"idx",
 
@@ -485,7 +485,7 @@ func (s *storeImpl) copyFromNodeCvesReferences(ctx context.Context, tx pgx.Tx, n
 
 		inputRows = append(inputRows, []interface{}{
 
-			node_cves_Id,
+			cveid,
 
 			idx,
 

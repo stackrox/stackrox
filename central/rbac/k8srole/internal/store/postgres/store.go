@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "k8sroles"
 	countStmt  = "SELECT COUNT(*) FROM k8sroles"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM k8sroles WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM k8sroles WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM k8sroles WHERE Id = $1"
-	deleteStmt  = "DELETE FROM k8sroles WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM k8sroles WHERE id = $1"
+	deleteStmt  = "DELETE FROM k8sroles WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM k8sroles"
-	getIDsStmt  = "SELECT Id FROM k8sroles"
-	getManyStmt = "SELECT serialized FROM k8sroles WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM k8sroles"
+	getManyStmt = "SELECT serialized FROM k8sroles WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM k8sroles WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM k8sroles WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,17 +73,17 @@ type storeImpl struct {
 func createTableK8sroles(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists k8sroles (
-    Id varchar,
-    Name varchar,
-    Namespace varchar,
-    ClusterId varchar,
-    ClusterName varchar,
-    ClusterRole bool,
-    Labels jsonb,
-    Annotations jsonb,
-    CreatedAt timestamp,
+    id varchar,
+    name varchar,
+    namespace varchar,
+    clusterid varchar,
+    clustername varchar,
+    clusterrole bool,
+    labels jsonb,
+    annotations jsonb,
+    createdat timestamp,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -105,15 +105,15 @@ create table if not exists k8sroles (
 func createTableK8srolesRules(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists k8sroles_Rules (
-    k8sroles_Id varchar,
+    k8sroleid varchar,
     idx integer,
-    Verbs text[],
-    ApiGroups text[],
-    Resources text[],
-    NonResourceUrls text[],
-    ResourceNames text[],
-    PRIMARY KEY(k8sroles_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (k8sroles_Id) REFERENCES k8sroles(Id) ON DELETE CASCADE
+    verbs text[],
+    apigroups text[],
+    resources text[],
+    nonresourceurls text[],
+    resourcenames text[],
+    PRIMARY KEY(k8sroleid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (k8sroleid) REFERENCES k8sroles(id) ON DELETE CASCADE
 )
 `
 
@@ -155,7 +155,7 @@ func insertIntoK8sroles(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole) er
 		serialized,
 	}
 
-	finalStr := "INSERT INTO k8sroles (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO k8sroles (id, name, namespace, clusterid, clustername, clusterrole, labels, annotations, createdat, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, namespace = EXCLUDED.namespace, clusterid = EXCLUDED.clusterid, clustername = EXCLUDED.clustername, clusterrole = EXCLUDED.clusterrole, labels = EXCLUDED.labels, annotations = EXCLUDED.annotations, createdat = EXCLUDED.createdat, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -169,7 +169,7 @@ func insertIntoK8sroles(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole) er
 		}
 	}
 
-	query = "delete from k8sroles_Rules where k8sroles_Id = $1 AND idx >= $2"
+	query = "delete from k8sroles_Rules where k8sroleid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetRules()))
 	if err != nil {
 		return err
@@ -177,11 +177,11 @@ func insertIntoK8sroles(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole) er
 	return nil
 }
 
-func insertIntoK8srolesRules(ctx context.Context, tx pgx.Tx, obj *storage.PolicyRule, k8sroles_Id string, idx int) error {
+func insertIntoK8srolesRules(ctx context.Context, tx pgx.Tx, obj *storage.PolicyRule, k8sroleid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		k8sroles_Id,
+		k8sroleid,
 		idx,
 		obj.GetVerbs(),
 		obj.GetApiGroups(),
@@ -190,7 +190,7 @@ func insertIntoK8srolesRules(ctx context.Context, tx pgx.Tx, obj *storage.Policy
 		obj.GetResourceNames(),
 	}
 
-	finalStr := "INSERT INTO k8sroles_Rules (k8sroles_Id, idx, Verbs, ApiGroups, Resources, NonResourceUrls, ResourceNames) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(k8sroles_Id, idx) DO UPDATE SET k8sroles_Id = EXCLUDED.k8sroles_Id, idx = EXCLUDED.idx, Verbs = EXCLUDED.Verbs, ApiGroups = EXCLUDED.ApiGroups, Resources = EXCLUDED.Resources, NonResourceUrls = EXCLUDED.NonResourceUrls, ResourceNames = EXCLUDED.ResourceNames"
+	finalStr := "INSERT INTO k8sroles_Rules (k8sroleid, idx, verbs, apigroups, resources, nonresourceurls, resourcenames) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(k8sroleid, idx) DO UPDATE SET k8sroleid = EXCLUDED.k8sroleid, idx = EXCLUDED.idx, verbs = EXCLUDED.verbs, apigroups = EXCLUDED.apigroups, resources = EXCLUDED.resources, nonresourceurls = EXCLUDED.nonresourceurls, resourcenames = EXCLUDED.resourcenames"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -300,7 +300,7 @@ func (s *storeImpl) copyFromK8sroles(ctx context.Context, tx pgx.Tx, objs ...*st
 	return err
 }
 
-func (s *storeImpl) copyFromK8srolesRules(ctx context.Context, tx pgx.Tx, k8sroles_Id string, objs ...*storage.PolicyRule) error {
+func (s *storeImpl) copyFromK8srolesRules(ctx context.Context, tx pgx.Tx, k8sroleid string, objs ...*storage.PolicyRule) error {
 
 	inputRows := [][]interface{}{}
 
@@ -308,7 +308,7 @@ func (s *storeImpl) copyFromK8srolesRules(ctx context.Context, tx pgx.Tx, k8srol
 
 	copyCols := []string{
 
-		"k8sroles_id",
+		"k8sroleid",
 
 		"idx",
 
@@ -329,7 +329,7 @@ func (s *storeImpl) copyFromK8srolesRules(ctx context.Context, tx pgx.Tx, k8srol
 
 		inputRows = append(inputRows, []interface{}{
 
-			k8sroles_Id,
+			k8sroleid,
 
 			idx,
 

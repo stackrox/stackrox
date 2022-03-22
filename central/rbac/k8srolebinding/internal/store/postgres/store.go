@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "rolebindings"
 	countStmt  = "SELECT COUNT(*) FROM rolebindings"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM rolebindings WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM rolebindings WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM rolebindings WHERE Id = $1"
-	deleteStmt  = "DELETE FROM rolebindings WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM rolebindings WHERE id = $1"
+	deleteStmt  = "DELETE FROM rolebindings WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM rolebindings"
-	getIDsStmt  = "SELECT Id FROM rolebindings"
-	getManyStmt = "SELECT serialized FROM rolebindings WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM rolebindings"
+	getManyStmt = "SELECT serialized FROM rolebindings WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM rolebindings WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM rolebindings WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,18 +73,18 @@ type storeImpl struct {
 func createTableRolebindings(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists rolebindings (
-    Id varchar,
-    Name varchar,
-    Namespace varchar,
-    ClusterId varchar,
-    ClusterName varchar,
-    ClusterRole bool,
-    Labels jsonb,
-    Annotations jsonb,
-    CreatedAt timestamp,
-    RoleId varchar,
+    id varchar,
+    name varchar,
+    namespace varchar,
+    clusterid varchar,
+    clustername varchar,
+    clusterrole bool,
+    labels jsonb,
+    annotations jsonb,
+    createdat timestamp,
+    roleid varchar,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -106,16 +106,16 @@ create table if not exists rolebindings (
 func createTableRolebindingsSubjects(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists rolebindings_Subjects (
-    rolebindings_Id varchar,
+    k8srolebindingid varchar,
     idx integer,
-    Id varchar,
-    Kind integer,
-    Name varchar,
-    Namespace varchar,
-    ClusterId varchar,
-    ClusterName varchar,
-    PRIMARY KEY(rolebindings_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (rolebindings_Id) REFERENCES rolebindings(Id) ON DELETE CASCADE
+    id varchar,
+    kind integer,
+    name varchar,
+    namespace varchar,
+    clusterid varchar,
+    clustername varchar,
+    PRIMARY KEY(k8srolebindingid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (k8srolebindingid) REFERENCES rolebindings(id) ON DELETE CASCADE
 )
 `
 
@@ -158,7 +158,7 @@ func insertIntoRolebindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole
 		serialized,
 	}
 
-	finalStr := "INSERT INTO rolebindings (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, CreatedAt, RoleId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, CreatedAt = EXCLUDED.CreatedAt, RoleId = EXCLUDED.RoleId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO rolebindings (id, name, namespace, clusterid, clustername, clusterrole, labels, annotations, createdat, roleid, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, namespace = EXCLUDED.namespace, clusterid = EXCLUDED.clusterid, clustername = EXCLUDED.clustername, clusterrole = EXCLUDED.clusterrole, labels = EXCLUDED.labels, annotations = EXCLUDED.annotations, createdat = EXCLUDED.createdat, roleid = EXCLUDED.roleid, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -172,7 +172,7 @@ func insertIntoRolebindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole
 		}
 	}
 
-	query = "delete from rolebindings_Subjects where rolebindings_Id = $1 AND idx >= $2"
+	query = "delete from rolebindings_Subjects where k8srolebindingid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetSubjects()))
 	if err != nil {
 		return err
@@ -180,11 +180,11 @@ func insertIntoRolebindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole
 	return nil
 }
 
-func insertIntoRolebindingsSubjects(ctx context.Context, tx pgx.Tx, obj *storage.Subject, rolebindings_Id string, idx int) error {
+func insertIntoRolebindingsSubjects(ctx context.Context, tx pgx.Tx, obj *storage.Subject, k8srolebindingid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		rolebindings_Id,
+		k8srolebindingid,
 		idx,
 		obj.GetId(),
 		obj.GetKind(),
@@ -194,7 +194,7 @@ func insertIntoRolebindingsSubjects(ctx context.Context, tx pgx.Tx, obj *storage
 		obj.GetClusterName(),
 	}
 
-	finalStr := "INSERT INTO rolebindings_Subjects (rolebindings_Id, idx, Id, Kind, Name, Namespace, ClusterId, ClusterName) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(rolebindings_Id, idx) DO UPDATE SET rolebindings_Id = EXCLUDED.rolebindings_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, Kind = EXCLUDED.Kind, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName"
+	finalStr := "INSERT INTO rolebindings_Subjects (k8srolebindingid, idx, id, kind, name, namespace, clusterid, clustername) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(k8srolebindingid, idx) DO UPDATE SET k8srolebindingid = EXCLUDED.k8srolebindingid, idx = EXCLUDED.idx, id = EXCLUDED.id, kind = EXCLUDED.kind, name = EXCLUDED.name, namespace = EXCLUDED.namespace, clusterid = EXCLUDED.clusterid, clustername = EXCLUDED.clustername"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -308,7 +308,7 @@ func (s *storeImpl) copyFromRolebindings(ctx context.Context, tx pgx.Tx, objs ..
 	return err
 }
 
-func (s *storeImpl) copyFromRolebindingsSubjects(ctx context.Context, tx pgx.Tx, rolebindings_Id string, objs ...*storage.Subject) error {
+func (s *storeImpl) copyFromRolebindingsSubjects(ctx context.Context, tx pgx.Tx, k8srolebindingid string, objs ...*storage.Subject) error {
 
 	inputRows := [][]interface{}{}
 
@@ -316,7 +316,7 @@ func (s *storeImpl) copyFromRolebindingsSubjects(ctx context.Context, tx pgx.Tx,
 
 	copyCols := []string{
 
-		"rolebindings_id",
+		"k8srolebindingid",
 
 		"idx",
 
@@ -339,7 +339,7 @@ func (s *storeImpl) copyFromRolebindingsSubjects(ctx context.Context, tx pgx.Tx,
 
 		inputRows = append(inputRows, []interface{}{
 
-			rolebindings_Id,
+			k8srolebindingid,
 
 			idx,
 

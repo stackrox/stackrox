@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "risk"
 	countStmt  = "SELECT COUNT(*) FROM risk"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM risk WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM risk WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM risk WHERE Id = $1"
-	deleteStmt  = "DELETE FROM risk WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM risk WHERE id = $1"
+	deleteStmt  = "DELETE FROM risk WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM risk"
-	getIDsStmt  = "SELECT Id FROM risk"
-	getManyStmt = "SELECT serialized FROM risk WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM risk"
+	getManyStmt = "SELECT serialized FROM risk WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM risk WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM risk WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,14 +73,14 @@ type storeImpl struct {
 func createTableRisk(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists risk (
-    Id varchar,
-    Subject_Id varchar,
-    Subject_Namespace varchar,
-    Subject_ClusterId varchar,
-    Subject_Type integer,
-    Score numeric,
+    id varchar,
+    subject_id varchar,
+    subject_namespace varchar,
+    subject_clusterid varchar,
+    subject_type integer,
+    score numeric,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -102,12 +102,12 @@ create table if not exists risk (
 func createTableRiskResults(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists risk_Results (
-    risk_Id varchar,
+    riskid varchar,
     idx integer,
-    Name varchar,
-    Score numeric,
-    PRIMARY KEY(risk_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (risk_Id) REFERENCES risk(Id) ON DELETE CASCADE
+    name varchar,
+    score numeric,
+    PRIMARY KEY(riskid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (riskid) REFERENCES risk(id) ON DELETE CASCADE
 )
 `
 
@@ -132,13 +132,13 @@ create table if not exists risk_Results (
 func createTableRiskResultsFactors(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists risk_Results_Factors (
-    risk_Id varchar,
-    risk_Results_idx integer,
+    riskid varchar,
+    risk_resultidx integer,
     idx integer,
-    Message varchar,
-    Url varchar,
-    PRIMARY KEY(risk_Id, risk_Results_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (risk_Id, risk_Results_idx) REFERENCES risk_Results(risk_Id, idx) ON DELETE CASCADE
+    message varchar,
+    url varchar,
+    PRIMARY KEY(riskid, risk_resultidx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (riskid, risk_resultidx) REFERENCES risk_Results(riskid, idx) ON DELETE CASCADE
 )
 `
 
@@ -177,7 +177,7 @@ func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO risk (Id, Subject_Id, Subject_Namespace, Subject_ClusterId, Subject_Type, Score, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Subject_Id = EXCLUDED.Subject_Id, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type, Score = EXCLUDED.Score, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO risk (id, subject_id, subject_namespace, subject_clusterid, subject_type, score, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, subject_id = EXCLUDED.subject_id, subject_namespace = EXCLUDED.subject_namespace, subject_clusterid = EXCLUDED.subject_clusterid, subject_type = EXCLUDED.subject_type, score = EXCLUDED.score, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -191,7 +191,7 @@ func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
 		}
 	}
 
-	query = "delete from risk_Results where risk_Id = $1 AND idx >= $2"
+	query = "delete from risk_Results where riskid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetResults()))
 	if err != nil {
 		return err
@@ -199,17 +199,17 @@ func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
 	return nil
 }
 
-func insertIntoRiskResults(ctx context.Context, tx pgx.Tx, obj *storage.Risk_Result, risk_Id string, idx int) error {
+func insertIntoRiskResults(ctx context.Context, tx pgx.Tx, obj *storage.Risk_Result, riskid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		risk_Id,
+		riskid,
 		idx,
 		obj.GetName(),
 		obj.GetScore(),
 	}
 
-	finalStr := "INSERT INTO risk_Results (risk_Id, idx, Name, Score) VALUES($1, $2, $3, $4) ON CONFLICT(risk_Id, idx) DO UPDATE SET risk_Id = EXCLUDED.risk_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Score = EXCLUDED.Score"
+	finalStr := "INSERT INTO risk_Results (riskid, idx, name, score) VALUES($1, $2, $3, $4) ON CONFLICT(riskid, idx) DO UPDATE SET riskid = EXCLUDED.riskid, idx = EXCLUDED.idx, name = EXCLUDED.name, score = EXCLUDED.score"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -218,31 +218,31 @@ func insertIntoRiskResults(ctx context.Context, tx pgx.Tx, obj *storage.Risk_Res
 	var query string
 
 	for childIdx, child := range obj.GetFactors() {
-		if err := insertIntoRiskResultsFactors(ctx, tx, child, risk_Id, idx, childIdx); err != nil {
+		if err := insertIntoRiskResultsFactors(ctx, tx, child, riskid, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from risk_Results_Factors where risk_Id = $1 AND risk_Results_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, risk_Id, idx, len(obj.GetFactors()))
+	query = "delete from risk_Results_Factors where riskid = $1 AND risk_resultidx = $2 AND idx >= $3"
+	_, err = tx.Exec(ctx, query, riskid, idx, len(obj.GetFactors()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoRiskResultsFactors(ctx context.Context, tx pgx.Tx, obj *storage.Risk_Result_Factor, risk_Id string, risk_Results_idx int, idx int) error {
+func insertIntoRiskResultsFactors(ctx context.Context, tx pgx.Tx, obj *storage.Risk_Result_Factor, riskid string, risk_resultidx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		risk_Id,
-		risk_Results_idx,
+		riskid,
+		risk_resultidx,
 		idx,
 		obj.GetMessage(),
 		obj.GetUrl(),
 	}
 
-	finalStr := "INSERT INTO risk_Results_Factors (risk_Id, risk_Results_idx, idx, Message, Url) VALUES($1, $2, $3, $4, $5) ON CONFLICT(risk_Id, risk_Results_idx, idx) DO UPDATE SET risk_Id = EXCLUDED.risk_Id, risk_Results_idx = EXCLUDED.risk_Results_idx, idx = EXCLUDED.idx, Message = EXCLUDED.Message, Url = EXCLUDED.Url"
+	finalStr := "INSERT INTO risk_Results_Factors (riskid, risk_resultidx, idx, message, url) VALUES($1, $2, $3, $4, $5) ON CONFLICT(riskid, risk_resultidx, idx) DO UPDATE SET riskid = EXCLUDED.riskid, risk_resultidx = EXCLUDED.risk_resultidx, idx = EXCLUDED.idx, message = EXCLUDED.message, url = EXCLUDED.url"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -340,7 +340,7 @@ func (s *storeImpl) copyFromRisk(ctx context.Context, tx pgx.Tx, objs ...*storag
 	return err
 }
 
-func (s *storeImpl) copyFromRiskResults(ctx context.Context, tx pgx.Tx, risk_Id string, objs ...*storage.Risk_Result) error {
+func (s *storeImpl) copyFromRiskResults(ctx context.Context, tx pgx.Tx, riskid string, objs ...*storage.Risk_Result) error {
 
 	inputRows := [][]interface{}{}
 
@@ -348,7 +348,7 @@ func (s *storeImpl) copyFromRiskResults(ctx context.Context, tx pgx.Tx, risk_Id 
 
 	copyCols := []string{
 
-		"risk_id",
+		"riskid",
 
 		"idx",
 
@@ -363,7 +363,7 @@ func (s *storeImpl) copyFromRiskResults(ctx context.Context, tx pgx.Tx, risk_Id 
 
 		inputRows = append(inputRows, []interface{}{
 
-			risk_Id,
+			riskid,
 
 			idx,
 
@@ -390,7 +390,7 @@ func (s *storeImpl) copyFromRiskResults(ctx context.Context, tx pgx.Tx, risk_Id 
 
 	for idx, obj := range objs {
 
-		if err = s.copyFromRiskResultsFactors(ctx, tx, risk_Id, idx, obj.GetFactors()...); err != nil {
+		if err = s.copyFromRiskResultsFactors(ctx, tx, riskid, idx, obj.GetFactors()...); err != nil {
 			return err
 		}
 	}
@@ -398,7 +398,7 @@ func (s *storeImpl) copyFromRiskResults(ctx context.Context, tx pgx.Tx, risk_Id 
 	return err
 }
 
-func (s *storeImpl) copyFromRiskResultsFactors(ctx context.Context, tx pgx.Tx, risk_Id string, risk_Results_idx int, objs ...*storage.Risk_Result_Factor) error {
+func (s *storeImpl) copyFromRiskResultsFactors(ctx context.Context, tx pgx.Tx, riskid string, risk_resultidx int, objs ...*storage.Risk_Result_Factor) error {
 
 	inputRows := [][]interface{}{}
 
@@ -406,9 +406,9 @@ func (s *storeImpl) copyFromRiskResultsFactors(ctx context.Context, tx pgx.Tx, r
 
 	copyCols := []string{
 
-		"risk_id",
+		"riskid",
 
-		"risk_results_idx",
+		"risk_resultidx",
 
 		"idx",
 
@@ -423,9 +423,9 @@ func (s *storeImpl) copyFromRiskResultsFactors(ctx context.Context, tx pgx.Tx, r
 
 		inputRows = append(inputRows, []interface{}{
 
-			risk_Id,
+			riskid,
 
-			risk_Results_idx,
+			risk_resultidx,
 
 			idx,
 

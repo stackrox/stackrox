@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "policy"
 	countStmt  = "SELECT COUNT(*) FROM policy"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM policy WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM policy WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM policy WHERE Id = $1"
-	deleteStmt  = "DELETE FROM policy WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM policy WHERE id = $1"
+	deleteStmt  = "DELETE FROM policy WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM policy"
-	getIDsStmt  = "SELECT Id FROM policy"
-	getManyStmt = "SELECT serialized FROM policy WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM policy"
+	getManyStmt = "SELECT serialized FROM policy WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM policy WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM policy WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,28 +73,28 @@ type storeImpl struct {
 func createTablePolicy(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists policy (
-    Id varchar,
-    Name varchar UNIQUE,
-    Description varchar,
-    Rationale varchar,
-    Remediation varchar,
-    Disabled bool,
-    Categories text[],
-    LifecycleStages int[],
-    EventSource integer,
-    Severity integer,
-    EnforcementActions int[],
-    Notifiers text[],
-    LastUpdated timestamp,
-    SORTName varchar,
-    SORTLifecycleStage varchar,
-    SORTEnforcement bool,
-    PolicyVersion varchar,
-    CriteriaLocked bool,
-    MitreVectorsLocked bool,
-    IsDefault bool,
+    id varchar,
+    name varchar UNIQUE,
+    description varchar,
+    rationale varchar,
+    remediation varchar,
+    disabled bool,
+    categories text[],
+    lifecyclestages int[],
+    eventsource integer,
+    severity integer,
+    enforcementactions int[],
+    notifiers text[],
+    lastupdated timestamp,
+    sortname varchar,
+    sortlifecyclestage varchar,
+    sortenforcement bool,
+    policyversion varchar,
+    criterialocked bool,
+    mitrevectorslocked bool,
+    isdefault bool,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -120,18 +120,18 @@ create table if not exists policy (
 func createTablePolicyWhitelists(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists policy_Whitelists (
-    policy_Id varchar,
+    policyid varchar,
     idx integer,
-    Name varchar,
-    Deployment_Name varchar,
-    Deployment_Scope_Cluster varchar,
-    Deployment_Scope_Namespace varchar,
-    Deployment_Scope_Label_Key varchar,
-    Deployment_Scope_Label_Value varchar,
-    Image_Name varchar,
-    Expiration timestamp,
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
+    name varchar,
+    deployment_name varchar,
+    deployment_scope_cluster varchar,
+    deployment_scope_namespace varchar,
+    deployment_scope_label_key varchar,
+    deployment_scope_label_value varchar,
+    image_name varchar,
+    expiration timestamp,
+    PRIMARY KEY(policyid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (policyid) REFERENCES policy(id) ON DELETE CASCADE
 )
 `
 
@@ -155,18 +155,18 @@ create table if not exists policy_Whitelists (
 func createTablePolicyExclusions(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists policy_Exclusions (
-    policy_Id varchar,
+    policyid varchar,
     idx integer,
-    Name varchar,
-    Deployment_Name varchar,
-    Deployment_Scope_Cluster varchar,
-    Deployment_Scope_Namespace varchar,
-    Deployment_Scope_Label_Key varchar,
-    Deployment_Scope_Label_Value varchar,
-    Image_Name varchar,
-    Expiration timestamp,
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
+    name varchar,
+    deployment_name varchar,
+    deployment_scope_cluster varchar,
+    deployment_scope_namespace varchar,
+    deployment_scope_label_key varchar,
+    deployment_scope_label_value varchar,
+    image_name varchar,
+    expiration timestamp,
+    PRIMARY KEY(policyid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (policyid) REFERENCES policy(id) ON DELETE CASCADE
 )
 `
 
@@ -190,14 +190,14 @@ create table if not exists policy_Exclusions (
 func createTablePolicyScope(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists policy_Scope (
-    policy_Id varchar,
+    policyid varchar,
     idx integer,
-    Cluster varchar,
-    Namespace varchar,
-    Label_Key varchar,
-    Label_Value varchar,
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
+    cluster varchar,
+    namespace varchar,
+    label_key varchar,
+    label_value varchar,
+    PRIMARY KEY(policyid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (policyid) REFERENCES policy(id) ON DELETE CASCADE
 )
 `
 
@@ -221,11 +221,11 @@ create table if not exists policy_Scope (
 func createTablePolicyPolicySections(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists policy_PolicySections (
-    policy_Id varchar,
+    policyid varchar,
     idx integer,
-    SectionName varchar,
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
+    sectionname varchar,
+    PRIMARY KEY(policyid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (policyid) REFERENCES policy(id) ON DELETE CASCADE
 )
 `
 
@@ -250,14 +250,14 @@ create table if not exists policy_PolicySections (
 func createTablePolicyPolicySectionsPolicyGroups(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists policy_PolicySections_PolicyGroups (
-    policy_Id varchar,
-    policy_PolicySections_idx integer,
+    policyid varchar,
+    policysectionidx integer,
     idx integer,
-    FieldName varchar,
-    BooleanOperator integer,
-    Negate bool,
-    PRIMARY KEY(policy_Id, policy_PolicySections_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id, policy_PolicySections_idx) REFERENCES policy_PolicySections(policy_Id, idx) ON DELETE CASCADE
+    fieldname varchar,
+    booleanoperator integer,
+    negate bool,
+    PRIMARY KEY(policyid, policysectionidx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (policyid, policysectionidx) REFERENCES policy_PolicySections(policyid, idx) ON DELETE CASCADE
 )
 `
 
@@ -282,13 +282,13 @@ create table if not exists policy_PolicySections_PolicyGroups (
 func createTablePolicyPolicySectionsPolicyGroupsValues(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists policy_PolicySections_PolicyGroups_Values (
-    policy_Id varchar,
-    policy_PolicySections_idx integer,
-    policy_PolicySections_PolicyGroups_idx integer,
+    policyid varchar,
+    policysectionidx integer,
+    policygroupidx integer,
     idx integer,
-    Value varchar,
-    PRIMARY KEY(policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx) REFERENCES policy_PolicySections_PolicyGroups(policy_Id, policy_PolicySections_idx, idx) ON DELETE CASCADE
+    value varchar,
+    PRIMARY KEY(policyid, policysectionidx, policygroupidx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (policyid, policysectionidx, policygroupidx) REFERENCES policy_PolicySections_PolicyGroups(policyid, policysectionidx, idx) ON DELETE CASCADE
 )
 `
 
@@ -312,12 +312,12 @@ create table if not exists policy_PolicySections_PolicyGroups_Values (
 func createTablePolicyMitreAttackVectors(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists policy_MitreAttackVectors (
-    policy_Id varchar,
+    policyid varchar,
     idx integer,
-    Tactic varchar,
-    Techniques text[],
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
+    tactic varchar,
+    techniques text[],
+    PRIMARY KEY(policyid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (policyid) REFERENCES policy(id) ON DELETE CASCADE
 )
 `
 
@@ -370,7 +370,7 @@ func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error
 		serialized,
 	}
 
-	finalStr := "INSERT INTO policy (Id, Name, Description, Rationale, Remediation, Disabled, Categories, LifecycleStages, EventSource, Severity, EnforcementActions, Notifiers, LastUpdated, SORTName, SORTLifecycleStage, SORTEnforcement, PolicyVersion, CriteriaLocked, MitreVectorsLocked, IsDefault, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Rationale = EXCLUDED.Rationale, Remediation = EXCLUDED.Remediation, Disabled = EXCLUDED.Disabled, Categories = EXCLUDED.Categories, LifecycleStages = EXCLUDED.LifecycleStages, EventSource = EXCLUDED.EventSource, Severity = EXCLUDED.Severity, EnforcementActions = EXCLUDED.EnforcementActions, Notifiers = EXCLUDED.Notifiers, LastUpdated = EXCLUDED.LastUpdated, SORTName = EXCLUDED.SORTName, SORTLifecycleStage = EXCLUDED.SORTLifecycleStage, SORTEnforcement = EXCLUDED.SORTEnforcement, PolicyVersion = EXCLUDED.PolicyVersion, CriteriaLocked = EXCLUDED.CriteriaLocked, MitreVectorsLocked = EXCLUDED.MitreVectorsLocked, IsDefault = EXCLUDED.IsDefault, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO policy (id, name, description, rationale, remediation, disabled, categories, lifecyclestages, eventsource, severity, enforcementactions, notifiers, lastupdated, sortname, sortlifecyclestage, sortenforcement, policyversion, criterialocked, mitrevectorslocked, isdefault, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, description = EXCLUDED.description, rationale = EXCLUDED.rationale, remediation = EXCLUDED.remediation, disabled = EXCLUDED.disabled, categories = EXCLUDED.categories, lifecyclestages = EXCLUDED.lifecyclestages, eventsource = EXCLUDED.eventsource, severity = EXCLUDED.severity, enforcementactions = EXCLUDED.enforcementactions, notifiers = EXCLUDED.notifiers, lastupdated = EXCLUDED.lastupdated, sortname = EXCLUDED.sortname, sortlifecyclestage = EXCLUDED.sortlifecyclestage, sortenforcement = EXCLUDED.sortenforcement, policyversion = EXCLUDED.policyversion, criterialocked = EXCLUDED.criterialocked, mitrevectorslocked = EXCLUDED.mitrevectorslocked, isdefault = EXCLUDED.isdefault, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -384,7 +384,7 @@ func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error
 		}
 	}
 
-	query = "delete from policy_Whitelists where policy_Id = $1 AND idx >= $2"
+	query = "delete from policy_Whitelists where policyid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetWhitelists()))
 	if err != nil {
 		return err
@@ -395,7 +395,7 @@ func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error
 		}
 	}
 
-	query = "delete from policy_Exclusions where policy_Id = $1 AND idx >= $2"
+	query = "delete from policy_Exclusions where policyid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetExclusions()))
 	if err != nil {
 		return err
@@ -406,7 +406,7 @@ func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error
 		}
 	}
 
-	query = "delete from policy_Scope where policy_Id = $1 AND idx >= $2"
+	query = "delete from policy_Scope where policyid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetScope()))
 	if err != nil {
 		return err
@@ -417,7 +417,7 @@ func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error
 		}
 	}
 
-	query = "delete from policy_PolicySections where policy_Id = $1 AND idx >= $2"
+	query = "delete from policy_PolicySections where policyid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetPolicySections()))
 	if err != nil {
 		return err
@@ -428,7 +428,7 @@ func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error
 		}
 	}
 
-	query = "delete from policy_MitreAttackVectors where policy_Id = $1 AND idx >= $2"
+	query = "delete from policy_MitreAttackVectors where policyid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetMitreAttackVectors()))
 	if err != nil {
 		return err
@@ -436,11 +436,11 @@ func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error
 	return nil
 }
 
-func insertIntoPolicyWhitelists(ctx context.Context, tx pgx.Tx, obj *storage.Exclusion, policy_Id string, idx int) error {
+func insertIntoPolicyWhitelists(ctx context.Context, tx pgx.Tx, obj *storage.Exclusion, policyid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		policy_Id,
+		policyid,
 		idx,
 		obj.GetName(),
 		obj.GetDeployment().GetName(),
@@ -452,7 +452,7 @@ func insertIntoPolicyWhitelists(ctx context.Context, tx pgx.Tx, obj *storage.Exc
 		pgutils.NilOrTime(obj.GetExpiration()),
 	}
 
-	finalStr := "INSERT INTO policy_Whitelists (policy_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(policy_Id, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Scope_Cluster = EXCLUDED.Deployment_Scope_Cluster, Deployment_Scope_Namespace = EXCLUDED.Deployment_Scope_Namespace, Deployment_Scope_Label_Key = EXCLUDED.Deployment_Scope_Label_Key, Deployment_Scope_Label_Value = EXCLUDED.Deployment_Scope_Label_Value, Image_Name = EXCLUDED.Image_Name, Expiration = EXCLUDED.Expiration"
+	finalStr := "INSERT INTO policy_Whitelists (policyid, idx, name, deployment_name, deployment_scope_cluster, deployment_scope_namespace, deployment_scope_label_key, deployment_scope_label_value, image_name, expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(policyid, idx) DO UPDATE SET policyid = EXCLUDED.policyid, idx = EXCLUDED.idx, name = EXCLUDED.name, deployment_name = EXCLUDED.deployment_name, deployment_scope_cluster = EXCLUDED.deployment_scope_cluster, deployment_scope_namespace = EXCLUDED.deployment_scope_namespace, deployment_scope_label_key = EXCLUDED.deployment_scope_label_key, deployment_scope_label_value = EXCLUDED.deployment_scope_label_value, image_name = EXCLUDED.image_name, expiration = EXCLUDED.expiration"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -461,11 +461,11 @@ func insertIntoPolicyWhitelists(ctx context.Context, tx pgx.Tx, obj *storage.Exc
 	return nil
 }
 
-func insertIntoPolicyExclusions(ctx context.Context, tx pgx.Tx, obj *storage.Exclusion, policy_Id string, idx int) error {
+func insertIntoPolicyExclusions(ctx context.Context, tx pgx.Tx, obj *storage.Exclusion, policyid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		policy_Id,
+		policyid,
 		idx,
 		obj.GetName(),
 		obj.GetDeployment().GetName(),
@@ -477,7 +477,7 @@ func insertIntoPolicyExclusions(ctx context.Context, tx pgx.Tx, obj *storage.Exc
 		pgutils.NilOrTime(obj.GetExpiration()),
 	}
 
-	finalStr := "INSERT INTO policy_Exclusions (policy_Id, idx, Name, Deployment_Name, Deployment_Scope_Cluster, Deployment_Scope_Namespace, Deployment_Scope_Label_Key, Deployment_Scope_Label_Value, Image_Name, Expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(policy_Id, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Scope_Cluster = EXCLUDED.Deployment_Scope_Cluster, Deployment_Scope_Namespace = EXCLUDED.Deployment_Scope_Namespace, Deployment_Scope_Label_Key = EXCLUDED.Deployment_Scope_Label_Key, Deployment_Scope_Label_Value = EXCLUDED.Deployment_Scope_Label_Value, Image_Name = EXCLUDED.Image_Name, Expiration = EXCLUDED.Expiration"
+	finalStr := "INSERT INTO policy_Exclusions (policyid, idx, name, deployment_name, deployment_scope_cluster, deployment_scope_namespace, deployment_scope_label_key, deployment_scope_label_value, image_name, expiration) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(policyid, idx) DO UPDATE SET policyid = EXCLUDED.policyid, idx = EXCLUDED.idx, name = EXCLUDED.name, deployment_name = EXCLUDED.deployment_name, deployment_scope_cluster = EXCLUDED.deployment_scope_cluster, deployment_scope_namespace = EXCLUDED.deployment_scope_namespace, deployment_scope_label_key = EXCLUDED.deployment_scope_label_key, deployment_scope_label_value = EXCLUDED.deployment_scope_label_value, image_name = EXCLUDED.image_name, expiration = EXCLUDED.expiration"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -486,11 +486,11 @@ func insertIntoPolicyExclusions(ctx context.Context, tx pgx.Tx, obj *storage.Exc
 	return nil
 }
 
-func insertIntoPolicyScope(ctx context.Context, tx pgx.Tx, obj *storage.Scope, policy_Id string, idx int) error {
+func insertIntoPolicyScope(ctx context.Context, tx pgx.Tx, obj *storage.Scope, policyid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		policy_Id,
+		policyid,
 		idx,
 		obj.GetCluster(),
 		obj.GetNamespace(),
@@ -498,7 +498,7 @@ func insertIntoPolicyScope(ctx context.Context, tx pgx.Tx, obj *storage.Scope, p
 		obj.GetLabel().GetValue(),
 	}
 
-	finalStr := "INSERT INTO policy_Scope (policy_Id, idx, Cluster, Namespace, Label_Key, Label_Value) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(policy_Id, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, idx = EXCLUDED.idx, Cluster = EXCLUDED.Cluster, Namespace = EXCLUDED.Namespace, Label_Key = EXCLUDED.Label_Key, Label_Value = EXCLUDED.Label_Value"
+	finalStr := "INSERT INTO policy_Scope (policyid, idx, cluster, namespace, label_key, label_value) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(policyid, idx) DO UPDATE SET policyid = EXCLUDED.policyid, idx = EXCLUDED.idx, cluster = EXCLUDED.cluster, namespace = EXCLUDED.namespace, label_key = EXCLUDED.label_key, label_value = EXCLUDED.label_value"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -507,16 +507,16 @@ func insertIntoPolicyScope(ctx context.Context, tx pgx.Tx, obj *storage.Scope, p
 	return nil
 }
 
-func insertIntoPolicyPolicySections(ctx context.Context, tx pgx.Tx, obj *storage.PolicySection, policy_Id string, idx int) error {
+func insertIntoPolicyPolicySections(ctx context.Context, tx pgx.Tx, obj *storage.PolicySection, policyid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		policy_Id,
+		policyid,
 		idx,
 		obj.GetSectionName(),
 	}
 
-	finalStr := "INSERT INTO policy_PolicySections (policy_Id, idx, SectionName) VALUES($1, $2, $3) ON CONFLICT(policy_Id, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, idx = EXCLUDED.idx, SectionName = EXCLUDED.SectionName"
+	finalStr := "INSERT INTO policy_PolicySections (policyid, idx, sectionname) VALUES($1, $2, $3) ON CONFLICT(policyid, idx) DO UPDATE SET policyid = EXCLUDED.policyid, idx = EXCLUDED.idx, sectionname = EXCLUDED.sectionname"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -525,32 +525,32 @@ func insertIntoPolicyPolicySections(ctx context.Context, tx pgx.Tx, obj *storage
 	var query string
 
 	for childIdx, child := range obj.GetPolicyGroups() {
-		if err := insertIntoPolicyPolicySectionsPolicyGroups(ctx, tx, child, policy_Id, idx, childIdx); err != nil {
+		if err := insertIntoPolicyPolicySectionsPolicyGroups(ctx, tx, child, policyid, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from policy_PolicySections_PolicyGroups where policy_Id = $1 AND policy_PolicySections_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, policy_Id, idx, len(obj.GetPolicyGroups()))
+	query = "delete from policy_PolicySections_PolicyGroups where policyid = $1 AND policysectionidx = $2 AND idx >= $3"
+	_, err = tx.Exec(ctx, query, policyid, idx, len(obj.GetPolicyGroups()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoPolicyPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, obj *storage.PolicyGroup, policy_Id string, policy_PolicySections_idx int, idx int) error {
+func insertIntoPolicyPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, obj *storage.PolicyGroup, policyid string, policysectionidx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		policy_Id,
-		policy_PolicySections_idx,
+		policyid,
+		policysectionidx,
 		idx,
 		obj.GetFieldName(),
 		obj.GetBooleanOperator(),
 		obj.GetNegate(),
 	}
 
-	finalStr := "INSERT INTO policy_PolicySections_PolicyGroups (policy_Id, policy_PolicySections_idx, idx, FieldName, BooleanOperator, Negate) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(policy_Id, policy_PolicySections_idx, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, policy_PolicySections_idx = EXCLUDED.policy_PolicySections_idx, idx = EXCLUDED.idx, FieldName = EXCLUDED.FieldName, BooleanOperator = EXCLUDED.BooleanOperator, Negate = EXCLUDED.Negate"
+	finalStr := "INSERT INTO policy_PolicySections_PolicyGroups (policyid, policysectionidx, idx, fieldname, booleanoperator, negate) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(policyid, policysectionidx, idx) DO UPDATE SET policyid = EXCLUDED.policyid, policysectionidx = EXCLUDED.policysectionidx, idx = EXCLUDED.idx, fieldname = EXCLUDED.fieldname, booleanoperator = EXCLUDED.booleanoperator, negate = EXCLUDED.negate"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -559,31 +559,31 @@ func insertIntoPolicyPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, 
 	var query string
 
 	for childIdx, child := range obj.GetValues() {
-		if err := insertIntoPolicyPolicySectionsPolicyGroupsValues(ctx, tx, child, policy_Id, policy_PolicySections_idx, idx, childIdx); err != nil {
+		if err := insertIntoPolicyPolicySectionsPolicyGroupsValues(ctx, tx, child, policyid, policysectionidx, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from policy_PolicySections_PolicyGroups_Values where policy_Id = $1 AND policy_PolicySections_idx = $2 AND policy_PolicySections_PolicyGroups_idx = $3 AND idx >= $4"
-	_, err = tx.Exec(ctx, query, policy_Id, policy_PolicySections_idx, idx, len(obj.GetValues()))
+	query = "delete from policy_PolicySections_PolicyGroups_Values where policyid = $1 AND policysectionidx = $2 AND policygroupidx = $3 AND idx >= $4"
+	_, err = tx.Exec(ctx, query, policyid, policysectionidx, idx, len(obj.GetValues()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoPolicyPolicySectionsPolicyGroupsValues(ctx context.Context, tx pgx.Tx, obj *storage.PolicyValue, policy_Id string, policy_PolicySections_idx int, policy_PolicySections_PolicyGroups_idx int, idx int) error {
+func insertIntoPolicyPolicySectionsPolicyGroupsValues(ctx context.Context, tx pgx.Tx, obj *storage.PolicyValue, policyid string, policysectionidx int, policygroupidx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		policy_Id,
-		policy_PolicySections_idx,
-		policy_PolicySections_PolicyGroups_idx,
+		policyid,
+		policysectionidx,
+		policygroupidx,
 		idx,
 		obj.GetValue(),
 	}
 
-	finalStr := "INSERT INTO policy_PolicySections_PolicyGroups_Values (policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx, idx, Value) VALUES($1, $2, $3, $4, $5) ON CONFLICT(policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, policy_PolicySections_idx = EXCLUDED.policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx = EXCLUDED.policy_PolicySections_PolicyGroups_idx, idx = EXCLUDED.idx, Value = EXCLUDED.Value"
+	finalStr := "INSERT INTO policy_PolicySections_PolicyGroups_Values (policyid, policysectionidx, policygroupidx, idx, value) VALUES($1, $2, $3, $4, $5) ON CONFLICT(policyid, policysectionidx, policygroupidx, idx) DO UPDATE SET policyid = EXCLUDED.policyid, policysectionidx = EXCLUDED.policysectionidx, policygroupidx = EXCLUDED.policygroupidx, idx = EXCLUDED.idx, value = EXCLUDED.value"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -592,17 +592,17 @@ func insertIntoPolicyPolicySectionsPolicyGroupsValues(ctx context.Context, tx pg
 	return nil
 }
 
-func insertIntoPolicyMitreAttackVectors(ctx context.Context, tx pgx.Tx, obj *storage.Policy_MitreAttackVectors, policy_Id string, idx int) error {
+func insertIntoPolicyMitreAttackVectors(ctx context.Context, tx pgx.Tx, obj *storage.Policy_MitreAttackVectors, policyid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		policy_Id,
+		policyid,
 		idx,
 		obj.GetTactic(),
 		obj.GetTechniques(),
 	}
 
-	finalStr := "INSERT INTO policy_MitreAttackVectors (policy_Id, idx, Tactic, Techniques) VALUES($1, $2, $3, $4) ON CONFLICT(policy_Id, idx) DO UPDATE SET policy_Id = EXCLUDED.policy_Id, idx = EXCLUDED.idx, Tactic = EXCLUDED.Tactic, Techniques = EXCLUDED.Techniques"
+	finalStr := "INSERT INTO policy_MitreAttackVectors (policyid, idx, tactic, techniques) VALUES($1, $2, $3, $4) ON CONFLICT(policyid, idx) DO UPDATE SET policyid = EXCLUDED.policyid, idx = EXCLUDED.idx, tactic = EXCLUDED.tactic, techniques = EXCLUDED.techniques"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -768,7 +768,7 @@ func (s *storeImpl) copyFromPolicy(ctx context.Context, tx pgx.Tx, objs ...*stor
 	return err
 }
 
-func (s *storeImpl) copyFromPolicyWhitelists(ctx context.Context, tx pgx.Tx, policy_Id string, objs ...*storage.Exclusion) error {
+func (s *storeImpl) copyFromPolicyWhitelists(ctx context.Context, tx pgx.Tx, policyid string, objs ...*storage.Exclusion) error {
 
 	inputRows := [][]interface{}{}
 
@@ -776,7 +776,7 @@ func (s *storeImpl) copyFromPolicyWhitelists(ctx context.Context, tx pgx.Tx, pol
 
 	copyCols := []string{
 
-		"policy_id",
+		"policyid",
 
 		"idx",
 
@@ -803,7 +803,7 @@ func (s *storeImpl) copyFromPolicyWhitelists(ctx context.Context, tx pgx.Tx, pol
 
 		inputRows = append(inputRows, []interface{}{
 
-			policy_Id,
+			policyid,
 
 			idx,
 
@@ -843,7 +843,7 @@ func (s *storeImpl) copyFromPolicyWhitelists(ctx context.Context, tx pgx.Tx, pol
 	return err
 }
 
-func (s *storeImpl) copyFromPolicyExclusions(ctx context.Context, tx pgx.Tx, policy_Id string, objs ...*storage.Exclusion) error {
+func (s *storeImpl) copyFromPolicyExclusions(ctx context.Context, tx pgx.Tx, policyid string, objs ...*storage.Exclusion) error {
 
 	inputRows := [][]interface{}{}
 
@@ -851,7 +851,7 @@ func (s *storeImpl) copyFromPolicyExclusions(ctx context.Context, tx pgx.Tx, pol
 
 	copyCols := []string{
 
-		"policy_id",
+		"policyid",
 
 		"idx",
 
@@ -878,7 +878,7 @@ func (s *storeImpl) copyFromPolicyExclusions(ctx context.Context, tx pgx.Tx, pol
 
 		inputRows = append(inputRows, []interface{}{
 
-			policy_Id,
+			policyid,
 
 			idx,
 
@@ -918,7 +918,7 @@ func (s *storeImpl) copyFromPolicyExclusions(ctx context.Context, tx pgx.Tx, pol
 	return err
 }
 
-func (s *storeImpl) copyFromPolicyScope(ctx context.Context, tx pgx.Tx, policy_Id string, objs ...*storage.Scope) error {
+func (s *storeImpl) copyFromPolicyScope(ctx context.Context, tx pgx.Tx, policyid string, objs ...*storage.Scope) error {
 
 	inputRows := [][]interface{}{}
 
@@ -926,7 +926,7 @@ func (s *storeImpl) copyFromPolicyScope(ctx context.Context, tx pgx.Tx, policy_I
 
 	copyCols := []string{
 
-		"policy_id",
+		"policyid",
 
 		"idx",
 
@@ -945,7 +945,7 @@ func (s *storeImpl) copyFromPolicyScope(ctx context.Context, tx pgx.Tx, policy_I
 
 		inputRows = append(inputRows, []interface{}{
 
-			policy_Id,
+			policyid,
 
 			idx,
 
@@ -977,7 +977,7 @@ func (s *storeImpl) copyFromPolicyScope(ctx context.Context, tx pgx.Tx, policy_I
 	return err
 }
 
-func (s *storeImpl) copyFromPolicyPolicySections(ctx context.Context, tx pgx.Tx, policy_Id string, objs ...*storage.PolicySection) error {
+func (s *storeImpl) copyFromPolicyPolicySections(ctx context.Context, tx pgx.Tx, policyid string, objs ...*storage.PolicySection) error {
 
 	inputRows := [][]interface{}{}
 
@@ -985,7 +985,7 @@ func (s *storeImpl) copyFromPolicyPolicySections(ctx context.Context, tx pgx.Tx,
 
 	copyCols := []string{
 
-		"policy_id",
+		"policyid",
 
 		"idx",
 
@@ -998,7 +998,7 @@ func (s *storeImpl) copyFromPolicyPolicySections(ctx context.Context, tx pgx.Tx,
 
 		inputRows = append(inputRows, []interface{}{
 
-			policy_Id,
+			policyid,
 
 			idx,
 
@@ -1023,7 +1023,7 @@ func (s *storeImpl) copyFromPolicyPolicySections(ctx context.Context, tx pgx.Tx,
 
 	for idx, obj := range objs {
 
-		if err = s.copyFromPolicyPolicySectionsPolicyGroups(ctx, tx, policy_Id, idx, obj.GetPolicyGroups()...); err != nil {
+		if err = s.copyFromPolicyPolicySectionsPolicyGroups(ctx, tx, policyid, idx, obj.GetPolicyGroups()...); err != nil {
 			return err
 		}
 	}
@@ -1031,7 +1031,7 @@ func (s *storeImpl) copyFromPolicyPolicySections(ctx context.Context, tx pgx.Tx,
 	return err
 }
 
-func (s *storeImpl) copyFromPolicyPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, policy_Id string, policy_PolicySections_idx int, objs ...*storage.PolicyGroup) error {
+func (s *storeImpl) copyFromPolicyPolicySectionsPolicyGroups(ctx context.Context, tx pgx.Tx, policyid string, policysectionidx int, objs ...*storage.PolicyGroup) error {
 
 	inputRows := [][]interface{}{}
 
@@ -1039,9 +1039,9 @@ func (s *storeImpl) copyFromPolicyPolicySectionsPolicyGroups(ctx context.Context
 
 	copyCols := []string{
 
-		"policy_id",
+		"policyid",
 
-		"policy_policysections_idx",
+		"policysectionidx",
 
 		"idx",
 
@@ -1058,9 +1058,9 @@ func (s *storeImpl) copyFromPolicyPolicySectionsPolicyGroups(ctx context.Context
 
 		inputRows = append(inputRows, []interface{}{
 
-			policy_Id,
+			policyid,
 
-			policy_PolicySections_idx,
+			policysectionidx,
 
 			idx,
 
@@ -1089,7 +1089,7 @@ func (s *storeImpl) copyFromPolicyPolicySectionsPolicyGroups(ctx context.Context
 
 	for idx, obj := range objs {
 
-		if err = s.copyFromPolicyPolicySectionsPolicyGroupsValues(ctx, tx, policy_Id, policy_PolicySections_idx, idx, obj.GetValues()...); err != nil {
+		if err = s.copyFromPolicyPolicySectionsPolicyGroupsValues(ctx, tx, policyid, policysectionidx, idx, obj.GetValues()...); err != nil {
 			return err
 		}
 	}
@@ -1097,7 +1097,7 @@ func (s *storeImpl) copyFromPolicyPolicySectionsPolicyGroups(ctx context.Context
 	return err
 }
 
-func (s *storeImpl) copyFromPolicyPolicySectionsPolicyGroupsValues(ctx context.Context, tx pgx.Tx, policy_Id string, policy_PolicySections_idx int, policy_PolicySections_PolicyGroups_idx int, objs ...*storage.PolicyValue) error {
+func (s *storeImpl) copyFromPolicyPolicySectionsPolicyGroupsValues(ctx context.Context, tx pgx.Tx, policyid string, policysectionidx int, policygroupidx int, objs ...*storage.PolicyValue) error {
 
 	inputRows := [][]interface{}{}
 
@@ -1105,11 +1105,11 @@ func (s *storeImpl) copyFromPolicyPolicySectionsPolicyGroupsValues(ctx context.C
 
 	copyCols := []string{
 
-		"policy_id",
+		"policyid",
 
-		"policy_policysections_idx",
+		"policysectionidx",
 
-		"policy_policysections_policygroups_idx",
+		"policygroupidx",
 
 		"idx",
 
@@ -1122,11 +1122,11 @@ func (s *storeImpl) copyFromPolicyPolicySectionsPolicyGroupsValues(ctx context.C
 
 		inputRows = append(inputRows, []interface{}{
 
-			policy_Id,
+			policyid,
 
-			policy_PolicySections_idx,
+			policysectionidx,
 
-			policy_PolicySections_PolicyGroups_idx,
+			policygroupidx,
 
 			idx,
 
@@ -1152,7 +1152,7 @@ func (s *storeImpl) copyFromPolicyPolicySectionsPolicyGroupsValues(ctx context.C
 	return err
 }
 
-func (s *storeImpl) copyFromPolicyMitreAttackVectors(ctx context.Context, tx pgx.Tx, policy_Id string, objs ...*storage.Policy_MitreAttackVectors) error {
+func (s *storeImpl) copyFromPolicyMitreAttackVectors(ctx context.Context, tx pgx.Tx, policyid string, objs ...*storage.Policy_MitreAttackVectors) error {
 
 	inputRows := [][]interface{}{}
 
@@ -1160,7 +1160,7 @@ func (s *storeImpl) copyFromPolicyMitreAttackVectors(ctx context.Context, tx pgx
 
 	copyCols := []string{
 
-		"policy_id",
+		"policyid",
 
 		"idx",
 
@@ -1175,7 +1175,7 @@ func (s *storeImpl) copyFromPolicyMitreAttackVectors(ctx context.Context, tx pgx
 
 		inputRows = append(inputRows, []interface{}{
 
-			policy_Id,
+			policyid,
 
 			idx,
 

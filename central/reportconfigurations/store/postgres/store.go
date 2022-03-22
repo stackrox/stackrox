@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "reportconfigs"
 	countStmt  = "SELECT COUNT(*) FROM reportconfigs"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM reportconfigs WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM reportconfigs WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM reportconfigs WHERE Id = $1"
-	deleteStmt  = "DELETE FROM reportconfigs WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM reportconfigs WHERE id = $1"
+	deleteStmt  = "DELETE FROM reportconfigs WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM reportconfigs"
-	getIDsStmt  = "SELECT Id FROM reportconfigs"
-	getManyStmt = "SELECT serialized FROM reportconfigs WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM reportconfigs"
+	getManyStmt = "SELECT serialized FROM reportconfigs WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM reportconfigs WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM reportconfigs WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,28 +73,28 @@ type storeImpl struct {
 func createTableReportconfigs(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists reportconfigs (
-    Id varchar,
-    Name varchar,
-    Description varchar,
-    Type integer,
-    VulnReportFilters_Fixability integer,
-    VulnReportFilters_SinceLastReport bool,
-    VulnReportFilters_Severities int[],
-    ScopeId varchar,
-    EmailConfig_NotifierId varchar,
-    EmailConfig_MailingLists text[],
-    Schedule_IntervalType integer,
-    Schedule_Hour integer,
-    Schedule_Minute integer,
-    Schedule_Weekly_Day integer,
-    Schedule_DaysOfWeek_Days int[],
-    Schedule_DaysOfMonth_Days int[],
-    LastRunStatus_ReportStatus integer,
-    LastRunStatus_LastRunTime timestamp,
-    LastRunStatus_ErrorMsg varchar,
-    LastSuccessfulRunTime timestamp,
+    id varchar,
+    name varchar,
+    description varchar,
+    type integer,
+    vulnreportfilters_fixability integer,
+    vulnreportfilters_sincelastreport bool,
+    vulnreportfilters_severities int[],
+    scopeid varchar,
+    emailconfig_notifierid varchar,
+    emailconfig_mailinglists text[],
+    schedule_intervaltype integer,
+    schedule_hour integer,
+    schedule_minute integer,
+    schedule_weekly_day integer,
+    schedule_daysofweek_days int[],
+    schedule_daysofmonth_days int[],
+    lastrunstatus_reportstatus integer,
+    lastrunstatus_lastruntime timestamp,
+    lastrunstatus_errormsg varchar,
+    lastsuccessfulruntime timestamp,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -144,7 +144,7 @@ func insertIntoReportconfigs(ctx context.Context, tx pgx.Tx, obj *storage.Report
 		serialized,
 	}
 
-	finalStr := "INSERT INTO reportconfigs (Id, Name, Description, Type, VulnReportFilters_Fixability, VulnReportFilters_SinceLastReport, VulnReportFilters_Severities, ScopeId, EmailConfig_NotifierId, EmailConfig_MailingLists, Schedule_IntervalType, Schedule_Hour, Schedule_Minute, Schedule_Weekly_Day, Schedule_DaysOfWeek_Days, Schedule_DaysOfMonth_Days, LastRunStatus_ReportStatus, LastRunStatus_LastRunTime, LastRunStatus_ErrorMsg, LastSuccessfulRunTime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Type = EXCLUDED.Type, VulnReportFilters_Fixability = EXCLUDED.VulnReportFilters_Fixability, VulnReportFilters_SinceLastReport = EXCLUDED.VulnReportFilters_SinceLastReport, VulnReportFilters_Severities = EXCLUDED.VulnReportFilters_Severities, ScopeId = EXCLUDED.ScopeId, EmailConfig_NotifierId = EXCLUDED.EmailConfig_NotifierId, EmailConfig_MailingLists = EXCLUDED.EmailConfig_MailingLists, Schedule_IntervalType = EXCLUDED.Schedule_IntervalType, Schedule_Hour = EXCLUDED.Schedule_Hour, Schedule_Minute = EXCLUDED.Schedule_Minute, Schedule_Weekly_Day = EXCLUDED.Schedule_Weekly_Day, Schedule_DaysOfWeek_Days = EXCLUDED.Schedule_DaysOfWeek_Days, Schedule_DaysOfMonth_Days = EXCLUDED.Schedule_DaysOfMonth_Days, LastRunStatus_ReportStatus = EXCLUDED.LastRunStatus_ReportStatus, LastRunStatus_LastRunTime = EXCLUDED.LastRunStatus_LastRunTime, LastRunStatus_ErrorMsg = EXCLUDED.LastRunStatus_ErrorMsg, LastSuccessfulRunTime = EXCLUDED.LastSuccessfulRunTime, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO reportconfigs (id, name, description, type, vulnreportfilters_fixability, vulnreportfilters_sincelastreport, vulnreportfilters_severities, scopeid, emailconfig_notifierid, emailconfig_mailinglists, schedule_intervaltype, schedule_hour, schedule_minute, schedule_weekly_day, schedule_daysofweek_days, schedule_daysofmonth_days, lastrunstatus_reportstatus, lastrunstatus_lastruntime, lastrunstatus_errormsg, lastsuccessfulruntime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, description = EXCLUDED.description, type = EXCLUDED.type, vulnreportfilters_fixability = EXCLUDED.vulnreportfilters_fixability, vulnreportfilters_sincelastreport = EXCLUDED.vulnreportfilters_sincelastreport, vulnreportfilters_severities = EXCLUDED.vulnreportfilters_severities, scopeid = EXCLUDED.scopeid, emailconfig_notifierid = EXCLUDED.emailconfig_notifierid, emailconfig_mailinglists = EXCLUDED.emailconfig_mailinglists, schedule_intervaltype = EXCLUDED.schedule_intervaltype, schedule_hour = EXCLUDED.schedule_hour, schedule_minute = EXCLUDED.schedule_minute, schedule_weekly_day = EXCLUDED.schedule_weekly_day, schedule_daysofweek_days = EXCLUDED.schedule_daysofweek_days, schedule_daysofmonth_days = EXCLUDED.schedule_daysofmonth_days, lastrunstatus_reportstatus = EXCLUDED.lastrunstatus_reportstatus, lastrunstatus_lastruntime = EXCLUDED.lastrunstatus_lastruntime, lastrunstatus_errormsg = EXCLUDED.lastrunstatus_errormsg, lastsuccessfulruntime = EXCLUDED.lastsuccessfulruntime, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err

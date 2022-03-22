@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "networkentity"
 	countStmt  = "SELECT COUNT(*) FROM networkentity"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkentity WHERE Info_Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkentity WHERE info_id = $1)"
 
-	getStmt     = "SELECT serialized FROM networkentity WHERE Info_Id = $1"
-	deleteStmt  = "DELETE FROM networkentity WHERE Info_Id = $1"
+	getStmt     = "SELECT serialized FROM networkentity WHERE info_id = $1"
+	deleteStmt  = "DELETE FROM networkentity WHERE info_id = $1"
 	walkStmt    = "SELECT serialized FROM networkentity"
-	getIDsStmt  = "SELECT Info_Id FROM networkentity"
-	getManyStmt = "SELECT serialized FROM networkentity WHERE Info_Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT info_id FROM networkentity"
+	getManyStmt = "SELECT serialized FROM networkentity WHERE info_id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM networkentity WHERE Info_Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM networkentity WHERE info_id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,17 +73,17 @@ type storeImpl struct {
 func createTableNetworkentity(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists networkentity (
-    Info_Type integer,
-    Info_Id varchar,
-    Info_Deployment_Name varchar,
-    Info_Deployment_Namespace varchar,
-    Info_Deployment_Cluster varchar,
-    Info_ExternalSource_Name varchar,
-    Info_ExternalSource_Cidr varchar,
-    Info_ExternalSource_Default bool,
-    Scope_ClusterId varchar,
+    info_type integer,
+    info_id varchar,
+    info_deployment_name varchar,
+    info_deployment_namespace varchar,
+    info_deployment_cluster varchar,
+    info_externalsource_name varchar,
+    info_externalsource_cidr varchar,
+    info_externalsource_default bool,
+    scope_clusterid varchar,
     serialized bytea,
-    PRIMARY KEY(Info_Id)
+    PRIMARY KEY(info_id)
 )
 `
 
@@ -105,12 +105,12 @@ create table if not exists networkentity (
 func createTableNetworkentityListenPorts(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists networkentity_ListenPorts (
-    networkentity_Info_Id varchar,
+    networkentityinfo_id varchar,
     idx integer,
-    Port integer,
-    L4Protocol integer,
-    PRIMARY KEY(networkentity_Info_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (networkentity_Info_Id) REFERENCES networkentity(Info_Id) ON DELETE CASCADE
+    port integer,
+    l4protocol integer,
+    PRIMARY KEY(networkentityinfo_id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkentityinfo_id) REFERENCES networkentity(info_id) ON DELETE CASCADE
 )
 `
 
@@ -152,7 +152,7 @@ func insertIntoNetworkentity(ctx context.Context, tx pgx.Tx, obj *storage.Networ
 		serialized,
 	}
 
-	finalStr := "INSERT INTO networkentity (Info_Type, Info_Id, Info_Deployment_Name, Info_Deployment_Namespace, Info_Deployment_Cluster, Info_ExternalSource_Name, Info_ExternalSource_Cidr, Info_ExternalSource_Default, Scope_ClusterId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Info_Id) DO UPDATE SET Info_Type = EXCLUDED.Info_Type, Info_Id = EXCLUDED.Info_Id, Info_Deployment_Name = EXCLUDED.Info_Deployment_Name, Info_Deployment_Namespace = EXCLUDED.Info_Deployment_Namespace, Info_Deployment_Cluster = EXCLUDED.Info_Deployment_Cluster, Info_ExternalSource_Name = EXCLUDED.Info_ExternalSource_Name, Info_ExternalSource_Cidr = EXCLUDED.Info_ExternalSource_Cidr, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, Scope_ClusterId = EXCLUDED.Scope_ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO networkentity (info_type, info_id, info_deployment_name, info_deployment_namespace, info_deployment_cluster, info_externalsource_name, info_externalsource_cidr, info_externalsource_default, scope_clusterid, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(info_id) DO UPDATE SET info_type = EXCLUDED.info_type, info_id = EXCLUDED.info_id, info_deployment_name = EXCLUDED.info_deployment_name, info_deployment_namespace = EXCLUDED.info_deployment_namespace, info_deployment_cluster = EXCLUDED.info_deployment_cluster, info_externalsource_name = EXCLUDED.info_externalsource_name, info_externalsource_cidr = EXCLUDED.info_externalsource_cidr, info_externalsource_default = EXCLUDED.info_externalsource_default, scope_clusterid = EXCLUDED.scope_clusterid, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -166,7 +166,7 @@ func insertIntoNetworkentity(ctx context.Context, tx pgx.Tx, obj *storage.Networ
 		}
 	}
 
-	query = "delete from networkentity_ListenPorts where networkentity_Info_Id = $1 AND idx >= $2"
+	query = "delete from networkentity_ListenPorts where networkentityinfo_id = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetInfo().GetId(), len(obj.GetInfo().GetDeployment().GetListenPorts()))
 	if err != nil {
 		return err
@@ -174,17 +174,17 @@ func insertIntoNetworkentity(ctx context.Context, tx pgx.Tx, obj *storage.Networ
 	return nil
 }
 
-func insertIntoNetworkentityListenPorts(ctx context.Context, tx pgx.Tx, obj *storage.NetworkEntityInfo_Deployment_ListenPort, networkentity_Id string, idx int) error {
+func insertIntoNetworkentityListenPorts(ctx context.Context, tx pgx.Tx, obj *storage.NetworkEntityInfo_Deployment_ListenPort, networkentityid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		networkentity_Id,
+		networkentityid,
 		idx,
 		obj.GetPort(),
 		obj.GetL4Protocol(),
 	}
 
-	finalStr := "INSERT INTO networkentity_ListenPorts (networkentity_Info_Id, idx, Port, L4Protocol) VALUES($1, $2, $3, $4) ON CONFLICT(networkentity_Info_Id, idx) DO UPDATE SET networkentity_Info_Id = EXCLUDED.networkentity_Info_Id, idx = EXCLUDED.idx, Port = EXCLUDED.Port, L4Protocol = EXCLUDED.L4Protocol"
+	finalStr := "INSERT INTO networkentity_ListenPorts (networkentityinfo_id, idx, port, l4protocol) VALUES($1, $2, $3, $4) ON CONFLICT(networkentityinfo_id, idx) DO UPDATE SET networkentityinfo_id = EXCLUDED.networkentityinfo_id, idx = EXCLUDED.idx, port = EXCLUDED.port, l4protocol = EXCLUDED.l4protocol"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -294,7 +294,7 @@ func (s *storeImpl) copyFromNetworkentity(ctx context.Context, tx pgx.Tx, objs .
 	return err
 }
 
-func (s *storeImpl) copyFromNetworkentityListenPorts(ctx context.Context, tx pgx.Tx, networkentity_Id string, objs ...*storage.NetworkEntityInfo_Deployment_ListenPort) error {
+func (s *storeImpl) copyFromNetworkentityListenPorts(ctx context.Context, tx pgx.Tx, networkentityid string, objs ...*storage.NetworkEntityInfo_Deployment_ListenPort) error {
 
 	inputRows := [][]interface{}{}
 
@@ -302,7 +302,7 @@ func (s *storeImpl) copyFromNetworkentityListenPorts(ctx context.Context, tx pgx
 
 	copyCols := []string{
 
-		"networkentity_info_id",
+		"networkentityinfo_id",
 
 		"idx",
 
@@ -317,7 +317,7 @@ func (s *storeImpl) copyFromNetworkentityListenPorts(ctx context.Context, tx pgx
 
 		inputRows = append(inputRows, []interface{}{
 
-			networkentity_Id,
+			networkentityid,
 
 			idx,
 

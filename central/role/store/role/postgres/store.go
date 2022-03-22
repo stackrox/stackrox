@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "roles"
 	countStmt  = "SELECT COUNT(*) FROM roles"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM roles WHERE Name = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM roles WHERE name = $1)"
 
-	getStmt     = "SELECT serialized FROM roles WHERE Name = $1"
-	deleteStmt  = "DELETE FROM roles WHERE Name = $1"
+	getStmt     = "SELECT serialized FROM roles WHERE name = $1"
+	deleteStmt  = "DELETE FROM roles WHERE name = $1"
 	walkStmt    = "SELECT serialized FROM roles"
-	getIDsStmt  = "SELECT Name FROM roles"
-	getManyStmt = "SELECT serialized FROM roles WHERE Name = ANY($1::text[])"
+	getIDsStmt  = "SELECT name FROM roles"
+	getManyStmt = "SELECT serialized FROM roles WHERE name = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM roles WHERE Name = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM roles WHERE name = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,14 +73,14 @@ type storeImpl struct {
 func createTableRoles(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists roles (
-    Name varchar,
-    Description varchar,
-    PermissionSetId varchar,
-    AccessScopeId varchar,
-    GlobalAccess integer,
-    ResourceToAccess jsonb,
+    name varchar,
+    description varchar,
+    permissionsetid varchar,
+    accessscopeid varchar,
+    globalaccess integer,
+    resourcetoaccess jsonb,
     serialized bytea,
-    PRIMARY KEY(Name)
+    PRIMARY KEY(name)
 )
 `
 
@@ -116,7 +116,7 @@ func insertIntoRoles(ctx context.Context, tx pgx.Tx, obj *storage.Role) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO roles (Name, Description, PermissionSetId, AccessScopeId, GlobalAccess, ResourceToAccess, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, Description = EXCLUDED.Description, PermissionSetId = EXCLUDED.PermissionSetId, AccessScopeId = EXCLUDED.AccessScopeId, GlobalAccess = EXCLUDED.GlobalAccess, ResourceToAccess = EXCLUDED.ResourceToAccess, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO roles (name, description, permissionsetid, accessscopeid, globalaccess, resourcetoaccess, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(name) DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description, permissionsetid = EXCLUDED.permissionsetid, accessscopeid = EXCLUDED.accessscopeid, globalaccess = EXCLUDED.globalaccess, resourcetoaccess = EXCLUDED.resourcetoaccess, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err

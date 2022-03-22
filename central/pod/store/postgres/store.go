@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "pods"
 	countStmt  = "SELECT COUNT(*) FROM pods"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM pods WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM pods WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM pods WHERE Id = $1"
-	deleteStmt  = "DELETE FROM pods WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM pods WHERE id = $1"
+	deleteStmt  = "DELETE FROM pods WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM pods"
-	getIDsStmt  = "SELECT Id FROM pods"
-	getManyStmt = "SELECT serialized FROM pods WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM pods"
+	getManyStmt = "SELECT serialized FROM pods WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM pods WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM pods WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,14 +73,14 @@ type storeImpl struct {
 func createTablePods(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists pods (
-    Id varchar,
-    Name varchar,
-    DeploymentId varchar,
-    Namespace varchar,
-    ClusterId varchar,
-    Started timestamp,
+    id varchar,
+    name varchar,
+    deploymentid varchar,
+    namespace varchar,
+    clusterid varchar,
+    started timestamp,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -103,21 +103,21 @@ create table if not exists pods (
 func createTablePodsLiveInstances(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists pods_LiveInstances (
-    pods_Id varchar,
+    podid varchar,
     idx integer,
-    InstanceId_ContainerRuntime integer,
-    InstanceId_Id varchar,
-    InstanceId_Node varchar,
-    ContainingPodId varchar,
-    ContainerName varchar,
-    ContainerIps text[],
-    Started timestamp,
-    ImageDigest varchar,
-    Finished timestamp,
-    ExitCode integer,
-    TerminationReason varchar,
-    PRIMARY KEY(pods_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (pods_Id) REFERENCES pods(Id) ON DELETE CASCADE
+    instanceid_containerruntime integer,
+    instanceid_id varchar,
+    instanceid_node varchar,
+    containingpodid varchar,
+    containername varchar,
+    containerips text[],
+    started timestamp,
+    imagedigest varchar,
+    finished timestamp,
+    exitcode integer,
+    terminationreason varchar,
+    PRIMARY KEY(podid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (podid) REFERENCES pods(id) ON DELETE CASCADE
 )
 `
 
@@ -141,10 +141,10 @@ create table if not exists pods_LiveInstances (
 func createTablePodsTerminatedInstances(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists pods_TerminatedInstances (
-    pods_Id varchar,
+    podid varchar,
     idx integer,
-    PRIMARY KEY(pods_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (pods_Id) REFERENCES pods(Id) ON DELETE CASCADE
+    PRIMARY KEY(podid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (podid) REFERENCES pods(id) ON DELETE CASCADE
 )
 `
 
@@ -169,22 +169,22 @@ create table if not exists pods_TerminatedInstances (
 func createTablePodsTerminatedInstancesInstances(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists pods_TerminatedInstances_Instances (
-    pods_Id varchar,
-    pods_TerminatedInstances_idx integer,
+    podid varchar,
+    pod_containerinstancelistidx integer,
     idx integer,
-    InstanceId_ContainerRuntime integer,
-    InstanceId_Id varchar,
-    InstanceId_Node varchar,
-    ContainingPodId varchar,
-    ContainerName varchar,
-    ContainerIps text[],
-    Started timestamp,
-    ImageDigest varchar,
-    Finished timestamp,
-    ExitCode integer,
-    TerminationReason varchar,
-    PRIMARY KEY(pods_Id, pods_TerminatedInstances_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (pods_Id, pods_TerminatedInstances_idx) REFERENCES pods_TerminatedInstances(pods_Id, idx) ON DELETE CASCADE
+    instanceid_containerruntime integer,
+    instanceid_id varchar,
+    instanceid_node varchar,
+    containingpodid varchar,
+    containername varchar,
+    containerips text[],
+    started timestamp,
+    imagedigest varchar,
+    finished timestamp,
+    exitcode integer,
+    terminationreason varchar,
+    PRIMARY KEY(podid, pod_containerinstancelistidx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (podid, pod_containerinstancelistidx) REFERENCES pods_TerminatedInstances(podid, idx) ON DELETE CASCADE
 )
 `
 
@@ -223,7 +223,7 @@ func insertIntoPods(ctx context.Context, tx pgx.Tx, obj *storage.Pod) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO pods (Id, Name, DeploymentId, Namespace, ClusterId, Started, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, Started = EXCLUDED.Started, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO pods (id, name, deploymentid, namespace, clusterid, started, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, deploymentid = EXCLUDED.deploymentid, namespace = EXCLUDED.namespace, clusterid = EXCLUDED.clusterid, started = EXCLUDED.started, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -237,7 +237,7 @@ func insertIntoPods(ctx context.Context, tx pgx.Tx, obj *storage.Pod) error {
 		}
 	}
 
-	query = "delete from pods_LiveInstances where pods_Id = $1 AND idx >= $2"
+	query = "delete from pods_LiveInstances where podid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetLiveInstances()))
 	if err != nil {
 		return err
@@ -248,7 +248,7 @@ func insertIntoPods(ctx context.Context, tx pgx.Tx, obj *storage.Pod) error {
 		}
 	}
 
-	query = "delete from pods_TerminatedInstances where pods_Id = $1 AND idx >= $2"
+	query = "delete from pods_TerminatedInstances where podid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetTerminatedInstances()))
 	if err != nil {
 		return err
@@ -256,11 +256,11 @@ func insertIntoPods(ctx context.Context, tx pgx.Tx, obj *storage.Pod) error {
 	return nil
 }
 
-func insertIntoPodsLiveInstances(ctx context.Context, tx pgx.Tx, obj *storage.ContainerInstance, pods_Id string, idx int) error {
+func insertIntoPodsLiveInstances(ctx context.Context, tx pgx.Tx, obj *storage.ContainerInstance, podid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pods_Id,
+		podid,
 		idx,
 		obj.GetInstanceId().GetContainerRuntime(),
 		obj.GetInstanceId().GetId(),
@@ -275,7 +275,7 @@ func insertIntoPodsLiveInstances(ctx context.Context, tx pgx.Tx, obj *storage.Co
 		obj.GetTerminationReason(),
 	}
 
-	finalStr := "INSERT INTO pods_LiveInstances (pods_Id, idx, InstanceId_ContainerRuntime, InstanceId_Id, InstanceId_Node, ContainingPodId, ContainerName, ContainerIps, Started, ImageDigest, Finished, ExitCode, TerminationReason) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(pods_Id, idx) DO UPDATE SET pods_Id = EXCLUDED.pods_Id, idx = EXCLUDED.idx, InstanceId_ContainerRuntime = EXCLUDED.InstanceId_ContainerRuntime, InstanceId_Id = EXCLUDED.InstanceId_Id, InstanceId_Node = EXCLUDED.InstanceId_Node, ContainingPodId = EXCLUDED.ContainingPodId, ContainerName = EXCLUDED.ContainerName, ContainerIps = EXCLUDED.ContainerIps, Started = EXCLUDED.Started, ImageDigest = EXCLUDED.ImageDigest, Finished = EXCLUDED.Finished, ExitCode = EXCLUDED.ExitCode, TerminationReason = EXCLUDED.TerminationReason"
+	finalStr := "INSERT INTO pods_LiveInstances (podid, idx, instanceid_containerruntime, instanceid_id, instanceid_node, containingpodid, containername, containerips, started, imagedigest, finished, exitcode, terminationreason) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(podid, idx) DO UPDATE SET podid = EXCLUDED.podid, idx = EXCLUDED.idx, instanceid_containerruntime = EXCLUDED.instanceid_containerruntime, instanceid_id = EXCLUDED.instanceid_id, instanceid_node = EXCLUDED.instanceid_node, containingpodid = EXCLUDED.containingpodid, containername = EXCLUDED.containername, containerips = EXCLUDED.containerips, started = EXCLUDED.started, imagedigest = EXCLUDED.imagedigest, finished = EXCLUDED.finished, exitcode = EXCLUDED.exitcode, terminationreason = EXCLUDED.terminationreason"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -284,15 +284,15 @@ func insertIntoPodsLiveInstances(ctx context.Context, tx pgx.Tx, obj *storage.Co
 	return nil
 }
 
-func insertIntoPodsTerminatedInstances(ctx context.Context, tx pgx.Tx, obj *storage.Pod_ContainerInstanceList, pods_Id string, idx int) error {
+func insertIntoPodsTerminatedInstances(ctx context.Context, tx pgx.Tx, obj *storage.Pod_ContainerInstanceList, podid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pods_Id,
+		podid,
 		idx,
 	}
 
-	finalStr := "INSERT INTO pods_TerminatedInstances (pods_Id, idx) VALUES($1, $2) ON CONFLICT(pods_Id, idx) DO UPDATE SET pods_Id = EXCLUDED.pods_Id, idx = EXCLUDED.idx"
+	finalStr := "INSERT INTO pods_TerminatedInstances (podid, idx) VALUES($1, $2) ON CONFLICT(podid, idx) DO UPDATE SET podid = EXCLUDED.podid, idx = EXCLUDED.idx"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -301,25 +301,25 @@ func insertIntoPodsTerminatedInstances(ctx context.Context, tx pgx.Tx, obj *stor
 	var query string
 
 	for childIdx, child := range obj.GetInstances() {
-		if err := insertIntoPodsTerminatedInstancesInstances(ctx, tx, child, pods_Id, idx, childIdx); err != nil {
+		if err := insertIntoPodsTerminatedInstancesInstances(ctx, tx, child, podid, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from pods_TerminatedInstances_Instances where pods_Id = $1 AND pods_TerminatedInstances_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, pods_Id, idx, len(obj.GetInstances()))
+	query = "delete from pods_TerminatedInstances_Instances where podid = $1 AND pod_containerinstancelistidx = $2 AND idx >= $3"
+	_, err = tx.Exec(ctx, query, podid, idx, len(obj.GetInstances()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoPodsTerminatedInstancesInstances(ctx context.Context, tx pgx.Tx, obj *storage.ContainerInstance, pods_Id string, pods_TerminatedInstances_idx int, idx int) error {
+func insertIntoPodsTerminatedInstancesInstances(ctx context.Context, tx pgx.Tx, obj *storage.ContainerInstance, podid string, pod_containerinstancelistidx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		pods_Id,
-		pods_TerminatedInstances_idx,
+		podid,
+		pod_containerinstancelistidx,
 		idx,
 		obj.GetInstanceId().GetContainerRuntime(),
 		obj.GetInstanceId().GetId(),
@@ -334,7 +334,7 @@ func insertIntoPodsTerminatedInstancesInstances(ctx context.Context, tx pgx.Tx, 
 		obj.GetTerminationReason(),
 	}
 
-	finalStr := "INSERT INTO pods_TerminatedInstances_Instances (pods_Id, pods_TerminatedInstances_idx, idx, InstanceId_ContainerRuntime, InstanceId_Id, InstanceId_Node, ContainingPodId, ContainerName, ContainerIps, Started, ImageDigest, Finished, ExitCode, TerminationReason) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) ON CONFLICT(pods_Id, pods_TerminatedInstances_idx, idx) DO UPDATE SET pods_Id = EXCLUDED.pods_Id, pods_TerminatedInstances_idx = EXCLUDED.pods_TerminatedInstances_idx, idx = EXCLUDED.idx, InstanceId_ContainerRuntime = EXCLUDED.InstanceId_ContainerRuntime, InstanceId_Id = EXCLUDED.InstanceId_Id, InstanceId_Node = EXCLUDED.InstanceId_Node, ContainingPodId = EXCLUDED.ContainingPodId, ContainerName = EXCLUDED.ContainerName, ContainerIps = EXCLUDED.ContainerIps, Started = EXCLUDED.Started, ImageDigest = EXCLUDED.ImageDigest, Finished = EXCLUDED.Finished, ExitCode = EXCLUDED.ExitCode, TerminationReason = EXCLUDED.TerminationReason"
+	finalStr := "INSERT INTO pods_TerminatedInstances_Instances (podid, pod_containerinstancelistidx, idx, instanceid_containerruntime, instanceid_id, instanceid_node, containingpodid, containername, containerips, started, imagedigest, finished, exitcode, terminationreason) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) ON CONFLICT(podid, pod_containerinstancelistidx, idx) DO UPDATE SET podid = EXCLUDED.podid, pod_containerinstancelistidx = EXCLUDED.pod_containerinstancelistidx, idx = EXCLUDED.idx, instanceid_containerruntime = EXCLUDED.instanceid_containerruntime, instanceid_id = EXCLUDED.instanceid_id, instanceid_node = EXCLUDED.instanceid_node, containingpodid = EXCLUDED.containingpodid, containername = EXCLUDED.containername, containerips = EXCLUDED.containerips, started = EXCLUDED.started, imagedigest = EXCLUDED.imagedigest, finished = EXCLUDED.finished, exitcode = EXCLUDED.exitcode, terminationreason = EXCLUDED.terminationreason"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -435,7 +435,7 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx pgx.Tx, objs ...*storag
 	return err
 }
 
-func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, pods_Id string, objs ...*storage.ContainerInstance) error {
+func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, podid string, objs ...*storage.ContainerInstance) error {
 
 	inputRows := [][]interface{}{}
 
@@ -443,7 +443,7 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, po
 
 	copyCols := []string{
 
-		"pods_id",
+		"podid",
 
 		"idx",
 
@@ -476,7 +476,7 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, po
 
 		inputRows = append(inputRows, []interface{}{
 
-			pods_Id,
+			podid,
 
 			idx,
 
@@ -522,7 +522,7 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, po
 	return err
 }
 
-func (s *storeImpl) copyFromPodsTerminatedInstances(ctx context.Context, tx pgx.Tx, pods_Id string, objs ...*storage.Pod_ContainerInstanceList) error {
+func (s *storeImpl) copyFromPodsTerminatedInstances(ctx context.Context, tx pgx.Tx, podid string, objs ...*storage.Pod_ContainerInstanceList) error {
 
 	inputRows := [][]interface{}{}
 
@@ -530,7 +530,7 @@ func (s *storeImpl) copyFromPodsTerminatedInstances(ctx context.Context, tx pgx.
 
 	copyCols := []string{
 
-		"pods_id",
+		"podid",
 
 		"idx",
 	}
@@ -541,7 +541,7 @@ func (s *storeImpl) copyFromPodsTerminatedInstances(ctx context.Context, tx pgx.
 
 		inputRows = append(inputRows, []interface{}{
 
-			pods_Id,
+			podid,
 
 			idx,
 		})
@@ -564,7 +564,7 @@ func (s *storeImpl) copyFromPodsTerminatedInstances(ctx context.Context, tx pgx.
 
 	for idx, obj := range objs {
 
-		if err = s.copyFromPodsTerminatedInstancesInstances(ctx, tx, pods_Id, idx, obj.GetInstances()...); err != nil {
+		if err = s.copyFromPodsTerminatedInstancesInstances(ctx, tx, podid, idx, obj.GetInstances()...); err != nil {
 			return err
 		}
 	}
@@ -572,7 +572,7 @@ func (s *storeImpl) copyFromPodsTerminatedInstances(ctx context.Context, tx pgx.
 	return err
 }
 
-func (s *storeImpl) copyFromPodsTerminatedInstancesInstances(ctx context.Context, tx pgx.Tx, pods_Id string, pods_TerminatedInstances_idx int, objs ...*storage.ContainerInstance) error {
+func (s *storeImpl) copyFromPodsTerminatedInstancesInstances(ctx context.Context, tx pgx.Tx, podid string, pod_containerinstancelistidx int, objs ...*storage.ContainerInstance) error {
 
 	inputRows := [][]interface{}{}
 
@@ -580,9 +580,9 @@ func (s *storeImpl) copyFromPodsTerminatedInstancesInstances(ctx context.Context
 
 	copyCols := []string{
 
-		"pods_id",
+		"podid",
 
-		"pods_terminatedinstances_idx",
+		"pod_containerinstancelistidx",
 
 		"idx",
 
@@ -615,9 +615,9 @@ func (s *storeImpl) copyFromPodsTerminatedInstancesInstances(ctx context.Context
 
 		inputRows = append(inputRows, []interface{}{
 
-			pods_Id,
+			podid,
 
-			pods_TerminatedInstances_idx,
+			pod_containerinstancelistidx,
 
 			idx,
 

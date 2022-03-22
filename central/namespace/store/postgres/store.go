@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "namespaces"
 	countStmt  = "SELECT COUNT(*) FROM namespaces"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM namespaces WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM namespaces WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM namespaces WHERE Id = $1"
-	deleteStmt  = "DELETE FROM namespaces WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM namespaces WHERE id = $1"
+	deleteStmt  = "DELETE FROM namespaces WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM namespaces"
-	getIDsStmt  = "SELECT Id FROM namespaces"
-	getManyStmt = "SELECT serialized FROM namespaces WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM namespaces"
+	getManyStmt = "SELECT serialized FROM namespaces WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM namespaces WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM namespaces WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,16 +73,16 @@ type storeImpl struct {
 func createTableNamespaces(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists namespaces (
-    Id varchar,
-    Name varchar,
-    ClusterId varchar,
-    ClusterName varchar,
-    Labels jsonb,
-    CreationTime timestamp,
-    Priority integer,
-    Annotations jsonb,
+    id varchar,
+    name varchar,
+    clusterid varchar,
+    clustername varchar,
+    labels jsonb,
+    creationtime timestamp,
+    priority integer,
+    annotations jsonb,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -120,7 +120,7 @@ func insertIntoNamespaces(ctx context.Context, tx pgx.Tx, obj *storage.Namespace
 		serialized,
 	}
 
-	finalStr := "INSERT INTO namespaces (Id, Name, ClusterId, ClusterName, Labels, CreationTime, Priority, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, CreationTime = EXCLUDED.CreationTime, Priority = EXCLUDED.Priority, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO namespaces (id, name, clusterid, clustername, labels, creationtime, priority, annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, clusterid = EXCLUDED.clusterid, clustername = EXCLUDED.clustername, labels = EXCLUDED.labels, creationtime = EXCLUDED.creationtime, priority = EXCLUDED.priority, annotations = EXCLUDED.annotations, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err

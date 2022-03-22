@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "apitokens"
 	countStmt  = "SELECT COUNT(*) FROM apitokens"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM apitokens WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM apitokens WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM apitokens WHERE Id = $1"
-	deleteStmt  = "DELETE FROM apitokens WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM apitokens WHERE id = $1"
+	deleteStmt  = "DELETE FROM apitokens WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM apitokens"
-	getIDsStmt  = "SELECT Id FROM apitokens"
-	getManyStmt = "SELECT serialized FROM apitokens WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM apitokens"
+	getManyStmt = "SELECT serialized FROM apitokens WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM apitokens WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM apitokens WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,15 +73,15 @@ type storeImpl struct {
 func createTableApitokens(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists apitokens (
-    Id varchar,
-    Name varchar,
-    Roles text[],
-    IssuedAt timestamp,
-    Expiration timestamp,
-    Revoked bool,
-    Role varchar,
+    id varchar,
+    name varchar,
+    roles text[],
+    issuedat timestamp,
+    expiration timestamp,
+    revoked bool,
+    role varchar,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -118,7 +118,7 @@ func insertIntoApitokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetad
 		serialized,
 	}
 
-	finalStr := "INSERT INTO apitokens (Id, Name, Roles, IssuedAt, Expiration, Revoked, Role, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Roles = EXCLUDED.Roles, IssuedAt = EXCLUDED.IssuedAt, Expiration = EXCLUDED.Expiration, Revoked = EXCLUDED.Revoked, Role = EXCLUDED.Role, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO apitokens (id, name, roles, issuedat, expiration, revoked, role, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, roles = EXCLUDED.roles, issuedat = EXCLUDED.issuedat, expiration = EXCLUDED.expiration, revoked = EXCLUDED.revoked, role = EXCLUDED.role, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err

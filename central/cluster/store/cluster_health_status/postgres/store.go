@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "cluster_health_status"
 	countStmt  = "SELECT COUNT(*) FROM cluster_health_status"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM cluster_health_status WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM cluster_health_status WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM cluster_health_status WHERE Id = $1"
-	deleteStmt  = "DELETE FROM cluster_health_status WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM cluster_health_status WHERE id = $1"
+	deleteStmt  = "DELETE FROM cluster_health_status WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM cluster_health_status"
-	getIDsStmt  = "SELECT Id FROM cluster_health_status"
-	getManyStmt = "SELECT serialized FROM cluster_health_status WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM cluster_health_status"
+	getManyStmt = "SELECT serialized FROM cluster_health_status WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM cluster_health_status WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM cluster_health_status WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,23 +73,23 @@ type storeImpl struct {
 func createTableClusterHealthStatus(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists cluster_health_status (
-    Id varchar,
-    CollectorHealthInfo_Version varchar,
-    CollectorHealthInfo_TotalDesiredPods integer,
-    CollectorHealthInfo_TotalReadyPods integer,
-    CollectorHealthInfo_TotalRegisteredNodes integer,
-    CollectorHealthInfo_StatusErrors text[],
-    AdmissionControlHealthInfo_TotalDesiredPods integer,
-    AdmissionControlHealthInfo_TotalReadyPods integer,
-    AdmissionControlHealthInfo_StatusErrors text[],
-    SensorHealthStatus integer,
-    CollectorHealthStatus integer,
-    OverallHealthStatus integer,
-    AdmissionControlHealthStatus integer,
-    LastContact timestamp,
-    HealthInfoComplete bool,
+    id varchar,
+    collectorhealthinfo_version varchar,
+    collectorhealthinfo_totaldesiredpods integer,
+    collectorhealthinfo_totalreadypods integer,
+    collectorhealthinfo_totalregisterednodes integer,
+    collectorhealthinfo_statuserrors text[],
+    admissioncontrolhealthinfo_totaldesiredpods integer,
+    admissioncontrolhealthinfo_totalreadypods integer,
+    admissioncontrolhealthinfo_statuserrors text[],
+    sensorhealthstatus integer,
+    collectorhealthstatus integer,
+    overallhealthstatus integer,
+    admissioncontrolhealthstatus integer,
+    lastcontact timestamp,
+    healthinfocomplete bool,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -134,7 +134,7 @@ func insertIntoClusterHealthStatus(ctx context.Context, tx pgx.Tx, obj *storage.
 		serialized,
 	}
 
-	finalStr := "INSERT INTO cluster_health_status (Id, CollectorHealthInfo_Version, CollectorHealthInfo_TotalDesiredPods, CollectorHealthInfo_TotalReadyPods, CollectorHealthInfo_TotalRegisteredNodes, CollectorHealthInfo_StatusErrors, AdmissionControlHealthInfo_TotalDesiredPods, AdmissionControlHealthInfo_TotalReadyPods, AdmissionControlHealthInfo_StatusErrors, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, LastContact, HealthInfoComplete, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CollectorHealthInfo_Version = EXCLUDED.CollectorHealthInfo_Version, CollectorHealthInfo_TotalDesiredPods = EXCLUDED.CollectorHealthInfo_TotalDesiredPods, CollectorHealthInfo_TotalReadyPods = EXCLUDED.CollectorHealthInfo_TotalReadyPods, CollectorHealthInfo_TotalRegisteredNodes = EXCLUDED.CollectorHealthInfo_TotalRegisteredNodes, CollectorHealthInfo_StatusErrors = EXCLUDED.CollectorHealthInfo_StatusErrors, AdmissionControlHealthInfo_TotalDesiredPods = EXCLUDED.AdmissionControlHealthInfo_TotalDesiredPods, AdmissionControlHealthInfo_TotalReadyPods = EXCLUDED.AdmissionControlHealthInfo_TotalReadyPods, AdmissionControlHealthInfo_StatusErrors = EXCLUDED.AdmissionControlHealthInfo_StatusErrors, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, LastContact = EXCLUDED.LastContact, HealthInfoComplete = EXCLUDED.HealthInfoComplete, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO cluster_health_status (id, collectorhealthinfo_version, collectorhealthinfo_totaldesiredpods, collectorhealthinfo_totalreadypods, collectorhealthinfo_totalregisterednodes, collectorhealthinfo_statuserrors, admissioncontrolhealthinfo_totaldesiredpods, admissioncontrolhealthinfo_totalreadypods, admissioncontrolhealthinfo_statuserrors, sensorhealthstatus, collectorhealthstatus, overallhealthstatus, admissioncontrolhealthstatus, lastcontact, healthinfocomplete, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, collectorhealthinfo_version = EXCLUDED.collectorhealthinfo_version, collectorhealthinfo_totaldesiredpods = EXCLUDED.collectorhealthinfo_totaldesiredpods, collectorhealthinfo_totalreadypods = EXCLUDED.collectorhealthinfo_totalreadypods, collectorhealthinfo_totalregisterednodes = EXCLUDED.collectorhealthinfo_totalregisterednodes, collectorhealthinfo_statuserrors = EXCLUDED.collectorhealthinfo_statuserrors, admissioncontrolhealthinfo_totaldesiredpods = EXCLUDED.admissioncontrolhealthinfo_totaldesiredpods, admissioncontrolhealthinfo_totalreadypods = EXCLUDED.admissioncontrolhealthinfo_totalreadypods, admissioncontrolhealthinfo_statuserrors = EXCLUDED.admissioncontrolhealthinfo_statuserrors, sensorhealthstatus = EXCLUDED.sensorhealthstatus, collectorhealthstatus = EXCLUDED.collectorhealthstatus, overallhealthstatus = EXCLUDED.overallhealthstatus, admissioncontrolhealthstatus = EXCLUDED.admissioncontrolhealthstatus, lastcontact = EXCLUDED.lastcontact, healthinfocomplete = EXCLUDED.healthinfocomplete, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err

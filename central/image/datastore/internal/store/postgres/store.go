@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "images"
 	countStmt  = "SELECT COUNT(*) FROM images"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM images WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM images WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM images WHERE Id = $1"
-	deleteStmt  = "DELETE FROM images WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM images WHERE id = $1"
+	deleteStmt  = "DELETE FROM images WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM images"
-	getIDsStmt  = "SELECT Id FROM images"
-	getManyStmt = "SELECT serialized FROM images WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM images"
+	getManyStmt = "SELECT serialized FROM images WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM images WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM images WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,42 +73,42 @@ type storeImpl struct {
 func createTableImages(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists images (
-    Id varchar,
-    Name_Registry varchar,
-    Name_Remote varchar,
-    Name_Tag varchar,
-    Name_FullName varchar,
-    Metadata_V1_Digest varchar,
-    Metadata_V1_Created timestamp,
-    Metadata_V1_Author varchar,
-    Metadata_V1_User varchar,
-    Metadata_V1_Command text[],
-    Metadata_V1_Entrypoint text[],
-    Metadata_V1_Volumes text[],
-    Metadata_V1_Labels jsonb,
-    Metadata_V2_Digest varchar,
-    Metadata_LayerShas text[],
-    Metadata_DataSource_Id varchar,
-    Metadata_DataSource_Name varchar,
-    Metadata_Version integer,
-    Scan_ScannerVersion varchar,
-    Scan_ScanTime timestamp,
-    Scan_OperatingSystem varchar,
-    Scan_DataSource_Id varchar,
-    Scan_DataSource_Name varchar,
-    Scan_Notes int[],
-    Components integer,
-    Cves integer,
-    FixableCves integer,
-    LastUpdated timestamp,
-    NotPullable bool,
-    IsClusterLocal bool,
-    Priority integer,
-    RiskScore numeric,
-    TopCvss numeric,
-    Notes int[],
+    id varchar,
+    name_registry varchar,
+    name_remote varchar,
+    name_tag varchar,
+    name_fullname varchar,
+    metadata_v1_digest varchar,
+    metadata_v1_created timestamp,
+    metadata_v1_author varchar,
+    metadata_v1_user varchar,
+    metadata_v1_command text[],
+    metadata_v1_entrypoint text[],
+    metadata_v1_volumes text[],
+    metadata_v1_labels jsonb,
+    metadata_v2_digest varchar,
+    metadata_layershas text[],
+    metadata_datasource_id varchar,
+    metadata_datasource_name varchar,
+    metadata_version integer,
+    scan_scannerversion varchar,
+    scan_scantime timestamp,
+    scan_operatingsystem varchar,
+    scan_datasource_id varchar,
+    scan_datasource_name varchar,
+    scan_notes int[],
+    components integer,
+    cves integer,
+    fixablecves integer,
+    lastupdated timestamp,
+    notpullable bool,
+    isclusterlocal bool,
+    priority integer,
+    riskscore numeric,
+    topcvss numeric,
+    notes int[],
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -132,15 +132,15 @@ create table if not exists images (
 func createTableImagesLayers(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists images_Layers (
-    images_Id varchar,
+    imageid varchar,
     idx integer,
-    Instruction varchar,
-    Value varchar,
-    Created timestamp,
-    Author varchar,
-    Empty bool,
-    PRIMARY KEY(images_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
+    instruction varchar,
+    value varchar,
+    created timestamp,
+    author varchar,
+    empty bool,
+    PRIMARY KEY(imageid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (imageid) REFERENCES images(id) ON DELETE CASCADE
 )
 `
 
@@ -164,14 +164,14 @@ create table if not exists images_Layers (
 func createTableImagesResults(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists images_Results (
-    images_Id varchar,
+    imageid varchar,
     idx integer,
-    VerificationTime timestamp,
-    VerifierId varchar,
-    Status integer,
-    Description varchar,
-    PRIMARY KEY(images_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
+    verificationtime timestamp,
+    verifierid varchar,
+    status integer,
+    description varchar,
+    PRIMARY KEY(imageid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (imageid) REFERENCES images(id) ON DELETE CASCADE
 )
 `
 
@@ -195,12 +195,12 @@ create table if not exists images_Results (
 func createTableImagesSignatures(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists images_Signatures (
-    images_Id varchar,
+    imageid varchar,
     idx integer,
-    Cosign_RawSignature varchar,
-    Cosign_SignaturePayload varchar,
-    PRIMARY KEY(images_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
+    cosign_rawsignature varchar,
+    cosign_signaturepayload varchar,
+    PRIMARY KEY(imageid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (imageid) REFERENCES images(id) ON DELETE CASCADE
 )
 `
 
@@ -267,7 +267,7 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image) error 
 		serialized,
 	}
 
-	finalStr := "INSERT INTO images (Id, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Digest, Metadata_V1_Created, Metadata_V1_Author, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Metadata_V2_Digest, Metadata_LayerShas, Metadata_DataSource_Id, Metadata_DataSource_Name, Metadata_Version, Scan_ScannerVersion, Scan_ScanTime, Scan_OperatingSystem, Scan_DataSource_Id, Scan_DataSource_Name, Scan_Notes, Components, Cves, FixableCves, LastUpdated, NotPullable, IsClusterLocal, Priority, RiskScore, TopCvss, Notes, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Digest = EXCLUDED.Metadata_V1_Digest, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_Author = EXCLUDED.Metadata_V1_Author, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Metadata_V2_Digest = EXCLUDED.Metadata_V2_Digest, Metadata_LayerShas = EXCLUDED.Metadata_LayerShas, Metadata_DataSource_Id = EXCLUDED.Metadata_DataSource_Id, Metadata_DataSource_Name = EXCLUDED.Metadata_DataSource_Name, Metadata_Version = EXCLUDED.Metadata_Version, Scan_ScannerVersion = EXCLUDED.Scan_ScannerVersion, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Scan_DataSource_Id = EXCLUDED.Scan_DataSource_Id, Scan_DataSource_Name = EXCLUDED.Scan_DataSource_Name, Scan_Notes = EXCLUDED.Scan_Notes, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, LastUpdated = EXCLUDED.LastUpdated, NotPullable = EXCLUDED.NotPullable, IsClusterLocal = EXCLUDED.IsClusterLocal, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, Notes = EXCLUDED.Notes, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO images (id, name_registry, name_remote, name_tag, name_fullname, metadata_v1_digest, metadata_v1_created, metadata_v1_author, metadata_v1_user, metadata_v1_command, metadata_v1_entrypoint, metadata_v1_volumes, metadata_v1_labels, metadata_v2_digest, metadata_layershas, metadata_datasource_id, metadata_datasource_name, metadata_version, scan_scannerversion, scan_scantime, scan_operatingsystem, scan_datasource_id, scan_datasource_name, scan_notes, components, cves, fixablecves, lastupdated, notpullable, isclusterlocal, priority, riskscore, topcvss, notes, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name_registry = EXCLUDED.name_registry, name_remote = EXCLUDED.name_remote, name_tag = EXCLUDED.name_tag, name_fullname = EXCLUDED.name_fullname, metadata_v1_digest = EXCLUDED.metadata_v1_digest, metadata_v1_created = EXCLUDED.metadata_v1_created, metadata_v1_author = EXCLUDED.metadata_v1_author, metadata_v1_user = EXCLUDED.metadata_v1_user, metadata_v1_command = EXCLUDED.metadata_v1_command, metadata_v1_entrypoint = EXCLUDED.metadata_v1_entrypoint, metadata_v1_volumes = EXCLUDED.metadata_v1_volumes, metadata_v1_labels = EXCLUDED.metadata_v1_labels, metadata_v2_digest = EXCLUDED.metadata_v2_digest, metadata_layershas = EXCLUDED.metadata_layershas, metadata_datasource_id = EXCLUDED.metadata_datasource_id, metadata_datasource_name = EXCLUDED.metadata_datasource_name, metadata_version = EXCLUDED.metadata_version, scan_scannerversion = EXCLUDED.scan_scannerversion, scan_scantime = EXCLUDED.scan_scantime, scan_operatingsystem = EXCLUDED.scan_operatingsystem, scan_datasource_id = EXCLUDED.scan_datasource_id, scan_datasource_name = EXCLUDED.scan_datasource_name, scan_notes = EXCLUDED.scan_notes, components = EXCLUDED.components, cves = EXCLUDED.cves, fixablecves = EXCLUDED.fixablecves, lastupdated = EXCLUDED.lastupdated, notpullable = EXCLUDED.notpullable, isclusterlocal = EXCLUDED.isclusterlocal, priority = EXCLUDED.priority, riskscore = EXCLUDED.riskscore, topcvss = EXCLUDED.topcvss, notes = EXCLUDED.notes, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -281,7 +281,7 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image) error 
 		}
 	}
 
-	query = "delete from images_Layers where images_Id = $1 AND idx >= $2"
+	query = "delete from images_Layers where imageid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetMetadata().GetV1().GetLayers()))
 	if err != nil {
 		return err
@@ -292,7 +292,7 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image) error 
 		}
 	}
 
-	query = "delete from images_Results where images_Id = $1 AND idx >= $2"
+	query = "delete from images_Results where imageid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetSignatureVerificationData().GetResults()))
 	if err != nil {
 		return err
@@ -303,7 +303,7 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image) error 
 		}
 	}
 
-	query = "delete from images_Signatures where images_Id = $1 AND idx >= $2"
+	query = "delete from images_Signatures where imageid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetSignature().GetSignatures()))
 	if err != nil {
 		return err
@@ -311,11 +311,11 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image) error 
 	return nil
 }
 
-func insertIntoImagesLayers(ctx context.Context, tx pgx.Tx, obj *storage.ImageLayer, images_Id string, idx int) error {
+func insertIntoImagesLayers(ctx context.Context, tx pgx.Tx, obj *storage.ImageLayer, imageid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		images_Id,
+		imageid,
 		idx,
 		obj.GetInstruction(),
 		obj.GetValue(),
@@ -324,7 +324,7 @@ func insertIntoImagesLayers(ctx context.Context, tx pgx.Tx, obj *storage.ImageLa
 		obj.GetEmpty(),
 	}
 
-	finalStr := "INSERT INTO images_Layers (images_Id, idx, Instruction, Value, Created, Author, Empty) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(images_Id, idx) DO UPDATE SET images_Id = EXCLUDED.images_Id, idx = EXCLUDED.idx, Instruction = EXCLUDED.Instruction, Value = EXCLUDED.Value, Created = EXCLUDED.Created, Author = EXCLUDED.Author, Empty = EXCLUDED.Empty"
+	finalStr := "INSERT INTO images_Layers (imageid, idx, instruction, value, created, author, empty) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(imageid, idx) DO UPDATE SET imageid = EXCLUDED.imageid, idx = EXCLUDED.idx, instruction = EXCLUDED.instruction, value = EXCLUDED.value, created = EXCLUDED.created, author = EXCLUDED.author, empty = EXCLUDED.empty"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -333,11 +333,11 @@ func insertIntoImagesLayers(ctx context.Context, tx pgx.Tx, obj *storage.ImageLa
 	return nil
 }
 
-func insertIntoImagesResults(ctx context.Context, tx pgx.Tx, obj *storage.ImageSignatureVerificationResult, images_Id string, idx int) error {
+func insertIntoImagesResults(ctx context.Context, tx pgx.Tx, obj *storage.ImageSignatureVerificationResult, imageid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		images_Id,
+		imageid,
 		idx,
 		pgutils.NilOrTime(obj.GetVerificationTime()),
 		obj.GetVerifierId(),
@@ -345,7 +345,7 @@ func insertIntoImagesResults(ctx context.Context, tx pgx.Tx, obj *storage.ImageS
 		obj.GetDescription(),
 	}
 
-	finalStr := "INSERT INTO images_Results (images_Id, idx, VerificationTime, VerifierId, Status, Description) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(images_Id, idx) DO UPDATE SET images_Id = EXCLUDED.images_Id, idx = EXCLUDED.idx, VerificationTime = EXCLUDED.VerificationTime, VerifierId = EXCLUDED.VerifierId, Status = EXCLUDED.Status, Description = EXCLUDED.Description"
+	finalStr := "INSERT INTO images_Results (imageid, idx, verificationtime, verifierid, status, description) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(imageid, idx) DO UPDATE SET imageid = EXCLUDED.imageid, idx = EXCLUDED.idx, verificationtime = EXCLUDED.verificationtime, verifierid = EXCLUDED.verifierid, status = EXCLUDED.status, description = EXCLUDED.description"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -354,17 +354,17 @@ func insertIntoImagesResults(ctx context.Context, tx pgx.Tx, obj *storage.ImageS
 	return nil
 }
 
-func insertIntoImagesSignatures(ctx context.Context, tx pgx.Tx, obj *storage.Signature, images_Id string, idx int) error {
+func insertIntoImagesSignatures(ctx context.Context, tx pgx.Tx, obj *storage.Signature, imageid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		images_Id,
+		imageid,
 		idx,
 		obj.GetCosign().GetRawSignature(),
 		obj.GetCosign().GetSignaturePayload(),
 	}
 
-	finalStr := "INSERT INTO images_Signatures (images_Id, idx, Cosign_RawSignature, Cosign_SignaturePayload) VALUES($1, $2, $3, $4) ON CONFLICT(images_Id, idx) DO UPDATE SET images_Id = EXCLUDED.images_Id, idx = EXCLUDED.idx, Cosign_RawSignature = EXCLUDED.Cosign_RawSignature, Cosign_SignaturePayload = EXCLUDED.Cosign_SignaturePayload"
+	finalStr := "INSERT INTO images_Signatures (imageid, idx, cosign_rawsignature, cosign_signaturepayload) VALUES($1, $2, $3, $4) ON CONFLICT(imageid, idx) DO UPDATE SET imageid = EXCLUDED.imageid, idx = EXCLUDED.idx, cosign_rawsignature = EXCLUDED.cosign_rawsignature, cosign_signaturepayload = EXCLUDED.cosign_signaturepayload"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -580,7 +580,7 @@ func (s *storeImpl) copyFromImages(ctx context.Context, tx pgx.Tx, objs ...*stor
 	return err
 }
 
-func (s *storeImpl) copyFromImagesLayers(ctx context.Context, tx pgx.Tx, images_Id string, objs ...*storage.ImageLayer) error {
+func (s *storeImpl) copyFromImagesLayers(ctx context.Context, tx pgx.Tx, imageid string, objs ...*storage.ImageLayer) error {
 
 	inputRows := [][]interface{}{}
 
@@ -588,7 +588,7 @@ func (s *storeImpl) copyFromImagesLayers(ctx context.Context, tx pgx.Tx, images_
 
 	copyCols := []string{
 
-		"images_id",
+		"imageid",
 
 		"idx",
 
@@ -609,7 +609,7 @@ func (s *storeImpl) copyFromImagesLayers(ctx context.Context, tx pgx.Tx, images_
 
 		inputRows = append(inputRows, []interface{}{
 
-			images_Id,
+			imageid,
 
 			idx,
 
@@ -643,7 +643,7 @@ func (s *storeImpl) copyFromImagesLayers(ctx context.Context, tx pgx.Tx, images_
 	return err
 }
 
-func (s *storeImpl) copyFromImagesResults(ctx context.Context, tx pgx.Tx, images_Id string, objs ...*storage.ImageSignatureVerificationResult) error {
+func (s *storeImpl) copyFromImagesResults(ctx context.Context, tx pgx.Tx, imageid string, objs ...*storage.ImageSignatureVerificationResult) error {
 
 	inputRows := [][]interface{}{}
 
@@ -651,7 +651,7 @@ func (s *storeImpl) copyFromImagesResults(ctx context.Context, tx pgx.Tx, images
 
 	copyCols := []string{
 
-		"images_id",
+		"imageid",
 
 		"idx",
 
@@ -670,7 +670,7 @@ func (s *storeImpl) copyFromImagesResults(ctx context.Context, tx pgx.Tx, images
 
 		inputRows = append(inputRows, []interface{}{
 
-			images_Id,
+			imageid,
 
 			idx,
 
@@ -702,7 +702,7 @@ func (s *storeImpl) copyFromImagesResults(ctx context.Context, tx pgx.Tx, images
 	return err
 }
 
-func (s *storeImpl) copyFromImagesSignatures(ctx context.Context, tx pgx.Tx, images_Id string, objs ...*storage.Signature) error {
+func (s *storeImpl) copyFromImagesSignatures(ctx context.Context, tx pgx.Tx, imageid string, objs ...*storage.Signature) error {
 
 	inputRows := [][]interface{}{}
 
@@ -710,7 +710,7 @@ func (s *storeImpl) copyFromImagesSignatures(ctx context.Context, tx pgx.Tx, ima
 
 	copyCols := []string{
 
-		"images_id",
+		"imageid",
 
 		"idx",
 
@@ -725,7 +725,7 @@ func (s *storeImpl) copyFromImagesSignatures(ctx context.Context, tx pgx.Tx, ima
 
 		inputRows = append(inputRows, []interface{}{
 
-			images_Id,
+			imageid,
 
 			idx,
 

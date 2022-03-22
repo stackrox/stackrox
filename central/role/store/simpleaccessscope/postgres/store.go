@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "simpleaccessscopes"
 	countStmt  = "SELECT COUNT(*) FROM simpleaccessscopes"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM simpleaccessscopes WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM simpleaccessscopes WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM simpleaccessscopes WHERE Id = $1"
-	deleteStmt  = "DELETE FROM simpleaccessscopes WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM simpleaccessscopes WHERE id = $1"
+	deleteStmt  = "DELETE FROM simpleaccessscopes WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM simpleaccessscopes"
-	getIDsStmt  = "SELECT Id FROM simpleaccessscopes"
-	getManyStmt = "SELECT serialized FROM simpleaccessscopes WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM simpleaccessscopes"
+	getManyStmt = "SELECT serialized FROM simpleaccessscopes WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM simpleaccessscopes WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM simpleaccessscopes WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,12 +73,12 @@ type storeImpl struct {
 func createTableSimpleaccessscopes(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists simpleaccessscopes (
-    Id varchar,
-    Name varchar UNIQUE,
-    Description varchar,
-    Rules_IncludedClusters text[],
+    id varchar,
+    name varchar UNIQUE,
+    description varchar,
+    rules_includedclusters text[],
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -102,12 +102,12 @@ create table if not exists simpleaccessscopes (
 func createTableSimpleaccessscopesIncludedNamespaces(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists simpleaccessscopes_IncludedNamespaces (
-    simpleaccessscopes_Id varchar,
+    simpleaccessscopeid varchar,
     idx integer,
-    ClusterName varchar,
-    NamespaceName varchar,
-    PRIMARY KEY(simpleaccessscopes_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
+    clustername varchar,
+    namespacename varchar,
+    PRIMARY KEY(simpleaccessscopeid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopeid) REFERENCES simpleaccessscopes(id) ON DELETE CASCADE
 )
 `
 
@@ -131,10 +131,10 @@ create table if not exists simpleaccessscopes_IncludedNamespaces (
 func createTableSimpleaccessscopesClusterLabelSelectors(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists simpleaccessscopes_ClusterLabelSelectors (
-    simpleaccessscopes_Id varchar,
+    simpleaccessscopeid varchar,
     idx integer,
-    PRIMARY KEY(simpleaccessscopes_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
+    PRIMARY KEY(simpleaccessscopeid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopeid) REFERENCES simpleaccessscopes(id) ON DELETE CASCADE
 )
 `
 
@@ -159,14 +159,14 @@ create table if not exists simpleaccessscopes_ClusterLabelSelectors (
 func createTableSimpleaccessscopesClusterLabelSelectorsRequirements(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists simpleaccessscopes_ClusterLabelSelectors_Requirements (
-    simpleaccessscopes_Id varchar,
-    simpleaccessscopes_ClusterLabelSelectors_idx integer,
+    simpleaccessscopeid varchar,
+    setbasedlabelselectoridx integer,
     idx integer,
-    Key varchar,
-    Op integer,
-    Values text[],
-    PRIMARY KEY(simpleaccessscopes_Id, simpleaccessscopes_ClusterLabelSelectors_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (simpleaccessscopes_Id, simpleaccessscopes_ClusterLabelSelectors_idx) REFERENCES simpleaccessscopes_ClusterLabelSelectors(simpleaccessscopes_Id, idx) ON DELETE CASCADE
+    key varchar,
+    op integer,
+    values text[],
+    PRIMARY KEY(simpleaccessscopeid, setbasedlabelselectoridx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopeid, setbasedlabelselectoridx) REFERENCES simpleaccessscopes_ClusterLabelSelectors(simpleaccessscopeid, idx) ON DELETE CASCADE
 )
 `
 
@@ -190,10 +190,10 @@ create table if not exists simpleaccessscopes_ClusterLabelSelectors_Requirements
 func createTableSimpleaccessscopesNamespaceLabelSelectors(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists simpleaccessscopes_NamespaceLabelSelectors (
-    simpleaccessscopes_Id varchar,
+    simpleaccessscopeid varchar,
     idx integer,
-    PRIMARY KEY(simpleaccessscopes_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
+    PRIMARY KEY(simpleaccessscopeid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopeid) REFERENCES simpleaccessscopes(id) ON DELETE CASCADE
 )
 `
 
@@ -218,14 +218,14 @@ create table if not exists simpleaccessscopes_NamespaceLabelSelectors (
 func createTableSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists simpleaccessscopes_NamespaceLabelSelectors_Requirements (
-    simpleaccessscopes_Id varchar,
-    simpleaccessscopes_NamespaceLabelSelectors_idx integer,
+    simpleaccessscopeid varchar,
+    setbasedlabelselectoridx integer,
     idx integer,
-    Key varchar,
-    Op integer,
-    Values text[],
-    PRIMARY KEY(simpleaccessscopes_Id, simpleaccessscopes_NamespaceLabelSelectors_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (simpleaccessscopes_Id, simpleaccessscopes_NamespaceLabelSelectors_idx) REFERENCES simpleaccessscopes_NamespaceLabelSelectors(simpleaccessscopes_Id, idx) ON DELETE CASCADE
+    key varchar,
+    op integer,
+    values text[],
+    PRIMARY KEY(simpleaccessscopeid, setbasedlabelselectoridx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopeid, setbasedlabelselectoridx) REFERENCES simpleaccessscopes_NamespaceLabelSelectors(simpleaccessscopeid, idx) ON DELETE CASCADE
 )
 `
 
@@ -262,7 +262,7 @@ func insertIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, obj *storage.S
 		serialized,
 	}
 
-	finalStr := "INSERT INTO simpleaccessscopes (Id, Name, Description, Rules_IncludedClusters, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Rules_IncludedClusters = EXCLUDED.Rules_IncludedClusters, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO simpleaccessscopes (id, name, description, rules_includedclusters, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, description = EXCLUDED.description, rules_includedclusters = EXCLUDED.rules_includedclusters, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -276,7 +276,7 @@ func insertIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, obj *storage.S
 		}
 	}
 
-	query = "delete from simpleaccessscopes_IncludedNamespaces where simpleaccessscopes_Id = $1 AND idx >= $2"
+	query = "delete from simpleaccessscopes_IncludedNamespaces where simpleaccessscopeid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetRules().GetIncludedNamespaces()))
 	if err != nil {
 		return err
@@ -287,7 +287,7 @@ func insertIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, obj *storage.S
 		}
 	}
 
-	query = "delete from simpleaccessscopes_ClusterLabelSelectors where simpleaccessscopes_Id = $1 AND idx >= $2"
+	query = "delete from simpleaccessscopes_ClusterLabelSelectors where simpleaccessscopeid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetRules().GetClusterLabelSelectors()))
 	if err != nil {
 		return err
@@ -298,7 +298,7 @@ func insertIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, obj *storage.S
 		}
 	}
 
-	query = "delete from simpleaccessscopes_NamespaceLabelSelectors where simpleaccessscopes_Id = $1 AND idx >= $2"
+	query = "delete from simpleaccessscopes_NamespaceLabelSelectors where simpleaccessscopeid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetRules().GetNamespaceLabelSelectors()))
 	if err != nil {
 		return err
@@ -306,17 +306,17 @@ func insertIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, obj *storage.S
 	return nil
 }
 
-func insertIntoSimpleaccessscopesIncludedNamespaces(ctx context.Context, tx pgx.Tx, obj *storage.SimpleAccessScope_Rules_Namespace, simpleaccessscopes_Id string, idx int) error {
+func insertIntoSimpleaccessscopesIncludedNamespaces(ctx context.Context, tx pgx.Tx, obj *storage.SimpleAccessScope_Rules_Namespace, simpleaccessscopeid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		simpleaccessscopes_Id,
+		simpleaccessscopeid,
 		idx,
 		obj.GetClusterName(),
 		obj.GetNamespaceName(),
 	}
 
-	finalStr := "INSERT INTO simpleaccessscopes_IncludedNamespaces (simpleaccessscopes_Id, idx, ClusterName, NamespaceName) VALUES($1, $2, $3, $4) ON CONFLICT(simpleaccessscopes_Id, idx) DO UPDATE SET simpleaccessscopes_Id = EXCLUDED.simpleaccessscopes_Id, idx = EXCLUDED.idx, ClusterName = EXCLUDED.ClusterName, NamespaceName = EXCLUDED.NamespaceName"
+	finalStr := "INSERT INTO simpleaccessscopes_IncludedNamespaces (simpleaccessscopeid, idx, clustername, namespacename) VALUES($1, $2, $3, $4) ON CONFLICT(simpleaccessscopeid, idx) DO UPDATE SET simpleaccessscopeid = EXCLUDED.simpleaccessscopeid, idx = EXCLUDED.idx, clustername = EXCLUDED.clustername, namespacename = EXCLUDED.namespacename"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -325,66 +325,15 @@ func insertIntoSimpleaccessscopesIncludedNamespaces(ctx context.Context, tx pgx.
 	return nil
 }
 
-func insertIntoSimpleaccessscopesClusterLabelSelectors(ctx context.Context, tx pgx.Tx, obj *storage.SetBasedLabelSelector, simpleaccessscopes_Id string, idx int) error {
+func insertIntoSimpleaccessscopesClusterLabelSelectors(ctx context.Context, tx pgx.Tx, obj *storage.SetBasedLabelSelector, simpleaccessscopeid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		simpleaccessscopes_Id,
+		simpleaccessscopeid,
 		idx,
 	}
 
-	finalStr := "INSERT INTO simpleaccessscopes_ClusterLabelSelectors (simpleaccessscopes_Id, idx) VALUES($1, $2) ON CONFLICT(simpleaccessscopes_Id, idx) DO UPDATE SET simpleaccessscopes_Id = EXCLUDED.simpleaccessscopes_Id, idx = EXCLUDED.idx"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetRequirements() {
-		if err := insertIntoSimpleaccessscopesClusterLabelSelectorsRequirements(ctx, tx, child, simpleaccessscopes_Id, idx, childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from simpleaccessscopes_ClusterLabelSelectors_Requirements where simpleaccessscopes_Id = $1 AND simpleaccessscopes_ClusterLabelSelectors_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, simpleaccessscopes_Id, idx, len(obj.GetRequirements()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoSimpleaccessscopesClusterLabelSelectorsRequirements(ctx context.Context, tx pgx.Tx, obj *storage.SetBasedLabelSelector_Requirement, simpleaccessscopes_Id string, simpleaccessscopes_ClusterLabelSelectors_idx int, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		simpleaccessscopes_Id,
-		simpleaccessscopes_ClusterLabelSelectors_idx,
-		idx,
-		obj.GetKey(),
-		obj.GetOp(),
-		obj.GetValues(),
-	}
-
-	finalStr := "INSERT INTO simpleaccessscopes_ClusterLabelSelectors_Requirements (simpleaccessscopes_Id, simpleaccessscopes_ClusterLabelSelectors_idx, idx, Key, Op, Values) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(simpleaccessscopes_Id, simpleaccessscopes_ClusterLabelSelectors_idx, idx) DO UPDATE SET simpleaccessscopes_Id = EXCLUDED.simpleaccessscopes_Id, simpleaccessscopes_ClusterLabelSelectors_idx = EXCLUDED.simpleaccessscopes_ClusterLabelSelectors_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Op = EXCLUDED.Op, Values = EXCLUDED.Values"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func insertIntoSimpleaccessscopesNamespaceLabelSelectors(ctx context.Context, tx pgx.Tx, obj *storage.SetBasedLabelSelector, simpleaccessscopes_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		simpleaccessscopes_Id,
-		idx,
-	}
-
-	finalStr := "INSERT INTO simpleaccessscopes_NamespaceLabelSelectors (simpleaccessscopes_Id, idx) VALUES($1, $2) ON CONFLICT(simpleaccessscopes_Id, idx) DO UPDATE SET simpleaccessscopes_Id = EXCLUDED.simpleaccessscopes_Id, idx = EXCLUDED.idx"
+	finalStr := "INSERT INTO simpleaccessscopes_ClusterLabelSelectors (simpleaccessscopeid, idx) VALUES($1, $2) ON CONFLICT(simpleaccessscopeid, idx) DO UPDATE SET simpleaccessscopeid = EXCLUDED.simpleaccessscopeid, idx = EXCLUDED.idx"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -393,32 +342,83 @@ func insertIntoSimpleaccessscopesNamespaceLabelSelectors(ctx context.Context, tx
 	var query string
 
 	for childIdx, child := range obj.GetRequirements() {
-		if err := insertIntoSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx, tx, child, simpleaccessscopes_Id, idx, childIdx); err != nil {
+		if err := insertIntoSimpleaccessscopesClusterLabelSelectorsRequirements(ctx, tx, child, simpleaccessscopeid, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from simpleaccessscopes_NamespaceLabelSelectors_Requirements where simpleaccessscopes_Id = $1 AND simpleaccessscopes_NamespaceLabelSelectors_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, simpleaccessscopes_Id, idx, len(obj.GetRequirements()))
+	query = "delete from simpleaccessscopes_ClusterLabelSelectors_Requirements where simpleaccessscopeid = $1 AND setbasedlabelselectoridx = $2 AND idx >= $3"
+	_, err = tx.Exec(ctx, query, simpleaccessscopeid, idx, len(obj.GetRequirements()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx context.Context, tx pgx.Tx, obj *storage.SetBasedLabelSelector_Requirement, simpleaccessscopes_Id string, simpleaccessscopes_NamespaceLabelSelectors_idx int, idx int) error {
+func insertIntoSimpleaccessscopesClusterLabelSelectorsRequirements(ctx context.Context, tx pgx.Tx, obj *storage.SetBasedLabelSelector_Requirement, simpleaccessscopeid string, setbasedlabelselectoridx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		simpleaccessscopes_Id,
-		simpleaccessscopes_NamespaceLabelSelectors_idx,
+		simpleaccessscopeid,
+		setbasedlabelselectoridx,
 		idx,
 		obj.GetKey(),
 		obj.GetOp(),
 		obj.GetValues(),
 	}
 
-	finalStr := "INSERT INTO simpleaccessscopes_NamespaceLabelSelectors_Requirements (simpleaccessscopes_Id, simpleaccessscopes_NamespaceLabelSelectors_idx, idx, Key, Op, Values) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(simpleaccessscopes_Id, simpleaccessscopes_NamespaceLabelSelectors_idx, idx) DO UPDATE SET simpleaccessscopes_Id = EXCLUDED.simpleaccessscopes_Id, simpleaccessscopes_NamespaceLabelSelectors_idx = EXCLUDED.simpleaccessscopes_NamespaceLabelSelectors_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Op = EXCLUDED.Op, Values = EXCLUDED.Values"
+	finalStr := "INSERT INTO simpleaccessscopes_ClusterLabelSelectors_Requirements (simpleaccessscopeid, setbasedlabelselectoridx, idx, key, op, values) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(simpleaccessscopeid, setbasedlabelselectoridx, idx) DO UPDATE SET simpleaccessscopeid = EXCLUDED.simpleaccessscopeid, setbasedlabelselectoridx = EXCLUDED.setbasedlabelselectoridx, idx = EXCLUDED.idx, key = EXCLUDED.key, op = EXCLUDED.op, values = EXCLUDED.values"
+	_, err := tx.Exec(ctx, finalStr, values...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func insertIntoSimpleaccessscopesNamespaceLabelSelectors(ctx context.Context, tx pgx.Tx, obj *storage.SetBasedLabelSelector, simpleaccessscopeid string, idx int) error {
+
+	values := []interface{}{
+		// parent primary keys start
+		simpleaccessscopeid,
+		idx,
+	}
+
+	finalStr := "INSERT INTO simpleaccessscopes_NamespaceLabelSelectors (simpleaccessscopeid, idx) VALUES($1, $2) ON CONFLICT(simpleaccessscopeid, idx) DO UPDATE SET simpleaccessscopeid = EXCLUDED.simpleaccessscopeid, idx = EXCLUDED.idx"
+	_, err := tx.Exec(ctx, finalStr, values...)
+	if err != nil {
+		return err
+	}
+
+	var query string
+
+	for childIdx, child := range obj.GetRequirements() {
+		if err := insertIntoSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx, tx, child, simpleaccessscopeid, idx, childIdx); err != nil {
+			return err
+		}
+	}
+
+	query = "delete from simpleaccessscopes_NamespaceLabelSelectors_Requirements where simpleaccessscopeid = $1 AND setbasedlabelselectoridx = $2 AND idx >= $3"
+	_, err = tx.Exec(ctx, query, simpleaccessscopeid, idx, len(obj.GetRequirements()))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func insertIntoSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx context.Context, tx pgx.Tx, obj *storage.SetBasedLabelSelector_Requirement, simpleaccessscopeid string, setbasedlabelselectoridx int, idx int) error {
+
+	values := []interface{}{
+		// parent primary keys start
+		simpleaccessscopeid,
+		setbasedlabelselectoridx,
+		idx,
+		obj.GetKey(),
+		obj.GetOp(),
+		obj.GetValues(),
+	}
+
+	finalStr := "INSERT INTO simpleaccessscopes_NamespaceLabelSelectors_Requirements (simpleaccessscopeid, setbasedlabelselectoridx, idx, key, op, values) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(simpleaccessscopeid, setbasedlabelselectoridx, idx) DO UPDATE SET simpleaccessscopeid = EXCLUDED.simpleaccessscopeid, setbasedlabelselectoridx = EXCLUDED.setbasedlabelselectoridx, idx = EXCLUDED.idx, key = EXCLUDED.key, op = EXCLUDED.op, values = EXCLUDED.values"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -514,7 +514,7 @@ func (s *storeImpl) copyFromSimpleaccessscopes(ctx context.Context, tx pgx.Tx, o
 	return err
 }
 
-func (s *storeImpl) copyFromSimpleaccessscopesIncludedNamespaces(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, objs ...*storage.SimpleAccessScope_Rules_Namespace) error {
+func (s *storeImpl) copyFromSimpleaccessscopesIncludedNamespaces(ctx context.Context, tx pgx.Tx, simpleaccessscopeid string, objs ...*storage.SimpleAccessScope_Rules_Namespace) error {
 
 	inputRows := [][]interface{}{}
 
@@ -522,7 +522,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesIncludedNamespaces(ctx context.Con
 
 	copyCols := []string{
 
-		"simpleaccessscopes_id",
+		"simpleaccessscopeid",
 
 		"idx",
 
@@ -537,7 +537,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesIncludedNamespaces(ctx context.Con
 
 		inputRows = append(inputRows, []interface{}{
 
-			simpleaccessscopes_Id,
+			simpleaccessscopeid,
 
 			idx,
 
@@ -565,7 +565,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesIncludedNamespaces(ctx context.Con
 	return err
 }
 
-func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectors(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, objs ...*storage.SetBasedLabelSelector) error {
+func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectors(ctx context.Context, tx pgx.Tx, simpleaccessscopeid string, objs ...*storage.SetBasedLabelSelector) error {
 
 	inputRows := [][]interface{}{}
 
@@ -573,7 +573,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectors(ctx context.
 
 	copyCols := []string{
 
-		"simpleaccessscopes_id",
+		"simpleaccessscopeid",
 
 		"idx",
 	}
@@ -584,7 +584,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectors(ctx context.
 
 		inputRows = append(inputRows, []interface{}{
 
-			simpleaccessscopes_Id,
+			simpleaccessscopeid,
 
 			idx,
 		})
@@ -607,7 +607,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectors(ctx context.
 
 	for idx, obj := range objs {
 
-		if err = s.copyFromSimpleaccessscopesClusterLabelSelectorsRequirements(ctx, tx, simpleaccessscopes_Id, idx, obj.GetRequirements()...); err != nil {
+		if err = s.copyFromSimpleaccessscopesClusterLabelSelectorsRequirements(ctx, tx, simpleaccessscopeid, idx, obj.GetRequirements()...); err != nil {
 			return err
 		}
 	}
@@ -615,7 +615,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectors(ctx context.
 	return err
 }
 
-func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectorsRequirements(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, simpleaccessscopes_ClusterLabelSelectors_idx int, objs ...*storage.SetBasedLabelSelector_Requirement) error {
+func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectorsRequirements(ctx context.Context, tx pgx.Tx, simpleaccessscopeid string, setbasedlabelselectoridx int, objs ...*storage.SetBasedLabelSelector_Requirement) error {
 
 	inputRows := [][]interface{}{}
 
@@ -623,9 +623,9 @@ func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectorsRequirements(
 
 	copyCols := []string{
 
-		"simpleaccessscopes_id",
+		"simpleaccessscopeid",
 
-		"simpleaccessscopes_clusterlabelselectors_idx",
+		"setbasedlabelselectoridx",
 
 		"idx",
 
@@ -642,9 +642,9 @@ func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectorsRequirements(
 
 		inputRows = append(inputRows, []interface{}{
 
-			simpleaccessscopes_Id,
+			simpleaccessscopeid,
 
-			simpleaccessscopes_ClusterLabelSelectors_idx,
+			setbasedlabelselectoridx,
 
 			idx,
 
@@ -674,7 +674,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesClusterLabelSelectorsRequirements(
 	return err
 }
 
-func (s *storeImpl) copyFromSimpleaccessscopesNamespaceLabelSelectors(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, objs ...*storage.SetBasedLabelSelector) error {
+func (s *storeImpl) copyFromSimpleaccessscopesNamespaceLabelSelectors(ctx context.Context, tx pgx.Tx, simpleaccessscopeid string, objs ...*storage.SetBasedLabelSelector) error {
 
 	inputRows := [][]interface{}{}
 
@@ -682,7 +682,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesNamespaceLabelSelectors(ctx contex
 
 	copyCols := []string{
 
-		"simpleaccessscopes_id",
+		"simpleaccessscopeid",
 
 		"idx",
 	}
@@ -693,7 +693,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesNamespaceLabelSelectors(ctx contex
 
 		inputRows = append(inputRows, []interface{}{
 
-			simpleaccessscopes_Id,
+			simpleaccessscopeid,
 
 			idx,
 		})
@@ -716,7 +716,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesNamespaceLabelSelectors(ctx contex
 
 	for idx, obj := range objs {
 
-		if err = s.copyFromSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx, tx, simpleaccessscopes_Id, idx, obj.GetRequirements()...); err != nil {
+		if err = s.copyFromSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx, tx, simpleaccessscopeid, idx, obj.GetRequirements()...); err != nil {
 			return err
 		}
 	}
@@ -724,7 +724,7 @@ func (s *storeImpl) copyFromSimpleaccessscopesNamespaceLabelSelectors(ctx contex
 	return err
 }
 
-func (s *storeImpl) copyFromSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx context.Context, tx pgx.Tx, simpleaccessscopes_Id string, simpleaccessscopes_NamespaceLabelSelectors_idx int, objs ...*storage.SetBasedLabelSelector_Requirement) error {
+func (s *storeImpl) copyFromSimpleaccessscopesNamespaceLabelSelectorsRequirements(ctx context.Context, tx pgx.Tx, simpleaccessscopeid string, setbasedlabelselectoridx int, objs ...*storage.SetBasedLabelSelector_Requirement) error {
 
 	inputRows := [][]interface{}{}
 
@@ -732,9 +732,9 @@ func (s *storeImpl) copyFromSimpleaccessscopesNamespaceLabelSelectorsRequirement
 
 	copyCols := []string{
 
-		"simpleaccessscopes_id",
+		"simpleaccessscopeid",
 
-		"simpleaccessscopes_namespacelabelselectors_idx",
+		"setbasedlabelselectoridx",
 
 		"idx",
 
@@ -751,9 +751,9 @@ func (s *storeImpl) copyFromSimpleaccessscopesNamespaceLabelSelectorsRequirement
 
 		inputRows = append(inputRows, []interface{}{
 
-			simpleaccessscopes_Id,
+			simpleaccessscopeid,
 
-			simpleaccessscopes_NamespaceLabelSelectors_idx,
+			setbasedlabelselectoridx,
 
 			idx,
 

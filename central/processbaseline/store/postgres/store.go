@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "processbaselines"
 	countStmt  = "SELECT COUNT(*) FROM processbaselines"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM processbaselines WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM processbaselines WHERE id = $1)"
 
-	getStmt     = "SELECT serialized FROM processbaselines WHERE Id = $1"
-	deleteStmt  = "DELETE FROM processbaselines WHERE Id = $1"
+	getStmt     = "SELECT serialized FROM processbaselines WHERE id = $1"
+	deleteStmt  = "DELETE FROM processbaselines WHERE id = $1"
 	walkStmt    = "SELECT serialized FROM processbaselines"
-	getIDsStmt  = "SELECT Id FROM processbaselines"
-	getManyStmt = "SELECT serialized FROM processbaselines WHERE Id = ANY($1::text[])"
+	getIDsStmt  = "SELECT id FROM processbaselines"
+	getManyStmt = "SELECT serialized FROM processbaselines WHERE id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM processbaselines WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM processbaselines WHERE id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -73,17 +73,17 @@ type storeImpl struct {
 func createTableProcessbaselines(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists processbaselines (
-    Id varchar,
-    Key_DeploymentId varchar,
-    Key_ContainerName varchar,
-    Key_ClusterId varchar,
-    Key_Namespace varchar,
-    Created timestamp,
-    UserLockedTimestamp timestamp,
-    StackRoxLockedTimestamp timestamp,
-    LastUpdate timestamp,
+    id varchar,
+    key_deploymentid varchar,
+    key_containername varchar,
+    key_clusterid varchar,
+    key_namespace varchar,
+    created timestamp,
+    userlockedtimestamp timestamp,
+    stackroxlockedtimestamp timestamp,
+    lastupdate timestamp,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(id)
 )
 `
 
@@ -106,12 +106,12 @@ create table if not exists processbaselines (
 func createTableProcessbaselinesElements(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists processbaselines_Elements (
-    processbaselines_Id varchar,
+    processbaselineid varchar,
     idx integer,
-    Element_ProcessName varchar,
-    Auto bool,
-    PRIMARY KEY(processbaselines_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (processbaselines_Id) REFERENCES processbaselines(Id) ON DELETE CASCADE
+    element_processname varchar,
+    auto bool,
+    PRIMARY KEY(processbaselineid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (processbaselineid) REFERENCES processbaselines(id) ON DELETE CASCADE
 )
 `
 
@@ -135,12 +135,12 @@ create table if not exists processbaselines_Elements (
 func createTableProcessbaselinesElementGraveyard(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists processbaselines_ElementGraveyard (
-    processbaselines_Id varchar,
+    processbaselineid varchar,
     idx integer,
-    Element_ProcessName varchar,
-    Auto bool,
-    PRIMARY KEY(processbaselines_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (processbaselines_Id) REFERENCES processbaselines(Id) ON DELETE CASCADE
+    element_processname varchar,
+    auto bool,
+    PRIMARY KEY(processbaselineid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (processbaselineid) REFERENCES processbaselines(id) ON DELETE CASCADE
 )
 `
 
@@ -182,7 +182,7 @@ func insertIntoProcessbaselines(ctx context.Context, tx pgx.Tx, obj *storage.Pro
 		serialized,
 	}
 
-	finalStr := "INSERT INTO processbaselines (Id, Key_DeploymentId, Key_ContainerName, Key_ClusterId, Key_Namespace, Created, UserLockedTimestamp, StackRoxLockedTimestamp, LastUpdate, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ContainerName = EXCLUDED.Key_ContainerName, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace, Created = EXCLUDED.Created, UserLockedTimestamp = EXCLUDED.UserLockedTimestamp, StackRoxLockedTimestamp = EXCLUDED.StackRoxLockedTimestamp, LastUpdate = EXCLUDED.LastUpdate, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO processbaselines (id, key_deploymentid, key_containername, key_clusterid, key_namespace, created, userlockedtimestamp, stackroxlockedtimestamp, lastupdate, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, key_deploymentid = EXCLUDED.key_deploymentid, key_containername = EXCLUDED.key_containername, key_clusterid = EXCLUDED.key_clusterid, key_namespace = EXCLUDED.key_namespace, created = EXCLUDED.created, userlockedtimestamp = EXCLUDED.userlockedtimestamp, stackroxlockedtimestamp = EXCLUDED.stackroxlockedtimestamp, lastupdate = EXCLUDED.lastupdate, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -196,7 +196,7 @@ func insertIntoProcessbaselines(ctx context.Context, tx pgx.Tx, obj *storage.Pro
 		}
 	}
 
-	query = "delete from processbaselines_Elements where processbaselines_Id = $1 AND idx >= $2"
+	query = "delete from processbaselines_Elements where processbaselineid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetElements()))
 	if err != nil {
 		return err
@@ -207,7 +207,7 @@ func insertIntoProcessbaselines(ctx context.Context, tx pgx.Tx, obj *storage.Pro
 		}
 	}
 
-	query = "delete from processbaselines_ElementGraveyard where processbaselines_Id = $1 AND idx >= $2"
+	query = "delete from processbaselines_ElementGraveyard where processbaselineid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetElementGraveyard()))
 	if err != nil {
 		return err
@@ -215,17 +215,17 @@ func insertIntoProcessbaselines(ctx context.Context, tx pgx.Tx, obj *storage.Pro
 	return nil
 }
 
-func insertIntoProcessbaselinesElements(ctx context.Context, tx pgx.Tx, obj *storage.BaselineElement, processbaselines_Id string, idx int) error {
+func insertIntoProcessbaselinesElements(ctx context.Context, tx pgx.Tx, obj *storage.BaselineElement, processbaselineid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		processbaselines_Id,
+		processbaselineid,
 		idx,
 		obj.GetElement().GetProcessName(),
 		obj.GetAuto(),
 	}
 
-	finalStr := "INSERT INTO processbaselines_Elements (processbaselines_Id, idx, Element_ProcessName, Auto) VALUES($1, $2, $3, $4) ON CONFLICT(processbaselines_Id, idx) DO UPDATE SET processbaselines_Id = EXCLUDED.processbaselines_Id, idx = EXCLUDED.idx, Element_ProcessName = EXCLUDED.Element_ProcessName, Auto = EXCLUDED.Auto"
+	finalStr := "INSERT INTO processbaselines_Elements (processbaselineid, idx, element_processname, auto) VALUES($1, $2, $3, $4) ON CONFLICT(processbaselineid, idx) DO UPDATE SET processbaselineid = EXCLUDED.processbaselineid, idx = EXCLUDED.idx, element_processname = EXCLUDED.element_processname, auto = EXCLUDED.auto"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -234,17 +234,17 @@ func insertIntoProcessbaselinesElements(ctx context.Context, tx pgx.Tx, obj *sto
 	return nil
 }
 
-func insertIntoProcessbaselinesElementGraveyard(ctx context.Context, tx pgx.Tx, obj *storage.BaselineElement, processbaselines_Id string, idx int) error {
+func insertIntoProcessbaselinesElementGraveyard(ctx context.Context, tx pgx.Tx, obj *storage.BaselineElement, processbaselineid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		processbaselines_Id,
+		processbaselineid,
 		idx,
 		obj.GetElement().GetProcessName(),
 		obj.GetAuto(),
 	}
 
-	finalStr := "INSERT INTO processbaselines_ElementGraveyard (processbaselines_Id, idx, Element_ProcessName, Auto) VALUES($1, $2, $3, $4) ON CONFLICT(processbaselines_Id, idx) DO UPDATE SET processbaselines_Id = EXCLUDED.processbaselines_Id, idx = EXCLUDED.idx, Element_ProcessName = EXCLUDED.Element_ProcessName, Auto = EXCLUDED.Auto"
+	finalStr := "INSERT INTO processbaselines_ElementGraveyard (processbaselineid, idx, element_processname, auto) VALUES($1, $2, $3, $4) ON CONFLICT(processbaselineid, idx) DO UPDATE SET processbaselineid = EXCLUDED.processbaselineid, idx = EXCLUDED.idx, element_processname = EXCLUDED.element_processname, auto = EXCLUDED.auto"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -357,7 +357,7 @@ func (s *storeImpl) copyFromProcessbaselines(ctx context.Context, tx pgx.Tx, obj
 	return err
 }
 
-func (s *storeImpl) copyFromProcessbaselinesElements(ctx context.Context, tx pgx.Tx, processbaselines_Id string, objs ...*storage.BaselineElement) error {
+func (s *storeImpl) copyFromProcessbaselinesElements(ctx context.Context, tx pgx.Tx, processbaselineid string, objs ...*storage.BaselineElement) error {
 
 	inputRows := [][]interface{}{}
 
@@ -365,7 +365,7 @@ func (s *storeImpl) copyFromProcessbaselinesElements(ctx context.Context, tx pgx
 
 	copyCols := []string{
 
-		"processbaselines_id",
+		"processbaselineid",
 
 		"idx",
 
@@ -380,7 +380,7 @@ func (s *storeImpl) copyFromProcessbaselinesElements(ctx context.Context, tx pgx
 
 		inputRows = append(inputRows, []interface{}{
 
-			processbaselines_Id,
+			processbaselineid,
 
 			idx,
 
@@ -408,7 +408,7 @@ func (s *storeImpl) copyFromProcessbaselinesElements(ctx context.Context, tx pgx
 	return err
 }
 
-func (s *storeImpl) copyFromProcessbaselinesElementGraveyard(ctx context.Context, tx pgx.Tx, processbaselines_Id string, objs ...*storage.BaselineElement) error {
+func (s *storeImpl) copyFromProcessbaselinesElementGraveyard(ctx context.Context, tx pgx.Tx, processbaselineid string, objs ...*storage.BaselineElement) error {
 
 	inputRows := [][]interface{}{}
 
@@ -416,7 +416,7 @@ func (s *storeImpl) copyFromProcessbaselinesElementGraveyard(ctx context.Context
 
 	copyCols := []string{
 
-		"processbaselines_id",
+		"processbaselineid",
 
 		"idx",
 
@@ -431,7 +431,7 @@ func (s *storeImpl) copyFromProcessbaselinesElementGraveyard(ctx context.Context
 
 		inputRows = append(inputRows, []interface{}{
 
-			processbaselines_Id,
+			processbaselineid,
 
 			idx,
 

@@ -22,15 +22,15 @@ import (
 const (
 	baseTable  = "processwhitelistresults"
 	countStmt  = "SELECT COUNT(*) FROM processwhitelistresults"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM processwhitelistresults WHERE DeploymentId = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM processwhitelistresults WHERE deploymentid = $1)"
 
-	getStmt     = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = $1"
-	deleteStmt  = "DELETE FROM processwhitelistresults WHERE DeploymentId = $1"
+	getStmt     = "SELECT serialized FROM processwhitelistresults WHERE deploymentid = $1"
+	deleteStmt  = "DELETE FROM processwhitelistresults WHERE deploymentid = $1"
 	walkStmt    = "SELECT serialized FROM processwhitelistresults"
-	getIDsStmt  = "SELECT DeploymentId FROM processwhitelistresults"
-	getManyStmt = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
+	getIDsStmt  = "SELECT deploymentid FROM processwhitelistresults"
+	getManyStmt = "SELECT serialized FROM processwhitelistresults WHERE deploymentid = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM processwhitelistresults WHERE deploymentid = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -51,11 +51,11 @@ func init() {
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, deploymentId string) (bool, error)
-	Get(ctx context.Context, deploymentId string) (*storage.ProcessBaselineResults, bool, error)
+	Exists(ctx context.Context, deploymentid string) (bool, error)
+	Get(ctx context.Context, deploymentid string) (*storage.ProcessBaselineResults, bool, error)
 	Upsert(ctx context.Context, obj *storage.ProcessBaselineResults) error
 	UpsertMany(ctx context.Context, objs []*storage.ProcessBaselineResults) error
-	Delete(ctx context.Context, deploymentId string) error
+	Delete(ctx context.Context, deploymentid string) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ProcessBaselineResults, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
@@ -73,11 +73,11 @@ type storeImpl struct {
 func createTableProcesswhitelistresults(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists processwhitelistresults (
-    DeploymentId varchar,
-    ClusterId varchar,
-    Namespace varchar,
+    deploymentid varchar,
+    clusterid varchar,
+    namespace varchar,
     serialized bytea,
-    PRIMARY KEY(DeploymentId)
+    PRIMARY KEY(deploymentid)
 )
 `
 
@@ -99,13 +99,13 @@ create table if not exists processwhitelistresults (
 func createTableProcesswhitelistresultsBaselineStatuses(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists processwhitelistresults_BaselineStatuses (
-    processwhitelistresults_DeploymentId varchar,
+    processbaselineresultsdeploymentid varchar,
     idx integer,
-    ContainerName varchar,
-    BaselineStatus integer,
-    AnomalousProcessesExecuted bool,
-    PRIMARY KEY(processwhitelistresults_DeploymentId, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (processwhitelistresults_DeploymentId) REFERENCES processwhitelistresults(DeploymentId) ON DELETE CASCADE
+    containername varchar,
+    baselinestatus integer,
+    anomalousprocessesexecuted bool,
+    PRIMARY KEY(processbaselineresultsdeploymentid, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (processbaselineresultsdeploymentid) REFERENCES processwhitelistresults(deploymentid) ON DELETE CASCADE
 )
 `
 
@@ -141,7 +141,7 @@ func insertIntoProcesswhitelistresults(ctx context.Context, tx pgx.Tx, obj *stor
 		serialized,
 	}
 
-	finalStr := "INSERT INTO processwhitelistresults (DeploymentId, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO processwhitelistresults (deploymentid, clusterid, namespace, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(deploymentid) DO UPDATE SET deploymentid = EXCLUDED.deploymentid, clusterid = EXCLUDED.clusterid, namespace = EXCLUDED.namespace, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -155,7 +155,7 @@ func insertIntoProcesswhitelistresults(ctx context.Context, tx pgx.Tx, obj *stor
 		}
 	}
 
-	query = "delete from processwhitelistresults_BaselineStatuses where processwhitelistresults_DeploymentId = $1 AND idx >= $2"
+	query = "delete from processwhitelistresults_BaselineStatuses where processbaselineresultsdeploymentid = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetDeploymentId(), len(obj.GetBaselineStatuses()))
 	if err != nil {
 		return err
@@ -163,18 +163,18 @@ func insertIntoProcesswhitelistresults(ctx context.Context, tx pgx.Tx, obj *stor
 	return nil
 }
 
-func insertIntoProcesswhitelistresultsBaselineStatuses(ctx context.Context, tx pgx.Tx, obj *storage.ContainerNameAndBaselineStatus, processwhitelistresults_DeploymentId string, idx int) error {
+func insertIntoProcesswhitelistresultsBaselineStatuses(ctx context.Context, tx pgx.Tx, obj *storage.ContainerNameAndBaselineStatus, processbaselineresultsdeploymentid string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		processwhitelistresults_DeploymentId,
+		processbaselineresultsdeploymentid,
 		idx,
 		obj.GetContainerName(),
 		obj.GetBaselineStatus(),
 		obj.GetAnomalousProcessesExecuted(),
 	}
 
-	finalStr := "INSERT INTO processwhitelistresults_BaselineStatuses (processwhitelistresults_DeploymentId, idx, ContainerName, BaselineStatus, AnomalousProcessesExecuted) VALUES($1, $2, $3, $4, $5) ON CONFLICT(processwhitelistresults_DeploymentId, idx) DO UPDATE SET processwhitelistresults_DeploymentId = EXCLUDED.processwhitelistresults_DeploymentId, idx = EXCLUDED.idx, ContainerName = EXCLUDED.ContainerName, BaselineStatus = EXCLUDED.BaselineStatus, AnomalousProcessesExecuted = EXCLUDED.AnomalousProcessesExecuted"
+	finalStr := "INSERT INTO processwhitelistresults_BaselineStatuses (processbaselineresultsdeploymentid, idx, containername, baselinestatus, anomalousprocessesexecuted) VALUES($1, $2, $3, $4, $5) ON CONFLICT(processbaselineresultsdeploymentid, idx) DO UPDATE SET processbaselineresultsdeploymentid = EXCLUDED.processbaselineresultsdeploymentid, idx = EXCLUDED.idx, containername = EXCLUDED.containername, baselinestatus = EXCLUDED.baselinestatus, anomalousprocessesexecuted = EXCLUDED.anomalousprocessesexecuted"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -260,7 +260,7 @@ func (s *storeImpl) copyFromProcesswhitelistresults(ctx context.Context, tx pgx.
 	return err
 }
 
-func (s *storeImpl) copyFromProcesswhitelistresultsBaselineStatuses(ctx context.Context, tx pgx.Tx, processwhitelistresults_DeploymentId string, objs ...*storage.ContainerNameAndBaselineStatus) error {
+func (s *storeImpl) copyFromProcesswhitelistresultsBaselineStatuses(ctx context.Context, tx pgx.Tx, processbaselineresultsdeploymentid string, objs ...*storage.ContainerNameAndBaselineStatus) error {
 
 	inputRows := [][]interface{}{}
 
@@ -268,7 +268,7 @@ func (s *storeImpl) copyFromProcesswhitelistresultsBaselineStatuses(ctx context.
 
 	copyCols := []string{
 
-		"processwhitelistresults_deploymentid",
+		"processbaselineresultsdeploymentid",
 
 		"idx",
 
@@ -285,7 +285,7 @@ func (s *storeImpl) copyFromProcesswhitelistresultsBaselineStatuses(ctx context.
 
 		inputRows = append(inputRows, []interface{}{
 
-			processwhitelistresults_DeploymentId,
+			processbaselineresultsdeploymentid,
 
 			idx,
 
@@ -397,10 +397,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, deploymentId string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, deploymentid string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ProcessBaselineResults")
 
-	row := s.db.QueryRow(ctx, existsStmt, deploymentId)
+	row := s.db.QueryRow(ctx, existsStmt, deploymentid)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -409,13 +409,13 @@ func (s *storeImpl) Exists(ctx context.Context, deploymentId string) (bool, erro
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, deploymentId string) (*storage.ProcessBaselineResults, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, deploymentid string) (*storage.ProcessBaselineResults, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ProcessBaselineResults")
 
 	conn, release := s.acquireConn(ctx, ops.Get, "ProcessBaselineResults")
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, deploymentId)
+	row := conn.QueryRow(ctx, getStmt, deploymentid)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -438,13 +438,13 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, deploymentId string) error {
+func (s *storeImpl) Delete(ctx context.Context, deploymentid string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ProcessBaselineResults")
 
 	conn, release := s.acquireConn(ctx, ops.Remove, "ProcessBaselineResults")
 	defer release()
 
-	if _, err := conn.Exec(ctx, deleteStmt, deploymentId); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, deploymentid); err != nil {
 		return err
 	}
 	return nil
