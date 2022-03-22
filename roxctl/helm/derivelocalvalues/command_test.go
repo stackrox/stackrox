@@ -73,7 +73,6 @@ func (suite *helmDeriveLocalValuesTestSuite) TestConstruct() {
 	cases := map[string]struct {
 		passedChartName string
 		chartName       string
-		shouldFail      bool
 	}{
 		"should set chart name": {
 			passedChartName: "test_chartName",
@@ -84,12 +83,7 @@ func (suite *helmDeriveLocalValuesTestSuite) TestConstruct() {
 	for name, c := range cases {
 		suite.Run(name, func() {
 			helmCmd := suite.helmDeriveLocalValuesCommand
-			err := helmCmd.Construct(c.passedChartName)
-			if c.shouldFail {
-				suite.Require().Error(err)
-			} else {
-				suite.Require().NoError(err)
-			}
+			helmCmd.Construct(c.passedChartName)
 			suite.Assert().Equal(c.chartName, helmCmd.chartName)
 		})
 	}

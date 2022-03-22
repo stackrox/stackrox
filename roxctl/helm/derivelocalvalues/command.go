@@ -28,9 +28,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			if err := helmDeriveLocalValuesCmd.Construct(args[0]); err != nil {
-				return err
-			}
+			helmDeriveLocalValuesCmd.Construct(args[0])
+
 			if err := helmDeriveLocalValuesCmd.Validate(); err != nil {
 				return err
 			}
@@ -61,10 +60,8 @@ type helmDeriveLocalValuesCommand struct {
 }
 
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
-func (cfg *helmDeriveLocalValuesCommand) Construct(chartName string) error {
+func (cfg *helmDeriveLocalValuesCommand) Construct(chartName string) {
 	cfg.chartName = chartName
-
-	return nil
 }
 
 // Validate will validate the injected values and check whether it's possible to execute the operation with the
