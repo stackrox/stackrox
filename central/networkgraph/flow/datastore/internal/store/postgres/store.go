@@ -32,7 +32,7 @@ const (
 	deleteStmt = "DELETE FROM networkflow WHERE Props_SrcEntity_Id = $1 AND Props_DstEntity_Id = $2 AND Props_DstPort = $3 AND Props_L4Protocol = $4 AND ClusterId = $5"
 	walkStmt   = "SELECT Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow"
 
-	getSinceStmt    = "SELECT Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE LastSeenTimestamp >= $1 and ClusterId = $2"
+	getSinceStmt    = "SELECT Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE (LastSeenTimestamp >= $1 OR LastSeenTimestamp IS NULL) AND ClusterId = $2"
 	deleteDeploymentStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2))"
 	deleteOrphanByTimeStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND LastSeenTimestamp IS NOT NULL AND LastSeenTimestamp < $2"
 )
@@ -165,7 +165,8 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, las
 		obj.GetProps().GetDstEntity().GetExternalSource().GetDefault(),
 		obj.GetProps().GetDstPort(),
 		obj.GetProps().GetL4Protocol(),
-		pgutils.NilOrTime(lastUpdateTS.GogoProtobuf()),
+		//pgutils.NilOrTime(lastUpdateTS.GogoProtobuf()),
+		pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
 		clusterID,
 	}
 
@@ -210,7 +211,8 @@ func (s *flowStoreImpl) insertMultiNetworkflow(ctx context.Context, tx pgx.Tx, c
 			obj.GetProps().GetDstEntity().GetExternalSource().GetDefault(),
 			obj.GetProps().GetDstPort(),
 			obj.GetProps().GetL4Protocol(),
-			pgutils.NilOrTime(lastUpdateTS.GogoProtobuf()),
+			pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
+			//pgutils.NilOrTime(lastUpdateTS.GogoProtobuf()),
 			clusterID,)
 
 		const rowSQL= "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -334,7 +336,8 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, last
 
 			obj.GetProps().GetL4Protocol(),
 
-			pgutils.NilOrTime(lastUpdateTS.GogoProtobuf()),
+			pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
+			//pgutils.NilOrTime(lastUpdateTS.GogoProtobuf()),
 
 			s.clusterID,
 		})
@@ -469,7 +472,11 @@ func (s *flowStoreImpl) UpsertManyInd(ctx context.Context, lastUpdateTS timestam
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
 
-	return s.insertMany(ctx, lastUpdateTS, flows...)
+	log.Infof("SHREWS -- UpsertFlows => %d", len(flows))
+	log.Info(s.clusterID)
+	log.Info(lastUpdateTS)
+	//return s.insertMany(ctx, lastUpdateTS, flows...)
+	return s.upsert(ctx, lastUpdateTS, flows...)
 }
 
 // Count returns the number of objects in the store
@@ -602,19 +609,24 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
 
+	log.Info("SHREWS => GetAllFlows")
 	var flows []*storage.NetworkFlow
 
 	var rows pgx.Rows
 	var err error
+	var lastUpdateTS *types.Timestamp
+	lastUpdateTS = protoconv.MustConvertTimeToTimestamp(time.Now())
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is null
 	if since == nil {
+		log.Info("SHREWS => GetAllFlows -- walkStmt")
 		rows, err = s.db.Query(ctx, walkStmt)
-
 	} else {
-		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since))
+		log.Info("SHREWS => GetAllFlows -- getSinceStmt")
+		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since), s.clusterID)
 	}
 	if err != nil {
+		log.Infof("SHREWS -- Get All Flows = %s", err)
 		return nil, *since, pgutils.ErrNilIfNoRows(err)
 	}
 	defer rows.Close()
@@ -624,12 +636,17 @@ func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp)
 		var port uint32
 		var protocol storage.L4Protocol
 		var lastTime *time.Time
-		if err := rows.Scan(&srcId, &destId, &port, &protocol, &lastTime); err != nil{
+		var clusterId string
+		if err := rows.Scan(&srcId, &destId, &port, &protocol, &lastTime, &clusterId); err != nil{
 			log.Info(err)
 			return nil, *since, pgutils.ErrNilIfNoRows(err)
 		}
 
 		//log.Infof("SHREWS => %s", srcId)
+		var ts *types.Timestamp
+		if lastTime != nil {
+			ts = protoconv.MustConvertTimeToTimestamp(*lastTime)
+		}
 		flow := &storage.NetworkFlow{
 			Props: &storage.NetworkFlowProperties{
 				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: srcId},
@@ -637,27 +654,33 @@ func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp)
 				DstPort:    port,
 				L4Protocol: protocol,
 			},
-			LastSeenTimestamp: protoconv.MustConvertTimeToTimestamp(*lastTime),
+			LastSeenTimestamp: ts,
+			ClusterId: clusterId,
 		}
 
 		flows = append(flows, flow)
 	}
 
-	return flows, *since, nil
+	return flows, *lastUpdateTS, nil
 }
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
 func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+	log.Info("SHREWS GetMatchingFlows")
+	log.Info(since)
 	var flows []*storage.NetworkFlow
 	var rows pgx.Rows
 	var err error
+	// The entry for this should be present, but make sure we have a sane default if it is not
+	var lastUpdateTS *types.Timestamp
+	lastUpdateTS = protoconv.MustConvertTimeToTimestamp(time.Now())
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is null
 	if since == nil {
 		rows, err = s.db.Query(ctx, walkStmt)
 
 	} else {
-		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since))
+		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since), s.clusterID)
 	}
 
 	if err != nil {
@@ -671,9 +694,16 @@ func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage
 		var port uint32
 		var protocol storage.L4Protocol
 		var lastTime *time.Time
+		var clusterId string
 
-		if err := rows.Scan(&srcId, &destId, &port, &protocol, &lastTime); err != nil {
+		if err := rows.Scan(&srcId, &destId, &port, &protocol, &lastTime, &clusterId); err != nil {
+			log.Info("SHREWS => error in scan of get matching flow")
+			log.Info(err)
 			return nil, *since, err
+		}
+		var ts *types.Timestamp
+		if lastTime != nil {
+			ts = protoconv.MustConvertTimeToTimestamp(*lastTime)
 		}
 		flow := &storage.NetworkFlow{
 			Props: &storage.NetworkFlowProperties{
@@ -682,7 +712,8 @@ func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage
 				DstPort:    port,
 				L4Protocol: protocol,
 			},
-			LastSeenTimestamp: protoconv.MustConvertTimeToTimestamp(*lastTime),
+			LastSeenTimestamp: ts,
+			ClusterId: clusterId,
 		}
 
 		if pred(flow.Props) {
@@ -690,7 +721,7 @@ func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage
 		}
 
 	}
-	return flows, *since, err
+	return flows, *lastUpdateTS, err
 }
 
 // RemoveFlow removes the specified ID from the store
@@ -700,7 +731,7 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 	conn, release := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	defer release()
 
-	if _, err := conn.Exec(ctx, deleteStmt, props.GetSrcEntity().GetId(), props.GetDstEntity().GetId(), props.GetDstPort(), props.GetL4Protocol()); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, props.GetSrcEntity().GetId(), props.GetDstEntity().GetId(), props.GetDstPort(), props.GetL4Protocol(), s.clusterID); err != nil {
 		return err
 	}
 	return nil
