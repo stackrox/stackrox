@@ -421,21 +421,30 @@ function postFormatNestedPolicyFields(policy: Policy): Policy {
     }
 
     const serverPolicy = cloneDeep(policy);
-    // itereating through each value in a policy group in a policy section to format to a flat value string
-    policy.policySections.forEach((policySection, sectionIdx) => {
-        const { policyGroups } = policySection;
-        policyGroups.forEach((policyGroup, groupIdx) => {
-            const { values } = policyGroup;
-            values.forEach((value, valueIdx) => {
-                serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[valueIdx] = {
-                    value: formatValueStr(value as ValueObj, policyGroup.fieldName),
-                };
+    if (policy.criteriaLocked) {
+        serverPolicy.policySections = policy.serverPolicySections;
+    } else {
+        // itereating through each value in a policy group in a policy section to format to a flat value string
+        policy.policySections.forEach((policySection, sectionIdx) => {
+            const { policyGroups } = policySection;
+            policyGroups.forEach((policyGroup, groupIdx) => {
+                const { values } = policyGroup;
+                values.forEach((value, valueIdx) => {
+                    serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
+                        valueIdx
+                    ] = {
+                        value: formatValueStr(value as ValueObj, policyGroup.fieldName),
+                    };
+                });
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                delete serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].fieldKey;
             });
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            delete serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].fieldKey;
         });
-    });
+    }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    delete serverPolicy.serverPolicySections;
     return serverPolicy;
 }
 
@@ -486,29 +495,23 @@ export function postFormatImageSigningPolicyGroup(policy: Policy): Policy {
     }
 
     const serverPolicy = cloneDeep(policy);
-    if (policy.criteriaLocked) {
-        serverPolicy.policySections = policy.serverPolicySections;
-    } else {
-        policy.policySections.forEach((policySection, sectionIdx) => {
-            const { policyGroups } = policySection;
-            policyGroups.forEach((policyGroup, groupIdx) => {
-                const { values } = policyGroup;
-                if (policyGroup.fieldName === imageSigningCriteriaName) {
-                    const { arrayValue } = values[0];
-                    arrayValue?.forEach((value, valueIdx) => {
-                        serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
-                            valueIdx
-                        ] = {
-                            value,
-                        };
-                    });
-                }
-            });
+
+    policy.policySections.forEach((policySection, sectionIdx) => {
+        const { policyGroups } = policySection;
+        policyGroups.forEach((policyGroup, groupIdx) => {
+            const { values } = policyGroup;
+            if (policyGroup.fieldName === imageSigningCriteriaName) {
+                const { arrayValue } = values[0];
+                arrayValue?.forEach((value, valueIdx) => {
+                    serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
+                        valueIdx
+                    ] = {
+                        value,
+                    };
+                });
+            }
         });
-    }
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    delete serverPolicy.serverPolicySections;
+    });
     return serverPolicy;
 }
 
@@ -538,8 +541,6 @@ export function preFormatImageSigningPolicyGroup(policy: Policy): Policy {
 
 export function getClientWizardPolicy(policy): Policy {
     let formattedPolicy = preFormatExclusionField(policy);
-    // order is important here since preFormatNestedPolicyFields adds
-    // serverPolicySections unparsed
     formattedPolicy = preFormatNestedPolicyFields(formattedPolicy);
     formattedPolicy = preFormatImageSigningPolicyGroup(formattedPolicy);
     return formattedPolicy;
@@ -548,8 +549,6 @@ export function getClientWizardPolicy(policy): Policy {
 export function getServerPolicy(policy): Policy {
     let serverPolicy = postFormatExclusionField(policy);
     serverPolicy = postFormatImageSigningPolicyGroup(serverPolicy);
-    // order is important here since postFormatNestedPolicyFields rewrites
-    // policySections with serverPolicySections for default policies
     serverPolicy = postFormatNestedPolicyFields(serverPolicy);
     return serverPolicy;
 }
