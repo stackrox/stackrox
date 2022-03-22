@@ -19,10 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 const (
 	baseTable  = "signatureintegrations"
 	countStmt  = "SELECT COUNT(*) FROM signatureintegrations"
@@ -45,11 +41,8 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
-)
-
-var (
 	schema = walker.Walk(reflect.TypeOf((*storage.SignatureIntegration)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {

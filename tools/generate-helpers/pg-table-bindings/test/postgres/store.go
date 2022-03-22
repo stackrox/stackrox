@@ -19,10 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 const (
 	baseTable  = "singlekey"
 	countStmt  = "SELECT COUNT(*) FROM singlekey"
@@ -45,11 +41,8 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
-)
-
-var (
 	schema = walker.Walk(reflect.TypeOf((*storage.TestSingleKeyStruct)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {

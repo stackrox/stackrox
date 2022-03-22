@@ -19,10 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 const (
 	baseTable  = "cluster_cves"
 	countStmt  = "SELECT COUNT(*) FROM cluster_cves"
@@ -45,11 +41,8 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
-)
-
-var (
 	schema = walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {

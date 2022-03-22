@@ -19,10 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 const (
 	baseTable  = "clusters"
 	countStmt  = "SELECT COUNT(*) FROM clusters"
@@ -35,10 +31,6 @@ const (
 	getManyStmt = "SELECT serialized FROM clusters WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM clusters WHERE Id = ANY($1::text[])"
-=======
-	getStmt    = "SELECT serialized FROM clusters WHERE Id = $1 AND HealthStatus_Id = $2"
-	deleteStmt = "DELETE FROM clusters WHERE Id = $1 AND HealthStatus_Id = $2"
-	walkStmt   = "SELECT serialized FROM clusters"
 
 	batchAfter = 100
 
@@ -49,12 +41,8 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
->>>>>>> 774c5350d (squash and rebase)
-)
-
-var (
 	schema = walker.Walk(reflect.TypeOf((*storage.Cluster)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {
@@ -312,6 +300,10 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 	inputRows := [][]interface{}{}
 
 	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
 
 	copyCols := []string{
 
@@ -696,14 +688,20 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 			serialized,
 		})
 
-		if _, err := tx.Exec(ctx, deleteStmt, obj.GetId(), obj.GetHealthStatus().GetId()); err != nil {
-			return err
-		}
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"clusters"}, copyCols, pgx.CopyFromRows(inputRows))
 

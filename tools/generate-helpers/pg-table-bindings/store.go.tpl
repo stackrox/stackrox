@@ -30,10 +30,6 @@ import (
     "github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
-var (
-    log = logging.LoggerForModule()
-)
-
 const (
         baseTable = "{{.Table}}"
         countStmt = "SELECT COUNT(*) FROM {{.Table}}"
@@ -59,11 +55,8 @@ const (
 )
 
 var (
-    log = logging.LoggerForModule()
-)
-
-var (
     schema = walker.Walk(reflect.TypeOf((*{{.Type}})(nil)), baseTable)
+    log = logging.LoggerForModule()
 )
 
 func init() {
