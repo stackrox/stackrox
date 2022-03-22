@@ -381,6 +381,7 @@ function preFormatNestedPolicyFields(policy: Policy): Policy {
     }
 
     const clientPolicy = cloneDeep(policy);
+    clientPolicy.serverPolicySections = policy.policySections;
     // itreating through each value in a policy group in a policy section to parse value string
     policy.policySections.forEach((policySection, sectionIdx) => {
         const { policyGroups } = policySection;
@@ -405,7 +406,7 @@ export function formatValueStr(valueObj: ValueObj, fieldName: string): string {
     if (nonStandardNumberFields.includes(fieldName)) {
         // TODO: work with API to update contract for returning number comparison fields
         //   until that improves, we short-circuit those fields here
-        valueStr = key !== '=' ? `${key} ${value}` : `${value}`;
+        valueStr = key !== '=' ? `${key}${value}` : `${value}`;
     } else if (source || fieldName === 'Environment Variable') {
         valueStr = `${source || ''}=${key}=${value}`;
     } else if (key) {
@@ -485,22 +486,29 @@ export function postFormatImageSigningPolicyGroup(policy: Policy): Policy {
     }
 
     const serverPolicy = cloneDeep(policy);
-    policy.policySections.forEach((policySection, sectionIdx) => {
-        const { policyGroups } = policySection;
-        policyGroups.forEach((policyGroup, groupIdx) => {
-            const { values } = policyGroup;
-            if (policyGroup.fieldName === imageSigningCriteriaName) {
-                const { arrayValue } = values[0];
-                arrayValue?.forEach((value, valueIdx) => {
-                    serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
-                        valueIdx
-                    ] = {
-                        value,
-                    };
-                });
-            }
+    if (policy.criteriaLocked) {
+        serverPolicy.policySections = policy.serverPolicySections;
+    } else {
+        policy.policySections.forEach((policySection, sectionIdx) => {
+            const { policyGroups } = policySection;
+            policyGroups.forEach((policyGroup, groupIdx) => {
+                const { values } = policyGroup;
+                if (policyGroup.fieldName === imageSigningCriteriaName) {
+                    const { arrayValue } = values[0];
+                    arrayValue?.forEach((value, valueIdx) => {
+                        serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
+                            valueIdx
+                        ] = {
+                            value,
+                        };
+                    });
+                }
+            });
         });
-    });
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        delete serverPolicy.serverPolicySections;
+    }
 
     return serverPolicy;
 }

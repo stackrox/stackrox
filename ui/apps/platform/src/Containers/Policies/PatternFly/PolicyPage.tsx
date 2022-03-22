@@ -56,6 +56,7 @@ const initialPolicy: Policy = {
     SORT_lifecycleStage: '', // For internal use only.
     SORT_enforcement: false, // For internal use only.
     policyVersion: '',
+    serverPolicySections: [],
     policySections: [
         {
             sectionName: 'Policy Section 1',
