@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
@@ -122,7 +123,7 @@ func (suite *scanTestSuite) TestShortCircuitWhenImageExists() {
 }
 
 func (suite *scanTestSuite) TestEnrichImageFailures() {
-	cases := map[string]struct {
+	type testCase struct {
 		scanImg func(ctx context.Context, image *storage.Image,
 			registry registryTypes.Registry) (*scannerV1.GetImageComponentsResponse, error)
 		fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
@@ -130,7 +131,9 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 		getMatchingRegistry    func(image *storage.ImageName) (registryTypes.Registry, error)
 		fakeImageServiceClient *fakeImageServiceClient
 		enrichmentTriggered    bool
-	}{
+	}
+
+	cases := map[string]testCase{
 		"fail getting a matching registry": {
 			fakeImageServiceClient: suite.createMockImageServiceClient(nil, true, false),
 			getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
@@ -171,6 +174,20 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 
 	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
 	suite.Require().NoError(err, "failed creating test image")
+
+	// This will allow us to test this only if the env variable is set. For release builds, this will skip this case
+	// until we have deprecated this feature flag.
+	if features.ImageSignatureVerification.Enabled() {
+		cases["fail enrich image via central"] = testCase{
+			fakeImageServiceClient: suite.createMockImageServiceClient(nil, true, true),
+			getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
+				return &fakeRegistry{fail: false}, nil
+			},
+			scanImg:                  successfulScan,
+			fetchSignaturesWithRetry: successfulFetchSignatures,
+			enrichmentTriggered:      true,
+		}
+	}
 
 	for name, c := range cases {
 		suite.Run(name, func() {
