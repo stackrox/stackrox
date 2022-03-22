@@ -3,7 +3,6 @@ package derivelocalvalues
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -17,27 +16,32 @@ const (
 
 // Command for deriving local values from existing StackRox Kubernetes resources.
 func Command(cliEnvironment environment.Environment) *cobra.Command {
-	cmdCfg := &helmDeriveLocalValuesCommand{env: cliEnvironment}
+	helmDeriveLocalValuesCmd := &helmDeriveLocalValuesCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
 		Use: fmt.Sprintf("derive-local-values --output <path> <%s>", common.MakePrettyChartNameList(supportedCharts...)),
-		Args: cobra.ExactArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return errox.InvalidArgs.New("incorrect number of arguments, see --help for usage information")
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			if err := cmdCfg.Construct(args, cmd); err != nil {
+			if err := helmDeriveLocalValuesCmd.Construct(args[0]); err != nil {
 				return err
 			}
-			if err := cmdCfg.Validate(); err != nil {
+			if err := helmDeriveLocalValuesCmd.Validate(); err != nil {
 				return err
 			}
 
-			return deriveLocalValuesForChart(defaultNamespace, cmdCfg.chartName, cmdCfg.input, cmdCfg.outputPath, cmdCfg.useDirectory)
+			return deriveLocalValuesForChart(defaultNamespace, helmDeriveLocalValuesCmd.chartName, helmDeriveLocalValuesCmd.input, helmDeriveLocalValuesCmd.outputPath, helmDeriveLocalValuesCmd.useDirectory)
 
 		},
 	}
-	c.PersistentFlags().StringVar(&cmdCfg.output, "output", "", "path to output file")
-	c.PersistentFlags().StringVar(&cmdCfg.outputDir, "output-dir", "", "path to output directory")
-	c.PersistentFlags().StringVar(&cmdCfg.input, "input", "", "path to file or directory containing YAML input")
+	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.output, "output", "", "path to output file")
+	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.outputDir, "output-dir", "", "path to output directory")
+	c.PersistentFlags().StringVar(&helmDeriveLocalValuesCmd.input, "input", "", "path to file or directory containing YAML input")
 
 	return c
 }
@@ -54,17 +58,11 @@ type helmDeriveLocalValuesCommand struct {
 	outputPath   string
 	useDirectory bool
 	env          environment.Environment
-	logger       environment.Logger
 }
 
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
 func (cfg *helmDeriveLocalValuesCommand) Construct(chartName string) error {
-	if len(args) != 1 {
-		return errors.New("incorrect number of arguments, see --help for usage information")
-	}
-	cfg.chartName = args[0]
-
-	cfg.logger = cfg.env.Logger()
+	cfg.chartName = chartName
 
 	return nil
 }
@@ -73,13 +71,13 @@ func (cfg *helmDeriveLocalValuesCommand) Construct(chartName string) error {
 // provided values
 func (cfg *helmDeriveLocalValuesCommand) Validate() error {
 	if cfg.output == "" && cfg.outputDir == "" {
-		cfg.logger.ErrfLn(`No output file specified using either "--output" or "--output-dir".`)
-		cfg.logger.ErrfLn(`If the derived Helm configuration should really be written to stdout, please use "--output=-".`)
+		cfg.env.Logger().ErrfLn(`No output file specified using either "--output" or "--output-dir".`)
+		cfg.env.Logger().ErrfLn(`If the derived Helm configuration should really be written to stdout, please use "--output=-".`)
 		return errox.NewErrInvalidArgs("no output file specified")
 	}
 
 	if cfg.output != "" && cfg.outputDir != "" {
-		cfg.logger.ErrfLn(`Specify either "--output" or "--output-dir" but not both.`)
+		cfg.env.Logger().ErrfLn(`Specify either "--output" or "--output-dir" but not both.`)
 		return errox.NewErrInvalidArgs(`invalid arguments "--output" and "--output-dir"`)
 	}
 
