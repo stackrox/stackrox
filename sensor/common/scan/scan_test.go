@@ -153,14 +153,6 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 			},
 			scanImg: failingScan,
 		},
-		"fail fetching signatures": {
-			fakeImageServiceClient: suite.createMockImageServiceClient(nil, true, false),
-			getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
-				return &fakeRegistry{fail: false}, nil
-			},
-			scanImg:                  successfulScan,
-			fetchSignaturesWithRetry: failingFetchSignatures,
-		},
 	}
 
 	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
@@ -177,6 +169,14 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 			scanImg:                  successfulScan,
 			fetchSignaturesWithRetry: successfulFetchSignatures,
 			enrichmentTriggered:      true,
+		}
+		cases["fail fetching signatures"] = testCase{
+			fakeImageServiceClient: suite.createMockImageServiceClient(nil, true, false),
+			getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
+				return &fakeRegistry{fail: false}, nil
+			},
+			scanImg:                  successfulScan,
+			fetchSignaturesWithRetry: failingFetchSignatures,
 		}
 	}
 
