@@ -6,6 +6,7 @@ import navigationSelectors from '../selectors/navigation';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import selectors from '../selectors/index';
+import { selectNamespaceFilters } from '../helpers/networkGraph';
 
 function uploadYAMLFile(fileName, selector) {
     cy.fixture(fileName).then((fileContent) => {
@@ -28,6 +29,9 @@ function navigateToNetworkGraphWithMockedData() {
     cy.route('GET', api.network.networkPoliciesGraph, '@networkPoliciesJson').as('networkPolicies');
 
     cy.visit(networkUrl);
+
+    selectNamespaceFilters('stackrox');
+
     cy.wait('@networkGraph');
     cy.wait('@networkPolicies');
 }
@@ -130,6 +134,8 @@ describe('Network page', () => {
         cy.get(selectors.table.rows).eq(0).click({ force: true });
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton, { timeout: 10000 }).click();
 
+        selectNamespaceFilters('stackrox');
+
         cy.get(networkPageSelectors.networkEntityTabbedOverlay.header, { timeout: 15000 }).should(
             'be.visible'
         );
@@ -146,6 +152,7 @@ describe('Network Deployment Details', () => {
         cy.visit(riskURL);
         cy.get(`${selectors.table.rows}:contains('central')`).click();
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+        selectNamespaceFilters('stackrox');
         cy.get(`${selectors.tab.tabs}:contains('Details')`).click();
         cy.get(`[data-testid="exposure"]:contains('ClusterIP')`);
         cy.get(`[data-testid="level"]:contains('ClusterIP')`);
@@ -174,6 +181,7 @@ describe('Network Policy Simulator', () => {
         }
 
         cy.visit(networkUrl);
+        selectNamespaceFilters('stackrox');
         cy.get(networkPageSelectors.buttons.allowedFilter).click();
         cy.getCytoscape('#cytoscapeContainer').then((cytoscape) => {
             const deployments = getDeployments(cytoscape);
@@ -203,6 +211,7 @@ describe('Network Flows Table', () => {
         cy.visit(riskURL);
         cy.get(`${selectors.table.rows}:contains('central')`).click();
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+        selectNamespaceFilters('stackrox');
         cy.get(`${selectors.tab.tabs}:contains('Network Flows')`).click();
         cy.get(`${selectors.table.th}:contains('Entity')`);
         cy.get(`${selectors.table.th}:contains('Traffic')`);

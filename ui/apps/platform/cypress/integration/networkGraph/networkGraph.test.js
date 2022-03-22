@@ -1,9 +1,13 @@
 import { url as networkUrl, selectors as networkPageSelectors } from '../../constants/NetworkPage';
-import selectors from '../../selectors';
 
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
-import { clickOnNodeByName, filterDeployments, filterNamespaces } from '../../helpers/networkGraph';
+import {
+    clickOnNodeByName,
+    filterDeployments,
+    filterNamespaces,
+    selectNamespaceFilters,
+} from '../../helpers/networkGraph';
 
 describe('Network Deployment Details', () => {
     withAuth();
@@ -23,6 +27,9 @@ describe('Network Deployment Details', () => {
         cy.route('GET', api.network.deployment, '@centralDeploymentJson').as('centralDeployment');
 
         cy.visit(networkUrl);
+
+        selectNamespaceFilters('stackrox');
+
         cy.wait('@networkGraph');
         cy.wait('@networkPolicies');
     });
@@ -49,13 +56,10 @@ describe('Network Graph Search', () => {
     });
 
     it('should filter to show only the deployments from the stackrox namespace and deployments connected to them', () => {
-        const namespaceName = 'stackrox';
-
         cy.visit(networkUrl);
-        cy.wait(['@networkPoliciesGraph', '@networkGraph']);
 
-        cy.get(selectors.search.multiSelectInput).type('Namespace{enter}');
-        cy.get(selectors.search.multiSelectInput).type(`${namespaceName}{enter}`);
+        selectNamespaceFilters('stackrox');
+
         cy.wait(['@networkPoliciesGraph', '@networkGraph']);
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
@@ -67,13 +71,10 @@ describe('Network Graph Search', () => {
     });
 
     it('should filter to show only the stackrox namespace and deployments connected to stackrox namespace', () => {
-        const namespaceName = 'stackrox';
-
         cy.visit(networkUrl);
-        cy.wait(['@networkPoliciesGraph', '@networkGraph']);
 
-        cy.get(selectors.search.multiSelectInput).type('Namespace{enter}');
-        cy.get(selectors.search.multiSelectInput).type(`${namespaceName}{enter}`);
+        selectNamespaceFilters('stackrox', 'kube-system');
+
         cy.wait(['@networkPoliciesGraph', '@networkGraph']);
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
@@ -89,10 +90,14 @@ describe('Network Graph Search', () => {
         const deploymentName = 'central';
 
         cy.visit(networkUrl);
-        cy.wait(['@networkPoliciesGraph', '@networkGraph']);
 
-        cy.get(selectors.search.multiSelectInput).type('Deployment{enter}');
-        cy.get(selectors.search.multiSelectInput).type(`${deploymentName}{enter}`);
+        selectNamespaceFilters('stackrox', 'kube-system');
+
+        cy.get(networkPageSelectors.toolbar.filterSelect).then(([$searchMultiSelect]) => {
+            cy.wrap($searchMultiSelect).type('Deployment{enter}');
+            cy.wrap($searchMultiSelect).type(`${deploymentName}{enter}`);
+        });
+
         cy.wait(['@networkPoliciesGraph', '@networkGraph']);
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
@@ -104,6 +109,29 @@ describe('Network Graph Search', () => {
                 minDeps.push(deployment.data().name);
             });
             expect(minDeps).to.include.members(['central', 'scanner', 'sensor']);
+        });
+    });
+});
+
+describe('Network graph namespace filtering', () => {
+    withAuth();
+
+    // Ensures that the network calls receive fully filtered data (zero nodes) upon
+    // the initial requests and that the data filtering occurs on the server.
+    it('should only receive empty graph data sets when no namespaces are selected', () => {
+        let graphResponse;
+
+        cy.intercept(api.network.networkGraph, (req) => {
+            req.continue((res) => {
+                graphResponse = res.body;
+            });
+        }).as('networkGraph');
+        cy.intercept(api.network.networkPoliciesGraph).as('networkPolicies');
+
+        cy.visit(networkUrl);
+        cy.get('h2').contains('Please select at least one namespace');
+        cy.wait(['@networkPolicies', '@networkGraph']).then(() => {
+            expect(graphResponse.nodes.length).to.equal(0);
         });
     });
 });

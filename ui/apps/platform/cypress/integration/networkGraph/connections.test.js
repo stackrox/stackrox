@@ -1,7 +1,11 @@
 import * as api from '../../constants/apiEndpoints';
 import { url as networkUrl, selectors as networkPageSelectors } from '../../constants/NetworkPage';
 import withAuth from '../../helpers/basicAuth';
-import { mouseOverEdgeByNames, ensureEdgeNotPresent } from '../../helpers/networkGraph';
+import {
+    mouseOverEdgeByNames,
+    ensureEdgeNotPresent,
+    selectNamespaceFilters,
+} from '../../helpers/networkGraph';
 import selectors from '../../selectors/index';
 
 const { cytoscapeContainer } = networkPageSelectors;
@@ -16,6 +20,7 @@ function navigateToNetworkGraphWithMockedData() {
     cy.route('GET', api.network.networkPoliciesGraph, '@networkPoliciesJson').as('networkPolicies');
 
     cy.visit(networkUrl);
+    selectNamespaceFilters('stackrox');
     cy.wait('@networkGraph');
     cy.wait('@networkPolicies');
 }
