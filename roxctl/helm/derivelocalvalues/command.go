@@ -58,7 +58,7 @@ type helmDeriveLocalValuesCommand struct {
 }
 
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
-func (cfg *helmDeriveLocalValuesCommand) Construct(args []string, cmd *cobra.Command) error {
+func (cfg *helmDeriveLocalValuesCommand) Construct(chartName string) error {
 	if len(args) != 1 {
 		return errors.New("incorrect number of arguments, see --help for usage information")
 	}
