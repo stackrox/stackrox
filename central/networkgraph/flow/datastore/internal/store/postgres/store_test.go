@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	//"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -61,8 +60,8 @@ func (s *NetworkflowStoreSuite) TestStore() {
 
 	w := csv.NewWriter(f)
 	ctx := context.Background()
-	//clusterId := "22"
-	clusterId := ""
+	clusterId := "22"
+	//clusterId := ""
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -119,188 +118,165 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundNetworkFlow)
 
-	//var networkFlows []*storage.NetworkFlow
-	//for i := 0; i < 100; i++ {
-	//	networkFlow := &storage.NetworkFlow{}
-	//	s.NoError(testutils.FullInit(networkFlow, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	//	networkFlows = append(networkFlows, networkFlow)
+	var networkFlows []*storage.NetworkFlow
+	for i := 0; i < 100; i++ {
+		networkFlow := &storage.NetworkFlow{}
+		s.NoError(testutils.FullInit(networkFlow, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		networkFlows = append(networkFlows, networkFlow)
+	}
+
+	s.NoError(store.UpsertMany(ctx, timestamp.Now(), networkFlows))
+
+	networkFlowCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(networkFlowCount, 100)
+
+	// been working with 600 but that is slow
+	entityCount := 100
+
+	// Build a few cluster IDs
+	clusters := []string{
+		"cluster_1",
+		"cluster_2",
+		"cluster_3",
+		"cluster_4",
+	}
+
+	// Build a bunch of srcs
+	var srcs []*storage.NetworkEntityInfo
+	for i := 0; i < entityCount; i++ {
+		src := &storage.NetworkEntityInfo{}
+		src.Type = storage.NetworkEntityInfo_DEPLOYMENT
+		src.Id = uuid.NewV4().String()
+		srcs = append(srcs, src)
+	}
+
+	// Build a bunch of destinations
+	var dsts []*storage.NetworkEntityInfo
+	for i := 0; i < entityCount; i++ {
+		dst := &storage.NetworkEntityInfo{}
+		if i % 17 == 0 {
+			dst.Type = storage.NetworkEntityInfo_EXTERNAL_SOURCE
+		} else {
+			dst.Type = storage.NetworkEntityInfo_DEPLOYMENT
+		}
+		dst.Id = uuid.NewV4().String()
+		dsts = append(dsts, dst)
+	}
+
+	// build some ports
+	// seed rand
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	var ports []uint32
+	for i := 0; i < 8; i++ {
+		port :=  r.Int31() % 10000
+		ports = append(ports, uint32(port))
+	}
+
+	// weave them together to create a bunch of network flows
+	var flows []*storage.NetworkFlow
+	var updatedFlows []*storage.NetworkFlow
+	testTime := protoconv.MustConvertTimeToTimestamp(time.Now())
+	for _, src := range srcs {
+		for j, dst := range dsts {
+			for _, port := range ports {
+				//day := (k % 4) * -24
+				clusterId := clusters[j % 4]
+				flow := &storage.NetworkFlow		{
+					Props: &storage.NetworkFlowProperties{
+						SrcEntity:  src,
+						DstEntity:  dst,
+						DstPort:    port,
+						L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					},
+					LastSeenTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
+					ClusterId: clusterId,
+				}
+
+				flows = append(flows, flow)
+
+				if j % 12 == 0 {
+					break
+				}
+			}
+		}
+	}
+
+	testTime = protoconv.MustConvertTimeToTimestamp(time.Now().Add(30))
+	for i, flow := range flows {
+		if i % 37 == 0 {
+			flow.LastSeenTimestamp = testTime
+			updatedFlows = append(updatedFlows, flow)
+		}
+
+	}
+
+	results := [][]string{}
+
+	log.Infof("flows => %d", len(flows))
+	log.Infof("updateflows => %d", len(updatedFlows))
+
+	// redo it and add the network flows through copy
+	log.Info("Copy From")
+	result := []string{}
+	result = append(result, "Copy From")
+	result = append(result, strconv.Itoa(len(flows)))
+	a := time.Now()
+	s.NoError(store.UpsertMany(ctx, timestamp.Now(), flows))
+
+	delta := time.Now().Sub(a)
+	result = append(result, strconv.FormatInt(delta.Milliseconds(), 10))
+	log.Infof("%d", delta.Milliseconds())
+
+	results = append(results, result)
+
+	result = nil
+	a = time.Now()
+	networkFlowCount, err = store.Count(ctx)
+	delta = time.Now().Sub(a)
+	result = append(result, "Count Time")
+	result = append(result, strconv.FormatInt(delta.Milliseconds(), 10))
+	results = append(results, result)
+	log.Infof("Count time => %d", delta.Milliseconds())
+	s.NoError(err)
+	log.Infof("Table Count => %d", networkFlowCount)
+	// redo it and add the network flows through insert many at once
+
+	log.Info("Insert Many")
+	result = []string{}
+	result = append(result, "Insert Many")
+	result = append(result, strconv.Itoa(len(flows)))
+	a = time.Now()
+	s.NoError(store.UpsertFlows(ctx, flows, timestamp.Now()))
+
+	delta = time.Now().Sub(a)
+	result = append(result, strconv.FormatInt(delta.Milliseconds(), 10))
+	log.Infof("%d", delta.Milliseconds())
+
+	results = append(results, result)
+
+	result = nil
+	a = time.Now()
+	networkFlowCount, err = store.Count(ctx)
+	delta = time.Now().Sub(a)
+	result = append(result, "Count Time")
+	result = append(result, strconv.FormatInt(delta.Milliseconds(), 10))
+	results = append(results, result)
+	log.Infof("Count time => %d", delta.Milliseconds())
+	s.NoError(err)
+	log.Infof("Table Count => %d", networkFlowCount)
+
+
+	flowsSince, _, err := store.GetAllFlows(ctx, protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)))//protoconv.+974MustConvertTimeToTimestamp(time.Now()))
+	//log.Info("Flows since is weird")
+	//for _, flow := range flowsSince {
+	//	log.Info(flow)
+	//	log.Info(protoconv.ConvertTimestampToTimeOrNow(flow.LastSeenTimestamp))
 	//}
-	//
-	//s.NoError(store.UpsertMany(ctx, timestamp.Now(), networkFlows))
-	//
-	//networkFlowCount, err = store.Count(ctx)
-	//s.NoError(err)
-	//s.Equal(networkFlowCount, 100)
-	//
-	//// been working with 600 but that is slow
-	//entityCount := 6
-	//
-	//// Build a few cluster IDs
-	//clusters := []string{
-	//	"cluster_1",
-	//	"cluster_2",
-	//	"cluster_3",
-	//	"cluster_4",
-	//}
-	//
-	//// Build a bunch of srcs
-	//var srcs []*storage.NetworkEntityInfo
-	//for i := 0; i < entityCount; i++ {
-	//	src := &storage.NetworkEntityInfo{}
-	//	src.Type = storage.NetworkEntityInfo_DEPLOYMENT
-	//	src.Id = uuid.NewV4().String()
-	//	srcs = append(srcs, src)
-	//}
-	//
-	//// Build a bunch of destinations
-	//var dsts []*storage.NetworkEntityInfo
-	//for i := 0; i < entityCount; i++ {
-	//	dst := &storage.NetworkEntityInfo{}
-	//	if i % 17 == 0 {
-	//		dst.Type = storage.NetworkEntityInfo_EXTERNAL_SOURCE
-	//	} else {
-	//		dst.Type = storage.NetworkEntityInfo_DEPLOYMENT
-	//	}
-	//	dst.Id = uuid.NewV4().String()
-	//	dsts = append(dsts, dst)
-	//}
-	//
-	//// build some ports
-	//// seed rand
-	//r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	//var ports []uint32
-	//for i := 0; i < 8; i++ {
-	//	port :=  r.Int31() % 10000
-	//	ports = append(ports, uint32(port))
-	//}
-	//
-	//// weave them together to create a bunch of network flows
-	//var flows []*storage.NetworkFlow
-	//var updatedFlows []*storage.NetworkFlow
-	////var testTime *types.Timestamp
-	//testTime := protoconv.MustConvertTimeToTimestamp(time.Now())
-	//for _, src := range srcs {
-	//	for j, dst := range dsts {
-	//		for _, port := range ports {
-	//			//day := (k % 4) * -24
-	//			clusterId := clusters[j % 4]
-	//			flow := &storage.NetworkFlow		{
-	//				Props: &storage.NetworkFlowProperties{
-	//					SrcEntity:  src,
-	//					DstEntity:  dst,
-	//					DstPort:    port,
-	//					L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-	//				},
-	//				LastSeenTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
-	//				ClusterId: clusterId,
-	//			}
-	//
-	//			flows = append(flows, flow)
-	//
-	//			if j % 12 == 0 {
-	//				break
-	//			}
-	//		}
-	//	}
-	//}
-	//
-	//testTime = protoconv.MustConvertTimeToTimestamp(time.Now().Add(30))
-	//for i, flow := range flows {
-	//	if i % 37 == 0 {
-	//		flow.LastSeenTimestamp = testTime
-	//		updatedFlows = append(updatedFlows, flow)
-	//	}
-	//
-	//}
-	//
-	//results := [][]string{}
-	//
-	//log.Infof("flows => %d", len(flows))
-	//log.Infof("updateflows => %d", len(updatedFlows))
-	//// add the network flows through insert
-	//log.Info("Upsert Many individually 1 transaction")
-	//result := []string{}
-	//result = append(result, "Copy From")
-	//result = append(result, strconv.Itoa(len(flows)))
-	//a := time.Now()
-	//s.NoError(store.UpsertManyInd(ctx, timestamp.Now(), flows))
-	//
-	//delta := time.Now().Sub(a)
-	//result = append(result, strconv.FormatInt(delta.Milliseconds(), 10))
-	//log.Infof("%d", delta.Milliseconds())
-	//
-	//results = append(results, result)
-	//
-	//result = nil
-	//a = time.Now()
-	//networkFlowCount, err = store.Count(ctx)
-	//delta = time.Now().Sub(a)
-	//result = append(result, "Count Time")
-	//result = append(result, strconv.FormatInt(delta.Milliseconds(), 10))
-	//results = append(results, result)
-	//log.Infof("Count time => %d", delta.Milliseconds())
-	//
-	//// redo it and add the network flows through copy
-	//log.Info("Copy From")
-	//result = []string{}
-	//result = append(result, "Copy From")
-	//result = append(result, strconv.Itoa(len(flows)))
-	//a = time.Now()
-	//s.NoError(store.UpsertMany(ctx, timestamp.Now(), flows))
-	//
-	//delta = time.Now().Sub(a)
-	//result = append(result, strconv.FormatInt(delta.Milliseconds(), 10))
-	//log.Infof("%d", delta.Milliseconds())
-	//
-	//results = append(results, result)
-	//
-	//result = nil
-	//a = time.Now()
-	//networkFlowCount, err = store.Count(ctx)
-	//delta = time.Now().Sub(a)
-	//result = append(result, "Count Time")
-	//result = append(result, strconv.FormatInt(delta.Milliseconds(), 10))
-	//results = append(results, result)
-	//log.Infof("Count time => %d", delta.Milliseconds())
-	//s.NoError(err)
-	//log.Infof("Table Count => %d", networkFlowCount)
-	//// redo it and add the network flows through insert many at once
-	//
-	//log.Info("Insert Many")
-	//result = []string{}
-	//result = append(result, "Insert Many")
-	//result = append(result, strconv.Itoa(len(flows)))
-	//a = time.Now()
-	//s.NoError(store.UpsertFlows(ctx, flows, timestamp.Now()))
-	//
-	//delta = time.Now().Sub(a)
-	//result = append(result, strconv.FormatInt(delta.Milliseconds(), 10))
-	//log.Infof("%d", delta.Milliseconds())
-	//
-	//results = append(results, result)
-	//
-	//result = nil
-	//a = time.Now()
-	//networkFlowCount, err = store.Count(ctx)
-	//delta = time.Now().Sub(a)
-	//result = append(result, "Count Time")
-	//result = append(result, strconv.FormatInt(delta.Milliseconds(), 10))
-	//results = append(results, result)
-	//log.Infof("Count time => %d", delta.Milliseconds())
-	//s.NoError(err)
-	//log.Infof("Table Count => %d", networkFlowCount)
-	//
-	//
-	//flowsSince, _, err := store.GetAllFlows(ctx, protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)))//protoconv.MustConvertTimeToTimestamp(time.Now()))
-	////log.Info("Flows since is weird")
-	////for _, flow := range flowsSince {
-	////	log.Info(flow)
-	////	log.Info(protoconv.ConvertTimestampToTimeOrNow(flow.LastSeenTimestamp))
-	////}
-	//
-	//log.Infof("Flows since => %d", len(flowsSince))
-	//
-	//log.Info(results)
-	//err = w.WriteAll(results) // calls Flush internally
-	//log.Info("Successfully loaded the DB")
+
+	log.Infof("Flows since => %d", len(flowsSince))
+
+	log.Info(results)
+	err = w.WriteAll(results) // calls Flush internally
+	log.Info("Successfully loaded the DB")
 }

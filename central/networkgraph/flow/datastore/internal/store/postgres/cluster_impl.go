@@ -30,5 +30,6 @@ func (s *clusterStoreImpl) CreateFlowStore(clusterID string) (store.FlowStore, e
 		db:        s.db,
 		clusterID: clusterID,
 	}
+	
 	return fs, nil
 }

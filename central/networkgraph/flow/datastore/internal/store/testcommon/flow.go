@@ -5,15 +5,11 @@ import (
 
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/net/context"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // NewFlowStoreTest creates a new flow test suite that can be shared between cluster store impls
@@ -82,29 +78,32 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	err = suite.tested.UpsertFlows(suite.ctx, flows, updateTS)
 	suite.NoError(err, "upsert should succeed on first insert")
 
-	readFlows, _, err := suite.tested.GetAllFlows(suite.ctx, nil)
+	readFlows, readUpdateTS, err := suite.tested.GetAllFlows(suite.ctx, nil)
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows)
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
-	//suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+	if !features.PostgresDatastore.Enabled() {
+		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+	}
 
-	readFlows, _, err = suite.tested.GetAllFlows(suite.ctx, protoconv.ConvertTimeToTimestamp(t2))
+	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(suite.ctx, protoconv.ConvertTimeToTimestamp(t2))
 	suite.Require().NoError(err)
-	log.Info("SHREWS -- Trying to see which is which")
-	log.Info(flows[1:])
-	log.Info(len(readFlows))
 	suite.ElementsMatch(readFlows, flows[1:])
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
-	//suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+	if !features.PostgresDatastore.Enabled() {
+		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+	}
 
-	readFlows, _, err = suite.tested.GetAllFlows(suite.ctx, protoconv.ConvertTimeToTimestamp(time.Now()))
+	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(suite.ctx, protoconv.ConvertTimeToTimestamp(time.Now()))
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows[2:])
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
-	//suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+	if !features.PostgresDatastore.Enabled() {
+		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+	}
 
 	updateTS += 1337
 	err = suite.tested.UpsertFlows(suite.ctx, flows, updateTS)
@@ -127,25 +126,29 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.NoError(err, "remove should succeed when not present")
 
 	var actualFlows []*storage.NetworkFlow
-	actualFlows, _, err = suite.tested.GetAllFlows(suite.ctx, nil)
+	actualFlows, readUpdateTS, err = suite.tested.GetAllFlows(suite.ctx, nil)
 	suite.NoError(err)
 	suite.ElementsMatch(actualFlows, flows[1:])
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
-	//suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+	if !features.PostgresDatastore.Enabled() {
+		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+	}
 
 	updateTS += 42
 	err = suite.tested.UpsertFlows(suite.ctx, flows, updateTS)
 	suite.NoError(err, "upsert should succeed")
 
-	actualFlows, _, err = suite.tested.GetAllFlows(suite.ctx, nil)
+	actualFlows, readUpdateTS, err = suite.tested.GetAllFlows(suite.ctx, nil)
 	suite.NoError(err)
 	suite.ElementsMatch(actualFlows, flows)
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
-	//suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+	if !features.PostgresDatastore.Enabled() {
+		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+	}
 
-	node1Flows, _, err := suite.tested.GetMatchingFlows(suite.ctx, func(props *storage.NetworkFlowProperties) bool {
+	node1Flows, readUpdateTS, err := suite.tested.GetMatchingFlows(suite.ctx, func(props *storage.NetworkFlowProperties) bool {
 		if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetDstEntity().GetId() == "someNode1" {
 			return true
 		}
@@ -158,7 +161,9 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.ElementsMatch(node1Flows, flows[:1])
 	// I don't think these time checks make sense based on how this will work in PG.
 	// Not sure it made sense regardless.
-	//suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+	if !features.PostgresDatastore.Enabled() {
+		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
+	}
 }
 
 // TestRemoveAllMatching tests removing flows that match deployments that have been removed
@@ -220,15 +225,17 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 	suite.NoError(err)
 	suite.ElementsMatch(flows[1:], currFlows)
 
-	// Commenting this one out for right now.  Currently the only use of that function is to delete flows
+	// Skipping this one out for right now.  Currently the only use of that function is to delete flows
 	// outside the orphan time window.  That is much easier more efficient to deal with in SQL than
-	// looping through all the flows and applying that function.  
-	//err = suite.tested.RemoveMatchingFlows(suite.ctx, nil, func(flow *storage.NetworkFlow) bool {
-	//	return flow.LastSeenTimestamp.Compare(protoconv.ConvertTimeToTimestamp(t2)) == 0
-	//})
-	//suite.NoError(err)
-	//
-	//currFlows, _, err = suite.tested.GetAllFlows(suite.ctx, nil)
-	//suite.NoError(err)
-	//suite.ElementsMatch(flows[2:], currFlows)
+	// looping through all the flows and applying that function.
+	if !features.PostgresDatastore.Enabled() {
+		err = suite.tested.RemoveMatchingFlows(suite.ctx, nil, func(flow *storage.NetworkFlow) bool {
+			return flow.LastSeenTimestamp.Compare(protoconv.ConvertTimeToTimestamp(t2)) == 0
+		})
+		suite.NoError(err)
+
+		currFlows, _, err = suite.tested.GetAllFlows(suite.ctx, nil)
+		suite.NoError(err)
+		suite.ElementsMatch(flows[2:], currFlows)
+	}
 }
