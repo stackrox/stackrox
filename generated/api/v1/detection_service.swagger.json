@@ -1649,6 +1649,9 @@
         },
         "seccompProfile": {
           "$ref": "#/definitions/SecurityContextSeccompProfile"
+        },
+        "allowPrivilegeEscalation": {
+          "type": "boolean"
         }
       }
     },
