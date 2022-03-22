@@ -10,13 +10,13 @@ import (
 // injected in search queries for resource types that have direct cluster scope level.
 func BuildClusterLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
 	if root == nil {
-		return nil, ErrResourceAccessDenied
+		return getMatchNoneQuery(), nil
 	}
 	if root.State == effectiveaccessscope.Included {
 		return nil, nil
 	}
 	if root.State == effectiveaccessscope.Excluded {
-		return nil, ErrResourceAccessDenied
+		return getMatchNoneQuery(), nil
 	}
 	clusterIDs := root.GetClusterIDs()
 	clusterFilters := make([]*v1.Query, 0, len(clusterIDs))
@@ -37,10 +37,10 @@ func BuildClusterLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.
 // injected in search queries for resource types that have direct namespace scope level.
 func BuildClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.Query, error) {
 	if root == nil {
-		return nil, ErrResourceAccessDenied
+		return getMatchNoneQuery(), nil
 	}
 	if root.State == effectiveaccessscope.Excluded {
-		return nil, ErrResourceAccessDenied
+		return getMatchNoneQuery(), nil
 	}
 	if root.State == effectiveaccessscope.Included {
 		return nil, nil
