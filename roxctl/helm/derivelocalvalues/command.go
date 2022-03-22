@@ -80,6 +80,7 @@ func (cfg *helmDeriveLocalValuesCommand) Validate() error {
 	}
 
 	if cfg.output == "-" {
+		// Internally we represent stdout as empty string.
 		cfg.output = standardOutput
 	}
 
