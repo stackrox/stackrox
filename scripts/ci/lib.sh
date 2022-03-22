@@ -336,10 +336,8 @@ mark_collector_release() {
     gitbot commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${tag}"
     gitbot push origin "${branch_name}"
 
-    # RS-487: These two env vars are required by /scripts/create_update_pr.sh which needs to get
-    # resolved in stackrox/rox-ci-image.
+    # RS-487: create_update_pr.sh needs to be fixed so it is not Circle CI dependent.
     require_environment "CIRCLE_USERNAME"
-    require_environment "CIRCLE_PULL_REQUEST"
     /scripts/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS" "Add entry into the RELEASED_VERSIONS file"
 }
 
