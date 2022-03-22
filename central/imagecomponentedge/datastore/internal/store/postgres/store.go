@@ -64,9 +64,6 @@ type storeImpl struct {
 func createTableImageComponentRelation(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists image_component_relation (
-    image_component_Id varchar,
-    image_component_Name varchar,
-    image_component_Version varchar,
     Id varchar,
     LayerIndex integer,
     Location varchar,
@@ -95,109 +92,6 @@ create table if not exists image_component_relation (
 
 }
 
-<<<<<<< HEAD
-func insertIntoImageComponentRelation(ctx context.Context, tx pgx.Tx, obj *storage.ImageComponentEdge, images_Id string, images_OperatingSystem string, image_component_Id string, image_component_Name string, image_component_Version string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		image_component_Id,
-		image_component_Name,
-		image_component_Version,
-		obj.GetId(),
-		obj.GetLayerIndex(),
-		obj.GetLocation(),
-		obj.GetImageId(),
-		obj.GetOperatingName(),
-		obj.GetComponentName(),
-		obj.GetComponentVersion(),
-	}
-
-	finalStr := "INSERT INTO image_component_relation (image_component_Id, image_component_Name, image_component_Version, Id, LayerIndex, Location, ImageId, OperatingName, ComponentName, ComponentVersion) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(image_component_Id, image_component_Name, image_component_Version, images_Id, images_Scan_OperatingSystem, ImageId, OperatingName, ComponentName, ComponentVersion) DO UPDATE SET image_component_Id = EXCLUDED.image_component_Id, image_component_Name = EXCLUDED.image_component_Name, image_component_Version = EXCLUDED.image_component_Version, Id = EXCLUDED.Id, LayerIndex = EXCLUDED.LayerIndex, Location = EXCLUDED.Location, ImageId = EXCLUDED.ImageId, OperatingName = EXCLUDED.OperatingName, ComponentName = EXCLUDED.ComponentName, ComponentVersion = EXCLUDED.ComponentVersion"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *storeImpl) copyFromImageComponentRelation(ctx context.Context, tx pgx.Tx, images_Id string, images_OperatingSystem string, image_component_Id string, image_component_Name string, image_component_Version string, objs ...*storage.ImageComponentEdge) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"image_component_id",
-
-		"image_component_name",
-
-		"image_component_version",
-
-		"id",
-
-		"layerindex",
-
-		"location",
-
-		"imageid",
-
-		"operatingname",
-
-		"componentname",
-
-		"componentversion",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			image_component_Id,
-
-			image_component_Name,
-
-			image_component_Version,
-
-			obj.GetId(),
-
-			obj.GetLayerIndex(),
-
-			obj.GetLocation(),
-
-			obj.GetImageId(),
-
-			obj.GetOperatingName(),
-
-			obj.GetComponentName(),
-
-			obj.GetComponentVersion(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"image_component_relation"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-=======
->>>>>>> 4cabd0fe2 (skip mutators on relations)
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableImageComponentRelation(ctx, db)
@@ -207,69 +101,6 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	}
 }
 
-<<<<<<< HEAD
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ImageComponentEdge) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "ImageComponentEdge")
-	defer release()
-
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := s.copyFromImageComponentRelation(ctx, tx, objs...); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ImageComponentEdge) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "ImageComponentEdge")
-	defer release()
-
-	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
-			return err
-		}
-
-		if err := insertIntoImageComponentRelation(ctx, tx, obj); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-			return err
-		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ImageComponentEdge) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "ImageComponentEdge")
-
-	return s.upsert(ctx, obj)
-}
-
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ImageComponentEdge) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ImageComponentEdge")
-
-	if len(objs) < batchAfter {
-		return s.upsert(ctx, objs...)
-	} else {
-		return s.copyFrom(ctx, objs...)
-	}
-}
-
-=======
->>>>>>> 4cabd0fe2 (skip mutators on relations)
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "ImageComponentEdge")

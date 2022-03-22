@@ -103,7 +103,13 @@ type storeImpl struct {
 func {{template "createFunctionName" $schema}}(ctx context.Context, db *pgxpool.Pool) {
     table := `
 create table if not exists {{$schema.Table}} (
-{{- range $idx, $field := $schema.ResolvedFields }}
+{{- $fields := dict.nil }}
+{{- if .joinTable}}
+    {{- $fields = $schema.Fields}}
+{{- else }}
+    {{- $fields = $schema.ResolvedFields}}
+{{- end}}
+{{- range $idx, $field := $fields }}
     {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}},
 {{- end}}
     {{- $primaryKeys := dict.nil }}
@@ -298,7 +304,9 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 {{range $idx, $child := $schema.Children}}{{ template "copyObject" $child }}{{end}}
 {{- end}}
 
+{{- if not .JoinTable }}
 {{ template "copyObject" .Schema }}
+{{- end }}
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
@@ -308,6 +316,8 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
         db: db,
     }
 }
+
+{{- if not .JoinTable }}
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
     conn, release := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
@@ -329,8 +339,6 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
     }
     return nil
 }
-
-{{- if not .JoinTable }}
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
     conn, release := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")

@@ -61,45 +61,4 @@ func (s *ImageComponentRelationStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundImageComponentEdge)
 
-<<<<<<< HEAD
-	s.NoError(store.Upsert(ctx, imageComponentEdge))
-	foundImageComponentEdge, exists, err = store.Get(ctx, imageComponentEdge.GetImageId(), imageComponentEdge.GetOperatingName(), imageComponentEdge.GetComponentName(), imageComponentEdge.GetComponentVersion())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(imageComponentEdge, foundImageComponentEdge)
-
-	imageComponentEdgeCount, err := store.Count(ctx)
-	s.NoError(err)
-	s.Equal(imageComponentEdgeCount, 1)
-
-	imageComponentEdgeExists, err := store.Exists(ctx, imageComponentEdge.GetImageId(), imageComponentEdge.GetOperatingName(), imageComponentEdge.GetComponentName(), imageComponentEdge.GetComponentVersion())
-	s.NoError(err)
-	s.True(imageComponentEdgeExists)
-	s.NoError(store.Upsert(ctx, imageComponentEdge))
-
-	foundImageComponentEdge, exists, err = store.Get(ctx, imageComponentEdge.GetImageId(), imageComponentEdge.GetOperatingName(), imageComponentEdge.GetComponentName(), imageComponentEdge.GetComponentVersion())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(imageComponentEdge, foundImageComponentEdge)
-
-	s.NoError(store.Delete(ctx, imageComponentEdge.GetImageId(), imageComponentEdge.GetOperatingName(), imageComponentEdge.GetComponentName(), imageComponentEdge.GetComponentVersion()))
-	foundImageComponentEdge, exists, err = store.Get(ctx, imageComponentEdge.GetImageId(), imageComponentEdge.GetOperatingName(), imageComponentEdge.GetComponentName(), imageComponentEdge.GetComponentVersion())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundImageComponentEdge)
-
-	var imageComponentEdges []*storage.ImageComponentEdge
-	for i := 0; i < 200; i++ {
-		imageComponentEdge := &storage.ImageComponentEdge{}
-		s.NoError(testutils.FullInit(imageComponentEdge, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		imageComponentEdges = append(imageComponentEdges, imageComponentEdge)
-	}
-
-	s.NoError(store.UpsertMany(ctx, imageComponentEdges))
-
-	imageComponentEdgeCount, err = store.Count(ctx)
-	s.NoError(err)
-	s.Equal(imageComponentEdgeCount, 200)
-=======
->>>>>>> 5cbad1c3b (follow-up)
 }
