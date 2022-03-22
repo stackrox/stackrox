@@ -4170,11 +4170,6 @@ jobs:
             - "7f:08:58:1e:80:80:6e:66:99:9a:37:cb:e9:96:0b:40"
 
       - run:
-          name: Add SSH key of github.com
-          command: |
-            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-
-      - run:
           name: Open a collector PR to add this release to RELEASED_VERSIONS
           command: |
             source scripts/ci/lib.sh
