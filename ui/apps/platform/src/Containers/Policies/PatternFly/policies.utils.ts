@@ -538,6 +538,7 @@ export function preFormatImageSigningPolicyGroup(policy: Policy): Policy {
 
 export function getClientWizardPolicy(policy): Policy {
     let formattedPolicy = preFormatExclusionField(policy);
+    // preFormatNestedPolicyFields adds serverPolicySections unparsed
     formattedPolicy = preFormatNestedPolicyFields(formattedPolicy);
     formattedPolicy = preFormatImageSigningPolicyGroup(formattedPolicy);
     return formattedPolicy;
@@ -546,6 +547,7 @@ export function getClientWizardPolicy(policy): Policy {
 export function getServerPolicy(policy): Policy {
     let serverPolicy = postFormatExclusionField(policy);
     serverPolicy = postFormatImageSigningPolicyGroup(serverPolicy);
+    // postFormatNestedPolicyFields rewrites policySections with serverPolicySections for default policies
     serverPolicy = postFormatNestedPolicyFields(serverPolicy);
     return serverPolicy;
 }
