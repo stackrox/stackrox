@@ -165,6 +165,9 @@ func (root *ScopeTree) String() string {
 
 // ToJSON yields a compacted JSON representation.
 func (root *ScopeTree) ToJSON() (string, error) {
+	if root == nil {
+		return "{}", nil
+	}
 	return root.Compactify().ToJSON()
 }
 
@@ -245,9 +248,15 @@ func (root *ScopeTree) bubbleUpStatesAndCompactify(detail v1.ComputeEffectiveAcc
 // Merge adds scope tree to the current root so result tree includes nodes that are included at least in one of them.
 // As we don't know in which form we get tree to merge with result will be in MINIMAL form
 func (root *ScopeTree) Merge(tree *ScopeTree) {
+	if tree == nil || tree == DenyAllEffectiveAccessScope() {
+		return
+	}
 	if tree.State == Included || root.State == Included {
 		root.State = Included
 		return
+	}
+	if root.Clusters == nil {
+		root.Clusters = map[string]*clustersScopeSubTree{}
 	}
 	for key, cluster := range tree.Clusters {
 		rootCluster := root.Clusters[key]
@@ -274,7 +283,7 @@ func (root *ScopeTree) Merge(tree *ScopeTree) {
 func (cluster *clustersScopeSubTree) copy() *clustersScopeSubTree {
 	namespaces := make(map[string]*namespacesScopeSubTree, len(cluster.Namespaces))
 	for k, v := range cluster.Namespaces {
-		namespaces[k] = v
+		namespaces[k] = v.copy()
 	}
 	return &clustersScopeSubTree{
 		State:      cluster.State,
