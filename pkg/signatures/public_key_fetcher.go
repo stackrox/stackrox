@@ -46,7 +46,7 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 	imgFullName := image.GetName().GetFullName()
 	imgRef, err := name.ParseReference(imgFullName)
 	if err != nil {
-		log.Errorf("Parsing image reference %q: %v", imgFullName, err)
+		log.Debugf("Parsing image reference %q: %v", imgFullName, err)
 		return nil, err
 	}
 
@@ -60,7 +60,7 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 	// Cosign ref:
 	//  https://github.com/sigstore/cosign/blob/44f3814667ba6a398aef62814cabc82aee4896e5/pkg/cosign/fetch.go#L84-L86
 	if err != nil && !strings.Contains(err.Error(), "no signatures associated") {
-		log.Errorf("Fetching signature for image %q: %v", imgFullName, err)
+		log.Debugf("Fetching signature for image %q: %v", imgFullName, err)
 		return nil, makeTransientErrorRetryable(err)
 	}
 
@@ -75,7 +75,7 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 		rawSig, err := base64.StdEncoding.DecodeString(signedPayload.Base64Signature)
 		// We skip the invalid base64 signature and log its occurrence.
 		if err != nil {
-			log.Errorf("Error during decoding of raw signature for image %q: %v",
+			log.Debugf("Error during decoding of raw signature for image %q: %v",
 				imgFullName, err)
 			continue
 		}
