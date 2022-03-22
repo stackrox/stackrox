@@ -26,32 +26,65 @@ func (suite *helmDeriveLocalValuesTestSuite) SetupTest() {
 	suite.helmDeriveLocalValuesCommand.env = environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 }
 
-func (suite *helmDeriveLocalValuesTestSuite) TestConstruct() {
-	cmd := &cobra.Command{Use: "test"}
-
+func (suite *helmDeriveLocalValuesTestSuite) TestInvalidCommandArgs() {
 	cases := map[string]struct {
 		args       []string
-		chartName  string
 		shouldFail bool
+		error      error
 	}{
 		"should not return an error if valid number of arguments given": {
-			args:      []string{"test_chartName"},
-			chartName: "test_chartName",
+			args: []string{"test_chartName"},
 		},
 		"should return an error if no arguments given": {
 			args:       []string{},
 			shouldFail: true,
+			error:      errox.InvalidArgs,
 		},
 		"should return an error if too many arguments given": {
 			args:       []string{"test_chartName", "another_arg"},
 			shouldFail: true,
+			error:      errox.InvalidArgs,
 		},
 	}
 
 	for name, c := range cases {
 		suite.Run(name, func() {
 			helmCmd := suite.helmDeriveLocalValuesCommand
-			err := helmCmd.Construct(c.args, cmd)
+			cmd := Command(helmCmd.env)
+
+			cmd.SetArgs(c.args)
+			// Ignore an executing flow of the command
+			cmd.RunE = func(cmd *cobra.Command, args []string) error {
+				return nil
+			}
+
+			err := cmd.Execute()
+			if c.shouldFail {
+				suite.Require().Error(err)
+			} else {
+				suite.Require().NoError(err)
+				suite.Assert().ErrorIs(err, c.error)
+			}
+		})
+	}
+}
+
+func (suite *helmDeriveLocalValuesTestSuite) TestConstruct() {
+	cases := map[string]struct {
+		passedChartName string
+		chartName       string
+		shouldFail      bool
+	}{
+		"should set chart name": {
+			passedChartName: "test_chartName",
+			chartName:       "test_chartName",
+		},
+	}
+
+	for name, c := range cases {
+		suite.Run(name, func() {
+			helmCmd := suite.helmDeriveLocalValuesCommand
+			err := helmCmd.Construct(c.passedChartName)
 			if c.shouldFail {
 				suite.Require().Error(err)
 			} else {
@@ -99,7 +132,6 @@ func (suite *helmDeriveLocalValuesTestSuite) TestValidate() {
 	for name, c := range cases {
 		suite.Run(name, func() {
 			helmCmd := suite.helmDeriveLocalValuesCommand
-			helmCmd.logger = helmCmd.env.Logger()
 			helmCmd.output = c.output
 			helmCmd.outputDir = c.outputDir
 
