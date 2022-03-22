@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM networkentity"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkentity WHERE Info_Id = $1)"
 
-	getStmt     = "SELECT serialized FROM networkentity WHERE Info_Id = $1"
-	deleteStmt  = "DELETE FROM networkentity WHERE Info_Id = $1"
-	walkStmt    = "SELECT serialized FROM networkentity"
-	getIDsStmt  = "SELECT Info_Id FROM networkentity"
-	getManyStmt = "SELECT serialized FROM networkentity WHERE Info_Id = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM networkentity WHERE Info_Id = $1"
+	deleteStmt        = "DELETE FROM networkentity WHERE Info_Id = $1"
+	walkStmt          = "SELECT serialized FROM networkentity"
+	getWithRollupStmt = "select row_to_json((select record from (select table0.Info_Type as Info_Type, table0.Info_Id as Info_Id, table0.Info_Deployment_Name as Info_Deployment_Name, table0.Info_Deployment_Namespace as Info_Deployment_Namespace, table0.Info_Deployment_Cluster as Info_Deployment_Cluster, table0.Info_ExternalSource_Name as Info_ExternalSource_Name, table0.Info_ExternalSource_Cidr as Info_ExternalSource_Cidr, table0.Info_ExternalSource_Default as Info_ExternalSource_Default, table0.Scope_ClusterId as Scope_ClusterId, to_json(join0)->'array' as join0 from networkentity table0 left join lateral (select array(select json_build_object('idx', table1.idx, 'Port', table1.Port, 'L4Protocol', table1.L4Protocol) from networkentity_ListenPorts table1 where (table0.Info_Id = table1.networkentity_Info_Id))) join0 on true where (table0.Info_Id = $1)) record ))"
+	getIDsStmt        = "SELECT Info_Id FROM networkentity"
+	getManyStmt       = "SELECT serialized FROM networkentity WHERE Info_Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM networkentity WHERE Info_Id = ANY($1::text[])"
 )
@@ -255,6 +257,22 @@ func (s *storeImpl) Exists(ctx context.Context, infoId string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, infoId string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkEntity")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, infoId)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

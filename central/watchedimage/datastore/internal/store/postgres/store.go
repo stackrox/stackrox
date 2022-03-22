@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM watchedimages"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM watchedimages WHERE Name = $1)"
 
-	getStmt     = "SELECT serialized FROM watchedimages WHERE Name = $1"
-	deleteStmt  = "DELETE FROM watchedimages WHERE Name = $1"
-	walkStmt    = "SELECT serialized FROM watchedimages"
-	getIDsStmt  = "SELECT Name FROM watchedimages"
-	getManyStmt = "SELECT serialized FROM watchedimages WHERE Name = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM watchedimages WHERE Name = $1"
+	deleteStmt        = "DELETE FROM watchedimages WHERE Name = $1"
+	walkStmt          = "SELECT serialized FROM watchedimages"
+	getWithRollupStmt = "select json_build_object('Name', table0.Name) from watchedimages table0 where (table0.Name = $1)"
+	getIDsStmt        = "SELECT Name FROM watchedimages"
+	getManyStmt       = "SELECT serialized FROM watchedimages WHERE Name = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM watchedimages WHERE Name = ANY($1::text[])"
 )
@@ -177,6 +179,22 @@ func (s *storeImpl) Exists(ctx context.Context, name string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, name string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "WatchedImage")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, name)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

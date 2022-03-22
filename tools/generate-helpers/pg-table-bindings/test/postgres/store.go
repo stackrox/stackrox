@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM singlekey"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM singlekey WHERE Key = $1)"
 
-	getStmt     = "SELECT serialized FROM singlekey WHERE Key = $1"
-	deleteStmt  = "DELETE FROM singlekey WHERE Key = $1"
-	walkStmt    = "SELECT serialized FROM singlekey"
-	getIDsStmt  = "SELECT Key FROM singlekey"
-	getManyStmt = "SELECT serialized FROM singlekey WHERE Key = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM singlekey WHERE Key = $1"
+	deleteStmt        = "DELETE FROM singlekey WHERE Key = $1"
+	walkStmt          = "SELECT serialized FROM singlekey"
+	getWithRollupStmt = "select json_build_object('Key', table0.Key, 'Name', table0.Name, 'StringSlice', table0.StringSlice, 'Bool', table0.Bool, 'Uint64', table0.Uint64, 'Int64', table0.Int64, 'Float', table0.Float, 'Labels', table0.Labels, 'Timestamp', table0.Timestamp, 'Enum', table0.Enum, 'Enums', table0.Enums, 'Embedded_Embedded', table0.Embedded_Embedded, 'Oneofstring', table0.Oneofstring, 'Oneofnested_Nested', table0.Oneofnested_Nested, 'Oneofnested_Nested2_Nested2', table0.Oneofnested_Nested2_Nested2, 'Bytess', table0.Bytess, 'join0', to_json(join0)->'array') from singlekey table0 left join lateral (select array(select json_build_object('idx', table1.idx, 'Nested', table1.Nested, 'Nested2_Nested2', table1.Nested2_Nested2) from singlekey_Nested table1 where (table0.Key = table1.singlekey_Key))) join0 on true where (table0.Key = $1)"
+	getIDsStmt        = "SELECT Key FROM singlekey"
+	getManyStmt       = "SELECT serialized FROM singlekey WHERE Key = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM singlekey WHERE Key = ANY($1::text[])"
 )
@@ -272,6 +274,22 @@ func (s *storeImpl) Exists(ctx context.Context, key string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, key string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "TestSingleKeyStruct")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, key)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

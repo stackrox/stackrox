@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM pods"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM pods WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM pods WHERE Id = $1"
-	deleteStmt  = "DELETE FROM pods WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM pods"
-	getIDsStmt  = "SELECT Id FROM pods"
-	getManyStmt = "SELECT serialized FROM pods WHERE Id = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM pods WHERE Id = $1"
+	deleteStmt        = "DELETE FROM pods WHERE Id = $1"
+	walkStmt          = "SELECT serialized FROM pods"
+	getWithRollupStmt = "select row_to_json((select record from (select table0.Id as Id, table0.Name as Name, table0.DeploymentId as DeploymentId, table0.Namespace as Namespace, table0.ClusterId as ClusterId, table0.Started as Started, to_json(join0)->'array' as join0, to_json(join1)->'array' as join1 from pods table0 left join lateral (select array(select json_build_object('idx', table1.idx, 'InstanceId_ContainerRuntime', table1.InstanceId_ContainerRuntime, 'InstanceId_Id', table1.InstanceId_Id, 'InstanceId_Node', table1.InstanceId_Node, 'ContainingPodId', table1.ContainingPodId, 'ContainerName', table1.ContainerName, 'ContainerIps', table1.ContainerIps, 'Started', table1.Started, 'ImageDigest', table1.ImageDigest, 'Finished', table1.Finished, 'ExitCode', table1.ExitCode, 'TerminationReason', table1.TerminationReason) from pods_LiveInstances table1 where (table0.Id = table1.pods_Id))) join0 on true left join lateral (select array(select json_build_object('idx', table2.idx, 'join0', to_json(join0)->'array') from pods_TerminatedInstances table2 left join lateral (select array(select json_build_object('idx', table3.idx, 'InstanceId_ContainerRuntime', table3.InstanceId_ContainerRuntime, 'InstanceId_Id', table3.InstanceId_Id, 'InstanceId_Node', table3.InstanceId_Node, 'ContainingPodId', table3.ContainingPodId, 'ContainerName', table3.ContainerName, 'ContainerIps', table3.ContainerIps, 'Started', table3.Started, 'ImageDigest', table3.ImageDigest, 'Finished', table3.Finished, 'ExitCode', table3.ExitCode, 'TerminationReason', table3.TerminationReason) from pods_TerminatedInstances_Instances table3 where (table0.Id = table3.pods_Id and table2.idx = table3.pods_TerminatedInstances_idx))) join0 on true where (table0.Id = table2.pods_Id))) join1 on true where (table0.Id = $1)) record ))"
+	getIDsStmt        = "SELECT Id FROM pods"
+	getManyStmt       = "SELECT serialized FROM pods WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM pods WHERE Id = ANY($1::text[])"
 )
@@ -405,6 +407,22 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, id string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Pod")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, id)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

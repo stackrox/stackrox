@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM processbaselines"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM processbaselines WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM processbaselines WHERE Id = $1"
-	deleteStmt  = "DELETE FROM processbaselines WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM processbaselines"
-	getIDsStmt  = "SELECT Id FROM processbaselines"
-	getManyStmt = "SELECT serialized FROM processbaselines WHERE Id = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM processbaselines WHERE Id = $1"
+	deleteStmt        = "DELETE FROM processbaselines WHERE Id = $1"
+	walkStmt          = "SELECT serialized FROM processbaselines"
+	getWithRollupStmt = "select row_to_json((select table0_record from (select table0.Id as Id, table0.Key_DeploymentId as Key_DeploymentId, table0.Key_ContainerName as Key_ContainerName, table0.Key_ClusterId as Key_ClusterId, table0.Key_Namespace as Key_Namespace, table0.Created as Created, table0.UserLockedTimestamp as UserLockedTimestamp, table0.StackRoxLockedTimestamp as StackRoxLockedTimestamp, table0.LastUpdate as LastUpdate, to_json(join0)->'array' as join0, to_json(join1)->'array' as join1 from processbaselines table0 left join lateral (select array(select row_to_json((select table1_record from (select table1.idx as idx, table1.Element_ProcessName as Element_ProcessName, table1.Auto as Auto from processbaselines_Elements table1 where (table1) ) table0.Id = table1.processbaselines_Id_record )))) join0 on true left join lateral (select array(select row_to_json((select table2_record from (select table2.idx as idx, table2.Element_ProcessName as Element_ProcessName, table2.Auto as Auto from processbaselines_ElementGraveyard table2 where (table2) ) table0.Id = table2.processbaselines_Id_record )))) join1 on true where (table0) ) table0.Id = $1_record ))"
+	getIDsStmt        = "SELECT Id FROM processbaselines"
+	getManyStmt       = "SELECT serialized FROM processbaselines WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM processbaselines WHERE Id = ANY($1::text[])"
 )
@@ -315,6 +317,22 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, id string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ProcessBaseline")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, id)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

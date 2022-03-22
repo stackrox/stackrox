@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM cluster_cves"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM cluster_cves WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM cluster_cves WHERE Id = $1"
-	deleteStmt  = "DELETE FROM cluster_cves WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM cluster_cves"
-	getIDsStmt  = "SELECT Id FROM cluster_cves"
-	getManyStmt = "SELECT serialized FROM cluster_cves WHERE Id = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM cluster_cves WHERE Id = $1"
+	deleteStmt        = "DELETE FROM cluster_cves WHERE Id = $1"
+	walkStmt          = "SELECT serialized FROM cluster_cves"
+	getWithRollupStmt = "select row_to_json((select record from (select table0.Id as Id, table0.Cvss as Cvss, table0.ImpactScore as ImpactScore, table0.Summary as Summary, table0.Link as Link, table0.PublishedOn as PublishedOn, table0.CreatedAt as CreatedAt, table0.LastModified as LastModified, table0.ScoreVersion as ScoreVersion, table0.CvssV2_Vector as CvssV2_Vector, table0.CvssV2_AttackVector as CvssV2_AttackVector, table0.CvssV2_AccessComplexity as CvssV2_AccessComplexity, table0.CvssV2_Authentication as CvssV2_Authentication, table0.CvssV2_Confidentiality as CvssV2_Confidentiality, table0.CvssV2_Integrity as CvssV2_Integrity, table0.CvssV2_Availability as CvssV2_Availability, table0.CvssV2_ExploitabilityScore as CvssV2_ExploitabilityScore, table0.CvssV2_ImpactScore as CvssV2_ImpactScore, table0.CvssV2_Score as CvssV2_Score, table0.CvssV2_Severity as CvssV2_Severity, table0.CvssV3_Vector as CvssV3_Vector, table0.CvssV3_ExploitabilityScore as CvssV3_ExploitabilityScore, table0.CvssV3_ImpactScore as CvssV3_ImpactScore, table0.CvssV3_AttackVector as CvssV3_AttackVector, table0.CvssV3_AttackComplexity as CvssV3_AttackComplexity, table0.CvssV3_PrivilegesRequired as CvssV3_PrivilegesRequired, table0.CvssV3_UserInteraction as CvssV3_UserInteraction, table0.CvssV3_Scope as CvssV3_Scope, table0.CvssV3_Confidentiality as CvssV3_Confidentiality, table0.CvssV3_Integrity as CvssV3_Integrity, table0.CvssV3_Availability as CvssV3_Availability, table0.CvssV3_Score as CvssV3_Score, table0.CvssV3_Severity as CvssV3_Severity, table0.Suppressed as Suppressed, table0.SuppressActivation as SuppressActivation, table0.SuppressExpiry as SuppressExpiry, table0.Severity as Severity, to_json(join0)->'array' as join0 from cluster_cves table0 left join lateral (select array(select json_build_object('idx', table1.idx, 'URI', table1.URI, 'Tags', table1.Tags) from cluster_cves_References table1 where (table0.Id = table1.cluster_cves_Id))) join0 on true where (table0.Id = $1)) record ))"
+	getIDsStmt        = "SELECT Id FROM cluster_cves"
+	getManyStmt       = "SELECT serialized FROM cluster_cves WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM cluster_cves WHERE Id = ANY($1::text[])"
 )
@@ -311,6 +313,22 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, id string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "CVE")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, id)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

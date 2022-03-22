@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM process_indicators"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM process_indicators WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM process_indicators WHERE Id = $1"
-	deleteStmt  = "DELETE FROM process_indicators WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM process_indicators"
-	getIDsStmt  = "SELECT Id FROM process_indicators"
-	getManyStmt = "SELECT serialized FROM process_indicators WHERE Id = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM process_indicators WHERE Id = $1"
+	deleteStmt        = "DELETE FROM process_indicators WHERE Id = $1"
+	walkStmt          = "SELECT serialized FROM process_indicators"
+	getWithRollupStmt = "select row_to_json((select table0_record from (select table0.Id as Id, table0.DeploymentId as DeploymentId, table0.ContainerName as ContainerName, table0.PodId as PodId, table0.PodUid as PodUid, table0.Signal_Id as Signal_Id, table0.Signal_ContainerId as Signal_ContainerId, table0.Signal_Time as Signal_Time, table0.Signal_Name as Signal_Name, table0.Signal_Args as Signal_Args, table0.Signal_ExecFilePath as Signal_ExecFilePath, table0.Signal_Pid as Signal_Pid, table0.Signal_Uid as Signal_Uid, table0.Signal_Gid as Signal_Gid, table0.Signal_Lineage as Signal_Lineage, table0.Signal_Scraped as Signal_Scraped, table0.ClusterId as ClusterId, table0.Namespace as Namespace, table0.ContainerStartTime as ContainerStartTime, table0.ImageId as ImageId, to_json(join0)->'array' as join0 from process_indicators table0 left join lateral (select array(select row_to_json((select table1_record from (select table1.idx as idx, table1.ParentUid as ParentUid, table1.ParentExecFilePath as ParentExecFilePath from process_indicators_LineageInfo table1 where (table1) ) table0.Id = table1.process_indicators_Id_record )))) join0 on true where (table0) ) table0.Id = $1_record ))"
+	getIDsStmt        = "SELECT Id FROM process_indicators"
+	getManyStmt       = "SELECT serialized FROM process_indicators WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM process_indicators WHERE Id = ANY($1::text[])"
 )
@@ -277,6 +279,22 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, id string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ProcessIndicator")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, id)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

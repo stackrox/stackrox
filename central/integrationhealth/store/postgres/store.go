@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM integrationhealth"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM integrationhealth WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM integrationhealth WHERE Id = $1"
-	deleteStmt  = "DELETE FROM integrationhealth WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM integrationhealth"
-	getIDsStmt  = "SELECT Id FROM integrationhealth"
-	getManyStmt = "SELECT serialized FROM integrationhealth WHERE Id = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM integrationhealth WHERE Id = $1"
+	deleteStmt        = "DELETE FROM integrationhealth WHERE Id = $1"
+	walkStmt          = "SELECT serialized FROM integrationhealth"
+	getWithRollupStmt = "select row_to_json((select record from (select table0.Id as Id, table0.Name as Name, table0.Type as Type, table0.Status as Status, table0.ErrorMessage as ErrorMessage, table0.LastTimestamp as LastTimestamp from integrationhealth table0 where (table0.Id = $1)) record ))"
+	getIDsStmt        = "SELECT Id FROM integrationhealth"
+	getManyStmt       = "SELECT serialized FROM integrationhealth WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM integrationhealth WHERE Id = ANY($1::text[])"
 )
@@ -187,6 +189,22 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, id string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "IntegrationHealth")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, id)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

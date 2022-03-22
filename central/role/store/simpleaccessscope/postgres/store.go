@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM simpleaccessscopes"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM simpleaccessscopes WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM simpleaccessscopes WHERE Id = $1"
-	deleteStmt  = "DELETE FROM simpleaccessscopes WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM simpleaccessscopes"
-	getIDsStmt  = "SELECT Id FROM simpleaccessscopes"
-	getManyStmt = "SELECT serialized FROM simpleaccessscopes WHERE Id = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM simpleaccessscopes WHERE Id = $1"
+	deleteStmt        = "DELETE FROM simpleaccessscopes WHERE Id = $1"
+	walkStmt          = "SELECT serialized FROM simpleaccessscopes"
+	getWithRollupStmt = "select row_to_json((select table0_record from (select table0.Id as Id, table0.Name as Name, table0.Description as Description, table0.Rules_IncludedClusters as Rules_IncludedClusters, to_json(join0)->'array' as join0, to_json(join1)->'array' as join1, to_json(join2)->'array' as join2 from simpleaccessscopes table0 left join lateral (select array(select row_to_json((select table1_record from (select table1.idx as idx, table1.ClusterName as ClusterName, table1.NamespaceName as NamespaceName from simpleaccessscopes_IncludedNamespaces table1 where (table1) ) table0.Id = table1.simpleaccessscopes_Id_record )))) join0 on true left join lateral (select array(select row_to_json((select table2_record from (select table2.idx as idx, to_json(join0)->'array' as join0 from simpleaccessscopes_ClusterLabelSelectors table2 left join lateral (select array(select row_to_json((select table3_record from (select table3.idx as idx, table3.Key as Key, table3.Op as Op, table3.Values as Values from simpleaccessscopes_ClusterLabelSelectors_Requirements table3 where (table3) ) table0.Id = table3.simpleaccessscopes_Id and table2.idx = table3.simpleaccessscopes_ClusterLabelSelectors_idx_record )))) join0 on true where (table2) ) table0.Id = table2.simpleaccessscopes_Id_record )))) join1 on true left join lateral (select array(select row_to_json((select table4_record from (select table4.idx as idx, to_json(join0)->'array' as join0 from simpleaccessscopes_NamespaceLabelSelectors table4 left join lateral (select array(select row_to_json((select table5_record from (select table5.idx as idx, table5.Key as Key, table5.Op as Op, table5.Values as Values from simpleaccessscopes_NamespaceLabelSelectors_Requirements table5 where (table5) ) table0.Id = table5.simpleaccessscopes_Id and table4.idx = table5.simpleaccessscopes_NamespaceLabelSelectors_idx_record )))) join0 on true where (table4) ) table0.Id = table4.simpleaccessscopes_Id_record )))) join2 on true where (table0) ) table0.Id = $1_record ))"
+	getIDsStmt        = "SELECT Id FROM simpleaccessscopes"
+	getManyStmt       = "SELECT serialized FROM simpleaccessscopes WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM simpleaccessscopes WHERE Id = ANY($1::text[])"
 )
@@ -489,6 +491,22 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, id string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "SimpleAccessScope")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, id)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

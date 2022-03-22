@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM roles"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM roles WHERE Name = $1)"
 
-	getStmt     = "SELECT serialized FROM roles WHERE Name = $1"
-	deleteStmt  = "DELETE FROM roles WHERE Name = $1"
-	walkStmt    = "SELECT serialized FROM roles"
-	getIDsStmt  = "SELECT Name FROM roles"
-	getManyStmt = "SELECT serialized FROM roles WHERE Name = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM roles WHERE Name = $1"
+	deleteStmt        = "DELETE FROM roles WHERE Name = $1"
+	walkStmt          = "SELECT serialized FROM roles"
+	getWithRollupStmt = "select row_to_json((select table0_record from (select table0.Name as Name, table0.Description as Description, table0.PermissionSetId as PermissionSetId, table0.AccessScopeId as AccessScopeId, table0.GlobalAccess as GlobalAccess, table0.ResourceToAccess as ResourceToAccess from roles table0 where (table0) ) table0.Name = $1_record ))"
+	getIDsStmt        = "SELECT Name FROM roles"
+	getManyStmt       = "SELECT serialized FROM roles WHERE Name = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM roles WHERE Name = ANY($1::text[])"
 )
@@ -187,6 +189,22 @@ func (s *storeImpl) Exists(ctx context.Context, name string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, name string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Role")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, name)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

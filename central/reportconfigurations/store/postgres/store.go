@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM reportconfigs"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM reportconfigs WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM reportconfigs WHERE Id = $1"
-	deleteStmt  = "DELETE FROM reportconfigs WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM reportconfigs"
-	getIDsStmt  = "SELECT Id FROM reportconfigs"
-	getManyStmt = "SELECT serialized FROM reportconfigs WHERE Id = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM reportconfigs WHERE Id = $1"
+	deleteStmt        = "DELETE FROM reportconfigs WHERE Id = $1"
+	walkStmt          = "SELECT serialized FROM reportconfigs"
+	getWithRollupStmt = "select row_to_json((select table0_record from (select table0.Id as Id, table0.Name as Name, table0.Description as Description, table0.Type as Type, table0.VulnReportFilters_Fixability as VulnReportFilters_Fixability, table0.VulnReportFilters_SinceLastReport as VulnReportFilters_SinceLastReport, table0.VulnReportFilters_Severities as VulnReportFilters_Severities, table0.ScopeId as ScopeId, table0.EmailConfig_NotifierId as EmailConfig_NotifierId, table0.EmailConfig_MailingLists as EmailConfig_MailingLists, table0.Schedule_IntervalType as Schedule_IntervalType, table0.Schedule_Hour as Schedule_Hour, table0.Schedule_Minute as Schedule_Minute, table0.Schedule_Weekly_Day as Schedule_Weekly_Day, table0.Schedule_DaysOfWeek_Days as Schedule_DaysOfWeek_Days, table0.Schedule_DaysOfMonth_Days as Schedule_DaysOfMonth_Days, table0.LastRunStatus_ReportStatus as LastRunStatus_ReportStatus, table0.LastRunStatus_LastRunTime as LastRunStatus_LastRunTime, table0.LastRunStatus_ErrorMsg as LastRunStatus_ErrorMsg, table0.LastSuccessfulRunTime as LastSuccessfulRunTime from reportconfigs table0 where (table0) ) table0.Id = $1_record ))"
+	getIDsStmt        = "SELECT Id FROM reportconfigs"
+	getManyStmt       = "SELECT serialized FROM reportconfigs WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM reportconfigs WHERE Id = ANY($1::text[])"
 )
@@ -215,6 +217,22 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, id string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ReportConfiguration")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, id)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

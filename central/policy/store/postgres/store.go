@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM policy"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM policy WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM policy WHERE Id = $1"
-	deleteStmt  = "DELETE FROM policy WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM policy"
-	getIDsStmt  = "SELECT Id FROM policy"
-	getManyStmt = "SELECT serialized FROM policy WHERE Id = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM policy WHERE Id = $1"
+	deleteStmt        = "DELETE FROM policy WHERE Id = $1"
+	walkStmt          = "SELECT serialized FROM policy"
+	getWithRollupStmt = "select row_to_json((select record from (select table0.Id as Id, table0.Name as Name, table0.Description as Description, table0.Rationale as Rationale, table0.Remediation as Remediation, table0.Disabled as Disabled, table0.Categories as Categories, table0.LifecycleStages as LifecycleStages, table0.EventSource as EventSource, table0.Severity as Severity, table0.EnforcementActions as EnforcementActions, table0.Notifiers as Notifiers, table0.LastUpdated as LastUpdated, table0.SORTName as SORTName, table0.SORTLifecycleStage as SORTLifecycleStage, table0.SORTEnforcement as SORTEnforcement, table0.PolicyVersion as PolicyVersion, table0.CriteriaLocked as CriteriaLocked, table0.MitreVectorsLocked as MitreVectorsLocked, table0.IsDefault as IsDefault, to_json(join0)->'array' as join0, to_json(join1)->'array' as join1, to_json(join2)->'array' as join2, to_json(join3)->'array' as join3, to_json(join4)->'array' as join4 from policy table0 left join lateral (select array(select json_build_object('idx', table1.idx, 'Name', table1.Name, 'Deployment_Name', table1.Deployment_Name, 'Deployment_Scope_Cluster', table1.Deployment_Scope_Cluster, 'Deployment_Scope_Namespace', table1.Deployment_Scope_Namespace, 'Deployment_Scope_Label_Key', table1.Deployment_Scope_Label_Key, 'Deployment_Scope_Label_Value', table1.Deployment_Scope_Label_Value, 'Image_Name', table1.Image_Name, 'Expiration', table1.Expiration) from policy_Whitelists table1 where (table0.Id = table1.policy_Id))) join0 on true left join lateral (select array(select json_build_object('idx', table2.idx, 'Name', table2.Name, 'Deployment_Name', table2.Deployment_Name, 'Deployment_Scope_Cluster', table2.Deployment_Scope_Cluster, 'Deployment_Scope_Namespace', table2.Deployment_Scope_Namespace, 'Deployment_Scope_Label_Key', table2.Deployment_Scope_Label_Key, 'Deployment_Scope_Label_Value', table2.Deployment_Scope_Label_Value, 'Image_Name', table2.Image_Name, 'Expiration', table2.Expiration) from policy_Exclusions table2 where (table0.Id = table2.policy_Id))) join1 on true left join lateral (select array(select json_build_object('idx', table3.idx, 'Cluster', table3.Cluster, 'Namespace', table3.Namespace, 'Label_Key', table3.Label_Key, 'Label_Value', table3.Label_Value) from policy_Scope table3 where (table0.Id = table3.policy_Id))) join2 on true left join lateral (select array(select json_build_object('idx', table4.idx, 'SectionName', table4.SectionName, 'join0', to_json(join0)->'array') from policy_PolicySections table4 left join lateral (select array(select json_build_object('idx', table5.idx, 'FieldName', table5.FieldName, 'BooleanOperator', table5.BooleanOperator, 'Negate', table5.Negate, 'join0', to_json(join0)->'array') from policy_PolicySections_PolicyGroups table5 left join lateral (select array(select json_build_object('idx', table6.idx, 'Value', table6.Value) from policy_PolicySections_PolicyGroups_Values table6 where (table0.Id = table6.policy_Id and table4.idx = table6.policy_PolicySections_idx and table5.idx = table6.policy_PolicySections_PolicyGroups_idx))) join0 on true where (table0.Id = table5.policy_Id and table4.idx = table5.policy_PolicySections_idx))) join0 on true where (table0.Id = table4.policy_Id))) join3 on true left join lateral (select array(select json_build_object('idx', table7.idx, 'Tactic', table7.Tactic, 'Techniques', table7.Techniques) from policy_MitreAttackVectors table7 where (table0.Id = table7.policy_Id))) join4 on true where (table0.Id = $1)) record ))"
+	getIDsStmt        = "SELECT Id FROM policy"
+	getManyStmt       = "SELECT serialized FROM policy WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM policy WHERE Id = ANY($1::text[])"
 )
@@ -673,6 +675,22 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, id string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Policy")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, id)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

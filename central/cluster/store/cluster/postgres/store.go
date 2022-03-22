@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM clusters"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM clusters WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM clusters WHERE Id = $1"
-	deleteStmt  = "DELETE FROM clusters WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM clusters"
-	getIDsStmt  = "SELECT Id FROM clusters"
-	getManyStmt = "SELECT serialized FROM clusters WHERE Id = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM clusters WHERE Id = $1"
+	deleteStmt        = "DELETE FROM clusters WHERE Id = $1"
+	walkStmt          = "SELECT serialized FROM clusters"
+	getWithRollupStmt = "select row_to_json((select record from (select table0.Id as Id, table0.Name as Name, table0.Type as Type, table0.Labels as Labels, table0.MainImage as MainImage, table0.CollectorImage as CollectorImage, table0.CentralApiEndpoint as CentralApiEndpoint, table0.RuntimeSupport as RuntimeSupport, table0.CollectionMethod as CollectionMethod, table0.AdmissionController as AdmissionController, table0.AdmissionControllerUpdates as AdmissionControllerUpdates, table0.AdmissionControllerEvents as AdmissionControllerEvents, table0.Status_SensorVersion as Status_SensorVersion, table0.Status_DEPRECATEDLastContact as Status_DEPRECATEDLastContact, table0.Status_ProviderMetadata_Region as Status_ProviderMetadata_Region, table0.Status_ProviderMetadata_Zone as Status_ProviderMetadata_Zone, table0.Status_ProviderMetadata_Google_Project as Status_ProviderMetadata_Google_Project, table0.Status_ProviderMetadata_Google_ClusterName as Status_ProviderMetadata_Google_ClusterName, table0.Status_ProviderMetadata_Aws_AccountId as Status_ProviderMetadata_Aws_AccountId, table0.Status_ProviderMetadata_Azure_SubscriptionId as Status_ProviderMetadata_Azure_SubscriptionId, table0.Status_ProviderMetadata_Verified as Status_ProviderMetadata_Verified, table0.Status_OrchestratorMetadata_Version as Status_OrchestratorMetadata_Version, table0.Status_OrchestratorMetadata_OpenshiftVersion as Status_OrchestratorMetadata_OpenshiftVersion, table0.Status_OrchestratorMetadata_BuildDate as Status_OrchestratorMetadata_BuildDate, table0.Status_OrchestratorMetadata_ApiVersions as Status_OrchestratorMetadata_ApiVersions, table0.Status_UpgradeStatus_Upgradability as Status_UpgradeStatus_Upgradability, table0.Status_UpgradeStatus_UpgradabilityStatusReason as Status_UpgradeStatus_UpgradabilityStatusReason, table0.Status_UpgradeStatus_MostRecentProcess_Active as Status_UpgradeStatus_MostRecentProcess_Active, table0.Status_UpgradeStatus_MostRecentProcess_Id as Status_UpgradeStatus_MostRecentProcess_Id, table0.Status_UpgradeStatus_MostRecentProcess_TargetVersion as Status_UpgradeStatus_MostRecentProcess_TargetVersion, table0.Status_UpgradeStatus_MostRecentProcess_UpgraderImage as Status_UpgradeStatus_MostRecentProcess_UpgraderImage, table0.Status_UpgradeStatus_MostRecentProcess_InitiatedAt as Status_UpgradeStatus_MostRecentProcess_InitiatedAt, table0.Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeState as Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeState, table0.Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeStatusDetail as Status_UpgradeStatus_MostRecentProcess_Progress_UpgradeStatusDetail, table0.Status_UpgradeStatus_MostRecentProcess_Progress_Since as Status_UpgradeStatus_MostRecentProcess_Progress_Since, table0.Status_UpgradeStatus_MostRecentProcess_Type as Status_UpgradeStatus_MostRecentProcess_Type, table0.Status_CertExpiryStatus_SensorCertExpiry as Status_CertExpiryStatus_SensorCertExpiry, table0.Status_CertExpiryStatus_SensorCertNotBefore as Status_CertExpiryStatus_SensorCertNotBefore, table0.DynamicConfig_AdmissionControllerConfig_Enabled as DynamicConfig_AdmissionControllerConfig_Enabled, table0.DynamicConfig_AdmissionControllerConfig_TimeoutSeconds as DynamicConfig_AdmissionControllerConfig_TimeoutSeconds, table0.DynamicConfig_AdmissionControllerConfig_ScanInline as DynamicConfig_AdmissionControllerConfig_ScanInline, table0.DynamicConfig_AdmissionControllerConfig_DisableBypass as DynamicConfig_AdmissionControllerConfig_DisableBypass, table0.DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates as DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates, table0.DynamicConfig_RegistryOverride as DynamicConfig_RegistryOverride, table0.DynamicConfig_DisableAuditLogs as DynamicConfig_DisableAuditLogs, table0.TolerationsConfig_Disabled as TolerationsConfig_Disabled, table0.Priority as Priority, table0.HealthStatus_Id as HealthStatus_Id, table0.HealthStatus_CollectorHealthInfo_Version as HealthStatus_CollectorHealthInfo_Version, table0.HealthStatus_CollectorHealthInfo_TotalDesiredPods as HealthStatus_CollectorHealthInfo_TotalDesiredPods, table0.HealthStatus_CollectorHealthInfo_TotalReadyPods as HealthStatus_CollectorHealthInfo_TotalReadyPods, table0.HealthStatus_CollectorHealthInfo_TotalRegisteredNodes as HealthStatus_CollectorHealthInfo_TotalRegisteredNodes, table0.HealthStatus_CollectorHealthInfo_StatusErrors as HealthStatus_CollectorHealthInfo_StatusErrors, table0.HealthStatus_AdmissionControlHealthInfo_TotalDesiredPods as HealthStatus_AdmissionControlHealthInfo_TotalDesiredPods, table0.HealthStatus_AdmissionControlHealthInfo_TotalReadyPods as HealthStatus_AdmissionControlHealthInfo_TotalReadyPods, table0.HealthStatus_AdmissionControlHealthInfo_StatusErrors as HealthStatus_AdmissionControlHealthInfo_StatusErrors, table0.HealthStatus_SensorHealthStatus as HealthStatus_SensorHealthStatus, table0.HealthStatus_CollectorHealthStatus as HealthStatus_CollectorHealthStatus, table0.HealthStatus_OverallHealthStatus as HealthStatus_OverallHealthStatus, table0.HealthStatus_AdmissionControlHealthStatus as HealthStatus_AdmissionControlHealthStatus, table0.HealthStatus_LastContact as HealthStatus_LastContact, table0.HealthStatus_HealthInfoComplete as HealthStatus_HealthInfoComplete, table0.SlimCollector as SlimCollector, table0.HelmConfig_DynamicConfig_AdmissionControllerConfig_Enabled as HelmConfig_DynamicConfig_AdmissionControllerConfig_Enabled, table0.HelmConfig_DynamicConfig_AdmissionControllerConfig_TimeoutSeconds as HelmConfig_DynamicConfig_AdmissionControllerConfig_TimeoutSeconds, table0.HelmConfig_DynamicConfig_AdmissionControllerConfig_ScanInline as HelmConfig_DynamicConfig_AdmissionControllerConfig_ScanInline, table0.HelmConfig_DynamicConfig_AdmissionControllerConfig_DisableBypass as HelmConfig_DynamicConfig_AdmissionControllerConfig_DisableBypass, table0.HelmConfig_DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates as HelmConfig_DynamicConfig_AdmissionControllerConfig_EnforceOnUpdates, table0.HelmConfig_DynamicConfig_RegistryOverride as HelmConfig_DynamicConfig_RegistryOverride, table0.HelmConfig_DynamicConfig_DisableAuditLogs as HelmConfig_DynamicConfig_DisableAuditLogs, table0.HelmConfig_StaticConfig_Type as HelmConfig_StaticConfig_Type, table0.HelmConfig_StaticConfig_MainImage as HelmConfig_StaticConfig_MainImage, table0.HelmConfig_StaticConfig_CentralApiEndpoint as HelmConfig_StaticConfig_CentralApiEndpoint, table0.HelmConfig_StaticConfig_CollectionMethod as HelmConfig_StaticConfig_CollectionMethod, table0.HelmConfig_StaticConfig_CollectorImage as HelmConfig_StaticConfig_CollectorImage, table0.HelmConfig_StaticConfig_AdmissionController as HelmConfig_StaticConfig_AdmissionController, table0.HelmConfig_StaticConfig_AdmissionControllerUpdates as HelmConfig_StaticConfig_AdmissionControllerUpdates, table0.HelmConfig_StaticConfig_TolerationsConfig_Disabled as HelmConfig_StaticConfig_TolerationsConfig_Disabled, table0.HelmConfig_StaticConfig_SlimCollector as HelmConfig_StaticConfig_SlimCollector, table0.HelmConfig_StaticConfig_AdmissionControllerEvents as HelmConfig_StaticConfig_AdmissionControllerEvents, table0.HelmConfig_ConfigFingerprint as HelmConfig_ConfigFingerprint, table0.HelmConfig_ClusterLabels as HelmConfig_ClusterLabels, table0.MostRecentSensorId_SystemNamespaceId as MostRecentSensorId_SystemNamespaceId, table0.MostRecentSensorId_DefaultNamespaceId as MostRecentSensorId_DefaultNamespaceId, table0.MostRecentSensorId_AppNamespace as MostRecentSensorId_AppNamespace, table0.MostRecentSensorId_AppNamespaceId as MostRecentSensorId_AppNamespaceId, table0.MostRecentSensorId_AppServiceaccountId as MostRecentSensorId_AppServiceaccountId, table0.MostRecentSensorId_K8SNodeName as MostRecentSensorId_K8SNodeName, table0.AuditLogState as AuditLogState, table0.InitBundleId as InitBundleId, table0.ManagedBy as ManagedBy from clusters table0 where (table0.Id = $1)) record ))"
+	getIDsStmt        = "SELECT Id FROM clusters"
+	getManyStmt       = "SELECT serialized FROM clusters WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM clusters WHERE Id = ANY($1::text[])"
 )
@@ -357,6 +359,22 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, id string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Cluster")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, id)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

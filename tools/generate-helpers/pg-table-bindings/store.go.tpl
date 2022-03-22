@@ -43,6 +43,7 @@ const (
         getStmt = "SELECT serialized FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
         deleteStmt = "DELETE FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
         walkStmt = "SELECT serialized FROM {{.Table}}"
+        getWithRollupStmt = "{{.Schema.RenderGetQueryWithRollup}}"
 
 {{- if $singlePK }}
         getIDsStmt = "SELECT {{$singlePK.ColumnName}} FROM {{.Table}}"
@@ -250,12 +251,20 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 	return exists, nil
 }
 
-func (s *storeImpl) GetWithRollup(ctx context.Context, {{template "paramList" $pks) (*{{.Type}}, bool, error) {
+func (s *storeImpl) GetWithRollup(ctx context.Context, {{template "paramList" $pks}}) (map[string]interface{}, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
 
-    conn, release := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
-    defer release()
+	row := s.db.QueryRow(ctx, getWithRollupStmt, {{template "argList" $pks}})
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+	    return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
 
+    var out map[string]interface{}
+    if err := json.Unmarshal(serializedRow, &out); err != nil {
+        return nil, false, err
+    }
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

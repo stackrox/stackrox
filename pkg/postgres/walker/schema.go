@@ -242,7 +242,7 @@ type Field struct {
 }
 
 // Getter returns the path to the object. If variable is true, then the value is just
-func (f Field) Getter(prefix string) string {
+func (f *Field) Getter(prefix string) string {
 	value := f.ObjectGetter.value
 	if f.ObjectGetter.variable {
 		return value

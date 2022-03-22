@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM networkbaseline"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkbaseline WHERE DeploymentId = $1)"
 
-	getStmt     = "SELECT serialized FROM networkbaseline WHERE DeploymentId = $1"
-	deleteStmt  = "DELETE FROM networkbaseline WHERE DeploymentId = $1"
-	walkStmt    = "SELECT serialized FROM networkbaseline"
-	getIDsStmt  = "SELECT DeploymentId FROM networkbaseline"
-	getManyStmt = "SELECT serialized FROM networkbaseline WHERE DeploymentId = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM networkbaseline WHERE DeploymentId = $1"
+	deleteStmt        = "DELETE FROM networkbaseline WHERE DeploymentId = $1"
+	walkStmt          = "SELECT serialized FROM networkbaseline"
+	getWithRollupStmt = "select row_to_json((select record from (select table0.DeploymentId as DeploymentId, table0.ClusterId as ClusterId, table0.Namespace as Namespace, table0.ObservationPeriodEnd as ObservationPeriodEnd, table0.Locked as Locked, table0.DeploymentName as DeploymentName, to_json(join0)->'array' as join0, to_json(join1)->'array' as join1 from networkbaseline table0 left join lateral (select array(select json_build_object('idx', table1.idx, 'Entity_Info_Type', table1.Entity_Info_Type, 'Entity_Info_Id', table1.Entity_Info_Id, 'Entity_Info_Deployment_Name', table1.Entity_Info_Deployment_Name, 'Entity_Info_Deployment_Namespace', table1.Entity_Info_Deployment_Namespace, 'Entity_Info_Deployment_Cluster', table1.Entity_Info_Deployment_Cluster, 'Entity_Info_ExternalSource_Name', table1.Entity_Info_ExternalSource_Name, 'Entity_Info_ExternalSource_Cidr', table1.Entity_Info_ExternalSource_Cidr, 'Entity_Info_ExternalSource_Default', table1.Entity_Info_ExternalSource_Default, 'Entity_Scope_ClusterId', table1.Entity_Scope_ClusterId, 'join0', to_json(join0)->'array', 'join1', to_json(join1)->'array') from networkbaseline_Peers table1 left join lateral (select array(select json_build_object('idx', table2.idx, 'Port', table2.Port, 'L4Protocol', table2.L4Protocol) from networkbaseline_Peers_ListenPorts table2 where (table0.DeploymentId = table2.networkbaseline_DeploymentId and table1.idx = table2.networkbaseline_Peers_idx))) join0 on true left join lateral (select array(select json_build_object('idx', table3.idx, 'Ingress', table3.Ingress, 'Port', table3.Port, 'Protocol', table3.Protocol) from networkbaseline_Peers_Properties table3 where (table0.DeploymentId = table3.networkbaseline_DeploymentId and table1.idx = table3.networkbaseline_Peers_idx))) join1 on true where (table0.DeploymentId = table1.networkbaseline_DeploymentId))) join0 on true left join lateral (select array(select json_build_object('idx', table4.idx, 'Entity_Info_Type', table4.Entity_Info_Type, 'Entity_Info_Id', table4.Entity_Info_Id, 'Entity_Info_Deployment_Name', table4.Entity_Info_Deployment_Name, 'Entity_Info_Deployment_Namespace', table4.Entity_Info_Deployment_Namespace, 'Entity_Info_Deployment_Cluster', table4.Entity_Info_Deployment_Cluster, 'Entity_Info_ExternalSource_Name', table4.Entity_Info_ExternalSource_Name, 'Entity_Info_ExternalSource_Cidr', table4.Entity_Info_ExternalSource_Cidr, 'Entity_Info_ExternalSource_Default', table4.Entity_Info_ExternalSource_Default, 'Entity_Scope_ClusterId', table4.Entity_Scope_ClusterId, 'join0', to_json(join0)->'array', 'join1', to_json(join1)->'array') from networkbaseline_ForbiddenPeers table4 left join lateral (select array(select json_build_object('idx', table5.idx, 'Port', table5.Port, 'L4Protocol', table5.L4Protocol) from networkbaseline_ForbiddenPeers_ListenPorts table5 where (table0.DeploymentId = table5.networkbaseline_DeploymentId and table4.idx = table5.networkbaseline_ForbiddenPeers_idx))) join0 on true left join lateral (select array(select json_build_object('idx', table6.idx, 'Ingress', table6.Ingress, 'Port', table6.Port, 'Protocol', table6.Protocol) from networkbaseline_ForbiddenPeers_Properties table6 where (table0.DeploymentId = table6.networkbaseline_DeploymentId and table4.idx = table6.networkbaseline_ForbiddenPeers_idx))) join1 on true where (table0.DeploymentId = table4.networkbaseline_DeploymentId))) join1 on true where (table0.DeploymentId = $1)) record ))"
+	getIDsStmt        = "SELECT DeploymentId FROM networkbaseline"
+	getManyStmt       = "SELECT serialized FROM networkbaseline WHERE DeploymentId = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM networkbaseline WHERE DeploymentId = ANY($1::text[])"
 )
@@ -593,6 +595,22 @@ func (s *storeImpl) Exists(ctx context.Context, deploymentId string) (bool, erro
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, deploymentId string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkBaseline")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, deploymentId)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM clusterinitbundles"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM clusterinitbundles WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM clusterinitbundles WHERE Id = $1"
-	deleteStmt  = "DELETE FROM clusterinitbundles WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM clusterinitbundles"
-	getIDsStmt  = "SELECT Id FROM clusterinitbundles"
-	getManyStmt = "SELECT serialized FROM clusterinitbundles WHERE Id = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM clusterinitbundles WHERE Id = $1"
+	deleteStmt        = "DELETE FROM clusterinitbundles WHERE Id = $1"
+	walkStmt          = "SELECT serialized FROM clusterinitbundles"
+	getWithRollupStmt = "select row_to_json((select record from (select table0.Id as Id, table0.Name as Name, table0.CreatedAt as CreatedAt, table0.CreatedBy_Id as CreatedBy_Id, table0.CreatedBy_AuthProviderId as CreatedBy_AuthProviderId, table0.IsRevoked as IsRevoked, table0.ExpiresAt as ExpiresAt, to_json(join0)->'array' as join0 from clusterinitbundles table0 left join lateral (select array(select json_build_object('idx', table1.idx, 'Key', table1.Key, 'Value', table1.Value) from clusterinitbundles_Attributes table1 where (table0.Id = table1.clusterinitbundles_Id))) join0 on true where (table0.Id = $1)) record ))"
+	getIDsStmt        = "SELECT Id FROM clusterinitbundles"
+	getManyStmt       = "SELECT serialized FROM clusterinitbundles WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM clusterinitbundles WHERE Id = ANY($1::text[])"
 )
@@ -251,6 +253,22 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, id string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "InitBundleMeta")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, id)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

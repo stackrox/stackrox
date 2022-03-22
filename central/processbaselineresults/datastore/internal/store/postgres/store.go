@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM processwhitelistresults"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM processwhitelistresults WHERE DeploymentId = $1)"
 
-	getStmt     = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = $1"
-	deleteStmt  = "DELETE FROM processwhitelistresults WHERE DeploymentId = $1"
-	walkStmt    = "SELECT serialized FROM processwhitelistresults"
-	getIDsStmt  = "SELECT DeploymentId FROM processwhitelistresults"
-	getManyStmt = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = $1"
+	deleteStmt        = "DELETE FROM processwhitelistresults WHERE DeploymentId = $1"
+	walkStmt          = "SELECT serialized FROM processwhitelistresults"
+	getWithRollupStmt = "select row_to_json((select table0_record from (select table0.DeploymentId as DeploymentId, table0.ClusterId as ClusterId, table0.Namespace as Namespace, to_json(join0)->'array' as join0 from processwhitelistresults table0 left join lateral (select array(select row_to_json((select table1_record from (select table1.idx as idx, table1.ContainerName as ContainerName, table1.BaselineStatus as BaselineStatus, table1.AnomalousProcessesExecuted as AnomalousProcessesExecuted from processwhitelistresults_BaselineStatuses table1 where (table1) ) table0.DeploymentId = table1.processwhitelistresults_DeploymentId_record )))) join0 on true where (table0) ) table0.DeploymentId = $1_record ))"
+	getIDsStmt        = "SELECT DeploymentId FROM processwhitelistresults"
+	getManyStmt       = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
 )
@@ -245,6 +247,22 @@ func (s *storeImpl) Exists(ctx context.Context, deploymentId string) (bool, erro
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, deploymentId string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ProcessBaselineResults")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, deploymentId)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

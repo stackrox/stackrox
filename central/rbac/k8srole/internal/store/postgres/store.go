@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM k8sroles"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM k8sroles WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM k8sroles WHERE Id = $1"
-	deleteStmt  = "DELETE FROM k8sroles WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM k8sroles"
-	getIDsStmt  = "SELECT Id FROM k8sroles"
-	getManyStmt = "SELECT serialized FROM k8sroles WHERE Id = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM k8sroles WHERE Id = $1"
+	deleteStmt        = "DELETE FROM k8sroles WHERE Id = $1"
+	walkStmt          = "SELECT serialized FROM k8sroles"
+	getWithRollupStmt = "select row_to_json((select table0_record from (select table0.Id as Id, table0.Name as Name, table0.Namespace as Namespace, table0.ClusterId as ClusterId, table0.ClusterName as ClusterName, table0.ClusterRole as ClusterRole, table0.Labels as Labels, table0.Annotations as Annotations, table0.CreatedAt as CreatedAt, to_json(join0)->'array' as join0 from k8sroles table0 left join lateral (select array(select row_to_json((select table1_record from (select table1.idx as idx, table1.Verbs as Verbs, table1.ApiGroups as ApiGroups, table1.Resources as Resources, table1.NonResourceUrls as NonResourceUrls, table1.ResourceNames as ResourceNames from k8sroles_Rules table1 where (table1) ) table0.Id = table1.k8sroles_Id_record )))) join0 on true where (table0) ) table0.Id = $1_record ))"
+	getIDsStmt        = "SELECT Id FROM k8sroles"
+	getManyStmt       = "SELECT serialized FROM k8sroles WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM k8sroles WHERE Id = ANY($1::text[])"
 )
@@ -261,6 +263,22 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, id string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "K8SRole")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, id)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

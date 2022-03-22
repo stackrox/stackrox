@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,11 +29,12 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM images"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM images WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM images WHERE Id = $1"
-	deleteStmt  = "DELETE FROM images WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM images"
-	getIDsStmt  = "SELECT Id FROM images"
-	getManyStmt = "SELECT serialized FROM images WHERE Id = ANY($1::text[])"
+	getStmt           = "SELECT serialized FROM images WHERE Id = $1"
+	deleteStmt        = "DELETE FROM images WHERE Id = $1"
+	walkStmt          = "SELECT serialized FROM images"
+	getWithRollupStmt = "select row_to_json((select record from (select table0.Id as Id, table0.Name_Registry as Name_Registry, table0.Name_Remote as Name_Remote, table0.Name_Tag as Name_Tag, table0.Name_FullName as Name_FullName, table0.Metadata_V1_Digest as Metadata_V1_Digest, table0.Metadata_V1_Created as Metadata_V1_Created, table0.Metadata_V1_Author as Metadata_V1_Author, table0.Metadata_V1_User as Metadata_V1_User, table0.Metadata_V1_Command as Metadata_V1_Command, table0.Metadata_V1_Entrypoint as Metadata_V1_Entrypoint, table0.Metadata_V1_Volumes as Metadata_V1_Volumes, table0.Metadata_V1_Labels as Metadata_V1_Labels, table0.Metadata_V2_Digest as Metadata_V2_Digest, table0.Metadata_LayerShas as Metadata_LayerShas, table0.Metadata_DataSource_Id as Metadata_DataSource_Id, table0.Metadata_DataSource_Name as Metadata_DataSource_Name, table0.Metadata_Version as Metadata_Version, table0.Scan_ScannerVersion as Scan_ScannerVersion, table0.Scan_ScanTime as Scan_ScanTime, table0.Scan_OperatingSystem as Scan_OperatingSystem, table0.Scan_DataSource_Id as Scan_DataSource_Id, table0.Scan_DataSource_Name as Scan_DataSource_Name, table0.Scan_Notes as Scan_Notes, table0.Components as Components, table0.Cves as Cves, table0.FixableCves as FixableCves, table0.LastUpdated as LastUpdated, table0.NotPullable as NotPullable, table0.IsClusterLocal as IsClusterLocal, table0.Priority as Priority, table0.RiskScore as RiskScore, table0.TopCvss as TopCvss, table0.Notes as Notes, to_json(join0)->'array' as join0, to_json(join1)->'array' as join1, to_json(join2)->'array' as join2 from images table0 left join lateral (select array(select json_build_object('idx', table1.idx, 'Instruction', table1.Instruction, 'Value', table1.Value, 'Created', table1.Created, 'Author', table1.Author, 'Empty', table1.Empty) from images_Layers table1 where (table0.Id = table1.images_Id))) join0 on true left join lateral (select array(select json_build_object('idx', table2.idx, 'VerificationTime', table2.VerificationTime, 'VerifierId', table2.VerifierId, 'Status', table2.Status, 'Description', table2.Description) from images_Results table2 where (table0.Id = table2.images_Id))) join1 on true left join lateral (select array(select json_build_object('idx', table3.idx, 'Cosign_RawSignature', table3.Cosign_RawSignature, 'Cosign_SignaturePayload', table3.Cosign_SignaturePayload) from images_Signatures table3 where (table0.Id = table3.images_Id))) join2 on true where (table0.Id = $1)) record ))"
+	getIDsStmt        = "SELECT Id FROM images"
+	getManyStmt       = "SELECT serialized FROM images WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM images WHERE Id = ANY($1::text[])"
 )
@@ -435,6 +437,22 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, id string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Image")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, id)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store

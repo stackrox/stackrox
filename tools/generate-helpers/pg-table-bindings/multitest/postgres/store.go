@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"time"
 
@@ -28,9 +29,10 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM multikey"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM multikey WHERE Key1 = $1 AND Key2 = $2)"
 
-	getStmt    = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
-	deleteStmt = "DELETE FROM multikey WHERE Key1 = $1 AND Key2 = $2"
-	walkStmt   = "SELECT serialized FROM multikey"
+	getStmt           = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
+	deleteStmt        = "DELETE FROM multikey WHERE Key1 = $1 AND Key2 = $2"
+	walkStmt          = "SELECT serialized FROM multikey"
+	getWithRollupStmt = "select json_build_object('Key1', table0.Key1, 'Key2', table0.Key2, 'StringSlice', table0.StringSlice, 'Bool', table0.Bool, 'Uint64', table0.Uint64, 'Int64', table0.Int64, 'Float', table0.Float, 'Labels', table0.Labels, 'Timestamp', table0.Timestamp, 'Enum', table0.Enum, 'Enums', table0.Enums, 'String_', table0.String_, 'IntSlice', table0.IntSlice, 'Embedded_Embedded', table0.Embedded_Embedded, 'Oneofstring', table0.Oneofstring, 'Oneofnested_Nested', table0.Oneofnested_Nested, 'join0', to_json(join0)->'array') from multikey table0 left join lateral (select array(select json_build_object('idx', table1.idx, 'Nested', table1.Nested, 'IsNested', table1.IsNested, 'Int64', table1.Int64, 'Nested2_Nested2', table1.Nested2_Nested2, 'Nested2_IsNested', table1.Nested2_IsNested, 'Nested2_Int64', table1.Nested2_Int64) from multikey_Nested table1 where (table0.Key1 = table1.multikey_Key1 and table0.Key2 = table1.multikey_Key2))) join0 on true where (table0.Key1 = $1 and table0.Key2 = $2)"
 )
 
 var (
@@ -272,6 +274,22 @@ func (s *storeImpl) Exists(ctx context.Context, key1 string, key2 string) (bool,
 		return false, pgutils.ErrNilIfNoRows(err)
 	}
 	return exists, nil
+}
+
+func (s *storeImpl) GetWithRollup(ctx context.Context, key1 string, key2 string) (map[string]interface{}, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "TestMultiKeyStruct")
+
+	row := s.db.QueryRow(ctx, getWithRollupStmt, key1, key2)
+	var serializedRow []byte
+	if err := row.Scan(&serializedRow); err != nil {
+		return nil, false, pgutils.ErrNilIfNoRows(err)
+	}
+
+	var out map[string]interface{}
+	if err := json.Unmarshal(serializedRow, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
 }
 
 // Get returns the object, if it exists from the store
