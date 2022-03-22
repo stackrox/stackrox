@@ -92,7 +92,7 @@ const (
 //go:generate mockgen-wrapper
 type ImageEnricher interface {
 	// EnrichImage will enrich an image with its metadata, scan results, signatures and signature verification results.
-	EnrichImage(ctx EnrichmentContext, image *storage.Image) (EnrichmentResult, error)
+	EnrichImage(ctx context.Context, enrichCtx EnrichmentContext, image *storage.Image) (EnrichmentResult, error)
 	// EnrichWithVulnerabilities will enrich an image with its components and their associated vulnerabilities only.
 	// This will always force re-enrichment and not take existing values into account.
 	EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error)
