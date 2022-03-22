@@ -35,15 +35,15 @@ QUAY_USERNAME="$(pass quay-io-ro-username)"
 QUAY_PASSWORD="$(pass quay-io-ro-password)"
 export QUAY_USERNAME QUAY_PASSWORD
 
-export KUBECONFIG="/tmp/kubeconfig"
-pkill -f 'port-forward.*svc/central' || true
-sleep 2
-kubectl port-forward -n stackrox svc/central 8443:443 &> /tmp/central.log &
-sleep 3
-
 # Required vars for Groovy e2e api tests
 export API_HOSTNAME="localhost"
 export API_PORT="8443"
+
+export KUBECONFIG="/tmp/kubeconfig"
+pkill -f 'port-forward.*svc/central' || true
+sleep 2
+kubectl port-forward -n stackrox svc/central "$API_PORT:443" &> /tmp/central.log &
+sleep 3
 
 # Verify API connectivity
 nc -vz "$API_HOSTNAME" "$API_PORT" \
