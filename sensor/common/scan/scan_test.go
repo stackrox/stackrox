@@ -161,15 +161,6 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 			scanImg:                  successfulScan,
 			fetchSignaturesWithRetry: failingFetchSignatures,
 		},
-		"fail enrich image via central": {
-			fakeImageServiceClient: suite.createMockImageServiceClient(nil, true, true),
-			getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
-				return &fakeRegistry{fail: false}, nil
-			},
-			scanImg:                  successfulScan,
-			fetchSignaturesWithRetry: successfulFetchSignatures,
-			enrichmentTriggered:      true,
-		},
 	}
 
 	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
@@ -197,8 +188,8 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 			// Need to manually trigger after test here, otherwise it would only be called at the end of table tests.
 			defer suite.AfterTest("", "")
 			img, err := EnrichLocalImage(context.Background(), c.fakeImageServiceClient, containerImg)
-			suite.Require().Error(err, "expected an error")
-			suite.Require().Nil(img, "required an empty image")
+			suite.Assert().Error(err, "expected an error")
+			suite.Assert().Nil(img, "required an empty image")
 			suite.Assert().Equal(c.enrichmentTriggered, c.fakeImageServiceClient.enrichTriggered,
 				"expected enrichment trigger status to be as expected")
 		})
