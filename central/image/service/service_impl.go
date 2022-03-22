@@ -313,7 +313,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
 	// contained a digest
-	if request.GetImageId() != "" {
+	if imgID != "" {
 		_ = s.saveImage(img)
 	}
 
@@ -331,7 +331,6 @@ func (s *serviceImpl) acquireScanSemaphore() error {
 }
 
 func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.EnrichLocalImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-
 	err := s.acquireScanSemaphore()
 	if err != nil {
 		return nil, err
@@ -348,10 +347,25 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		}
 		// This is safe even if img is nil.
 		scanTime := existingImg.GetScan().GetScanTime()
+
+		forceSigVerificationUpdate := false
+		// Check whether the time of the signature verification requires an update via the enrichment pipeline so we
+		// make sure to not return stale data. Only do this when the image signature verification feature is enabled.
+		// If no verification result is given, we can assume that the image doesn't have any signatures associated with
+		// it.
+		if features.ImageSignatureVerification.Enabled() &&
+			len(existingImg.GetSignatureVerificationData().GetResults()) > 0 {
+			// For now, all verification results within the signature verification data will have approximately the same
+			// time, their margin being ns.
+			verificationTime := existingImg.GetSignatureVerificationData().GetResults()[0].GetVerificationTime()
+			forceSigVerificationUpdate = forceSigVerificationUpdate || timestamp.FromProtobuf(verificationTime).
+				Add(reprocessInterval).After(timestamp.Now())
+		}
+
 		// Central does not reprocess cluster-local images. If the image exists and not too much time has passed,
 		// then return the image. Otherwise, run the enrichment pipeline to ensure we do not return stale data.
 		if exists && (timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now())) &&
-			(existingImg.GetSignature() != nil && existingImg.GetSignatureVerificationData() != nil) {
+			!forceSigVerificationUpdate {
 			return internalScanRespFromImage(existingImg), nil
 		}
 	}
