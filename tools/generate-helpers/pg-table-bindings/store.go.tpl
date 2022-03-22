@@ -73,7 +73,7 @@ type Store interface {
     Count(ctx context.Context) (int, error)
     Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error)
     Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error)
-{{- if not .SkipMutators }}
+{{- if not .JoinTable }}
     Upsert(ctx context.Context, obj *{{.Type}}) error
     UpsertMany(ctx context.Context, objs []*{{.Type}}) error
     Delete(ctx context.Context, {{template "paramList" $pks}}) error
@@ -142,8 +142,6 @@ create table if not exists {{$schema.Table}} (
 
 {{- define "insertObject"}}
 {{- $schema := . }}
-
-{{- if not .SkipMutators }}
 func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.Parents}}, idx int{{end}}) error {
     {{if not $schema.Parents }}
     serialized, marshalErr := obj.Marshal()
@@ -188,11 +186,13 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
     {{- end}}
     return nil
 }
+
 {{range $idx, $child := $schema.Children}}{{ template "insertObject" $child }}{{end}}
 {{- end}}
 
+{{- if not .JoinTable }}
 {{ template "insertObject" .Schema }}
-{{- end }}
+{{- end}}
 
 {{- define "copyFunctionName"}}{{- $schema := . }}copyFrom{{$schema.Table|upperCamelCase}}
 {{- end}}
@@ -324,7 +324,8 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
     return nil
 }
 
-{{- if not .SkipMutators }}
+{{- if not .JoinTable }}
+
 func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
     conn, release := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
     defer release()
@@ -418,6 +419,21 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 	return conn, conn.Release
 }
 
+{{- if not .JoinTable }}
+// Delete removes the specified ID from the store
+func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
+
+    conn, release := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
+	defer release()
+
+	if _, err := conn.Exec(ctx, deleteStmt, {{template "argList" $pks}}); err != nil {
+		return err
+	}
+	return nil
+}
+{{- end}}
+
 {{- if $singlePK }}
 
 // GetIDs returns all the IDs for the store
@@ -485,20 +501,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
 	return elems, missingIndices, nil
 }
 
-{{- if not .SkipMutators }}
-// Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
-
-    conn, release := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, {{template "argList" $pks}}); err != nil {
-		return err
-	}
-	return nil
-}
-
+{{- if not .JoinTable }}
 // Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.TrimmedType}}")

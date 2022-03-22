@@ -56,8 +56,9 @@ type properties struct {
 	// RefTypes indicate the object type for the referenced table schemas.
 	RefTypes []string
 
-	// When set to true, auto-generation skips generation of mutating funcs such as inserts, updates, deletes.
-	SkipMutators bool
+	// When set to true, it means that the schema represents a join table. The generation of mutating functions
+	// such as inserts, updates, deletes, is skipped. This is because join tables should be filled from parents.
+	JoinTable bool
 }
 
 func renderFile(templateMap map[string]interface{}, temp *template.Template, templateFileName string) error {
@@ -96,7 +97,7 @@ func main() {
 	c.Flags().StringVar(&props.SearchCategory, "search-category", "", "the search category to index under")
 	c.Flags().StringSliceVar(&props.RefTables, "referenced-tables", []string{}, "additional foreign key references for this table")
 	c.Flags().StringSliceVar(&props.RefTypes, "referenced-types", []string{}, "the proto object type of the referenced tables")
-	c.Flags().BoolVar(&props.SkipMutators, "skip-mutators", true, "skip generation of mutating functions")
+	c.Flags().BoolVar(&props.JoinTable, "join-table", false, "indicates the schema represents a join table. The generation of mutating functions is skipped")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
@@ -130,13 +131,13 @@ func main() {
 			"Schema":         schema,
 			"SearchCategory": fmt.Sprintf("SearchCategory_%s", props.SearchCategory),
 			"OptionsPath":    path.Join(packagenames.Rox, props.OptionsPath),
-			"SkipMutators":   props.SkipMutators,
+			"JoinTable":      props.JoinTable,
 		}
 
 		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
 			return err
 		}
-		if !props.SkipMutators {
+		if !props.JoinTable {
 			if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
 				return err
 			}
