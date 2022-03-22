@@ -55,8 +55,8 @@ const (
 )
 
 var (
-    log = logging.LoggerForModule()
     schema = walker.Walk(reflect.TypeOf((*{{.Type}})(nil)), baseTable)
+    log = logging.LoggerForModule()
     {{- $schema := .Schema }}
     {{- range $idx, $ref := $schema.Parents}}
         {{- if ne $ref.Table $schema.EmbeddedIn -}}.

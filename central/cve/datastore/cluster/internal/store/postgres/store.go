@@ -41,8 +41,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
 	schema = walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {

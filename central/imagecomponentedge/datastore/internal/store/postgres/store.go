@@ -36,8 +36,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = walker.Walk(reflect.TypeOf((*storage.ImageComponentEdge)(nil)), baseTable).
+	schema = walker.Walk(reflect.TypeOf((*storage.ImageComponentEdge)(nil)), baseTable)
+	log    = logging.LoggerForModule().
 		WithReference(walker.Walk(reflect.TypeOf((*storage.Image)(nil)), "images")).
 		WithReference(walker.Walk(reflect.TypeOf((*storage.ImageComponent)(nil)), "image_component"))
 )
