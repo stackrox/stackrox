@@ -71,14 +71,12 @@ func (cfg *helmDeriveLocalValuesCommand) Construct(chartName string) error {
 // provided values
 func (cfg *helmDeriveLocalValuesCommand) Validate() error {
 	if cfg.output == "" && cfg.outputDir == "" {
-		cfg.env.Logger().ErrfLn(`No output file specified using either "--output" or "--output-dir".`)
-		cfg.env.Logger().ErrfLn(`If the derived Helm configuration should really be written to stdout, please use "--output=-".`)
-		return errox.NewErrInvalidArgs("no output file specified")
+		return errox.NewErrInvalidArgs(`no output file specified using either "--output" or "--output-dir".\n` +
+			`If the derived Helm configuration should really be written to stdout, please use "--output=-"`)
 	}
 
 	if cfg.output != "" && cfg.outputDir != "" {
-		cfg.env.Logger().ErrfLn(`Specify either "--output" or "--output-dir" but not both.`)
-		return errox.NewErrInvalidArgs(`invalid arguments "--output" and "--output-dir"`)
+		return errox.NewErrInvalidArgs(`specify either "--output" or "--output-dir" but not both`)
 	}
 
 	if cfg.output == "-" {
