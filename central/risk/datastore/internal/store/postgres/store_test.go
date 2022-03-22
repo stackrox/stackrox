@@ -86,4 +86,17 @@ func (s *RiskStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundRisk)
+
+	var risks []*storage.Risk
+	for i := 0; i < 200; i++ {
+		risk := &storage.Risk{}
+		s.NoError(testutils.FullInit(risk, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		risks = append(risks, risk)
+	}
+
+	s.NoError(store.UpsertMany(ctx, risks))
+
+	riskCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(riskCount, 200)
 }

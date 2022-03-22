@@ -19,10 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 const (
 	baseTable  = "reportconfigs"
 	countStmt  = "SELECT COUNT(*) FROM reportconfigs"
@@ -35,10 +31,18 @@ const (
 	getManyStmt = "SELECT serialized FROM reportconfigs WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM reportconfigs WHERE Id = ANY($1::text[])"
+
+	batchAfter = 100
+
+	// using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	batchSize = 10000
 )
 
 var (
 	schema = walker.Walk(reflect.TypeOf((*storage.ReportConfiguration)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {
@@ -134,9 +138,9 @@ func insertIntoReportconfigs(ctx context.Context, tx pgx.Tx, obj *storage.Report
 		obj.GetSchedule().GetDaysOfWeek().GetDays(),
 		obj.GetSchedule().GetDaysOfMonth().GetDays(),
 		obj.GetLastRunStatus().GetReportStatus(),
-		pgutils.NilOrStringTimestamp(obj.GetLastRunStatus().GetLastRunTime()),
+		pgutils.NilOrTime(obj.GetLastRunStatus().GetLastRunTime()),
 		obj.GetLastRunStatus().GetErrorMsg(),
-		pgutils.NilOrStringTimestamp(obj.GetLastSuccessfulRunTime()),
+		pgutils.NilOrTime(obj.GetLastSuccessfulRunTime()),
 		serialized,
 	}
 
@@ -149,6 +153,144 @@ func insertIntoReportconfigs(ctx context.Context, tx pgx.Tx, obj *storage.Report
 	return nil
 }
 
+func (s *storeImpl) copyFromReportconfigs(ctx context.Context, tx pgx.Tx, objs ...*storage.ReportConfiguration) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"description",
+
+		"type",
+
+		"vulnreportfilters_fixability",
+
+		"vulnreportfilters_sincelastreport",
+
+		"vulnreportfilters_severities",
+
+		"scopeid",
+
+		"emailconfig_notifierid",
+
+		"emailconfig_mailinglists",
+
+		"schedule_intervaltype",
+
+		"schedule_hour",
+
+		"schedule_minute",
+
+		"schedule_weekly_day",
+
+		"schedule_daysofweek_days",
+
+		"schedule_daysofmonth_days",
+
+		"lastrunstatus_reportstatus",
+
+		"lastrunstatus_lastruntime",
+
+		"lastrunstatus_errormsg",
+
+		"lastsuccessfulruntime",
+
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			obj.GetId(),
+
+			obj.GetName(),
+
+			obj.GetDescription(),
+
+			obj.GetType(),
+
+			obj.GetVulnReportFilters().GetFixability(),
+
+			obj.GetVulnReportFilters().GetSinceLastReport(),
+
+			obj.GetVulnReportFilters().GetSeverities(),
+
+			obj.GetScopeId(),
+
+			obj.GetEmailConfig().GetNotifierId(),
+
+			obj.GetEmailConfig().GetMailingLists(),
+
+			obj.GetSchedule().GetIntervalType(),
+
+			obj.GetSchedule().GetHour(),
+
+			obj.GetSchedule().GetMinute(),
+
+			obj.GetSchedule().GetWeekly().GetDay(),
+
+			obj.GetSchedule().GetDaysOfWeek().GetDays(),
+
+			obj.GetSchedule().GetDaysOfMonth().GetDays(),
+
+			obj.GetLastRunStatus().GetReportStatus(),
+
+			pgutils.NilOrTime(obj.GetLastRunStatus().GetLastRunTime()),
+
+			obj.GetLastRunStatus().GetErrorMsg(),
+
+			pgutils.NilOrTime(obj.GetLastSuccessfulRunTime()),
+
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"reportconfigs"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableReportconfigs(ctx, db)
@@ -156,6 +298,27 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ReportConfiguration) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "ReportConfiguration")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.copyFromReportconfigs(ctx, tx, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ReportConfiguration) error {
@@ -190,7 +353,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ReportConfiguration
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ReportConfiguration) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ReportConfiguration")
 
-	return s.upsert(ctx, objs...)
+	if len(objs) < batchAfter {
+		return s.upsert(ctx, objs...)
+	} else {
+		return s.copyFrom(ctx, objs...)
+	}
 }
 
 // Count returns the number of objects in the store

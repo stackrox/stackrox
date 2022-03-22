@@ -86,4 +86,17 @@ func (s *ProcessbaselinesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundProcessBaseline)
+
+	var processBaselines []*storage.ProcessBaseline
+	for i := 0; i < 200; i++ {
+		processBaseline := &storage.ProcessBaseline{}
+		s.NoError(testutils.FullInit(processBaseline, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		processBaselines = append(processBaselines, processBaseline)
+	}
+
+	s.NoError(store.UpsertMany(ctx, processBaselines))
+
+	processBaselineCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(processBaselineCount, 200)
 }

@@ -86,4 +86,17 @@ func (s *ApitokensStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTokenMetadata)
+
+	var tokenMetadatas []*storage.TokenMetadata
+	for i := 0; i < 200; i++ {
+		tokenMetadata := &storage.TokenMetadata{}
+		s.NoError(testutils.FullInit(tokenMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		tokenMetadatas = append(tokenMetadatas, tokenMetadata)
+	}
+
+	s.NoError(store.UpsertMany(ctx, tokenMetadatas))
+
+	tokenMetadataCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(tokenMetadataCount, 200)
 }

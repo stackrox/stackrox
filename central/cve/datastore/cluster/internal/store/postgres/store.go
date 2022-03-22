@@ -19,10 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 const (
 	baseTable  = "cluster_cves"
 	countStmt  = "SELECT COUNT(*) FROM cluster_cves"
@@ -35,10 +31,18 @@ const (
 	getManyStmt = "SELECT serialized FROM cluster_cves WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM cluster_cves WHERE Id = ANY($1::text[])"
+
+	batchAfter = 100
+
+	// using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	batchSize = 10000
 )
 
 var (
 	schema = walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {
@@ -169,9 +173,9 @@ func insertIntoClusterCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) err
 		obj.GetImpactScore(),
 		obj.GetSummary(),
 		obj.GetLink(),
-		pgutils.NilOrStringTimestamp(obj.GetPublishedOn()),
-		pgutils.NilOrStringTimestamp(obj.GetCreatedAt()),
-		pgutils.NilOrStringTimestamp(obj.GetLastModified()),
+		pgutils.NilOrTime(obj.GetPublishedOn()),
+		pgutils.NilOrTime(obj.GetCreatedAt()),
+		pgutils.NilOrTime(obj.GetLastModified()),
 		obj.GetScoreVersion(),
 		obj.GetCvssV2().GetVector(),
 		obj.GetCvssV2().GetAttackVector(),
@@ -198,8 +202,8 @@ func insertIntoClusterCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) err
 		obj.GetCvssV3().GetScore(),
 		obj.GetCvssV3().GetSeverity(),
 		obj.GetSuppressed(),
-		pgutils.NilOrStringTimestamp(obj.GetSuppressActivation()),
-		pgutils.NilOrStringTimestamp(obj.GetSuppressExpiry()),
+		pgutils.NilOrTime(obj.GetSuppressActivation()),
+		pgutils.NilOrTime(obj.GetSuppressExpiry()),
 		obj.GetSeverity(),
 		serialized,
 	}
@@ -245,6 +249,270 @@ func insertIntoClusterCvesReferences(ctx context.Context, tx pgx.Tx, obj *storag
 	return nil
 }
 
+func (s *storeImpl) copyFromClusterCves(ctx context.Context, tx pgx.Tx, objs ...*storage.CVE) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
+	copyCols := []string{
+
+		"id",
+
+		"cvss",
+
+		"impactscore",
+
+		"summary",
+
+		"link",
+
+		"publishedon",
+
+		"createdat",
+
+		"lastmodified",
+
+		"scoreversion",
+
+		"cvssv2_vector",
+
+		"cvssv2_attackvector",
+
+		"cvssv2_accesscomplexity",
+
+		"cvssv2_authentication",
+
+		"cvssv2_confidentiality",
+
+		"cvssv2_integrity",
+
+		"cvssv2_availability",
+
+		"cvssv2_exploitabilityscore",
+
+		"cvssv2_impactscore",
+
+		"cvssv2_score",
+
+		"cvssv2_severity",
+
+		"cvssv3_vector",
+
+		"cvssv3_exploitabilityscore",
+
+		"cvssv3_impactscore",
+
+		"cvssv3_attackvector",
+
+		"cvssv3_attackcomplexity",
+
+		"cvssv3_privilegesrequired",
+
+		"cvssv3_userinteraction",
+
+		"cvssv3_scope",
+
+		"cvssv3_confidentiality",
+
+		"cvssv3_integrity",
+
+		"cvssv3_availability",
+
+		"cvssv3_score",
+
+		"cvssv3_severity",
+
+		"suppressed",
+
+		"suppressactivation",
+
+		"suppressexpiry",
+
+		"severity",
+
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			obj.GetId(),
+
+			obj.GetCvss(),
+
+			obj.GetImpactScore(),
+
+			obj.GetSummary(),
+
+			obj.GetLink(),
+
+			pgutils.NilOrTime(obj.GetPublishedOn()),
+
+			pgutils.NilOrTime(obj.GetCreatedAt()),
+
+			pgutils.NilOrTime(obj.GetLastModified()),
+
+			obj.GetScoreVersion(),
+
+			obj.GetCvssV2().GetVector(),
+
+			obj.GetCvssV2().GetAttackVector(),
+
+			obj.GetCvssV2().GetAccessComplexity(),
+
+			obj.GetCvssV2().GetAuthentication(),
+
+			obj.GetCvssV2().GetConfidentiality(),
+
+			obj.GetCvssV2().GetIntegrity(),
+
+			obj.GetCvssV2().GetAvailability(),
+
+			obj.GetCvssV2().GetExploitabilityScore(),
+
+			obj.GetCvssV2().GetImpactScore(),
+
+			obj.GetCvssV2().GetScore(),
+
+			obj.GetCvssV2().GetSeverity(),
+
+			obj.GetCvssV3().GetVector(),
+
+			obj.GetCvssV3().GetExploitabilityScore(),
+
+			obj.GetCvssV3().GetImpactScore(),
+
+			obj.GetCvssV3().GetAttackVector(),
+
+			obj.GetCvssV3().GetAttackComplexity(),
+
+			obj.GetCvssV3().GetPrivilegesRequired(),
+
+			obj.GetCvssV3().GetUserInteraction(),
+
+			obj.GetCvssV3().GetScope(),
+
+			obj.GetCvssV3().GetConfidentiality(),
+
+			obj.GetCvssV3().GetIntegrity(),
+
+			obj.GetCvssV3().GetAvailability(),
+
+			obj.GetCvssV3().GetScore(),
+
+			obj.GetCvssV3().GetSeverity(),
+
+			obj.GetSuppressed(),
+
+			pgutils.NilOrTime(obj.GetSuppressActivation()),
+
+			pgutils.NilOrTime(obj.GetSuppressExpiry()),
+
+			obj.GetSeverity(),
+
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"cluster_cves"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for _, obj := range objs {
+
+		if err = s.copyFromClusterCvesReferences(ctx, tx, obj.GetId(), obj.GetReferences()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromClusterCvesReferences(ctx context.Context, tx pgx.Tx, cluster_cves_Id string, objs ...*storage.CVE_Reference) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"cluster_cves_id",
+
+		"idx",
+
+		"uri",
+
+		"tags",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			cluster_cves_Id,
+
+			idx,
+
+			obj.GetURI(),
+
+			obj.GetTags(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"cluster_cves_references"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableClusterCves(ctx, db)
@@ -252,6 +520,27 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.CVE) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "CVE")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.copyFromClusterCves(ctx, tx, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.CVE) error {
@@ -286,7 +575,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.CVE) error {
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.CVE) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "CVE")
 
-	return s.upsert(ctx, objs...)
+	if len(objs) < batchAfter {
+		return s.upsert(ctx, objs...)
+	} else {
+		return s.copyFrom(ctx, objs...)
+	}
 }
 
 // Count returns the number of objects in the store

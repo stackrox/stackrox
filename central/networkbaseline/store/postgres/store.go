@@ -19,10 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 const (
 	baseTable  = "networkbaseline"
 	countStmt  = "SELECT COUNT(*) FROM networkbaseline"
@@ -35,10 +31,18 @@ const (
 	getManyStmt = "SELECT serialized FROM networkbaseline WHERE DeploymentId = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM networkbaseline WHERE DeploymentId = ANY($1::text[])"
+
+	batchAfter = 100
+
+	// using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	batchSize = 10000
 )
 
 var (
 	schema = walker.Walk(reflect.TypeOf((*storage.NetworkBaseline)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {
@@ -306,7 +310,7 @@ func insertIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, obj *storage.Netw
 		obj.GetDeploymentId(),
 		obj.GetClusterId(),
 		obj.GetNamespace(),
-		pgutils.NilOrStringTimestamp(obj.GetObservationPeriodEnd()),
+		pgutils.NilOrTime(obj.GetObservationPeriodEnd()),
 		obj.GetLocked(),
 		obj.GetDeploymentName(),
 		serialized,
@@ -527,6 +531,504 @@ func insertIntoNetworkbaselineForbiddenPeersProperties(ctx context.Context, tx p
 	return nil
 }
 
+func (s *storeImpl) copyFromNetworkbaseline(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkBaseline) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
+	copyCols := []string{
+
+		"deploymentid",
+
+		"clusterid",
+
+		"namespace",
+
+		"observationperiodend",
+
+		"locked",
+
+		"deploymentname",
+
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			obj.GetDeploymentId(),
+
+			obj.GetClusterId(),
+
+			obj.GetNamespace(),
+
+			pgutils.NilOrTime(obj.GetObservationPeriodEnd()),
+
+			obj.GetLocked(),
+
+			obj.GetDeploymentName(),
+
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetDeploymentId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for _, obj := range objs {
+
+		if err = s.copyFromNetworkbaselinePeers(ctx, tx, obj.GetDeploymentId(), obj.GetPeers()...); err != nil {
+			return err
+		}
+		if err = s.copyFromNetworkbaselineForbiddenPeers(ctx, tx, obj.GetDeploymentId(), obj.GetForbiddenPeers()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromNetworkbaselinePeers(ctx context.Context, tx pgx.Tx, networkbaseline_DeploymentId string, objs ...*storage.NetworkBaselinePeer) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"networkbaseline_deploymentid",
+
+		"idx",
+
+		"entity_info_type",
+
+		"entity_info_id",
+
+		"entity_info_deployment_name",
+
+		"entity_info_deployment_namespace",
+
+		"entity_info_deployment_cluster",
+
+		"entity_info_externalsource_name",
+
+		"entity_info_externalsource_cidr",
+
+		"entity_info_externalsource_default",
+
+		"entity_scope_clusterid",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			networkbaseline_DeploymentId,
+
+			idx,
+
+			obj.GetEntity().GetInfo().GetType(),
+
+			obj.GetEntity().GetInfo().GetId(),
+
+			obj.GetEntity().GetInfo().GetDeployment().GetName(),
+
+			obj.GetEntity().GetInfo().GetDeployment().GetNamespace(),
+
+			obj.GetEntity().GetInfo().GetDeployment().GetCluster(),
+
+			obj.GetEntity().GetInfo().GetExternalSource().GetName(),
+
+			obj.GetEntity().GetInfo().GetExternalSource().GetCidr(),
+
+			obj.GetEntity().GetInfo().GetExternalSource().GetDefault(),
+
+			obj.GetEntity().GetScope().GetClusterId(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline_peers"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for idx, obj := range objs {
+
+		if err = s.copyFromNetworkbaselinePeersListenPorts(ctx, tx, networkbaseline_DeploymentId, idx, obj.GetEntity().GetInfo().GetDeployment().GetListenPorts()...); err != nil {
+			return err
+		}
+		if err = s.copyFromNetworkbaselinePeersProperties(ctx, tx, networkbaseline_DeploymentId, idx, obj.GetProperties()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromNetworkbaselinePeersListenPorts(ctx context.Context, tx pgx.Tx, networkbaseline_DeploymentId string, networkbaseline_Peers_idx int, objs ...*storage.NetworkEntityInfo_Deployment_ListenPort) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"networkbaseline_deploymentid",
+
+		"networkbaseline_peers_idx",
+
+		"idx",
+
+		"port",
+
+		"l4protocol",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			networkbaseline_DeploymentId,
+
+			networkbaseline_Peers_idx,
+
+			idx,
+
+			obj.GetPort(),
+
+			obj.GetL4Protocol(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline_peers_listenports"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromNetworkbaselinePeersProperties(ctx context.Context, tx pgx.Tx, networkbaseline_DeploymentId string, networkbaseline_Peers_idx int, objs ...*storage.NetworkBaselineConnectionProperties) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"networkbaseline_deploymentid",
+
+		"networkbaseline_peers_idx",
+
+		"idx",
+
+		"ingress",
+
+		"port",
+
+		"protocol",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			networkbaseline_DeploymentId,
+
+			networkbaseline_Peers_idx,
+
+			idx,
+
+			obj.GetIngress(),
+
+			obj.GetPort(),
+
+			obj.GetProtocol(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline_peers_properties"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromNetworkbaselineForbiddenPeers(ctx context.Context, tx pgx.Tx, networkbaseline_DeploymentId string, objs ...*storage.NetworkBaselinePeer) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"networkbaseline_deploymentid",
+
+		"idx",
+
+		"entity_info_type",
+
+		"entity_info_id",
+
+		"entity_info_deployment_name",
+
+		"entity_info_deployment_namespace",
+
+		"entity_info_deployment_cluster",
+
+		"entity_info_externalsource_name",
+
+		"entity_info_externalsource_cidr",
+
+		"entity_info_externalsource_default",
+
+		"entity_scope_clusterid",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			networkbaseline_DeploymentId,
+
+			idx,
+
+			obj.GetEntity().GetInfo().GetType(),
+
+			obj.GetEntity().GetInfo().GetId(),
+
+			obj.GetEntity().GetInfo().GetDeployment().GetName(),
+
+			obj.GetEntity().GetInfo().GetDeployment().GetNamespace(),
+
+			obj.GetEntity().GetInfo().GetDeployment().GetCluster(),
+
+			obj.GetEntity().GetInfo().GetExternalSource().GetName(),
+
+			obj.GetEntity().GetInfo().GetExternalSource().GetCidr(),
+
+			obj.GetEntity().GetInfo().GetExternalSource().GetDefault(),
+
+			obj.GetEntity().GetScope().GetClusterId(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline_forbiddenpeers"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for idx, obj := range objs {
+
+		if err = s.copyFromNetworkbaselineForbiddenPeersListenPorts(ctx, tx, networkbaseline_DeploymentId, idx, obj.GetEntity().GetInfo().GetDeployment().GetListenPorts()...); err != nil {
+			return err
+		}
+		if err = s.copyFromNetworkbaselineForbiddenPeersProperties(ctx, tx, networkbaseline_DeploymentId, idx, obj.GetProperties()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromNetworkbaselineForbiddenPeersListenPorts(ctx context.Context, tx pgx.Tx, networkbaseline_DeploymentId string, networkbaseline_ForbiddenPeers_idx int, objs ...*storage.NetworkEntityInfo_Deployment_ListenPort) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"networkbaseline_deploymentid",
+
+		"networkbaseline_forbiddenpeers_idx",
+
+		"idx",
+
+		"port",
+
+		"l4protocol",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			networkbaseline_DeploymentId,
+
+			networkbaseline_ForbiddenPeers_idx,
+
+			idx,
+
+			obj.GetPort(),
+
+			obj.GetL4Protocol(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline_forbiddenpeers_listenports"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromNetworkbaselineForbiddenPeersProperties(ctx context.Context, tx pgx.Tx, networkbaseline_DeploymentId string, networkbaseline_ForbiddenPeers_idx int, objs ...*storage.NetworkBaselineConnectionProperties) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"networkbaseline_deploymentid",
+
+		"networkbaseline_forbiddenpeers_idx",
+
+		"idx",
+
+		"ingress",
+
+		"port",
+
+		"protocol",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			networkbaseline_DeploymentId,
+
+			networkbaseline_ForbiddenPeers_idx,
+
+			idx,
+
+			obj.GetIngress(),
+
+			obj.GetPort(),
+
+			obj.GetProtocol(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline_forbiddenpeers_properties"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableNetworkbaseline(ctx, db)
@@ -534,6 +1036,27 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkBaseline) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "NetworkBaseline")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.copyFromNetworkbaseline(ctx, tx, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkBaseline) error {
@@ -568,7 +1091,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NetworkBaseline) er
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkBaseline) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkBaseline")
 
-	return s.upsert(ctx, objs...)
+	if len(objs) < batchAfter {
+		return s.upsert(ctx, objs...)
+	} else {
+		return s.copyFrom(ctx, objs...)
+	}
 }
 
 // Count returns the number of objects in the store
