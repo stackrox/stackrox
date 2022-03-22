@@ -19,7 +19,6 @@ import (
 
 // Top Level Resolvers.
 ///////////////////////
-// osward change for PR
 
 func (resolver *Resolver) componentV2(ctx context.Context, args IDQuery) (ComponentResolver, error) {
 	component, exists, err := resolver.ImageComponentDataStore.Get(ctx, string(*args.ID))
@@ -41,6 +40,7 @@ func (resolver *Resolver) componentsV2(ctx context.Context, args PaginatedQuery)
 	if err != nil {
 		return nil, err
 	}
+	log.Errorf("osward -- query: %s\n", query)
 	return resolver.componentsV2Query(ctx, query)
 }
 
@@ -56,8 +56,9 @@ func (resolver *Resolver) componentsV2Query(ctx context.Context, query *v1.Query
 	}
 
 	ret := make([]ComponentResolver, 0, len(compRes))
-	for _, resolver := range compRes {
+	for i, resolver := range compRes {
 		resolver.ctx = ctx
+		log.Errorf("osward -- top cvss for resolver %d %f", i, resolver.data.GetTopCvss())
 		ret = append(ret, resolver)
 	}
 	return ret, err
