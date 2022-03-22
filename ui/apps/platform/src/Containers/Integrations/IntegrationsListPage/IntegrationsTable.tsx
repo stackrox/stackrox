@@ -16,12 +16,12 @@ import pluralize from 'pluralize';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useTableSelection from 'hooks/useTableSelection';
+import TableCellValue from 'Components/TableCellValue/TableCellValue';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
 import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
 import DownloadCAConfigBundle from '../ClusterInitBundles/DownloadCAConfigBundle';
-import TableCellValue from '../../../Components/TableCellValue/TableCellValue';
 
 function getNewButtonText(type) {
     if (type === 'apitoken') {
