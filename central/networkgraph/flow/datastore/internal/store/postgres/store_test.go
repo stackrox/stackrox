@@ -240,12 +240,38 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	log.Infof("Count time => %d", delta.Milliseconds())
 
 	// redo it and add the network flows through copy
-	log.Info("Copy From")
+	//log.Info("Copy From")
+	//result = []string{}
+	//result = append(result, "Copy From")
+	//result = append(result, strconv.Itoa(len(flows)))
+	//a = time.Now()
+	//s.NoError(store.UpsertMany(ctx, timestamp.Now(), flows))
+	//
+	//delta = time.Now().Sub(a)
+	//result = append(result, strconv.FormatInt(delta.Milliseconds(), 10))
+	//log.Infof("%d", delta.Milliseconds())
+	//
+	//results = append(results, result)
+	//
+	//result = nil
+	//a = time.Now()
+	//networkFlowCount, err = store.Count(ctx)
+	//delta = time.Now().Sub(a)
+	//result = append(result, "Count Time")
+	//result = append(result, strconv.FormatInt(delta.Milliseconds(), 10))
+	//results = append(results, result)
+	//log.Infof("Count time => %d", delta.Milliseconds())
+	//s.NoError(err)
+	//log.Infof("Table Count => %d", networkFlowCount)
+	// redo it and add the network flows through insert many at once
+
+	// redo it and add the network flows through copy
+	log.Info("Insert Many")
 	result = []string{}
-	result = append(result, "Copy From")
+	result = append(result, "Insert Many")
 	result = append(result, strconv.Itoa(len(flows)))
 	a = time.Now()
-	s.NoError(store.UpsertMany(ctx, timestamp.Now(), flows))
+	s.NoError(store.UpsertFlows(ctx, flows, timestamp.Now()))
 
 	delta = time.Now().Sub(a)
 	result = append(result, strconv.FormatInt(delta.Milliseconds(), 10))
@@ -263,8 +289,6 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	log.Infof("Count time => %d", delta.Milliseconds())
 	s.NoError(err)
 	log.Infof("Table Count => %d", networkFlowCount)
-	// redo it and add the network flows through insert many at once
-
 
 
 	flowsSince, _, err := store.GetAllFlows(ctx, protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)))//protoconv.MustConvertTimeToTimestamp(time.Now()))

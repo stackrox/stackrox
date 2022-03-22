@@ -4,7 +4,9 @@ package postgres
 
 import (
 	"context"
+	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -16,11 +18,13 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 const (
+	baseTable  = "networkflow"
 	countStmt  = "SELECT COUNT(*) FROM networkflow"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkflow WHERE Props_SrcEntity_Id = $1 AND Props_DstEntity_Id = $2 AND Props_DstPort = $3 AND Props_L4Protocol = $4 AND ClusterId = $5)"
 
@@ -36,7 +40,7 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	table = "networkflow"
+	schema = walker.Walk(reflect.TypeOf((*storage.NetworkFlow)(nil)), baseTable)
 
 	// We begin to process in batches after this number of records
 	batchAfter = 100
@@ -52,7 +56,7 @@ var (
 )
 
 func init() {
-	globaldb.RegisterTable(table, "NetworkFlow")
+	globaldb.RegisterTable(schema)
 }
 
 type FlowStore interface {
@@ -116,7 +120,7 @@ create table if not exists networkflow (
     LastSeenTimestamp timestamp,
     ClusterId varchar,
     PRIMARY KEY(Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId)
-) PARTITION BY HASH (ClusterId, Props_SrcEntity_Id, Props_DstEntity_Id)
+) 
 `
 
 	_, err := db.Exec(ctx, table)
@@ -136,18 +140,6 @@ create table if not exists networkflow (
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			panic(err)
-		}
-	}
-
-
-	// now create the partitions
-	for i := 0; i < 87; i++ {
-		partition := " create table if not exists networkflow_" + strconv.Itoa(i) + " PARTITION OF networkflow FOR VALUES WITH (MODULUS 87, REMAINDER " + strconv.Itoa(i) + ")"
-
-		_, err := db.Exec(ctx, partition)
-		if err != nil {
-			log.Info(err)
-			panic("error creating table: " + table)
 		}
 	}
 
@@ -182,6 +174,78 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, las
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (s *flowStoreImpl) insertMultiNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
+
+	sqlStr := "INSERT INTO networkflow (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_SrcEntity_Deployment_Name, Props_SrcEntity_Deployment_Namespace, Props_SrcEntity_ExternalSource_Name, Props_SrcEntity_ExternalSource_Cidr, Props_SrcEntity_ExternalSource_Default, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstEntity_Deployment_Name, Props_DstEntity_Deployment_Namespace, Props_DstEntity_ExternalSource_Name, Props_DstEntity_ExternalSource_Cidr, Props_DstEntity_ExternalSource_Default, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES "
+
+	sqlEnd := " ON CONFLICT(Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) DO UPDATE SET Props_SrcEntity_Type = EXCLUDED.Props_SrcEntity_Type, Props_SrcEntity_Id = EXCLUDED.Props_SrcEntity_Id, Props_SrcEntity_Deployment_Name = EXCLUDED.Props_SrcEntity_Deployment_Name, Props_SrcEntity_Deployment_Namespace = EXCLUDED.Props_SrcEntity_Deployment_Namespace, Props_SrcEntity_ExternalSource_Name = EXCLUDED.Props_SrcEntity_ExternalSource_Name, Props_SrcEntity_ExternalSource_Cidr = EXCLUDED.Props_SrcEntity_ExternalSource_Cidr, Props_SrcEntity_ExternalSource_Default = EXCLUDED.Props_SrcEntity_ExternalSource_Default, Props_DstEntity_Type = EXCLUDED.Props_DstEntity_Type, Props_DstEntity_Id = EXCLUDED.Props_DstEntity_Id, Props_DstEntity_Deployment_Name = EXCLUDED.Props_DstEntity_Deployment_Name, Props_DstEntity_Deployment_Namespace = EXCLUDED.Props_DstEntity_Deployment_Namespace, Props_DstEntity_ExternalSource_Name = EXCLUDED.Props_DstEntity_ExternalSource_Name, Props_DstEntity_ExternalSource_Cidr = EXCLUDED.Props_DstEntity_ExternalSource_Cidr, Props_DstEntity_ExternalSource_Default = EXCLUDED.Props_DstEntity_ExternalSource_Default, Props_DstPort = EXCLUDED.Props_DstPort, Props_L4Protocol = EXCLUDED.Props_L4Protocol, LastSeenTimestamp = EXCLUDED.LastSeenTimestamp, ClusterId = EXCLUDED.ClusterId"
+
+	var inserts []string
+	vals := []interface{}{}
+
+	// cannot insert more than 1000 rows at a time with this method.
+	if batchSize > 1000 {
+		batchSize = 1000
+	}
+
+	for idx, obj := range objs {
+		vals = append(vals, obj.GetProps().GetSrcEntity().GetType(),
+			obj.GetProps().GetSrcEntity().GetId(),
+			obj.GetProps().GetSrcEntity().GetDeployment().GetName(),
+			obj.GetProps().GetSrcEntity().GetDeployment().GetNamespace(),
+			obj.GetProps().GetSrcEntity().GetExternalSource().GetName(),
+			obj.GetProps().GetSrcEntity().GetExternalSource().GetCidr(),
+			obj.GetProps().GetSrcEntity().GetExternalSource().GetDefault(),
+			obj.GetProps().GetDstEntity().GetType(),
+			obj.GetProps().GetDstEntity().GetId(),
+			obj.GetProps().GetDstEntity().GetDeployment().GetName(),
+			obj.GetProps().GetDstEntity().GetDeployment().GetNamespace(),
+			obj.GetProps().GetDstEntity().GetExternalSource().GetName(),
+			obj.GetProps().GetDstEntity().GetExternalSource().GetCidr(),
+			obj.GetProps().GetDstEntity().GetExternalSource().GetDefault(),
+			obj.GetProps().GetDstPort(),
+			obj.GetProps().GetL4Protocol(),
+			pgutils.NilOrTime(lastUpdateTS.GogoProtobuf()),
+			clusterID,)
+
+		const rowSQL= "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+		inserts = append(inserts, rowSQL)
+
+		// if we are at the end or reach our batch size we need to begin a transaction
+		// apply the inserts and commit
+		if (idx + 1) % batchSize == 0 || idx == len(objs) {
+			//tx, err := tx.Begin(context.Background())
+			//if err != nil {
+			//	return err
+			//}
+
+			// build the string for the batch
+			varString := strings.Join(inserts, ",")
+			varString = ReplaceSQL(varString, "?")
+			finalStr := sqlStr + varString + sqlEnd
+			//log.Info("SQL => " + finalStr)
+
+			_, err := tx.Exec(context.Background(), finalStr, vals...)
+			if err != nil {
+				//if err := tx.Rollback(context.Background()); err != nil {
+				//	return err
+				//}
+				return err
+			}
+
+			//if err := tx.Commit(context.Background()); err != nil {
+			//	return err
+			//}
+
+			// clear the inserts and vals
+			inserts = nil
+			vals = vals[:0]
+		}
 	}
 
 	return nil
@@ -334,6 +398,27 @@ func (s *flowStoreImpl) copyFrom(ctx context.Context, lastUpdateTS timestamp.Mic
 	return nil
 }
 
+func (s *flowStoreImpl) insertMany(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "NetworkFlow")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.insertMultiNetworkflow(ctx, tx, s.clusterID, lastUpdateTS, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *flowStoreImpl) upsert(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
 	conn, release := s.acquireConn(ctx, ops.Get, "NetworkFlow")
 	defer release()
@@ -384,7 +469,7 @@ func (s *flowStoreImpl) UpsertManyInd(ctx context.Context, lastUpdateTS timestam
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
 
-	return s.upsert(ctx, lastUpdateTS, flows...)
+	return s.insertMany(ctx, lastUpdateTS, flows...)
 }
 
 // Count returns the number of objects in the store
@@ -657,6 +742,15 @@ func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func
 	}
 
 	return nil
+}
+
+// ReplaceSQL replaces the instance occurrence of any string pattern with an increasing $n based sequence
+func ReplaceSQL(old, searchPattern string) string {
+	tmpCount := strings.Count(old, searchPattern)
+	for m := 1; m <= tmpCount; m++ {
+		old = strings.Replace(old, searchPattern, "$"+strconv.Itoa(m), 1)
+	}
+	return old
 }
 
 //// Used for testing
