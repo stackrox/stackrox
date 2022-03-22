@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -x
 
 function realpath {
 	[[ -n "$1" ]] || return 0
@@ -157,6 +158,10 @@ function launch_central {
     fi
 
     add_args -i "${MAIN_IMAGE}"
+
+    if [[ "${ROX_POSTGRES_DATASTORE}" == "true" && -n "${CENTRAL_DB_IMAGE}" ]]; then
+        add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
+    fi
 
     pkill -f kubectl'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
     pkill -9 -f kubectl'.*port-forward.*' || true
