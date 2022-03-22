@@ -7,23 +7,33 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
 import { Message } from '@stackrox/ui-components';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import PolicyBuilderKeys from './PolicyBuilderKeys';
 import PolicySections from './PolicySections';
 import {
     policyConfigurationDescriptor,
     networkDetectionDescriptor,
     auditLogDescriptor,
+    imageSigningCriteriaDescriptor,
 } from './descriptors';
 
 function BooleanPolicySection({ readOnly, hasHeader, hasAuditLogEventSource, criteriaLocked }) {
     const [descriptor, setDescriptor] = useState([]);
+    const isImageSigningEnabled = useFeatureFlagEnabled('ROX_VERIFY_IMAGE_SIGNATURE');
     useEffect(() => {
         if (hasAuditLogEventSource) {
             setDescriptor(auditLogDescriptor);
         } else {
-            setDescriptor([...policyConfigurationDescriptor, ...networkDetectionDescriptor]);
+            const descriptors = isImageSigningEnabled
+                ? [
+                      ...policyConfigurationDescriptor,
+                      ...networkDetectionDescriptor,
+                      imageSigningCriteriaDescriptor,
+                  ]
+                : [...policyConfigurationDescriptor, ...networkDetectionDescriptor];
+            setDescriptor(descriptors);
         }
-    }, [hasAuditLogEventSource]);
+    }, [hasAuditLogEventSource, isImageSigningEnabled]);
 
     if (readOnly || criteriaLocked) {
         return (

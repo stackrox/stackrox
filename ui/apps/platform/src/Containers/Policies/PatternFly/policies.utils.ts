@@ -19,6 +19,7 @@ import {
 } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
+import { imageSigningCriteriaName } from '../Wizard/Form/descriptors';
 
 function isValidAction(action: unknown): action is ExtendedPageAction {
     return action === 'clone' || action === 'create' || action === 'edit' || action === 'generate';
@@ -478,14 +479,66 @@ export function postFormatExclusionField(policy): Policy {
     return serverPolicy;
 }
 
+export function postFormatImageSigningPolicyGroup(policy: Policy): Policy {
+    if (!policy.policySections) {
+        return policy;
+    }
+
+    const serverPolicy = cloneDeep(policy);
+    policy.policySections.forEach((policySection, sectionIdx) => {
+        const { policyGroups } = policySection;
+        policyGroups.forEach((policyGroup, groupIdx) => {
+            const { values } = policyGroup;
+            if (policyGroup.fieldName === imageSigningCriteriaName) {
+                const { arrayValue } = values[0];
+                arrayValue?.forEach((value, valueIdx) => {
+                    serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
+                        valueIdx
+                    ] = {
+                        value,
+                    };
+                });
+            }
+        });
+    });
+
+    return serverPolicy;
+}
+
+export function preFormatImageSigningPolicyGroup(policy: Policy): Policy {
+    if (!policy.policySections) {
+        return policy;
+    }
+
+    const clientPolicy = cloneDeep(policy);
+    policy.policySections.forEach((policySection, sectionIdx) => {
+        const { policyGroups } = policySection;
+        policyGroups.forEach((policyGroup, groupIdx) => {
+            const { values, fieldName } = policyGroup;
+            if (fieldName === imageSigningCriteriaName) {
+                const arrayValue = values.map((v) => v.value as string);
+                clientPolicy.policySections[sectionIdx].policyGroups[groupIdx].values = [
+                    {
+                        arrayValue,
+                    },
+                ];
+            }
+        });
+    });
+
+    return clientPolicy;
+}
+
 export function getClientWizardPolicy(policy): Policy {
     let formattedPolicy = preFormatExclusionField(policy);
     formattedPolicy = preFormatNestedPolicyFields(formattedPolicy);
+    formattedPolicy = preFormatImageSigningPolicyGroup(formattedPolicy);
     return formattedPolicy;
 }
 
 export function getServerPolicy(policy): Policy {
     let serverPolicy = postFormatExclusionField(policy);
+    serverPolicy = postFormatImageSigningPolicyGroup(serverPolicy);
     serverPolicy = postFormatNestedPolicyFields(serverPolicy);
     return serverPolicy;
 }
