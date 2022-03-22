@@ -3,8 +3,10 @@ package resources
 import "github.com/stackrox/rox/pkg/sync"
 
 var (
-	dsInit      sync.Once
-	depStore    *DeploymentStore
+	dsInit   sync.Once
+	depStore *DeploymentStore
+
+	npsInit     sync.Once
 	netPolStore *NetworkPolicyStore
 
 	psInit   sync.Once
@@ -21,7 +23,7 @@ func DeploymentStoreSingleton() *DeploymentStore {
 
 // NetworkPolicyStoreSingleton returns a singleton of the NetworkPolicy
 func NetworkPolicyStoreSingleton() *NetworkPolicyStore {
-	dsInit.Do(func() {
+	npsInit.Do(func() {
 		netPolStore = newNetworkPolicyStore()
 	})
 	return netPolStore
