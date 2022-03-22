@@ -32,7 +32,7 @@ const (
 	getStmt           = "SELECT serialized FROM signatureintegrations WHERE Id = $1"
 	deleteStmt        = "DELETE FROM signatureintegrations WHERE Id = $1"
 	walkStmt          = "SELECT serialized FROM signatureintegrations"
-	getWithRollupStmt = "select row_to_json((select table0_record from (select table0.Id as Id, table0.Name as Name, to_json(join0)->'array' as join0 from signatureintegrations table0 left join lateral (select array(select row_to_json((select table1_record from (select table1.idx as idx, table1.Name as Name, table1.PublicKeyPemEnc as PublicKeyPemEnc from signatureintegrations_PublicKeys table1 where (table1) ) table0.Id = table1.signatureintegrations_Id_record )))) join0 on true where (table0) ) table0.Id = $1_record ))"
+	getWithRollupStmt = "select row_to_json((select record from (select table0.Id as Id, table0.Name as Name, to_json(join0)->'array' as join0 from signatureintegrations table0 left join lateral (select array(select json_build_object('idx', table1.idx, 'Name', table1.Name, 'PublicKeyPemEnc', table1.PublicKeyPemEnc) from signatureintegrations_PublicKeys table1 where (table0.Id = table1.signatureintegrations_Id))) join0 on true where (table0.Id = $1)) record ))"
 	getIDsStmt        = "SELECT Id FROM signatureintegrations"
 	getManyStmt       = "SELECT serialized FROM signatureintegrations WHERE Id = ANY($1::text[])"
 

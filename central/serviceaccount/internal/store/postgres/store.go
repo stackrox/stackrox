@@ -32,7 +32,7 @@ const (
 	getStmt           = "SELECT serialized FROM serviceaccounts WHERE Id = $1"
 	deleteStmt        = "DELETE FROM serviceaccounts WHERE Id = $1"
 	walkStmt          = "SELECT serialized FROM serviceaccounts"
-	getWithRollupStmt = "select row_to_json((select table0_record from (select table0.Id as Id, table0.Name as Name, table0.Namespace as Namespace, table0.ClusterName as ClusterName, table0.ClusterId as ClusterId, table0.Labels as Labels, table0.Annotations as Annotations, table0.CreatedAt as CreatedAt, table0.AutomountToken as AutomountToken, table0.Secrets as Secrets, table0.ImagePullSecrets as ImagePullSecrets from serviceaccounts table0 where (table0) ) table0.Id = $1_record ))"
+	getWithRollupStmt = "select row_to_json((select record from (select table0.Id as Id, table0.Name as Name, table0.Namespace as Namespace, table0.ClusterName as ClusterName, table0.ClusterId as ClusterId, table0.Labels as Labels, table0.Annotations as Annotations, table0.CreatedAt as CreatedAt, table0.AutomountToken as AutomountToken, table0.Secrets as Secrets, table0.ImagePullSecrets as ImagePullSecrets from serviceaccounts table0 where (table0.Id = $1)) record ))"
 	getIDsStmt        = "SELECT Id FROM serviceaccounts"
 	getManyStmt       = "SELECT serialized FROM serviceaccounts WHERE Id = ANY($1::text[])"
 

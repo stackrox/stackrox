@@ -32,7 +32,7 @@ const (
 	getStmt           = "SELECT serialized FROM roles WHERE Name = $1"
 	deleteStmt        = "DELETE FROM roles WHERE Name = $1"
 	walkStmt          = "SELECT serialized FROM roles"
-	getWithRollupStmt = "select row_to_json((select table0_record from (select table0.Name as Name, table0.Description as Description, table0.PermissionSetId as PermissionSetId, table0.AccessScopeId as AccessScopeId, table0.GlobalAccess as GlobalAccess, table0.ResourceToAccess as ResourceToAccess from roles table0 where (table0) ) table0.Name = $1_record ))"
+	getWithRollupStmt = "select row_to_json((select record from (select table0.Name as Name, table0.Description as Description, table0.PermissionSetId as PermissionSetId, table0.AccessScopeId as AccessScopeId, table0.GlobalAccess as GlobalAccess, table0.ResourceToAccess as ResourceToAccess from roles table0 where (table0.Name = $1)) record ))"
 	getIDsStmt        = "SELECT Name FROM roles"
 	getManyStmt       = "SELECT serialized FROM roles WHERE Name = ANY($1::text[])"
 

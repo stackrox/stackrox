@@ -32,7 +32,7 @@ const (
 	getStmt           = "SELECT serialized FROM watchedimages WHERE Name = $1"
 	deleteStmt        = "DELETE FROM watchedimages WHERE Name = $1"
 	walkStmt          = "SELECT serialized FROM watchedimages"
-	getWithRollupStmt = "select json_build_object('Name', table0.Name) from watchedimages table0 where (table0.Name = $1)"
+	getWithRollupStmt = "select row_to_json((select record from (select table0.Name as Name from watchedimages table0 where (table0.Name = $1)) record ))"
 	getIDsStmt        = "SELECT Name FROM watchedimages"
 	getManyStmt       = "SELECT serialized FROM watchedimages WHERE Name = ANY($1::text[])"
 

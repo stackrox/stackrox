@@ -32,7 +32,7 @@ const (
 	getStmt           = "SELECT serialized FROM permissionsets WHERE Id = $1"
 	deleteStmt        = "DELETE FROM permissionsets WHERE Id = $1"
 	walkStmt          = "SELECT serialized FROM permissionsets"
-	getWithRollupStmt = "select row_to_json((select table0_record from (select table0.Id as Id, table0.Name as Name, table0.Description as Description, table0.ResourceToAccess as ResourceToAccess from permissionsets table0 where (table0) ) table0.Id = $1_record ))"
+	getWithRollupStmt = "select row_to_json((select record from (select table0.Id as Id, table0.Name as Name, table0.Description as Description, table0.ResourceToAccess as ResourceToAccess from permissionsets table0 where (table0.Id = $1)) record ))"
 	getIDsStmt        = "SELECT Id FROM permissionsets"
 	getManyStmt       = "SELECT serialized FROM permissionsets WHERE Id = ANY($1::text[])"
 
