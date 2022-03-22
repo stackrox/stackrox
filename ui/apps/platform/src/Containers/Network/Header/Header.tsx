@@ -5,7 +5,11 @@ import CIDRFormButton from './CIDRFormButton';
 import FilterToolbar from './FilterToolbar';
 import SimulatorButton from './SimulatorButton';
 
-function Header({ isSimulationOn }) {
+interface HeaderProps {
+    isSimulationOn: boolean;
+}
+
+function Header({ isSimulationOn }: HeaderProps) {
     return (
         <>
             <PageSection variant="light">
