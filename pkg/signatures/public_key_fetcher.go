@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	gcrRemote "github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
+	dockerRegistry "github.com/heroku/docker-registry-client/registry"
 	"github.com/sigstore/cosign/pkg/cosign"
 	ociremote "github.com/sigstore/cosign/pkg/oci/remote"
 	"github.com/stackrox/rox/generated/storage"
@@ -40,7 +40,7 @@ func init() {
 // It will return the storage.ImageSignature and an error that indicated whether the fetching should be retried or not.
 // NOTE: No error will be returned when the image has no signature available. All occurring errors will be logged.
 func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, image *storage.Image,
-	registry registryTypes.ImageRegistry) ([]*storage.Signature, error) {
+	registry registryTypes.Registry) ([]*storage.Signature, error) {
 	// Since cosign makes heavy use of google/go-containerregistry, we need to parse the image's full name as a
 	// name.Reference.
 	imgFullName := image.GetName().GetFullName()
@@ -110,21 +110,21 @@ func makeTransientErrorRetryable(err error) error {
 	return err
 }
 
-func optionsFromRegistry(registry registryTypes.ImageRegistry) []gcrRemote.Option {
+func optionsFromRegistry(registry registryTypes.Registry) []gcrRemote.Option {
 	registryCfg := registry.Config()
 	if registryCfg == nil {
 		return nil
 	}
 
+	log.Infof("Using the following registry information for registry %q:\nUser: %s\nPass: %s\n",
+		registry.Name(), registryCfg.Username, registryCfg.Password)
 	var opts []gcrRemote.Option
-	if registryCfg.Username != "" {
-		opts = append(opts, gcrRemote.WithAuth(authn.FromConfig(authn.AuthConfig{
-			Username: registryCfg.Username,
-			Password: registryCfg.Password,
-		})))
-	}
 	if registryCfg.Insecure {
-		opts = append(opts, gcrRemote.WithTransport(insecureDefaultTransport))
+		opts = append(opts, gcrRemote.WithTransport(dockerRegistry.WrapTransport(insecureDefaultTransport,
+			strings.TrimSuffix(registryCfg.URL, "/"), registryCfg.Username, registryCfg.Password)))
+	} else {
+		opts = append(opts, gcrRemote.WithTransport(dockerRegistry.WrapTransport(gcrRemote.DefaultTransport,
+			strings.TrimSuffix(registryCfg.URL, "/"), registryCfg.Username, registryCfg.Password)))
 	}
 
 	return opts
