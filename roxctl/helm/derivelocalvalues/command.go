@@ -21,6 +21,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use: fmt.Sprintf("derive-local-values --output <path> <%s>", common.MakePrettyChartNameList(supportedCharts...)),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			if err := cmdCfg.Construct(args, cmd); err != nil {
