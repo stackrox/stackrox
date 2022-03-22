@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="194px" height="48px" viewBox="0 0 194 48" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Group 7 Copy 5</title>
+    <defs>
+        <path d="M24,2.28571429 L5.71428571,10.1818182 L5.71428571,22.025974 C5.71428571,32.9818182 13.5161905,43.227013 24,45.7142857 C34.4838095,43.227013 42.2857143,32.9818182 42.2857143,22.025974 L42.2857143,10.1818182 L24,2.28571429 Z" id="path-1"></path>
+        <filter x="-5.5%" y="-4.8%" width="110.9%" height="109.5%" filterUnits="objectBoundingBox" id="filter-2">
+            <feMorphology radius="1" operator="erode" in="SourceAlpha" result="shadowSpreadInner1"></feMorphology>
+            <feGaussianBlur stdDeviation="0.5" in="shadowSpreadInner1" result="shadowBlurInner1"></feGaussianBlur>
+            <feOffset dx="0" dy="0" in="shadowBlurInner1" result="shadowOffsetInner1"></feOffset>
+            <feComposite in="shadowOffsetInner1" in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="shadowInnerInner1"></feComposite>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.5 0" type="matrix" in="shadowInnerInner1"></feColorMatrix>
+        </filter>
+        <path d="M24,6.85714286 L10.2857143,13.0909091 L10.2857143,22.4415584 C10.2857143,31.0909091 16.1371429,39.1792208 24,41.1428571 C31.8628571,39.1792208 37.7142857,31.0909091 37.7142857,22.4415584 L37.7142857,13.0909091 L24,6.85714286 Z" id="path-3"></path>
+        <filter x="-5.5%" y="-4.4%" width="110.9%" height="108.8%" filterUnits="objectBoundingBox" id="filter-4">
+            <feGaussianBlur stdDeviation="1.5" in="SourceAlpha" result="shadowBlurInner1"></feGaussianBlur>
+            <feOffset dx="0" dy="0" in="shadowBlurInner1" result="shadowOffsetInner1"></feOffset>
+            <feComposite in="shadowOffsetInner1" in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="shadowInnerInner1"></feComposite>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.5 0" type="matrix" in="shadowInnerInner1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group-5">
+            <text id="Signature-Copy-2" font-family="RedHatDisplay-Bold, Red Hat Display" font-size="29" font-weight="bold" fill="#095DB6">
+                <tspan x="52" y="34">Signature</tspan>
+            </text>
+            <g id="Group-2-Copy-15">
+                <polygon id="Path" points="0 0 48 0 48 48 0 48"></polygon>
+                <g id="Path" fill-rule="nonzero">
+                    <use fill="#5592F2" xlink:href="#path-1"></use>
+                    <use fill="black" fill-opacity="1" filter="url(#filter-2)" xlink:href="#path-1"></use>
+                    <use stroke="#8CB9FF" stroke-width="2" xlink:href="#path-1"></use>
+                </g>
+                <g id="Path" fill-rule="nonzero">
+                    <use fill="#095DB6" xlink:href="#path-3"></use>
+                    <use fill="black" fill-opacity="1" filter="url(#filter-4)" xlink:href="#path-3"></use>
+                </g>
+                <path d="M34.2857143,21.7142857 L24.7428571,21.7142857 C23.8057143,19.0514286 21.2685714,17.1428571 18.2857143,17.1428571 C14.5028571,17.1428571 11.4285714,20.2171429 11.4285714,24 C11.4285714,27.7828571 14.5028571,30.8571429 18.2857143,30.8571429 C21.2685714,30.8571429 23.8057143,28.9485714 24.7428571,26.2857143 L25.1428571,26.2857143 L27.4285714,28.5714286 L29.7142857,26.2857143 L32,28.5714286 L36.5714286,23.9542857 L34.2857143,21.7142857 Z M18.2857143,27.4285714 C16.4,27.4285714 14.8571429,25.8857143 14.8571429,24 C14.8571429,22.1142857 16.4,20.5714286 18.2857143,20.5714286 C20.1714286,20.5714286 21.7142857,22.1142857 21.7142857,24 C21.7142857,25.8857143 20.1714286,27.4285714 18.2857143,27.4285714 Z" id="Shape" fill="#FFFFFF" fill-rule="nonzero" transform="translate(24.000000, 24.000000) rotate(-270.000000) translate(-24.000000, -24.000000) "></path>
+            </g>
+        </g>
+    </g>
+</svg>
