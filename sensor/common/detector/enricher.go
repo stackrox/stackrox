@@ -2,7 +2,6 @@ package detector
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -213,21 +212,24 @@ func (e *enricher) getNetpols(deployment *storage.Deployment) *augmentedobjs.Net
 	npStore := resources.NetworkPolicyStoreSingleton()
 	matchingNPs := make([]storage.NetworkPolicy, 0)
 
-	fmt.Printf("getNetpols: searching network policies for deployment: %s\n", deployment.Name)
+	log.Infof("getNetpols: searching network policies for deployment: %s\n", deployment.Name)
 	// full scan for all policies currently known
 	for _, policy := range npStore.GetAll() {
 		if policy.GetNamespace() != deployment.GetNamespace() {
+			log.Errorf("getNetpols: skip due to namespace policy.ns(%s) != depl.ns(%s)\n", policy.GetNamespace(), deployment.GetNamespace())
+			log.Infof("getNetpols: policy %+v\n", policy)
+			log.Infof("getNetpols: deployment %+v\n", deployment)
 			continue
 		}
 		policySelector := policy.GetSpec().GetPodSelector()
 		podLabels := deployment.GetPodLabels()
 		if labels.MatchLabels(policySelector, podLabels) {
-			fmt.Printf("getNetpols: policy/depl: %s/%s - MATCH\n", policy.GetName(), deployment.Name)
+			log.Infof("getNetpols: policy/depl: %s/%s - MATCH\n", policy.GetName(), deployment.Name)
 			matchingNPs = append(matchingNPs, *policy)
 		} else {
-			fmt.Printf("getNetpols: policy/depl: %s/%s - NOPE\n", policy.GetName(), deployment.Name)
-			fmt.Printf("getNetpols: policySelector: %+v\n", policySelector.MatchLabels)
-			fmt.Printf("getNetpols: podLabels: %+v\n", podLabels)
+			log.Errorf("getNetpols: policy/depl: %s/%s - NOPE\n", policy.GetName(), deployment.Name)
+			log.Infof("getNetpols: policySelector: %+v\n", policySelector.MatchLabels)
+			log.Infof("getNetpols: podLabels: %+v\n", podLabels)
 		}
 	}
 
