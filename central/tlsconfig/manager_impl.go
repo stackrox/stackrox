@@ -154,9 +154,9 @@ func (m *managerImpl) TLSConfigurer(opts Options) (verifier.TLSConfigurer, error
 	for _, serverCert := range opts.ServerCerts {
 		switch serverCert {
 		case DefaultTLSCertSource:
-			configurer.AddServerCertSource(m.defaultCerts)
+			configurer.AddServerCertSource(&m.defaultCerts)
 		case ServiceCertSource:
-			configurer.AddServerCertSource(m.internalCerts)
+			configurer.AddServerCertSource(&m.internalCerts)
 		default:
 			return nil, errors.Errorf("invalid server cert source %v", serverCert)
 		}
@@ -165,9 +165,9 @@ func (m *managerImpl) TLSConfigurer(opts Options) (verifier.TLSConfigurer, error
 	for _, clientCA := range opts.ClientCAs {
 		switch clientCA {
 		case UserCAsSource:
-			configurer.AddClientCertSource(m.userTrustRoots)
+			configurer.AddClientCertSource(&m.userTrustRoots)
 		case ServiceCASource:
-			configurer.AddClientCertSource(m.internalTrustRoots)
+			configurer.AddClientCertSource(&m.internalTrustRoots)
 		default:
 			return nil, errors.Errorf("invalid client CA source %v", clientCA)
 		}

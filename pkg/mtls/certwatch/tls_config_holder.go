@@ -72,11 +72,11 @@ func (c *TLSConfigHolder) TLSConfig() (*tls.Config, error) {
 }
 
 // AddServerCertSource adds server cert source.
-func (c *TLSConfigHolder) AddServerCertSource(serverCertSource []tls.Certificate) {
-	c.serverCertSources = append(c.serverCertSources, &serverCertSource)
+func (c *TLSConfigHolder) AddServerCertSource(serverCertSource *[]tls.Certificate) {
+	c.serverCertSources = append(c.serverCertSources, serverCertSource)
 }
 
 // AddClientCertSource adds client cert source.
-func (c *TLSConfigHolder) AddClientCertSource(clientCertSource []*x509.Certificate) {
-	c.clientCASources = append(c.clientCASources, &clientCertSource)
+func (c *TLSConfigHolder) AddClientCertSource(clientCertSource *[]*x509.Certificate) {
+	c.clientCASources = append(c.clientCASources, clientCertSource)
 }
