@@ -112,26 +112,3 @@ describe('Network Graph Search', () => {
         });
     });
 });
-
-describe('Network graph namespace filtering', () => {
-    withAuth();
-
-    // Ensures that the network calls receive fully filtered data (zero nodes) upon
-    // the initial requests and that the data filtering occurs on the server.
-    it('should only receive empty graph data sets when no namespaces are selected', () => {
-        let graphResponse;
-
-        cy.intercept(api.network.networkGraph, (req) => {
-            req.continue((res) => {
-                graphResponse = res.body;
-            });
-        }).as('networkGraph');
-        cy.intercept(api.network.networkPoliciesGraph).as('networkPolicies');
-
-        cy.visit(networkUrl);
-        cy.get('h2').contains('Please select at least one namespace');
-        cy.wait(['@networkPolicies', '@networkGraph']).then(() => {
-            expect(graphResponse.nodes.length).to.equal(0);
-        });
-    });
-});
