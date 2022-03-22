@@ -212,7 +212,7 @@ func (e *enricher) getNetpols(deployment *storage.Deployment) *augmentedobjs.Net
 	npStore := resources.NetworkPolicyStoreSingleton()
 	matchingNPs := make([]storage.NetworkPolicy, 0)
 
-	log.Infof("getNetpols: searching network policies for deployment: %s\n", deployment.Name)
+	log.Infof("getNetpols: searching among %d network policies for deployment: %s\n", len(npStore.GetAll()), deployment.Name)
 	// full scan for all policies currently known
 	for _, policy := range npStore.GetAll() {
 		if policy.GetNamespace() != deployment.GetNamespace() {

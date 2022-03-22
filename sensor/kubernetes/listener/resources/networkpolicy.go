@@ -14,12 +14,14 @@ type Detection interface {
 // networkPolicyDispatcher handles network policy resource events.
 type networkPolicyDispatcher struct {
 	npStore   *NetworkPolicyStore
+	deplStore *DeploymentStore
 	detection Detection
 }
 
-func newNetworkPolicyDispatcher(store *NetworkPolicyStore, detection Detection) *networkPolicyDispatcher {
+func newNetworkPolicyDispatcher(store *NetworkPolicyStore, deplStore *DeploymentStore, detection Detection) *networkPolicyDispatcher {
 	return &networkPolicyDispatcher{
 		npStore:   store,
+		deplStore: deplStore,
 		detection: detection,
 	}
 }
@@ -37,9 +39,13 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, _ interface{}, action centra
 	case central.ResourceAction_UPDATE_RESOURCE:
 		h.npStore.update(netPolicy)
 	}
+	log.Infof("networkPolicyDispatcher.ProcessEvent: got %d network polisies in the store.\n", len(h.npStore.GetAll()))
+	deployments := h.deplStore.GetAll()
 
-	for _, deployment := range DeploymentStoreSingleton().GetAll() {
-		if deployment.Namespace == netPolicy.GetNamespace() {
+	log.Infof("networkPolicyDispatcher.ProcessEvent: pinging up to %d deployments to refresh.\n", len(deployments))
+	for _, deployment := range deployments {
+		if deployment.GetNamespace() == netPolicy.GetNamespace() {
+			log.Infof("networkPolicyDispatcher.ProcessEvent: triggering detection for depl: %s\n", deployment.Name)
 			h.detection.ProcessDeployment(deployment, action)
 		}
 	}
