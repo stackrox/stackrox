@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -12,8 +13,10 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 const (
@@ -28,10 +31,22 @@ const (
 	getManyStmt = "SELECT serialized FROM secrets WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM secrets WHERE Id = ANY($1::text[])"
+
+	batchAfter = 100
+
+	// using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	batchSize = 10000
+)
+
+var (
+	schema = walker.Walk(reflect.TypeOf((*storage.Secret)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {
-	globaldb.RegisterTable(baseTable, "Secret")
+	globaldb.RegisterTable(schema)
 }
 
 type Store interface {
@@ -75,13 +90,13 @@ create table if not exists secrets (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -126,7 +141,7 @@ create table if not exists secrets_Files (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -135,7 +150,7 @@ create table if not exists secrets_Files (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -157,7 +172,7 @@ create table if not exists secrets_Files_Registries (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -166,7 +181,7 @@ create table if not exists secrets_Files_Registries (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -186,7 +201,7 @@ create table if not exists secrets_ContainerRelationships (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -195,7 +210,7 @@ create table if not exists secrets_ContainerRelationships (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -215,7 +230,7 @@ create table if not exists secrets_DeploymentRelationships (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -224,7 +239,7 @@ create table if not exists secrets_DeploymentRelationships (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -247,7 +262,7 @@ func insertIntoSecrets(ctx context.Context, tx pgx.Tx, obj *storage.Secret) erro
 		obj.GetType(),
 		obj.GetLabels(),
 		obj.GetAnnotations(),
-		pgutils.NilOrStringTimestamp(obj.GetCreatedAt()),
+		pgutils.NilOrTime(obj.GetCreatedAt()),
 		obj.GetRelationship().GetId(),
 		serialized,
 	}
@@ -323,8 +338,8 @@ func insertIntoSecretsFiles(ctx context.Context, tx pgx.Tx, obj *storage.SecretD
 		obj.GetCert().GetIssuer().GetPostalCode(),
 		obj.GetCert().GetIssuer().GetNames(),
 		obj.GetCert().GetSans(),
-		pgutils.NilOrStringTimestamp(obj.GetCert().GetStartDate()),
-		pgutils.NilOrStringTimestamp(obj.GetCert().GetEndDate()),
+		pgutils.NilOrTime(obj.GetCert().GetStartDate()),
+		pgutils.NilOrTime(obj.GetCert().GetEndDate()),
 		obj.GetCert().GetAlgorithm(),
 	}
 
@@ -408,6 +423,420 @@ func insertIntoSecretsDeploymentRelationships(ctx context.Context, tx pgx.Tx, ob
 	return nil
 }
 
+func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*storage.Secret) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"clusterid",
+
+		"clustername",
+
+		"namespace",
+
+		"type",
+
+		"labels",
+
+		"annotations",
+
+		"createdat",
+
+		"relationship_id",
+
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			obj.GetId(),
+
+			obj.GetName(),
+
+			obj.GetClusterId(),
+
+			obj.GetClusterName(),
+
+			obj.GetNamespace(),
+
+			obj.GetType(),
+
+			obj.GetLabels(),
+
+			obj.GetAnnotations(),
+
+			pgutils.NilOrTime(obj.GetCreatedAt()),
+
+			obj.GetRelationship().GetId(),
+
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"secrets"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for _, obj := range objs {
+
+		if err = s.copyFromSecretsFiles(ctx, tx, obj.GetId(), obj.GetFiles()...); err != nil {
+			return err
+		}
+		if err = s.copyFromSecretsContainerRelationships(ctx, tx, obj.GetId(), obj.GetRelationship().GetContainerRelationships()...); err != nil {
+			return err
+		}
+		if err = s.copyFromSecretsDeploymentRelationships(ctx, tx, obj.GetId(), obj.GetRelationship().GetDeploymentRelationships()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretDataFile) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"secrets_id",
+
+		"idx",
+
+		"name",
+
+		"type",
+
+		"cert_subject_commonname",
+
+		"cert_subject_country",
+
+		"cert_subject_organization",
+
+		"cert_subject_organizationunit",
+
+		"cert_subject_locality",
+
+		"cert_subject_province",
+
+		"cert_subject_streetaddress",
+
+		"cert_subject_postalcode",
+
+		"cert_subject_names",
+
+		"cert_issuer_commonname",
+
+		"cert_issuer_country",
+
+		"cert_issuer_organization",
+
+		"cert_issuer_organizationunit",
+
+		"cert_issuer_locality",
+
+		"cert_issuer_province",
+
+		"cert_issuer_streetaddress",
+
+		"cert_issuer_postalcode",
+
+		"cert_issuer_names",
+
+		"cert_sans",
+
+		"cert_startdate",
+
+		"cert_enddate",
+
+		"cert_algorithm",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			secrets_Id,
+
+			idx,
+
+			obj.GetName(),
+
+			obj.GetType(),
+
+			obj.GetCert().GetSubject().GetCommonName(),
+
+			obj.GetCert().GetSubject().GetCountry(),
+
+			obj.GetCert().GetSubject().GetOrganization(),
+
+			obj.GetCert().GetSubject().GetOrganizationUnit(),
+
+			obj.GetCert().GetSubject().GetLocality(),
+
+			obj.GetCert().GetSubject().GetProvince(),
+
+			obj.GetCert().GetSubject().GetStreetAddress(),
+
+			obj.GetCert().GetSubject().GetPostalCode(),
+
+			obj.GetCert().GetSubject().GetNames(),
+
+			obj.GetCert().GetIssuer().GetCommonName(),
+
+			obj.GetCert().GetIssuer().GetCountry(),
+
+			obj.GetCert().GetIssuer().GetOrganization(),
+
+			obj.GetCert().GetIssuer().GetOrganizationUnit(),
+
+			obj.GetCert().GetIssuer().GetLocality(),
+
+			obj.GetCert().GetIssuer().GetProvince(),
+
+			obj.GetCert().GetIssuer().GetStreetAddress(),
+
+			obj.GetCert().GetIssuer().GetPostalCode(),
+
+			obj.GetCert().GetIssuer().GetNames(),
+
+			obj.GetCert().GetSans(),
+
+			pgutils.NilOrTime(obj.GetCert().GetStartDate()),
+
+			pgutils.NilOrTime(obj.GetCert().GetEndDate()),
+
+			obj.GetCert().GetAlgorithm(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"secrets_files"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for idx, obj := range objs {
+
+		if err = s.copyFromSecretsFilesRegistries(ctx, tx, secrets_Id, idx, obj.GetImagePullSecret().GetRegistries()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, secrets_Id string, secrets_Files_idx int, objs ...*storage.ImagePullSecret_Registry) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"secrets_id",
+
+		"secrets_files_idx",
+
+		"idx",
+
+		"name",
+
+		"username",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			secrets_Id,
+
+			secrets_Files_idx,
+
+			idx,
+
+			obj.GetName(),
+
+			obj.GetUsername(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"secrets_files_registries"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromSecretsContainerRelationships(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretContainerRelationship) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"secrets_id",
+
+		"idx",
+
+		"id",
+
+		"path",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			secrets_Id,
+
+			idx,
+
+			obj.GetId(),
+
+			obj.GetPath(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"secrets_containerrelationships"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromSecretsDeploymentRelationships(ctx context.Context, tx pgx.Tx, secrets_Id string, objs ...*storage.SecretDeploymentRelationship) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"secrets_id",
+
+		"idx",
+
+		"id",
+
+		"name",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			secrets_Id,
+
+			idx,
+
+			obj.GetId(),
+
+			obj.GetName(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"secrets_deploymentrelationships"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableSecrets(ctx, db)
@@ -415,6 +844,27 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Secret) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "Secret")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.copyFromSecrets(ctx, tx, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Secret) error {
@@ -449,7 +899,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Secret) error {
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Secret) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Secret")
 
-	return s.upsert(ctx, objs...)
+	if len(objs) < batchAfter {
+		return s.upsert(ctx, objs...)
+	} else {
+		return s.copyFrom(ctx, objs...)
+	}
 }
 
 // Count returns the number of objects in the store

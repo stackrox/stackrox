@@ -13,10 +13,10 @@ import useFetchBaselineComparisons from 'Containers/Network/useFetchBaselineComp
 import SimulationFrame from 'Components/SimulationFrame';
 import Dialogue from 'Containers/Network/Dialogue';
 import Graph from 'Containers/Network/Graph/Graph';
-import Header from 'Containers/Network/Header/Header';
 import SidePanel from 'Containers/Network/SidePanel/SidePanel';
+import Header from './Header/Header';
 
-function NetworkPageContent() {
+function GraphFrame() {
     const [showNamespaceFlows, setShowNamespaceFlows] = useLocalStorage(
         'showNamespaceFlows',
         'show'
@@ -40,37 +40,34 @@ function NetworkPageContent() {
         setShowNamespaceFlows(mode);
     }
 
-    return (
-        <div className="flex flex-1 flex-col relative">
-            <div className="flex border-b border-base-400">
-                <Header isDisabled={isSimulationOn} />
+    return isSimulationOn ? (
+        <SimulationFrame isError={isError} onStop={onStop}>
+            <div className="flex flex-1 relative">
+                <Graph
+                    isSimulationOn
+                    showNamespaceFlows={showNamespaceFlows}
+                    setShowNamespaceFlows={handleNamespaceFlowsToggle}
+                    simulatedBaselines={simulatedBaselines}
+                />
+                <SidePanel />
             </div>
-            {isSimulationOn ? (
-                <SimulationFrame isError={isError} onStop={onStop}>
-                    <div className="flex flex-1 relative">
-                        <Graph
-                            isSimulationOn
-                            showNamespaceFlows={showNamespaceFlows}
-                            setShowNamespaceFlows={handleNamespaceFlowsToggle}
-                            simulatedBaselines={simulatedBaselines}
-                        />
-                        <SidePanel />
-                    </div>
-                </SimulationFrame>
-            ) : (
-                <div className="flex flex-1 relative">
-                    <Graph
-                        showNamespaceFlows={showNamespaceFlows}
-                        setShowNamespaceFlows={handleNamespaceFlowsToggle}
-                    />
-                    <SidePanel />
-                </div>
-            )}
+        </SimulationFrame>
+    ) : (
+        <div className="flex flex-1 relative">
+            <Graph
+                showNamespaceFlows={showNamespaceFlows}
+                setShowNamespaceFlows={handleNamespaceFlowsToggle}
+            />
+            <SidePanel />
         </div>
     );
 }
 
 function NetworkPage({ closeSidePanel, setDialogueStage, setNetworkModification }) {
+    const { isNetworkSimulationOn } = useNetworkPolicySimulation();
+    const { isBaselineSimulationOn } = useNetworkBaselineSimulation();
+    const isSimulationOn = isNetworkSimulationOn || isBaselineSimulationOn;
+
     // when this component unmounts, then close the side panel and exit network policy simulation
     useEffect(() => {
         return () => {
@@ -81,12 +78,17 @@ function NetworkPage({ closeSidePanel, setDialogueStage, setNetworkModification 
     }, [closeSidePanel, setDialogueStage, setNetworkModification]);
 
     return (
-        <section className="flex flex-1 h-full w-full">
-            <div className="flex flex-1 flex-col w-full overflow-hidden">
-                <NetworkPageContent />
-            </div>
-            <Dialogue />
-        </section>
+        <>
+            <Header isSimulationOn={isSimulationOn} />
+            <section className="flex flex-1 h-full w-full">
+                <div className="flex flex-1 flex-col w-full overflow-hidden">
+                    <div className="flex flex-1 flex-col relative">
+                        <GraphFrame />
+                    </div>
+                </div>
+                <Dialogue />
+            </section>
+        </>
     );
 }
 

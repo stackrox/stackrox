@@ -86,4 +86,17 @@ func (s *NetworkentityStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkEntity)
+
+	var networkEntitys []*storage.NetworkEntity
+	for i := 0; i < 200; i++ {
+		networkEntity := &storage.NetworkEntity{}
+		s.NoError(testutils.FullInit(networkEntity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		networkEntitys = append(networkEntitys, networkEntity)
+	}
+
+	s.NoError(store.UpsertMany(ctx, networkEntitys))
+
+	networkEntityCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(networkEntityCount, 200)
 }

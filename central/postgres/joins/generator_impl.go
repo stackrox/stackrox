@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/postgres/registry"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/set"
@@ -63,7 +63,7 @@ func newJoinGenerator() *joinGeneratorImpl {
 	ret := &joinGeneratorImpl{
 		joins: make(map[string]map[string]*sqlJoinClauseParts),
 	}
-	ret.generateJoinsForDBSchema(registry.GetAllRegisteredSchemas())
+	ret.generateJoinsForDBSchema(globaldb.GetAllRegisteredSchemas())
 	return ret
 }
 

@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role/resources"
@@ -52,7 +51,7 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 		return nil, err
 	}
 	if integration.GetId() != "" {
-		return nil, errox.InvalidArgs.New(fmt.Sprintf("id should be empty but %q provided", integration.GetId()))
+		return nil, errox.InvalidArgs.Newf("id should be empty but %q provided", integration.GetId())
 	}
 	integration.Id = GenerateSignatureIntegrationID()
 	if err := ValidateSignatureIntegration(integration); err != nil {
@@ -116,7 +115,7 @@ func (d *datastoreImpl) verifyIntegrationIDExists(ctx context.Context, id string
 	if err != nil {
 		return err
 	} else if !found {
-		return errox.NotFound.New(fmt.Sprintf("signature integration id=%s doesn't exist", id))
+		return errox.NotFound.Newf("signature integration id=%s doesn't exist", id)
 	}
 	return nil
 }
@@ -126,7 +125,7 @@ func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(ctx context.Context, id 
 	if err != nil {
 		return err
 	} else if found {
-		return errox.AlreadyExists.New(fmt.Sprintf("signature integration id=%s already exists", id))
+		return errox.AlreadyExists.Newf("signature integration id=%s already exists", id)
 	}
 	return nil
 }

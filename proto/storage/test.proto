@@ -124,7 +124,7 @@ message TestMultiKeyStruct {
   repeated Nested nested = 13;
 
   message OneOfNested {
-    string nested = 1;
+    string nested = 1 [(gogoproto.moretags) = 'search:"Test Oneof Nested String"'];
     message Nested2 {
       string nested2 = 2;
     }

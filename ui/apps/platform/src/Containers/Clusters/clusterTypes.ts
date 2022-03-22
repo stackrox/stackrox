@@ -65,6 +65,11 @@ export type CentralEnv = {
     successfullyFetched?: boolean;
 };
 
+export type CertExpiryStatus = {
+    sensorCertExpiry: string; // ISO 8601
+    sensorCertNotBefore: string; // ISO 8601
+};
+
 export type ClusterStatus = {
     sensorVersion: string;
     providerMetadata: {
@@ -75,9 +80,7 @@ export type ClusterStatus = {
         buildDate: string;
     };
     upgradeStatus: SensorUpgradeStatus;
-    certExpiryStatus: {
-        sensorCertExpiry: string;
-    };
+    certExpiryStatus: CertExpiryStatus;
 };
 
 export type ClusterManagerType =

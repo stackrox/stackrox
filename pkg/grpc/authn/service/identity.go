@@ -45,8 +45,8 @@ func (i identity) User() *storage.UserInfo {
 	return nil // services is not a user
 }
 
-func (i identity) Expiry() time.Time {
-	return i.id.Expiry
+func (i identity) ValidityPeriod() (time.Time, time.Time) {
+	return i.id.NotBefore, i.id.Expiry
 }
 
 func (i identity) ExternalAuthProvider() authproviders.Provider {

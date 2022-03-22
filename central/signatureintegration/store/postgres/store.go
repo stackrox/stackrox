@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -12,8 +13,10 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 const (
@@ -28,10 +31,22 @@ const (
 	getManyStmt = "SELECT serialized FROM signatureintegrations WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM signatureintegrations WHERE Id = ANY($1::text[])"
+
+	batchAfter = 100
+
+	// using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	batchSize = 10000
+)
+
+var (
+	schema = walker.Walk(reflect.TypeOf((*storage.SignatureIntegration)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {
-	globaldb.RegisterTable(baseTable, "SignatureIntegration")
+	globaldb.RegisterTable(schema)
 }
 
 type Store interface {
@@ -67,13 +82,13 @@ create table if not exists signatureintegrations (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -94,7 +109,7 @@ create table if not exists signatureintegrations_PublicKeys (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -103,7 +118,7 @@ create table if not exists signatureintegrations_PublicKeys (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -164,6 +179,130 @@ func insertIntoSignatureintegrationsPublicKeys(ctx context.Context, tx pgx.Tx, o
 	return nil
 }
 
+func (s *storeImpl) copyFromSignatureintegrations(ctx context.Context, tx pgx.Tx, objs ...*storage.SignatureIntegration) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			obj.GetId(),
+
+			obj.GetName(),
+
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"signatureintegrations"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for _, obj := range objs {
+
+		if err = s.copyFromSignatureintegrationsPublicKeys(ctx, tx, obj.GetId(), obj.GetCosign().GetPublicKeys()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromSignatureintegrationsPublicKeys(ctx context.Context, tx pgx.Tx, signatureintegrations_Id string, objs ...*storage.CosignPublicKeyVerification_PublicKey) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"signatureintegrations_id",
+
+		"idx",
+
+		"name",
+
+		"publickeypemenc",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			signatureintegrations_Id,
+
+			idx,
+
+			obj.GetName(),
+
+			obj.GetPublicKeyPemEnc(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"signatureintegrations_publickeys"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableSignatureintegrations(ctx, db)
@@ -171,6 +310,27 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.SignatureIntegration) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "SignatureIntegration")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.copyFromSignatureintegrations(ctx, tx, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.SignatureIntegration) error {
@@ -205,7 +365,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.SignatureIntegratio
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.SignatureIntegration) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "SignatureIntegration")
 
-	return s.upsert(ctx, objs...)
+	if len(objs) < batchAfter {
+		return s.upsert(ctx, objs...)
+	} else {
+		return s.copyFrom(ctx, objs...)
+	}
 }
 
 // Count returns the number of objects in the store

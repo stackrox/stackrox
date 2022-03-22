@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -17,7 +18,7 @@ const (
 )
 
 var (
-	registeredTables = make(map[string]registeredTable)
+	registeredTables = make(map[string]*walker.Schema)
 
 	postgresOpenRetries        = 10
 	postgresTimeBetweenRetries = 10 * time.Second
@@ -25,25 +26,13 @@ var (
 	pgSync                     sync.Once
 )
 
-type registeredTable struct {
-	table, objType string
-}
-
 // RegisterTable maps a table to an object type for the purposes of metrics gathering
-func RegisterTable(table string, objType string) {
-	tableToRegister := registeredTable{
-		table:   table,
-		objType: objType,
-	}
-
-	if registered, ok := registeredTables[table]; ok {
-		if registered != tableToRegister {
-			log.Fatalf("table %q is already mapped to %q", table, registered.objType)
-		}
+func RegisterTable(schema *walker.Schema) {
+	if _, ok := registeredTables[schema.Table]; ok {
+		log.Fatalf("table %q is already registered for %s", schema.Table, schema.Type)
 		return
 	}
-
-	registeredTables[table] = tableToRegister
+	registeredTables[schema.Table] = schema
 }
 
 // GetPostgres returns a global database instance
@@ -74,4 +63,18 @@ func GetPostgres() *pgxpool.Pool {
 		}
 	})
 	return postgresDB
+}
+
+// GetSchemaForTable return the schema registered for specified table name.
+func GetSchemaForTable(tableName string) *walker.Schema {
+	return registeredTables[tableName]
+}
+
+// GetAllRegisteredSchemas returns all registered schemas.
+func GetAllRegisteredSchemas() map[string]*walker.Schema {
+	ret := make(map[string]*walker.Schema)
+	for k, v := range registeredTables {
+		ret[k] = v
+	}
+	return ret
 }

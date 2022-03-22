@@ -86,4 +86,17 @@ func (s *RolesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundRole)
+
+	var roles []*storage.Role
+	for i := 0; i < 200; i++ {
+		role := &storage.Role{}
+		s.NoError(testutils.FullInit(role, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		roles = append(roles, role)
+	}
+
+	s.NoError(store.UpsertMany(ctx, roles))
+
+	roleCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(roleCount, 200)
 }

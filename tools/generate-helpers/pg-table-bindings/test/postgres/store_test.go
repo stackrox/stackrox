@@ -86,4 +86,17 @@ func (s *SinglekeyStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestSingleKeyStruct)
+
+	var testSingleKeyStructs []*storage.TestSingleKeyStruct
+	for i := 0; i < 200; i++ {
+		testSingleKeyStruct := &storage.TestSingleKeyStruct{}
+		s.NoError(testutils.FullInit(testSingleKeyStruct, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		testSingleKeyStructs = append(testSingleKeyStructs, testSingleKeyStruct)
+	}
+
+	s.NoError(store.UpsertMany(ctx, testSingleKeyStructs))
+
+	testSingleKeyStructCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(testSingleKeyStructCount, 200)
 }
