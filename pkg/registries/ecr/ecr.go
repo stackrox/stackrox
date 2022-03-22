@@ -105,12 +105,20 @@ func (e *ecr) refreshDockerClient() error {
 	return nil
 }
 
-// Metadata returns the metadata via this registries implementation
+// Metadata returns the metadata via this registry's implementation.
 func (e *ecr) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
 	if err := e.refreshDockerClient(); err != nil {
 		return nil, err
 	}
 	return e.Registry.Metadata(image)
+}
+
+// Config returns the config via this registry's implementation.
+func (e *ecr) Config() *types.Config {
+	if err := e.refreshDockerClient(); err != nil {
+		log.Errorf("Error refreshing docker client for registry %q: %v", e.Name(), err)
+	}
+	return e.Registry.Config()
 }
 
 // Test tests the current registry and makes sure that it is working properly
