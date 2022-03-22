@@ -61,6 +61,7 @@ func (s *ImageComponentRelationStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundImageComponentEdge)
 
+<<<<<<< HEAD
 	s.NoError(store.Upsert(ctx, imageComponentEdge))
 	foundImageComponentEdge, exists, err = store.Get(ctx, imageComponentEdge.GetImageId(), imageComponentEdge.GetOperatingName(), imageComponentEdge.GetComponentName(), imageComponentEdge.GetComponentVersion())
 	s.NoError(err)
@@ -99,4 +100,6 @@ func (s *ImageComponentRelationStoreSuite) TestStore() {
 	imageComponentEdgeCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(imageComponentEdgeCount, 200)
+=======
+>>>>>>> 5cbad1c3b (follow-up)
 }

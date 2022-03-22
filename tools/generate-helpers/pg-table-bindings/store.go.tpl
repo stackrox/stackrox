@@ -99,16 +99,22 @@ type storeImpl struct {
 {{- end}}
 
 {{- define "createTable"}}
-{{- $schema := . }}
+{{- $schema := .schema }}
 func {{template "createFunctionName" $schema}}(ctx context.Context, db *pgxpool.Pool) {
     table := `
 create table if not exists {{$schema.Table}} (
 {{- range $idx, $field := $schema.ResolvedFields }}
     {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}},
 {{- end}}
-    PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys}}){{ if gt (len $schema.Parents) 0 }},{{end}}
-    {{- range $parent, $pks := $schema.ParentKeysAsMap }}
-    CONSTRAINT fk_parent_table FOREIGN KEY ({{template "commaSeparatedColumns" $pks}}) REFERENCES {{$parent}}({{template "commandSeparatedRefs" $pks}}) ON DELETE CASCADE
+    {{- $primaryKeys := dict.nil }}
+    {{- if .joinTable}}
+        {{$primaryKeys = $schema.LocalPrimaryKeys}}
+    {{- else }}
+        {{- $primaryKeys = $schema.ResolvedPrimaryKeys}}
+    {{- end}}
+    PRIMARY KEY({{template "commaSeparatedColumns" $primaryKeys }}){{ if gt (len $schema.Parents) 0 }},{{end}}
+    {{- range $idx, $pksGrps := $schema.ParentKeysGroupedByTable }}
+    CONSTRAINT fk_parent_table FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrps.Fields}}) REFERENCES {{$pksGrps.Table}}({{template "commandSeparatedRefs" $pksGrps.Fields}}) ON DELETE CASCADE
     {{- end }}
 )
 `
@@ -133,16 +139,16 @@ create table if not exists {{$schema.Table}} (
     {{template "createFunctionName" $child}}(ctx, db)
     {{- end}}
 }
-{{range $idx, $child := $schema.Children}}{{template "createTable" $child}}{{end}}
+{{range $idx, $child := $schema.Children}}{{template "createTable" dict "schema" $child "joinTable" false }}{{end}}
 {{end}}
-{{- template "createTable" .Schema}}
+{{- template "createTable" dict "schema" .Schema "joinTable" .JoinTable}}
 
 {{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}
 {{- end}}
 
 {{- define "insertObject"}}
-{{- $schema := . }}
-func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.Parents}}, idx int{{end}}) error {
+{{- $schema := .schema }}
+func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{if not .joinTable}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.Parents}}, idx int{{end}}{{end}}) error {
     {{if not $schema.Parents }}
     serialized, marshalErr := obj.Marshal()
     if marshalErr != nil {
@@ -187,11 +193,11 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
     return nil
 }
 
-{{range $idx, $child := $schema.Children}}{{ template "insertObject" $child }}{{end}}
+{{range $idx, $child := $schema.Children}}{{ template "insertObject" dict "schema" $child "joinTable" false }}{{end}}
 {{- end}}
 
 {{- if not .JoinTable }}
-{{ template "insertObject" .Schema }}
+{{ template "insertObject" dict "schema" .Schema "joinTable" .JoinTable }}
 {{- end}}
 
 {{- define "copyFunctionName"}}{{- $schema := . }}copyFrom{{$schema.Table|upperCamelCase}}

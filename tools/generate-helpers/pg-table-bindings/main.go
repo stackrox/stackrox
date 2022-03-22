@@ -49,12 +49,10 @@ type properties struct {
 	WriteOptions   bool
 	OptionsPath    string
 
-	// RefTables indicate the any additional referentiol relationships. These are non-embedding relations, that is,
-	// this table is not embedded into referenced table to construct the proto message.
-	RefTables []string
-
-	// RefTypes indicate the object type for the referenced table schemas.
-	RefTypes []string
+	// Refs indicate the additional referentiol relationships. Each string is <table_name>:<proto_type>.
+	// These are non-embedding relations, that is, this table is not embedded into referenced table to
+	// construct the proto message.
+	Refs []string
 
 	// When set to true, it means that the schema represents a join table. The generation of mutating functions
 	// such as inserts, updates, deletes, is skipped. This is because join tables should be filled from parents.
@@ -95,8 +93,7 @@ func main() {
 	c.Flags().StringVar(&props.Singular, "singular", "", "the singular name of the object")
 	c.Flags().StringVar(&props.OptionsPath, "options-path", "/index/mappings", "path to write out the options to")
 	c.Flags().StringVar(&props.SearchCategory, "search-category", "", "the search category to index under")
-	c.Flags().StringSliceVar(&props.RefTables, "referenced-tables", []string{}, "additional foreign key references for this table")
-	c.Flags().StringSliceVar(&props.RefTypes, "referenced-types", []string{}, "the proto object type of the referenced tables")
+	c.Flags().StringSliceVar(&props.Refs, "references", []string{}, "additional foreign key references as <table_name:type>")
 	c.Flags().BoolVar(&props.JoinTable, "join-table", false, "indicates the schema represents a join table. The generation of mutating functions is skipped")
 
 	c.RunE = func(*cobra.Command, []string) error {
@@ -112,14 +109,11 @@ func main() {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
 
-		if len(props.RefTables) != len(props.RefTypes) {
-			log.Fatal("Proto object type of each referenced table must be provided")
-		}
-
-		for idx, refTable := range props.RefTables {
-			refMsgType := proto.MessageType(props.RefTypes[idx])
+		for _, ref := range props.Refs {
+			refTable, refObjType := stringutils.Split2(ref, ":")
+			refMsgType := proto.MessageType(refObjType)
 			if refMsgType == nil {
-				log.Fatalf("could not find message for type: %s", props.RefTypes[idx])
+				log.Fatalf("could not find message for type: %s", refObjType)
 			}
 			schema.WithReference(walker.Walk(refMsgType, refTable))
 		}
@@ -137,10 +131,8 @@ func main() {
 		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
 			return err
 		}
-		if !props.JoinTable {
-			if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
-				return err
-			}
+		if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
+			return err
 		}
 		if props.SearchCategory != "" {
 			if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
