@@ -11,26 +11,21 @@ import (
 func TestIsContextBuiltinScopedAuthzEnabled(t *testing.T) {
 	tests := []struct {
 		ctx                context.Context
-		sac                bool
 		builtinScopedAuthz bool
 	}{{
-		ctx: context.Background(),
-		sac: false, builtinScopedAuthz: false,
+		ctx:                context.Background(),
+		builtinScopedAuthz: false,
 	}, {
-		ctx: SetContextSACEnabled(context.Background()),
-		sac: true, builtinScopedAuthz: false,
+		ctx:                SetContextPluginScopedAuthzEnabled(context.Background()),
+		builtinScopedAuthz: true,
 	}, {
-		ctx: SetContextBuiltinScopedAuthzEnabled(context.Background()),
-		sac: true, builtinScopedAuthz: true,
-	}, {
-		ctx: context.WithValue(context.Background(), builtinScopedAuthzEnabled{}, struct{}{}),
-		sac: false, builtinScopedAuthz: false,
+		ctx:                context.WithValue(context.Background(), pluginScopedAuthzEnabled{}, struct{}{}),
+		builtinScopedAuthz: true,
 	},
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%v", tt.ctx), func(t *testing.T) {
-			assert.Equal(t, tt.sac, IsContextSACEnabled(tt.ctx))
-			assert.Equal(t, tt.builtinScopedAuthz, IsContextBuiltinScopedAuthzEnabled(tt.ctx))
+			assert.Equal(t, tt.builtinScopedAuthz, IsContextPluginScopedAuthzEnabled(tt.ctx))
 		})
 	}
 }

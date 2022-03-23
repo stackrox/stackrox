@@ -30,6 +30,8 @@ class GraphQLResourcePaginationTest extends BaseSpecification {
         def objs = resultRet.getValue()["${topResource}s"]
         assert objs.size() != 0
 
+        println "Got top level objects: ${objs}"
+
         def sublistGraphQLQuery = "query get${topResource}_${subResource}(" +
                 "\$id: ID!, \$query: String, \$pagination: Pagination) {" +
                 "${topResource}(id:\$id) { ${subResource}(query: \$query, pagination: \$pagination) { id } } }"
@@ -64,7 +66,7 @@ class GraphQLResourcePaginationTest extends BaseSpecification {
         "k8sRole"    | "Role:system:node-bootstrapper" | null | "subjects"
         "k8sRole"    | "Namespace:stackrox+Role:edit"  | null | "serviceAccounts"
 
-        "serviceAccount" | "Service Account:central" | null |  "k8sRoles"
+        "serviceAccount" | "Service Account:\"central\"" | null |  "k8sRoles"
     }
 
     @Unroll

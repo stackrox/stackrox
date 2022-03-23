@@ -5,10 +5,10 @@ import {
     Divider,
     PageSection,
     Title,
-    Badge,
     Pagination,
     Select,
     SelectOption,
+    pluralize,
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 
@@ -146,17 +146,14 @@ function ViolationsTablePanel({
     return (
         <>
             <Flex
-                className="pf-u-p-md"
+                className="pf-u-pb-md"
                 alignSelf={{ default: 'alignSelfCenter' }}
                 fullWidth={{ default: 'fullWidth' }}
             >
                 <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                    <Title headingLevel="h2" className="pf-u-color-100 pf-u-ml-sm">
-                        Violations
+                    <Title headingLevel="h2" className="pf-u-color-100">
+                        {pluralize(violationsCount, 'result')} found
                     </Title>
-                </FlexItem>
-                <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                    <Badge isRead>{violationsCount}</Badge>
                 </FlexItem>
                 <FlexItem data-testid="violations-bulk-actions-dropdown">
                     <Select

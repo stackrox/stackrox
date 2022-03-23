@@ -31,7 +31,7 @@ type searcherImpl struct {
 	searcher search.Searcher
 }
 
-// SearchRawRisk retrieves Risks from the indexer and storage
+// SearchRawRisks retrieves Risks from the indexer and storage
 func (s *searcherImpl) SearchRawRisks(ctx context.Context, q *v1.Query) ([]*storage.Risk, error) {
 	results, err := s.Search(ctx, q)
 	if err != nil {
@@ -39,7 +39,7 @@ func (s *searcherImpl) SearchRawRisks(ctx context.Context, q *v1.Query) ([]*stor
 	}
 
 	ids := search.ResultsToIDs(results)
-	risks, _, err := s.storage.GetMany(ids)
+	risks, _, err := s.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

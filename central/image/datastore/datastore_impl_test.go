@@ -81,7 +81,7 @@ func (suite *ImageDataStoreTestSuite) SetupSuite() {
 
 	suite.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(suite.T()))
 
-	suite.datastore = New(dacky, concurrency.NewKeyFence(), bleveIndex, false, suite.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
+	suite.datastore = New(dacky, concurrency.NewKeyFence(), bleveIndex, bleveIndex, false, suite.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
 }
 
 func (suite *ImageDataStoreTestSuite) TearDownSuite() {

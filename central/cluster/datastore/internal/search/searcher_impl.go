@@ -6,7 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/cluster/index"
 	"github.com/stackrox/rox/central/cluster/index/mappings"
-	"github.com/stackrox/rox/central/cluster/store"
+	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	cveSAC "github.com/stackrox/rox/central/cve/sac"
 	"github.com/stackrox/rox/central/dackbox"
 	deploymentSAC "github.com/stackrox/rox/central/deployment/sac"
@@ -35,7 +35,7 @@ var (
 )
 
 type searcherImpl struct {
-	clusterStorage    store.ClusterStore
+	clusterStorage    clusterStore.Store
 	indexer           index.Indexer
 	formattedSearcher search.Searcher
 }
@@ -63,7 +63,7 @@ func (ds *searcherImpl) searchClusters(ctx context.Context, q *v1.Query) ([]*sto
 		return nil, nil, err
 	}
 
-	clusters, missingIndices, err := ds.clusterStorage.GetMany(search.ResultsToIDs(results))
+	clusters, missingIndices, err := ds.clusterStorage.GetMany(ctx, search.ResultsToIDs(results))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -104,7 +104,7 @@ func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher, graphProvider gra
 }
 
 func wrapDerivedFieldSearcher(graphProvider graph.Provider, searcher search.Searcher, clusterRanker *ranking.Ranker) search.Searcher {
-	prioritySortedSearcher := sorted.Searcher(searcher, search.Priority, clusterRanker)
+	prioritySortedSearcher := sorted.Searcher(searcher, search.ClusterPriority, clusterRanker)
 
 	return derivedfields.CountSortedSearcher(prioritySortedSearcher, map[string]counter.DerivedFieldCounter{
 		search.NamespaceCount.String():  counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.ClusterToNamespace, nsSAC.GetSACFilter()),

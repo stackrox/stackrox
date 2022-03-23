@@ -75,7 +75,7 @@ message VulnerabilityRequest {
             Global global_scope = 2;
         }
     }
-    string                           id                 = 1;
+    string                           id                 = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     // Indicates the state the vulnerabilities will move to once the request is complete.
     VulnerabilityState               target_state       = 2 [(gogoproto.moretags) = "search:\"Requested Vulnerability State\""];
     // Indicates the status of a request.

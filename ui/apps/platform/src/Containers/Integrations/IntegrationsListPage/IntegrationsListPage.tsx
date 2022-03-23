@@ -20,6 +20,7 @@ import {
     getIsAPIToken,
     getIsClusterInitBundle,
     getIntegrationLabel,
+    getIsSignatureIntegration,
 } from 'Containers/Integrations/utils/integrationUtils';
 
 import PageTitle from 'Components/PageTitle';
@@ -45,6 +46,7 @@ function IntegrationsListPage({
     const typeLabel = getIntegrationLabel(source, type);
     const isAPIToken = getIsAPIToken(source, type);
     const isClusterInitBundle = getIsClusterInitBundle(source, type);
+    const isSignatureIntegration = getIsSignatureIntegration(source);
 
     function onDeleteIntegrations(ids) {
         setDeletingIntegrationIds(ids);
@@ -76,22 +78,26 @@ function IntegrationsListPage({
     return (
         <>
             <PageTitle title={typeLabel} />
-            <PageSection variant={PageSectionVariants.light}>
-                <div className="pf-u-mb-sm">
-                    <Breadcrumb>
-                        <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
-                        <BreadcrumbItem isActive>{typeLabel}</BreadcrumbItem>
-                    </Breadcrumb>
-                </div>
-                <Title headingLevel="h1">Integrations</Title>
+            <PageSection variant={PageSectionVariants.light} className="pf-u-py-md">
+                <Breadcrumb>
+                    <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>{typeLabel}</BreadcrumbItem>
+                </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <IntegrationsTable
-                title={typeLabel}
-                integrations={integrations}
-                hasMultipleDelete={!isClusterInitBundle}
-                onDeleteIntegrations={onDeleteIntegrations}
-            />
+            <PageSection variant="light">
+                <Title headingLevel="h1">
+                    {isSignatureIntegration ? 'Signature' : ''} Integrations
+                </Title>
+                {!isSignatureIntegration && <Title headingLevel="h2">{typeLabel}</Title>}
+            </PageSection>
+            <PageSection variant="default">
+                <IntegrationsTable
+                    integrations={integrations}
+                    hasMultipleDelete={!isClusterInitBundle}
+                    onDeleteIntegrations={onDeleteIntegrations}
+                />
+            </PageSection>
             {isAPIToken && (
                 <ConfirmationModal
                     ariaLabel="Confirm delete"

@@ -1,37 +1,29 @@
 import React from 'react';
-import { connect } from 'react-redux';
-import { createSelector, createStructuredSelector } from 'reselect';
-import { selectors } from 'reducers';
+import { Divider, Flex, PageSection, Title } from '@patternfly/react-core';
 
-import PageHeader from 'Components/PageHeader';
-import NetworkSearch from './NetworkSearch';
-import ClusterSelect from './ClusterSelect';
-import SimulatorButton from './SimulatorButton';
-import TimeWindowSelector from './TimeWindowSelector';
 import CIDRFormButton from './CIDRFormButton';
+import FilterToolbar from './FilterToolbar';
+import SimulatorButton from './SimulatorButton';
 
-function Header({ isViewFiltered, isDisabled }) {
-    const subHeader = isViewFiltered ? 'Filtered view' : 'Default view';
+function Header({ isSimulationOn }) {
     return (
         <>
-            <PageHeader header="Network Graph" subHeader={subHeader} classes="flex-1 border-none">
-                <ClusterSelect isDisabled={isDisabled} />
-                <NetworkSearch isDisabled={isDisabled} />
-                <TimeWindowSelector isDisabled={isDisabled} />
-                <SimulatorButton isDisabled={isDisabled} />
-            </PageHeader>
-            <CIDRFormButton isDisabled={isDisabled} />
+            <PageSection variant="light">
+                <Flex direction={{ default: 'row' }}>
+                    <Title className="pf-u-flex-grow-1" headingLevel="h1">
+                        Network Graph
+                    </Title>
+                    <CIDRFormButton isDisabled={isSimulationOn} />
+                    <SimulatorButton isDisabled={isSimulationOn} />
+                </Flex>
+            </PageSection>
+            <Divider component="div" />
+            <PageSection variant="light" padding={{ default: 'noPadding' }}>
+                <FilterToolbar isDisabled={isSimulationOn} />
+            </PageSection>
+            <Divider component="div" />
         </>
     );
 }
 
-const isViewFiltered = createSelector(
-    [selectors.getNetworkSearchOptions],
-    (searchOptions) => searchOptions.length !== 0
-);
-
-const mapStateToProps = createStructuredSelector({
-    isViewFiltered,
-});
-
-export default connect(mapStateToProps, null)(Header);
+export default Header;

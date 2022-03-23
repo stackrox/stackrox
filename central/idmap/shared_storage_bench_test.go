@@ -1,6 +1,7 @@
 package idmap
 
 import (
+	"context"
 	"math/rand"
 	"strconv"
 	"testing"
@@ -49,6 +50,7 @@ func BenchmarkSharedIDMapStorage_LookupsSingleThread(b *testing.B) {
 }
 
 func BenchmarkCrudStorage_LookupsSingleThread(b *testing.B) {
+	ctx := context.Background()
 	for _, numNamespaces := range namespaceCounts {
 		namespaces := make([]*storage.NamespaceMetadata, 0, numNamespaces)
 		for i := 0; i < numNamespaces; i++ {
@@ -68,13 +70,13 @@ func BenchmarkCrudStorage_LookupsSingleThread(b *testing.B) {
 			}()
 
 			s := rocksdb.New(rocksDB)
-			require.NoError(b, s.UpsertMany(namespaces))
+			require.NoError(b, s.UpsertMany(ctx, namespaces))
 
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
 				ns := namespaces[rand.Int()%numNamespaces]
-				nsInfo, _, _ := s.Get(ns.GetId())
+				nsInfo, _, _ := s.Get(ctx, ns.GetId())
 				require.NotNil(b, nsInfo)
 				require.Equal(b, ns.GetClusterName(), nsInfo.ClusterName)
 			}
@@ -119,6 +121,7 @@ func BenchmarkSharedIDMapStorage_LookupsMultiThread(b *testing.B) {
 }
 
 func BenchmarkCrudStorage_LookupsMultiThread(b *testing.B) {
+	ctx := context.Background()
 	for _, numNamespaces := range namespaceCounts {
 		namespaces := make([]*storage.NamespaceMetadata, 0, numNamespaces)
 		for i := 0; i < numNamespaces; i++ {
@@ -138,7 +141,7 @@ func BenchmarkCrudStorage_LookupsMultiThread(b *testing.B) {
 			}()
 
 			s := rocksdb.New(rocksDB)
-			require.NoError(b, s.UpsertMany(namespaces))
+			require.NoError(b, s.UpsertMany(ctx, namespaces))
 
 			b.ResetTimer()
 			var wg sync.WaitGroup
@@ -149,7 +152,7 @@ func BenchmarkCrudStorage_LookupsMultiThread(b *testing.B) {
 
 					for i := 0; i < b.N; i++ {
 						ns := namespaces[rand.Int()%numNamespaces]
-						nsInfo, _, _ := s.Get(ns.GetId())
+						nsInfo, _, _ := s.Get(ctx, ns.GetId())
 						require.NotNil(b, nsInfo)
 						require.Equal(b, ns.GetClusterName(), nsInfo.ClusterName)
 					}

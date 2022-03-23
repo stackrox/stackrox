@@ -87,7 +87,7 @@ func (m *managerImpl) buildIndicatorFilter() {
 	ctx := sac.WithAllAccess(context.Background())
 	var processesToRemove []string
 
-	deploymentIDs, err := m.deploymentDataStore.GetDeploymentIDs()
+	deploymentIDs, err := m.deploymentDataStore.GetDeploymentIDs(ctx)
 	if err != nil {
 		utils.Should(errors.Wrap(err, "error getting deployment IDs"))
 		return

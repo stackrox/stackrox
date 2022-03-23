@@ -26,10 +26,10 @@ type datastoreImpl struct {
 	subjectTypeToRanker map[string]*ranking.Ranker
 }
 
-func (d *datastoreImpl) buildIndex() error {
+func (d *datastoreImpl) buildIndex(ctx context.Context) error {
 	log.Info("[STARTUP] Indexing risk")
 	var risks []*storage.Risk
-	err := d.storage.Walk(func(risk *storage.Risk) error {
+	err := d.storage.Walk(ctx, func(risk *storage.Risk) error {
 		risks = append(risks, risk)
 		return nil
 	})
@@ -61,23 +61,23 @@ func (d *datastoreImpl) GetRisk(ctx context.Context, subjectID string, subjectTy
 	if allowed, err := riskSAC.ReadAllowed(ctx); err != nil || !allowed {
 		return nil, false, err
 	}
-	return d.getRiskForSubject(subjectID, subjectType)
+	return d.getRiskForSubject(ctx, subjectID, subjectType)
 }
 
 func (d *datastoreImpl) GetRiskForDeployment(ctx context.Context, deployment *storage.Deployment) (*storage.Risk, bool, error) {
 	if allowed, err := riskSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment)...); err != nil || !allowed {
 		return nil, false, err
 	}
-	return d.getRiskForSubject(deployment.GetId(), storage.RiskSubjectType_DEPLOYMENT)
+	return d.getRiskForSubject(ctx, deployment.GetId(), storage.RiskSubjectType_DEPLOYMENT)
 }
 
-func (d *datastoreImpl) getRiskForSubject(subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, bool, error) {
+func (d *datastoreImpl) getRiskForSubject(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, bool, error) {
 	id, err := GetID(subjectID, subjectType)
 	if err != nil {
 		return nil, false, err
 	}
 
-	risk, exists, err := d.getRisk(id)
+	risk, exists, err := d.getRisk(ctx, id)
 	if err != nil || !exists {
 		return nil, false, err
 	}
@@ -85,7 +85,7 @@ func (d *datastoreImpl) getRiskForSubject(subjectID string, subjectType storage.
 	return risk, true, nil
 }
 
-func (d *datastoreImpl) GetRiskByIndicators(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType, riskIndicatorNames []string) (*storage.Risk, error) {
+func (d *datastoreImpl) GetRiskByIndicators(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType, _ []string) (*storage.Risk, error) {
 	if allowed, err := riskSAC.ReadAllowed(ctx); err != nil || !allowed {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (d *datastoreImpl) UpsertRisk(ctx context.Context, risk *storage.Risk) erro
 	}
 
 	risk.Id = id
-	if err := d.storage.Upsert(risk); err != nil {
+	if err := d.storage.Upsert(ctx, risk); err != nil {
 		return err
 	}
 	upsertRankerRecord(d.getRanker(risk.GetSubject().GetType()), risk.GetSubject().GetId(), risk.GetScore())
@@ -141,20 +141,20 @@ func (d *datastoreImpl) RemoveRisk(ctx context.Context, subjectID string, subjec
 		return err
 	}
 
-	risk, exists, err := d.getRisk(id)
+	risk, exists, err := d.getRisk(ctx, id)
 	if err != nil || !exists {
 		return err
 	}
 
-	if err := d.storage.Delete(id); err != nil {
+	if err := d.storage.Delete(ctx, id); err != nil {
 		return err
 	}
 	removeRankerRecord(d.getRanker(risk.GetSubject().GetType()), risk.GetSubject().GetId())
 	return d.indexer.DeleteRisk(id)
 }
 
-func (d *datastoreImpl) getRisk(id string) (*storage.Risk, bool, error) {
-	risk, exists, err := d.storage.Get(id)
+func (d *datastoreImpl) getRisk(ctx context.Context, id string) (*storage.Risk, bool, error) {
+	risk, exists, err := d.storage.Get(ctx, id)
 	if err != nil || !exists {
 		return nil, false, err
 	}

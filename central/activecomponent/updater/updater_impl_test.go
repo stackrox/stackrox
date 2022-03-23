@@ -79,6 +79,8 @@ var (
 		Id: "image1",
 		Scan: &storage.ImageScan{
 			ScanTime: protoconv.ConvertTimeToTimestamp(time.Now()),
+			// leaving empty initially so the test will cover backwards compatibility for scans with no version
+			ScannerVersion: "",
 			Components: []*storage.EmbeddedImageScanComponent{
 				{
 					Name:    "image1_component1",
@@ -118,6 +120,7 @@ var (
 			},
 		},
 	}
+
 	mockIndicators = []indicatorModel{
 		{
 			DeploymentID:  "depA",
@@ -200,7 +203,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 			}
 		}
 	}
-	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs().AnyTimes().Return(deploymentIDs, nil)
+	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs(gomock.Any()).AnyTimes().Return(deploymentIDs, nil)
 	s.mockActiveComponentDataStore.EXPECT().SearchRawActiveComponents(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	s.mockProcessIndicatorDataStore.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Times(3).DoAndReturn(
 		func(ctx context.Context, query *v1.Query) ([]*storage.ProcessIndicator, error) {
@@ -293,7 +296,9 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 	}
 
 	// Initial population
+	// scanner version is empty to test backward compatibility
 	image := mockImage.Clone()
+	s.Assert().Equal(image.GetScan().GetScannerVersion(), "")
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image))
 	s.verifyExecutableCache(updater, mockImage)
 
@@ -308,7 +313,8 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 
 	// New update without the first component
 	image = mockImage.Clone()
-	image.GetScan().ScanTime = protoconv.ConvertTimeToTimestamp(time.Now().Add(1))
+	// update the scanner version to make sure cache gets re-populated
+	image.GetScan().ScannerVersion = "2.22.0"
 	image.GetScan().Components = image.GetScan().GetComponents()[1:]
 	imageForVerify := image.Clone()
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image))
@@ -317,8 +323,12 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 
 func (s *acUpdaterTestSuite) verifyExecutableCache(updater *updaterImpl, image *storage.Image) {
 	s.Assert().Len(updater.executableCache.Keys(), 1)
+
 	result, ok := updater.executableCache.Get(image.GetId())
 	s.Assert().True(ok)
+
+	// ensure the scanner version is updated and matches
+	s.Assert().Equal(image.GetScan().GetScannerVersion(), result.(*imageExecutable).scannerVersion)
 	execToComponents := result.(*imageExecutable).execToComponents
 	allExecutables := set.NewStringSet()
 	for _, component := range image.GetScan().GetComponents() {
@@ -347,7 +357,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 	image := &storage.Image{
 		Id: "image1",
 		Scan: &storage.ImageScan{
-			ScanTime: protoconv.ConvertTimeToTimestamp(time.Now()),
+			ScanTime:       protoconv.ConvertTimeToTimestamp(time.Now()),
+			ScannerVersion: "2.22.0",
 			Components: []*storage.EmbeddedImageScanComponent{
 				{
 					Name:    "component1",
@@ -394,7 +405,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 			return []search.Result{{ID: image.GetId()}}, nil
 		})
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image.Clone()))
-	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs().AnyTimes().Return([]string{deployment.GetId()}, nil)
+	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs(gomock.Any()).AnyTimes().Return([]string{deployment.GetId()}, nil)
 
 	// Test active components with designated image and deployment
 	var testCases = []struct {

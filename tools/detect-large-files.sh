@@ -13,6 +13,7 @@ fi
 allowed_files=""
 if [[ -n "$allowlist_path" ]]
 then
+  LC_ALL=C LC_COLLATE=C sort --check "${allowlist_path}"
   allowed_files=$(egrep -v '^\s*(#.*)$' "${allowlist_path}" | xargs git -C "$GIT_REPO_TOP" ls-files --)
 fi
 

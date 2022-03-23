@@ -2,9 +2,10 @@ import React from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 
 import usePermissions from 'hooks/usePermissions';
-import { policiesBasePathPatternFly } from 'routePaths';
+import { policiesBasePath } from 'routePaths';
 import { SearchFilter } from 'types/search';
 
+import NotFoundMessage from 'Components/NotFoundMessage';
 import { getSearchStringForFilter, parsePoliciesSearchString } from './policies.utils';
 import PoliciesTablePage from './Table/PoliciesTablePage';
 import PolicyPage from './PolicyPage';
@@ -35,13 +36,13 @@ function PoliciesPage() {
     function handleChangeSearchFilter(changedSearchFilter: SearchFilter) {
         // Browser history has only the most recent search filter.
         history.replace({
-            pathname: policiesBasePathPatternFly,
+            pathname: policiesBasePath,
             search: getSearchStringForFilter(changedSearchFilter),
         });
     }
 
     if (!hasReadAccessForPolicy) {
-        return <div>TODO</div>;
+        return <NotFoundMessage title="404: We couldn't find that page" />;
     }
 
     if (pageAction || policyId) {

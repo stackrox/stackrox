@@ -48,6 +48,7 @@ var (
 		fieldnames.ImageScanAge:                 {{required: set.NewStringSet(search.ImageScanTime.String()), printerFuncKey: printer.ImageScanAgeKey}},
 		fieldnames.ImageTag:                     {{required: set.StringSet{}, printerFuncKey: printer.ImageDetailsKey}},
 		fieldnames.ImageUser:                    {{required: set.StringSet{}, printerFuncKey: printer.ImageUserKey}},
+		fieldnames.ImageSignatureVerifiedBy:     {{required: set.NewStringSet(augmentedobjs.ImageSignatureVerifiedCustomTag), printerFuncKey: printer.ImageSignatureVerifiedKey}},
 		fieldnames.LivenessProbeDefined:         {{required: set.NewStringSet(search.LivenessProbeDefined.String()), printerFuncKey: printer.LivenessProbeDefinedKey}},
 		fieldnames.MinimumRBACPermissions:       {{required: set.NewStringSet(search.ServiceAccountPermissionLevel.String()), printerFuncKey: printer.RbacKey}},
 		fieldnames.MountPropagation:             {{required: set.NewStringSet(search.MountPropagation.String()), printerFuncKey: printer.VolumeKey}},

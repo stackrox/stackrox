@@ -24,11 +24,11 @@ func (d *datastoreImpl) UpsertBaselineResults(ctx context.Context, results *stor
 		return sac.ErrResourceAccessDenied
 	}
 
-	return d.storage.Upsert(results)
+	return d.storage.Upsert(ctx, results)
 }
 
 func (d *datastoreImpl) GetBaselineResults(ctx context.Context, deploymentID string) (*storage.ProcessBaselineResults, error) {
-	pWResults, exists, err := d.storage.Get(deploymentID)
+	pWResults, exists, err := d.storage.Get(ctx, deploymentID)
 	if err != nil || !exists {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (d *datastoreImpl) GetBaselineResults(ctx context.Context, deploymentID str
 }
 
 func (d *datastoreImpl) DeleteBaselineResults(ctx context.Context, deploymentID string) error {
-	pWResults, exists, err := d.storage.Get(deploymentID)
+	pWResults, exists, err := d.storage.Get(ctx, deploymentID)
 	if err != nil || !exists {
 		return err
 	}
@@ -50,5 +50,5 @@ func (d *datastoreImpl) DeleteBaselineResults(ctx context.Context, deploymentID 
 		return err
 	}
 
-	return d.storage.Delete(deploymentID)
+	return d.storage.Delete(ctx, deploymentID)
 }

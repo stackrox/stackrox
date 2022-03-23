@@ -35,18 +35,16 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 		return err
 	}
 
-	// If sac scope checker is configured, skip role check.
-	contextIsSACEnabled := sac.IsContextSACEnabled(ctx)
-	contextIsBuiltinScopedAuthzEnabled := sac.IsContextBuiltinScopedAuthzEnabled(ctx)
-	rootScopeChecker := sac.GlobalAccessScopeCheckerOrNil(ctx)
+	// If sac non-builtin scope checker is configured, skip role check.
+	rootScopeChecker := sac.GlobalAccessScopeChecker(ctx)
 
 	// For plugin-based legacy SAC, only global permissions are checked here,
 	// and the plugin is queried for these permissions.
-	if contextIsSACEnabled && !contextIsBuiltinScopedAuthzEnabled && rootScopeChecker != nil {
-		return p.checkGlobalSACPermissions(ctx, *rootScopeChecker)
+	if sac.IsContextPluginScopedAuthzEnabled(ctx) {
+		return p.checkGlobalSACPermissions(ctx, rootScopeChecker)
 	}
-	// In all other cases (no SAC and built-in scoped authorizer), we check if
-	// the role has all the required permissions.
+	// If built-in scoped authorizer is used, we check if the role has all
+	// the required permissions.
 	return p.checkPermissions(id.Permissions())
 }
 

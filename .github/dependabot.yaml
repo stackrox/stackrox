@@ -16,7 +16,6 @@ updates:
     labels:
       - "ci-no-api-tests"
       - "ci-no-qa-tests"
-      - "ci-no-upgrade-tests"
       - "dependencies"
     reviewers:
       - "stackrox/ui-dep-updaters"

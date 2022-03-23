@@ -1,11 +1,13 @@
 import React, { ReactElement } from 'react';
 import { Alert, Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
 
-import MitreAttackVectorsView from 'Containers/MitreAttackVectors/MitreAttackVectorsView';
+import MitreAttackVectorsViewContainer from 'Containers/MitreAttackVectors/MitreAttackVectorsViewContainer';
 
 import PolicyMetadataFormSection from './PolicyMetadataFormSection';
 import AttachNotifiersFormSection from './AttachNotifiersFormSection';
 import MitreAttackVectorsFormSection from './MitreAttackVectorsFormSection';
+
+import './PolicyDetailsForm.css';
 
 type PolicyDetailsFormProps = {
     id: string;
@@ -29,12 +31,20 @@ function PolicyDetailsForm({ id, mitreVectorsLocked }: PolicyDetailsFormProps): 
             </Flex>
             <Divider component="div" />
             <Flex>
-                <Flex spaceItems={{ default: 'spaceItemsNone' }}>
-                    <FlexItem className="pf-u-p-lg" grow={{ default: 'grow' }}>
+                <Flex
+                    spaceItems={{ default: 'spaceItemsNone' }}
+                    flexWrap={{ default: 'wrap', md: 'nowrap' }}
+                    fullWidth={{ default: 'fullWidth' }}
+                >
+                    <FlexItem
+                        className="pf-u-p-lg"
+                        grow={{ default: 'grow' }}
+                        flex={{ default: 'flex_1' }}
+                    >
                         <PolicyMetadataFormSection />
                     </FlexItem>
                     <Divider component="div" isVertical />
-                    <FlexItem className="pf-u-w-33">
+                    <FlexItem className="attach-notifiers-section">
                         <AttachNotifiersFormSection />
                     </FlexItem>
                 </Flex>
@@ -63,7 +73,7 @@ function PolicyDetailsForm({ id, mitreVectorsLocked }: PolicyDetailsFormProps): 
                                 If you need to edit MITRE ATT&CK, clone this policy or create a new
                                 policy.
                             </Alert>
-                            <MitreAttackVectorsView policyId={id} />
+                            <MitreAttackVectorsViewContainer policyId={id} />
                         </>
                     ) : (
                         <MitreAttackVectorsFormSection />

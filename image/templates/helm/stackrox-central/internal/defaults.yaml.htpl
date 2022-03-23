@@ -55,18 +55,12 @@ defaults:
         memory: "1500Mi"
         cpu: "1000m"
       limits:
-        memory: "3000Mi"
+        memory: "4Gi"
         cpu: "2000m"
 
     image:
       name: [< required "" .ScannerImageRemote >]
       tag: [< required "" .ScannerImageTag >]
-
-    [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
-    slimImage:
-      name: [< required "" .ScannerSlimImageRemote >]
-      tag: [< required "" .ScannerImageTag >]
-    [< end >]
 
     dbResources:
       limits:
@@ -78,13 +72,7 @@ defaults:
 
     dbImage:
       name: [< required "" .ScannerDBImageRemote >]
-      tag: [< required "" .ScannerDBImageTag >]
-
-    [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
-    slimDBImage:
-      name: [< required "" .ScannerDBSlimImageRemote >]
-      tag: [< required "" .ScannerDBImageTag >]
-    [< end >]
+      tag: [< required "" .ScannerImageTag >]
 
   system:
     createSCCs: [< not .Operator >]

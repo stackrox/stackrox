@@ -10,9 +10,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/scan"
 	"google.golang.org/grpc/status"
 )
 
@@ -52,14 +54,25 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 func scanImage(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
+
 	return svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 		Image: ci,
 	})
 }
 
-func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
-	defer c.signal.Signal()
+func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
+	defer cancel()
 
+	img, err := scan.ScanImage(ctx, svc, ci)
+	return &v1.ScanImageInternalResponse{
+		Image: img,
+	}, err
+}
+
+type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) (*v1.ScanImageInternalResponse, error)
+
+func scanWithRetries(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage, scan scanFunc) (*v1.ScanImageInternalResponse, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.InitialInterval = 5 * time.Second
 	eb.Multiplier = 2
@@ -72,22 +85,44 @@ outer:
 	for {
 		// We want to get the time spent in backoff without including the time it took to scan the image.
 		timeSpentInBackoffSoFar := eb.GetElapsedTime()
-		scannedImage, err := scanImage(ctx, svc, ci)
+		scannedImage, err := scan(ctx, svc, ci)
 		if err != nil {
 			for _, detail := range status.Convert(err).Details() {
-				// If the client is effectively rate limited, backoff and try again.
+				// If the client is effectively rate-limited, backoff and try again.
 				if _, isTooManyParallelScans := detail.(*v1.ScanImageInternalResponseDetails_TooManyParallelScans); isTooManyParallelScans {
 					time.Sleep(eb.NextBackOff())
 					continue outer
 				}
 			}
-			c.image = types.ToImage(ci)
-			return
+
+			return nil, err
 		}
+
 		metrics.ObserveTimeSpentInExponentialBackoff(timeSpentInBackoffSoFar)
-		c.image = scannedImage.GetImage()
+
+		return scannedImage, nil
+	}
+}
+
+func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, ci *storage.ContainerImage) {
+	defer c.signal.Signal()
+
+	// Ask Central to scan the image if the image is not internal.
+	// Otherwise, attempt to scan locally.
+	scanImageFn := scanImage
+	if features.LocalImageScanning.Enabled() && ci.GetIsClusterLocal() {
+		scanImageFn = scanImageLocal
+	}
+
+	scannedImage, err := scanWithRetries(ctx, svc, ci, scanImageFn)
+	if err != nil {
+		// Ignore the error and set the image to something basic,
+		// so alerting can progress.
+		c.image = types.ToImage(ci)
 		return
 	}
+
+	c.image = scannedImage.GetImage()
 }
 
 func newEnricher(cache expiringcache.Cache) *enricher {
@@ -142,7 +177,7 @@ func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageCh
 
 func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, containerIdx int, ci *storage.ContainerImage) {
 	go func() {
-		// unguarded send (push to channel outside of a select) is allowed because the imageChan is a buffered channel of exact size
+		// unguarded send (push to channel outside a select) is allowed because the imageChan is a buffered channel of exact size
 		imageChan <- e.runScan(containerIdx, ci)
 	}()
 }

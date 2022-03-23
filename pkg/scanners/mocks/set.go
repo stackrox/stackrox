@@ -48,10 +48,10 @@ func (mr *MockSetMockRecorder) Clear() *gomock.Call {
 }
 
 // GetAll mocks base method.
-func (m *MockSet) GetAll() []types.ImageScanner {
+func (m *MockSet) GetAll() []types.ImageScannerWithDataSource {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll")
-	ret0, _ := ret[0].([]types.ImageScanner)
+	ret0, _ := ret[0].([]types.ImageScannerWithDataSource)
 	return ret0
 }
 

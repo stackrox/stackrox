@@ -67,7 +67,7 @@ func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 	if err != nil {
 		return nil, nil, err
 	}
-	alerts, missingIndices, err := ds.storage.GetListAlerts(search.ResultsToIDs(results))
+	alerts, missingIndices, err := ds.storage.GetListAlerts(ctx, search.ResultsToIDs(results))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -80,7 +80,7 @@ func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query) ([]*stora
 	if err != nil {
 		return nil, err
 	}
-	alerts, _, err := ds.storage.GetMany(search.ResultsToIDs(results))
+	alerts, _, err := ds.storage.GetMany(ctx, search.ResultsToIDs(results))
 	if err != nil {
 		return nil, err
 	}

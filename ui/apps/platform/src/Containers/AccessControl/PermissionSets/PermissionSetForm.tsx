@@ -114,7 +114,7 @@ function PermissionSetForm({
 
     return (
         <Form id="permission-set-form">
-            <Toolbar inset={{ default: 'insetNone' }}>
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">

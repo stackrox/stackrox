@@ -58,7 +58,7 @@ function PolicyScopeForm() {
     }
 
     function deleteExclusionDeploymentScope(index) {
-        const newScope = scope.filter((_, i) => i !== index);
+        const newScope = excludedDeploymentScopes.filter((_, i) => i !== index);
         setFieldValue('excludedDeploymentScopes', newScope);
     }
 
@@ -128,14 +128,13 @@ function PolicyScopeForm() {
                     </FlexItem>
                 </Flex>
                 <FlexItem>
-                    <Grid hasGutter>
+                    <Grid hasGutter md={6} xl={4}>
                         {scope?.map((_, index) => (
                             // eslint-disable-next-line react/no-array-index-key
-                            <GridItem span={4} rowSpan={4} key={index}>
+                            <GridItem key={index}>
                                 <PolicyScopeCard
                                     type="inclusion"
                                     name={`scope[${index}]`}
-                                    index={index}
                                     clusters={clusters}
                                     onDelete={() => deleteInclusionScope(index)}
                                     hasAuditLogEventSource={hasAuditLogEventSource}
@@ -151,10 +150,10 @@ function PolicyScopeForm() {
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h3">Exclude by scope</Title>
                         <div className="pf-u-mt-sm">
-                            Use Exclude by scope to exclude entities from your policy. You can add
+                            Use Exclude by scope to exclude entities from your policy. This function
+                            is only available for Deploy and Runtime lifecycle stages. You can add
                             multiple scopes and also use regular expressions (RE2 syntax) for
-                            namespaces and labels. However, you can&apos;t use regular expressions
-                            for selecting deployments.
+                            namespaces and labels.
                         </div>
                     </FlexItem>
                     <FlexItem className="pf-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
@@ -168,14 +167,13 @@ function PolicyScopeForm() {
                     </FlexItem>
                 </Flex>
                 <FlexItem>
-                    <Grid hasGutter>
+                    <Grid hasGutter md={6} xl={4}>
                         {excludedDeploymentScopes?.map((_, index) => (
                             // eslint-disable-next-line react/no-array-index-key
-                            <GridItem span={4} rowSpan={4} key={index}>
+                            <GridItem key={index}>
                                 <PolicyScopeCard
                                     type="exclusion"
                                     name={`excludedDeploymentScopes[${index}]`}
-                                    index={index}
                                     clusters={clusters}
                                     deployments={deployments}
                                     onDelete={() => deleteExclusionDeploymentScope(index)}

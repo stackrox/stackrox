@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 // Command represents the command.
@@ -19,8 +18,9 @@ func Command() *cobra.Command {
 	var filename string
 
 	c := &cobra.Command{
-		Use: "upload-db",
-		RunE: util.RunENoArgs(func(c *cobra.Command) error {
+		Use:  "upload-db",
+		Args: cobra.NoArgs,
+		RunE: func(c *cobra.Command, args []string) error {
 			file, err := os.Open(filename)
 			if err != nil {
 				return errors.Wrap(err, "Could not open file")
@@ -30,7 +30,7 @@ func Command() *cobra.Command {
 			resp, err := common.DoHTTPRequestAndCheck200("/api/extensions/scannerdefinitions",
 				flags.Timeout(c), http.MethodPost, file)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "could not connect with scanner definitions API")
 			}
 			defer utils.IgnoreError(resp.Body.Close)
 			body, err := io.ReadAll(resp.Body)
@@ -39,7 +39,7 @@ func Command() *cobra.Command {
 			}
 			fmt.Println(string(body))
 			return nil
-		}),
+		},
 	}
 
 	c.Flags().StringVar(&filename, "scanner-db-file", "", "file containing the dumped Scanner definitions DB")

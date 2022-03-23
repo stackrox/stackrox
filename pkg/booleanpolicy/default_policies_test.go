@@ -79,12 +79,10 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 	}
 
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv(features.VulnRiskManagement.EnvVar(), "true")
+	suite.envIsolator.Setenv(features.ImageSignatureVerification.EnvVar(), "true")
 }
 
-func (suite *DefaultPoliciesTestSuite) TearDownSuite() {
-	suite.envIsolator.RestoreAll()
-}
+func (suite *DefaultPoliciesTestSuite) TearDownSuite() {}
 
 func (suite *DefaultPoliciesTestSuite) SetupTest() {
 	suite.deployments = make(map[string]*storage.Deployment)
@@ -161,6 +159,16 @@ func imageWithOS(os string) *storage.Image {
 		Name: &storage.ImageName{FullName: "docker.io/ASFASF", Remote: "ASFASF"},
 		Scan: &storage.ImageScan{
 			OperatingSystem: os,
+		},
+	}
+}
+
+func imageWithSignatureVerificationResults(name string, results []*storage.ImageSignatureVerificationResult) *storage.Image {
+	return &storage.Image{
+		Id:   uuid.NewV4().String(),
+		Name: &storage.ImageName{FullName: name, Remote: "ASFASF"},
+		SignatureVerificationData: &storage.ImageSignatureVerificationData{
+			Results: results,
 		},
 	}
 }
@@ -1397,11 +1405,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				processMatcher, err := BuildDeploymentWithProcessMatcher(p)
 				require.NoError(t, err)
 				for deploymentID, processes := range c.expectedProcessViolations {
-					if !features.VulnRiskManagement.Enabled() {
-						if deploymentID == structDepWithDeferredVulns.GetId() {
-							continue
-						}
-					}
 					expectedProcesses := set.NewStringSet(sliceutils.Map(processes, func(p *storage.ProcessIndicator) string {
 						return p.GetId()
 					}).([]string)...)
@@ -1454,11 +1457,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			}
 
 			for id := range suite.deployments {
-				if !features.VulnRiskManagement.Enabled() {
-					if id == structDepWithDeferredVulns.GetId() {
-						continue
-					}
-				}
 				violations, expected := c.expectedViolations[id]
 				if expected {
 					assert.Contains(t, actualViolations, id)
@@ -2109,6 +2107,129 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 				}
 			}
 			assert.ElementsMatch(t, imgMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", imgMatched.AsSlice(), c.value, c.expectedMatches)
+		})
+	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
+
+	if !features.ImageSignatureVerification.Enabled() {
+		return
+	}
+
+	const (
+		verifier0  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000000"
+		verifier1  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000001"
+		verifier2  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000002"
+		verifier3  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000003"
+		unverifier = "io.stackrox.signatureintegration.00000000-0000-0000-0000-00000000000F"
+	)
+
+	var images = []*storage.Image{
+		imageWithSignatureVerificationResults("image_no_results", []*storage.ImageSignatureVerificationResult{{}}),
+		imageWithSignatureVerificationResults("verified_by_0", []*storage.ImageSignatureVerificationResult{{
+			VerifierId: verifier0,
+			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+		}}),
+		imageWithSignatureVerificationResults("unverified_image", []*storage.ImageSignatureVerificationResult{{
+			VerifierId: unverifier,
+			Status:     storage.ImageSignatureVerificationResult_UNSET,
+		}}),
+		imageWithSignatureVerificationResults("verified_by_3", []*storage.ImageSignatureVerificationResult{{
+			VerifierId: verifier2,
+			Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
+		}, {
+			VerifierId: verifier3,
+			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+		}}),
+		imageWithSignatureVerificationResults("verified_by_2_and_3", []*storage.ImageSignatureVerificationResult{{
+			VerifierId: verifier2,
+			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+		}, {
+			VerifierId: verifier3,
+			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
+		}}),
+	}
+
+	allImages := set.NewStringSet()
+	for _, img := range images {
+		allImages.Add(img.GetName().GetFullName())
+	}
+
+	for _, testCase := range []struct {
+		values          []string
+		negate          bool
+		expectedMatches set.FrozenStringSet
+	}{
+		{
+			values:          []string{verifier0},
+			negate:          false,
+			expectedMatches: set.NewFrozenStringSet("verified_by_0"),
+		},
+		{
+			values:          []string{verifier1},
+			negate:          false,
+			expectedMatches: set.NewFrozenStringSet(),
+		},
+		{
+			values:          []string{verifier2},
+			negate:          false,
+			expectedMatches: set.NewFrozenStringSet("verified_by_2_and_3"),
+		},
+		{
+			values:          []string{verifier0, verifier2},
+			negate:          false,
+			expectedMatches: set.NewFrozenStringSet("verified_by_0", "verified_by_2_and_3"),
+		},
+		{
+			values:          []string{verifier3},
+			negate:          false,
+			expectedMatches: set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3"),
+		},
+		{
+			values:          []string{unverifier},
+			negate:          true,
+			expectedMatches: set.NewFrozenStringSet("unverified_image", "image_no_results"),
+		},
+	} {
+		c := testCase
+
+		suite.Run(fmt.Sprintf("ImageMatcher %+v", c), func() {
+			imgMatcher, err := BuildImageMatcher(policyWithSingleFieldAndValues(fieldnames.ImageSignatureVerifiedBy, c.values, c.negate, storage.BooleanOperator_OR))
+			suite.NoError(err)
+			matchedImages := set.NewStringSet()
+			for _, img := range images {
+				violations, err := imgMatcher.MatchImage(nil, img)
+				suite.NoError(err)
+				if len(violations.AlertViolations) == 0 {
+					continue
+				}
+				matchedImages.Add(img.GetName().GetFullName())
+				if c.negate {
+					suite.Falsef(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match %q", img.GetName().GetFullName())
+				} else {
+					suite.Truef(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match %q", img.GetName().GetFullName())
+				}
+
+				messages := set.NewStringSet()
+				for _, r := range img.GetSignatureVerificationData().GetResults() {
+					if r.GetVerifierId() != "" && r.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
+						messages.Add(fmt.Sprintf("Image signature is verified by %s", r.GetVerifierId()))
+					}
+				}
+				for _, violation := range violations.AlertViolations {
+					if messages.Cardinality() > 0 {
+						suite.Truef(messages.Contains(violation.GetMessage()), "Message not found %q", violation.GetMessage())
+					} else {
+						suite.Equal("Image signature is unverified", violation.GetMessage())
+					}
+				}
+			}
+			if c.negate {
+				suite.True(c.expectedMatches.Difference(allImages.Difference(matchedImages).Freeze()).IsEmpty())
+			} else {
+				suite.True(c.expectedMatches.Difference(matchedImages.Freeze()).IsEmpty())
+			}
 		})
 	}
 }

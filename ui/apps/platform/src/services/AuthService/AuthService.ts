@@ -25,12 +25,16 @@ const requestedLocationKey = 'requested_location';
  */
 export class AuthHttpError extends Error {
     code: number;
-    cause: string; // eslint-disable-line @typescript-eslint/lines-between-class-members
+    cause: Error; // eslint-disable-line @typescript-eslint/lines-between-class-members
 
-    constructor(message: string, code: number, cause: string) {
+    constructor(message: string, code: number, cause: Error) {
         super(message);
         this.name = 'AuthHttpError';
         this.code = code;
+        /*
+         * Although ES2022 adds `{ cause }` as optional argument to Error constructor
+         * declare and assign cause property in subclass for backward compatibility.
+         */
         this.cause = cause;
     }
 

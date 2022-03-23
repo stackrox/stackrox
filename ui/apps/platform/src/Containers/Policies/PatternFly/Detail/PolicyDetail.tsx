@@ -24,7 +24,7 @@ import { CaretDownIcon } from '@patternfly/react-icons';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
-import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
+import { policiesBasePath } from 'routePaths';
 import { deletePolicy, exportPolicies } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -66,14 +66,14 @@ function PolicyDetail({
     }
 
     function onEditPolicy() {
-        history.replace({
+        history.push({
             pathname: `${policiesBasePath}/${id}`,
             search: 'action=edit',
         });
     }
 
     function onClonePolicy() {
-        history.replace({
+        history.push({
             pathname: `${policiesBasePath}/${id}`,
             search: 'action=clone',
         });
@@ -253,6 +253,7 @@ function PolicyDetail({
                             variant={AlertVariant[variant]}
                             title={title}
                             timeout={4000}
+                            onTimeout={() => removeToast(key)}
                             actionClose={
                                 <AlertActionCloseButton
                                     title={title}

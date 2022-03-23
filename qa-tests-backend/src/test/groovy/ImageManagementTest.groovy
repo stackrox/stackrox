@@ -85,7 +85,7 @@ class ImageManagementTest extends BaseSpecification {
 
         imageName               | imageRegistry | imageRemote       | imageTag         | expected
         "alpine:3.10.0"         | "docker.io"   | "library/alpine"  | "3.10.0"         | "alpine:v3.10"
-        "busybox:1.32.0"        | "docker.io"   | "library/busybox" | "1.32.0"         | "unknown"
+        "busybox:1.32.0"        | "docker.io"   | "library/busybox" | "1.32.0"         | "busybox:1.32.0"
         "centos:centos8.2.2004" | "docker.io"   | "library/centos"  | "centos8.2.2004" | "centos:8"
         // We explicitly do not support Fedora at this time.
         "fedora:33"             | "docker.io"   | "library/fedora"  | "33"             | "unknown"

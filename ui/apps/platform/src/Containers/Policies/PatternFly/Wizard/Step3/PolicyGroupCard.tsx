@@ -73,7 +73,7 @@ function PolicyGroupCard({
 
     return (
         <>
-            <Card isFlat isCompact>
+            <Card isFlat isCompact data-testid="policy-criteria-group-card">
                 <CardHeader className="pf-u-p-0">
                     <CardTitle className="pf-u-pl-md">
                         <Flex
@@ -93,6 +93,7 @@ function PolicyGroupCard({
                                     onChange={handleNegate}
                                     id={`${group.fieldName}-negate`}
                                     isDisabled={readOnly}
+                                    data-testid="policy-criteria-value-negate-checkbox"
                                 />
                             </>
                         )}
@@ -103,6 +104,7 @@ function PolicyGroupCard({
                                     variant="plain"
                                     className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
                                     onClick={onDeleteGroup}
+                                    data-testid="delete-policy-criteria-btn"
                                 >
                                     <TrashIcon />
                                 </Button>
@@ -142,21 +144,24 @@ function PolicyGroupCard({
                         );
                     })}
                     {/* this is because there can't be multiple boolean values */}
-                    {!readOnly && descriptor.type !== 'radioGroup' && (
-                        <Flex
-                            direction={{ default: 'column' }}
-                            alignItems={{ default: 'alignItemsCenter' }}
-                            className="pf-u-pt-sm"
-                        >
-                            <Button
-                                onClick={handleAddValue}
-                                variant="plain"
-                                // dataTestId="add-policy-field-value-btn"
+                    {!readOnly &&
+                        descriptor.type !== 'signaturePolicyCriteria' &&
+                        descriptor.type !== 'radioGroup' &&
+                        descriptor.type !== 'radioGroupString' && (
+                            <Flex
+                                direction={{ default: 'column' }}
+                                alignItems={{ default: 'alignItemsCenter' }}
+                                className="pf-u-pt-sm"
                             >
-                                <PlusIcon />
-                            </Button>
-                        </Flex>
-                    )}
+                                <Button
+                                    onClick={handleAddValue}
+                                    variant="plain"
+                                    data-testid="add-policy-criteria-value-btn"
+                                >
+                                    <PlusIcon />
+                                </Button>
+                            </Flex>
+                        )}
                 </CardBody>
             </Card>
             {(policyGroups.length - 1 !== groupIndex || !readOnly) && (

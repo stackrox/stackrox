@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 // Merge merges the images parts into an image.
@@ -101,12 +100,10 @@ func generateEmbeddedCVE(os string, cp CVEParts, imageCVEEdge *storage.ImageCVEE
 	}
 	ret.FirstImageOccurrence = imageCVEEdge.GetFirstImageOccurrence()
 
-	if features.VulnRiskManagement.Enabled() {
-		// The `Suppressed` field is transferred to `State` field (as DEFERRED) in `converter.ProtoCVEToEmbeddedCVE`.
-		// Now visit image-cve edge to derive the state.
-		if state := imageCVEEdge.GetState(); state != storage.VulnerabilityState_OBSERVED {
-			ret.State = state
-		}
+	// The `Suppressed` field is transferred to `State` field (as DEFERRED) in `converter.ProtoCVEToEmbeddedCVE`.
+	// Now visit image-cve edge to derive the state.
+	if state := imageCVEEdge.GetState(); state != storage.VulnerabilityState_OBSERVED {
+		ret.State = state
 	}
 
 	if distroSpecifics, ok := cp.cve.GetDistroSpecifics()[os]; ok {

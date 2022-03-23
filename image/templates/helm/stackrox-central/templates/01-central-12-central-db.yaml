@@ -1,0 +1,144 @@
+{{- include "srox.init" . -}}
+{{ if ._rox.central.enableCentralDB -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central-db
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: central-db
+    {{- include "srox.labels" (list . "deployment" "central-db") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "deployment" "central-db") | nindent 4 }}
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: central-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: central-db
+        {{- include "srox.podLabels" (list . "deployment" "central-db") | nindent 8 }}
+      annotations:
+        {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
+    spec:
+      serviceAccountName: central-db
+      initContainers:
+      - name: init-db
+        image: {{ ._rox.central.image.fullRef | replace "main" "central-db" | quote }}
+        env:
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        command:
+        - /bin/sh
+        - -c
+        - |
+          # Initialize DB if it does not exist
+          if [ ! -s "$PGDATA/PG_VERSION" ]; then
+            docker-entrypoint.sh initdb --pwfile /run/secrets/stackrox.io/secrets/password
+          fi
+        volumeMounts:
+        - name: disk
+          mountPath: /var/lib/postgresql/data
+        - name: central-db-password
+          mountPath: /run/secrets/stackrox.io/secrets
+        securityContext:
+          runAsUser: 70
+          runAsGroup: 70
+      containers:
+      - name: central-db
+        {{- /* TODO(ROX-9249): Need to provide Central DB configuration. Use the same image registry and tag for Central DB image for now. */}}
+        image: {{ ._rox.central.image.fullRef | replace "main" "central-db" | quote }}
+        env:
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: "password"
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        ports:
+        - containerPort: 5432
+          name: postgresql
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "2"
+            memory: 4Gi
+          requests:
+            cpu: 200m
+            memory: 200Mi
+        securityContext:
+          runAsUser: 70
+          runAsGroup: 70
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: disk
+        - name: central-db-tls-volume
+          mountPath: /run/secrets/stackrox.io/certs
+      securityContext:
+        fsGroup: 70
+      volumes:
+      - name: disk
+        {{- if ._rox.central.persistence._pvcCfg }}
+        persistentVolumeClaim:
+          claimName: central-db
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      - name: central-db-password
+        secret:
+          secretName: central-db-password
+      - name: central-db-tls-volume
+        secret:
+          secretName: central-db-tls
+          defaultMode: 0640
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: central-db
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "service" "central-db") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "service" "central-db") | nindent 4 }}
+spec:
+  ports:
+  - name: tcp-db
+    port: 5432
+    protocol: TCP
+    targetPort: postgresql
+  selector:
+    app: central-db
+  type: ClusterIP
+{{- if ._rox.central._dbPassword }}
+{{- if not (kindIs "invalid" ._rox.central._dbPassword.value) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: central-db-password
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "secret" "central-db-password") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "secret" "central-db-password") | nindent 4 }}
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    "helm.sh/resource-policy": keep
+type: Opaque
+stringData:
+  password: |
+    {{- ._rox.central._dbPassword.value | nindent 4 }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
+	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -86,6 +87,10 @@ func (a *globalScopeChecker) TryAllowed() sac.TryAllowedResult {
 
 func (a *globalScopeChecker) PerformChecks(_ context.Context) error {
 	return nil
+}
+
+func (a *globalScopeChecker) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
+	return nil, errors.New("global scope checker has no effective access scope")
 }
 
 func (a *globalScopeChecker) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {
@@ -176,6 +181,14 @@ func (a *resourceLevelScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
 	}
 	a.trace.RecordDenyOnResourceLevel(a.access.String(), a.resource.String())
 	return sac.Deny
+}
+
+func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
+	// TODO(ROX-9537): Implement it
+	// 1. Get all roles and filter them to get only roles with desired access level (here: READ_ACCESS)
+	// 2. For every role get it's effective access scope (EAS)
+	// 3. Merge all EAS into a single tree
+	panic("Implement me: ROX-9537")
 }
 
 func (a *resourceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {
@@ -277,7 +290,10 @@ func (c *authorizerDataCache) getEffectiveAccessScopeFromCache(id string) *effec
 }
 
 func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.SimpleAccessScope) (*effectiveaccessscope.ScopeTree, error) {
-	if accessScope == nil {
+	if accessScope == nil || accessScope.Id == rolePkg.AccessScopeExcludeAll.Id {
+		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+	}
+	if accessScope.Id == rolePkg.AccessScopeIncludeAll.Id {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
 	eas, err := effectiveaccessscope.ComputeEffectiveAccessScope(accessScope.GetRules(), c.clusters, c.namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)

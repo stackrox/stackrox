@@ -128,7 +128,7 @@ func (u *updaterImpl) getClusterMetadata() *storage.OrchestratorMetadata {
 		ApiVersions: u.getAPIVersions(),
 	}
 
-	if env.OpenshiftAPI.Setting() == "true" {
+	if env.OpenshiftAPI.BooleanSetting() {
 		// Update Openshift version
 		openshiftVersion, err := u.getOpenshiftVersion()
 		if kerrors.IsNotFound(err) {

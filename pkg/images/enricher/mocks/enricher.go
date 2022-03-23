@@ -10,6 +10,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	enricher "github.com/stackrox/rox/pkg/images/enricher"
+	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
 // MockImageEnricher is a mock of ImageEnricher interface.
@@ -50,37 +51,52 @@ func (mr *MockImageEnricherMockRecorder) EnrichImage(ctx, image interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImage", reflect.TypeOf((*MockImageEnricher)(nil).EnrichImage), ctx, image)
 }
 
-// MockcveSuppressor is a mock of cveSuppressor interface.
-type MockcveSuppressor struct {
+// EnrichWithVulnerabilities mocks base method.
+func (m *MockImageEnricher) EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (enricher.EnrichmentResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnrichWithVulnerabilities", image, components, notes)
+	ret0, _ := ret[0].(enricher.EnrichmentResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EnrichWithVulnerabilities indicates an expected call of EnrichWithVulnerabilities.
+func (mr *MockImageEnricherMockRecorder) EnrichWithVulnerabilities(image, components, notes interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichWithVulnerabilities", reflect.TypeOf((*MockImageEnricher)(nil).EnrichWithVulnerabilities), image, components, notes)
+}
+
+// MockCVESuppressor is a mock of CVESuppressor interface.
+type MockCVESuppressor struct {
 	ctrl     *gomock.Controller
-	recorder *MockcveSuppressorMockRecorder
+	recorder *MockCVESuppressorMockRecorder
 }
 
-// MockcveSuppressorMockRecorder is the mock recorder for MockcveSuppressor.
-type MockcveSuppressorMockRecorder struct {
-	mock *MockcveSuppressor
+// MockCVESuppressorMockRecorder is the mock recorder for MockCVESuppressor.
+type MockCVESuppressorMockRecorder struct {
+	mock *MockCVESuppressor
 }
 
-// NewMockcveSuppressor creates a new mock instance.
-func NewMockcveSuppressor(ctrl *gomock.Controller) *MockcveSuppressor {
-	mock := &MockcveSuppressor{ctrl: ctrl}
-	mock.recorder = &MockcveSuppressorMockRecorder{mock}
+// NewMockCVESuppressor creates a new mock instance.
+func NewMockCVESuppressor(ctrl *gomock.Controller) *MockCVESuppressor {
+	mock := &MockCVESuppressor{ctrl: ctrl}
+	mock.recorder = &MockCVESuppressorMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockcveSuppressor) EXPECT() *MockcveSuppressorMockRecorder {
+func (m *MockCVESuppressor) EXPECT() *MockCVESuppressorMockRecorder {
 	return m.recorder
 }
 
 // EnrichImageWithSuppressedCVEs mocks base method.
-func (m *MockcveSuppressor) EnrichImageWithSuppressedCVEs(image *storage.Image) {
+func (m *MockCVESuppressor) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "EnrichImageWithSuppressedCVEs", image)
 }
 
 // EnrichImageWithSuppressedCVEs indicates an expected call of EnrichImageWithSuppressedCVEs.
-func (mr *MockcveSuppressorMockRecorder) EnrichImageWithSuppressedCVEs(image interface{}) *gomock.Call {
+func (mr *MockCVESuppressorMockRecorder) EnrichImageWithSuppressedCVEs(image interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageWithSuppressedCVEs", reflect.TypeOf((*MockcveSuppressor)(nil).EnrichImageWithSuppressedCVEs), image)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageWithSuppressedCVEs", reflect.TypeOf((*MockCVESuppressor)(nil).EnrichImageWithSuppressedCVEs), image)
 }

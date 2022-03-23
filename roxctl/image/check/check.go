@@ -137,7 +137,7 @@ func (i *imageCheckCommand) Construct(args []string, cmd *cobra.Command, f *prin
 	if !i.json {
 		p, err := f.CreatePrinter()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "could not create printer for image check result")
 		}
 		i.objectPrinter = p
 		i.standardizedOutputFormat = f.IsStandardizedFormat()
@@ -173,7 +173,7 @@ func (i *imageCheckCommand) CheckImage() error {
 			time.Sleep(time.Duration(i.retryDelay) * time.Second)
 		}))
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "checking image failed after %d retries", i.retryCount)
 	}
 	return nil
 }
@@ -210,7 +210,7 @@ func (i *imageCheckCommand) printResults(alerts []*storage.Alert) error {
 
 	// print the JSON object in the dedicated format via a printer.ObjectPrinter
 	if err := i.objectPrinter.Print(policySummary, i.env.ColorWriter()); err != nil {
-		return err
+		return errors.Wrap(err, "could not print policy summary")
 	}
 
 	// conditionally print errors when the output format is a "non-RFC/standardized" one
@@ -229,7 +229,7 @@ func (i *imageCheckCommand) printResults(alerts []*storage.Alert) error {
 func (i *imageCheckCommand) getAlerts(req *v1.BuildDetectionRequest) ([]*storage.Alert, error) {
 	conn, err := i.env.GRPCConnection()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 
 	defer pkgUtils.IgnoreError(conn.Close)
@@ -240,7 +240,7 @@ func (i *imageCheckCommand) getAlerts(req *v1.BuildDetectionRequest) ([]*storage
 
 	response, err := svc.DetectBuildTime(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not check build-time alerts")
 	}
 
 	return response.GetAlerts(), err
@@ -250,7 +250,7 @@ func (i *imageCheckCommand) getAlerts(req *v1.BuildDetectionRequest) ([]*storage
 func legacyPrint(alerts []*storage.Alert, failViolations bool, numBuildBreakingPolicies int, out io.Writer) error {
 	err := report.JSON(out, alerts)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not create legacy JSON report")
 	}
 	if failViolations && numBuildBreakingPolicies != 0 {
 		return errors.New("Violated a policy with CI enforcement set")

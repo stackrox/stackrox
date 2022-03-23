@@ -37,6 +37,8 @@ import ApiTokenIntegrationForm from './Forms/ApiTokenIntegrationForm';
 import ClusterInitBundleIntegrationForm from './Forms/ClusterInitBundleIntegrationForm';
 // authorization plugins
 import ScopedAccessPluginIntegrationForm from './Forms/ScopedAccessPluginIntegrationForm';
+// signature integrations
+import SignatureIntegrationForm from './Forms/SignatureIntegrationForm';
 
 import './IntegrationForm.css';
 
@@ -69,6 +71,9 @@ const ComponentFormMap = {
         tenable: TenableIntegrationForm,
         ibm: IbmIntegrationForm,
         rhel: RhelIntegrationForm,
+    },
+    signatureIntegrations: {
+        signature: SignatureIntegrationForm,
     },
     notifiers: {
         awsSecurityHub: AwsSecurityHubIntegrationForm,

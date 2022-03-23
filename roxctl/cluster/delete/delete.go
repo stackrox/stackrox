@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -59,7 +60,7 @@ func (cmd *clusterDeleteCommand) Validate() error {
 func (cmd *clusterDeleteCommand) Delete() error {
 	conn, err := cmd.env.GRPCConnection()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 	service := v1.NewClustersServiceClient(conn)
 	clusters, err := cmd.getClusters(service)
@@ -85,7 +86,7 @@ func (cmd *clusterDeleteCommand) Delete() error {
 	defer cancel()
 	_, err = service.DeleteCluster(ctx, &v1.ResourceByID{Id: cluster.GetId()})
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not delete cluster: %q", cluster.GetId())
 	}
 
 	cmd.env.Logger().PrintfLn("Successfully deleted cluster %q\n", cmd.name)
@@ -97,7 +98,7 @@ func (cmd *clusterDeleteCommand) getClusters(svc v1.ClustersServiceClient) ([]*s
 	defer cancel()
 	clusterResponse, err := svc.GetClusters(ctx, &v1.GetClustersRequest{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not get clusters")
 	}
 	return clusterResponse.GetClusters(), nil
 }

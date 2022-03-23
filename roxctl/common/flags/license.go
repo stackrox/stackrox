@@ -1,13 +1,12 @@
 package flags
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 
-	pkgErrors "github.com/pkg/errors"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/license"
 	"github.com/stackrox/rox/roxctl/common/mode"
 )
@@ -56,7 +55,7 @@ func readLicenseFromStdin() ([]byte, error) {
 	}
 	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
-		return nil, pkgErrors.Wrap(err, "failed to read from stdin")
+		return nil, errors.Wrap(err, "failed to read license from stdin")
 	}
 	return data, nil
 }
@@ -67,7 +66,7 @@ func tryReadLicenseFromFile(filename string) ([]byte, error) {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
-		return nil, err
+		return nil, errors.Wrapf(err, "could not read file:  %q", filename)
 	}
 	return contents, nil
 }

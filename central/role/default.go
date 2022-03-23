@@ -38,27 +38,40 @@ const (
 	ScopeManager = "Scope Manager"
 )
 
-// DefaultRoleNames is a string set containing the names of all default (built-in) Roles.
-var DefaultRoleNames = set.NewStringSet(Admin, Analyst, None, ContinuousIntegration, ScopeManager, SensorCreator, VulnMgmtApprover, VulnMgmtRequester, VulnReporter)
+var (
+	// DefaultRoleNames is a string set containing the names of all default (built-in) Roles.
+	DefaultRoleNames = set.NewStringSet(Admin, Analyst, None, ContinuousIntegration, ScopeManager, SensorCreator, VulnMgmtApprover, VulnMgmtRequester, VulnReporter)
 
-// AccessScopeExcludeAll has empty rules and hence excludes all
-// scoped resources. Global resources must be unaffected.
-var AccessScopeExcludeAll = &storage.SimpleAccessScope{
-	Id:          EnsureValidAccessScopeID("denyall"),
-	Name:        "Deny All",
-	Description: "No access to scoped resources",
-	Rules:       &storage.SimpleAccessScope_Rules{},
-}
+	// defaultScopesIDs is a string set containing the names of all default (built-in) scopes.
+	defaultScopesIDs = set.NewFrozenStringSet(AccessScopeIncludeAll.Id, AccessScopeExcludeAll.Id)
+
+	// AccessScopeExcludeAll has empty rules and hence excludes all
+	// scoped resources. Global resources must be unaffected.
+	AccessScopeExcludeAll = &storage.SimpleAccessScope{
+		Id:          EnsureValidAccessScopeID("denyall"),
+		Name:        "Deny All",
+		Description: "No access to scoped resources",
+		Rules:       &storage.SimpleAccessScope_Rules{},
+	}
+
+	// AccessScopeIncludeAll gives access to all resources. It is checked by ID, as
+	// Rules cannot represent unrestricted scope.
+	AccessScopeIncludeAll = &storage.SimpleAccessScope{
+		Id:          EnsureValidAccessScopeID("unrestricted"),
+		Name:        "Unrestricted",
+		Description: "Access to all clusters and namespaces",
+	}
+)
 
 // IsDefaultRoleName checks if a given role name corresponds to a default role.
 func IsDefaultRoleName(name string) bool {
 	return DefaultRoleNames.Contains(name)
 }
 
-// IsDefaultAccessScope checks if a given access scope name corresponds to the
+// IsDefaultAccessScope checks if a given access scope id corresponds to a
 // default access scope.
-func IsDefaultAccessScope(name string) bool {
-	return AccessScopeExcludeAll.GetName() == name
+func IsDefaultAccessScope(id string) bool {
+	return defaultScopesIDs.Contains(id)
 }
 
 // GetAnalystPermissions returns permissions for `Analyst` role.

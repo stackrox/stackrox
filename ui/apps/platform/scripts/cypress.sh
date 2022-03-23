@@ -32,6 +32,6 @@ if [ $2 == "--spec" ]; then
         exit 1
     fi
     cypress run --spec "cypress/integration/$3"
-else 
-    DEBUG="cypress:*" cypress "$@" 2> /dev/null
+else
+    DEBUG="*" cypress "$@" 2> /dev/null
 fi

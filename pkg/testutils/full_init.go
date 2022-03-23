@@ -2,15 +2,24 @@ package testutils
 
 import (
 	"errors"
+	"math/rand"
 	"reflect"
 	"strings"
+	"time"
 	"unicode"
 	"unsafe"
+
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // BasicTypeInitializer prescribes how to initialize a struct field with a given type.
 type BasicTypeInitializer interface {
 	Value(ty reflect.Type, fieldPath []reflect.StructField) interface{}
+}
+
+// UniqueTypeInitializer prescribes how to initialize a struct field with a given type.
+type UniqueTypeInitializer interface {
+	ValueUnique(ty reflect.Type, fieldPath []reflect.StructField) interface{}
 }
 
 type zeroInitializer struct{}
@@ -42,10 +51,41 @@ func (simpleInitializer) Value(ty reflect.Type, fieldPath []reflect.StructField)
 	return nil
 }
 
+type uniqueInitializer struct{}
+
+func (uniqueInitializer) Value(ty reflect.Type, fieldPath []reflect.StructField) interface{} {
+	// seed rand
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	switch ty.Kind() {
+	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return r.Int31()
+	case reflect.Int8, reflect.Uint8:
+		// We are using Uint8 for bytes that become varchars.  Need to ensure that we return a
+		// non-zero number within the Uint8 range of values.
+		return r.Intn(100) + 1
+	case reflect.Float32, reflect.Float64:
+		return r.Float32()
+	case reflect.Complex64, reflect.Complex128:
+		return complex(r.Float32(), 1.0)
+	case reflect.Bool:
+		return true
+	case reflect.String:
+		return uuid.NewV4().String()
+	}
+	return nil
+}
+
 // SimpleInitializer returns a BasicTypeInitializer that initializes all fields of basic types with a simple non-zero
 // value (1 for integer fields, 1.0 for float fields, true for boolean fields, "a" for string fields).
 func SimpleInitializer() BasicTypeInitializer {
 	return simpleInitializer{}
+}
+
+// UniqueInitializer returns a UniqueTypeInitializer that initializes all fields of basic types with a simple non-zero
+// value (1 for integer fields, 1.0 for float fields, true for boolean fields, a new UUID for string fields).
+func UniqueInitializer() BasicTypeInitializer {
+	return uniqueInitializer{}
 }
 
 // FieldFilter determines whether or not to include a field.

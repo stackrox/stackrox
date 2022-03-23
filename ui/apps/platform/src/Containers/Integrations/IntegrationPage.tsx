@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
 import {
+    Button,
     ButtonVariant,
     Flex,
     FlexItem,
@@ -13,7 +14,7 @@ import {
 import { integrationsPath } from 'routePaths';
 import { getIntegrationLabel } from 'Containers/Integrations/utils/integrationUtils';
 import PageTitle from 'Components/PageTitle';
-import ButtonLink from 'Components/PatternFly/ButtonLink';
+import LinkShim from 'Components/PatternFly/LinkShim';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useIntegrationPermissions from './hooks/useIntegrationPermissions';
 import usePageState from './hooks/usePageState';
@@ -37,16 +38,15 @@ function IntegrationPage({ title, children }: IntegrationPageProps): ReactElemen
     return (
         <>
             <PageTitle title={title} />
+            <PageSection variant="light" className="pf-u-py-md">
+                <Breadcrumb>
+                    <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
+                    <BreadcrumbItemLink to={integrationsListPath}>{typeLabel}</BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>{title}</BreadcrumbItem>
+                </Breadcrumb>
+            </PageSection>
+            <Divider component="div" />
             <PageSection variant="light">
-                <div className="pf-u-mb-sm">
-                    <Breadcrumb>
-                        <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
-                        <BreadcrumbItemLink to={integrationsListPath}>
-                            {typeLabel}
-                        </BreadcrumbItemLink>
-                        <BreadcrumbItem isActive>{title}</BreadcrumbItem>
-                    </Breadcrumb>
-                </div>
                 <Flex>
                     <FlexItem>
                         <Title headingLevel="h1">{`${
@@ -55,14 +55,17 @@ function IntegrationPage({ title, children }: IntegrationPageProps): ReactElemen
                     </FlexItem>
                     {pageState === 'VIEW_DETAILS' && permissions[source].write && (
                         <FlexItem align={{ default: 'alignRight' }}>
-                            <ButtonLink variant={ButtonVariant.secondary} to={integrationEditPath}>
+                            <Button
+                                variant={ButtonVariant.secondary}
+                                component={LinkShim}
+                                href={integrationEditPath}
+                            >
                                 Edit
-                            </ButtonLink>
+                            </Button>
                         </FlexItem>
                     )}
                 </Flex>
             </PageSection>
-            <Divider component="div" />
             {children}
         </>
     );

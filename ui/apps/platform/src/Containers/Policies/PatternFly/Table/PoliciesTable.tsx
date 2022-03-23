@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
     Button,
     ButtonVariant,
@@ -25,13 +26,13 @@ import pluralize from 'pluralize';
 
 import { ListPolicy } from 'types/policy.proto';
 import { sortSeverity, sortAsciiCaseInsensitive, sortValueByLength } from 'sorters/sorters';
-import ButtonLink from 'Components/PatternFly/ButtonLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
+import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { ActionItem } from 'Containers/Violations/ViolationsTablePanel';
 import useTableSelection from 'hooks/useTableSelection';
 import { SortDirection } from 'hooks/useTableSort';
-import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
+import { policiesBasePath } from 'routePaths';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { SearchFilter } from 'types/search';
 
@@ -109,6 +110,7 @@ function PoliciesTable({
     searchFilter,
     searchOptions,
 }: PoliciesTableProps): React.ReactElement {
+    const history = useHistory();
     const [labelAndNotifierIdsForTypes, setLabelAndNotifierIdsForTypes] = useState<
         LabelAndNotifierIdsForType[]
     >([]);
@@ -158,6 +160,20 @@ function PoliciesTable({
     function onSort(e, index, direction) {
         setActiveSortIndex(index);
         setActiveSortDirection(direction);
+    }
+
+    function onEditPolicy(id: string) {
+        history.push({
+            pathname: `${policiesBasePath}/${id}`,
+            search: 'action=edit',
+        });
+    }
+
+    function onClonePolicy(id: string) {
+        history.push({
+            pathname: `${policiesBasePath}/${id}`,
+            search: 'action=clone',
+        });
     }
 
     const selectedIds = getSelectedIds();
@@ -337,7 +353,11 @@ function PoliciesTable({
                 hasOverflowScroll
                 id="policies-table"
             >
-                <TableComposable isStickyHeader>
+                <TableComposable
+                    isStickyHeader
+                    aria-label="Policies table"
+                    data-testid="policies-table"
+                >
                     <Thead>
                         <Tr>
                             <Th
@@ -389,6 +409,14 @@ function PoliciesTable({
                             };
                             const actionItems = hasWriteAccessForPolicy
                                 ? [
+                                      {
+                                          title: 'Edit policy',
+                                          onClick: () => onEditPolicy(id),
+                                      },
+                                      {
+                                          title: 'Clone policy',
+                                          onClick: () => onClonePolicy(id),
+                                      },
                                       disabled
                                           ? {
                                                 title: 'Enable policy',
@@ -420,13 +448,14 @@ function PoliciesTable({
                                         }}
                                     />
                                     <Td dataLabel="Policy">
-                                        <ButtonLink
+                                        <Button
                                             variant={ButtonVariant.link}
                                             isInline
-                                            to={`${policiesBasePath}/${id}`}
+                                            component={LinkShim}
+                                            href={`${policiesBasePath}/${id}`}
                                         >
                                             {name}
-                                        </ButtonLink>
+                                        </Button>
                                     </Td>
                                     <Td dataLabel="Description">
                                         <Truncate

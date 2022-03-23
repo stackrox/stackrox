@@ -55,10 +55,34 @@ var (
 				},
 			}
 		},
-		search.Priority: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
+		search.NodePriority: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
 			return []*v1.QuerySortOption{
 				{
-					Field:    search.RiskScore.String(),
+					Field:    search.NodeRiskScore.String(),
+					Reversed: !option.GetReversed(),
+				},
+			}
+		},
+		search.DeploymentPriority: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
+			return []*v1.QuerySortOption{
+				{
+					Field:    search.DeploymentRiskScore.String(),
+					Reversed: !option.GetReversed(),
+				},
+			}
+		},
+		search.ImagePriority: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
+			return []*v1.QuerySortOption{
+				{
+					Field:    search.ImageRiskScore.String(),
+					Reversed: !option.GetReversed(),
+				},
+			}
+		},
+		search.ComponentPriority: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
+			return []*v1.QuerySortOption{
+				{
+					Field:    search.ComponentRiskScore.String(),
 					Reversed: !option.GetReversed(),
 				},
 			}

@@ -2,11 +2,11 @@ package logconvert
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -43,7 +43,7 @@ func Command() *cobra.Command {
 			case io.EOF:
 				return nil
 			default:
-				return err
+				return errors.Wrap(err, "scanner error")
 			}
 		}),
 	}

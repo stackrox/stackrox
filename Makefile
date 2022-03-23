@@ -16,20 +16,13 @@ endif
 # 3. Otherwise set it to "development_build" by default, e.g. for developers running the Makefile locally.
 ROX_IMAGE_FLAVOR ?= $(shell if [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then echo "stackrox.io"; else echo "development_build"; fi)
 
-# Compute the tag of the build image based on the contents of the tracked files in
-# build. This ensures that we build it if and only if necessary, pulling from DockerHub
-# otherwise.
-# `git ls-files -sm build` prints all files in build (including extra entries for locally
-# modified files), along with the SHAs, and `git hash-object` just computes the SHA of that.
-BUILD_DIR_HASH := $(shell git ls-files -sm build | git hash-object --stdin)
-
-BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
+BUILD_IMAGE_VERSION=$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
+BUILD_IMAGE := quay.io/rhacs-eng/apollo-ci:$(BUILD_IMAGE_VERSION)
 MONITORING_IMAGE := stackrox/monitoring:$(shell cat MONITORING_VERSION)
 DOCS_IMAGE_BASE := stackrox/docs
 
 ifdef CI
     QUAY_REPO := rhacs-eng
-    BUILD_IMAGE := quay.io/$(QUAY_REPO)/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
     MONITORING_IMAGE := quay.io/$(QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
     DOCS_IMAGE_BASE := quay.io/$(QUAY_REPO)/docs
 endif
@@ -206,7 +199,7 @@ fast-central-build:
 fast-central: deps
 	@echo "+ $@"
 	docker run --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
-	@$(BASE_DIR)/scripts/k8s/kill-central.sh
+	@$(BASE_DIR)/scripts/k8s/kill-pod.sh central
 
 # fast is a dev mode options when using local dev
 # it will automatically restart Central if there are any changes
@@ -218,6 +211,7 @@ fast-sensor: sensor-build-dockerized
 
 .PHONY: fast-sensor-kubernetes
 fast-sensor-kubernetes: sensor-kubernetes-build-dockerized
+	@$(BASE_DIR)/scripts/k8s/kill-pod.sh sensor
 
 .PHONY: fast-migrator
 fast-migrator:
@@ -308,7 +302,12 @@ clean-proto-generated-srcs:
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs
 
-deps: go.mod
+deps: $(BASE_DIR)/go.sum tools/linters/go.sum tools/test/go.sum
+	@echo "+ $@"
+	@touch deps
+
+%/go.sum: %/go.mod
+	@cd $*
 	@echo "+ $@"
 	@$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
 	@test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
@@ -317,7 +316,7 @@ ifdef CI
 	@git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
 	go mod verify
 endif
-	@touch deps
+	@touch $@
 
 .PHONY: clean-deps
 clean-deps:
@@ -380,9 +379,8 @@ build-volumes:
 .PHONY: main-builder-image
 main-builder-image: build-volumes
 	@echo "+ $@"
-	scripts/ensure_image.sh $(BUILD_IMAGE) build/Dockerfile_rhel build/
 	@# Ensure that the go version in the image matches the expected version
-	# If the next line fails, you need to update the go version in build/Dockerfile_rhel.
+	# If the next line fails, you need to update the go version in rox-ci-image/images/stackrox-build.Dockerfile
 	grep -q "$(shell cat EXPECTED_GO_VERSION)" <(docker run --rm "$(BUILD_IMAGE)" go version)
 
 .PHONY: main-build
@@ -472,12 +470,19 @@ go-unit-tests: build-prep test-prep
 		done; \
 	done
 
+.PHONY: go-postgres-unit-tests
+go-postgres-unit-tests: build-prep test-prep
+	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
+	set -o pipefail ; \
+	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
+		$(shell git ls-files -- '*postgres/*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
+		| tee test-output/test.log
+
 .PHONY: shell-unit-tests
 shell-unit-tests:
 	@echo "+ $@"
 	@mkdir -p shell-test-output
-	set -o pipefail ; \
-	bats -t $(shell git ls-files -- '*_test.bats') | tee shell-test-output/test.log
+	bats --print-output-on-failure --verbose-run --recursive --report-formatter junit --output shell-test-output scripts
 
 .PHONY: ui-build
 ui-build:
@@ -531,7 +536,7 @@ $(CURDIR)/image/rhel/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
 
 .PHONY: docker-build-main-image
-docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image $(CURDIR)/image/rhel/bundle.tar.gz
+docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image $(CURDIR)/image/rhel/bundle.tar.gz central-db-image
 	docker build \
 		-t stackrox/main:$(TAG) \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
@@ -616,6 +621,22 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 	cp bin/linux/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
 	docker tag stackrox/grpc-server:$(TAG) quay.io/$(QUAY_REPO)/grpc-server:$(TAG)
+
+$(CURDIR)/image/postgres/bundle.tar.gz:
+	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
+
+.PHONY: central-db-image
+central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz
+	docker build \
+		-t stackrox/central-db:$(TAG) \
+		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
+		--file image/postgres/Dockerfile \
+		image/postgres
+ifdef CI
+	docker tag stackrox/central-db:$(TAG) quay.io/$(QUAY_REPO)/central-db:$(TAG)
+endif
+	@echo "Built central-db image with tag $(TAG)"
+
 ###########
 ## Clean ##
 ###########
@@ -629,7 +650,7 @@ clean-image:
 	git clean -xf image/bin
 	git clean -xdf image/ui image/docs
 	git clean -xf integration-tests/mock-grpc-server/image/bin/mock-grpc-server
-	rm -f $(CURDIR)/image/rhel/bundle.tar.gz
+	rm -f $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/postgres/bundle.tar.gz
 	rm -rf $(CURDIR)/image/rhel/scripts
 
 .PHONY: tag

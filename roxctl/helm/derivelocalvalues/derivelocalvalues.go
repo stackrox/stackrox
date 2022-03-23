@@ -173,7 +173,7 @@ func helmValuesForCentralServices(ctx context.Context, namespace string, k8s k8s
 	publicValuesCleaned := maputil.NormalizeGenericMap(publicValues)
 	privateValuesCleaned := maputil.NormalizeGenericMap(privateValues)
 
-	return publicValuesCleaned, privateValuesCleaned, err
+	return publicValuesCleaned, privateValuesCleaned, errors.Wrap(err, "could not derive local values")
 
 }
 
@@ -292,6 +292,7 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, namespace st
 					"enabled": k8s.evaluateToString(ctx, "service", "central-loadbalancer", `{.spec.type}`, "") == "NodePort",
 				},
 			},
+			"enableCentralDB": k8s.evaluateToString(ctx, "service", "central-db", `{.spec.type}`, "") != "",
 		},
 		"scanner": scannerConfig,
 		"customize": map[string]interface{}{

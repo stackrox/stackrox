@@ -22,7 +22,6 @@ type MetaValues struct {
 	ScannerImageTag                  string
 	ScannerDBImageRemote             string
 	ScannerDBSlimImageRemote         string
-	ScannerDBImageTag                string
 	RenderMode                       string
 	ChartRepo                        defaults.ChartRepo
 	ImagePullSecrets                 defaults.ImagePullSecrets
@@ -51,6 +50,7 @@ type MetaValues struct {
 	ScanInline                       bool
 	AdmissionControllerEnabled       bool
 	AdmissionControlEnforceOnUpdates bool
+	ReleaseBuild                     bool
 }
 
 // GetMetaValuesForFlavor are the default meta values for rendering the StackRox charts in production.
@@ -70,16 +70,14 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		ScannerImageTag:          imageFlavor.ScannerImageTag,
 		ScannerDBImageRemote:     imageFlavor.ScannerDBImageName,
 		ScannerDBSlimImageRemote: imageFlavor.ScannerDBSlimImageName,
-		ScannerDBImageTag:        imageFlavor.ScannerDBImageTag,
 		RenderMode:               "",
 		ChartRepo:                imageFlavor.ChartRepo,
 		ImagePullSecrets:         imageFlavor.ImagePullSecrets,
 		Operator:                 false,
+		ReleaseBuild:             buildinfo.ReleaseBuild,
+		FeatureFlags:             getFeatureFlags(),
 	}
 
-	if !buildinfo.ReleaseBuild {
-		metaValues.FeatureFlags = getFeatureFlags()
-	}
 	return &metaValues
 }
 

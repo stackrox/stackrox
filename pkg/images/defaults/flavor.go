@@ -78,12 +78,12 @@ type ImageFlavor struct {
 	CollectorSlimImageName string
 	CollectorSlimImageTag  string
 
+	// ScannerImageTag is used for all scanner* images (scanner, scanner-db, scanner-slim and scanner-db-slim)
+	ScannerImageTag        string
 	ScannerImageName       string
 	ScannerSlimImageName   string
-	ScannerImageTag        string
 	ScannerDBImageName     string
 	ScannerDBSlimImageName string
-	ScannerDBImageTag      string
 
 	ChartRepo        ChartRepo
 	ImagePullSecrets ImagePullSecrets
@@ -110,7 +110,6 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		ScannerImageTag:        v.ScannerVersion,
 		ScannerDBImageName:     "scanner-db",
 		ScannerDBSlimImageName: "scanner-db-slim",
-		ScannerDBImageTag:      v.ScannerVersion,
 
 		ChartRepo: ChartRepo{
 			URL: "https://charts.stackrox.io",
@@ -141,7 +140,6 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 		ScannerImageTag:        v.ScannerVersion,
 		ScannerDBImageName:     "scanner-db",
 		ScannerDBSlimImageName: "scanner-db-slim",
-		ScannerDBImageTag:      v.ScannerVersion,
 
 		ChartRepo: ChartRepo{
 			URL: "https://charts.stackrox.io",
@@ -167,11 +165,10 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 		CollectorSlimImageTag:  v.CollectorVersion,
 
 		ScannerImageName:       "rhacs-scanner-rhel8",
-		ScannerSlimImageName:   "scanner-slim",
+		ScannerSlimImageName:   "rhacs-scanner-slim-rhel8",
 		ScannerImageTag:        v.ScannerVersion,
 		ScannerDBImageName:     "rhacs-scanner-db-rhel8",
-		ScannerDBSlimImageName: "scanner-db-slim",
-		ScannerDBImageTag:      v.ScannerVersion,
+		ScannerDBSlimImageName: "rhacs-scanner-db-slim-rhel8",
 
 		ChartRepo: ChartRepo{
 			URL: "https://mirror.openshift.com/pub/rhacs/charts",
@@ -254,7 +251,7 @@ func (f *ImageFlavor) ScannerImage() string {
 
 // ScannerDBImage is the container image reference (full name) for the scanner-db image.
 func (f *ImageFlavor) ScannerDBImage() string {
-	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerDBImageName, f.ScannerDBImageTag)
+	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerDBImageName, f.ScannerImageTag)
 }
 
 // MainImage is the container image reference (full name) for the "main" image.

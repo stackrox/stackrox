@@ -26,7 +26,7 @@ fi
 # Openshift: us-east1-d
 
 # get gcloud user name
-gcloud container clusters get-credentials "${CLUSTER_NAME}" --project stackrox-ci $zone || {
+gcloud container clusters get-credentials "${CLUSTER_NAME}" --project srox-temp-dev-test $zone || {
   exit 1
 }
 [[ -n "$GCLOUD_USER" ]] || GCLOUD_USER="$(gcloud config get-value account 2>/dev/null)"

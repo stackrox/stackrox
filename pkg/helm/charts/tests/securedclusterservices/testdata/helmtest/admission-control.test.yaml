@@ -56,3 +56,16 @@ tests:
   expect: |
     .validatingwebhookconfigurations[].apiVersion | assertThat(. == "admissionregistration.k8s.io/v1beta1")
     .validatingwebhookconfigurations[].webhooks[] | assertThat(.admissionReviewVersions == null)
+
+- name: "Webhook timeout pads AdmissionController timeout by 2 seconds"
+  tests:
+    - name: "default AdmissionController timeout is 20s + 2s padding"
+      expect: |
+        .validatingwebhookconfigurations[].webhooks[].timeoutSeconds | assertThat(. == 20 + 2)
+    - name: "override sets value correctly"
+      values:
+        admissionControl:
+          dynamic:
+            timeout: 10
+      expect: |
+        .validatingwebhookconfigurations[].webhooks[].timeoutSeconds | assertThat(. == 10 + 2)

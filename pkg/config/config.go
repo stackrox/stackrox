@@ -2,18 +2,27 @@ package config
 
 import (
 	"os"
+	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
-const (
+var (
 	path = "/etc/stackrox/central-config.yaml"
 )
 
 var (
 	defaultBucketFillFraction = 0.5
 	defaultCompactionState    = true
+	defaultDBSource           = "host=central-db.stackrox port=5432 database=postgres user=postgres sslmode=verify-full statement_timeout=600000 pool_min_conns=1 pool_max_conns=90"
+
+	once   sync.Once
+	config *Config
+
+	log = logging.CreatePersistentLogger(logging.CurrentModule(), 0)
 )
 
 // Compaction defines the compaction configuration
@@ -64,13 +73,27 @@ func (m *Maintenance) validate() error {
 	return errorList.ToError()
 }
 
+// CentralDB defines the config options to access central-db
+type CentralDB struct {
+	Source string `yaml:"source"`
+}
+
+func (c *CentralDB) applyDefaults() {
+	c.Source = strings.TrimSpace(c.Source)
+	if c.Source == "" {
+		c.Source = defaultDBSource
+	}
+}
+
 // Config defines the configuration for Central
 type Config struct {
 	Maintenance Maintenance `yaml:"maintenance"`
+	CentralDB   CentralDB   `yaml:"centralDB"`
 }
 
 func (c *Config) applyDefaults() {
 	c.Maintenance.applyDefaults()
+	c.CentralDB.applyDefaults()
 }
 
 func (c *Config) validate() error {
@@ -81,8 +104,8 @@ func (c *Config) validate() error {
 	return errorList.ToError()
 }
 
-// ReadConfig reads the configuration file
-func ReadConfig() (*Config, error) {
+// readConfig reads the configuration file
+func readConfig() (*Config, error) {
 	bytes, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -101,4 +124,17 @@ func ReadConfig() (*Config, error) {
 		return nil, err
 	}
 	return &conf, nil
+}
+
+// GetConfig gets the Central configuration file
+func GetConfig() *Config {
+	once.Do(func() {
+		var err error
+		config, err = readConfig()
+		if err != nil {
+			config = nil
+			log.Errorf("Error reading config file: %v", err)
+		}
+	})
+	return config
 }

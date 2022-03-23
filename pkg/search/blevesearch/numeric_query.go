@@ -1,7 +1,6 @@
 package blevesearch
 
 import (
-	"fmt"
 	"math"
 	"sort"
 	"strconv"
@@ -58,52 +57,6 @@ var (
 type NumericQueryValue struct {
 	Comparator storage.Comparator
 	Value      float64
-}
-
-// ParseNumericQueryValue interprets a string a NumericQueryValue.
-func ParseNumericQueryValue(value string) (NumericQueryValue, error) {
-	prefix, trimmedValue := parseNumericPrefix(value)
-	valuePtr, err := parseNumericStringToPtr(trimmedValue)
-	if err != nil {
-		return NumericQueryValue{}, err
-	}
-
-	output := NumericQueryValue{
-		Value: *valuePtr,
-	}
-	switch prefix {
-	case "<=":
-		output.Comparator = storage.Comparator_LESS_THAN_OR_EQUALS
-	case "<":
-		output.Comparator = storage.Comparator_LESS_THAN
-	case ">=":
-		output.Comparator = storage.Comparator_GREATER_THAN_OR_EQUALS
-	case ">":
-		output.Comparator = storage.Comparator_GREATER_THAN
-	case "==":
-		output.Comparator = storage.Comparator_EQUALS
-	default:
-		return NumericQueryValue{}, fmt.Errorf("unrecognized comparator in query %s", prefix)
-	}
-	return output, nil
-}
-
-// PrintNumericQueryValue prints out the input NumericQueryValue as a query string.
-func PrintNumericQueryValue(value NumericQueryValue) string {
-	var prefix string
-	switch value.Comparator {
-	case storage.Comparator_LESS_THAN_OR_EQUALS:
-		prefix = "<="
-	case storage.Comparator_LESS_THAN:
-		prefix = "<"
-	case storage.Comparator_GREATER_THAN_OR_EQUALS:
-		prefix = ">="
-	case storage.Comparator_GREATER_THAN:
-		prefix = ">"
-	case storage.Comparator_EQUALS:
-		prefix = "=="
-	}
-	return fmt.Sprintf("%s%f", prefix, value.Value)
 }
 
 func invertNumericPrefix(prefix string) string {

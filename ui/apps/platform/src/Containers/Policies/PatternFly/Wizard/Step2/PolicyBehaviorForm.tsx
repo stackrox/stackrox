@@ -99,6 +99,18 @@ function PolicyBehaviorForm() {
                 false
             );
         });
+
+        // clear policy sections to prevent non-runtime criteria from being sent to BE
+        setFieldValue(
+            'policySections',
+            [
+                {
+                    sectionName: 'Policy Section 1',
+                    policyGroups: [],
+                },
+            ],
+            false
+        );
     }
 
     const responseMethodHelperText = showEnforcement
@@ -271,9 +283,8 @@ function PolicyBehaviorForm() {
                                         </CardActions>
                                     </CardHeader>
                                     <CardBody>
-                                        If enabled, ACS will fail your CI builds when images match
-                                        the conditions of this policy. Download the CLI to get
-                                        started.
+                                        If enabled, your CI builds will be failed when images
+                                        violate this policy. Download the CLI to get started.
                                         <Flex
                                             justifyContent={{ default: 'justifyContentCenter' }}
                                             className="pf-u-pt-md"
@@ -302,11 +313,11 @@ function PolicyBehaviorForm() {
                                         </CardActions>
                                     </CardHeader>
                                     <CardBody>
-                                        If enabled, ACS will automatically block creation of
-                                        deployments that match the conditions of this policy. In
-                                        clusters with the ACS admissions controller enabled, the
-                                        Kubernetes API server will block noncompliant deployments to
-                                        prevent pods from being scheduled.
+                                        If enabled, creation of deployments that violate this policy
+                                        will be blocked. In clusters with the admission controller
+                                        enabled, the Kubernetes API server will block deployments
+                                        that violate this policy to prevent pods from being
+                                        scheduled.
                                     </CardBody>
                                 </Card>
                             </GridItem>
@@ -332,11 +343,9 @@ function PolicyBehaviorForm() {
                                         </CardActions>
                                     </CardHeader>
                                     <CardBody>
-                                        If enabled, ACS will either kill the offending pod or block
-                                        the action taken on the pod. Executions within a pod that
-                                        match the conditions of the policy will result in the pod
-                                        being killed. Actions taken through the API server that math
-                                        policy criteria will be blocked.
+                                        If enabled, executions within a pod that violate this policy
+                                        will result in the pod being killed. Actions taken through
+                                        the API server that violate this policy will be blocked.
                                     </CardBody>
                                 </Card>
                             </GridItem>

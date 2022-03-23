@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -22,11 +23,12 @@ func BenchmarkDBs(b *testing.B) {
 		defer rocksdbtest.TearDownRocksDB(db)
 
 		require.NoError(b, err)
-		benchmarkLoad(b, rocksDBStore.NewFullStore(db), nil)
+		benchmarkLoad(b, store.NewFullStore(rocksDBStore.New(db)), nil)
 	})
 }
 
 func benchmarkLoad(b *testing.B, s store.Store, c commentsStore.Store) {
+	ctx := context.TODO()
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	require.NoError(b, err)
 	idx := index.New(tmpIndex)
@@ -37,7 +39,7 @@ func benchmarkLoad(b *testing.B, s store.Store, c commentsStore.Store) {
 
 	for i := 0; i < 15000; i++ {
 		a := fixtures.GetAlertWithID(fmt.Sprintf("%d", i))
-		require.NoError(b, s.Upsert(a))
+		require.NoError(b, s.Upsert(ctx, a))
 	}
 
 	log.Info("Successfully loaded the DB")
@@ -45,6 +47,6 @@ func benchmarkLoad(b *testing.B, s store.Store, c commentsStore.Store) {
 	b.ResetTimer()
 	// Load the store with 15k alerts and then try to build index
 	for i := 0; i < b.N; i++ {
-		require.NoError(b, datastoreImpl.buildIndex())
+		require.NoError(b, datastoreImpl.buildIndex(ctx))
 	}
 }

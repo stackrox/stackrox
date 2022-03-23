@@ -103,5 +103,6 @@ func loadKubeCtlConfig() (*rest.Config, error) {
 		return nil, errors.Wrap(err, "loading default Kubernetes client config")
 	}
 
-	return clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
+	clientConfig, err := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
+	return clientConfig, errors.Wrap(err, "could not load new default Kubernetes client config")
 }

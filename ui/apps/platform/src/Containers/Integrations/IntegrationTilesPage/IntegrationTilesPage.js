@@ -21,6 +21,7 @@ const IntegrationTilesPage = ({
     imageIntegrations,
     notifiers,
     featureFlags,
+    signatureIntegrations,
 }) => {
     function findIntegrations(source, type) {
         const typeLowerMatches = (integration) =>
@@ -47,6 +48,9 @@ const IntegrationTilesPage = ({
             }
             case 'imageIntegrations': {
                 return imageIntegrations.filter(typeLowerMatches);
+            }
+            case 'signatureIntegrations': {
+                return signatureIntegrations;
             }
             default: {
                 throw new Error(`Unknown source ${source}`);
@@ -105,6 +109,12 @@ const IntegrationTilesPage = ({
     const authPluginTiles = renderIntegrationTiles('authPlugins');
     const authProviderTiles = renderIntegrationTiles('authProviders');
     const backupTiles = renderIntegrationTiles('backups');
+    const signatureTiles = renderIntegrationTiles('signatureIntegrations');
+
+    const isSignatureIntegrationEnabled = isBackendFeatureFlagEnabled(
+        featureFlags,
+        'ROX_VERIFY_IMAGE_SIGNATURE'
+    );
 
     return (
         <>
@@ -115,6 +125,14 @@ const IntegrationTilesPage = ({
                 <IntegrationsSection headerName="Image Integrations" testId="image-integrations">
                     {imageIntegrationTiles}
                 </IntegrationsSection>
+                {isSignatureIntegrationEnabled && (
+                    <IntegrationsSection
+                        headerName="Signature Integrations"
+                        testId="signature-integrations"
+                    >
+                        {signatureTiles}
+                    </IntegrationsSection>
+                )}
                 <IntegrationsSection
                     headerName="Notifier Integrations"
                     testId="notifier-integrations"
@@ -175,6 +193,7 @@ IntegrationTilesPage.propTypes = {
             enabled: PropTypes.bool.isRequired,
         })
     ).isRequired,
+    signatureIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
@@ -186,6 +205,7 @@ const mapStateToProps = createStructuredSelector({
     imageIntegrations: selectors.getImageIntegrations,
     backups: selectors.getBackups,
     featureFlags: selectors.getFeatureFlags,
+    signatureIntegrations: selectors.getSignatureIntegrations,
 });
 
 export default connect(mapStateToProps)(IntegrationTilesPage);

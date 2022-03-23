@@ -36,11 +36,29 @@ var (
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
 
+	postgresOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_op_duration",
+		Help:      "Time taken to perform a postgres operation",
+		// We care more about precision at lower latencies, or outliers at higher latencies.
+		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Operation", "Type"})
+
 	dackboxOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "dackbox_op_duration",
 		Help:      "Time taken to perform a dackbox operation",
+		// We care more about precision at lower latencies, or outliers at higher latencies.
+		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Operation", "Type"})
+
+	acquireDBConnHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_acquire_conn_op_duration",
+		Help:      "Time taken to acquire a Postgres connection",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -160,6 +178,16 @@ func SetBoltOperationDurationTime(start time.Time, op metrics.Op, t string) {
 // SetRocksDBOperationDurationTime times how long a particular rocksdb operation took on a particular resource
 func SetRocksDBOperationDurationTime(start time.Time, op metrics.Op, t string) {
 	rocksDBOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
+}
+
+// SetPostgresOperationDurationTime times how long a particular postgres operation took on a particular resource
+func SetPostgresOperationDurationTime(start time.Time, op metrics.Op, t string) {
+	postgresOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
+}
+
+// SetAcquireDBConnDuration times how long it took the database pool to acquire a connection
+func SetAcquireDBConnDuration(start time.Time, op metrics.Op, t string) {
+	acquireDBConnHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
 }
 
 // SetDackboxOperationDurationTime times how long a particular dackbox operation took on a particular resource

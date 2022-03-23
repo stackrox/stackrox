@@ -56,7 +56,7 @@ func (s *searcherImpl) searchReportConfigurations(ctx context.Context, q *v1.Que
 	}
 
 	ids := search.ResultsToIDs(results)
-	reportConfigs, _, err := s.storage.GetMany(ids)
+	reportConfigs, _, err := s.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

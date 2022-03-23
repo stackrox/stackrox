@@ -128,7 +128,7 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 		Return([]*storage.Group{expectedGroup}, nil)
 
 	// Expect the role to be fetched.
-	expectedResolvedRole := roletest.NewResolvedRoleWithGlobalScope(
+	expectedResolvedRole := roletest.NewResolvedRoleWithDenyAll(
 		"TeamAwesome",
 		utils.FromResourcesWithAccess(resources.AllResourcesViewPermissions()...))
 	s.mockRoles.
@@ -181,7 +181,7 @@ func (s *MapperTestSuite) TestMapperSuccessForOnlyNoneRole() {
 		Return([]*storage.Group{expectedGroup}, nil)
 
 	// Expect the role to be fetched.
-	expectedResolvedRole := roletest.NewResolvedRoleWithGlobalScope(
+	expectedResolvedRole := roletest.NewResolvedRoleWithDenyAll(
 		"None",
 		utils.FromResourcesWithAccess(resources.AllResourcesViewPermissions()...))
 	s.mockRoles.
@@ -242,10 +242,10 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 		Return([]*storage.Group{expectedGroup1, expectedGroup2}, nil)
 
 	// Expect the roles to be fetched, and make the second a superset of the first.
-	expectedResolvedRole1 := roletest.NewResolvedRoleWithGlobalScope(
+	expectedResolvedRole1 := roletest.NewResolvedRoleWithDenyAll(
 		"TeamAwesome",
 		utils.FromResourcesWithAccess(resources.AllResourcesViewPermissions()...))
-	expectedResolvedRole2 := roletest.NewResolvedRoleWithGlobalScope(
+	expectedResolvedRole2 := roletest.NewResolvedRoleWithDenyAll(
 		"TeamAwesome",
 		utils.FromResourcesWithAccess(resources.AllResourcesModifyPermissions()...))
 	s.mockRoles.
@@ -313,10 +313,10 @@ func (s *MapperTestSuite) TestMapperSuccessForMultipleRolesIncludingNone() {
 		Return([]*storage.Group{expectedGroup, expectedGroupNone}, nil)
 
 	// Expect the roles to be fetched.
-	expectedResolvedRole := roletest.NewResolvedRoleWithGlobalScope(
+	expectedResolvedRole := roletest.NewResolvedRoleWithDenyAll(
 		"TeamAwesome",
 		utils.FromResourcesWithAccess(resources.AllResourcesViewPermissions()...))
-	expectedResolvedNoneRole := roletest.NewResolvedRoleWithGlobalScope(
+	expectedResolvedNoneRole := roletest.NewResolvedRoleWithDenyAll(
 		"None",
 		utils.FromResourcesWithAccess(resources.AllResourcesViewPermissions()...))
 	s.mockRoles.
@@ -374,7 +374,7 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 		Return([]*storage.Group{expectedGroup}, nil)
 
 	// Expect the role to be fetched.
-	expectedResolvedRole := roletest.NewResolvedRoleWithGlobalScope(
+	expectedResolvedRole := roletest.NewResolvedRoleWithDenyAll(
 		"TeamAwesome",
 		utils.FromResourcesWithAccess(resources.AllResourcesViewPermissions()...))
 	s.mockRoles.

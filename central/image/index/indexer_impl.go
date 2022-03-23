@@ -68,6 +68,9 @@ func mapComponents(im *mapping.IndexMappingImpl, components []*storage.EmbeddedI
 	componentVersionMapping := getFieldOrPanic(getSubMappingOrPanic(componentMapping, "version"))
 	componentVersionPathStr, componentVersionPath := getComponentPath("version")
 
+	componentPriorityMapping := getFieldOrPanic(getSubMappingOrPanic(componentMapping, "risk_score"))
+	componentPriorityPathStr, componentPriorityPath := getComponentPath("risk_score")
+
 	vulnMapping := getSubMappingOrPanic(componentMapping, "vulns")
 
 	cveMapping := getFieldOrPanic(getSubMappingOrPanic(vulnMapping, "cve"))
@@ -93,6 +96,7 @@ func mapComponents(im *mapping.IndexMappingImpl, components []*storage.EmbeddedI
 
 		componentNameMapping.ProcessString(c.GetName(), componentNamePathStr, componentNamePath, componentIndex, walkContext)
 		componentVersionMapping.ProcessString(c.GetVersion(), componentVersionPathStr, componentVersionPath, componentIndex, walkContext)
+		componentPriorityMapping.ProcessFloat64(float64(c.GetRiskScore()), componentPriorityPathStr, componentPriorityPath, componentIndex, walkContext)
 
 		for j, vuln := range c.GetVulns() {
 			vulnIndex := []uint64{uint64(i), uint64(j)}

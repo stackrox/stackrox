@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
 	"github.com/stackrox/rox/pkg/utils"
@@ -74,21 +73,14 @@ func ForSeverity() QueryBuilder {
 
 func wrapForVulnMgmt(f queryBuilderFunc) QueryBuilder {
 	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
-		if features.VulnRiskManagement.Enabled() {
-			return append(f(group),
-				&query.FieldQuery{
-					Field:  search.CVESuppressed.String(),
-					Values: []string{"false"},
-				},
-				&query.FieldQuery{
-					Field:  search.VulnerabilityState.String(),
-					Values: []string{storage.VulnerabilityState_OBSERVED.String()},
-				})
-		}
 		return append(f(group),
 			&query.FieldQuery{
 				Field:  search.CVESuppressed.String(),
 				Values: []string{"false"},
+			},
+			&query.FieldQuery{
+				Field:  search.VulnerabilityState.String(),
+				Values: []string{storage.VulnerabilityState_OBSERVED.String()},
 			})
 	})
 }

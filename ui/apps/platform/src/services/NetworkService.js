@@ -64,7 +64,7 @@ export function fetchBaselineComparison({ deploymentId }) {
 
 // TODO: wire this through redux saga, like the `fetchBaselineComparison` above
 /*
- * Fetches the diff view of flows between the network policies last applied by ACS to the
+ * Fetches the diff view of flows between the network policies last applied to the
  * specified deployment and the previous state before that application.
  *
  * @returns {Promise<Object, Error>}
@@ -133,7 +133,7 @@ export function toggleAlertBaselineViolations({ deploymentId, enable }) {
 }
 
 /*
- * Retrieves the last StackRox-applied policy for a deployement
+ * Retrieves the last security policy applied for a deployement
  *
  * @param   {string}  deploymentId
  * @returns {Promise<Object, Error>}
@@ -414,7 +414,7 @@ export function deleteCIDRBlock(blockId) {
 }
 
 /**
- * Gets the default StackRox generated CIDR blocks toggle state.
+ * Gets the default application generated CIDR blocks toggle state.
  *
  * @returns {Promise<Object, Error>}
  */
@@ -425,7 +425,7 @@ export function getHideDefaultExternalSrcs() {
 }
 
 /**
- * Sets the default StackRox generated CIDR blocks to be on or off.
+ * Sets the default application generated CIDR blocks to be on or off.
  *
  * @returns {Promise<Object, Error>}
  */

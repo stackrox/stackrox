@@ -15,8 +15,8 @@ package storage;
 
 // Next available tag: 35
 message Deployment {
-    string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
-    string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
+    string id                                  = 1 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" sql:"pk"'];
+    string name                                = 2 [(gogoproto.moretags) = 'search:"Deployment,store"'];
     reserved 3;
     uint64 hash                                = 26 [(gogoproto.moretags) = "hash:\"ignore\""];
     string type                                = 4 [(gogoproto.moretags) = "search:\"Deployment Type\""];
@@ -34,7 +34,7 @@ message Deployment {
     repeated Container containers              = 11;
     reserved 12;
     map<string, string> annotations            = 14 [(gogoproto.moretags) = "search:\"Annotation\""];
-    int64 priority                             = 15 [(gogoproto.moretags) = "search:\"Priority,hidden\" hash:\"ignore\""];
+    int64 priority                             = 15 [(gogoproto.moretags) = "search:\"Deployment Risk Priority,hidden\" hash:\"ignore\""];
     bool inactive                              = 16;
     repeated string image_pull_secrets         = 17 [(gogoproto.moretags) = "search:\"Image Pull Secret\""];
     string service_account                     = 18 [(gogoproto.moretags) = "search:\"Service Account\""];
@@ -48,18 +48,23 @@ message Deployment {
     repeated PortConfig ports                  = 24 [(gogoproto.moretags) = "policy:\"Ports\""];
 
     int64 state_timestamp                      = 27 [(gogoproto.moretags) = "hash:\"ignore\" sensorhash:\"ignore\""]; // Internal use only
-    float risk_score                           = 29 [(gogoproto.moretags) = "search:\"Risk Score,hidden\" policy:\",ignore\""];
+    float risk_score                           = 29 [(gogoproto.moretags) = "search:\"Deployment Risk Score,hidden\" policy:\",ignore\""];
 
     repeated string process_tags               = 30 [(gogoproto.moretags) = "search:\"Process Tag,store\""];
 }
 
+// Next tag: 12
 message ContainerImage {
     option (gogoproto.goproto_unrecognized) = false;
 
     // These tags maintain backwards compatibility with the previously embedded storage.Image
-    string id = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
-    ImageName name = 1;
-    bool not_pullable  = 10;
+    // Tags after 10 may be used as needed
+    reserved 2, 3, 5, 6, 7, 8, 9;
+    string    id               = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
+    ImageName name             = 1;
+    bool      not_pullable     = 10;
+
+    bool      is_cluster_local = 11;
 }
 
 message Container {
@@ -112,7 +117,7 @@ message ReadinessProbe {
 // Pod represents information for a currently running pod or deleted pod in an active deployment.
 message Pod {
     // Pod UID
-    string id                                           = 1 [(gogoproto.moretags) = "search:\"Pod ID,hidden\""];
+    string id                                           = 1 [(gogoproto.moretags) = "search:\"Pod ID,hidden\" sql:\"pk\""];
     string name                                         = 2 [(gogoproto.moretags) = "search:\"Pod Name,hidden\""];
     string deployment_id                                = 3 [(gogoproto.moretags) = "search:\"Deployment ID,hidden\""];
     string namespace                                    = 4 [(gogoproto.moretags) = "search:\"Namespace,store\""];

@@ -1,9 +1,9 @@
 import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
 import dateFns from 'date-fns';
-import { ButtonVariant, Flex, FlexItem, Tooltip, Label } from '@patternfly/react-core';
+import { Button, ButtonVariant, Flex, FlexItem, Tooltip, Label } from '@patternfly/react-core';
 
-import ButtonLink from 'Components/PatternFly/ButtonLink';
+import LinkShim from 'Components/PatternFly/LinkShim';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { severityColorMapPF } from 'constants/severityColors';
 import { severityLabels, lifecycleStageLabels } from 'messages/common';
@@ -87,9 +87,9 @@ const tableColumnDescriptor = [
             const url = `${violationsBasePath}/${original.id as string}`;
             return (
                 <Tooltip content={original?.policy?.description || 'No description available'}>
-                    <ButtonLink variant={ButtonVariant.link} isInline to={url}>
+                    <Button variant={ButtonVariant.link} isInline component={LinkShim} href={url}>
                         {original?.policy?.name}
-                    </ButtonLink>
+                    </Button>
                 </Tooltip>
             );
         },

@@ -113,8 +113,8 @@ message SensorDeploymentIdentification {
 }
 
 message Cluster {
-    string                    id                               = 1 [(gogoproto.moretags) = "search:\"Cluster ID,hidden,store\""];
-    string                    name                             = 2 [(gogoproto.moretags) = "search:\"Cluster,store\""];
+    string                    id                               = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"pk"'];
+    string                    name                             = 2 [(gogoproto.moretags) = 'search:"Cluster,store" sql:"unique"'];
     ClusterType               type                             = 3;
     map<string, string>       labels                           = 27 [(gogoproto.moretags) = "search:\"Cluster Label\""];
     string                    main_image                       = 4;
@@ -135,7 +135,7 @@ message Cluster {
     DynamicClusterConfig      dynamic_config                   = 18;
     TolerationsConfig         tolerations_config               = 19;
     int64                     priority                         = 20;
-    ClusterHealthStatus       health_status                    = 22;
+    ClusterHealthStatus       health_status                    = 22 [(gogoproto.moretags) = 'sql:"ignore_pk"'];
     bool                      slim_collector                   = 23;
     // The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed.
     CompleteClusterConfig     helm_config                      = 24;
@@ -159,6 +159,7 @@ enum ManagerType {
 
 message ClusterCertExpiryStatus {
     google.protobuf.Timestamp sensor_cert_expiry = 1;
+    google.protobuf.Timestamp sensor_cert_not_before = 2;
 }
 
 message ClusterStatus {
@@ -269,6 +270,7 @@ message AuditLogFileState {
 }
 
 message ClusterHealthStatus {
+    string                    id                               = 9 [(gogoproto.moretags) = 'sql:"pk"'];
     enum HealthStatusLabel {
         UNINITIALIZED = 0;
         // Only collector can have unavailable status

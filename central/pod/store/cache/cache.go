@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/pod/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -65,7 +67,7 @@ func (c *cachedStore) getCachedPod(id string) (*storage.Pod, bool, error) {
 	return entry.(*storage.Pod).Clone(), true, nil
 }
 
-func (c *cachedStore) Get(id string) (*storage.Pod, bool, error) {
+func (c *cachedStore) Get(ctx context.Context, id string) (*storage.Pod, bool, error) {
 	pod, entryExists, err := c.getCachedPod(id)
 	if err != nil {
 		return nil, false, err
@@ -77,7 +79,7 @@ func (c *cachedStore) Get(id string) (*storage.Pod, bool, error) {
 	}
 
 	podStoreCacheMisses.Inc()
-	pod, exists, err := c.store.Get(id)
+	pod, exists, err := c.store.Get(ctx, id)
 	if err != nil || !exists {
 		return nil, exists, err
 	}
@@ -86,7 +88,7 @@ func (c *cachedStore) Get(id string) (*storage.Pod, bool, error) {
 	return pod, true, nil
 }
 
-func (c *cachedStore) GetMany(ids []string) ([]*storage.Pod, []int, error) {
+func (c *cachedStore) GetMany(ctx context.Context, ids []string) ([]*storage.Pod, []int, error) {
 	var pods []*storage.Pod
 	var missingIndices []int
 	for i, id := range ids {
@@ -106,7 +108,7 @@ func (c *cachedStore) GetMany(ids []string) ([]*storage.Pod, []int, error) {
 		}
 		podStoreCacheMisses.Inc()
 
-		pod, exists, err := c.store.Get(id)
+		pod, exists, err := c.store.Get(ctx, id)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -122,8 +124,8 @@ func (c *cachedStore) GetMany(ids []string) ([]*storage.Pod, []int, error) {
 	return pods, missingIndices, nil
 }
 
-func (c *cachedStore) Upsert(pod *storage.Pod) error {
-	if err := c.store.Upsert(pod); err != nil {
+func (c *cachedStore) Upsert(ctx context.Context, pod *storage.Pod) error {
+	if err := c.store.Upsert(ctx, pod); err != nil {
 		return err
 	}
 
@@ -132,8 +134,8 @@ func (c *cachedStore) Upsert(pod *storage.Pod) error {
 	return nil
 }
 
-func (c *cachedStore) Delete(id string) error {
-	if err := c.store.Delete(id); err != nil {
+func (c *cachedStore) Delete(ctx context.Context, id string) error {
+	if err := c.store.Delete(ctx, id); err != nil {
 		return err
 	}
 	c.cache.Add(id, &podTombstone{})
@@ -147,18 +149,18 @@ func (c *cachedStore) updateStats() {
 	podStoreCacheSize.Set(float64(size))
 }
 
-func (c *cachedStore) AckKeysIndexed(keys ...string) error {
-	return c.store.AckKeysIndexed(keys...)
+func (c *cachedStore) AckKeysIndexed(ctx context.Context, keys ...string) error {
+	return c.store.AckKeysIndexed(ctx, keys...)
 }
 
-func (c *cachedStore) GetKeysToIndex() ([]string, error) {
-	return c.store.GetKeysToIndex()
+func (c *cachedStore) GetKeysToIndex(ctx context.Context) ([]string, error) {
+	return c.store.GetKeysToIndex(ctx)
 }
 
-func (c *cachedStore) GetIDs() ([]string, error) {
-	return c.store.GetIDs()
+func (c *cachedStore) GetIDs(ctx context.Context) ([]string, error) {
+	return c.store.GetIDs(ctx)
 }
 
-func (c *cachedStore) Walk(fn func(pod *storage.Pod) error) error {
-	return c.store.Walk(fn)
+func (c *cachedStore) Walk(ctx context.Context, fn func(pod *storage.Pod) error) error {
+	return c.store.Walk(ctx, fn)
 }

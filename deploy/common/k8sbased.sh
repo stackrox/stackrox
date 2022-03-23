@@ -311,7 +311,7 @@ function launch_central {
       fi
 
       if [[ "$SCANNER_SUPPORT" == "true" ]]; then
-          echo "Deploying Scanning..."
+          echo "Deploying Scanner..."
           $unzip_dir/scanner/scripts/setup.sh
           launch_service $unzip_dir scanner
 
@@ -329,6 +329,12 @@ function launch_central {
     if [[ "${is_local_dev}" == "true" && "${ROX_HOTRELOAD}" == "true" ]]; then
       hotload_binary central central central
     fi
+
+    # Wait for any pending changes to Central deployment to get reconciled before trying to connect it.
+    # On some systems there's a race condition when port-forward connects to central but its pod then gets deleted due
+    # to ongoing modifications to the central deployment. This port-forward dies and the script hangs "Waiting for
+    # Central to respond" until it times out. Waiting for rollout status should help not get into such situation.
+    kubectl -n stackrox rollout status deploy/central --timeout=3m
 
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
     if [[ "${LOAD_BALANCER}" == "lb" ]]; then
@@ -496,6 +502,11 @@ function launch_sensor {
       echo "Deploying Sensor..."
       $k8s_dir/sensor-deploy/sensor.sh
     fi
+
+    if [[ -n "${ROX_AFTERGLOW_PERIOD}" ]]; then
+       kubectl -n stackrox set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
+    fi
+
 
     if [[ -n "${CI}" || $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
        if [[ "${ROX_HOTRELOAD}" == "true" ]]; then

@@ -56,7 +56,7 @@ func (ds *searcherImpl) searchRoleBindings(ctx context.Context, q *v1.Query) ([]
 	if err != nil {
 		return nil, nil, err
 	}
-	bindings, missingIndices, err := ds.storage.GetMany(search.ResultsToIDs(results))
+	bindings, missingIndices, err := ds.storage.GetMany(ctx, search.ResultsToIDs(results))
 	if err != nil {
 		return nil, nil, err
 	}

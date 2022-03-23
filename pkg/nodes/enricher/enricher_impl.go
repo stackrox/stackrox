@@ -72,7 +72,7 @@ func (e *enricherImpl) enrichWithScan(node *storage.Node) error {
 	}
 
 	for _, scanner := range scanners {
-		if err := e.enrichNodeWithScanner(node, scanner); err != nil {
+		if err := e.enrichNodeWithScanner(node, scanner.GetNodeScanner()); err != nil {
 			errorList.AddError(err)
 			continue
 		}

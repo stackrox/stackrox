@@ -8,6 +8,7 @@ import axios from './instance';
 const reportUrl = '/v1/report';
 const reportServiceUrl = `${reportUrl}/run`;
 const reportConfigurationsUrl = `${reportUrl}/configurations`;
+const reportConfigurationsCountUrl = '/v1/report-configurations-count';
 
 export function fetchReports(
     options: RestSearchOption[] = [],
@@ -40,21 +41,19 @@ export function fetchReports(
 export function fetchReportsCount(options: RestSearchOption[] = []): Promise<number> {
     const searchOptions: RestSearchOption[] = [...options];
     const query = searchOptionsToQuery(searchOptions);
-    const queryObject: Record<string, string | Record<string, number | string | RestSortOption>> = {
-        pagination: {
-            offset: 0,
-            limit: 999999,
-        },
-    };
-    if (query) {
-        queryObject.query = query;
-    }
+    const queryObject =
+        searchOptions.length > 0
+            ? {
+                  query,
+              }
+            : {};
+
     const params = queryString.stringify(queryObject, { arrayFormat: 'repeat', allowDots: true });
 
     return axios
-        .get<{ reportConfigs: ReportConfiguration[] }>(`${reportConfigurationsUrl}?${params}`)
+        .get<{ count: number }>(`${reportConfigurationsCountUrl}?${params}`)
         .then((response) => {
-            return response?.data?.reportConfigs.length ?? 0;
+            return response?.data?.count ?? 0;
         });
 }
 

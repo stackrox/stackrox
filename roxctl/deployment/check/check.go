@@ -5,10 +5,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
@@ -117,7 +118,7 @@ func (d *deploymentCheckCommand) Construct(args []string, cmd *cobra.Command, f 
 	if !d.json {
 		p, err := f.CreatePrinter()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "could not create printer for deployment check results")
 		}
 		d.printer = p
 		d.standardizedFormat = f.IsStandardizedFormat()
@@ -128,7 +129,7 @@ func (d *deploymentCheckCommand) Construct(args []string, cmd *cobra.Command, f 
 
 func (d *deploymentCheckCommand) Validate() error {
 	if _, err := os.Open(d.file); err != nil {
-		return errorhelpers.NewErrInvalidArgs(err.Error())
+		return errox.NewErrInvalidArgs(err.Error())
 	}
 
 	return nil
@@ -141,12 +142,12 @@ func (d *deploymentCheckCommand) Check() error {
 		retry.Tries(d.retryCount+1),
 		retry.OnlyRetryableErrors(),
 		retry.OnFailedAttempts(func(err error) {
-			d.env.Logger().ErrfLn("Scanning image failed: %v. Retrying after %d seconds...",
+			d.env.Logger().ErrfLn("Checking deployment failed: %v. Retrying after %d seconds...",
 				err, d.retryDelay)
 			time.Sleep(time.Duration(d.retryDelay) * time.Second)
 		}))
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "checking deployment failed after %d retries", d.retryCount)
 	}
 	return nil
 }
@@ -154,7 +155,7 @@ func (d *deploymentCheckCommand) Check() error {
 func (d *deploymentCheckCommand) checkDeployment() error {
 	deploymentFileContents, err := os.ReadFile(d.file)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not read deployment file: %q", d.file)
 	}
 
 	alerts, err := d.getAlerts(string(deploymentFileContents))
@@ -168,7 +169,7 @@ func (d *deploymentCheckCommand) checkDeployment() error {
 func (d *deploymentCheckCommand) getAlerts(deploymentYaml string) ([]*storage.Alert, error) {
 	conn, err := d.env.GRPCConnection()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 	defer utils.IgnoreError(conn.Close)
 
@@ -181,7 +182,7 @@ func (d *deploymentCheckCommand) getAlerts(deploymentYaml string) ([]*storage.Al
 		PolicyCategories: d.policyCategories,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not check deploy-time alerts")
 	}
 
 	var alerts []*storage.Alert
@@ -193,7 +194,7 @@ func (d *deploymentCheckCommand) getAlerts(deploymentYaml string) ([]*storage.Al
 
 func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert) error {
 	if d.json {
-		return report.JSON(d.env.InputOutput().Out, alerts)
+		return errors.Wrap(report.JSON(d.env.InputOutput().Out, alerts), "could not print JSON report")
 	}
 
 	// TODO: Need to refactor this to include additional summary info for non-standardized formats
@@ -205,7 +206,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert) error {
 	}
 
 	if err := d.printer.Print(policySummary, d.env.ColorWriter()); err != nil {
-		return err
+		return errors.Wrap(err, "could not print policy summary")
 	}
 
 	amountBreakingPolicies := policySummary.GetTotalAmountOfBreakingPolicies()

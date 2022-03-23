@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -1074,7 +1075,7 @@ func compileValidateYaml(simulationYaml string) ([]*storage.NetworkPolicy, error
 	// Check that all resulting policies have namespaces.
 	for _, policy := range policies {
 		if policy.GetNamespace() == "" {
-			return nil, errors.New("yamls tested against must apply to a namespace")
+			return nil, errox.NewErrInvalidArgs("yamls tested against must apply to a namespace")
 		}
 	}
 

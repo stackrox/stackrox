@@ -21,3 +21,10 @@ area/central:
 - central/**/*
 area/admission-controller:
 - sensor/admission-control/**/*
+area/postgres:
+- central/globaldb/postgres.go
+- image/postgres/**/*
+- pkg/postgres/**/*
+- pkg/search/postgres/**/*
+- tools/generate-helpers/pg-table-bindings/**/*
+- tools/generate-helpers/pg-table-bindings-wrapper

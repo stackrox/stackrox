@@ -352,7 +352,7 @@ func (ds *datastoreImpl) updateDeploymentPriority(deployments ...*storage.Deploy
 	}
 }
 
-func (ds *datastoreImpl) GetDeploymentIDs() ([]string, error) {
+func (ds *datastoreImpl) GetDeploymentIDs(_ context.Context) ([]string, error) {
 	return ds.deploymentStore.GetDeploymentIDs()
 }
 

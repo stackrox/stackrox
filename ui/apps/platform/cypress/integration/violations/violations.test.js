@@ -179,7 +179,7 @@ describe('Violations page', () => {
             expect(message).to.contain('Kill Pod');
         });
         cy.get(ViolationsPageSelectors.enforcement.explanationMessage).should((message) => {
-            expect(message).to.contain('Runtime data was evaluated against this StackRox policy');
+            expect(message).to.contain('Runtime data was evaluated against this security policy');
         });
     });
 

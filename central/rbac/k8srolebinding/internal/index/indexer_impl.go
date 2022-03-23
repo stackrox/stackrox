@@ -29,7 +29,7 @@ type k8SRoleBindingWrapper struct {
 	Type                    string `json:"type"`
 }
 
-func (b *indexerImpl) AddK8sRoleBinding(k8srolebinding *storage.K8SRoleBinding) error {
+func (b *indexerImpl) AddK8SRoleBinding(k8srolebinding *storage.K8SRoleBinding) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "K8SRoleBinding")
 	if err := b.index.Index(k8srolebinding.GetId(), &k8SRoleBindingWrapper{
 		K8SRoleBinding: k8srolebinding,
@@ -40,7 +40,7 @@ func (b *indexerImpl) AddK8sRoleBinding(k8srolebinding *storage.K8SRoleBinding) 
 	return nil
 }
 
-func (b *indexerImpl) AddK8sRoleBindings(k8srolebindings []*storage.K8SRoleBinding) error {
+func (b *indexerImpl) AddK8SRoleBindings(k8srolebindings []*storage.K8SRoleBinding) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "K8SRoleBinding")
 	batchManager := batcher.New(len(k8srolebindings), batchSize)
 	for {
@@ -73,7 +73,7 @@ func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int,
 	return blevesearch.RunCountRequest(v1.SearchCategory_ROLEBINDINGS, q, b.index, mappings.OptionsMap, opts...)
 }
 
-func (b *indexerImpl) DeleteK8sRoleBinding(id string) error {
+func (b *indexerImpl) DeleteK8SRoleBinding(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "K8SRoleBinding")
 	if err := b.index.Delete(id); err != nil {
 		return err
@@ -81,7 +81,7 @@ func (b *indexerImpl) DeleteK8sRoleBinding(id string) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteK8sRoleBindings(ids []string) error {
+func (b *indexerImpl) DeleteK8SRoleBindings(ids []string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.RemoveMany, "K8SRoleBinding")
 	batch := b.index.NewBatch()
 	for _, id := range ids {

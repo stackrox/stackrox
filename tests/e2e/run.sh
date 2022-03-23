@@ -49,7 +49,7 @@ test_e2e() {
     setup_proxy_tests
     run_proxy_tests
 
-    collect_and_check_stackrox_logs "initial_phase"
+    collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_phase"
 
     info "E2E destructive tests"
     make -C tests destructive-tests
@@ -123,12 +123,6 @@ run_roxctl_bats_tests() {
     fi
     [[ -d "$TEST_ROOT/tests/roxctl/bats-tests/$suite" ]] || die "Cannot find directory: $TEST_ROOT/tests/roxctl/bats-tests/$suite"
 
-    # TODO(RS-449): Move expect installation to the CI image
-    if is_CI; then
-      if ! command -v expect >/dev/null 2>&1; then
-        sudo apt-get update && sudo apt-get install --no-install-recommends -y expect
-      fi
-    fi
     info "Running Bats e2e tests on development roxctl"
     "$TEST_ROOT/tests/roxctl/bats-runner.sh" "$output" "$TEST_ROOT/tests/roxctl/bats-tests/$suite"
 }
@@ -150,6 +144,12 @@ setup_proxy_tests() {
     PROXY_CERTS_DIR="$(mktemp -d)"
     export PROXY_CERTS_DIR="$PROXY_CERTS_DIR"
     "$TEST_ROOT/scripts/ci/proxy/deploy.sh"
+
+    # Try preventing kubectl port-forward from hitting the FD limit, see
+    # https://github.com/kubernetes/kubernetes/issues/74551#issuecomment-910520361
+    # Note: this might fail if we don't have the correct privileges. Unfortunately,
+    # we cannot `sudo ulimit` because it is a shell builtin.
+    ulimit -n 65535 || true
 
     nohup kubectl -n proxies port-forward svc/nginx-proxy-plain-http 10080:80 </dev/null &>/dev/null &
     nohup kubectl -n proxies port-forward svc/nginx-proxy-tls-multiplexed 10443:443 </dev/null &>/dev/null &

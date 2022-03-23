@@ -61,7 +61,6 @@ func newEnricher() *Enricher {
 //   4. Unrecoverable error => nil context.
 func (se *Enricher) getRootScopeCheckerCore(ctx context.Context) (context.Context, observe.ScopeCheckerCoreType, error) {
 	client := se.clientManager.GetClient()
-	ctx = sac.SetContextSACEnabled(ctx)
 
 	// Check the id of the context and decide scope checker to use.
 	id := authn.IdentityFromContextOrNil(ctx)
@@ -79,13 +78,13 @@ func (se *Enricher) getRootScopeCheckerCore(ctx context.Context) (context.Contex
 	}
 	if client == nil {
 		// 2. Built-in scoped authorizer must be used.
-		ctx = sac.SetContextBuiltinScopedAuthzEnabled(ctx)
 		scopeChecker, err := authorizer.NewBuiltInScopeChecker(ctx, id.Roles())
 		if err != nil {
 			return nil, observe.ScopeCheckerNone, errors.Wrap(err, "creating scoped authorizer for identity")
 		}
 		return sac.WithGlobalAccessScopeChecker(ctx, scopeChecker), observe.ScopeCheckerBuiltIn, nil
 	}
+	ctx = sac.SetContextPluginScopedAuthzEnabled(ctx)
 
 	// Get the principal and the cache key for it.
 	principal, idCacheKey, err := idToPrincipalAndCacheKey(id)
@@ -129,18 +128,6 @@ func (se *Enricher) GetPreAuthContextEnricher(authzTraceSink observe.AuthzTraceS
 		trace.RecordScopeCheckerCoreType(sccType)
 		return ctxWithSCC, nil
 	}
-}
-
-// PostAuthContextEnricher enriches the given context with a root scope checker which can be used to check a
-// user's permissions. If SAC is disabled we will instead enrich with an AllowAllAccessScopeChecker and skip caching
-func (se *Enricher) PostAuthContextEnricher(ctx context.Context) (context.Context, error) {
-	// If SAC is turned off (or no authz plugin is configured), just allow all access for SAC checks.
-	// This means we don't reap the benefit of more fine-grained checks if SAC is not configured, but we also won't
-	// break APIs due to stricter enforcement of access rules.
-	if rootSC := sac.GlobalAccessScopeCheckerOrNil(ctx); rootSC == nil {
-		return sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker()), nil
-	}
-	return ctx, nil
 }
 
 func (se *Enricher) cacheForClient(client sacClient.Client) expiringcache.Cache {

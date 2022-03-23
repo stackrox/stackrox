@@ -247,6 +247,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("ClusterCertExpiryStatus", []string{
 		"sensorCertExpiry: Time",
+		"sensorCertNotBefore: Time",
 	}))
 	utils.Must(builder.AddType("ClusterHealthStatus", []string{
 		"admissionControlHealthInfo: AdmissionControlHealthInfo",
@@ -254,6 +255,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"collectorHealthInfo: CollectorHealthInfo",
 		"collectorHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 		"healthInfoComplete: Boolean!",
+		"id: ID!",
 		"lastContact: Time",
 		"overallHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 		"sensorHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
@@ -473,6 +475,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerConfig_EnvironmentConfig_EnvVarSource(0)))
 	utils.Must(builder.AddType("ContainerImage", []string{
 		"id: ID!",
+		"isClusterLocal: Boolean!",
 		"name: ImageName",
 		"notPullable: Boolean!",
 	}))
@@ -498,7 +501,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"version: String!",
 	}))
 	utils.Must(builder.AddType("CosignSignature", []string{
-		"rawSignatureBase64Enc: String!",
 	}))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
@@ -624,6 +626,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Image", []string{
 		"id: ID!",
+		"isClusterLocal: Boolean!",
 		"lastUpdated: Time",
 		"metadata: ImageMetadata",
 		"name: ImageName",
@@ -681,6 +684,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"notes: [ImageScan_Note!]!",
 		"operatingSystem: String!",
 		"scanTime: Time",
+		"scannerVersion: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageScan_Note(0)))
 	utils.Must(builder.AddType("ImageSignature", []string{
@@ -690,6 +694,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"results: [ImageSignatureVerificationResult]!",
 	}))
 	utils.Must(builder.AddType("ImageSignatureVerificationResult", []string{
+		"description: String!",
 		"status: ImageSignatureVerificationResult_Status!",
 		"verificationTime: Time",
 		"verifierId: String!",
@@ -976,6 +981,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"fixedBy: String!",
 		"hostMountPolicy: HostMountPolicy",
 		"imageName: ImageNamePolicy",
+		"imageSignatureVerifiedBy: String!",
 		"lineRule: DockerfileLineRuleField",
 		"permissionPolicy: PermissionPolicy",
 		"portExposurePolicy: PortExposurePolicy",
@@ -3265,6 +3271,11 @@ func (resolver *clusterCertExpiryStatusResolver) SensorCertExpiry(ctx context.Co
 	return timestamp(value)
 }
 
+func (resolver *clusterCertExpiryStatusResolver) SensorCertNotBefore(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSensorCertNotBefore()
+	return timestamp(value)
+}
+
 type clusterHealthStatusResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -3312,6 +3323,11 @@ func (resolver *clusterHealthStatusResolver) CollectorHealthStatus(ctx context.C
 func (resolver *clusterHealthStatusResolver) HealthInfoComplete(ctx context.Context) bool {
 	value := resolver.data.GetHealthInfoComplete()
 	return value
+}
+
+func (resolver *clusterHealthStatusResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
 }
 
 func (resolver *clusterHealthStatusResolver) LastContact(ctx context.Context) (*graphql.Time, error) {
@@ -4999,6 +5015,11 @@ func (resolver *containerImageResolver) Id(ctx context.Context) graphql.ID {
 	return graphql.ID(value)
 }
 
+func (resolver *containerImageResolver) IsClusterLocal(ctx context.Context) bool {
+	value := resolver.data.GetIsClusterLocal()
+	return value
+}
+
 func (resolver *containerImageResolver) Name(ctx context.Context) (*imageNameResolver, error) {
 	value := resolver.data.GetName()
 	return resolver.root.wrapImageName(value, true, nil)
@@ -5193,8 +5214,13 @@ func (resolver *Resolver) wrapCosignSignatures(values []*storage.CosignSignature
 	return output, nil
 }
 
-func (resolver *cosignSignatureResolver) RawSignatureBase64Enc(ctx context.Context) string {
-	value := resolver.data.GetRawSignatureBase64Enc()
+func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) []byte {
+	value := resolver.data.GetRawSignature()
+	return value
+}
+
+func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) []byte {
+	value := resolver.data.GetSignaturePayload()
 	return value
 }
 
@@ -6224,6 +6250,12 @@ func (resolver *imageResolver) Id(ctx context.Context) graphql.ID {
 	return graphql.ID(value)
 }
 
+func (resolver *imageResolver) IsClusterLocal(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetIsClusterLocal()
+	return value
+}
+
 func (resolver *imageResolver) LastUpdated(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastUpdated()
 	if resolver.data == nil {
@@ -6635,6 +6667,11 @@ func (resolver *imageScanResolver) ScanTime(ctx context.Context) (*graphql.Time,
 	return timestamp(value)
 }
 
+func (resolver *imageScanResolver) ScannerVersion(ctx context.Context) string {
+	value := resolver.data.GetScannerVersion()
+	return value
+}
+
 func toImageScan_Note(value *string) storage.ImageScan_Note {
 	if value != nil {
 		return storage.ImageScan_Note(storage.ImageScan_Note_value[*value])
@@ -6733,6 +6770,11 @@ func (resolver *Resolver) wrapImageSignatureVerificationResults(values []*storag
 		output[i] = &imageSignatureVerificationResultResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *imageSignatureVerificationResultResolver) Description(ctx context.Context) string {
+	value := resolver.data.GetDescription()
+	return value
 }
 
 func (resolver *imageSignatureVerificationResultResolver) Status(ctx context.Context) string {
@@ -8785,6 +8827,11 @@ func (resolver *policyFieldsResolver) HostMountPolicy(ctx context.Context) (*hos
 func (resolver *policyFieldsResolver) ImageName(ctx context.Context) (*imageNamePolicyResolver, error) {
 	value := resolver.data.GetImageName()
 	return resolver.root.wrapImageNamePolicy(value, true, nil)
+}
+
+func (resolver *policyFieldsResolver) ImageSignatureVerifiedBy(ctx context.Context) string {
+	value := resolver.data.GetImageSignatureVerifiedBy()
+	return value
 }
 
 func (resolver *policyFieldsResolver) LineRule(ctx context.Context) (*dockerfileLineRuleFieldResolver, error) {

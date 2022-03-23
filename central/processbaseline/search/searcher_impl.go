@@ -30,14 +30,14 @@ type searcherImpl struct {
 	formattedSearcher search.Searcher
 }
 
-func (s *searcherImpl) buildIndex() error {
+func (s *searcherImpl) buildIndex(ctx context.Context) error {
 	defer debug.FreeOSMemory()
 	log.Info("[STARTUP] Indexing process baselines")
 	baselines := make([]*storage.ProcessBaseline, 0, baselineBatchLimit)
-	if err := s.storage.Walk(func(baseline *storage.ProcessBaseline) error {
+	if err := s.storage.Walk(ctx, func(baseline *storage.ProcessBaseline) error {
 		baselines = append(baselines, baseline)
 		if len(baselines) == baselineBatchLimit {
-			if err := s.indexer.AddBaselines(baselines); err != nil {
+			if err := s.indexer.AddProcessBaselines(baselines); err != nil {
 				return err
 			}
 
@@ -50,7 +50,7 @@ func (s *searcherImpl) buildIndex() error {
 	}
 
 	if len(baselines) > 0 {
-		return s.indexer.AddBaselines(baselines)
+		return s.indexer.AddProcessBaselines(baselines)
 	}
 	log.Info("[STARTUP] Successfully indexed process baselines")
 	return nil
@@ -62,7 +62,7 @@ func (s *searcherImpl) SearchRawProcessBaselines(ctx context.Context, q *v1.Quer
 		return nil, err
 	}
 	ids := search.ResultsToIDs(results)
-	baselines, _, err := s.storage.GetMany(ids)
+	baselines, _, err := s.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

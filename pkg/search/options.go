@@ -71,6 +71,7 @@ var (
 	ImageCreatedTime              = newFieldLabel("Image Created Time")
 	ImageName                     = newFieldLabel("Image")
 	ImageSHA                      = newFieldLabel("Image Sha")
+	ImageSignatureVerified        = newFieldLabel("Image Signature Verified")
 	ImageRegistry                 = newFieldLabel("Image Registry")
 	ImageRemote                   = newFieldLabel("Image Remote")
 	ImageScanTime                 = newFieldLabel("Image Scan Time")
@@ -124,10 +125,17 @@ var (
 	// PolicyViolated is a fake search field to filter deployments that have violation.
 	// This is handled/supported only by deployments sub-resolver of policy resolver.
 	// Note that 'Policy Violated=false' is not yet supported.
-	PolicyViolated                = newFieldLabel("Policy Violated")
-	Port                          = newFieldLabel("Port")
-	PortProtocol                  = newFieldLabel("Port Protocol")
+	PolicyViolated = newFieldLabel("Policy Violated")
+	Port           = newFieldLabel("Port")
+	PortProtocol   = newFieldLabel("Port Protocol")
+	// Priority is used in risk datastore internally.
 	Priority                      = newFieldLabel("Priority")
+	ClusterPriority               = newFieldLabel("Cluster Risk Priority")
+	NamespacePriority             = newFieldLabel("Namespace Risk Priority")
+	NodePriority                  = newFieldLabel("Node Risk Priority")
+	DeploymentPriority            = newFieldLabel("Deployment Risk Priority")
+	ImagePriority                 = newFieldLabel("Image Risk Priority")
+	ComponentPriority             = newFieldLabel("Component Risk Priority")
 	Privileged                    = newFieldLabel("Privileged")
 	ProcessTag                    = newFieldLabel("Process Tag")
 	ReadOnlyRootFilesystem        = newFieldLabel("Read Only Root Filesystem")
@@ -216,9 +224,12 @@ var (
 	Inactive = newFieldLabel("Inactive Deployment")
 
 	// Risk Search Fields
-	RiskScore       = newFieldLabel("Risk Score")
-	RiskSubjectType = newFieldLabel("Risk Subject Type")
-	RiskIndicator   = newFieldLabel("Risk Indicator")
+	RiskScore           = newFieldLabel("Risk Score")
+	NodeRiskScore       = newFieldLabel("Node Risk Score")
+	DeploymentRiskScore = newFieldLabel("Deployment Risk Score")
+	ImageRiskScore      = newFieldLabel("Image Risk Score")
+	ComponentRiskScore  = newFieldLabel("Component Risk Score")
+	RiskSubjectType     = newFieldLabel("Risk Subject Type")
 
 	PolicyLastUpdated = newFieldLabel("Policy Last Updated")
 
@@ -252,6 +263,28 @@ var (
 	RequestExpiresWhenFixed     = newFieldLabel("Request Expires When Fixed")
 	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")
 	UserName                    = newFieldLabel("User Name")
+
+	// Test Search Fields
+	TestKey               = newFieldLabel("Test Key")
+	TestName              = newFieldLabel("Test Name")
+	TestString            = newFieldLabel("Test String")
+	TestStringSlice       = newFieldLabel("Test String Slice")
+	TestBool              = newFieldLabel("Test Bool")
+	TestUint64            = newFieldLabel("Test Uint64")
+	TestInt64             = newFieldLabel("Test Int64")
+	TestInt64Slice        = newFieldLabel("Test Int64 Slice")
+	TestFloat             = newFieldLabel("Test Float")
+	TestLabels            = newFieldLabel("Test Labels")
+	TestTimestamp         = newFieldLabel("Test Timestamp")
+	TestEnum              = newFieldLabel("Test Enum")
+	TestEnumSlice         = newFieldLabel("Test Enum Slice")
+	TestNestedString      = newFieldLabel("Test Nested String")
+	TestNestedString2     = newFieldLabel("Test Nested String 2")
+	TestNestedBool        = newFieldLabel("Test Nested Bool")
+	TestNestedBool2       = newFieldLabel("Test Nested Bool 2")
+	TestNestedInt64       = newFieldLabel("Test Nested Int64")
+	TestNested2Int64      = newFieldLabel("Test Nested Int64 2")
+	TestOneofNestedString = newFieldLabel("Test Oneof Nested String")
 )
 
 func newFieldLabel(s string) FieldLabel {

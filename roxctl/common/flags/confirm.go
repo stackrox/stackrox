@@ -39,7 +39,7 @@ func CheckConfirmation(c *cobra.Command) error {
 	fmt.Print("Are you sure? [y/N] ")
 	resp, err := bufio.NewReader(os.Stdin).ReadString('\n')
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not read answer")
 	}
 	resp = strings.ToLower(strings.TrimSpace(resp))
 	if resp != "y" {

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	metricsPkg "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -51,9 +52,17 @@ type DispatcherRegistry interface {
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
-func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister, profileLister cache.GenericLister,
-	entityStore *clusterentities.Store, processFilter filter.Filter,
-	configHandler config.Handler, detector detector.Detector, namespaces *orchestratornamespaces.OrchestratorNamespaces) DispatcherRegistry {
+func NewDispatcherRegistry(
+	clusterID string,
+	podLister v1Listers.PodLister,
+	profileLister cache.GenericLister,
+	entityStore *clusterentities.Store,
+	processFilter filter.Filter,
+	configHandler config.Handler,
+	detector detector.Detector,
+	namespaces *orchestratornamespaces.OrchestratorNamespaces,
+	credentialsManager awscredentials.RegistryCredentialsManager,
+) DispatcherRegistry {
 	serviceStore := newServiceStore()
 	deploymentStore := DeploymentStoreSingleton()
 	podStore := PodStoreSingleton()
@@ -66,7 +75,7 @@ func NewDispatcherRegistry(clusterID string, podLister v1Listers.PodLister, prof
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, serviceStore, deploymentStore, podStore, endpointManager, nsStore,
-			rbacUpdater, podLister, processFilter, configHandler, detector, namespaces),
+			rbacUpdater, podLister, processFilter, configHandler, detector, namespaces, credentialsManager),
 
 		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater),
 		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore),

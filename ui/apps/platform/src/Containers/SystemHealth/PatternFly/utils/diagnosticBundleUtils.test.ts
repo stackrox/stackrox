@@ -73,7 +73,7 @@ describe('Diagnostic Bundle dialog box', () => {
             expect(startingTimeRegExp.test(startingTimeText)).toBe(false);
         });
 
-        it('should not match StackRox stringification', () => {
+        it('should not match application stringification', () => {
             const startingTimeText = '10/20/2020 17:22:00';
 
             expect(startingTimeRegExp.test(startingTimeText)).toBe(false);

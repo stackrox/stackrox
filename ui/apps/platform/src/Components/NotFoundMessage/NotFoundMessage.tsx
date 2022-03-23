@@ -8,7 +8,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import ButtonLink from 'Components/PatternFly/ButtonLink';
+import LinkShim from 'Components/PatternFly/LinkShim';
 
 export type NotFoundMessageProps = {
     title: string;
@@ -36,9 +36,9 @@ const NotFoundMessage = ({
                 {message && <EmptyStateBody>{message}</EmptyStateBody>}
                 {isButtonVisible && <Button variant="primary">{actionText}</Button>}
                 {isLinkVisible && (
-                    <ButtonLink variant={ButtonVariant.link} isInline to={url}>
+                    <Button variant={ButtonVariant.link} isInline component={LinkShim} href={url}>
                         {actionText}
-                    </ButtonLink>
+                    </Button>
                 )}
             </EmptyState>
         </Bullseye>

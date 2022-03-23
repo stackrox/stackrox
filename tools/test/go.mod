@@ -3,7 +3,7 @@ module github.com/stackrox/stackrox/tools/test
 go 1.17
 
 require (
-	github.com/jstemmer/go-junit-report v0.9.1
+	github.com/jstemmer/go-junit-report v1.0.0
 	github.com/mattn/goveralls v0.0.11
 )
 

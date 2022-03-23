@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-    Badge,
     Button,
     ButtonVariant,
     Divider,
@@ -12,35 +11,17 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { useParams, Link } from 'react-router-dom';
-import resolvePath from 'object-resolve-path';
 import pluralize from 'pluralize';
 
-import ACSEmptyState from 'Components/ACSEmptyState';
-import ButtonLink from 'Components/PatternFly/ButtonLink';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import LinkShim from 'Components/PatternFly/LinkShim';
 import useTableSelection from 'hooks/useTableSelection';
+import TableCellValue from 'Components/TableCellValue/TableCellValue';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
 import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
 import DownloadCAConfigBundle from '../ClusterInitBundles/DownloadCAConfigBundle';
-
-type TableCellProps = {
-    row: Integration;
-    column: {
-        Header: string;
-        accessor: (data) => string | string;
-    };
-};
-
-function TableCellValue({ row, column }: TableCellProps): React.ReactElement {
-    let value: string;
-    if (typeof column.accessor === 'function') {
-        value = column.accessor(row).toString();
-    } else {
-        value = resolvePath(row, column.accessor).toString();
-    }
-    return <div>{value || '-'}</div>;
-}
 
 function getNewButtonText(type) {
     if (type === 'apitoken') {
@@ -53,14 +34,12 @@ function getNewButtonText(type) {
 }
 
 type IntegrationsTableProps = {
-    title: string;
     integrations: Integration[];
     hasMultipleDelete: boolean;
     onDeleteIntegrations: (integration) => void;
 };
 
 function IntegrationsTable({
-    title,
     integrations,
     hasMultipleDelete,
     onDeleteIntegrations,
@@ -91,62 +70,48 @@ function IntegrationsTable({
 
     return (
         <>
-            <Flex className="pf-u-p-md">
-                <FlexItem
-                    spacer={{ default: 'spacerMd' }}
-                    alignSelf={{ default: 'alignSelfCenter' }}
-                >
-                    <Flex alignSelf={{ default: 'alignSelfCenter' }}>
-                        <FlexItem
-                            spacer={{ default: 'spacerMd' }}
-                            alignSelf={{ default: 'alignSelfCenter' }}
-                        >
-                            <Title headingLevel="h2" className="pf-u-color-100 pf-u-ml-sm">
-                                {title}
-                            </Title>
-                        </FlexItem>
-                        <FlexItem
-                            spacer={{ default: 'spacerMd' }}
-                            alignSelf={{ default: 'alignSelfCenter' }}
-                        >
-                            <Badge isRead>{integrations.length}</Badge>
-                        </FlexItem>
-                    </Flex>
-                </FlexItem>
-                <FlexItem align={{ default: 'alignRight' }}>
-                    <Flex>
-                        {hasSelections && hasMultipleDelete && permissions[source].write && (
-                            <FlexItem spacer={{ default: 'spacerMd' }}>
-                                <Button variant="danger" onClick={onDeleteIntegrationHandler}>
-                                    Delete {numSelected} selected{' '}
-                                    {pluralize('integration', numSelected)}
-                                </Button>
-                            </FlexItem>
-                        )}
-                        {isClusterInitBundle && (
-                            <FlexItem spacer={{ default: 'spacerMd' }}>
-                                <DownloadCAConfigBundle />
-                            </FlexItem>
-                        )}
-                        {permissions[source].write && (
-                            <FlexItem spacer={{ default: 'spacerMd' }}>
-                                <ButtonLink
-                                    to={getPathToCreate(source, type)}
-                                    variant={ButtonVariant.primary}
-                                    data-testid="add-integration"
-                                >
-                                    {newButtonText}
-                                </ButtonLink>
-                            </FlexItem>
-                        )}
-                    </Flex>
-                </FlexItem>
-            </Flex>
+            <PageSection variant="light">
+                <Flex>
+                    <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                        <Title headingLevel="h2">
+                            {integrations.length} {pluralize('results', integrations.length)} found
+                        </Title>
+                    </FlexItem>
+                    <FlexItem align={{ default: 'alignRight' }}>
+                        <Flex>
+                            {hasSelections && hasMultipleDelete && permissions[source].write && (
+                                <FlexItem>
+                                    <Button variant="danger" onClick={onDeleteIntegrationHandler}>
+                                        Delete {numSelected} selected{' '}
+                                        {pluralize('integration', numSelected)}
+                                    </Button>
+                                </FlexItem>
+                            )}
+                            {isClusterInitBundle && (
+                                <FlexItem>
+                                    <DownloadCAConfigBundle />
+                                </FlexItem>
+                            )}
+                            {permissions[source].write && (
+                                <FlexItem>
+                                    <Button
+                                        variant={ButtonVariant.primary}
+                                        component={LinkShim}
+                                        href={getPathToCreate(source, type)}
+                                        data-testid="add-integration"
+                                    >
+                                        {newButtonText}
+                                    </Button>
+                                </FlexItem>
+                            )}
+                        </Flex>
+                    </FlexItem>
+                </Flex>
+            </PageSection>
             <Divider component="div" />
             <PageSection
                 isFilled
                 padding={{ default: 'noPadding' }}
-                hasOverflowScroll
                 variant={PageSectionVariants.light}
             >
                 {integrations.length > 0 ? (
@@ -210,10 +175,11 @@ function IntegrationsTable({
                                             if (column.Header === 'Name') {
                                                 return (
                                                     <Td key="name">
-                                                        <ButtonLink
+                                                        <Button
                                                             variant={ButtonVariant.link}
                                                             isInline
-                                                            to={getPathToViewDetails(
+                                                            component={LinkShim}
+                                                            href={getPathToViewDetails(
                                                                 source,
                                                                 type,
                                                                 id
@@ -223,7 +189,7 @@ function IntegrationsTable({
                                                                 row={integration}
                                                                 column={column}
                                                             />
-                                                        </ButtonLink>
+                                                        </Button>
                                                     </Td>
                                                 );
                                             }
@@ -249,9 +215,9 @@ function IntegrationsTable({
                         </Tbody>
                     </TableComposable>
                 ) : (
-                    <ACSEmptyState
-                        key="no-results"
+                    <EmptyStateTemplate
                         title="No integrations of this type are currently configured."
+                        headingLevel="h3"
                     />
                 )}
             </PageSection>

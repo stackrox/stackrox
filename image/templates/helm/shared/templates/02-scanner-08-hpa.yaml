@@ -6,19 +6,19 @@
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ ._rox.scanner.name }}
+  name: scanner
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "horizontalpodautoscaler" ._rox.scanner.name) | nindent 4 }}
+    {{- include "srox.labels" (list . "horizontalpodautoscaler" "scanner") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "horizontalpodautoscaler" ._rox.scanner.name) | nindent 4 }}
+    {{- include "srox.annotations" (list . "horizontalpodautoscaler" "scanner") | nindent 4 }}
 spec:
   minReplicas: {{ ._rox.scanner.autoscaling.minReplicas }}
   maxReplicas: {{ ._rox.scanner.autoscaling.maxReplicas }}
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ ._rox.scanner.name }}
+    name: scanner
   targetCPUUtilizationPercentage: 150
 {{ end -}}
 

@@ -12,7 +12,8 @@ import (
 	"github.com/pkg/errors"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterIndexMocks "github.com/stackrox/rox/central/cluster/index/mocks"
-	clusterMocks "github.com/stackrox/rox/central/cluster/store/mocks"
+	clusterStoreMocks "github.com/stackrox/rox/central/cluster/store/cluster/mocks"
+	clusterHealthStoreMocks "github.com/stackrox/rox/central/cluster/store/cluster_health_status/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
@@ -22,10 +23,13 @@ import (
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
+	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
+	roleBindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
+	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
@@ -58,24 +62,27 @@ type ClusterDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
-	clusters            *clusterMocks.MockClusterStore
-	healthStatuses      *clusterMocks.MockClusterHealthStore
-	indexer             *clusterIndexMocks.MockIndexer
-	clusterDataStore    DataStore
-	namespaceDataStore  *namespaceMocks.MockDataStore
-	deploymentDataStore *deploymentMocks.MockDataStore
-	nodeDataStore       *nodeMocks.MockGlobalDataStore
-	secretDataStore     *secretMocks.MockDataStore
-	podDataStore        *podMocks.MockDataStore
-	flowsDataStore      *netFlowsMocks.MockClusterDataStore
-	netEntityDataStore  *netEntityMocks.MockEntityDataStore
-	connMgr             *connectionMocks.MockManager
-	alertDataStore      *alertMocks.MockDataStore
-	riskDataStore       *riskMocks.MockDataStore
-	mockCtrl            *gomock.Controller
-	notifierMock        *notifierMocks.MockProcessor
-	mockProvider        *graphMocks.MockProvider
-	networkBaselineMgr  *networkBaselineMocks.MockManager
+	clusters                *clusterStoreMocks.MockStore
+	healthStatuses          *clusterHealthStoreMocks.MockStore
+	indexer                 *clusterIndexMocks.MockIndexer
+	clusterDataStore        DataStore
+	namespaceDataStore      *namespaceMocks.MockDataStore
+	deploymentDataStore     *deploymentMocks.MockDataStore
+	nodeDataStore           *nodeMocks.MockGlobalDataStore
+	secretDataStore         *secretMocks.MockDataStore
+	podDataStore            *podMocks.MockDataStore
+	flowsDataStore          *netFlowsMocks.MockClusterDataStore
+	netEntityDataStore      *netEntityMocks.MockEntityDataStore
+	connMgr                 *connectionMocks.MockManager
+	alertDataStore          *alertMocks.MockDataStore
+	riskDataStore           *riskMocks.MockDataStore
+	mockCtrl                *gomock.Controller
+	notifierMock            *notifierMocks.MockProcessor
+	mockProvider            *graphMocks.MockProvider
+	networkBaselineMgr      *networkBaselineMocks.MockManager
+	serviceAccountDataStore *serviceAccountMocks.MockDataStore
+	roleDataStore           *roleMocks.MockDataStore
+	roleBindingDataStore    *roleBindingMocks.MockDataStore
 }
 
 var _ suite.TearDownTestSuite = (*ClusterDataStoreTestSuite)(nil)
@@ -92,8 +99,8 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.Cluster)))
 
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.clusters = clusterMocks.NewMockClusterStore(suite.mockCtrl)
-	suite.healthStatuses = clusterMocks.NewMockClusterHealthStore(suite.mockCtrl)
+	suite.clusters = clusterStoreMocks.NewMockStore(suite.mockCtrl)
+	suite.healthStatuses = clusterHealthStoreMocks.NewMockStore(suite.mockCtrl)
 	suite.indexer = clusterIndexMocks.NewMockIndexer(suite.mockCtrl)
 
 	suite.namespaceDataStore = namespaceMocks.NewMockDataStore(suite.mockCtrl)
@@ -109,12 +116,15 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.notifierMock = notifierMocks.NewMockProcessor(suite.mockCtrl)
 	suite.mockProvider = graphMocks.NewMockProvider(suite.mockCtrl)
 	suite.networkBaselineMgr = networkBaselineMocks.NewMockManager(suite.mockCtrl)
+	suite.serviceAccountDataStore = serviceAccountMocks.NewMockDataStore(suite.mockCtrl)
+	suite.roleDataStore = roleMocks.NewMockDataStore(suite.mockCtrl)
+	suite.roleBindingDataStore = roleBindingMocks.NewMockDataStore(suite.mockCtrl)
 
 	suite.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
+	suite.clusters.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
 	suite.netEntityDataStore.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
-	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
-	suite.healthStatuses.EXPECT().WalkAllWithID(gomock.Any()).Return(nil)
+	suite.clusters.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+	suite.healthStatuses.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().AddClusters(nil).Return(nil)
 
 	var err error
@@ -130,6 +140,9 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.secretDataStore,
 		suite.flowsDataStore,
 		suite.netEntityDataStore,
+		suite.serviceAccountDataStore,
+		suite.roleDataStore,
+		suite.roleBindingDataStore,
 		suite.connMgr,
 		suite.notifierMock,
 		suite.mockProvider,
@@ -151,7 +164,7 @@ func (suite *ClusterDataStoreTestSuite) TearDownTest() {
 // Test that when the cluster we try to remove does not exist, we return an error.
 func (suite *ClusterDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
 	// Return false for the cluster not existing.
-	suite.clusters.EXPECT().Get(fakeClusterID).Return((*storage.Cluster)(nil), false, nil)
+	suite.clusters.EXPECT().Get(suite.hasWriteCtx, fakeClusterID).Return((*storage.Cluster)(nil), false, nil)
 
 	// run removal.
 	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, fakeClusterID, nil)
@@ -162,7 +175,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
 func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingCluster() {
 	// Return an error trying to fetch the cluster.
 	expectedErr := errors.New("issues need tissues")
-	suite.clusters.EXPECT().Get(fakeClusterID).Return((*storage.Cluster)(nil), true, expectedErr)
+	suite.clusters.EXPECT().Get(suite.hasWriteCtx, fakeClusterID).Return((*storage.Cluster)(nil), true, expectedErr)
 
 	// run removal.
 	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, fakeClusterID, nil)
@@ -175,8 +188,11 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	testPods := []search.Result{{ID: "fakepod"}}
 	testAlerts := []*storage.Alert{{}}
 	testSecrets := []*storage.ListSecret{{}}
-	suite.clusters.EXPECT().Get(fakeClusterID).Return(testCluster, true, nil)
-	suite.clusters.EXPECT().Delete(fakeClusterID).Return(nil)
+	testServiceAccounts := []search.Result{{ID: "fakeSA"}}
+	testRoles := []search.Result{{ID: "fakeK8Srole"}}
+	testRoleBindings := []search.Result{{ID: "fakerolebinding"}}
+	suite.clusters.EXPECT().Get(suite.hasWriteCtx, fakeClusterID).Return(testCluster, true, nil)
+	suite.clusters.EXPECT().Delete(suite.hasWriteCtx, fakeClusterID).Return(nil)
 	suite.indexer.EXPECT().DeleteCluster(fakeClusterID).Return(nil)
 	suite.connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
 	suite.namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil)
@@ -189,9 +205,15 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	suite.podDataStore.EXPECT().RemovePod(gomock.Any(), "fakepod").Return(nil)
 	suite.nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).Return(nil)
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(testSecrets, nil)
+	suite.serviceAccountDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testServiceAccounts, nil)
+	suite.roleDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testRoles, nil)
+	suite.roleBindingDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testRoleBindings, nil)
 	suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil)
 	suite.networkBaselineMgr.EXPECT().ProcessPostClusterDelete(gomock.Any()).Return(nil)
 	suite.secretDataStore.EXPECT().RemoveSecret(gomock.Any(), gomock.Any()).Return(nil)
+	suite.serviceAccountDataStore.EXPECT().RemoveServiceAccount(gomock.Any(), gomock.Any()).Return(nil)
+	suite.roleDataStore.EXPECT().RemoveRole(gomock.Any(), gomock.Any()).Return(nil)
+	suite.roleBindingDataStore.EXPECT().RemoveRoleBinding(gomock.Any(), gomock.Any()).Return(nil)
 
 	done := concurrency.NewSignal()
 	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, fakeClusterID, &done)
@@ -201,7 +223,7 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesGet() {
 	testCluster := &storage.Cluster{Id: fakeClusterID}
-	suite.clusters.EXPECT().Get(fakeClusterID).Return(testCluster, true, nil)
+	suite.clusters.EXPECT().Get(gomock.Any(), fakeClusterID).Return(testCluster, true, nil)
 
 	cluster, exists, err := suite.clusterDataStore.GetCluster(suite.hasNoneCtx, fakeClusterID)
 	suite.NoError(err, "expected no error, should return nil without access")
@@ -210,21 +232,21 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsGet() {
-	suite.clusters.EXPECT().Get(gomock.Any()).Return(nil, false, nil)
+	suite.clusters.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil)
 
 	_, _, err := suite.clusterDataStore.GetCluster(suite.hasReadCtx, "An Id")
 	suite.NoError(err, "expected no error trying to read with permissions")
 
-	suite.clusters.EXPECT().Get(gomock.Any()).Return(nil, false, nil)
+	suite.clusters.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil)
 
 	_, _, err = suite.clusterDataStore.GetCluster(suite.hasWriteCtx, "beef")
 	suite.NoError(err, "expected no error trying to read with permissions")
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesGetAll() {
-	suite.clusters.EXPECT().GetMany([]string{}).Return(nil, nil, nil)
+	suite.clusters.EXPECT().GetMany(gomock.Any(), []string{}).Return(nil, nil, nil)
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
-	suite.healthStatuses.EXPECT().GetMany(gomock.Any()).Return([]*storage.ClusterHealthStatus{}, []int{}, nil)
+	suite.healthStatuses.EXPECT().GetMany(gomock.Any(), gomock.Any()).Return([]*storage.ClusterHealthStatus{}, []int{}, nil)
 
 	clusters, err := suite.clusterDataStore.GetClusters(suite.hasNoneCtx)
 	suite.NoError(err, "expected no error, should return nil without access")
@@ -232,21 +254,21 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesGetAll() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsGetAll() {
-	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
-	suite.healthStatuses.EXPECT().GetMany(gomock.Any()).Return([]*storage.ClusterHealthStatus{}, []int{}, nil)
+	suite.clusters.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+	suite.healthStatuses.EXPECT().GetMany(gomock.Any(), gomock.Any()).Return([]*storage.ClusterHealthStatus{}, []int{}, nil)
 
 	_, err := suite.clusterDataStore.GetClusters(suite.hasReadCtx)
 	suite.NoError(err, "expected no error trying to read with permissions")
 
-	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
-	suite.healthStatuses.EXPECT().GetMany(gomock.Any()).Return([]*storage.ClusterHealthStatus{}, []int{}, nil)
+	suite.clusters.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+	suite.healthStatuses.EXPECT().GetMany(gomock.Any(), gomock.Any()).Return([]*storage.ClusterHealthStatus{}, []int{}, nil)
 
 	_, err = suite.clusterDataStore.GetClusters(suite.hasWriteCtx)
 	suite.NoError(err, "expected no error trying to read with permissions")
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesCount() {
-	suite.clusters.EXPECT().Count().Times(0)
+	suite.clusters.EXPECT().Count(suite.hasWriteCtx).Times(0)
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
 
 	count, err := suite.clusterDataStore.CountClusters(suite.hasNoneCtx)
@@ -255,19 +277,19 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesCount() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsCount() {
-	suite.clusters.EXPECT().Count().Return(99, nil)
+	suite.clusters.EXPECT().Count(gomock.Any()).Return(99, nil)
 
 	_, err := suite.clusterDataStore.CountClusters(suite.hasReadCtx)
 	suite.NoError(err, "expected no error trying to read with permissions")
 
-	suite.clusters.EXPECT().Count().Return(42, nil)
+	suite.clusters.EXPECT().Count(gomock.Any()).Return(42, nil)
 
 	_, err = suite.clusterDataStore.CountClusters(suite.hasWriteCtx)
 	suite.NoError(err, "expected no error trying to read with permissions")
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesAdd() {
-	suite.clusters.EXPECT().Upsert(gomock.Any()).Times(0)
+	suite.clusters.EXPECT().Upsert(suite.hasWriteCtx, gomock.Any()).Times(0)
 
 	_, err := suite.clusterDataStore.AddCluster(suite.hasNoneCtx, &storage.Cluster{})
 	suite.Error(err, "expected an error trying to write without permissions")
@@ -277,7 +299,7 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsAdd() {
-	suite.clusters.EXPECT().Upsert(gomock.Any()).Return(nil)
+	suite.clusters.EXPECT().Upsert(suite.hasWriteCtx, gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().AddCluster(gomock.Any()).Return(nil)
 	suite.flowsDataStore.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(suite.mockCtrl), nil)
 
@@ -286,7 +308,7 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsAdd() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdate() {
-	suite.clusters.EXPECT().Upsert(gomock.Any()).Times(0)
+	suite.clusters.EXPECT().Upsert(suite.hasWriteCtx, gomock.Any()).Times(0)
 
 	err := suite.clusterDataStore.UpdateCluster(suite.hasNoneCtx, &storage.Cluster{})
 	suite.Error(err, "expected an error trying to write without permissions")
@@ -296,22 +318,22 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsUpdate() {
-	suite.clusters.EXPECT().Get(gomock.Any()).Return(&storage.Cluster{Id: "1", Name: "blah", MainImage: mainImage, CentralApiEndpoint: centralEndpoint}, true, nil)
-	suite.clusters.EXPECT().Upsert(gomock.Any()).Return(nil)
+	suite.clusters.EXPECT().Get(suite.hasWriteCtx, gomock.Any()).Return(&storage.Cluster{Id: "1", Name: "blah", MainImage: mainImage, CentralApiEndpoint: centralEndpoint}, true, nil)
+	suite.clusters.EXPECT().Upsert(suite.hasWriteCtx, gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().AddCluster(gomock.Any()).Return(nil)
 	suite.connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
 
 	err := suite.clusterDataStore.UpdateCluster(suite.hasWriteCtx, &storage.Cluster{Id: "1", Name: "blah", MainImage: mainImage, CentralApiEndpoint: centralEndpoint})
 	suite.NoError(err, "expected no error trying to write with permissions")
 
-	suite.clusters.EXPECT().Get(gomock.Any()).Return(&storage.Cluster{Id: "1", Name: "blah"}, true, nil)
+	suite.clusters.EXPECT().Get(suite.hasWriteCtx, gomock.Any()).Return(&storage.Cluster{Id: "1", Name: "blah"}, true, nil)
 
 	err = suite.clusterDataStore.UpdateCluster(suite.hasWriteCtx, &storage.Cluster{Id: "1", Name: "blahDiff"})
 	suite.Error(err, "expected error trying to rename cluster")
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesRemove() {
-	suite.clusters.EXPECT().Delete(gomock.Any()).Times(0)
+	suite.clusters.EXPECT().Delete(suite.hasWriteCtx, gomock.Any()).Times(0)
 
 	err := suite.clusterDataStore.RemoveCluster(suite.hasNoneCtx, "jiogserlksd", nil)
 	suite.Error(err, "expected an error trying to write without permissions")
@@ -322,8 +344,8 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesRemove() {
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsRemove() {
 	// This is a weird thing for store.Get() to return but we're only testing auth here
-	suite.clusters.EXPECT().Get("poiuytre").Return(nil, true, nil)
-	suite.clusters.EXPECT().Delete(gomock.Any()).Return(nil)
+	suite.clusters.EXPECT().Get(suite.hasWriteCtx, "poiuytre").Return(nil, true, nil)
+	suite.clusters.EXPECT().Delete(suite.hasWriteCtx, gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().DeleteCluster(gomock.Any()).Return(nil)
 	suite.namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.deploymentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
@@ -331,6 +353,9 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsRemove() {
 	suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), gomock.Any()).Return(nil)
 	suite.networkBaselineMgr.EXPECT().ProcessPostClusterDelete(gomock.Any()).Return(nil)
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(nil, nil)
+	suite.serviceAccountDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
+	suite.roleDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
+	suite.roleBindingDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
 
@@ -349,8 +374,8 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdateClusterStatus() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsUpdateClusterStatus() {
-	suite.clusters.EXPECT().Get(gomock.Any()).Return(&storage.Cluster{Id: "qwerty", Name: "blah"}, true, nil)
-	suite.clusters.EXPECT().Upsert(&storage.Cluster{Id: "qwerty", Name: "blah", Status: &storage.ClusterStatus{}}).Return(nil)
+	suite.clusters.EXPECT().Get(suite.hasWriteCtx, gomock.Any()).Return(&storage.Cluster{Id: "qwerty", Name: "blah"}, true, nil)
+	suite.clusters.EXPECT().Upsert(suite.hasWriteCtx, &storage.Cluster{Id: "qwerty", Name: "blah", Status: &storage.ClusterStatus{}}).Return(nil)
 
 	err := suite.clusterDataStore.UpdateClusterStatus(suite.hasWriteCtx, "qwerty", &storage.ClusterStatus{})
 	suite.NoError(err, "expected no error trying to write with permissions")
@@ -436,8 +461,8 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 	}
 
 	suite.indexer.EXPECT().Search(gomock.Any()).Return(results, nil)
-	suite.clusters.EXPECT().GetMany(ids).Return(clusters, []int{}, nil)
-	suite.healthStatuses.EXPECT().GetMany(ids).Return(existingHealths, []int{0, 2, 5}, nil)
+	suite.clusters.EXPECT().GetMany(gomock.Any(), ids).Return(clusters, []int{}, nil)
+	suite.healthStatuses.EXPECT().GetMany(gomock.Any(), ids).Return(existingHealths, []int{0, 2, 5}, nil)
 
 	actuals, err := suite.clusterDataStore.SearchRawClusters(suite.hasReadCtx, search.EmptyQuery())
 	suite.NoError(err)
@@ -522,8 +547,8 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 	}
 
 	suite.indexer.EXPECT().Search(gomock.Any()).Return(results, nil)
-	suite.clusters.EXPECT().GetMany(ids).Return(clusters, []int{}, nil)
-	suite.healthStatuses.EXPECT().GetMany(ids).Return(existingHealths, []int{}, nil)
+	suite.clusters.EXPECT().GetMany(gomock.Any(), ids).Return(clusters, []int{}, nil)
+	suite.healthStatuses.EXPECT().GetMany(gomock.Any(), ids).Return(existingHealths, []int{}, nil)
 
 	actuals, err = suite.clusterDataStore.SearchRawClusters(suite.hasReadCtx, search.EmptyQuery())
 	suite.NoError(err)
@@ -769,7 +794,7 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 				newCluster = updatedCluster
 			}).Return(nil)
 
-			upsertMock := suite.clusters.EXPECT().Upsert(gomock.Any()).Do(func(updatedCluster *storage.Cluster) {
+			upsertMock := suite.clusters.EXPECT().Upsert(suite.hasWriteCtx, gomock.Any()).Do(func(_ context.Context, updatedCluster *storage.Cluster) {
 				clusterID = updatedCluster.GetId()
 				newCluster = updatedCluster
 			}).Return(nil)
@@ -787,8 +812,8 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 				clusterID, err = suite.clusterDataStore.AddCluster(suite.hasWriteCtx, cluster)
 				suite.NoError(err)
 
-				suite.clusters.EXPECT().Get(clusterID).Return(newCluster, true, nil)
-				suite.healthStatuses.EXPECT().GetMany([]string{clusterID}).Return([]*storage.ClusterHealthStatus{clusterHealth}, []int{}, nil)
+				suite.clusters.EXPECT().Get(suite.hasWriteCtx, clusterID).Return(newCluster, true, nil)
+				suite.healthStatuses.EXPECT().GetMany(suite.hasWriteCtx, []string{clusterID}).Return([]*storage.ClusterHealthStatus{clusterHealth}, []int{}, nil)
 			}
 
 			// Execute call to LookupOrCreateClusterFromConfig.
@@ -923,6 +948,7 @@ func (suite *ClusterDataStoreTestSuite) TestUpdateClusterHealth() {
 			name:      "no previous health status exists",
 			oldHealth: &storage.ClusterHealthStatus{},
 			newHealth: &storage.ClusterHealthStatus{
+				Id:                 "6",
 				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 				LastContact:        ts1,
 			},
@@ -938,10 +964,10 @@ func (suite *ClusterDataStoreTestSuite) TestUpdateClusterHealth() {
 	}
 
 	for _, c := range cases {
-		suite.healthStatuses.EXPECT().Get(c.cluster.GetId()).Return(c.oldHealth, true, nil)
-		suite.healthStatuses.EXPECT().UpsertWithID(c.cluster.GetId(), c.newHealth)
+		suite.healthStatuses.EXPECT().Get(suite.hasWriteCtx, c.cluster.GetId()).Return(c.oldHealth, true, nil)
+		suite.healthStatuses.EXPECT().Upsert(suite.hasWriteCtx, c.newHealth)
 		if !c.skipIndex {
-			suite.clusters.EXPECT().Get(c.cluster.GetId()).Return(c.cluster, true, nil)
+			suite.clusters.EXPECT().Get(suite.hasWriteCtx, c.cluster.GetId()).Return(c.cluster, true, nil)
 			cluster := c.cluster
 			cluster.HealthStatus = c.newHealth
 			suite.indexer.EXPECT().AddCluster(cluster).Return(nil)
@@ -969,8 +995,8 @@ func (suite *ClusterDataStoreTestSuite) TestUpdateAuditLogFileStates() {
 		"node-3": {CollectLogsSince: ts1, LastAuditId: "zyxw"},
 	}
 
-	suite.clusters.EXPECT().Get(fakeClusterID).Return(fakeCluster, true, nil)
-	suite.clusters.EXPECT().Upsert(&storage.Cluster{Id: fakeClusterID, Name: "it's just your imagination", AuditLogState: states}).Return(nil)
+	suite.clusters.EXPECT().Get(suite.hasWriteCtx, fakeClusterID).Return(fakeCluster, true, nil)
+	suite.clusters.EXPECT().Upsert(suite.hasWriteCtx, &storage.Cluster{Id: fakeClusterID, Name: "it's just your imagination", AuditLogState: states}).Return(nil)
 
 	err := suite.clusterDataStore.UpdateAuditLogFileStates(suite.hasWriteCtx, fakeClusterID, states)
 	suite.NoError(err)
@@ -1003,8 +1029,8 @@ func (suite *ClusterDataStoreTestSuite) TestUpdateAuditLogFileStatesLeavesUnmodi
 		"old-node1": {CollectLogsSince: ts3, LastAuditId: "ggggg"},
 	}
 
-	suite.clusters.EXPECT().Get(fakeClusterID).Return(fakeCluster, true, nil)
-	suite.clusters.EXPECT().Upsert(&storage.Cluster{Id: fakeClusterID, Name: "it's just your imagination", AuditLogState: expectedStates}).Return(nil)
+	suite.clusters.EXPECT().Get(suite.hasWriteCtx, fakeClusterID).Return(fakeCluster, true, nil)
+	suite.clusters.EXPECT().Upsert(suite.hasWriteCtx, &storage.Cluster{Id: fakeClusterID, Name: "it's just your imagination", AuditLogState: expectedStates}).Return(nil)
 
 	err := suite.clusterDataStore.UpdateAuditLogFileStates(suite.hasWriteCtx, fakeClusterID, newStates)
 	suite.NoError(err)
@@ -1097,13 +1123,13 @@ func (suite *ClusterDataStoreTestSuite) TestUpdateAuditLogFileStatesErrorConditi
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
 			if c.clusterIsMissing {
-				suite.clusters.EXPECT().Get(fakeClusterID).Return((*storage.Cluster)(nil), false, nil)
+				suite.clusters.EXPECT().Get(suite.hasWriteCtx, fakeClusterID).Return((*storage.Cluster)(nil), false, nil)
 			}
 			if c.realClusterFound {
-				suite.clusters.EXPECT().Get(fakeClusterID).Return(fakeCluster, true, nil)
+				suite.clusters.EXPECT().Get(suite.hasWriteCtx, fakeClusterID).Return(fakeCluster, true, nil)
 			}
 			if c.upsertWillError {
-				suite.clusters.EXPECT().Upsert(&storage.Cluster{Id: fakeClusterID, Name: "it's just your imagination", AuditLogState: states}).Return(errors.New("test"))
+				suite.clusters.EXPECT().Upsert(suite.hasWriteCtx, &storage.Cluster{Id: fakeClusterID, Name: "it's just your imagination", AuditLogState: states}).Return(errors.New("test"))
 			}
 			err := suite.clusterDataStore.UpdateAuditLogFileStates(c.ctx, c.clusterID, c.states)
 			suite.Error(err)

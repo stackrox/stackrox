@@ -16,7 +16,7 @@ import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { convertToRestSearch } from 'utils/searchUtils';
 import { knownBackendFlags } from 'utils/featureFlags';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { policiesBasePath, policiesBasePathPatternFly } from 'routePaths';
+import { policiesBasePath } from 'routePaths';
 
 function CreatePolicyFromSearch({
     openWizard,
@@ -47,9 +47,7 @@ function CreatePolicyFromSearch({
         generatePolicyFromSearch(queryString)
             .then((response) => {
                 history.push({
-                    pathname: isPoliciesPatternFlyEnabled
-                        ? policiesBasePathPatternFly
-                        : policiesBasePath,
+                    pathname: policiesBasePath,
                     search: isPoliciesPatternFlyEnabled ? '?action=generate' : '',
                 });
 

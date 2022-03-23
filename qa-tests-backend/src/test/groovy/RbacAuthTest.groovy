@@ -118,10 +118,8 @@ spec:
     def "Verify RBAC with Role/Token combinations: #resourceAccess"() {
         when:
         "Create a test role"
-        def testRole = RoleOuterClass.Role.newBuilder()
-                .setName("Automation Role")
-                .build()
-        RoleService.createRoleWithPermissionSet(testRole, resourceAccess)
+        def testRole = RoleService.createRoleWithScopeAndPermissionSet("Automation Role",
+            UNRESTRICTED_SCOPE_ID, resourceAccess)
         assert RoleService.getRole(testRole.name)
         println "Created Role:\n${testRole}"
 
@@ -187,13 +185,11 @@ spec:
         when:
         "Create two roles for individual access"
         def roles = ["Indicator", "ProcessWhitelist"].collect {
-            def role = RoleOuterClass.Role.newBuilder()
-                    .setName("View ${it}")
-                    .build()
             Map<String, RoleOuterClass.Access> resourceToAccess = [
                     (it): RoleOuterClass.Access.READ_ACCESS
             ]
-            RoleService.createRoleWithPermissionSet(role, resourceToAccess)
+            def role = RoleService.createRoleWithScopeAndPermissionSet("View ${it}",
+                UNRESTRICTED_SCOPE_ID, resourceToAccess)
             assert RoleService.getRole(role.name)
             println "Created Role:\n${role.name}"
             role

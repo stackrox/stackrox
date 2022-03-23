@@ -36,7 +36,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 type bucketRef struct {
@@ -108,21 +107,18 @@ var (
 			category: v1.SearchCategory_NODES,
 			wrapper:  nodeIndex.Wrapper{},
 		},
+		{
+			bucket:   imageCVEEdgeDackbox.Bucket,
+			reader:   imageCVEEdgeDackbox.Reader,
+			category: v1.SearchCategory_IMAGE_VULN_EDGE,
+			wrapper:  imageCVEEdgeIndex.Wrapper{},
+		},
 	}
 )
 
 // Init runs all registered initialization functions.
 func Init(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, registry indexer.WrapperRegistry, reindexBucket, dirtyBucket, reindexValue []byte) error {
 	synchronized := concurrency.NewSignal()
-
-	if features.VulnRiskManagement.Enabled() {
-		initializedBuckets = append(initializedBuckets, bucketRef{
-			bucket:   imageCVEEdgeDackbox.Bucket,
-			reader:   imageCVEEdgeDackbox.Reader,
-			category: v1.SearchCategory_IMAGE_VULN_EDGE,
-			wrapper:  imageCVEEdgeIndex.Wrapper{},
-		})
-	}
 
 	for _, initialized := range initializedBuckets {
 		// Register the wrapper to index the objects.

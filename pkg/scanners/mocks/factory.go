@@ -36,10 +36,10 @@ func (m *MockFactory) EXPECT() *MockFactoryMockRecorder {
 }
 
 // CreateScanner mocks base method.
-func (m *MockFactory) CreateScanner(source *storage.ImageIntegration) (types.ImageScanner, error) {
+func (m *MockFactory) CreateScanner(source *storage.ImageIntegration) (types.ImageScannerWithDataSource, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateScanner", source)
-	ret0, _ := ret[0].(types.ImageScanner)
+	ret0, _ := ret[0].(types.ImageScannerWithDataSource)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

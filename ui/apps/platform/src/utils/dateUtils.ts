@@ -1,6 +1,6 @@
 import { distanceInWordsStrict, format, addDays } from 'date-fns';
 
-import dateTimeFormat, { dateFormat } from 'constants/dateTimeFormat';
+import dateTimeFormat, { dateFormat, timeFormat } from 'constants/dateTimeFormat';
 
 /**
  * Returns a formatted date and time
@@ -20,12 +20,21 @@ export function getDate(timestamp) {
     return format(timestamp, dateFormat);
 }
 
-export function getLatestDatedItemByKey(key, list = []) {
+/**
+ * Returns a formatted time
+ * @param {string | Date} timestamp - The timestamp for the date
+ * @returns {string} - returns a formatted string for the time
+ */
+export function getTime(timestamp) {
+    return format(timestamp, timeFormat);
+}
+
+export function getLatestDatedItemByKey<T>(key: string | null, list: T[] = []): T | null {
     if (!key || !list.length || !list[0][key]) {
         return null;
     }
 
-    return list.reduce((acc, item) => {
+    return list.reduce((acc: T | null, item) => {
         const nextDate = item[key] && Date.parse(item[key]);
 
         if (!acc || nextDate > Date.parse(acc[key])) {

@@ -1,9 +1,11 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { Alert, Bullseye, Spinner } from '@patternfly/react-core';
+import { Bullseye, Spinner } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
+import { policiesBasePath } from 'routePaths';
+import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
 import { getPolicy, updatePolicyDisabledState } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
@@ -54,7 +56,13 @@ const initialPolicy: Policy = {
     SORT_lifecycleStage: '', // For internal use only.
     SORT_enforcement: false, // For internal use only.
     policyVersion: '',
-    policySections: [],
+    serverPolicySections: [],
+    policySections: [
+        {
+            sectionName: 'Policy Section 1',
+            policyGroups: [],
+        },
+    ],
     mitreAttackVectors: [],
     criteriaLocked: false,
     mitreVectorsLocked: false,
@@ -82,7 +90,9 @@ function PolicyPage({
     const { wizardPolicy } = useSelector(wizardPolicyState);
 
     const [policy, setPolicy] = useState<Policy>(
-        pageAction === 'generate' && wizardPolicy ? wizardPolicy : initialPolicy
+        pageAction === 'generate' && wizardPolicy
+            ? getClientWizardPolicy(wizardPolicy)
+            : initialPolicy
     );
     const [policyError, setPolicyError] = useState<ReactElement | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -104,9 +114,12 @@ function PolicyPage({
                 .catch((error) => {
                     setPolicy(initialPolicy);
                     setPolicyError(
-                        <Alert title="Request failure for policy" variant="danger" isInline>
-                            {getAxiosErrorMessage(error)}
-                        </Alert>
+                        <NotFoundMessage
+                            title="404: We couldn't find that page"
+                            message={getAxiosErrorMessage(error)}
+                            actionText="Go to Policies"
+                            url={policiesBasePath}
+                        />
                     );
                 })
                 .finally(() => {

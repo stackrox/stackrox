@@ -1,6 +1,8 @@
 package dackbox
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dbhelper"
@@ -49,7 +51,7 @@ func NewCachedSearcher(g graph.RGraph, predicate func([]byte) (bool, error), sea
 }
 
 // Search performs a search.
-func (c *cachedSearcher) Search(unprefixedID string) (bool, error) {
+func (c *cachedSearcher) Search(_ context.Context, unprefixedID string) (bool, error) {
 	key := c.searchPathElems[0].GetKey(unprefixedID)
 
 	return c.dfs(key, c.searchPathElems[1:])

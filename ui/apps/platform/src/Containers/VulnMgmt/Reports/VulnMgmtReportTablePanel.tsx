@@ -3,6 +3,7 @@ import {
     Alert,
     AlertGroup,
     AlertVariant,
+    Button,
     ButtonVariant,
     DropdownItem,
     Divider,
@@ -20,8 +21,8 @@ import usePermissions from 'hooks/usePermissions';
 import useTableSelection from 'hooks/useTableSelection';
 import { TableColumn, SortDirection } from 'hooks/useTableSort';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
-import ButtonLink from 'Components/PatternFly/ButtonLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
+import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterResults from 'Components/PatternFly/SearchFilterResults';
 import TableCell from 'Components/PatternFly/TableCell';
 import { vulnManagementReportsPath } from 'routePaths';
@@ -292,13 +293,14 @@ function ReportingTablePanel({
                             if (canWriteReports) {
                                 actionItems.push({
                                     title: (
-                                        <ButtonLink
+                                        <Button
                                             variant={ButtonVariant.link}
                                             isInline
-                                            to={`${vulnManagementReportsPath}/${id}?action=edit`}
+                                            component={LinkShim}
+                                            href={`${vulnManagementReportsPath}/${id}?action=edit`}
                                         >
                                             Edit report
-                                        </ButtonLink>
+                                        </Button>
                                     ),
                                     onClick: () => {},
                                 });

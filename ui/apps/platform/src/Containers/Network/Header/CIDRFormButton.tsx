@@ -1,8 +1,8 @@
 import React, { ReactElement } from 'react';
-import { Box } from 'react-feather';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
+import { Button } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
@@ -38,19 +38,9 @@ function CIDRFormButton({
     }
 
     return (
-        <button
-            type="button"
-            onClick={toggleForm}
-            className="flex border-l border-dashed border-base-400 items-center px-4 font-condensed uppercase justify-center hover:bg-base-300"
-            disabled={isDisabled}
-        >
-            <Box />
-            <span className="text-left pl-2">
-                Configure
-                <br />
-                CIDR Blocks
-            </span>
-        </button>
+        <Button variant="secondary" onClick={toggleForm} isDisabled={isDisabled}>
+            CIDR Blocks
+        </Button>
     );
 }
 

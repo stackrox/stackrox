@@ -7,6 +7,7 @@ export const selectors = {
     buttons: {
         viewAll: 'button:contains("View All")',
     },
+    summaryCount: '[data-testid="summary-tile-count"]',
     sectionHeaders: {
         systemViolations: 'h2:contains("System Violations")',
         compliance: 'h2:contains("Compliance")',

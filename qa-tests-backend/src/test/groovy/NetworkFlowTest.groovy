@@ -253,7 +253,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Category([NetworkFlowVisualization])
-    def "Verify one-time connections show at first, but do not appear again"() {
+    def "Verify one-time connections show at first and are closed after the afterglow period"() {
         given:
         "Two deployments, A and B, where B communicates to A a single time during initial deployment"
         rebuildForRetries()
@@ -270,7 +270,12 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "Wait for collector update and fetch graph again to confirm connection dropped"
-        assert !waitForEdgeUpdate(edges.get(0))
+        // 65 seconds is the grace period for updates because a closed connection is subject to
+        // afterglow and the rate at which collector and sensor sends network flows (30s respectively).
+        // The afterglow period in testing is 15s so the max time for the close message to propagate is
+        // 30s in collector, 30s in sensor, plus 5s of buffer time for transit/storage.
+        // The network graph continually returns timestamp.Now() if the lastSeenTime is nil.
+        assert waitForEdgeToBeClosed(edges.get(0), 65)
     }
 
     @Category([BAT, RUNTIME, NetworkFlowVisualization])
@@ -631,6 +636,8 @@ class NetworkFlowTest extends BaseSpecification {
 
     @Category([BAT])
     def "Verify generated network policies"() {
+        // ROX-8785 - EKS cannot NetworkPolicy (RS-178)
+        Assume.assumeFalse(ClusterService.isEKS())
         given:
         "Get current state of network graph"
         NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph()
@@ -679,10 +686,10 @@ class NetworkFlowTest extends BaseSpecification {
                     null
 
             if (allowAllIngress) {
-                print "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
+                println "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
                 assert it."spec"."ingress" == [[:]]
             } else if (outNodes.size() > 0) {
-                print "${deploymentName} has incoming connections - ensure podSelectors/namespaceSelectors match " +
+                println "${deploymentName} has incoming connections - ensure podSelectors/namespaceSelectors match " +
                         "sources from graph"
                 def sourceDeploymentsFromGraph = outNodes.findAll { it.deploymentName }*.deploymentName
                 def sourceDeploymentsFromNetworkPolicy = ingressPodSelectors.collect {
@@ -692,9 +699,14 @@ class NetworkFlowTest extends BaseSpecification {
                     it."namespaceSelector"."matchLabels"."namespace.metadata.stackrox.io/name"
                 }
                 assert sourceDeploymentsFromNetworkPolicy.sort() == sourceDeploymentsFromGraph.sort()
+                if (!deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)) {
+                    println "Deployed namespaces do not contain all namespaces found in the network policy"
+                    println "The network policy:"
+                    print modification
+                }
                 assert deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)
             } else {
-                print "${deploymentName} has no incoming connections - ensure ingress spec is empty"
+                println "${deploymentName} has no incoming connections - ensure ingress spec is empty"
                 assert it."spec"."ingress" == [] || it."spec"."ingress" == null
             }
         }
@@ -855,6 +867,25 @@ class NetworkFlowTest extends BaseSpecification {
         }
 
         return match
+    }
+
+    private waitForEdgeToBeClosed(Edge edge, int timeoutSeconds = 65) {
+        int intervalSeconds = 1
+        int waitTime
+        def prevEdge = edge
+        for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
+            def graph = NetworkGraphService.getNetworkGraph()
+            def newEdge = NetworkGraphUtil.findEdges(graph, edge.sourceID, edge.targetID)?.find { true }
+
+            // If lastActiveTimestamp is equal to the previous edges lastActiveTimestamp then the edge has been closed
+            if (newEdge != null && newEdge.lastActiveTimestamp == prevEdge.lastActiveTimestamp) {
+                return true
+            }
+            prevEdge = newEdge
+            sleep intervalSeconds * 1000
+        }
+        println "Edge was never closed"
+        return false
     }
 
     private waitForEdgeUpdate(Edge edge, int timeoutSeconds = 60, float addSecondsToEdgeTimestamp = 0.2) {

@@ -7,11 +7,11 @@ import { LifecycleStage } from '../../types/violationTypes';
 
 function getEnforcementExplanation(lifecycleStage: LifecycleStage, message: string) {
     if (lifecycleStage === LIFECYCLE_STAGES.DEPLOY) {
-        return `Deployment data was evaluated against this StackRox policy. ${message}`;
+        return `Deployment data was evaluated against this security policy. ${message}`;
     }
 
     if (lifecycleStage === LIFECYCLE_STAGES.RUNTIME) {
-        return `Runtime data was evaluated against this StackRox policy. ${message}`;
+        return `Runtime data was evaluated against this security policy. ${message}`;
     }
 
     return '';

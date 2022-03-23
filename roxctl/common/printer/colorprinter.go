@@ -57,7 +57,7 @@ func DefaultColorPrinter() ColorfulPrinter {
 	c := &colorPrinter{
 		err:             color.New(color.FgRed, color.Bold).FprintfFunc(),
 		warn:            color.New(color.FgHiMagenta).FprintfFunc(),
-		info:            color.New(color.FgBlue, color.Faint).FprintfFunc(),
+		info:            color.New(color.FgHiBlue).FprintfFunc(),
 		bold:            color.New(color.Bold).FprintfFunc(),
 		colorKeyWordMap: wordToColorfulWord,
 	}

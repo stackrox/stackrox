@@ -6,10 +6,8 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -74,14 +72,6 @@ func TestGetCVEEdgeQuery(t *testing.T) {
 }
 
 func TestSnoozedQueryHandler(t *testing.T) {
-	env := envisolator.NewEnvIsolator(t)
-	env.Setenv(features.VulnRiskManagement.EnvVar(), "true")
-	defer env.RestoreAll()
-
-	if !features.VulnRiskManagement.Enabled() {
-		t.Skip()
-	}
-
 	scopedCtx := scoped.Context(context.Background(), scoped.Scope{
 		ID:    "img1",
 		Level: v1.SearchCategory_IMAGES,

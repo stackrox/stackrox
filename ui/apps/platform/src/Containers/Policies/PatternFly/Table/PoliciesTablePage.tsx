@@ -11,7 +11,7 @@ import {
 } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
-import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
+import { policiesBasePath } from 'routePaths';
 import {
     getPolicies,
     reassessPolicies,
@@ -211,6 +211,7 @@ function PoliciesTablePage({
                         variant={AlertVariant[variant]}
                         title={title}
                         timeout={4000}
+                        onTimeout={() => removeToast(key)}
                         actionClose={
                             <AlertActionCloseButton
                                 title={title}

@@ -51,6 +51,14 @@ func EnsureValidAccessScopeID(id string) string {
 	return accessScopeIDPrefix + id
 }
 
+// ValidateAccessScopeID returns an error if the scope ID prefix is not correct.
+func ValidateAccessScopeID(scope *storage.SimpleAccessScope) error {
+	if !strings.HasPrefix(scope.GetId(), accessScopeIDPrefix) {
+		return errors.Errorf("id field must be in '%s*' format", accessScopeIDPrefix)
+	}
+	return nil
+}
+
 // ValidateRole checks whether the supplied protobuf message is a valid role.
 func ValidateRole(role *storage.Role) error {
 	var multiErr error
@@ -60,16 +68,20 @@ func ValidateRole(role *storage.Role) error {
 		multiErr = multierror.Append(multiErr, err)
 	}
 	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
-		err := errors.Errorf("role name=%q: globalAccess should not be set, but is set to %s", role.GetName(), role.GetGlobalAccess())
+		err := errors.New("role global_access field must be 'NO_ACCESS' or unset")
 		multiErr = multierror.Append(multiErr, err)
 	}
 
 	if len(role.GetResourceToAccess()) != 0 {
-		err := errors.Errorf("role name=%q: must not have resourceToAccess, use a permission set instead", role.GetName())
+		err := errors.New("role must not set resource_to_access field")
 		multiErr = multierror.Append(multiErr, err)
 	}
 	if role.GetPermissionSetId() == "" {
 		err := errors.New("role permission_set_id field must be set")
+		multiErr = multierror.Append(multiErr, err)
+	}
+	if role.GetAccessScopeId() == "" {
+		err := errors.New("role access_scope_id field must be set")
 		multiErr = multierror.Append(multiErr, err)
 	}
 	return multiErr
@@ -101,8 +113,8 @@ func ValidatePermissionSet(ps *storage.PermissionSet) error {
 func ValidateSimpleAccessScope(scope *storage.SimpleAccessScope) error {
 	var multiErr error
 
-	if !strings.HasPrefix(scope.GetId(), accessScopeIDPrefix) {
-		multiErr = multierror.Append(multiErr, errors.Errorf("id field must be in '%s*' format", accessScopeIDPrefix))
+	if err := ValidateAccessScopeID(scope); err != nil {
+		multiErr = multierror.Append(multiErr, err)
 	}
 	if scope.GetName() == "" {
 		multiErr = multierror.Append(multiErr, errors.New("name field must be set"))
@@ -110,7 +122,7 @@ func ValidateSimpleAccessScope(scope *storage.SimpleAccessScope) error {
 
 	err := ValidateSimpleAccessScopeRules(scope.GetRules())
 	if err != nil {
-		multiErr = multierror.Append(err)
+		multiErr = multierror.Append(multiErr, err)
 	}
 
 	return multiErr

@@ -250,7 +250,7 @@ function AuthProviderForm({
 
     return (
         <Form>
-            <Toolbar inset={{ default: 'insetNone' }}>
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">{formTitle}</Title>

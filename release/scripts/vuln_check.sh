@@ -19,12 +19,12 @@ function compare_fixable_vulns {
   local image_name=$1
   local image_tag=$2
 
-  echo "Fetching current image id from quay for $image_name:$image_tag"
+  echo "Fetching current image SHA from quay for $image_name:$image_tag"
   img_data="$(quay_curl "${image_name}/tag/?specificTag=${image_tag}" | jq -r '.tags | first')"
   if [[ "$(jq -r '.is_manifest_list' <<<"$img_data")" == "true" ]]; then
     img_data="$(quay_curl "${image_name}/tag/?specificTag=${image_tag}-amd64" | jq -r '.tags | first')"
   fi
-  CURRENT_IMAGE="$(jq -r '.image_id' <<<"$img_data")"
+  CURRENT_IMAGE="$(jq -r '.manifest_digest' <<<"$img_data")"
   if [[ -z "$CURRENT_IMAGE" || "$CURRENT_IMAGE" == "null" ]]; then
     echo >&2 "Tag ${image_tag} could not be found for image ${image_name}"
     FAIL_SCRIPT=true
@@ -36,11 +36,11 @@ function compare_fixable_vulns {
   local scan_present
   local count=1
 
-  echo "Getting scan status"
-  scan_present=$(quay_curl "${image_name}/image/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.status')
+  echo "Getting scan status for ${image_name}"
+  scan_present=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.status')
   until [ "$scan_present" = "scanned" ] || [ "$count" -gt 100 ]; do
     echo "Waiting for scan to complete..."
-    scan_present=$(quay_curl "${image_name}/image/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.status')
+    scan_present=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.status')
     count=$((count+1))
     sleep 15
   done
@@ -50,8 +50,8 @@ function compare_fixable_vulns {
     echo "${image_name}:${image_tag} scan never completed. Check Quay website."
     FAIL_SCRIPT=true
   else
-    echo "Trying to get any fixable vulns for the scanned image"
-    CURRENT_FIXABLE=$(quay_curl "${image_name}/image/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.data.Layer.Features | .[] | select(.Vulnerabilities != null) | .Vulnerabilities | .[] | select(.FixedBy != null) | .Name')
+    echo "Trying to get any fixable vulns for ${image_name}"
+    CURRENT_FIXABLE=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.data.Layer.Features | .[] | select(.Vulnerabilities != null) | .Vulnerabilities | .[] | select(.FixedBy != null) | .Name')
 
     # fail the check if fixable vulns are found that are not allowed
     if [[ -n "$CURRENT_FIXABLE" ]]; then

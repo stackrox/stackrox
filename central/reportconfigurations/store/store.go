@@ -1,15 +1,19 @@
 package store
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"context"
+
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // Store provides access and update functions for report configurations.
 //go:generate mockgen-wrapper
 type Store interface {
-	Count() (int, error)
-	Get(id string) (*storage.ReportConfiguration, bool, error)
-	GetMany(ids []string) ([]*storage.ReportConfiguration, []int, error)
-	Walk(func(reportConfig *storage.ReportConfiguration) error) error
+	Count(ctx context.Context) (int, error)
+	Get(ctx context.Context, id string) (*storage.ReportConfiguration, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.ReportConfiguration, []int, error)
+	Walk(context.Context, func(reportConfig *storage.ReportConfiguration) error) error
 
-	Upsert(reportConfig *storage.ReportConfiguration) error
-	Delete(id string) error
+	Upsert(ctx context.Context, reportConfig *storage.ReportConfiguration) error
+	Delete(ctx context.Context, id string) error
 }

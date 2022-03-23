@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
@@ -335,16 +334,12 @@ func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timesta
 
 	// Update the image links in the graph iff the image upsert has updated scan.
 	if scanUpdated {
-		if features.VulnRiskManagement.Enabled() {
-			childKeys := make([][]byte, 0, len(parts.imageCVEEdges))
-			for cve := range parts.imageCVEEdges {
-				childKeys = append(childKeys, cveDackBox.BucketHandler.GetKey(cve))
-			}
-			childKeys = append(childKeys, componentKeys...)
-			dackTxn.Graph().SetRefs(imageDackBox.KeyFunc(parts.image), childKeys)
-		} else {
-			dackTxn.Graph().SetRefs(imageDackBox.KeyFunc(parts.image), componentKeys)
+		childKeys := make([][]byte, 0, len(parts.imageCVEEdges))
+		for cve := range parts.imageCVEEdges {
+			childKeys = append(childKeys, cveDackBox.BucketHandler.GetKey(cve))
 		}
+		childKeys = append(childKeys, componentKeys...)
+		dackTxn.Graph().SetRefs(imageDackBox.KeyFunc(parts.image), childKeys)
 	}
 	return dackTxn.Commit()
 }

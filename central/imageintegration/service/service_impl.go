@@ -261,7 +261,7 @@ func (s *serviceImpl) testScannerIntegration(integration *storage.ImageIntegrati
 	if err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
-	if err := scanner.Test(); err != nil {
+	if err := scanner.GetScanner().Test(); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	return nil
@@ -272,7 +272,7 @@ func (s *serviceImpl) testNodeScannerIntegration(integration *storage.NodeIntegr
 	if err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
-	if err := scanner.TestNodeScanner(); err != nil {
+	if err := scanner.GetNodeScanner().TestNodeScanner(); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 	return nil
@@ -290,17 +290,6 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 		errorList.AddStrings("integrations require a category")
 	}
 
-	clustersRequested := request.GetClusters()
-	existingClusters, err := s.clusterDatastore.GetClusters(ctx)
-	if err != nil {
-		return err
-	}
-	for _, req := range clustersRequested {
-		if !s.clusterExists(req, existingClusters) {
-			errorList.AddStringf("cluster %s does not exist", req)
-		}
-	}
-
 	// Validate if there is a name. If there isn't, then skip the DB name check by returning the accumulated errors
 	if request.GetName() == "" {
 		errorList.AddString("name for integration is required")
@@ -315,15 +304,6 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 		errorList.AddStringf("integration with name %q already exists", request.GetName())
 	}
 	return errorList.ToError()
-}
-
-func (s *serviceImpl) clusterExists(name string, clusters []*storage.Cluster) bool {
-	for _, c := range clusters {
-		if name == c.GetName() {
-			return true
-		}
-	}
-	return false
 }
 
 func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context, updateRequest *v1.UpdateImageIntegrationRequest) error {

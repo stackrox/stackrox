@@ -85,7 +85,7 @@ func GetDefaultImage() *Image {
 func (i *Image) LoadFileContents(filename string) (string, error) {
 	content, err := fs.ReadFile(AssetFS, filename)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "could not read file %q", filename)
 	}
 	return string(content), nil
 }
@@ -97,7 +97,8 @@ func (i *Image) ReadFileAndTemplate(pathToFile string) (*template.Template, erro
 	if err != nil {
 		return nil, err
 	}
-	return helmTemplate.InitTemplate(templatePath).Parse(contents)
+	parse, err := helmTemplate.InitTemplate(templatePath).Parse(contents)
+	return parse, errors.Wrapf(err, "could not render template %q with file %q", templatePath, pathToFile)
 }
 
 // GetChartTemplate loads the chart based on the given prefix.
@@ -217,7 +218,7 @@ func (i *Image) getFiles(prefixPath string) ([]*loader.BufferedFile, error) {
 
 		data, err := fs.ReadFile(i.fs, p)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "could not read file %q", p)
 		}
 
 		newPath := strings.TrimPrefix(p, prefixPath+"/")
@@ -228,7 +229,7 @@ func (i *Image) getFiles(prefixPath string) ([]*loader.BufferedFile, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "errors when reading dir %q", prefixPath)
 	}
 
 	return files, nil
@@ -255,7 +256,8 @@ func (i *Image) GetSensorChartTemplate() (*helmTemplate.ChartTemplate, error) {
 		return nil, errors.Wrap(err, "fetching sensor chart files from embedded filesystem")
 	}
 
-	return helmTemplate.Load(chartTplFiles)
+	load, err := helmTemplate.Load(chartTplFiles)
+	return load, errors.Wrap(err, "could not load chart template")
 }
 
 func (i *Image) getSensorChart(values *charts.MetaValues, certs *sensor.Certs) (*chart.Chart, error) {
@@ -285,7 +287,8 @@ func (i *Image) getSensorChart(values *charts.MetaValues, certs *sensor.Certs) (
 		renderedFiles = append(renderedFiles, scriptFiles...)
 	}
 
-	return loader.LoadFiles(renderedFiles)
+	files, err := loader.LoadFiles(renderedFiles)
+	return files, errors.Wrap(err, "could not load files")
 }
 
 func (i *Image) addScripts(values *charts.MetaValues) ([]*loader.BufferedFile, error) {
@@ -304,15 +307,15 @@ func (i *Image) scripts(values *charts.MetaValues, filenameMap map[string]string
 	for srcFile, dstFile := range filenameMap {
 		fileData, err := AssetFS.ReadFile(srcFile)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "could not read file: %q", srcFile)
 		}
 		t, err := helmTemplate.InitTemplate(srcFile).Parse(string(fileData))
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "could not render template: %q", srcFile)
 		}
 		data, err := templates.ExecuteToBytes(t, values)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "could not execute template")
 		}
 		chartFiles = append(chartFiles, &loader.BufferedFile{
 			Name: dstFile,

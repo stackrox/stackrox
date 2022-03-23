@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
-import { Brand, PageHeader } from '@patternfly/react-core';
+import { PageHeader } from '@patternfly/react-core';
 
-import rhacsLogo from 'images/RHACS-Logo.svg';
+import BrandLogo from 'Components/PatternFly/BrandLogo';
 import MastheadToolbar from './MastheadToolbar';
 
 function Masthead(): ReactElement {
@@ -9,7 +9,7 @@ function Masthead(): ReactElement {
         <PageHeader
             className="ignore-react-onclickoutside theme-dark"
             showNavToggle
-            logo={<Brand src={rhacsLogo} alt="Red Hat Advanced Cluster Security" />}
+            logo={<BrandLogo />}
             headerTools={<MastheadToolbar />}
         />
     );

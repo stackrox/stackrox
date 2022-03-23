@@ -28,7 +28,7 @@ var (
 			"/v1.ClustersService/GetClusters",
 			"/v1.ClustersService/GetCluster",
 			"/v1.ClustersService/GetKernelSupportAvailable",
-			"/v1.ClustersService/GetClusterDefaults",
+			"/v1.ClustersService/GetClusterDefaultValues",
 		},
 		user.With(permissions.Modify(resources.Cluster)): {
 			"/v1.ClustersService/PostCluster",
@@ -134,7 +134,7 @@ func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByI
 	return &v1.Empty{}, nil
 }
 
-// Deprecated: Use GetClusterDefaults instead.
+// Deprecated: Use GetClusterDefaultValues instead.
 func (s *serviceImpl) GetKernelSupportAvailable(ctx context.Context, _ *v1.Empty) (*v1.KernelSupportAvailableResponse, error) {
 	anyAvailable, err := s.probeSources.AnyAvailable(ctx)
 	if err != nil {
@@ -146,7 +146,7 @@ func (s *serviceImpl) GetKernelSupportAvailable(ctx context.Context, _ *v1.Empty
 	return result, nil
 }
 
-func (s *serviceImpl) GetClusterDefaults(ctx context.Context, _ *v1.Empty) (*v1.ClusterDefaultsResponse, error) {
+func (s *serviceImpl) GetClusterDefaultValues(ctx context.Context, _ *v1.Empty) (*v1.ClusterDefaultsResponse, error) {
 	kernelSupport, err := s.probeSources.AnyAvailable(ctx)
 	if err != nil {
 		return nil, err

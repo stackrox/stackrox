@@ -1,13 +1,18 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore/internal/commentsstore"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
+	"github.com/stackrox/rox/central/alert/datastore/internal/store"
+	"github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -18,9 +23,17 @@ var (
 )
 
 func initialize() {
-	storage := rocksdb.NewFullStore(globaldb.GetRocksDB())
+	var storage store.Store
+	var indexer index.Indexer
+
+	if features.PostgresDatastore.Enabled() {
+		storage = store.NewFullStore(postgres.New(context.TODO(), globaldb.GetPostgres()))
+		indexer = postgres.NewIndexer(globaldb.GetPostgres())
+	} else {
+		storage = store.NewFullStore(rocksdb.New(globaldb.GetRocksDB()))
+		indexer = index.New(globalindex.GetAlertIndex())
+	}
 	commentsStorage := commentsstore.New(globaldb.GetGlobalDB())
-	indexer := index.New(globalindex.GetAlertIndex())
 	searcher := search.New(storage, indexer)
 	var err error
 	soleInstance, err = New(storage, commentsStorage, indexer, searcher)

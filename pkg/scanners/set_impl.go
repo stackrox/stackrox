@@ -13,22 +13,22 @@ type setImpl struct {
 	lock sync.RWMutex
 
 	factory      Factory
-	integrations map[string]types.ImageScanner
+	integrations map[string]types.ImageScannerWithDataSource
 }
 
 var registryDependentScanners = set.NewFrozenStringSet("clair", "clairify")
 
 // GetAll returns the set of integrations that are active.
-func (e *setImpl) GetAll() []types.ImageScanner {
+func (e *setImpl) GetAll() []types.ImageScannerWithDataSource {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 
-	integrations := make([]types.ImageScanner, 0, len(e.integrations))
+	integrations := make([]types.ImageScannerWithDataSource, 0, len(e.integrations))
 	for _, i := range e.integrations {
 		integrations = append(integrations, i)
 	}
 	sort.Slice(integrations, func(i, j int) bool {
-		return !registryDependentScanners.Contains(integrations[i].Type())
+		return !registryDependentScanners.Contains(integrations[i].GetScanner().Type())
 	})
 	return integrations
 }
@@ -46,7 +46,7 @@ func (e *setImpl) Clear() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	e.integrations = make(map[string]types.ImageScanner)
+	e.integrations = make(map[string]types.ImageScannerWithDataSource)
 }
 
 // UpdateImageIntegration updates the integration with the matching id to a new configuration.

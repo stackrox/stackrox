@@ -55,7 +55,7 @@ func New(storage store.Store, commentsStorage commentsStore.Store, indexer index
 		searcher:        searcher,
 		keyedMutex:      concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
-	if err := ds.buildIndex(); err != nil {
+	if err := ds.buildIndex(context.TODO()); err != nil {
 		return nil, err
 	}
 	return ds, nil
@@ -63,7 +63,7 @@ func New(storage store.Store, commentsStorage commentsStore.Store, indexer index
 
 // NewWithDb returns a new soleInstance of DataStore using the input indexer, and searcher.
 func NewWithDb(db *rocksdbBase.RocksDB, commentsDB *bolt.DB, bIndex bleve.Index) DataStore {
-	store := rocksdb.NewFullStore(db)
+	store := store.NewFullStore(rocksdb.New(db))
 	commentsStore := commentsStore.New(commentsDB)
 	indexer := index.New(bIndex)
 	searcher := search.New(store, indexer)

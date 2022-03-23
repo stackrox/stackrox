@@ -7,7 +7,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -122,16 +121,11 @@ func handleSnoozedCVEQuery(ctx context.Context, q *v1.Query) *v1.Query {
 		if ok && mfQ.MatchFieldQuery.GetField() == search.CVESuppressed.String() && mfQ.MatchFieldQuery.GetValue() == "true" {
 			searchBySuppressed = true
 		}
-		if features.VulnRiskManagement.Enabled() {
-			if ok && mfQ.MatchFieldQuery.GetField() == search.VulnerabilityState.String() {
-				searchByVulnState = true
-			}
+		if ok && mfQ.MatchFieldQuery.GetField() == search.VulnerabilityState.String() {
+			searchByVulnState = true
 		}
 	})
 
-	if !features.VulnRiskManagement.Enabled() {
-		return q
-	}
 	if !searchBySuppressed || searchByVulnState {
 		return q
 	}

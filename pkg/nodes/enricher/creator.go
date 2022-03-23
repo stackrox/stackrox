@@ -7,9 +7,15 @@ import (
 	"github.com/stackrox/rox/pkg/scanners/types"
 )
 
+var _ types.NodeScannerWithDataSource = (*nodeScannerWithDataSource)(nil)
+
 type nodeScannerWithDataSource struct {
-	types.NodeScanner
-	datasource *storage.DataSource
+	nodeScanner types.NodeScanner
+	datasource  *storage.DataSource
+}
+
+func (n *nodeScannerWithDataSource) GetNodeScanner() types.NodeScanner {
+	return n.nodeScanner
 }
 
 func (n *nodeScannerWithDataSource) DataSource() *storage.DataSource {
@@ -27,7 +33,7 @@ func (e *enricherImpl) CreateNodeScanner(source *storage.NodeIntegration) (types
 		return nil, err
 	}
 	return &nodeScannerWithDataSource{
-		NodeScanner: scanner,
+		nodeScanner: scanner,
 		datasource: &storage.DataSource{
 			Id:   source.GetId(),
 			Name: source.GetName(),

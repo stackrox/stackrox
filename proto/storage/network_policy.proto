@@ -6,6 +6,7 @@ option java_package = "io.stackrox.proto.storage";
 import "google/protobuf/timestamp.proto";
 
 import "storage/labels.proto";
+import "gogoproto/gogo.proto";
 
 package storage;
 
@@ -95,7 +96,7 @@ message NetworkPolicyApplicationUndoRecord {
 }
 
 message NetworkPolicyApplicationUndoDeploymentRecord {
-    string deployment_id                            = 1;
+    string deployment_id                            = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     // For SAC
     string cluster_id                               = 2;
     string namespace                                = 3;

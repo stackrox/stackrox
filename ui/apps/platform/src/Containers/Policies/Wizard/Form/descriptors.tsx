@@ -115,6 +115,8 @@ const memoryResource = (label: string): GroupDescriptor => ({
     canBooleanLogic: true,
 });
 
+export const imageSigningCriteriaName = 'Image Signature Verified By';
+
 // A form descriptor for every option (key) on the policy criteria form page.
 /*
     e.g.
@@ -174,14 +176,27 @@ export type BaseDescriptor = {
     disabled?: boolean;
 };
 
-export type DescriptorType = 'group' | 'multiselect' | 'number' | 'radioGroup' | 'select' | 'text';
+export type DescriptorType =
+    | 'group'
+    | 'multiselect'
+    | 'number'
+    | 'radioGroup'
+    | 'radioGroupString'
+    | 'select'
+    | 'text'
+    | 'signaturePolicyCriteria';
 
 export type Descriptor =
     | GroupDescriptor
     | NumberDescriptor
     | RadioGroupDescriptor
     | SelectDescriptor
-    | TextDescriptor;
+    | TextDescriptor
+    | SignatureDescriptor;
+
+export type SignatureDescriptor = {
+    type: 'signaturePolicyCriteria';
+} & BaseDescriptor;
 
 export type GroupDescriptor = {
     type: 'group';
@@ -195,7 +210,7 @@ export type NumberDescriptor = {
 } & BaseDescriptor;
 
 export type RadioGroupDescriptor = {
-    type: 'radioGroup';
+    type: 'radioGroup' | 'radioGroupString';
     radioButtons: { text: string; value: string | boolean }[];
     defaultValue?: string | boolean;
     reverse?: boolean;
@@ -212,6 +227,18 @@ export type TextDescriptor = {
     type: 'text';
     placeholder?: string;
 } & BaseDescriptor;
+
+// TODO: merge with policyConfigurationDescriptor after ROX_VERIFY_IMAGE_SIGNATURE enabled by default
+export const imageSigningCriteriaDescriptor: SignatureDescriptor = {
+    label: 'Trust image signers',
+    name: imageSigningCriteriaName,
+    shortName: 'Trust image signers',
+    longName: 'Trust image signers',
+    negatedName: 'Do not trust image signers',
+    category: policyCriteriaCategories.IMAGE_REGISTRY,
+    type: 'signaturePolicyCriteria',
+    canBooleanLogic: true,
+};
 
 export const policyConfigurationDescriptor: Descriptor[] = [
     {
@@ -634,7 +661,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         shortName: 'Exposed node port',
         negatedName: `Exposed node port doesn't match`,
         category: policyCriteriaCategories.NETWORKING,
-        type: 'number',
+        type: 'text',
         placeholder: '22',
         canBooleanLogic: true,
     },
@@ -700,7 +727,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         shortName: 'Seccomp profile type',
         negatedName: 'Seccomp profile type is not',
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
-        type: 'radioGroup',
+        type: 'radioGroupString',
         radioButtons: Object.keys(seccompProfileTypeLabels).map((key) => ({
             text: seccompProfileTypeLabels[key],
             value: key,
@@ -1099,6 +1126,7 @@ export const auditLogDescriptor: Descriptor[] = [
         shortName: 'Kubernetes resource',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'select',
+        placeholder: 'Select a resource',
         options: [
             {
                 label: 'Config maps',
@@ -1117,6 +1145,7 @@ export const auditLogDescriptor: Descriptor[] = [
         shortName: 'Kubernetes API verb',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'select',
+        placeholder: 'Select an API verb',
         options: APIVerbs,
         canBooleanLogic: false,
     },

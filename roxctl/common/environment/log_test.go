@@ -33,7 +33,7 @@ func TestLogger(t *testing.T) {
 		{
 			name:   "Info",
 			fun:    func(l Logger) { l.InfofLn(in) },
-			errOut: "\x1b[34;2mINFO:\t(TOTAL: 0, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0)\n\x1b[0m",
+			errOut: "\x1b[94mINFO:\t(TOTAL: 0, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0)\n\x1b[0m",
 		},
 		{
 			name:   "Warn",

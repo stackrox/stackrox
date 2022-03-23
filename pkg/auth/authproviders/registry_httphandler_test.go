@@ -206,7 +206,7 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationTestModeUserWithRo
 	testAuthProviderBackendFactory.registerProcessResponse(dummyProviderType, clientState, nil)
 	authRsp := generateAuthResponse(testUserWithAdminRole, nil)
 	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
-	adminRole := roletest.NewResolvedRoleWithGlobalScope(testUserWithAdminRole, nil)
+	adminRole := roletest.NewResolvedRoleWithDenyAll(testUserWithAdminRole, nil)
 	rolemapping := make(map[string][]perm.ResolvedRole)
 	rolemapping[testUserWithAdminRole] = []perm.ResolvedRole{adminRole}
 	testRoleMapper.registerRoleMapping(rolemapping)
@@ -251,7 +251,7 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationIssuesTokenForUser
 	testAuthProviderBackendFactory.registerProcessResponse(dummyProviderType, clientState, nil)
 	authRsp := generateAuthResponse(testUserWithAdminRole, nil)
 	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
-	adminRole := roletest.NewResolvedRoleWithGlobalScope(testUserWithAdminRole, nil)
+	adminRole := roletest.NewResolvedRoleWithDenyAll(testUserWithAdminRole, nil)
 	rolemapping := make(map[string][]perm.ResolvedRole)
 	rolemapping[testUserWithAdminRole] = []perm.ResolvedRole{adminRole}
 	testRoleMapper.registerRoleMapping(rolemapping)

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
@@ -21,24 +22,30 @@ const (
 )
 
 type listenerImpl struct {
-	client  client.Interface
-	eventsC chan *central.MsgFromSensor
-	stopSig concurrency.Signal
-
-	configHandler config.Handler
-	detector      detector.Detector
+	client             client.Interface
+	eventsC            chan *central.MsgFromSensor
+	stopSig            concurrency.Signal
+	credentialsManager awscredentials.RegistryCredentialsManager
+	configHandler      config.Handler
+	detector           detector.Detector
 }
 
 func (k *listenerImpl) Start() error {
 	// Patch namespaces to include labels
 	patchNamespaces(k.client.Kubernetes(), &k.stopSig)
-
+	// Start credentials manager.
+	if k.credentialsManager != nil {
+		k.credentialsManager.Start()
+	}
 	// Start handling resource events.
 	go k.handleAllEvents()
 	return nil
 }
 
 func (k *listenerImpl) Stop(_ error) {
+	if k.credentialsManager != nil {
+		k.credentialsManager.Stop()
+	}
 	k.stopSig.Signal()
 }
 

@@ -29,6 +29,7 @@ var (
 		user.With(permissions.View(resources.VulnerabilityReports)): {
 			"/v1.ReportConfigurationService/GetReportConfigurations",
 			"/v1.ReportConfigurationService/GetReportConfiguration",
+			"/v1.ReportConfigurationService/CountReportConfigurations",
 		},
 		user.With(permissions.Modify(resources.VulnerabilityReports), permissions.View(resources.Notifier), permissions.View(resources.Role)): {
 			"/v1.ReportConfigurationService/PostReportConfiguration",
@@ -123,6 +124,19 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *v1.Reso
 		return &v1.Empty{}, err
 	}
 	return &v1.Empty{}, s.manager.Remove(ctx, id.GetId())
+}
+
+func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *v1.RawQuery) (*v1.CountReportConfigurationsResponse, error) {
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+	}
+
+	numReportConfigs, err := s.reportConfigStore.Count(ctx, parsedQuery)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.CountReportConfigurationsResponse{Count: int32(numReportConfigs)}, nil
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {

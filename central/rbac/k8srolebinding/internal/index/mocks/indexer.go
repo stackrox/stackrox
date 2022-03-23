@@ -37,32 +37,32 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddK8sRoleBinding mocks base method.
-func (m *MockIndexer) AddK8sRoleBinding(k8srolebinding *storage.K8SRoleBinding) error {
+// AddK8SRoleBinding mocks base method.
+func (m *MockIndexer) AddK8SRoleBinding(k8srolebinding *storage.K8SRoleBinding) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddK8sRoleBinding", k8srolebinding)
+	ret := m.ctrl.Call(m, "AddK8SRoleBinding", k8srolebinding)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddK8sRoleBinding indicates an expected call of AddK8sRoleBinding.
-func (mr *MockIndexerMockRecorder) AddK8sRoleBinding(k8srolebinding interface{}) *gomock.Call {
+// AddK8SRoleBinding indicates an expected call of AddK8SRoleBinding.
+func (mr *MockIndexerMockRecorder) AddK8SRoleBinding(k8srolebinding interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddK8sRoleBinding", reflect.TypeOf((*MockIndexer)(nil).AddK8sRoleBinding), k8srolebinding)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddK8SRoleBinding", reflect.TypeOf((*MockIndexer)(nil).AddK8SRoleBinding), k8srolebinding)
 }
 
-// AddK8sRoleBindings mocks base method.
-func (m *MockIndexer) AddK8sRoleBindings(k8srolebindings []*storage.K8SRoleBinding) error {
+// AddK8SRoleBindings mocks base method.
+func (m *MockIndexer) AddK8SRoleBindings(k8srolebindings []*storage.K8SRoleBinding) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddK8sRoleBindings", k8srolebindings)
+	ret := m.ctrl.Call(m, "AddK8SRoleBindings", k8srolebindings)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddK8sRoleBindings indicates an expected call of AddK8sRoleBindings.
-func (mr *MockIndexerMockRecorder) AddK8sRoleBindings(k8srolebindings interface{}) *gomock.Call {
+// AddK8SRoleBindings indicates an expected call of AddK8SRoleBindings.
+func (mr *MockIndexerMockRecorder) AddK8SRoleBindings(k8srolebindings interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddK8sRoleBindings", reflect.TypeOf((*MockIndexer)(nil).AddK8sRoleBindings), k8srolebindings)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddK8SRoleBindings", reflect.TypeOf((*MockIndexer)(nil).AddK8SRoleBindings), k8srolebindings)
 }
 
 // Count mocks base method.
@@ -85,32 +85,32 @@ func (mr *MockIndexerMockRecorder) Count(q interface{}, opts ...interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
 }
 
-// DeleteK8sRoleBinding mocks base method.
-func (m *MockIndexer) DeleteK8sRoleBinding(id string) error {
+// DeleteK8SRoleBinding mocks base method.
+func (m *MockIndexer) DeleteK8SRoleBinding(id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteK8sRoleBinding", id)
+	ret := m.ctrl.Call(m, "DeleteK8SRoleBinding", id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteK8sRoleBinding indicates an expected call of DeleteK8sRoleBinding.
-func (mr *MockIndexerMockRecorder) DeleteK8sRoleBinding(id interface{}) *gomock.Call {
+// DeleteK8SRoleBinding indicates an expected call of DeleteK8SRoleBinding.
+func (mr *MockIndexerMockRecorder) DeleteK8SRoleBinding(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteK8sRoleBinding", reflect.TypeOf((*MockIndexer)(nil).DeleteK8sRoleBinding), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteK8SRoleBinding", reflect.TypeOf((*MockIndexer)(nil).DeleteK8SRoleBinding), id)
 }
 
-// DeleteK8sRoleBindings mocks base method.
-func (m *MockIndexer) DeleteK8sRoleBindings(ids []string) error {
+// DeleteK8SRoleBindings mocks base method.
+func (m *MockIndexer) DeleteK8SRoleBindings(ids []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteK8sRoleBindings", ids)
+	ret := m.ctrl.Call(m, "DeleteK8SRoleBindings", ids)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteK8sRoleBindings indicates an expected call of DeleteK8sRoleBindings.
-func (mr *MockIndexerMockRecorder) DeleteK8sRoleBindings(ids interface{}) *gomock.Call {
+// DeleteK8SRoleBindings indicates an expected call of DeleteK8SRoleBindings.
+func (mr *MockIndexerMockRecorder) DeleteK8SRoleBindings(ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteK8sRoleBindings", reflect.TypeOf((*MockIndexer)(nil).DeleteK8sRoleBindings), ids)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteK8SRoleBindings", reflect.TypeOf((*MockIndexer)(nil).DeleteK8SRoleBindings), ids)
 }
 
 // MarkInitialIndexingComplete mocks base method.

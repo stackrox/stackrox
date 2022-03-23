@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Flex, FlexItem, Card, CardBody, Title } from '@patternfly/react-core';
+import { Alert, Flex, FlexItem, Card, CardBody, Title, Divider } from '@patternfly/react-core';
 
 import { fetchDeployment } from 'services/DeploymentsService';
 import { portExposureLabels } from 'messages/common';
@@ -74,7 +74,6 @@ const DeploymentDetails = ({ deployment }) => {
 
     return (
         <Flex
-            className="pf-u-mt-md"
             direction={{ default: 'column' }}
             flex={{ default: 'flex_1' }}
             data-testid="deployment-details"
@@ -90,7 +89,10 @@ const DeploymentDetails = ({ deployment }) => {
             <Flex flex={{ default: 'flex_1' }}>
                 <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
                     <FlexItem>
-                        <Title headingLevel="h3">Overview</Title>
+                        <Title headingLevel="h3" className="pf-u-mb-md">
+                            Overview
+                        </Title>
+                        <Divider component="div" />
                     </FlexItem>
                     <FlexItem>
                         <Card isFlat data-testid="deployment-overview">
@@ -100,7 +102,10 @@ const DeploymentDetails = ({ deployment }) => {
                         </Card>
                     </FlexItem>
                     <FlexItem>
-                        <Title headingLevel="h3">Port configuration</Title>
+                        <Title headingLevel="h3" className="pf-u-my-md">
+                            Port configuration
+                        </Title>
+                        <Divider component="div" />
                     </FlexItem>
                     <FlexItem>
                         <Card isFlat data-testid="port-configuration">
@@ -117,7 +122,10 @@ const DeploymentDetails = ({ deployment }) => {
                         </Card>
                     </FlexItem>
                     <FlexItem>
-                        <Title headingLevel="h3">Security context</Title>
+                        <Title headingLevel="h3" className="pf-u-my-md">
+                            Security context
+                        </Title>
+                        <Divider component="div" />
                     </FlexItem>
                     <FlexItem>
                         <SecurityContext deployment={relatedDeployment} />
@@ -125,7 +133,10 @@ const DeploymentDetails = ({ deployment }) => {
                 </Flex>
                 <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
                     <FlexItem>
-                        <Title headingLevel="h3">Container configuration</Title>
+                        <Title headingLevel="h3" className="pf-u-mb-md">
+                            Container configuration
+                        </Title>
+                        <Divider component="div" />
                     </FlexItem>
                     <FlexItem>
                         <ContainerConfiguration deployment={relatedDeployment} />

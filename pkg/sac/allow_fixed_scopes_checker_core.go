@@ -1,6 +1,11 @@
 package sac
 
-import "context"
+import (
+	"context"
+
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+)
 
 type scopeKeySet map[ScopeKey]struct{}
 
@@ -44,4 +49,9 @@ func (c allowFixedScopesCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerC
 		return c[1:]
 	}
 	return denyAllScopeCheckerCore
+}
+
+func (c allowFixedScopesCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
+	// TODO(ROX-9537): Implement it
+	panic("Implement me: ROX-9537")
 }

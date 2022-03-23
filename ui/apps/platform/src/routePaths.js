@@ -24,8 +24,6 @@ export const integrationDetailsPath = `${integrationsPath}/:source/:type/view/:i
 export const integrationEditPath = `${integrationsPath}/:source/:type/edit/:id`;
 export const policiesBasePath = `${mainPath}/policies`;
 export const policiesPath = `${policiesBasePath}/:policyId?/:command?`;
-export const policiesBasePathPatternFly = `${mainPath}/policies-pf`;
-export const policiesPathPatternFly = `${policiesBasePathPatternFly}/:policyId?/:command?`;
 export const riskBasePath = `${mainPath}/risk`;
 export const riskPath = `${riskBasePath}/:deploymentId?`;
 export const imagesPath = `${mainPath}/images/:imageId?`;
@@ -121,8 +119,7 @@ export const basePathToLabelMap = {
     [apidocsPath]: 'API Reference',
     [productDocsPath]: 'Help Center',
     [clustersBasePath]: 'Clusters',
-    [policiesBasePath]: 'System Policies',
-    [policiesBasePathPatternFly]: 'Policies',
+    [policiesBasePath]: 'Policies',
     [integrationsPath]: 'Integrations',
     [accessControlPath]: 'Access Control',
     [accessControlBasePathV2]: 'Access Control',

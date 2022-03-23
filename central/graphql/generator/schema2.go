@@ -120,6 +120,7 @@ type SchemaBuilder interface {
 	AddUnionType(name string, types []string) error
 	AddExtraResolver(name string, resolver string) error
 	AddQuery(resolver string) error
+	// Deprecated: Use REST APIs instead
 	AddMutation(resolver string) error
 	Render() (string, error)
 }
@@ -205,6 +206,7 @@ func (s *schemaBuilderImpl) AddQuery(resolver string) error {
 	return s.addBuiltin("Query", resolver)
 }
 
+// Deprecated: Use REST APIs instead
 func (s *schemaBuilderImpl) AddMutation(resolver string) error {
 	return s.addBuiltin("Mutation", resolver)
 }

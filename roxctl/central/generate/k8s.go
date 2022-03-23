@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
@@ -93,6 +94,8 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	flagWrap.StringVar(&k8sConfig.ScannerDBImage, flags.FlagNameScannerDBImage, "", "scanner-db image to use"+defaultImageHelp, "scanner")
 
 	flagWrap.BoolVar(&k8sConfig.EnableTelemetry, "enable-telemetry", true, "whether to enable telemetry", "central")
+
+	k8sConfig.EnableCentralDB = features.PostgresDatastore.Enabled()
 
 	return c
 }

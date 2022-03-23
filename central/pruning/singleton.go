@@ -12,7 +12,10 @@ import (
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
+	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -37,7 +40,10 @@ func Singleton() GarbageCollector {
 			configDatastore.Singleton(),
 			imageComponentDatastore.Singleton(),
 			riskDataStore.Singleton(),
-			vulnReqDataStore.Singleton())
+			vulnReqDataStore.Singleton(),
+			serviceAccountDataStore.Singleton(),
+			k8sRoleDataStore.Singleton(),
+			k8srolebindingStore.Singleton())
 	})
 	return gc
 }

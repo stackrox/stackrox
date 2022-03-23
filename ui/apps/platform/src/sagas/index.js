@@ -8,7 +8,6 @@ import clusters from './clusterSagas';
 import deployments from './deploymentSagas';
 import featureFlags from './featureFlagSagas';
 import images from './imageSagas';
-import policies from './policiesSagas';
 import integrations from './integrationSagas';
 import globalSearch from './globalSearchSagas';
 import roles from './roleSagas';
@@ -32,7 +31,6 @@ export default function* root() {
         fork(clusters),
         fork(deployments),
         fork(images),
-        fork(policies),
         fork(featureFlags),
         fork(integrations),
         fork(globalSearch),

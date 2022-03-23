@@ -92,5 +92,5 @@ func newLocalK8sObjectDescriptionFromPath(inputPath string) (*localK8sObjectDesc
 		}
 	}
 
-	return &localK8sObjectDescription{cache: cache}, err
+	return &localK8sObjectDescription{cache: cache}, nil
 }

@@ -26,7 +26,7 @@ func (f *scopedSACFilterImpl) Apply(ctx context.Context, from ...string) ([]int,
 	errorList := errorhelpers.NewErrorList("errors during SAC filtering")
 	filteredIndices := make([]int, 0, len(from))
 	for idx, id := range from {
-		if ok, err := accessChecker.Search(id); err != nil {
+		if ok, err := accessChecker.Search(ctx, id); err != nil {
 			errorList.AddError(err)
 			continue
 		} else if ok {

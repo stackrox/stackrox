@@ -5612,6 +5612,11 @@
                 ]
               },
               {
+                "id": 6,
+                "name": "scanner_version",
+                "type": "string"
+              },
+              {
                 "id": 3,
                 "name": "data_source",
                 "type": "DataSource"

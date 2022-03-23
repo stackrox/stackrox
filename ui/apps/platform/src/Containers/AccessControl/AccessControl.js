@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 import { Redirect, Route, Switch } from 'react-router-dom';
 import { createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
-import { PageSection } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import { actions, getHasReadPermission } from 'reducers/roles';
@@ -17,8 +16,6 @@ import AuthProviders from './AuthProviders/AuthProviders';
 import PermissionSets from './PermissionSets/PermissionSets';
 import Roles from './Roles/Roles';
 
-import './AccessControl.css';
-
 const paramId = ':entityId?';
 
 function AccessControl({ userRolePermissions }) {
@@ -27,12 +24,7 @@ function AccessControl({ userRolePermissions }) {
     const hasReadAccess = getHasReadPermission('AuthProvider', userRolePermissions);
 
     return (
-        <PageSection
-            variant="light"
-            isFilled
-            className="pf-u-display-flex pf-u-flex-direction-column"
-            id="access-control"
-        >
+        <>
             {hasReadAccess ? (
                 <Switch>
                     <Route exact path={accessControlBasePath}>
@@ -61,7 +53,7 @@ function AccessControl({ userRolePermissions }) {
             ) : (
                 <AccessControlNoPermission />
             )}
-        </PageSection>
+        </>
     );
 }
 

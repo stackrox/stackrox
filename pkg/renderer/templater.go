@@ -111,6 +111,8 @@ type K8sConfig struct {
 	IstioVersion string
 
 	ImageOverrides map[string]interface{}
+
+	EnableCentralDB bool
 }
 
 // Config configures the deployer for the central service.

@@ -3,9 +3,7 @@ import groups.RUNTIME
 import io.stackrox.proto.storage.Cve
 import io.stackrox.proto.storage.VulnRequests
 import objects.Deployment
-import org.junit.Assume
 import org.junit.experimental.categories.Category
-import services.FeatureFlagService
 import services.VulnRequestService
 import spock.lang.Unroll
 
@@ -32,10 +30,6 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
     @Unroll
     @Category([BAT, RUNTIME])
     def "Verify Vulnerability Requests can transition between states - #requestType - approve?(#approve)"() {
-        given:
-        "Vuln Management Feature is enabled"
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_VULN_RISK_MANAGEMENT"))
-
         when:
         "A user requests a vuln be deferred or marked as FP"
         VulnRequests.VulnerabilityRequest vulnReq

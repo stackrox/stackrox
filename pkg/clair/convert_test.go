@@ -25,7 +25,7 @@ func TestConvertFeatures(t *testing.T) {
 }
 
 func TestVersionFormatCompleteness(t *testing.T) {
-	assert.Equal(t, len(versionFormatsToSource), int(component.SentinelEndSourceType-component.UnsetSourceType-1))
+	assert.Equal(t, len(VersionFormatsToSource), int(component.SentinelEndSourceType-component.UnsetSourceType-1))
 }
 
 func componentWithLayerIndex(name string, idx int32) *storage.EmbeddedImageScanComponent {

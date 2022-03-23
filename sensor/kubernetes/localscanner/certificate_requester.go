@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -15,16 +14,8 @@ var (
 	// ErrCertificateRequesterStopped is returned by RequestCertificates when the certificate
 	// requester is not initialized.
 	ErrCertificateRequesterStopped                      = errors.New("stopped")
-	log                                                 = logging.LoggerForModule()
 	_                              CertificateRequester = (*certificateRequesterImpl)(nil)
 )
-
-// CertificateRequester requests a new set of local scanner certificates from central.
-type CertificateRequester interface {
-	Start()
-	Stop()
-	RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
-}
 
 // NewCertificateRequester creates a new certificate requester that communicates through
 // the specified channels and initializes a new request ID for reach request.

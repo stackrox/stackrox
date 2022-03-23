@@ -134,7 +134,7 @@ func (ds *datastoreImpl) UpsertUndoRecord(ctx context.Context, clusterID string,
 // UndoDeploymentDataStore functionality.
 ///////////////////////////////
 func (ds *datastoreImpl) GetUndoDeploymentRecord(ctx context.Context, deploymentID string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error) {
-	undoRecord, found, err := ds.undoDeploymentStorage.Get(deploymentID)
+	undoRecord, found, err := ds.undoDeploymentStorage.Get(ctx, deploymentID)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -153,7 +153,7 @@ func (ds *datastoreImpl) UpsertUndoDeploymentRecord(ctx context.Context, undoRec
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.undoDeploymentStorage.Upsert(undoRecord)
+	return ds.undoDeploymentStorage.Upsert(ctx, undoRecord)
 }
 
 func (ds *datastoreImpl) getNetworkPolicy(id string) (*storage.NetworkPolicy, bool, error) {

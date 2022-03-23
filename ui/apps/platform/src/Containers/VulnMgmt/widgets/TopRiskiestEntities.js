@@ -19,6 +19,7 @@ import entityTypes from 'constants/entityTypes';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import { entitySortFieldsMap } from 'constants/sortFields';
 import { resourceLabels } from 'messages/common';
+import { entityPriorityField } from 'Containers/VulnMgmt/VulnMgmt.constants';
 
 const TOP_RISKIEST_IMAGES = gql`
     query topRiskiestImages($query: String, $pagination: Pagination) {
@@ -267,7 +268,7 @@ const TopRiskiestEntities = ({ entityContext, limit }) => {
             query: queryService.entityContextToQueryString(entityContext),
             pagination: queryService.getPagination(
                 {
-                    id: 'Priority',
+                    id: entityPriorityField[selectedEntity],
                     desc: false,
                 },
                 WIDGET_PAGINATION_START_OFFSET,

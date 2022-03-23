@@ -8,6 +8,7 @@ import {
 } from 'Containers/Clusters/cluster.helpers';
 
 import { CategoryStyle, CountableText, nbsp } from './health';
+import { CertExpiryStatus } from '../../Clusters/clusterTypes';
 
 export const problemText: CountableText = {
     plural: `clusters require your${nbsp}attention`,
@@ -42,9 +43,7 @@ export interface Cluster {
         overallHealthStatus: ClusterStatus;
     };
     status?: {
-        certExpiryStatus?: {
-            sensorCertExpiry: string;
-        };
+        certExpiryStatus?: CertExpiryStatus;
         upgradeStatus?: UpgradeStatus;
     };
 }
@@ -193,7 +192,7 @@ export const getCredentialExpirationCountMap = (
     };
 
     clusters.forEach((cluster) => {
-        const sensorCertExpiry = cluster.status?.certExpiryStatus?.sensorCertExpiry;
+        const sensorCertExpiry = cluster.status?.certExpiryStatus;
         if (sensorCertExpiry) {
             const status = getCredentialExpirationStatus(sensorCertExpiry, currentDateTime);
             countMap[status] += 1;

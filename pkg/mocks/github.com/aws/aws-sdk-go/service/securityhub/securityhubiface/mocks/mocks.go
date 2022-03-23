@@ -386,6 +386,56 @@ func (mr *MockSecurityHubAPIMockRecorder) CreateActionTargetWithContext(arg0, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateActionTargetWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).CreateActionTargetWithContext), varargs...)
 }
 
+// CreateFindingAggregator mocks base method.
+func (m *MockSecurityHubAPI) CreateFindingAggregator(arg0 *securityhub.CreateFindingAggregatorInput) (*securityhub.CreateFindingAggregatorOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateFindingAggregator", arg0)
+	ret0, _ := ret[0].(*securityhub.CreateFindingAggregatorOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateFindingAggregator indicates an expected call of CreateFindingAggregator.
+func (mr *MockSecurityHubAPIMockRecorder) CreateFindingAggregator(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFindingAggregator", reflect.TypeOf((*MockSecurityHubAPI)(nil).CreateFindingAggregator), arg0)
+}
+
+// CreateFindingAggregatorRequest mocks base method.
+func (m *MockSecurityHubAPI) CreateFindingAggregatorRequest(arg0 *securityhub.CreateFindingAggregatorInput) (*request.Request, *securityhub.CreateFindingAggregatorOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateFindingAggregatorRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.CreateFindingAggregatorOutput)
+	return ret0, ret1
+}
+
+// CreateFindingAggregatorRequest indicates an expected call of CreateFindingAggregatorRequest.
+func (mr *MockSecurityHubAPIMockRecorder) CreateFindingAggregatorRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFindingAggregatorRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).CreateFindingAggregatorRequest), arg0)
+}
+
+// CreateFindingAggregatorWithContext mocks base method.
+func (m *MockSecurityHubAPI) CreateFindingAggregatorWithContext(arg0 context.Context, arg1 *securityhub.CreateFindingAggregatorInput, arg2 ...request.Option) (*securityhub.CreateFindingAggregatorOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreateFindingAggregatorWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.CreateFindingAggregatorOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateFindingAggregatorWithContext indicates an expected call of CreateFindingAggregatorWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) CreateFindingAggregatorWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFindingAggregatorWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).CreateFindingAggregatorWithContext), varargs...)
+}
+
 // CreateInsight mocks base method.
 func (m *MockSecurityHubAPI) CreateInsight(arg0 *securityhub.CreateInsightInput) (*securityhub.CreateInsightOutput, error) {
 	m.ctrl.T.Helper()
@@ -584,6 +634,56 @@ func (mr *MockSecurityHubAPIMockRecorder) DeleteActionTargetWithContext(arg0, ar
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteActionTargetWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).DeleteActionTargetWithContext), varargs...)
+}
+
+// DeleteFindingAggregator mocks base method.
+func (m *MockSecurityHubAPI) DeleteFindingAggregator(arg0 *securityhub.DeleteFindingAggregatorInput) (*securityhub.DeleteFindingAggregatorOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteFindingAggregator", arg0)
+	ret0, _ := ret[0].(*securityhub.DeleteFindingAggregatorOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteFindingAggregator indicates an expected call of DeleteFindingAggregator.
+func (mr *MockSecurityHubAPIMockRecorder) DeleteFindingAggregator(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFindingAggregator", reflect.TypeOf((*MockSecurityHubAPI)(nil).DeleteFindingAggregator), arg0)
+}
+
+// DeleteFindingAggregatorRequest mocks base method.
+func (m *MockSecurityHubAPI) DeleteFindingAggregatorRequest(arg0 *securityhub.DeleteFindingAggregatorInput) (*request.Request, *securityhub.DeleteFindingAggregatorOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteFindingAggregatorRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.DeleteFindingAggregatorOutput)
+	return ret0, ret1
+}
+
+// DeleteFindingAggregatorRequest indicates an expected call of DeleteFindingAggregatorRequest.
+func (mr *MockSecurityHubAPIMockRecorder) DeleteFindingAggregatorRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFindingAggregatorRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).DeleteFindingAggregatorRequest), arg0)
+}
+
+// DeleteFindingAggregatorWithContext mocks base method.
+func (m *MockSecurityHubAPI) DeleteFindingAggregatorWithContext(arg0 context.Context, arg1 *securityhub.DeleteFindingAggregatorInput, arg2 ...request.Option) (*securityhub.DeleteFindingAggregatorOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteFindingAggregatorWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.DeleteFindingAggregatorOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteFindingAggregatorWithContext indicates an expected call of DeleteFindingAggregatorWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) DeleteFindingAggregatorWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFindingAggregatorWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).DeleteFindingAggregatorWithContext), varargs...)
 }
 
 // DeleteInsight mocks base method.
@@ -1751,6 +1851,56 @@ func (mr *MockSecurityHubAPIMockRecorder) GetEnabledStandardsWithContext(arg0, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEnabledStandardsWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetEnabledStandardsWithContext), varargs...)
 }
 
+// GetFindingAggregator mocks base method.
+func (m *MockSecurityHubAPI) GetFindingAggregator(arg0 *securityhub.GetFindingAggregatorInput) (*securityhub.GetFindingAggregatorOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFindingAggregator", arg0)
+	ret0, _ := ret[0].(*securityhub.GetFindingAggregatorOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFindingAggregator indicates an expected call of GetFindingAggregator.
+func (mr *MockSecurityHubAPIMockRecorder) GetFindingAggregator(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFindingAggregator", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetFindingAggregator), arg0)
+}
+
+// GetFindingAggregatorRequest mocks base method.
+func (m *MockSecurityHubAPI) GetFindingAggregatorRequest(arg0 *securityhub.GetFindingAggregatorInput) (*request.Request, *securityhub.GetFindingAggregatorOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFindingAggregatorRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.GetFindingAggregatorOutput)
+	return ret0, ret1
+}
+
+// GetFindingAggregatorRequest indicates an expected call of GetFindingAggregatorRequest.
+func (mr *MockSecurityHubAPIMockRecorder) GetFindingAggregatorRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFindingAggregatorRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetFindingAggregatorRequest), arg0)
+}
+
+// GetFindingAggregatorWithContext mocks base method.
+func (m *MockSecurityHubAPI) GetFindingAggregatorWithContext(arg0 context.Context, arg1 *securityhub.GetFindingAggregatorInput, arg2 ...request.Option) (*securityhub.GetFindingAggregatorOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetFindingAggregatorWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.GetFindingAggregatorOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFindingAggregatorWithContext indicates an expected call of GetFindingAggregatorWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) GetFindingAggregatorWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFindingAggregatorWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).GetFindingAggregatorWithContext), varargs...)
+}
+
 // GetFindings mocks base method.
 func (m *MockSecurityHubAPI) GetFindings(arg0 *securityhub.GetFindingsInput) (*securityhub.GetFindingsOutput, error) {
 	m.ctrl.T.Helper()
@@ -2250,6 +2400,89 @@ func (mr *MockSecurityHubAPIMockRecorder) ListEnabledProductsForImportWithContex
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEnabledProductsForImportWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListEnabledProductsForImportWithContext), varargs...)
 }
 
+// ListFindingAggregators mocks base method.
+func (m *MockSecurityHubAPI) ListFindingAggregators(arg0 *securityhub.ListFindingAggregatorsInput) (*securityhub.ListFindingAggregatorsOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFindingAggregators", arg0)
+	ret0, _ := ret[0].(*securityhub.ListFindingAggregatorsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFindingAggregators indicates an expected call of ListFindingAggregators.
+func (mr *MockSecurityHubAPIMockRecorder) ListFindingAggregators(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFindingAggregators", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListFindingAggregators), arg0)
+}
+
+// ListFindingAggregatorsPages mocks base method.
+func (m *MockSecurityHubAPI) ListFindingAggregatorsPages(arg0 *securityhub.ListFindingAggregatorsInput, arg1 func(*securityhub.ListFindingAggregatorsOutput, bool) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFindingAggregatorsPages", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListFindingAggregatorsPages indicates an expected call of ListFindingAggregatorsPages.
+func (mr *MockSecurityHubAPIMockRecorder) ListFindingAggregatorsPages(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFindingAggregatorsPages", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListFindingAggregatorsPages), arg0, arg1)
+}
+
+// ListFindingAggregatorsPagesWithContext mocks base method.
+func (m *MockSecurityHubAPI) ListFindingAggregatorsPagesWithContext(arg0 context.Context, arg1 *securityhub.ListFindingAggregatorsInput, arg2 func(*securityhub.ListFindingAggregatorsOutput, bool) bool, arg3 ...request.Option) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListFindingAggregatorsPagesWithContext", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListFindingAggregatorsPagesWithContext indicates an expected call of ListFindingAggregatorsPagesWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) ListFindingAggregatorsPagesWithContext(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFindingAggregatorsPagesWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListFindingAggregatorsPagesWithContext), varargs...)
+}
+
+// ListFindingAggregatorsRequest mocks base method.
+func (m *MockSecurityHubAPI) ListFindingAggregatorsRequest(arg0 *securityhub.ListFindingAggregatorsInput) (*request.Request, *securityhub.ListFindingAggregatorsOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFindingAggregatorsRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.ListFindingAggregatorsOutput)
+	return ret0, ret1
+}
+
+// ListFindingAggregatorsRequest indicates an expected call of ListFindingAggregatorsRequest.
+func (mr *MockSecurityHubAPIMockRecorder) ListFindingAggregatorsRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFindingAggregatorsRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListFindingAggregatorsRequest), arg0)
+}
+
+// ListFindingAggregatorsWithContext mocks base method.
+func (m *MockSecurityHubAPI) ListFindingAggregatorsWithContext(arg0 context.Context, arg1 *securityhub.ListFindingAggregatorsInput, arg2 ...request.Option) (*securityhub.ListFindingAggregatorsOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListFindingAggregatorsWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.ListFindingAggregatorsOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFindingAggregatorsWithContext indicates an expected call of ListFindingAggregatorsWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) ListFindingAggregatorsWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFindingAggregatorsWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).ListFindingAggregatorsWithContext), varargs...)
+}
+
 // ListInvitations mocks base method.
 func (m *MockSecurityHubAPI) ListInvitations(arg0 *securityhub.ListInvitationsInput) (*securityhub.ListInvitationsOutput, error) {
 	m.ctrl.T.Helper()
@@ -2697,6 +2930,56 @@ func (mr *MockSecurityHubAPIMockRecorder) UpdateActionTargetWithContext(arg0, ar
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateActionTargetWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).UpdateActionTargetWithContext), varargs...)
+}
+
+// UpdateFindingAggregator mocks base method.
+func (m *MockSecurityHubAPI) UpdateFindingAggregator(arg0 *securityhub.UpdateFindingAggregatorInput) (*securityhub.UpdateFindingAggregatorOutput, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateFindingAggregator", arg0)
+	ret0, _ := ret[0].(*securityhub.UpdateFindingAggregatorOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateFindingAggregator indicates an expected call of UpdateFindingAggregator.
+func (mr *MockSecurityHubAPIMockRecorder) UpdateFindingAggregator(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFindingAggregator", reflect.TypeOf((*MockSecurityHubAPI)(nil).UpdateFindingAggregator), arg0)
+}
+
+// UpdateFindingAggregatorRequest mocks base method.
+func (m *MockSecurityHubAPI) UpdateFindingAggregatorRequest(arg0 *securityhub.UpdateFindingAggregatorInput) (*request.Request, *securityhub.UpdateFindingAggregatorOutput) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateFindingAggregatorRequest", arg0)
+	ret0, _ := ret[0].(*request.Request)
+	ret1, _ := ret[1].(*securityhub.UpdateFindingAggregatorOutput)
+	return ret0, ret1
+}
+
+// UpdateFindingAggregatorRequest indicates an expected call of UpdateFindingAggregatorRequest.
+func (mr *MockSecurityHubAPIMockRecorder) UpdateFindingAggregatorRequest(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFindingAggregatorRequest", reflect.TypeOf((*MockSecurityHubAPI)(nil).UpdateFindingAggregatorRequest), arg0)
+}
+
+// UpdateFindingAggregatorWithContext mocks base method.
+func (m *MockSecurityHubAPI) UpdateFindingAggregatorWithContext(arg0 context.Context, arg1 *securityhub.UpdateFindingAggregatorInput, arg2 ...request.Option) (*securityhub.UpdateFindingAggregatorOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateFindingAggregatorWithContext", varargs...)
+	ret0, _ := ret[0].(*securityhub.UpdateFindingAggregatorOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateFindingAggregatorWithContext indicates an expected call of UpdateFindingAggregatorWithContext.
+func (mr *MockSecurityHubAPIMockRecorder) UpdateFindingAggregatorWithContext(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFindingAggregatorWithContext", reflect.TypeOf((*MockSecurityHubAPI)(nil).UpdateFindingAggregatorWithContext), varargs...)
 }
 
 // UpdateFindings mocks base method.

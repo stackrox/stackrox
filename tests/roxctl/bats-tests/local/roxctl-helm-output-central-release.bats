@@ -30,7 +30,7 @@ teardown() {
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
   has_default_flavor_warning
-  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' "$any_version" 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-release helm output central-services --rhacs should use registry.redhat.io registry and display deprecation warning" {
@@ -39,7 +39,7 @@ teardown() {
   assert_output --partial "Written Helm chart central-services to directory"
   has_deprecation_warning
   has_no_default_flavor_warning
-  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' "$any_version" 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-release helm output central-services --image-defaults=stackrox.io should use stackrox.io registry" {
@@ -47,7 +47,7 @@ teardown() {
   assert_success
   has_no_default_flavor_warning
   assert_output --partial "Written Helm chart central-services to directory"
-  assert_helm_template_central_registry "$out_dir" 'stackrox.io' 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'stackrox.io' "$any_version" 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-release helm output central-services --image-defaults=rhacs should use registry.redhat.io registry" {
@@ -55,7 +55,7 @@ teardown() {
   assert_success
   has_no_default_flavor_warning
   assert_output --partial "Written Helm chart central-services to directory"
-  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' "$any_version" 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-release helm output central-services --image-defaults=development_build should fail" {

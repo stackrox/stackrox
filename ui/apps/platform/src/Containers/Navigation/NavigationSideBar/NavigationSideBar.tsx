@@ -39,17 +39,12 @@ const platformConfigurationPaths = [
 function NavigationSideBar(): ReactElement {
     const location: Location = useLocation();
     const { hasReadAccess } = usePermissions();
-
-    const isVulnRiskManagementEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_VULN_RISK_MANAGEMENT
-    );
     const isVulnReportingEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
 
     const vulnerabilityManagementPaths = [vulnManagementPath];
     if (
-        isVulnRiskManagementEnabled &&
-        (hasReadAccess('VulnerabilityManagementRequests') ||
-            hasReadAccess('VulnerabilityManagementApprovals'))
+        hasReadAccess('VulnerabilityManagementRequests') ||
+        hasReadAccess('VulnerabilityManagementApprovals')
     ) {
         vulnerabilityManagementPaths.push(vulnManagementRiskAcceptancePath);
     }
@@ -80,40 +75,29 @@ function NavigationSideBar(): ReactElement {
                     path={complianceBasePath}
                     title={basePathToLabelMap[complianceBasePath]}
                 />
-                {(isVulnRiskManagementEnabled || isVulnReportingEnabled) && (
-                    <NavExpandable
-                        id="VulnerabilityManagement"
-                        title="Vulnerability Management"
-                        isActive={vulnerabilityManagementPaths.some((path) =>
-                            location.pathname.includes(path)
-                        )}
-                        isExpanded={vulnerabilityManagementPaths.some((path) =>
-                            location.pathname.includes(path)
-                        )}
-                    >
-                        {vulnerabilityManagementPaths.map((path) => {
-                            const isActive =
-                                path === vulnManagementPath
-                                    ? false
-                                    : location.pathname.includes(path);
-                            return (
-                                <LeftNavItem
-                                    key={path}
-                                    isActive={isActive}
-                                    path={path}
-                                    title={basePathToLabelMap[path]}
-                                />
-                            );
-                        })}
-                    </NavExpandable>
-                )}
-                {!(isVulnRiskManagementEnabled || isVulnReportingEnabled) && (
-                    <LeftNavItem
-                        isActive={location.pathname.includes(vulnManagementPath)}
-                        path={vulnManagementPath}
-                        title="Vulnerability Management"
-                    />
-                )}
+                <NavExpandable
+                    id="VulnerabilityManagement"
+                    title="Vulnerability Management"
+                    isActive={vulnerabilityManagementPaths.some((path) =>
+                        location.pathname.includes(path)
+                    )}
+                    isExpanded={vulnerabilityManagementPaths.some((path) =>
+                        location.pathname.includes(path)
+                    )}
+                >
+                    {vulnerabilityManagementPaths.map((path) => {
+                        const isActive =
+                            path === vulnManagementPath ? false : location.pathname.includes(path);
+                        return (
+                            <LeftNavItem
+                                key={path}
+                                isActive={isActive}
+                                path={path}
+                                title={basePathToLabelMap[path]}
+                            />
+                        );
+                    })}
+                </NavExpandable>
                 <LeftNavItem
                     isActive={location.pathname.includes(configManagementPath)}
                     path={configManagementPath}

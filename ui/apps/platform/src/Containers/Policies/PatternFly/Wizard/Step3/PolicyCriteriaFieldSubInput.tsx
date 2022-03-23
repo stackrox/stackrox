@@ -1,6 +1,6 @@
 import React from 'react';
 import { useField } from 'formik';
-import { TextInput, NumberInput, FormGroup, Select, SelectOption } from '@patternfly/react-core';
+import { TextInput, FormGroup, Select, SelectOption } from '@patternfly/react-core';
 
 import { SubComponent } from 'Containers/Policies/Wizard/Form/descriptors';
 
@@ -20,18 +20,6 @@ function PolicyCriteriaFieldSubInput({
     const { value } = field;
     const { setValue } = helper;
 
-    function handleChangeNumberValue(e) {
-        const newValue = Number.isNaN(e.target.value) ? 0 : Number(e.target.value);
-        const { max = 10, min = 0 } = subComponent;
-        if (newValue > max) {
-            setValue(max);
-        } else if (newValue < min) {
-            setValue(min);
-        } else {
-            setValue(newValue);
-        }
-    }
-
     function handleChangeSelect(e, val) {
         setIsSelectOpen(false);
         setValue(val);
@@ -39,14 +27,6 @@ function PolicyCriteriaFieldSubInput({
 
     function handleOnToggleSelect() {
         setIsSelectOpen(!isSelectOpen);
-    }
-
-    function handleOnMinus(step = 1) {
-        return () => setValue((Number(value) - step).toFixed(1));
-    }
-
-    function handleOnPlus(step = 1) {
-        return () => setValue((Number(value) + step).toFixed(1));
     }
 
     /* eslint-disable default-case */
@@ -59,26 +39,32 @@ function PolicyCriteriaFieldSubInput({
                         type="text"
                         id={name}
                         isDisabled={readOnly}
-                        placeholder={subComponent.placeholder}
                         onChange={(v) => setValue(v)}
+                        data-testid="policy-criteria-value-text-input"
                     />
                 </FormGroup>
             );
         case 'number':
             return (
-                <NumberInput
-                    value={Number(value)}
+                <TextInput
+                    value={value}
+                    type="number"
+                    id={name}
                     isDisabled={readOnly}
-                    onChange={handleChangeNumberValue}
-                    min={subComponent.min}
-                    max={subComponent.max}
-                    onPlus={handleOnPlus(subComponent.step)}
-                    onMinus={handleOnMinus(subComponent.step)}
+                    onChange={(v) => setValue(v)}
+                    placeholder="(ex. 5)"
+                    className="pf-u-w-25"
+                    data-testid="policy-criteria-value-number-input"
                 />
             );
         case 'select':
             return (
-                <FormGroup label={subComponent.label} fieldId={name} className="pf-u-flex-1">
+                <FormGroup
+                    label={subComponent.label}
+                    fieldId={name}
+                    className="pf-u-flex-1 pf-u-w-0"
+                    data-testid="policy-criteria-value-select"
+                >
                     <Select
                         onToggle={handleOnToggleSelect}
                         onSelect={handleChangeSelect}
@@ -88,7 +74,11 @@ function PolicyCriteriaFieldSubInput({
                         placeholderText={subComponent.placeholder || 'Select an option'}
                     >
                         {subComponent.options?.map((option) => (
-                            <SelectOption key={option.value} value={option.value}>
+                            <SelectOption
+                                key={option.value}
+                                value={option.value}
+                                data-testid="policy-criteria-value-select-option"
+                            >
                                 {option.label}
                             </SelectOption>
                         ))}

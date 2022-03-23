@@ -56,14 +56,14 @@ var (
 func ConnectNames() (string, string, error) {
 	endpoint, _, err := flags.EndpointAndPlaintextSetting()
 	if err != nil {
-		return "", "", err
+		return "", "", errors.Wrap(err, "could not get endpoint")
 	}
 	serverName := flags.ServerName()
 	if serverName == "" {
 		var err error
 		serverName, _, _, err = netutil.ParseEndpoint(endpoint)
 		if err != nil {
-			return "", "", err
+			return "", "", errors.Wrap(err, "could not parse endpoint")
 		}
 	}
 	return endpoint, serverName, nil
@@ -113,7 +113,7 @@ func tlsConfigForCentral() (*tls.Config, error) {
 	}
 	conf, err := clientconn.TLSConfig(mtls.CentralSubject, *opts)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "invalid TLS config")
 	}
 	return conf, nil
 }

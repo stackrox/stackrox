@@ -1,0 +1,92 @@
+# # NOTE:
+# # The Scanner is only available in the secured clusters on the OpenShift Container Platform.
+#
+# # Public configuration options for the StackRox Scanner:
+# # When installing the Secured Cluster chart, a slim scanner mode is deployed with reduced image caching.
+# # To run the scanner in the secured cluster, you must connect the Scanner to Sensor.
+#
+# # WARNING:
+# # If deployed in the same namespace with Central it is only supported to install Scanner as part of Central's installation.
+# # Sensor will use the existing Scanner to scan for local images.
+#
+# Image configuration for scanner:
+# # For a complete example, see the `values-public.yaml.example` file.
+# image:
+#  # Configuration for the `scanner` image that is used by Scanner.
+#  scanner:
+#    registry: null
+#    name: scanner-slim
+#    tag: null
+#    fullRef: null
+#
+# scanner:
+#   # disable=false Deploys a StackRox Scanner in the secured cluster to allow scanning images
+#   # from the OpenShift Container Platform cluster's local registries.
+#   disable: false
+#
+#   # The number of replicas for the Scanner deployment. If autoscaling is enabled (see below),
+#   # this determines the initial number of replicas.
+#   replicas: 3
+#
+#   # The log level for the scanner deployment. This typically does not need to be changed.
+#   logLevel: INFO
+#
+#   # If you want to enforce StackRox Scanner to only run on certain nodes, you can specify
+#   # a node selector here to make sure Scanner can only be scheduled on Nodes with the
+#   # given label.
+#   nodeSelector:
+#     # This can contain arbitrary `label-key: label-value` pairs.
+#     role: stackrox-scanner
+#
+#   If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#   tolerations:
+#     - effect: NoSchedule
+#       key: infra
+#       value: reserved
+#     - effect: NoExecute
+#       key: infra
+#       value: reserved
+#
+#   # If you want to enforce StackRox Scanner DB to only run on certain nodes, you can specify
+#   # a node selector here to make sure Scanner DB can only be scheduled on Nodes with the
+#   # given label.
+#   dbNodeSelector:
+#     # This can contain arbitrary `label-key: label-value` pairs.
+#     role: stackrox-scanner-db
+#
+#   If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#   dbTolerations:
+#     - effect: NoSchedule
+#       key: infra
+#       value: reserved
+#     - effect: NoExecute
+#       key: infra
+#       value: reserved
+#
+#   # Configuration for autoscaling the Scanner deployment.
+#   autoscaling:
+#     # disable=true causes autoscaling to be disabled. All other settings in this section
+#     # will have no effect.
+#     disable: false
+#     # The minimum number of replicas for autoscaling. The following value is the default.
+#     minReplicas: 2
+#     # The maximum number of replicas for autoscaling. The following value is the default.
+#     maxReplicas: 5
+#
+#   # Custom resource overrides for the Scanner deployment.
+#   resources:
+#     requests:
+#       memory: "1500Mi"
+#       cpu: "1000m"
+#     limits:
+#       memory: "4Gi"
+#       cpu: "2000m"
+#
+#   # Custom resource overrides for the Scanner DB deployment.
+#   dbResources:
+#     limits:
+#       cpu: "2000m"
+#       memory: "4Gi"
+#     requests:
+#       cpu: "200m"
+#       memory: "200Mi"

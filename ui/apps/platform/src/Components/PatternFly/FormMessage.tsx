@@ -4,6 +4,7 @@ import { Alert, AlertVariant } from '@patternfly/react-core';
 export type FormResponseMessage = {
     message: string;
     isError: boolean;
+    data?: any;
 } | null;
 
 export type FormMessageProps = {

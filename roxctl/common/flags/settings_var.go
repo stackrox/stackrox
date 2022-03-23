@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/env"
 )
@@ -38,7 +39,7 @@ func (v settingVar) Set(value string) error {
 	} else {
 		fmt.Println("no validator")
 	}
-	return os.Setenv(v.setting.EnvVar(), value)
+	return errors.Wrap(os.Setenv(v.setting.EnvVar(), value), "could not set env")
 }
 
 // ForSetting returns a pflag.Value that acts on the given setting, using default options.

@@ -42,7 +42,7 @@ func New(store store.Store, indexer index.Indexer, searcher search.Searcher) (Da
 			storage.RiskSubjectType_IMAGE_COMPONENT.String(): ranking.ComponentRanker(),
 		},
 	}
-	if err := d.buildIndex(); err != nil {
+	if err := d.buildIndex(context.TODO()); err != nil {
 		return nil, errors.Wrap(err, "failed to build index from existing store")
 	}
 	return d, nil

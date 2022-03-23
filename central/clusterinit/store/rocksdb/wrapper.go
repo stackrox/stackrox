@@ -1,6 +1,8 @@
 package rocksdb
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clusterinit/store"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,9 +25,9 @@ func NewStore(db *rocksdb.RocksDB) (store.Store, error) {
 	return &rocksDBStoreWrapper{store: rawStore}, nil
 }
 
-func (w *rocksDBStoreWrapper) GetAll() ([]*storage.InitBundleMeta, error) {
+func (w *rocksDBStoreWrapper) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error) {
 	var result []*storage.InitBundleMeta
-	if err := w.store.Walk(func(obj *storage.InitBundleMeta) error {
+	if err := w.store.Walk(ctx, func(obj *storage.InitBundleMeta) error {
 		if obj.GetIsRevoked() {
 			return nil
 		}
@@ -37,8 +39,8 @@ func (w *rocksDBStoreWrapper) GetAll() ([]*storage.InitBundleMeta, error) {
 	return result, nil
 }
 
-func (w *rocksDBStoreWrapper) Get(id string) (*storage.InitBundleMeta, error) {
-	obj, exists, err := w.store.Get(id)
+func (w *rocksDBStoreWrapper) Get(ctx context.Context, id string) (*storage.InitBundleMeta, error) {
+	obj, exists, err := w.store.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	} else if !exists {
@@ -47,25 +49,25 @@ func (w *rocksDBStoreWrapper) Get(id string) (*storage.InitBundleMeta, error) {
 	return obj, nil
 }
 
-func (w *rocksDBStoreWrapper) Add(meta *storage.InitBundleMeta) error {
+func (w *rocksDBStoreWrapper) Add(ctx context.Context, meta *storage.InitBundleMeta) error {
 	w.uniqueIDMutex.Lock()
 	defer w.uniqueIDMutex.Unlock()
 
-	if err := w.checkDuplicateName(meta); err != nil {
+	if err := w.checkDuplicateName(ctx, meta); err != nil {
 		return err
 	}
 
-	if exists, err := w.store.Exists(meta.GetId()); err != nil {
+	if exists, err := w.store.Exists(ctx, meta.GetId()); err != nil {
 		return err
 	} else if exists {
 		return store.ErrInitBundleIDCollision
 	}
 
-	return w.store.Upsert(meta)
+	return w.store.Upsert(ctx, meta)
 }
 
-func (w *rocksDBStoreWrapper) checkDuplicateName(meta *storage.InitBundleMeta) error {
-	metas, err := w.GetAll()
+func (w *rocksDBStoreWrapper) checkDuplicateName(ctx context.Context, meta *storage.InitBundleMeta) error {
+	metas, err := w.GetAll(ctx)
 	if err != nil {
 		return err
 	}
@@ -77,11 +79,11 @@ func (w *rocksDBStoreWrapper) checkDuplicateName(meta *storage.InitBundleMeta) e
 	return nil
 }
 
-func (w *rocksDBStoreWrapper) Revoke(id string) error {
+func (w *rocksDBStoreWrapper) Revoke(ctx context.Context, id string) error {
 	w.uniqueUpdateMutex.Lock()
 	defer w.uniqueUpdateMutex.Unlock()
 
-	meta, err := w.Get(id)
+	meta, err := w.Get(ctx, id)
 	if err != nil {
 		if errors.Is(err, store.ErrInitBundleNotFound) {
 			return errors.Errorf("init bundle %q does not exist", meta.GetId())
@@ -90,7 +92,7 @@ func (w *rocksDBStoreWrapper) Revoke(id string) error {
 	}
 
 	meta.IsRevoked = true
-	if err := w.store.Upsert(meta); err != nil {
+	if err := w.store.Upsert(ctx, meta); err != nil {
 		return err
 	}
 	return nil

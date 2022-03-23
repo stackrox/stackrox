@@ -45,6 +45,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/rox/sensor/kubernetes/localscanner"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
@@ -102,10 +103,8 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	}
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
-
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager)
-
-	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener.New(client, configHandler, policyDetector))
+	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener.New(client, configHandler, policyDetector, k8sNodeName.Setting()))
 
 	upgradeCmdHandler, err := upgrade.NewCommandHandler(configHandler)
 	if err != nil {
@@ -135,10 +134,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
-	}
-
-	if features.VulnRiskManagement.Enabled() {
-		components = append(components, reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache))
+		reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache),
 	}
 
 	sensorNamespace, err := satoken.LoadNamespaceFromFile()
@@ -160,6 +156,12 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())
 	if err != nil {
 		return nil, errors.Wrap(err, "creating central client")
+	}
+
+	if features.LocalImageScanning.Enabled() && securedClusterIsNotManagedManually(helmManagedConfig) && env.UseLocalScanner.BooleanSetting() {
+		podName := os.Getenv("POD_NAME")
+		components = append(components,
+			localscanner.NewLocalScannerTLSIssuer(client.Kubernetes(), sensorNamespace, podName))
 	}
 
 	s := sensor.NewSensor(
@@ -191,4 +193,9 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	s.AddAPIServices(apiServices...)
 	return s, nil
+}
+
+func securedClusterIsNotManagedManually(helmManagedConfig *central.HelmManagedConfigInit) bool {
+	return helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_UNKNOWN &&
+		helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL
 }

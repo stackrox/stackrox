@@ -259,7 +259,10 @@ type ExposureRoute struct {
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
-// ScannerComponentSpec defines settings for the "scanner" component.
+// Note the following struct should mostly match LocalScannerComponentSpec for the SecuredCluster type. Different Scanner
+// types struct are maintained because of UI exposed documentation differences.
+
+// ScannerComponentSpec defines settings for the central "scanner" component.
 type ScannerComponentSpec struct {
 	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
 	// (not recommended).
@@ -294,7 +297,7 @@ func (s *ScannerComponentSpec) IsEnabled() bool {
 	return *s.ScannerComponent == ScannerComponentEnabled
 }
 
-// ScannerComponentPolicy is a type for values of spec.scannerSpec.scannerComponent.
+// ScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
 //+kubebuilder:validation:Enum=Enabled;Disabled
 type ScannerComponentPolicy string
 
@@ -303,63 +306,6 @@ const (
 	ScannerComponentEnabled ScannerComponentPolicy = "Enabled"
 	// ScannerComponentDisabled means that scanner should not be installed.
 	ScannerComponentDisabled ScannerComponentPolicy = "Disabled"
-)
-
-// ScannerAnalyzerComponent describes the analyzer component
-type ScannerAnalyzerComponent struct {
-	// Controls the number of analyzer replicas and autoscaling.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
-	Scaling *ScannerAnalyzerScaling `json:"scaling,omitempty"`
-
-	DeploymentSpec `json:",inline"`
-}
-
-// GetScaling returns scaling config even if receiver is nil
-func (s *ScannerAnalyzerComponent) GetScaling() *ScannerAnalyzerScaling {
-	if s == nil {
-		return nil
-	}
-	return s.Scaling
-}
-
-// ScannerAnalyzerScaling defines replication settings of the analyzer.
-type ScannerAnalyzerScaling struct {
-	// When enabled, the number of analyzer replicas is managed dynamically based on the load, within the limits
-	// specified below.
-	//+kubebuilder:validation:Default=Enabled
-	//+kubebuilder:default=Enabled
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Autoscaling",order=1
-	AutoScaling *AutoScalingPolicy `json:"autoScaling,omitempty"`
-
-	// When autoscaling is disabled, the number of replicas will always be configured to match this value.
-	//+kubebuilder:validation:Default=3
-	//+kubebuilder:default=3
-	//+kubebuilder:validation:Minimum=1
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Default Replicas",order=2
-	Replicas *int32 `json:"replicas,omitempty"`
-
-	//+kubebuilder:validation:Default=2
-	//+kubebuilder:default=2
-	//+kubebuilder:validation:Minimum=1
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Autoscaling Minimum Replicas",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled"}
-	MinReplicas *int32 `json:"minReplicas,omitempty"`
-
-	//+kubebuilder:validation:Default=5
-	//+kubebuilder:default=5
-	//+kubebuilder:validation:Minimum=1
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Autoscaling Maximum Replicas",order=4,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled"}
-	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
-}
-
-// AutoScalingPolicy is a type for values of spec.scannerSpec.replicas.autoScaling.
-//+kubebuilder:validation:Enum=Enabled;Disabled
-type AutoScalingPolicy string
-
-const (
-	// ScannerAutoScalingEnabled means that scanner autoscaling should be enabled.
-	ScannerAutoScalingEnabled AutoScalingPolicy = "Enabled"
-	// ScannerAutoScalingDisabled means that scanner autoscaling should be disabled.
-	ScannerAutoScalingDisabled AutoScalingPolicy = "Disabled"
 )
 
 // -------------------------------------------------------------
@@ -418,3 +364,8 @@ var (
 	// CentralGVK is the GVK for the Central type.
 	CentralGVK = SchemeGroupVersion.WithKind("Central")
 )
+
+// IsScannerEnabled returns true if scanner is enabled.
+func (c *Central) IsScannerEnabled() bool {
+	return c.Spec.Scanner.IsEnabled()
+}

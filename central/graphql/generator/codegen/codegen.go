@@ -207,6 +207,8 @@ func getFieldTransform(fd fieldData) (templateName string, returnType string) {
 		return "raw", "float64"
 	case reflect.Bool:
 		return "raw", "bool"
+	case reflect.Uint8:
+		return "raw", "byte"
 	case reflect.Map:
 		if fd.Type.Key().Kind() == reflect.String && fd.Type.Elem().Kind() == reflect.String {
 			return "label", "labels"

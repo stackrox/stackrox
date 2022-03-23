@@ -9,8 +9,10 @@ import {
     networkDetectionDescriptor,
     auditLogDescriptor,
     Descriptor,
+    imageSigningCriteriaDescriptor,
 } from 'Containers/Policies/Wizard/Form/descriptors';
 import { Policy } from 'types/policy.proto';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
 import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
 
@@ -35,20 +37,26 @@ function PolicyCriteriaForm() {
         }
     }
 
+    const isImageSigningEnabled = useFeatureFlagEnabled('ROX_VERIFY_IMAGE_SIGNATURE');
     React.useEffect(() => {
         if (values.eventSource === 'AUDIT_LOG_EVENT') {
             setDescriptor(auditLogDescriptor);
         } else {
-            setDescriptor([...policyConfigurationDescriptor, ...networkDetectionDescriptor]);
+            const descriptors = isImageSigningEnabled
+                ? [
+                      ...policyConfigurationDescriptor,
+                      ...networkDetectionDescriptor,
+                      imageSigningCriteriaDescriptor,
+                  ]
+                : [...policyConfigurationDescriptor, ...networkDetectionDescriptor];
+            setDescriptor(descriptors);
         }
-    }, [values.eventSource]);
+    }, [values.eventSource, isImageSigningEnabled]);
 
     const headingElements = (
         <>
             <Title headingLevel="h2">Policy criteria</Title>
-            <div className="pf-u-mt-sm">
-                Construct policy rules by chaining criteria together with boolean logic.
-            </div>
+            <div className="pf-u-mt-sm">Chain criteria with boolean logic.</div>
         </>
     );
 
@@ -68,6 +76,7 @@ function PolicyCriteriaForm() {
                     isInline
                     title="Editing policy criteria is disabled for system default policies"
                     className="pf-u-mt-sm pf-u-mb-md"
+                    data-testid="default-policy-alert"
                 >
                     If you need to edit policy criteria, clone this policy or create a new policy.
                 </Alert>
@@ -91,17 +100,21 @@ function PolicyCriteriaForm() {
                     <Flex direction={{ default: 'row' }} className="pf-u-p-lg">
                         <FlexItem flex={{ default: 'flex_1' }}>{headingElements}</FlexItem>
                         <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                            <Button variant="secondary" onClick={addNewPolicySection}>
-                                Add a new condition
+                            <Button
+                                variant="secondary"
+                                onClick={addNewPolicySection}
+                                data-testid="add-section-btn"
+                            >
+                                Add condition
                             </Button>
                         </FlexItem>
                     </Flex>
                     <Divider component="div" />
                     <Flex
-                        direction={{ default: 'row' }}
+                        direction={{ default: 'column', lg: 'row' }}
                         flexWrap={{ default: 'nowrap' }}
                         id="policy-sections"
-                        className="pf-u-p-lg"
+                        className="pf-u-p-lg pf-u-h-100"
                     >
                         <BooleanPolicyLogicSection />
                     </Flex>

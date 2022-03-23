@@ -1,6 +1,8 @@
 package translation
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -124,4 +126,42 @@ func GetTolerations(key string, tolerations []*corev1.Toleration) *ValuesBuilder
 	v.SetSlice(key, convertedList)
 
 	return &v
+}
+
+// SetScannerAnalyzerValues sets values in "sv" based on "analyzer".
+func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnalyzerComponent) {
+	if analyzer.GetScaling() != nil {
+		scaling := analyzer.GetScaling()
+		sv.SetInt32("replicas", scaling.Replicas)
+
+		autoscaling := NewValuesBuilder()
+		if scaling.AutoScaling != nil {
+			switch *scaling.AutoScaling {
+			case platform.ScannerAutoScalingDisabled:
+				autoscaling.SetBoolValue("disable", true)
+			case platform.ScannerAutoScalingEnabled:
+				autoscaling.SetBoolValue("disable", false)
+			default:
+				autoscaling.SetError(fmt.Errorf("invalid spec.scanner.replicas.autoScaling %q", *scaling.AutoScaling))
+			}
+		}
+		autoscaling.SetInt32("minReplicas", scaling.MinReplicas)
+		autoscaling.SetInt32("maxReplicas", scaling.MaxReplicas)
+		sv.AddChild("autoscaling", &autoscaling)
+	}
+
+	if analyzer != nil {
+		sv.SetStringMap("nodeSelector", analyzer.NodeSelector)
+		sv.AddChild(ResourcesKey, GetResources(analyzer.Resources))
+		sv.AddAllFrom(GetTolerations(TolerationsKey, analyzer.DeploymentSpec.Tolerations))
+	}
+}
+
+// SetScannerDBValues sets values in "sb" based on "db".
+func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
+	if db != nil {
+		sv.SetStringMap("dbNodeSelector", db.NodeSelector)
+		sv.AddChild("dbResources", GetResources(db.Resources))
+		sv.AddAllFrom(GetTolerations("dbTolerations", db.Tolerations))
+	}
 }

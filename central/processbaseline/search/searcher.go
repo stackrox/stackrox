@@ -31,7 +31,7 @@ func New(storage store.Store, indexer index.Indexer) (Searcher, error) {
 		formattedSearcher: formatSearcher(indexer),
 	}
 
-	if err := ds.buildIndex(); err != nil {
+	if err := ds.buildIndex(context.TODO()); err != nil {
 		return nil, err
 	}
 	return ds, nil

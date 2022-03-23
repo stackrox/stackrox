@@ -134,6 +134,7 @@ export const certGen = {
 
 export const dashboard = {
     timeseries: '/v1/alerts/summary/timeseries?*',
+    summaryCounts: graphql('summary_counts'),
 };
 
 export const metadata = 'v1/metadata';
@@ -156,6 +157,7 @@ export const policies = {
     dryrun: '/v1/policies/dryrunjob',
     export: '/v1/policies/export',
     import: '/v1/policies/import',
+    reassess: '/v1/policies/reassess',
 };
 
 export const roles = {
@@ -254,6 +256,7 @@ export const integrationHealth = {
 
 export const integrations = {
     imageIntegrations: '/v1/imageintegrations',
+    signatureIntegrations: '/v1/signatureintegrations',
     notifiers: '/v1/notifiers',
     externalBackups: '/v1/externalbackups',
     authPlugins: '/v1/scopedaccessctrl/configs',
@@ -274,6 +277,7 @@ export const integration = {
 
 export const report = {
     configurations: '/v1/report/configurations*',
+    configurationsCount: '/v1/report-configurations-count*',
 };
 
 export const riskAcceptance = {

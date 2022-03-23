@@ -30,7 +30,7 @@ func (ds *dataStoreImpl) GetNetworkBaseline(
 	ctx context.Context,
 	deploymentID string,
 ) (*storage.NetworkBaseline, bool, error) {
-	baseline, found, err := ds.storage.Get(deploymentID)
+	baseline, found, err := ds.storage.Get(ctx, deploymentID)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -62,7 +62,7 @@ func (ds *dataStoreImpl) UpsertNetworkBaselines(ctx context.Context, baselines [
 		allowedScopes[pair] = struct{}{}
 	}
 
-	return ds.storage.UpsertMany(baselines)
+	return ds.storage.UpsertMany(ctx, baselines)
 }
 
 func (ds *dataStoreImpl) UpdateNetworkBaseline(ctx context.Context, baseline *storage.NetworkBaseline) error {
@@ -72,7 +72,7 @@ func (ds *dataStoreImpl) UpdateNetworkBaseline(ctx context.Context, baseline *st
 		return sac.ErrResourceAccessDenied
 	}
 
-	found, err := ds.validateClusterAndNamespaceAgainstExistingBaseline(baseline)
+	found, err := ds.validateClusterAndNamespaceAgainstExistingBaseline(ctx, baseline)
 	if err != nil {
 		return errors.Wrapf(err, "updating network baseline %s", baseline.GetDeploymentId())
 	}
@@ -80,7 +80,7 @@ func (ds *dataStoreImpl) UpdateNetworkBaseline(ctx context.Context, baseline *st
 		return errors.Errorf("updating a baseline that does not exist: %s", baseline.GetDeploymentId())
 	}
 
-	if err := ds.storage.Upsert(baseline); err != nil {
+	if err := ds.storage.Upsert(ctx, baseline); err != nil {
 		return errors.Wrapf(err, "updating network baseline %s into storage", baseline.GetDeploymentId())
 	}
 
@@ -91,9 +91,10 @@ func (ds *dataStoreImpl) UpdateNetworkBaseline(ctx context.Context, baseline *st
 //   - returns true if baseline already exists
 //   - returns error if existing baseline does not match with provided baseline
 func (ds *dataStoreImpl) validateClusterAndNamespaceAgainstExistingBaseline(
+	ctx context.Context,
 	baseline *storage.NetworkBaseline,
 ) (bool, error) {
-	existingBaseline, found, err := ds.storage.Get(baseline.GetDeploymentId())
+	existingBaseline, found, err := ds.storage.Get(ctx, baseline.GetDeploymentId())
 	if err != nil || !found {
 		return false, err
 	}
@@ -114,7 +115,7 @@ func (ds *dataStoreImpl) DeleteNetworkBaseline(ctx context.Context, deploymentID
 func (ds *dataStoreImpl) DeleteNetworkBaselines(ctx context.Context, deploymentIDs []string) error {
 	// First check permission
 	for _, id := range deploymentIDs {
-		baseline, found, err := ds.storage.Get(id)
+		baseline, found, err := ds.storage.Get(ctx, id)
 		if err != nil {
 			return err
 		} else if !found {
@@ -127,7 +128,7 @@ func (ds *dataStoreImpl) DeleteNetworkBaselines(ctx context.Context, deploymentI
 		}
 	}
 
-	if err := ds.storage.DeleteMany(deploymentIDs); err != nil {
+	if err := ds.storage.DeleteMany(ctx, deploymentIDs); err != nil {
 		return errors.Wrapf(err, "deleting network baselines %q from storage", deploymentIDs)
 	}
 
@@ -157,6 +158,6 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, f func(baseline *storage.Netw
 		return nil
 	}
 
-	return ds.storage.Walk(f)
+	return ds.storage.Walk(ctx, f)
 
 }

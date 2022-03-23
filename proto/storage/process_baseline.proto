@@ -22,7 +22,7 @@ message ProcessBaselineKey {
 }
 
 message ProcessBaseline {
-    string                   id                = 1;
+    string                   id                = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     ProcessBaselineKey       key               = 2;
 
     repeated BaselineElement elements          = 3;
@@ -62,7 +62,7 @@ message ContainerNameAndBaselineStatus {
 
 // `ProcessBaselineResults` represent cached results of process baseline evaluation.
 message ProcessBaselineResults {
-    string                                  deployment_id     = 1;
+    string                                  deployment_id     = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string                                  cluster_id        = 3;
     string                                  namespace         = 4;
     repeated ContainerNameAndBaselineStatus baseline_statuses = 2;

@@ -10,9 +10,6 @@
 {{ $centralCfg := $._rox.central }}
 
 {{/* Image settings */}}
-{{ if kindIs "invalid" $centralCfg.image.tag }}
-  {{ $_ := set $centralCfg.image "tag" $.Chart.AppVersion }}
-{{ end }}
 {{ include "srox.configureImage" (list $ $centralCfg.image) }}
 
 {{/* Admin password */}}
@@ -37,6 +34,15 @@
   {{ else if or $cert $key }}
     {{ include "srox.fail" "Must specify either none or both of central.defaultTLS.cert and central.defaultTLS.key" }}
   {{ end }}
+{{ end }}
+
+{{/* Central DB password */}}
+{{ if $centralCfg.enableCentralDB }}
+{{ include "srox.configurePassword" (list $ "central.dbPassword") }}
+
+{{/* Central DB Service TLS Certificates */}}
+{{ $centralDBCertSpec := dict "CN" "CENTRAL_DB_SERVICE: Central DB" "dnsBase" "central-db" }}
+{{ include "srox.configureCrypto" (list $ "central.dbServiceTLS" $centralDBCertSpec) }}
 {{ end }}
 
 {{/*

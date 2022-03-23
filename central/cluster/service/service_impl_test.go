@@ -63,7 +63,7 @@ func (suite *ClusterServiceTestSuite) TestGetClusterDefaults() {
 			ps.EXPECT().AnyAvailable(gomock.Any()).Times(1).Return(testCase.kernelSupportAvailable, nil)
 			clusterService := New(suite.dataStore, nil, ps)
 
-			defaults, err := clusterService.GetClusterDefaults(context.Background(), nil)
+			defaults, err := clusterService.GetClusterDefaultValues(context.Background(), nil)
 			suite.NoError(err)
 			suite.Equal(flavor.MainImageNoTag(), defaults.GetMainImageRepository())
 			suite.Equal(flavor.CollectorFullImageNoTag(), defaults.GetCollectorImageRepository())

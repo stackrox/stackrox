@@ -27,7 +27,6 @@ func MakeImageFlavorForTest(t *testing.T) defaults.ImageFlavor {
 		ScannerImageTag:        "2.2.2",
 		ScannerDBImageName:     "scanner-db",
 		ScannerDBSlimImageName: "scanner-db-slim",
-		ScannerDBImageTag:      "2.2.2",
 		ChartRepo: defaults.ChartRepo{
 			URL: "some.url/path/to/chart",
 		},

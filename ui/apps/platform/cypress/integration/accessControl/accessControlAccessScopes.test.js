@@ -9,7 +9,7 @@ import withAuth from '../../helpers/basicAuth';
 const h1 = 'Access Control';
 const h2 = 'Access scopes';
 
-const defaultNames = ['Deny All'];
+const defaultNames = ['Unrestricted', 'Deny All'];
 
 describe('Access Control Access scopes', () => {
     withAuth();
@@ -38,16 +38,15 @@ describe('Access Control Access scopes', () => {
         );
     });
 
-    it('list has breadcrumbs, headings, link, button, and table head cells', () => {
+    it('list has headings, link, button, and table head cells, and no breadcrumbs', () => {
         visitAccessScopes();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
+        cy.get(selectors.breadcrumbNav).should('not.exist');
 
         cy.get(selectors.h1).should('have.text', h1);
         cy.get(selectors.navLinkCurrent).should('have.text', h2);
 
-        cy.get(selectors.h2).should('have.text', h2);
+        cy.contains(selectors.h2, /^\d+ results? found$/).should('exist');
         cy.get(selectors.list.addButton).should('have.text', 'Add access scope');
 
         cy.get(`${selectors.list.th}:contains("Name")`);
@@ -58,10 +57,6 @@ describe('Access Control Access scopes', () => {
     it('list has default names', () => {
         visitAccessScopes();
 
-        // Unrestricted is special case, because it does not have a link.
-        cy.get(`${selectors.list.tdName}:contains("Unrestricted")`);
-        cy.get(`${selectors.list.tdNameLink}:contains("Unrestricted")`).should('not.exist');
-
         defaultNames.forEach((name) => {
             cy.get(`${selectors.list.tdNameLink}:contains("${name}")`);
         });
@@ -70,15 +65,15 @@ describe('Access Control Access scopes', () => {
     it('list link for default Deny All goes to form which has label instead of button and disabled input values', () => {
         visitAccessScopes();
 
-        const name = defaultNames[0];
+        const name = 'Deny All';
         cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("${name}")`);
 
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
+        cy.get(selectors.h1).should('not.exist');
+        cy.get(selectors.navLinkCurrent).should('not.exist');
 
         cy.get(selectors.h2).should('have.text', name);
         cy.get(selectors.form.notEditableLabel).should('exist');
@@ -97,9 +92,8 @@ describe('Access Control Access scopes', () => {
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(3)`).should('not.exist');
 
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
-
+        cy.get(selectors.h1).should('not.exist');
+        cy.get(selectors.navLinkCurrent).should('not.exist');
         cy.get(selectors.h2).should('not.exist');
 
         cy.get(selectors.notFound.title).should('have.text', 'Access scope does not exist');

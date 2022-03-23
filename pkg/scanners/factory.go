@@ -16,7 +16,7 @@ import (
 // Factory provides a centralized location for creating Scanner from v1.ImageIntegrations.
 //go:generate mockgen-wrapper
 type Factory interface {
-	CreateScanner(source *storage.ImageIntegration) (types.ImageScanner, error)
+	CreateScanner(source *storage.ImageIntegration) (types.ImageScannerWithDataSource, error)
 }
 
 // NewFactory creates a new scanner factory.

@@ -19,7 +19,7 @@ export const imageSortFields = {
     ENTRYPOINT: 'Image Entrypoint',
     IMAGE_STATUS: 'Image Status',
     IMAGE_OS: 'Image OS',
-    PRIORITY: 'Priority',
+    PRIORITY: 'Image Risk Priority',
     REGISTRY: 'Image Registry',
     REMOTE: 'Image Remote',
     SCAN_TIME: 'Image Scan Time',
@@ -48,7 +48,7 @@ export const componentSortFields = {
     LOCATION: 'Component Location',
     IMAGE_COUNT: 'Image Count',
     DEPLOYMENT_COUNT: 'Deployment Count',
-    PRIORITY: 'Priority',
+    PRIORITY: 'Component Risk Priority',
     FIXEDIN: 'Component Fixed By', // This field does not exist. However, seems like every column has to follow a template.
 };
 
@@ -98,7 +98,7 @@ export const clusterSortFields = {
     NAMESPACE_COUNT: 'Namespace Count',
     POLICY_COUNT: 'Policy Count',
     POLICY_STATUS: 'Policy Status',
-    PRIORITY: 'Priority',
+    PRIORITY: 'Cluster Risk Priority',
 };
 
 /**
@@ -118,7 +118,7 @@ export const namespaceSortFields = {
     NAME: 'Namespace',
     POLICY_COUNT: 'Policy Count',
     POLICY_STATUS: 'Policy Status',
-    PRIORITY: 'Priority',
+    PRIORITY: 'Namespace Risk Priority',
 };
 
 export const nodeSortFields = {
@@ -128,7 +128,7 @@ export const nodeSortFields = {
     NODE_JOIN_TIME: 'Node Join Time',
     OPERATING_SYSTEM: 'Operating System',
     CVE_COUNT: 'CVE Count',
-    PRIORITY: 'Priority',
+    PRIORITY: 'Node Risk Priority',
     TOP_CVSS: 'Node Top CVSS',
     IMAGE_OS: 'Image OS',
     SCAN_TIME: 'Node Scan Time',
@@ -248,7 +248,7 @@ export const deploymentSortFields = {
     POLICY_STATUS: 'Policy Status',
     PORT: 'Port',
     PORT_PROTOCOL: 'Port Protocol',
-    PRIORITY: 'Priority',
+    PRIORITY: 'Deployment Risk Priority',
     PRIVILEGED: 'Privileged',
     PROCESS_ANCESTOR: 'Process Ancestor',
     PROCESS_ARGUMENTS: 'Process Arguments',

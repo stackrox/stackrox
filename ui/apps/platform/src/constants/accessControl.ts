@@ -73,7 +73,7 @@ export const defaultMinimalReadAccessResources = [
 
 // Default to giving new roles read access to specific resources.
 export const defaultNewRolePermissions = defaultMinimalReadAccessResources.reduce(
-    (map, resource) => {
+    (map: Record<string, AccessLevel>, resource) => {
         const newMap = map;
         newMap[resource] = READ_ACCESS;
         return newMap;

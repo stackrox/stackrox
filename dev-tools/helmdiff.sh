@@ -16,12 +16,21 @@ for CHART in ${CHARTS}; do
   $ROXCTL helm output --debug --remove ${CHART} --output-dir="${TMP_ROOT}/${CHART}-new"
 done
 
+REPO_STAT="$(git diff --stat)"
 # TODO(ebensh): Use smart branch root (if present) instead of master.
+if [[ -n $REPO_STAT ]]; then
+  echo "Saving uncommitted changes with 'git stash push'."
+  git stash push
+fi
 git switch master
 for CHART in ${CHARTS}; do
   $ROXCTL helm output --debug --remove ${CHART} --output-dir="${TMP_ROOT}/${CHART}-old"
 done
 git switch ${WORKING_BRANCH}
+if [[ -n $REPO_STAT ]]; then
+  echo "Restoring uncommitted changes with 'git stash pop'."
+  git stash pop
+fi
 
 echo "Rendering a dry run installation of the stackrox-central-services helm charts as Kubernetes manifests:"
 for VERSION in "old" "new"; do

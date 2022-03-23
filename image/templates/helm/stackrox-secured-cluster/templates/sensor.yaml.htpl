@@ -108,6 +108,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         - name: ROX_CENTRAL_ENDPOINT
           value: {{ ._rox.centralEndpoint }}
         - name: ROX_ADVERTISED_ENDPOINT
@@ -115,6 +119,12 @@ spec:
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
+        [<- if and (not .KubectlOutput) .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING >]
+        - name: ROX_USE_LOCAL_SCANNER
+          value: "{{ not ._rox.scanner.disable | not | not }}"
+        - name: ROX_SCANNER_GRPC_ENDPOINT
+          value: {{ printf "scanner.%s.svc:8443" .Release.Namespace }}
+        [<- end >]
         {{- end}}
         [<- if not .KubectlOutput >]
         - name: ROX_HELM_CLUSTER_CONFIG_FP

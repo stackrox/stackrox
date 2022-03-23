@@ -12,6 +12,7 @@ import {
 
 import { Descriptor } from 'Containers/Policies/Wizard/Form/descriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
+import ImageSignersCriteriaFieldInput from './ImageSignersCriteriaFieldInput';
 
 type PolicyCriteriaFieldInputProps = {
     descriptor: Descriptor;
@@ -65,11 +66,30 @@ function PolicyCriteriaFieldInput({
                     id={name}
                     isDisabled={readOnly}
                     onChange={handleChangeValue}
+                    data-testid="policy-criteria-value-text-input"
                 />
             );
-        case 'radioGroup':
+        case 'radioGroup': {
+            const booleanValue = value.value === true || value.value === 'true';
             return (
-                <ToggleGroup>
+                <ToggleGroup data-testid="policy-criteria-value-radio-group">
+                    {descriptor.radioButtons?.map(({ text, value: radioValue }) => (
+                        <ToggleGroupItem
+                            key={text}
+                            text={text}
+                            buttonId={text}
+                            isDisabled={readOnly}
+                            isSelected={booleanValue === radioValue}
+                            onChange={handleChangeSelectedValue(radioValue)}
+                            data-testid="policy-criteria-value-radio-group-item"
+                        />
+                    ))}
+                </ToggleGroup>
+            );
+        }
+        case 'radioGroupString': {
+            return (
+                <ToggleGroup data-testid="policy-criteria-value-radio-group-string">
                     {descriptor.radioButtons?.map(({ text, value: radioValue }) => (
                         <ToggleGroupItem
                             key={text}
@@ -78,10 +98,12 @@ function PolicyCriteriaFieldInput({
                             isDisabled={readOnly}
                             isSelected={value.value === radioValue}
                             onChange={handleChangeSelectedValue(radioValue)}
+                            data-testid="policy-criteria-value-radio-group-string-item"
                         />
                     ))}
                 </ToggleGroup>
             );
+        }
         case 'number':
             return (
                 <TextInput
@@ -90,7 +112,7 @@ function PolicyCriteriaFieldInput({
                     id={name}
                     isDisabled={readOnly}
                     onChange={handleChangeValue}
-                    placeholder={descriptor.placeholder}
+                    data-testid="policy-criteria-value-number-input"
                 />
             );
         case 'select':
@@ -99,6 +121,7 @@ function PolicyCriteriaFieldInput({
                     label={descriptor.label}
                     fieldId={descriptor.name}
                     className="pf-u-flex-1"
+                    data-testid="policy-criteria-value-select"
                 >
                     <Select
                         onToggle={handleOnToggleSelect}
@@ -106,10 +129,14 @@ function PolicyCriteriaFieldInput({
                         isOpen={isSelectOpen}
                         isDisabled={readOnly}
                         selections={value.value}
-                        placeholderText={descriptor.placeholder}
+                        placeholderText={descriptor.placeholder || 'Select an option'}
                     >
                         {descriptor?.options?.map((option) => (
-                            <SelectOption key={option.value} value={option.value}>
+                            <SelectOption
+                                key={option.value}
+                                value={option.value}
+                                data-testid="policy-criteria-value-select-option"
+                            >
                                 {option.label}
                             </SelectOption>
                         ))}
@@ -122,19 +149,24 @@ function PolicyCriteriaFieldInput({
                     label={descriptor.label}
                     fieldId={descriptor.name}
                     className="pf-u-flex-1"
+                    data-testid="policy-criteria-value-multiselect"
                 >
                     <Select
                         onToggle={handleOnToggleSelect}
                         onSelect={handleChangeSelectMultiple}
                         isOpen={isSelectOpen}
                         isDisabled={readOnly}
-                        selections={value.value}
+                        selections={value.value === '' ? [] : value.value}
                         onClear={handleChangeSelectedValue([])}
-                        placeholderText={descriptor.placeholder}
+                        placeholderText={descriptor.placeholder || 'Select one or more options'}
                         variant={SelectVariant.typeaheadMulti}
                     >
                         {descriptor.options?.map((option) => (
-                            <SelectOption key={option.value} value={option.value}>
+                            <SelectOption
+                                key={option.value}
+                                value={option.value}
+                                data-testid="policy-criteria-value-multiselect-option"
+                            >
                                 {option.label}
                             </SelectOption>
                         ))}
@@ -156,6 +188,15 @@ function PolicyCriteriaFieldInput({
                 </>
             );
             /* eslint-enable react/no-array-index-key */
+        }
+        case 'signaturePolicyCriteria': {
+            return (
+                <ImageSignersCriteriaFieldInput
+                    setValue={setValue}
+                    value={value}
+                    readOnly={readOnly}
+                />
+            );
         }
     }
     /* eslint-enable default-case */

@@ -12,6 +12,8 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/signatures"
+	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
 )
 
@@ -29,7 +31,16 @@ const (
 	IgnoreExistingImages
 	ForceRefetch
 	ForceRefetchScansOnly
+	ForceRefetchSignaturesOnly
+	ForceRefetchCachedValuesOnly
 )
+
+// forceRefetchCachedValues implies whether the cached values within the database should be skipped and refetched.
+// Note: This does not include the specific FetchOption ForceRefetchScansOnly and ForceRefetchSignaturesOnly, the caller
+// still needs to check for those specifically.
+func (f FetchOption) forceRefetchCachedValues() bool {
+	return f == ForceRefetch || f == ForceRefetchCachedValuesOnly
+}
 
 // EnrichmentContext is used to pass options through the enricher without exploding the number of function arguments
 type EnrichmentContext struct {
@@ -38,10 +49,6 @@ type EnrichmentContext struct {
 
 	// EnforcementOnly indicates that we don't care about any violations unless they have enforcement enabled.
 	EnforcementOnly bool
-
-	// UseNonBlockingCallsWherePossible tells the enricher to make non-blocking calls to image scanners where that is
-	// possible. Note that, if NoExternalMetadata is true, this param is irrelevant since no external calls are made at all.
-	UseNonBlockingCallsWherePossible bool
 
 	// Internal is used to indicate when the caller is internal.
 	// This is used to indicate that we do not want to fail upon failing to find integrations.
@@ -56,7 +63,7 @@ func (e EnrichmentContext) FetchOnlyIfMetadataEmpty() bool {
 
 // FetchOnlyIfScanEmpty will use the scan that exists in the image unless the fetch opts prohibit it
 func (e EnrichmentContext) FetchOnlyIfScanEmpty() bool {
-	return e.FetchOpt != IgnoreExistingImages && e.FetchOpt != ForceRefetch && e.FetchOpt != ForceRefetchScansOnly
+	return e.FetchOpt != IgnoreExistingImages && !e.FetchOpt.forceRefetchCachedValues() && e.FetchOpt != ForceRefetchScansOnly
 }
 
 // EnrichmentResult denotes possible return values of the EnrichImage function.
@@ -85,18 +92,29 @@ const (
 //go:generate mockgen-wrapper
 type ImageEnricher interface {
 	EnrichImage(ctx EnrichmentContext, image *storage.Image) (EnrichmentResult, error)
+	EnrichWithVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (EnrichmentResult, error)
 }
 
-type cveSuppressor interface {
+// CVESuppressor provides enrichment for suppressed CVEs for an image's components.
+type CVESuppressor interface {
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
 }
 
-type imageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
+// ImageGetter will be used to retrieve a specific image from the datastore.
+type ImageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
+
+// SignatureIntegrationGetter will be used to retrieve all available signature integrations.
+type SignatureIntegrationGetter func(ctx context.Context) ([]*storage.SignatureIntegration, error)
+
+// signatureVerifierForIntegrations will be used to verify signatures for an image using a list of integrations.
+// This is used for mocking purposes, otherwise it will use signatures.VerifyAgainstSignatureIntegrations.
+type signatureVerifierForIntegrations func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult
 
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
-	imageGetter imageGetter, healthReporter integrationhealth.Reporter) ImageEnricher {
+func New(cvesSuppressor CVESuppressor, cvesSuppressorV2 CVESuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache expiringcache.Cache,
+	imageGetter ImageGetter, healthReporter integrationhealth.Reporter,
+	signatureIntegrationGetter SignatureIntegrationGetter) ImageEnricher {
 	enricher := &enricherImpl{
 		cvesSuppressor:   cvesSuppressor,
 		cvesSuppressorV2: cvesSuppressorV2,
@@ -104,11 +122,16 @@ func New(cvesSuppressor cveSuppressor, cvesSuppressorV2 cveSuppressor, is integr
 
 		// number of consecutive errors per registry or scanner to ascertain health of the integration
 		errorsPerRegistry:         make(map[registryTypes.ImageRegistry]int32, len(is.RegistrySet().GetAll())),
-		errorsPerScanner:          make(map[scannerTypes.ImageScanner]int32, len(is.ScannerSet().GetAll())),
+		errorsPerScanner:          make(map[scannerTypes.ImageScannerWithDataSource]int32, len(is.ScannerSet().GetAll())),
 		integrationHealthReporter: healthReporter,
 
 		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		metadataCache:   metadataCache,
+
+		signatureIntegrationGetter: signatureIntegrationGetter,
+		signatureVerifier:          signatures.VerifyAgainstSignatureIntegrations,
+		signatureFetcherLimiter:    rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
+		signatureFetcher:           signatures.NewSignatureFetcher(),
 
 		imageGetter: imageGetter,
 

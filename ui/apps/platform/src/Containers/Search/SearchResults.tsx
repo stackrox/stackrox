@@ -17,7 +17,7 @@ import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-tab
 import { addSearchModifier, addSearchKeyword } from 'utils/searchUtils';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
-import ACSEmptyState from 'Components/ACSEmptyState';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import RelatedLink from './RelatedLink';
 
 type GlobalSearchResult = {
@@ -340,9 +340,9 @@ function SearchResults({
             </Tbody>
         </TableComposable>
     ) : (
-        <ACSEmptyState key="no-results" title="No results for your chosen filters">
+        <EmptyStateTemplate title="No results for your chosen filters" headingLevel="h2">
             Try changing the filter values.
-        </ACSEmptyState>
+        </EmptyStateTemplate>
     );
 
     const activeTabKey = tabs.findIndex((tab) => tab.category === defaultTab?.category) || 0;
@@ -377,9 +377,12 @@ function SearchResults({
 
     return !globalSearchOptions.length ? (
         <Bullseye>
-            <ACSEmptyState title="Search all data across Advanced Cluster Security">
+            <EmptyStateTemplate
+                title="Search all data across Advanced Cluster Security"
+                headingLevel="h1"
+            >
                 Choose one or more filter values to search.
-            </ACSEmptyState>
+            </EmptyStateTemplate>
         </Bullseye>
     ) : (
         <div className="bg-base-100 flex-1" data-testid="global-search-results">

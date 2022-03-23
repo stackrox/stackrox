@@ -27,7 +27,7 @@ class ClusterTestRunner:
             except Exception as err:
                 hold = err
             try:
-                self.post.run()
+                self.post.run(test_output_dirs=self.test.test_output_dirs)
             except Exception as err:
                 if hold is None:
                     hold = err

@@ -17,7 +17,7 @@ import {
     withFirstPolicyName,
 } from '../../helpers/policies';
 
-describe('Policies basic tests', () => {
+describe.skip('Policies basic tests', () => {
     withAuth();
 
     describe('basic tests', () => {

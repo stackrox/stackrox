@@ -4,7 +4,7 @@ import usePagination from 'hooks/patternfly/usePagination';
 import queryService from 'utils/queryService';
 import useSearch from 'hooks/useSearch';
 import { PageSection, PageSectionVariants } from '@patternfly/react-core';
-import ACSEmptyState from 'Components/ACSEmptyState';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 import ApprovedDeferralsTable from './ApprovedDeferralsTable';
 
@@ -43,7 +43,7 @@ function ApprovedDeferrals(): ReactElement {
     if (!isLoading && rows && rows.length === 0) {
         return (
             <PageSection variant={PageSectionVariants.light} isFilled>
-                <ACSEmptyState title="No deferral requests were approved." />
+                <EmptyStateTemplate title="No deferral requests were approved." headingLevel="h2" />
             </PageSection>
         );
     }

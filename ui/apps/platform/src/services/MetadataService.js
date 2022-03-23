@@ -1,7 +1,7 @@
 import axios from './instance';
 
 /**
- * Fetches StackRox metadata.
+ * Fetches metadata.
  * @returns {Promise<Object, Error>} fulfilled with response
  */
 

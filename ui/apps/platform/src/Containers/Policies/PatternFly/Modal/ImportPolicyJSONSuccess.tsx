@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button, Flex, FlexItem, ModalBoxBody, ModalBoxFooter } from '@patternfly/react-core';
 
 import { ListPolicy } from 'types/policy.proto';
-import { policiesBasePathPatternFly as policiesBasePath } from 'routePaths';
+import { policiesBasePath } from 'routePaths';
 
 type ImportPolicyJSONSuccessProps = {
     policies: ListPolicy[];

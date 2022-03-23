@@ -12,7 +12,7 @@ import googleartifact from 'images/google-artifact.svg';
 import helm from 'images/helm.svg';
 import ibm from 'images/ibm-ccr.svg';
 import jira from 'images/jira.svg';
-import logo from 'images/logo-tall.svg';
+import logo from 'images/StackRox-integration-logo.svg';
 import nexus from 'images/nexus.svg';
 import quay from 'images/quay.svg';
 import redhat from 'images/redhat.svg';
@@ -169,6 +169,14 @@ const integrationsList = {
             source: 'imageIntegrations',
             image: redhat,
             disabled: false,
+        },
+    ],
+    signatureIntegrations: [
+        {
+            label: 'Signature',
+            type: 'signature',
+            source: 'signatureIntegrations',
+            image: redhat,
         },
     ],
     notifiers: [

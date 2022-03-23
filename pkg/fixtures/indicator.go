@@ -14,6 +14,16 @@ func GetProcessIndicator() *storage.ProcessIndicator {
 			Name:         "apt-get",
 			Args:         "install nmap",
 			ExecFilePath: "bin",
+			LineageInfo: []*storage.ProcessSignal_LineageInfo{
+				{
+					ParentUid:          22,
+					ParentExecFilePath: "/bin/bash",
+				},
+				{
+					ParentUid:          28,
+					ParentExecFilePath: "/bin/curl",
+				},
+			},
 		},
 	}
 }

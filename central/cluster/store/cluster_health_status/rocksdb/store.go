@@ -3,6 +3,7 @@
 package rocksdb
 
 import (
+	"context"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,18 +25,18 @@ var (
 )
 
 type Store interface {
-	Count() (int, error)
-	Exists(id string) (bool, error)
-	GetIDs() ([]string, error)
-	Get(id string) (*storage.ClusterHealthStatus, bool, error)
-	GetMany(ids []string) ([]*storage.ClusterHealthStatus, []int, error)
-	UpsertWithID(id string, obj *storage.ClusterHealthStatus) error
-	UpsertManyWithIDs(ids []string, objs []*storage.ClusterHealthStatus) error
-	Delete(id string) error
-	DeleteMany(ids []string) error
-	WalkAllWithID(fn func(id string, obj *storage.ClusterHealthStatus) error) error
-	AckKeysIndexed(keys ...string) error
-	GetKeysToIndex() ([]string, error)
+	Count(ctx context.Context) (int, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	GetIDs(ctx context.Context) ([]string, error)
+	Get(ctx context.Context, id string) (*storage.ClusterHealthStatus, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.ClusterHealthStatus, []int, error)
+	Upsert(ctx context.Context, obj *storage.ClusterHealthStatus) error
+	UpsertMany(ctx context.Context, objs []*storage.ClusterHealthStatus) error
+	Delete(ctx context.Context, id string) error
+	DeleteMany(ctx context.Context, ids []string) error
+	Walk(ctx context.Context, fn func(obj *storage.ClusterHealthStatus) error) error
+	AckKeysIndexed(ctx context.Context, keys ...string) error
+	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 type storeImpl struct {
@@ -46,11 +47,19 @@ func alloc() proto.Message {
 	return &storage.ClusterHealthStatus{}
 }
 
+func keyFunc(msg proto.Message) []byte {
+	return []byte(msg.(*storage.ClusterHealthStatus).GetId())
+}
+
+func uniqKeyFunc(msg proto.Message) []byte {
+	return []byte(msg.(*storage.ClusterHealthStatus).GetId())
+}
+
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {
 	globaldb.RegisterBucket(bucket, "ClusterHealthStatus")
-	baseCRUD := generic.NewCRUD(db, bucket, nil, alloc, false)
-	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, nil)
+	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, false)
+	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -60,28 +69,28 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 }
 
 // Count returns the number of objects in the store
-func (b *storeImpl) Count() (int, error) {
+func (b *storeImpl) Count(_ context.Context) (int, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Count, "ClusterHealthStatus")
 
 	return b.crud.Count()
 }
 
 // Exists returns if the id exists in the store
-func (b *storeImpl) Exists(id string) (bool, error) {
+func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Exists, "ClusterHealthStatus")
 
 	return b.crud.Exists(id)
 }
 
 // GetIDs returns all the IDs for the store
-func (b *storeImpl) GetIDs() ([]string, error) {
+func (b *storeImpl) GetIDs(_ context.Context) ([]string, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetAll, "ClusterHealthStatusIDs")
 
 	return b.crud.GetKeys()
 }
 
 // Get returns the object, if it exists from the store
-func (b *storeImpl) Get(id string) (*storage.ClusterHealthStatus, bool, error) {
+func (b *storeImpl) Get(_ context.Context, id string) (*storage.ClusterHealthStatus, bool, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Get, "ClusterHealthStatus")
 
 	msg, exists, err := b.crud.Get(id)
@@ -91,8 +100,8 @@ func (b *storeImpl) Get(id string) (*storage.ClusterHealthStatus, bool, error) {
 	return msg.(*storage.ClusterHealthStatus), true, nil
 }
 
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice 
-func (b *storeImpl) GetMany(ids []string) ([]*storage.ClusterHealthStatus, []int, error) {
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice
+func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.ClusterHealthStatus, []int, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "ClusterHealthStatus")
 
 	msgs, missingIndices, err := b.crud.GetMany(ids)
@@ -105,15 +114,16 @@ func (b *storeImpl) GetMany(ids []string) ([]*storage.ClusterHealthStatus, []int
 	}
 	return objs, missingIndices, nil
 }
-// UpsertWithID inserts the object into the DB
-func (b *storeImpl) UpsertWithID(id string, obj *storage.ClusterHealthStatus) error {
+
+// Upsert inserts the object into the DB
+func (b *storeImpl) Upsert(_ context.Context, obj *storage.ClusterHealthStatus) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "ClusterHealthStatus")
 
-	return b.crud.UpsertWithID(id, obj)
+	return b.crud.Upsert(obj)
 }
 
-// UpsertManyWithIDs batches objects into the DB
-func (b *storeImpl) UpsertManyWithIDs(ids []string, objs []*storage.ClusterHealthStatus) error {
+// UpsertMany batches objects into the DB
+func (b *storeImpl) UpsertMany(_ context.Context, objs []*storage.ClusterHealthStatus) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.AddMany, "ClusterHealthStatus")
 
 	msgs := make([]proto.Message, 0, len(objs))
@@ -121,35 +131,36 @@ func (b *storeImpl) UpsertManyWithIDs(ids []string, objs []*storage.ClusterHealt
 		msgs = append(msgs, o)
     }
 
-	return b.crud.UpsertManyWithIDs(ids, msgs)
+	return b.crud.UpsertMany(msgs)
 }
 
 // Delete removes the specified ID from the store
-func (b *storeImpl) Delete(id string) error {
+func (b *storeImpl) Delete(_ context.Context, id string) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Remove, "ClusterHealthStatus")
 
 	return b.crud.Delete(id)
 }
 
 // Delete removes the specified IDs from the store
-func (b *storeImpl) DeleteMany(ids []string) error {
+func (b *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.RemoveMany, "ClusterHealthStatus")
 
 	return b.crud.DeleteMany(ids)
 }
-// WalkAllWithID iterates over all of the objects in the store and applies the closure
-func (b *storeImpl) WalkAllWithID(fn func(id string, obj *storage.ClusterHealthStatus) error) error {
-	return b.crud.WalkAllWithID(func(id []byte, msg proto.Message) error {
-		return fn(string(id), msg.(*storage.ClusterHealthStatus))
+
+// Walk iterates over all of the objects in the store and applies the closure
+func (b *storeImpl) Walk(_ context.Context, fn func(obj *storage.ClusterHealthStatus) error) error {
+	return b.crud.Walk(func(msg proto.Message) error {
+		return fn(msg.(*storage.ClusterHealthStatus))
 	})
 }
 
 // AckKeysIndexed acknowledges the passed keys were indexed
-func (b *storeImpl) AckKeysIndexed(keys ...string) error {
+func (b *storeImpl) AckKeysIndexed(_ context.Context, keys ...string) error {
 	return b.crud.AckKeysIndexed(keys...)
 }
 
 // GetKeysToIndex returns the keys that need to be indexed
-func (b *storeImpl) GetKeysToIndex() ([]string, error) {
+func (b *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 	return b.crud.GetKeysToIndex()
 }

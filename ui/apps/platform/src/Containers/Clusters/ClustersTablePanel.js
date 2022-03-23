@@ -273,7 +273,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
             <Dialog
                 className="w-1/3"
                 isOpen={showDialog}
-                text={`Deleting a cluster configuration doesn't remove StackRox services running in the cluster. To remove them, run the "delete-sensor.sh" script from the sensor installation bundle. Are you sure you want to delete ${checkedClusterIds.length} cluster(s)?`}
+                text={`Deleting a cluster configuration doesn't remove security services running in the cluster. To remove them, run the "delete-sensor.sh" script from the sensor installation bundle. Are you sure you want to delete ${checkedClusterIds.length} cluster(s)?`}
                 onConfirm={makeDeleteRequest}
                 confirmText="Delete"
                 onCancel={hideDialog}

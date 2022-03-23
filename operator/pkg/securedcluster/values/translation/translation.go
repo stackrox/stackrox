@@ -12,7 +12,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/securedcluster/scanner"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
+	"github.com/stackrox/rox/pkg/features"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
@@ -103,6 +105,10 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 
 	if sc.Spec.PerNode != nil {
 		v.AddChild("collector", t.getCollectorValues(sc.Spec.PerNode))
+	}
+
+	if features.LocalImageScanning.Enabled() {
+		v.AddChild("scanner", t.getLocalScannerComponentValues(ctx, sc))
 	}
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
@@ -297,9 +303,27 @@ func (t Translator) getComplianceContainerValues(compliance *platform.ContainerS
 	return &cv
 }
 
+func (t Translator) getLocalScannerComponentValues(ctx context.Context, securedCluster platform.SecuredCluster) *translation.ValuesBuilder {
+	sv := translation.NewValuesBuilder()
+	s := securedCluster.Spec.Scanner
+
+	enabled, err := scanner.AutoSenseLocalScannerSupport(ctx, t.client, securedCluster)
+	if err != nil {
+		sv.SetError(err)
+	} else {
+		sv.SetBoolValue("disable", !enabled)
+	}
+
+	translation.SetScannerAnalyzerValues(&sv, s.Analyzer)
+	translation.SetScannerDBValues(&sv, s.DB)
+
+	return &sv
+}
+
 // Sets defaults that might not be applied on the resource due to ROX-8046.
 // Only defaults that result in behaviour different from the Helm chart defaults should be included here.
 func (t Translator) setDefaults(sc *platform.SecuredCluster) {
+	scanner.SetScannerDefaults(&sc.Spec)
 	if sc.Spec.AdmissionControl == nil {
 		sc.Spec.AdmissionControl = &platform.AdmissionControlComponentSpec{}
 	}

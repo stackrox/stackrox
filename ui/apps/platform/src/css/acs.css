@@ -36,3 +36,10 @@
     background-color: var(--pf-global--disabled-color--200);
     color: var(--pf-global--disabled-color--100);
 }
+
+/*
+ * ToggleGroupItem button that is selected but disabled needs more contrast to distinguish from unselected button.
+ */
+button:disabled.pf-c-toggle-group__button.pf-m-selected {
+    background-color: var(--pf-c-toggle-group__button--m-selected--BackgroundColor);
+}

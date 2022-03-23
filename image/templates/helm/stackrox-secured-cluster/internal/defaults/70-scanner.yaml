@@ -1,0 +1,38 @@
+scanner:
+  disable: true
+  replicas: 3
+  logLevel: INFO
+  mode: slim
+
+  autoscaling:
+    disable: false
+    minReplicas: 2
+    maxReplicas: 5
+
+  resources:
+    requests:
+      memory: "1500Mi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+
+  dbResources:
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+    requests:
+      cpu: "200m"
+      memory: "200Mi"
+
+  slimImage:
+    name: ""
+    tag: ""
+    fullRef: ""
+    repository: ""
+
+  slimDBImage:
+    name: ""
+    tag: ""
+    fullRef: ""
+    repository: ""

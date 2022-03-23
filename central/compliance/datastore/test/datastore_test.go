@@ -235,7 +235,6 @@ func (s *complianceDataStoreWithSACTestSuite) TestEnforceStoreFailure() {
 }
 
 func (s *complianceDataStoreWithSACTestSuite) TestDoesNotUseStoredAggregationsWithSAC() {
-	ctx := sac.SetContextSACEnabled(context.Background())
 	noop := func() ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
 		return nil, nil, nil, nil
 	}
@@ -245,11 +244,13 @@ func (s *complianceDataStoreWithSACTestSuite) TestDoesNotUseStoredAggregationsWi
 		Unit:            storage.ComplianceAggregation_CLUSTER,
 		AggregationFunc: noop,
 	}
-	_, _, _, err := s.dataStore.PerformStoredAggregation(ctx, aggArgs)
+	_, _, _, err := s.dataStore.PerformStoredAggregation(context.Background(), aggArgs)
 	s.Require().NoError(err)
 }
 
 func (s *complianceDataStoreWithSACTestSuite) TestUsesStoredAggregationsWithoutSAC() {
+	s.T().Skip("ROX-9134: Re-enable or delete")
+
 	queryString := "query"
 	testUnit := storage.ComplianceAggregation_CLUSTER
 	results := []*storage.ComplianceAggregation_Result{}

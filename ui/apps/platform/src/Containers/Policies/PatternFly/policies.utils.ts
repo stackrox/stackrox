@@ -1,6 +1,7 @@
 import isPlainObject from 'lodash/isPlainObject';
 import pluralize from 'pluralize';
 import qs, { ParsedQs } from 'qs';
+import cloneDeep from 'lodash/cloneDeep';
 
 import integrationsList from 'Containers/Integrations/utils/integrationsList';
 import { eventSourceLabels, lifecycleStageLabels } from 'messages/common';
@@ -13,9 +14,12 @@ import {
     PolicyExcludedDeployment,
     PolicyExclusion,
     Policy,
+    ValueObj,
+    PolicyValue,
 } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
+import { imageSigningCriteriaName } from '../Wizard/Form/descriptors';
 
 function isValidAction(action: unknown): action is ExtendedPageAction {
     return action === 'clone' || action === 'create' || action === 'edit' || action === 'generate';
@@ -151,15 +155,15 @@ export function formatEventSource(eventSource: PolicyEventSource): string {
 // exclusions
 
 export function getExcludedDeployments(exclusions: PolicyExclusion[]): PolicyExcludedDeployment[] {
-    const excludedDeployments: PolicyExcludedDeployment[] = [];
+    const excludedDeploymentScopes: PolicyExcludedDeployment[] = [];
 
     exclusions.forEach(({ deployment }) => {
         if (deployment?.name || deployment?.scope) {
-            excludedDeployments.push(deployment);
+            excludedDeploymentScopes.push(deployment);
         }
     });
 
-    return excludedDeployments;
+    return excludedDeploymentScopes;
 }
 
 export function getExcludedImageNames(exclusions: PolicyExclusion[]): string[] {
@@ -296,12 +300,152 @@ export const initialExcludedDeployment: WizardExcludedDeployment = {
     scope: initialScope,
 };
 
-export function getClientWizardPolicy(policy): Policy {
-    return preFormatExclusionField(policy);
+// TODO: work with API to update contract for returning number comparison fields
+//   until that improves, we short-circuit those fields here
+const nonStandardNumberFields = [
+    'CVSS',
+    'Container CPU Request',
+    'Container CPU Limit',
+    'Container Memory Request',
+    'Container Memory Limit',
+    'Replicas',
+    'Severity',
+];
+
+function isCompoundField(fieldName = '') {
+    const compoundValueFields = [
+        'Disallowed Annotation',
+        'Disallowed Image Label',
+        'Dockerfile Line',
+        'Environment Variable',
+        'Image Component',
+        'Required Annotation',
+        'Required Image Label',
+        'Required Label',
+    ];
+
+    return compoundValueFields.includes(fieldName);
 }
 
-export function getServerPolicy(policy): Policy {
-    return postFormatExclusionField(policy);
+const numericCompRe =
+    /^([><=]+)?\D*(?=.)(([+-]?([0-9]*)(\.([0-9]+))?)|(UNKNOWN|LOW|MODERATE|IMPORTANT|CRITICAL))$/;
+
+export function parseNumericComparisons(str): [string, string] {
+    const matches: string[] = str.match(numericCompRe);
+    return [matches[1], matches[2]];
+}
+
+export function parseValueStr(value, fieldName): ValueObj {
+    // TODO: work with API to update contract for returning number comparison fields
+    //   until that improves, we short-circuit those fields here
+
+    if (nonStandardNumberFields.includes(fieldName)) {
+        const [comparison, num] = parseNumericComparisons(value);
+        return comparison
+            ? {
+                  key: comparison,
+                  value: num,
+              }
+            : {
+                  key: '=',
+                  value: num,
+              };
+    }
+    if (typeof value === 'string' && isCompoundField(fieldName)) {
+        // handle all other string fields
+        const valueArr = value.split('=');
+        // for nested policy criteria fields
+        if (valueArr.length === 2) {
+            return {
+                key: valueArr[0],
+                value: valueArr[1],
+            };
+        }
+        // for the Environment Variable policy criteria
+        if (valueArr.length === 3) {
+            return {
+                source: valueArr[0],
+                key: valueArr[1],
+                value: valueArr[2],
+            };
+        }
+    }
+    return {
+        value,
+    };
+}
+
+function preFormatNestedPolicyFields(policy: Policy): Policy {
+    if (!policy.policySections) {
+        return policy;
+    }
+
+    const clientPolicy = cloneDeep(policy);
+    clientPolicy.serverPolicySections = policy.policySections;
+    // itreating through each value in a policy group in a policy section to parse value string
+    policy.policySections.forEach((policySection, sectionIdx) => {
+        const { policyGroups } = policySection;
+        policyGroups.forEach((policyGroup, groupIdx) => {
+            const { values, fieldName } = policyGroup;
+            values.forEach((value, valueIdx) => {
+                clientPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[valueIdx] =
+                    parseValueStr(value.value, fieldName) as PolicyValue;
+            });
+        });
+    });
+    return clientPolicy;
+}
+
+export function formatValueStr(valueObj: ValueObj, fieldName: string): string {
+    if (!valueObj) {
+        return '';
+    }
+    const { source, key = '', value = '' } = valueObj;
+    let valueStr = value;
+
+    if (nonStandardNumberFields.includes(fieldName)) {
+        // TODO: work with API to update contract for returning number comparison fields
+        //   until that improves, we short-circuit those fields here
+        valueStr = key !== '=' ? `${key}${value}` : `${value}`;
+    } else if (source || fieldName === 'Environment Variable') {
+        valueStr = `${source || ''}=${key}=${value}`;
+    } else if (key) {
+        valueStr = `${key}=${value}`;
+    }
+    return valueStr ?? '';
+}
+
+function postFormatNestedPolicyFields(policy: Policy): Policy {
+    if (!policy.policySections) {
+        return policy;
+    }
+
+    const serverPolicy = cloneDeep(policy);
+    if (policy.criteriaLocked) {
+        serverPolicy.policySections = policy.serverPolicySections;
+    } else {
+        // itereating through each value in a policy group in a policy section to format to a flat value string
+        policy.policySections.forEach((policySection, sectionIdx) => {
+            const { policyGroups } = policySection;
+            policyGroups.forEach((policyGroup, groupIdx) => {
+                const { values } = policyGroup;
+                values.forEach((value, valueIdx) => {
+                    serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
+                        valueIdx
+                    ] = {
+                        value: formatValueStr(value as ValueObj, policyGroup.fieldName),
+                    };
+                });
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                delete serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].fieldKey;
+            });
+        });
+    }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    delete serverPolicy.serverPolicySections;
+    return serverPolicy;
 }
 
 /*
@@ -324,7 +468,7 @@ function preFormatExclusionField(policy): Policy {
 /*
  * Merge client-wizard excludedDeploymentScopes and excludedImageNames properties into server exclusions property.
  */
-function postFormatExclusionField(policy): Policy {
+export function postFormatExclusionField(policy): Policy {
     const serverPolicy: Policy = { ...policy };
     serverPolicy.exclusions = [];
 
@@ -342,5 +486,69 @@ function postFormatExclusionField(policy): Policy {
         );
     }
 
+    return serverPolicy;
+}
+
+export function postFormatImageSigningPolicyGroup(policy: Policy): Policy {
+    if (!policy.policySections) {
+        return policy;
+    }
+
+    const serverPolicy = cloneDeep(policy);
+    policy.policySections.forEach((policySection, sectionIdx) => {
+        const { policyGroups } = policySection;
+        policyGroups.forEach((policyGroup, groupIdx) => {
+            const { values } = policyGroup;
+            if (policyGroup.fieldName === imageSigningCriteriaName) {
+                const { arrayValue } = values[0];
+                arrayValue?.forEach((value, valueIdx) => {
+                    serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
+                        valueIdx
+                    ] = {
+                        value,
+                    };
+                });
+            }
+        });
+    });
+
+    return serverPolicy;
+}
+
+export function preFormatImageSigningPolicyGroup(policy: Policy): Policy {
+    if (!policy.policySections) {
+        return policy;
+    }
+
+    const clientPolicy = cloneDeep(policy);
+    policy.policySections.forEach((policySection, sectionIdx) => {
+        const { policyGroups } = policySection;
+        policyGroups.forEach((policyGroup, groupIdx) => {
+            const { values, fieldName } = policyGroup;
+            if (fieldName === imageSigningCriteriaName) {
+                const arrayValue = values.map((v) => v.value as string);
+                clientPolicy.policySections[sectionIdx].policyGroups[groupIdx].values = [
+                    {
+                        arrayValue,
+                    },
+                ];
+            }
+        });
+    });
+
+    return clientPolicy;
+}
+
+export function getClientWizardPolicy(policy): Policy {
+    let formattedPolicy = preFormatExclusionField(policy);
+    formattedPolicy = preFormatNestedPolicyFields(formattedPolicy);
+    formattedPolicy = preFormatImageSigningPolicyGroup(formattedPolicy);
+    return formattedPolicy;
+}
+
+export function getServerPolicy(policy): Policy {
+    let serverPolicy = postFormatExclusionField(policy);
+    serverPolicy = postFormatImageSigningPolicyGroup(serverPolicy);
+    serverPolicy = postFormatNestedPolicyFields(serverPolicy);
     return serverPolicy;
 }

@@ -134,7 +134,9 @@ func newSecretDispatcher(regStore *registry.Store) *secretDispatcher {
 	}
 }
 
-func dockerConfigToImageIntegration(registry string, dce config.DockerConfigEntry) *storage.ImageIntegration {
+// DockerConfigToImageIntegration creates an image integration for a given
+// registry URL and docker config.
+func DockerConfigToImageIntegration(registry string, dce config.DockerConfigEntry) *storage.ImageIntegration {
 	registryType := docker.GenericDockerRegistryType
 	if urlfmt.TrimHTTPPrefixes(registry) == redhatRegistryEndpoint {
 		registryType = rhel.RedHatRegistryType
@@ -202,7 +204,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret *v1.Secret, action ce
 		}
 
 		if !features.LocalImageScanning.Enabled() || !fromDefaultSA {
-			ii := dockerConfigToImageIntegration(registry, dce)
+			ii := DockerConfigToImageIntegration(registry, dce)
 			sensorEvents = append(sensorEvents, &central.SensorEvent{
 				// Only update is supported at this time.
 				Action: central.ResourceAction_UPDATE_RESOURCE,

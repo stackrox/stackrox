@@ -32,7 +32,7 @@ func New(reportConfigStore store.Store, indexer index.Indexer, searcher search.S
 		searcher:          searcher,
 		indexer:           indexer,
 	}
-	if err := d.buildIndex(); err != nil {
+	if err := d.buildIndex(context.TODO()); err != nil {
 		return nil, errors.Wrap(err, "failed to build index from existing store")
 	}
 	return d, nil

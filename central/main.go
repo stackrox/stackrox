@@ -56,7 +56,6 @@ import (
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	groupService "github.com/stackrox/rox/central/group/service"
 	"github.com/stackrox/rox/central/grpc/metrics"
-	helmHandler "github.com/stackrox/rox/central/helm/handler"
 	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
@@ -119,6 +118,7 @@ import (
 	serviceAccountService "github.com/stackrox/rox/central/serviceaccount/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
+	signatureIntegrationService "github.com/stackrox/rox/central/signatureintegration/service"
 	"github.com/stackrox/rox/central/splunk"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
@@ -218,10 +218,10 @@ func runSafeMode() {
 func main() {
 	premain.StartMain()
 
-	conf, err := config.ReadConfig()
-	if err != nil || conf.Maintenance.SafeMode {
-		if err != nil {
-			log.Errorf("error reading config file: %v. Starting up in safe mode", err)
+	conf := config.GetConfig()
+	if conf == nil || conf.Maintenance.SafeMode {
+		if conf == nil {
+			log.Error("cannot get central configuration. Starting up in safe mode")
 		}
 		runSafeMode()
 		return
@@ -247,7 +247,7 @@ func main() {
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
 	licenseMgr := licenseSingletons.ManagerSingleton()
-	_, err = licenseMgr.Initialize()
+	_, err := licenseMgr.Initialize()
 	if err != nil {
 		log.Warnf("Could not initialize license manager: %v", err)
 	}
@@ -272,10 +272,7 @@ func startServices() {
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
 	gatherer.Singleton().Start()
-
-	if features.VulnRiskManagement.Enabled() {
-		vulnRequestManager.Singleton().Start()
-	}
+	vulnRequestManager.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -341,16 +338,17 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		summaryService.Singleton(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
-	}
-
-	if features.VulnRiskManagement.Enabled() {
-		servicesToRegister = append(servicesToRegister, vulnRequestService.Singleton())
+		vulnRequestService.Singleton(),
 	}
 
 	if features.VulnReporting.Enabled() {
 		servicesToRegister = append(servicesToRegister,
 			reportConfigurationService.Singleton(),
 			reportService.Singleton())
+	}
+
+	if features.ImageSignatureVerification.Enabled() {
+		servicesToRegister = append(servicesToRegister, signatureIntegrationService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
@@ -460,8 +458,14 @@ func startGRPCServer() {
 	}
 
 	if devbuild.IsEnabled() {
-		config.UnaryInterceptors = append(config.UnaryInterceptors, errors.PanicOnInvariantViolationUnaryInterceptor)
-		config.StreamInterceptors = append(config.StreamInterceptors, errors.PanicOnInvariantViolationStreamInterceptor)
+		config.UnaryInterceptors = append(config.UnaryInterceptors,
+			errors.LogInternalErrorInterceptor,
+			errors.PanicOnInvariantViolationUnaryInterceptor,
+		)
+		config.StreamInterceptors = append(config.StreamInterceptors,
+			errors.LogInternalErrorStreamInterceptor,
+			errors.PanicOnInvariantViolationStreamInterceptor,
+		)
 		// This helps validate that SAC is being used correctly.
 		config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
 	}
@@ -473,14 +477,9 @@ func startGRPCServer() {
 	)
 	config.HTTPInterceptors = append(config.HTTPInterceptors, observe.AuthzTraceHTTPInterceptor(authzTraceSink))
 
-	// The below enrichers handle SAC being off or on.
 	// Before authorization is checked, we want to inject the sac client into the context.
 	config.PreAuthContextEnrichers = append(config.PreAuthContextEnrichers,
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
-	)
-	// After auth checks are run, we want to use the client (if available) to add scope checking.
-	config.PostAuthContextEnrichers = append(config.PostAuthContextEnrichers,
-		centralSAC.GetEnricher().PostAuthContextEnricher,
 	)
 
 	server := pkgGRPC.NewAPI(config)
@@ -672,17 +671,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	)
 
-	helmClusterAddRoute := "/api/helm/cluster/add"
-	customRoutes = append(customRoutes,
-		routes.CustomRoute{
-			Route: helmClusterAddRoute,
-			Authorizer: user.With(permissions.Modify(resources.Cluster),
-				permissions.Modify(resources.ServiceIdentity)),
-			ServerHandler: helmHandler.Handler(siStore.Singleton(), clusterService.Singleton()),
-			Compression:   false,
-		},
-	)
-
 	customRoutes = append(customRoutes, debugRoutes()...)
 	return
 }
@@ -721,10 +709,7 @@ func waitForTerminationSignal() {
 		{suppress.Singleton(), "cve unsuppress loop"},
 		{pruning.Singleton(), "gargage collector"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
-	}
-
-	if features.VulnRiskManagement.Enabled() {
-		stoppables = append(stoppables, stoppableWithName{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"})
+		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 	}
 
 	if features.VulnReporting.Enabled() {

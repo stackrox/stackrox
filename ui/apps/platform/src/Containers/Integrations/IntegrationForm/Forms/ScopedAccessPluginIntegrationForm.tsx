@@ -17,13 +17,13 @@ import { FieldArray, FormikProvider } from 'formik';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
+import FormTestButton from 'Components/PatternFly/FormTestButton';
+import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
-import FormCancelButton from '../FormCancelButton';
-import FormTestButton from '../FormTestButton';
-import FormSaveButton from '../FormSaveButton';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type ScopedAccessPluginIntegration = {

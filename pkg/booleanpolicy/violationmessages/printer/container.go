@@ -156,6 +156,26 @@ func imageUserPrinter(fieldMap map[string][]string) ([]string, error) {
 }
 
 const (
+	imageSignatureVerifiedTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with ` +
+		`{{.Status}} signature{{else}}Image signature is {{.Status}}{{end}}`
+)
+
+func imageSignatureVerifiedPrinter(fieldMap map[string][]string) ([]string, error) {
+	type resultFields struct {
+		ContainerName string
+		Status        string
+	}
+	r := resultFields{
+		ContainerName: maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap),
+		Status:        "unverified",
+	}
+	if verifiedBy := maybeGetSingleValueFromFieldMap(augmentedobjs.ImageSignatureVerifiedCustomTag, fieldMap); verifiedBy != "" {
+		r.Status = "verified by " + verifiedBy
+	}
+	return executeTemplate(imageSignatureVerifiedTemplate, r)
+}
+
+const (
 	seccompProfileTypeTemplate = `Container{{if .ContainerName}} '{{.ContainerName}}'{{end}} has Seccomp profile type '{{.SeccompProfileType}}'`
 )
 

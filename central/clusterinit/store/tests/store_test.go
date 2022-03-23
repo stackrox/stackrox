@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -45,14 +46,18 @@ type clusterInitStoreTestSuite struct {
 	suite.Suite
 	store         store.Store
 	teardownStore func(t *testing.T)
+	ctx           context.Context
+	cancel        context.CancelFunc
 }
 
 func (s *clusterInitStoreTestSuite) SetupTest() {
 	s.store, s.teardownStore = s.storeCreator(s.T())
+	s.ctx, s.cancel = context.WithCancel(context.Background())
 }
 
 func (s *clusterInitStoreTestSuite) TearDownTest() {
 	s.teardownStore(s.T())
+	s.cancel()
 }
 
 func (s *clusterInitStoreTestSuite) TestIDCollisionOnAdd() {
@@ -65,10 +70,10 @@ func (s *clusterInitStoreTestSuite) TestIDCollisionOnAdd() {
 		Name: "id collision",
 	}
 
-	err := s.store.Add(meta)
+	err := s.store.Add(s.ctx, meta)
 	s.NoError(err)
 
-	err = s.store.Add(idCollision)
+	err = s.store.Add(s.ctx, idCollision)
 	s.Error(err)
 	s.True(errors.Is(err, store.ErrInitBundleIDCollision))
 }
@@ -78,7 +83,7 @@ func (s *clusterInitStoreTestSuite) TestNameCollisionOnAdd() {
 		Id:   "0123456789",
 		Name: "test_name",
 	}
-	err := s.store.Add(meta)
+	err := s.store.Add(s.ctx, meta)
 	s.NoError(err)
 
 	meta2 := &storage.InitBundleMeta{
@@ -86,7 +91,7 @@ func (s *clusterInitStoreTestSuite) TestNameCollisionOnAdd() {
 		Name: "test_name",
 	}
 
-	err = s.store.Add(meta2)
+	err = s.store.Add(s.ctx, meta2)
 	s.Error(err)
 }
 
@@ -108,27 +113,27 @@ func (s *clusterInitStoreTestSuite) TestRevokeToken() {
 	}
 
 	for _, m := range []*storage.InitBundleMeta{toRevokeMeta, meta} {
-		err := s.store.Add(m)
+		err := s.store.Add(s.ctx, m)
 		s.Require().NoError(err)
 	}
 
-	storedMeta, err := s.store.Get(toRevokeMeta.GetId())
+	storedMeta, err := s.store.Get(s.ctx, toRevokeMeta.GetId())
 	s.Require().NoError(err)
 	s.False(storedMeta.GetIsRevoked())
 
-	err = s.store.Revoke(toRevokeMeta.GetId())
+	err = s.store.Revoke(s.ctx, toRevokeMeta.GetId())
 	s.Require().NoError(err)
 
 	// test GetAll ignores revoked bundles
-	all, err := s.store.GetAll()
+	all, err := s.store.GetAll(s.ctx)
 	s.Require().NoError(err)
 	s.Len(all, 1)
 	s.Equal("available", all[0].GetName())
 
 	// test name can be reused after revoking an init-bundle
-	err = s.store.Add(toReuseMetaName)
+	err = s.store.Add(s.ctx, toReuseMetaName)
 	s.Require().NoError(err)
-	reused, err := s.store.Get(toReuseMetaName.GetId())
+	reused, err := s.store.Get(s.ctx, toReuseMetaName.GetId())
 	s.Require().NoError(err)
 	s.Equal(toReuseMetaName.GetName(), reused.GetName())
 	s.Equal(toRevokeMeta.GetName(), reused.GetName())

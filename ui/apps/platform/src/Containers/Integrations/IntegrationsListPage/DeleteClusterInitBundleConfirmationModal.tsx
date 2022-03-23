@@ -125,9 +125,8 @@ function DeleteClusterInitBundleConfirmationModal({
                         ) : (
                             <Alert title="Clusters depend on this bundle" variant="danger" isInline>
                                 <p>
-                                    In clusters that depend on this bundle, Red Hat Advanced Cluster
-                                    Security deployments like Sensor will lose connectivity to
-                                    Central.
+                                    In clusters that depend on this bundle, security deployments
+                                    like Sensor will lose connectivity to Central.
                                 </p>
                                 <p className="pf-u-mt-md">
                                     We recommend that you <strong>replace</strong> this bundle in

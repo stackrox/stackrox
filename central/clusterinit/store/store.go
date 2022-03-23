@@ -1,6 +1,8 @@
 package store
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -18,8 +20,8 @@ var (
 
 // Store interface for managing persisted cluster init bundles.
 type Store interface {
-	GetAll() ([]*storage.InitBundleMeta, error)
-	Get(id string) (*storage.InitBundleMeta, error)
-	Add(bundleMeta *storage.InitBundleMeta) error
-	Revoke(id string) error
+	GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error)
+	Get(ctx context.Context, id string) (*storage.InitBundleMeta, error)
+	Add(ctx context.Context, bundleMeta *storage.InitBundleMeta) error
+	Revoke(ctx context.Context, id string) error
 }

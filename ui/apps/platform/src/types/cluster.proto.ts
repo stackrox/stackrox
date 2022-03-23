@@ -89,7 +89,7 @@ export type CompleteClusterConfig = {
     clusterLabels: Record<string, string>;
 };
 
-// StackRoxDeploymentIdentification aims at uniquely identifying a StackRox Sensor deployment. It is used to determine
+// SensorDeploymentIdentification aims at uniquely identifying a Sensor deployment. It is used to determine
 // whether a sensor connection comes from a sensor pod that has restarted or was recreated (possibly after a network
 // partition), or from a deployment in a different namespace or cluster.
 export type SensorDeploymentIdentification = {
