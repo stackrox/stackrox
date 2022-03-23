@@ -160,7 +160,13 @@
               {
                 "id": 3,
                 "name": "lifecycle_stage",
-                "type": "LifecycleStage"
+                "type": "LifecycleStage",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Lifecycle Stage\""
+                  }
+                ]
               },
               {
                 "id": 4,
@@ -209,7 +215,13 @@
               {
                 "id": 6,
                 "name": "enforcement",
-                "type": "Enforcement"
+                "type": "Enforcement",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Enforcement\""
+                  }
+                ]
               },
               {
                 "id": 7,
@@ -1663,7 +1675,13 @@
               {
                 "id": 22,
                 "name": "health_status",
-                "type": "ClusterHealthStatus"
+                "type": "ClusterHealthStatus",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"ignore_pk\""
+                  }
+                ]
               },
               {
                 "id": 23,
@@ -5972,7 +5990,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Image OS,store\"sql:\"pk\""
+                    "value": "search:\\\"Image OS,store\\\""
                   }
                 ]
               },
@@ -6623,6 +6641,17 @@
                 "id": 9,
                 "name": "fixed_by",
                 "type": "string"
+              },
+              {
+                "id": 10,
+                "name": "operating_system",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               }
             ]
           },
@@ -11666,40 +11695,18 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,fk(Image:id)\""
                   }
                 ]
               },
               {
                 "id": 5,
-                "name": "operating_name",
+                "name": "image_component_id",
                 "type": "string",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
-                  }
-                ]
-              },
-              {
-                "id": 6,
-                "name": "component_name",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
-                  }
-                ]
-              },
-              {
-                "id": 7,
-                "name": "component_version",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,fk(ImageComponent:id)\""
                   }
                 ]
               }
@@ -14072,7 +14079,13 @@
                   {
                     "id": 1,
                     "name": "nested",
-                    "type": "string"
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\"Test Oneof Nested String\""
+                      }
+                    ]
                   }
                 ],
                 "messages": [
