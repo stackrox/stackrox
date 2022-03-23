@@ -2919,6 +2919,7 @@ jobs:
     resource_class: small
     environment:
       - GCP_IMAGE_TYPE: "COS"
+      - POD_SECURITY_POLICIES: "true"
     steps:
       - checkout
       - check-backend-changes

@@ -1,0 +1,161 @@
+{{- include "srox.init" . -}}
+{{- if ._rox.central.enableCentralDB }}
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "srox.globalResourceName" (list . "stackrox-central-db-psp") }}
+  labels:
+    {{- include "srox.labels" (list . "clusterrole" "stackrox-central-db-psp") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox-central-db-psp") | nindent 4 }}
+rules:
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    resourceNames:
+      - {{ include "srox.globalResourceName" (list . "stackrox-central-db") }}
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-central-db-psp
+  namespace: {{.Release.Namespace}}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "stackrox-central-db-psp") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "stackrox-central-db-psp") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "srox.globalResourceName" (list . "stackrox-central-db-psp") }}
+subjects:
+  - kind: ServiceAccount
+    name: central-db
+    namespace: {{.Release.Namespace}}
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: {{ include "srox.globalResourceName" (list . "stackrox-central-db") }}
+  labels:
+    {{- include "srox.labels" (list . "podsecuritypolicy" "stackrox-central-db") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "podsecuritypolicy" "stackrox-central-db") | nindent 4 }}
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  volumes:
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+    - 'hostPath'
+  {{- if ._rox.central.persistence.hostPath }}
+  allowedHostPaths:
+    {{- /* TODO(ROX-9807): Use a designated path for central-db for now. Need to move hostPath from central to central-db */}}
+    - pathPrefix: {{._rox.central.persistence.hostPath}}-db
+  {{- end}}
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 70
+        max: 70
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 70
+        max: 70
+
+{{- if and ._rox.env.openshift ._rox.system.createSCCs }}
+---
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: {{ include "srox.globalResourceName" (list . "stackrox-central-db") }}
+  labels:
+    {{- include "srox.labels" (list . "securitycontextconstraints" "stackrox-central-db") | nindent 4 }}
+  annotations:
+    kubernetes.io/description: stackrox-central-db is the security constraint for the central database
+    {{- include "srox.annotations" (list . "securitycontextconstraints" "stackrox-central-db") | nindent 4 }}
+allowHostDirVolumePlugin: {{ ._rox.central.persistence.hostPath | not | not }}
+allowedCapabilities: []
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+defaultAddCapabilities: []
+fsGroup:
+  type: MustRunAs
+  ranges:
+    - max: 70
+      min: 70
+priority: 0
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
+runAsUser:
+  type: MustRunAs
+  uid: 70
+seLinuxContext:
+  type: "RunAsAny"
+seccompProfiles:
+  - '*'
+users:
+  - system:serviceaccount:{{ .Release.Namespace }}:central-db
+volumes:
+  - '*'
+{{- else if eq ._rox.env.openshift 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-central-db-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "use-central-db-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "role" "use-central-db-scc") | nindent 4 }}
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - anyuid
+  {{- if ._rox.central.persistence.hostPath }}
+  - hostmount-anyuid
+  {{- end }}
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: central-db-use-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "central-db-use-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "central-db-use-scc") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: use-central-db-scc
+subjects:
+- kind: ServiceAccount
+  name: central-db
+  namespace: {{.Release.Namespace}}
+{{- end }}
+{{- end }}
