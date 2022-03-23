@@ -42,6 +42,30 @@ describe('Policies table', () => {
         cy.get('th[scope="col"]:contains("Lifecycle")');
     });
 
+    it('should have expected status values', () => {
+        visitPolicies();
+
+        // The following assertions assume that the table is not paginated.
+        cy.get(`${selectors.table.statusCell}:contains("Disabled")`);
+        cy.get(`${selectors.table.statusCell}:contains("Enabled")`);
+    });
+
+    it('should filter policies by disabled status', () => {
+        visitPolicies();
+
+        searchPolicies('Disabled', 'true');
+        cy.get(`${selectors.table.statusCell}:contains("Disabled")`);
+        cy.get(`${selectors.table.statusCell}:contains("Enabled")`).should('not.exist');
+    });
+
+    it('should filter policies by enabled status', () => {
+        visitPolicies();
+
+        searchPolicies('Disabled', 'false');
+        cy.get(`${selectors.table.statusCell}:contains("Disabled")`).should('not.exist');
+        cy.get(`${selectors.table.statusCell}:contains("Enabled")`);
+    });
+
     it('should have expected severity values', () => {
         visitPolicies();
 
