@@ -137,7 +137,14 @@ create table if not exists alerts (
 		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
-	indexes := []string{}
+	indexes := []string{
+
+		"create index if not exists alerts_LifecycleStage on alerts using btree(LifecycleStage)",
+
+		"create index if not exists alerts_Deployment_Id on alerts using hash(Deployment_Id)",
+
+		"create index if not exists alerts_State on alerts using btree(State)",
+	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			log.Panicf("Error creating index %s: %v", index, err)
@@ -416,17 +423,6 @@ create table if not exists alerts_Violations (
     alerts_Id varchar,
     idx integer,
     Message varchar,
-    NetworkFlowInfo_Protocol integer,
-    NetworkFlowInfo_Source_Name varchar,
-    NetworkFlowInfo_Source_EntityType integer,
-    NetworkFlowInfo_Source_DeploymentNamespace varchar,
-    NetworkFlowInfo_Source_DeploymentType varchar,
-    NetworkFlowInfo_Source_Port integer,
-    NetworkFlowInfo_Destination_Name varchar,
-    NetworkFlowInfo_Destination_EntityType integer,
-    NetworkFlowInfo_Destination_DeploymentNamespace varchar,
-    NetworkFlowInfo_Destination_DeploymentType varchar,
-    NetworkFlowInfo_Destination_Port integer,
     Type integer,
     Time timestamp,
     PRIMARY KEY(alerts_Id, idx),
@@ -932,22 +928,11 @@ func insertIntoAlertsViolations(ctx context.Context, tx pgx.Tx, obj *storage.Ale
 		alerts_Id,
 		idx,
 		obj.GetMessage(),
-		obj.GetNetworkFlowInfo().GetProtocol(),
-		obj.GetNetworkFlowInfo().GetSource().GetName(),
-		obj.GetNetworkFlowInfo().GetSource().GetEntityType(),
-		obj.GetNetworkFlowInfo().GetSource().GetDeploymentNamespace(),
-		obj.GetNetworkFlowInfo().GetSource().GetDeploymentType(),
-		obj.GetNetworkFlowInfo().GetSource().GetPort(),
-		obj.GetNetworkFlowInfo().GetDestination().GetName(),
-		obj.GetNetworkFlowInfo().GetDestination().GetEntityType(),
-		obj.GetNetworkFlowInfo().GetDestination().GetDeploymentNamespace(),
-		obj.GetNetworkFlowInfo().GetDestination().GetDeploymentType(),
-		obj.GetNetworkFlowInfo().GetDestination().GetPort(),
 		obj.GetType(),
 		pgutils.NilOrTime(obj.GetTime()),
 	}
 
-	finalStr := "INSERT INTO alerts_Violations (alerts_Id, idx, Message, NetworkFlowInfo_Protocol, NetworkFlowInfo_Source_Name, NetworkFlowInfo_Source_EntityType, NetworkFlowInfo_Source_DeploymentNamespace, NetworkFlowInfo_Source_DeploymentType, NetworkFlowInfo_Source_Port, NetworkFlowInfo_Destination_Name, NetworkFlowInfo_Destination_EntityType, NetworkFlowInfo_Destination_DeploymentNamespace, NetworkFlowInfo_Destination_DeploymentType, NetworkFlowInfo_Destination_Port, Type, Time) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Message = EXCLUDED.Message, NetworkFlowInfo_Protocol = EXCLUDED.NetworkFlowInfo_Protocol, NetworkFlowInfo_Source_Name = EXCLUDED.NetworkFlowInfo_Source_Name, NetworkFlowInfo_Source_EntityType = EXCLUDED.NetworkFlowInfo_Source_EntityType, NetworkFlowInfo_Source_DeploymentNamespace = EXCLUDED.NetworkFlowInfo_Source_DeploymentNamespace, NetworkFlowInfo_Source_DeploymentType = EXCLUDED.NetworkFlowInfo_Source_DeploymentType, NetworkFlowInfo_Source_Port = EXCLUDED.NetworkFlowInfo_Source_Port, NetworkFlowInfo_Destination_Name = EXCLUDED.NetworkFlowInfo_Destination_Name, NetworkFlowInfo_Destination_EntityType = EXCLUDED.NetworkFlowInfo_Destination_EntityType, NetworkFlowInfo_Destination_DeploymentNamespace = EXCLUDED.NetworkFlowInfo_Destination_DeploymentNamespace, NetworkFlowInfo_Destination_DeploymentType = EXCLUDED.NetworkFlowInfo_Destination_DeploymentType, NetworkFlowInfo_Destination_Port = EXCLUDED.NetworkFlowInfo_Destination_Port, Type = EXCLUDED.Type, Time = EXCLUDED.Time"
+	finalStr := "INSERT INTO alerts_Violations (alerts_Id, idx, Message, Type, Time) VALUES($1, $2, $3, $4, $5) ON CONFLICT(alerts_Id, idx) DO UPDATE SET alerts_Id = EXCLUDED.alerts_Id, idx = EXCLUDED.idx, Message = EXCLUDED.Message, Type = EXCLUDED.Type, Time = EXCLUDED.Time"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -1885,28 +1870,6 @@ func (s *storeImpl) copyFromAlertsViolations(ctx context.Context, tx pgx.Tx, ale
 
 		"message",
 
-		"networkflowinfo_protocol",
-
-		"networkflowinfo_source_name",
-
-		"networkflowinfo_source_entitytype",
-
-		"networkflowinfo_source_deploymentnamespace",
-
-		"networkflowinfo_source_deploymenttype",
-
-		"networkflowinfo_source_port",
-
-		"networkflowinfo_destination_name",
-
-		"networkflowinfo_destination_entitytype",
-
-		"networkflowinfo_destination_deploymentnamespace",
-
-		"networkflowinfo_destination_deploymenttype",
-
-		"networkflowinfo_destination_port",
-
 		"type",
 
 		"time",
@@ -1923,28 +1886,6 @@ func (s *storeImpl) copyFromAlertsViolations(ctx context.Context, tx pgx.Tx, ale
 			idx,
 
 			obj.GetMessage(),
-
-			obj.GetNetworkFlowInfo().GetProtocol(),
-
-			obj.GetNetworkFlowInfo().GetSource().GetName(),
-
-			obj.GetNetworkFlowInfo().GetSource().GetEntityType(),
-
-			obj.GetNetworkFlowInfo().GetSource().GetDeploymentNamespace(),
-
-			obj.GetNetworkFlowInfo().GetSource().GetDeploymentType(),
-
-			obj.GetNetworkFlowInfo().GetSource().GetPort(),
-
-			obj.GetNetworkFlowInfo().GetDestination().GetName(),
-
-			obj.GetNetworkFlowInfo().GetDestination().GetEntityType(),
-
-			obj.GetNetworkFlowInfo().GetDestination().GetDeploymentNamespace(),
-
-			obj.GetNetworkFlowInfo().GetDestination().GetDeploymentType(),
-
-			obj.GetNetworkFlowInfo().GetDestination().GetPort(),
 
 			obj.GetType(),
 
