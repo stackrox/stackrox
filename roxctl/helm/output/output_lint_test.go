@@ -164,13 +164,8 @@ func executeHelpOutputCommand(chartName, outputDir string, removeOutputDir bool,
 		}
 	}
 
-	// `chartName` is parsed from args
-	args := []string{chartName}
-
 	// Execute command flow
-	if err := cmd.Construct(args, c); err != nil {
-		return err
-	}
+	cmd.Construct(chartName, c)
 	if err := cmd.Validate(); err != nil {
 		return err
 	}
