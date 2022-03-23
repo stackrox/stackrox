@@ -161,9 +161,10 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 func RHACSReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
-		MainRegistry:       "registry.redhat.io/advanced-cluster-security",
-		MainImageName:      "rhacs-main-rhel8",
-		MainImageTag:       v.MainVersion,
+		MainRegistry:  "registry.redhat.io/advanced-cluster-security",
+		MainImageName: "rhacs-main-rhel8",
+		MainImageTag:  v.MainVersion,
+		/* TODO(ROX-9858): Create repo rhacs-central-db-rhel8 when starting building rhacs */
 		CentralDBImageTag:  v.MainVersion,
 		CentralDBImageName: "rhacs-central-db-rhel8",
 
