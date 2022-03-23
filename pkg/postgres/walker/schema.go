@@ -115,7 +115,7 @@ func (s *Schema) ResolvedFields() []Field {
 	}
 
 	pks = append(pks, s.Fields...)
-	if len(s.Parents) == 0 {
+	if len(s.Parents) == 0 || s.EmbeddedIn == "" {
 		pks = append(pks, serializedField)
 	}
 	return pks
@@ -216,17 +216,19 @@ func (s *Schema) ForeignKeys() []Field {
 // of keys from the parent schemas and also any local keys
 func (s *Schema) ResolvedPrimaryKeys() []Field {
 	localPKSet := set.NewStringSet()
-	pks := s.LocalPrimaryKeys()
-	for _, pk := range pks {
+	localPKS := s.LocalPrimaryKeys()
+	for _, pk := range localPKS {
 		localPKSet.Add(pk.ColumnName)
 	}
 
+	var pks []Field
 	// If the resolved primary key is already present as local primary key, do not add it.
 	for _, pk := range s.ParentKeys() {
 		if localPKSet.Add(pk.ColumnName) {
 			pks = append(pks, pk)
 		}
 	}
+	pks = append(pks, localPKS...)
 	return pks
 }
 
