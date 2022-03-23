@@ -120,11 +120,7 @@ export function filterBySourceTarget(sourceNode, targetNode) {
 export function selectNamespaceFilters(...namespaces) {
     cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
     namespaces.forEach((ns) => {
-        cy.get(selectSelectors.patternFlySelect.openMenu)
-            .find('span')
-            .contains(ns)
-            .siblings('input[type="checkbox"]')
-            .click();
+        cy.contains(`${selectSelectors.patternFlySelect.openMenu} span`, ns).click();
     });
     cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
 }
