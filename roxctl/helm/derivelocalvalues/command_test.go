@@ -28,22 +28,25 @@ func (suite *helmDeriveLocalValuesTestSuite) SetupTest() {
 
 func (suite *helmDeriveLocalValuesTestSuite) TestInvalidCommandArgs() {
 	cases := map[string]struct {
-		args       []string
-		shouldFail bool
-		error      error
+		args        []string
+		shouldFail  bool
+		error       error
+		errorString string
 	}{
 		"should not return an error if valid number of arguments given": {
 			args: []string{"test_chartName"},
 		},
 		"should return an error if no arguments given": {
-			args:       []string{},
-			shouldFail: true,
-			error:      errox.InvalidArgs,
+			args:        []string{},
+			shouldFail:  true,
+			error:       errox.InvalidArgs,
+			errorString: "incorrect number of arguments, see --help for usage information",
 		},
 		"should return an error if too many arguments given": {
-			args:       []string{"test_chartName", "another_arg"},
-			shouldFail: true,
-			error:      errox.InvalidArgs,
+			args:        []string{"test_chartName", "another_arg"},
+			shouldFail:  true,
+			error:       errox.InvalidArgs,
+			errorString: "incorrect number of arguments, see --help for usage information",
 		},
 	}
 
@@ -61,9 +64,10 @@ func (suite *helmDeriveLocalValuesTestSuite) TestInvalidCommandArgs() {
 			err := cmd.Execute()
 			if c.shouldFail {
 				suite.Require().Error(err)
+				suite.Assert().ErrorIs(err, c.error)
+				suite.Assert().Equal(c.errorString, err.Error())
 			} else {
 				suite.Require().NoError(err)
-				suite.Assert().ErrorIs(err, c.error)
 			}
 		})
 	}
@@ -75,15 +79,14 @@ func (suite *helmDeriveLocalValuesTestSuite) TestConstruct() {
 		chartName       string
 	}{
 		"should set chart name": {
-			passedChartName: "test_chartName",
-			chartName:       "test_chartName",
+			chartName: "test_chartName",
 		},
 	}
 
 	for name, c := range cases {
 		suite.Run(name, func() {
 			helmCmd := suite.helmDeriveLocalValuesCommand
-			helmCmd.Construct(c.passedChartName)
+			helmCmd.Construct(c.chartName)
 			suite.Assert().Equal(c.chartName, helmCmd.chartName)
 		})
 	}
@@ -97,6 +100,7 @@ func (suite *helmDeriveLocalValuesTestSuite) TestValidate() {
 		useDirectory bool
 		shouldFail   bool
 		error        error
+		errorString  string
 	}{
 		"should not fail for valid output argument and empty outputDir": {
 			output:     "path_to_file",
@@ -112,14 +116,16 @@ func (suite *helmDeriveLocalValuesTestSuite) TestValidate() {
 			outputPath: standardOutput,
 		},
 		"should fail if both output and outputDir are empty": {
-			shouldFail: true,
-			error:      errox.InvalidArgs,
+			shouldFail:  true,
+			error:       errox.InvalidArgs,
+			errorString: "invalid arguments: no output file specified using either \"--output\" or \"--output-dir\".\\nIf the derived Helm configuration should really be written to stdout, please use \"--output=-\"",
 		},
 		"should fail if both output and outputDir given": {
-			output:     "path_to_file",
-			outputDir:  "path_to_folder",
-			shouldFail: true,
-			error:      errox.InvalidArgs,
+			output:      "path_to_file",
+			outputDir:   "path_to_folder",
+			shouldFail:  true,
+			error:       errox.InvalidArgs,
+			errorString: "invalid arguments: specify either \"--output\" or \"--output-dir\" but not both",
 		},
 	}
 
@@ -133,6 +139,7 @@ func (suite *helmDeriveLocalValuesTestSuite) TestValidate() {
 			if c.shouldFail {
 				suite.Require().Error(err)
 				suite.Assert().ErrorIs(err, c.error)
+				suite.Assert().Equal(c.errorString, err.Error())
 			} else {
 				suite.Require().NoError(err)
 			}
