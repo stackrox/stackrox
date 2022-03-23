@@ -2597,10 +2597,10 @@ github.com/thanos-io/thanos v0.11.0/go.mod h1:N/Yes7J68KqvmY+xM6J5CJqEvWIvKSR5sq
 github.com/theupdateframework/go-tuf v0.0.0-20211203210025-7ded50136bf9/go.mod h1:n2n6wwC9BEnYS/C/APAtNln0eM5zYAYOkOTx6VEG/mA=
 github.com/theupdateframework/go-tuf v0.0.0-20220124194755-2c5d73bebc1c h1:ACqkD0gnDOlJhT9woBFSTVSyIm0k5jRq3CEM/0N8azw=
 github.com/theupdateframework/go-tuf v0.0.0-20220124194755-2c5d73bebc1c/go.mod h1:I0Gs4Tev4hYQ5wiNqN8VJ7qS0gw7KOZNQuckC624RmE=
-github.com/tidwall/gjson v1.9.2 h1:SJQc2IgWWKL5V+YGJrr95hjNXFeZzHT2L9Wv1aAb51Q=
-github.com/tidwall/gjson v1.9.2/go.mod h1:2tcKM/KQ/GjiTN7mfTL/HdNmef9Q6AZLaSK2RdfvSjw=
-github.com/tidwall/match v1.1.0 h1:VfI2e2aXLvytih7WUVyO9uvRC+RcXlaTrMbHuQWnFmk=
-github.com/tidwall/match v1.1.0/go.mod h1:eRSPERbgtNPcGhD8UCthc6PmLEQXEWd3PRB5JTxsfmM=
+github.com/tidwall/gjson v1.14.0 h1:6aeJ0bzojgWLa82gDQHcx3S0Lr/O51I9bJ5nv6JFx5w=
+github.com/tidwall/gjson v1.14.0/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
+github.com/tidwall/match v1.1.1 h1:+Ho715JplO36QYgwN9PGYNhgZvoUSc9X2c80KVTi+GA=
+github.com/tidwall/match v1.1.1/go.mod h1:eRSPERbgtNPcGhD8UCthc6PmLEQXEWd3PRB5JTxsfmM=
 github.com/tidwall/pretty v0.0.0-20180105212114-65a9db5fad51/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
 github.com/tidwall/pretty v1.2.0 h1:RWIZEg2iJ8/g6fDDYzMpobmaoGh5OLl4AXtGUGPcqCs=
