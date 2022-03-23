@@ -40,6 +40,7 @@ export type Policy = {
     SORT_lifecycleStage: string; // For internal use only.
     SORT_enforcement: boolean; // For internal use only.
     policyVersion: string;
+    serverPolicySections: PolicySection[]; // For internal use only.
     policySections: PolicySection[];
     mitreAttackVectors: PolicyMitreAttackVector[];
     readonly criteriaLocked: boolean; // If true, the policy's criteria fields are rendered read-only.
