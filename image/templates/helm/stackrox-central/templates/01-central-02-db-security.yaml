@@ -103,7 +103,7 @@ fsGroup:
     - max: 70
       min: 70
 priority: 0
-readOnlyRootFilesystem: true
+readOnlyRootFilesystem: false
 requiredDropCapabilities: []
 runAsUser:
   type: MustRunAs
