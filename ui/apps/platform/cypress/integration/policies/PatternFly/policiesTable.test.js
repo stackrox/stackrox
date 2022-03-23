@@ -130,7 +130,7 @@ describe('Policies table', () => {
         cy.wait('@reassess');
     });
 
-    it('should have row action to edit policy', () => {
+    it('should have row action to edit policy and then cancel', () => {
         visitPolicies();
 
         cy.intercept('GET', api.policies.policy).as('getPolicy');
@@ -159,7 +159,7 @@ describe('Policies table', () => {
         });
     });
 
-    it('should have row action to clone policy', () => {
+    it('should have row action to clone policy and then cancel', () => {
         visitPolicies();
 
         cy.intercept('GET', api.policies.policy).as('getPolicy');
