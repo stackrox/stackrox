@@ -550,8 +550,7 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 	var fetchedSignatures []*storage.Signature
 	for _, matchingReg := range matchingRegistries {
 		// During fetching, there may occur transient errors. If that's the case, we will retry.
-		// We can ignore the returned error since it will be already logged by the signatures.SignatureFetcher.
-		_ = retry.WithRetry(func() error {
+		err = retry.WithRetry(func() error {
 			// Wait until limiter allows entrance.
 			err := e.signatureFetcherLimiter.Wait(ctx)
 			if err != nil {
@@ -566,6 +565,21 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 			retry.BetweenAttempts(func(_ int) {
 				time.Sleep(500 * time.Millisecond)
 			}))
+
+		// Skip other matching registries if we have a successful fetch of signatures, irrespective of whether
+		// signatures were found or not. Retrying this for other registries won't change the fact that signatures are
+		// available or not.
+		if err == nil {
+			break
+		}
+
+		// We skip logging unauthorized errors. Each matching registry may either provide no credentials or different
+		// credentials, which makes it expected that we receive unauthorized errors on multiple occasions.
+		// The best way to handle this would be to keep a list of images which are matching but not authorized for each
+		// registry, but this can be tackled at a latter improvement.
+		if !errors.Is(err, errox.NotAuthorized) {
+			log.Errorf("Image ")
+		}
 	}
 
 	// Do not signal updates when no signatures have been fetched.
