@@ -578,7 +578,7 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		// The best way to handle this would be to keep a list of images which are matching but not authorized for each
 		// registry, but this can be tackled at a latter improvement.
 		if !errors.Is(err, errox.NotAuthorized) {
-			log.Errorf("Image ")
+			log.Errorf("Error fetching image signatures for image %q: %v", img.GetName().GetFullName(), err)
 		}
 	}
 
