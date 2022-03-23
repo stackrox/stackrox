@@ -90,7 +90,7 @@ create table if not exists singlekey (
     Oneofnested_Nested2_Nested2 varchar,
     Bytess varchar,
     serialized bytea,
-        PRIMARY KEY(Key)
+    PRIMARY KEY(Key)
 )
 `
 
@@ -119,8 +119,8 @@ create table if not exists singlekey_Nested (
     idx integer,
     Nested varchar,
     Nested2_Nested2 varchar,
-        PRIMARY KEY(singlekey_Key, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (singlekey_Key) REFERENCES singlekey(Key) ON DELETE CASCADE
+    PRIMARY KEY(singlekey_Key, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (singlekey_Key) REFERENCES singlekey(Key) ON DELETE CASCADE
 )
 `
 

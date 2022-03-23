@@ -111,7 +111,7 @@ create table if not exists image_cves (
     SuppressExpiry timestamp,
     Severity integer,
     serialized bytea,
-        PRIMARY KEY(Id)
+    PRIMARY KEY(Id)
 )
 `
 
@@ -137,8 +137,8 @@ create table if not exists image_cves_References (
     idx integer,
     URI varchar,
     Tags text[],
-        PRIMARY KEY(image_cves_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (image_cves_Id) REFERENCES image_cves(Id) ON DELETE CASCADE
+    PRIMARY KEY(image_cves_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (image_cves_Id) REFERENCES image_cves(Id) ON DELETE CASCADE
 )
 `
 

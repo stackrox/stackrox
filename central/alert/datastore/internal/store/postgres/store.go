@@ -128,7 +128,7 @@ create table if not exists alerts (
     SnoozeTill timestamp,
     Tags text[],
     serialized bytea,
-        PRIMARY KEY(Id)
+    PRIMARY KEY(Id)
 )
 `
 
@@ -167,8 +167,8 @@ create table if not exists alerts_Whitelists (
     Deployment_Scope_Label_Value varchar,
     Image_Name varchar,
     Expiration timestamp,
-        PRIMARY KEY(alerts_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -202,8 +202,8 @@ create table if not exists alerts_Exclusions (
     Deployment_Scope_Label_Value varchar,
     Image_Name varchar,
     Expiration timestamp,
-        PRIMARY KEY(alerts_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -233,8 +233,8 @@ create table if not exists alerts_Scope (
     Namespace varchar,
     Label_Key varchar,
     Label_Value varchar,
-        PRIMARY KEY(alerts_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -261,8 +261,8 @@ create table if not exists alerts_PolicySections (
     alerts_Id varchar,
     idx integer,
     SectionName varchar,
-        PRIMARY KEY(alerts_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -293,8 +293,8 @@ create table if not exists alerts_PolicySections_PolicyGroups (
     FieldName varchar,
     BooleanOperator integer,
     Negate bool,
-        PRIMARY KEY(alerts_Id, alerts_PolicySections_idx, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id, alerts_PolicySections_idx) REFERENCES alerts_PolicySections(alerts_Id, idx) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, alerts_PolicySections_idx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id, alerts_PolicySections_idx) REFERENCES alerts_PolicySections(alerts_Id, idx) ON DELETE CASCADE
 )
 `
 
@@ -324,8 +324,8 @@ create table if not exists alerts_PolicySections_PolicyGroups_Values (
     alerts_PolicySections_PolicyGroups_idx integer,
     idx integer,
     Value varchar,
-        PRIMARY KEY(alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx) REFERENCES alerts_PolicySections_PolicyGroups(alerts_Id, alerts_PolicySections_idx, idx) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx) REFERENCES alerts_PolicySections_PolicyGroups(alerts_Id, alerts_PolicySections_idx, idx) ON DELETE CASCADE
 )
 `
 
@@ -353,8 +353,8 @@ create table if not exists alerts_MitreAttackVectors (
     idx integer,
     Tactic varchar,
     Techniques text[],
-        PRIMARY KEY(alerts_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -388,8 +388,8 @@ create table if not exists alerts_Containers (
     Image_NotPullable bool,
     Image_IsClusterLocal bool,
     Name varchar,
-        PRIMARY KEY(alerts_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -429,8 +429,8 @@ create table if not exists alerts_Violations (
     NetworkFlowInfo_Destination_Port integer,
     Type integer,
     Time timestamp,
-        PRIMARY KEY(alerts_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -460,8 +460,8 @@ create table if not exists alerts_Violations_Attrs (
     idx integer,
     Key varchar,
     Value varchar,
-        PRIMARY KEY(alerts_Id, alerts_Violations_idx, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id, alerts_Violations_idx) REFERENCES alerts_Violations(alerts_Id, idx) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, alerts_Violations_idx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id, alerts_Violations_idx) REFERENCES alerts_Violations(alerts_Id, idx) ON DELETE CASCADE
 )
 `
 
@@ -507,8 +507,8 @@ create table if not exists alerts_Processes (
     Namespace varchar,
     ContainerStartTime timestamp,
     ImageId varchar,
-        PRIMARY KEY(alerts_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -538,8 +538,8 @@ create table if not exists alerts_Processes_LineageInfo (
     idx integer,
     ParentUid integer,
     ParentExecFilePath varchar,
-        PRIMARY KEY(alerts_Id, alerts_Processes_idx, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id, alerts_Processes_idx) REFERENCES alerts_Processes(alerts_Id, idx) ON DELETE CASCADE
+    PRIMARY KEY(alerts_Id, alerts_Processes_idx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id, alerts_Processes_idx) REFERENCES alerts_Processes(alerts_Id, idx) ON DELETE CASCADE
 )
 `
 

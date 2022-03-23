@@ -80,7 +80,7 @@ create table if not exists risk (
     Subject_Type integer,
     Score numeric,
     serialized bytea,
-        PRIMARY KEY(Id)
+    PRIMARY KEY(Id)
 )
 `
 
@@ -106,8 +106,8 @@ create table if not exists risk_Results (
     idx integer,
     Name varchar,
     Score numeric,
-        PRIMARY KEY(risk_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (risk_Id) REFERENCES risk(Id) ON DELETE CASCADE
+    PRIMARY KEY(risk_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (risk_Id) REFERENCES risk(Id) ON DELETE CASCADE
 )
 `
 
@@ -137,8 +137,8 @@ create table if not exists risk_Results_Factors (
     idx integer,
     Message varchar,
     Url varchar,
-        PRIMARY KEY(risk_Id, risk_Results_idx, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (risk_Id, risk_Results_idx) REFERENCES risk_Results(risk_Id, idx) ON DELETE CASCADE
+    PRIMARY KEY(risk_Id, risk_Results_idx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (risk_Id, risk_Results_idx) REFERENCES risk_Results(risk_Id, idx) ON DELETE CASCADE
 )
 `
 

@@ -108,7 +108,7 @@ create table if not exists images (
     TopCvss numeric,
     Notes int[],
     serialized bytea,
-        PRIMARY KEY(Id)
+    PRIMARY KEY(Id)
 )
 `
 
@@ -139,8 +139,8 @@ create table if not exists images_Layers (
     Created timestamp,
     Author varchar,
     Empty bool,
-        PRIMARY KEY(images_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
+    PRIMARY KEY(images_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
 )
 `
 
@@ -170,8 +170,8 @@ create table if not exists images_Results (
     VerifierId varchar,
     Status integer,
     Description varchar,
-        PRIMARY KEY(images_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
+    PRIMARY KEY(images_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
 )
 `
 
@@ -199,8 +199,8 @@ create table if not exists images_Signatures (
     idx integer,
     Cosign_RawSignature varchar,
     Cosign_SignaturePayload varchar,
-        PRIMARY KEY(images_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
+    PRIMARY KEY(images_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
 )
 `
 

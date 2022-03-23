@@ -165,7 +165,7 @@ create table if not exists clusters (
     InitBundleId varchar,
     ManagedBy integer,
     serialized bytea,
-        PRIMARY KEY(Id)
+    PRIMARY KEY(Id)
 )
 `
 

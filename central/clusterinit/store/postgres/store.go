@@ -81,7 +81,7 @@ create table if not exists clusterinitbundles (
     IsRevoked bool,
     ExpiresAt timestamp,
     serialized bytea,
-        PRIMARY KEY(Id)
+    PRIMARY KEY(Id)
 )
 `
 
@@ -107,8 +107,8 @@ create table if not exists clusterinitbundles_Attributes (
     idx integer,
     Key varchar,
     Value varchar,
-        PRIMARY KEY(clusterinitbundles_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (clusterinitbundles_Id) REFERENCES clusterinitbundles(Id) ON DELETE CASCADE
+    PRIMARY KEY(clusterinitbundles_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (clusterinitbundles_Id) REFERENCES clusterinitbundles(Id) ON DELETE CASCADE
 )
 `
 

@@ -76,7 +76,7 @@ create table if not exists signatureintegrations (
     Id varchar,
     Name varchar UNIQUE,
     serialized bytea,
-        PRIMARY KEY(Id)
+    PRIMARY KEY(Id)
 )
 `
 
@@ -102,8 +102,8 @@ create table if not exists signatureintegrations_PublicKeys (
     idx integer,
     Name varchar,
     PublicKeyPemEnc varchar,
-        PRIMARY KEY(signatureintegrations_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (signatureintegrations_Id) REFERENCES signatureintegrations(Id) ON DELETE CASCADE
+    PRIMARY KEY(signatureintegrations_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (signatureintegrations_Id) REFERENCES signatureintegrations(Id) ON DELETE CASCADE
 )
 `
 

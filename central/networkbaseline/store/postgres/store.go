@@ -80,7 +80,7 @@ create table if not exists networkbaseline (
     Locked bool,
     DeploymentName varchar,
     serialized bytea,
-        PRIMARY KEY(DeploymentId)
+    PRIMARY KEY(DeploymentId)
 )
 `
 
@@ -114,8 +114,8 @@ create table if not exists networkbaseline_Peers (
     Entity_Info_ExternalSource_Cidr varchar,
     Entity_Info_ExternalSource_Default bool,
     Entity_Scope_ClusterId varchar,
-        PRIMARY KEY(networkbaseline_DeploymentId, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId) REFERENCES networkbaseline(DeploymentId) ON DELETE CASCADE
+    PRIMARY KEY(networkbaseline_DeploymentId, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId) REFERENCES networkbaseline(DeploymentId) ON DELETE CASCADE
 )
 `
 
@@ -146,8 +146,8 @@ create table if not exists networkbaseline_Peers_ListenPorts (
     idx integer,
     Port integer,
     L4Protocol integer,
-        PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_Peers_idx) REFERENCES networkbaseline_Peers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
+    PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_Peers_idx) REFERENCES networkbaseline_Peers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
 )
 `
 
@@ -177,8 +177,8 @@ create table if not exists networkbaseline_Peers_Properties (
     Ingress bool,
     Port integer,
     Protocol integer,
-        PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_Peers_idx) REFERENCES networkbaseline_Peers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
+    PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_Peers_idx) REFERENCES networkbaseline_Peers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
 )
 `
 
@@ -213,8 +213,8 @@ create table if not exists networkbaseline_ForbiddenPeers (
     Entity_Info_ExternalSource_Cidr varchar,
     Entity_Info_ExternalSource_Default bool,
     Entity_Scope_ClusterId varchar,
-        PRIMARY KEY(networkbaseline_DeploymentId, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId) REFERENCES networkbaseline(DeploymentId) ON DELETE CASCADE
+    PRIMARY KEY(networkbaseline_DeploymentId, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId) REFERENCES networkbaseline(DeploymentId) ON DELETE CASCADE
 )
 `
 
@@ -245,8 +245,8 @@ create table if not exists networkbaseline_ForbiddenPeers_ListenPorts (
     idx integer,
     Port integer,
     L4Protocol integer,
-        PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx) REFERENCES networkbaseline_ForbiddenPeers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
+    PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx) REFERENCES networkbaseline_ForbiddenPeers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
 )
 `
 
@@ -276,8 +276,8 @@ create table if not exists networkbaseline_ForbiddenPeers_Properties (
     Ingress bool,
     Port integer,
     Protocol integer,
-        PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx) REFERENCES networkbaseline_ForbiddenPeers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
+    PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx) REFERENCES networkbaseline_ForbiddenPeers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
 )
 `
 

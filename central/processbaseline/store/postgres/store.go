@@ -83,7 +83,7 @@ create table if not exists processbaselines (
     StackRoxLockedTimestamp timestamp,
     LastUpdate timestamp,
     serialized bytea,
-        PRIMARY KEY(Id)
+    PRIMARY KEY(Id)
 )
 `
 
@@ -110,8 +110,8 @@ create table if not exists processbaselines_Elements (
     idx integer,
     Element_ProcessName varchar,
     Auto bool,
-        PRIMARY KEY(processbaselines_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (processbaselines_Id) REFERENCES processbaselines(Id) ON DELETE CASCADE
+    PRIMARY KEY(processbaselines_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (processbaselines_Id) REFERENCES processbaselines(Id) ON DELETE CASCADE
 )
 `
 
@@ -139,8 +139,8 @@ create table if not exists processbaselines_ElementGraveyard (
     idx integer,
     Element_ProcessName varchar,
     Auto bool,
-        PRIMARY KEY(processbaselines_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (processbaselines_Id) REFERENCES processbaselines(Id) ON DELETE CASCADE
+    PRIMARY KEY(processbaselines_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (processbaselines_Id) REFERENCES processbaselines(Id) ON DELETE CASCADE
 )
 `
 

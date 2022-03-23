@@ -94,7 +94,7 @@ create table if not exists process_indicators (
     ContainerStartTime timestamp,
     ImageId varchar,
     serialized bytea,
-        PRIMARY KEY(Id)
+    PRIMARY KEY(Id)
 )
 `
 
@@ -120,8 +120,8 @@ create table if not exists process_indicators_LineageInfo (
     idx integer,
     ParentUid integer,
     ParentExecFilePath varchar,
-        PRIMARY KEY(process_indicators_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (process_indicators_Id) REFERENCES process_indicators(Id) ON DELETE CASCADE
+    PRIMARY KEY(process_indicators_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (process_indicators_Id) REFERENCES process_indicators(Id) ON DELETE CASCADE
 )
 `
 

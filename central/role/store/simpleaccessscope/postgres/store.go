@@ -78,7 +78,7 @@ create table if not exists simpleaccessscopes (
     Description varchar,
     Rules_IncludedClusters text[],
     serialized bytea,
-        PRIMARY KEY(Id)
+    PRIMARY KEY(Id)
 )
 `
 
@@ -106,8 +106,8 @@ create table if not exists simpleaccessscopes_IncludedNamespaces (
     idx integer,
     ClusterName varchar,
     NamespaceName varchar,
-        PRIMARY KEY(simpleaccessscopes_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
+    PRIMARY KEY(simpleaccessscopes_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
 )
 `
 
@@ -133,8 +133,8 @@ func createTableSimpleaccessscopesClusterLabelSelectors(ctx context.Context, db 
 create table if not exists simpleaccessscopes_ClusterLabelSelectors (
     simpleaccessscopes_Id varchar,
     idx integer,
-        PRIMARY KEY(simpleaccessscopes_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
+    PRIMARY KEY(simpleaccessscopes_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
 )
 `
 
@@ -165,8 +165,8 @@ create table if not exists simpleaccessscopes_ClusterLabelSelectors_Requirements
     Key varchar,
     Op integer,
     Values text[],
-        PRIMARY KEY(simpleaccessscopes_Id, simpleaccessscopes_ClusterLabelSelectors_idx, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id, simpleaccessscopes_ClusterLabelSelectors_idx) REFERENCES simpleaccessscopes_ClusterLabelSelectors(simpleaccessscopes_Id, idx) ON DELETE CASCADE
+    PRIMARY KEY(simpleaccessscopes_Id, simpleaccessscopes_ClusterLabelSelectors_idx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id, simpleaccessscopes_ClusterLabelSelectors_idx) REFERENCES simpleaccessscopes_ClusterLabelSelectors(simpleaccessscopes_Id, idx) ON DELETE CASCADE
 )
 `
 
@@ -192,8 +192,8 @@ func createTableSimpleaccessscopesNamespaceLabelSelectors(ctx context.Context, d
 create table if not exists simpleaccessscopes_NamespaceLabelSelectors (
     simpleaccessscopes_Id varchar,
     idx integer,
-        PRIMARY KEY(simpleaccessscopes_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
+    PRIMARY KEY(simpleaccessscopes_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
 )
 `
 
@@ -224,8 +224,8 @@ create table if not exists simpleaccessscopes_NamespaceLabelSelectors_Requiremen
     Key varchar,
     Op integer,
     Values text[],
-        PRIMARY KEY(simpleaccessscopes_Id, simpleaccessscopes_NamespaceLabelSelectors_idx, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id, simpleaccessscopes_NamespaceLabelSelectors_idx) REFERENCES simpleaccessscopes_NamespaceLabelSelectors(simpleaccessscopes_Id, idx) ON DELETE CASCADE
+    PRIMARY KEY(simpleaccessscopes_Id, simpleaccessscopes_NamespaceLabelSelectors_idx, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id, simpleaccessscopes_NamespaceLabelSelectors_idx) REFERENCES simpleaccessscopes_NamespaceLabelSelectors(simpleaccessscopes_Id, idx) ON DELETE CASCADE
 )
 `
 

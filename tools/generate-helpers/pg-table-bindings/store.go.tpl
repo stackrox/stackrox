@@ -56,13 +56,13 @@ const (
 
 var (
     schema = walker.Walk(reflect.TypeOf((*{{.Type}})(nil)), baseTable)
-    log = logging.LoggerForModule()
     {{- $schema := .Schema }}
     {{- range $idx, $ref := $schema.Parents}}
         {{- if ne $ref.Table $schema.EmbeddedIn -}}.
         WithReference(walker.Walk(reflect.TypeOf(({{$ref.Type}})(nil)), "{{$ref.Table}}"))
         {{- end }}
     {{- end }}
+    log = logging.LoggerForModule()
 )
 
 func init() {
@@ -106,17 +106,10 @@ create table if not exists {{$schema.Table}} (
 {{- range $idx, $field := $schema.ResolvedFields }}
     {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}},
 {{- end}}
-    {{- if .joinTable}}
-        PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys }}){{ if gt (len $schema.Parents) 0 }},{{end}}
-        {{- range $idx, $pksGrps := $schema.ParentKeysGroupedByTable }}
-        CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrps.Fields}}) REFERENCES {{$pksGrps.Table}}({{template "commandSeparatedRefs" $pksGrps.Fields}}) ON DELETE CASCADE{{if lt (add $idx 1) (len $schema.ParentKeysGroupedByTable)}},{{end}}
-        {{- end}}
-    {{- else }}
-        PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys }}){{ if gt (len $schema.Parents) 0 }},{{end}}
-        {{- range $idx, $pksGrps := $schema.ParentKeysGroupedByTable }}
-        CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrps.Fields}}) REFERENCES {{$pksGrps.Table}}({{template "commandSeparatedRefs" $pksGrps.Fields}}) ON DELETE CASCADE
-        {{- end}}
-    {{- end }}
+    PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys }}){{ if gt (len $schema.Parents) 0 }},{{end}}
+{{- range $idx, $pksGrps := $schema.ParentKeysGroupedByTable }}
+    CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrps.Fields}}) REFERENCES {{$pksGrps.Table}}({{template "commandSeparatedRefs" $pksGrps.Fields}}) ON DELETE CASCADE{{if lt (add $idx 1) (len $schema.ParentKeysGroupedByTable)}},{{end}}
+{{- end}}
 )
 `
 

@@ -84,7 +84,7 @@ create table if not exists rolebindings (
     CreatedAt timestamp,
     RoleId varchar,
     serialized bytea,
-        PRIMARY KEY(Id)
+    PRIMARY KEY(Id)
 )
 `
 
@@ -114,8 +114,8 @@ create table if not exists rolebindings_Subjects (
     Namespace varchar,
     ClusterId varchar,
     ClusterName varchar,
-        PRIMARY KEY(rolebindings_Id, idx),
-        CONSTRAINT fk_parent_table_0 FOREIGN KEY (rolebindings_Id) REFERENCES rolebindings(Id) ON DELETE CASCADE
+    PRIMARY KEY(rolebindings_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (rolebindings_Id) REFERENCES rolebindings(Id) ON DELETE CASCADE
 )
 `
 

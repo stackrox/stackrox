@@ -78,7 +78,7 @@ create table if not exists permissionsets (
     Description varchar,
     ResourceToAccess jsonb,
     serialized bytea,
-        PRIMARY KEY(Id)
+    PRIMARY KEY(Id)
 )
 `
 
