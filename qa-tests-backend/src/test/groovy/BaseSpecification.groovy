@@ -284,7 +284,11 @@ class BaseSpecification extends Specification {
         }
         disableAuthzPlugin()
 
-        compareResourcesAtSpecEnd()
+        // Openshift dynamically creates namespaces (and potentially deployments)
+        // so skip resource model divergence checking when cluster is Openshift.
+        if (!ClusterService.isOpenShift3() && !ClusterService.isOpenShift4()) {
+            compareResourcesAtSpecEnd()
+        }
     }
 
     def compareResourcesAtSpecEnd() {

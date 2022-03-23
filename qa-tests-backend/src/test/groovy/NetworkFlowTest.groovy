@@ -638,6 +638,11 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify generated network policies"() {
         // ROX-8785 - EKS cannot NetworkPolicy (RS-178)
         Assume.assumeFalse(ClusterService.isEKS())
+
+        // RS-361 - OSD cannot NetworkPolicy
+        Assume.assumeFalse(ClusterService.isOpenShift3())
+        Assume.assumeFalse(ClusterService.isOpenShift4())
+
         given:
         "Get current state of network graph"
         NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph()

@@ -66,4 +66,3 @@ cd "$STACKROX_SOURCE_ROOT/qa-tests-backend"
 kubectl delete -f "src/k8s/scc-qatest-anyuid.yaml" &>/dev/null || true
 kubectl apply -f "src/k8s/scc-qatest-anyuid.yaml"
 echo "Cluster is ready for testing."
-
