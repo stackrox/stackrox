@@ -54,6 +54,7 @@ var (
 
 func init() {
 	globaldb.RegisterTable(schema)
+	log.Info("SHREWS => init")
 }
 
 type FlowStore interface {
@@ -287,6 +288,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 // New returns a new Store instance using the provided sql instance.
 // Todo:  maybe a better way.  probably need to default ClusterID to 0 or something.  we may not want to create a store by cluster for PG.
 func New(ctx context.Context, db *pgxpool.Pool, clusterID string) FlowStore {
+	log.Info("SHREWS => New")
 	createTableNetworkflow(ctx, db)
 
 	return &flowStoreImpl{
@@ -361,6 +363,8 @@ func (s *flowStoreImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkF
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
 
+	log.Infof("SHREWS => UpsertFlows => %s", flows)
+
 	// RocksDB implementation was adding the lastUpdatedTS to a key.  That is not necessary in PG world so that
 	// parameter is not being passed forward and should be removed from the interface once RocksDB is removed.
 	if len(flows) < batchAfter {
@@ -428,6 +432,7 @@ func (s *flowStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) 
 
 func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowProperties) bool) ([]*storage.NetworkFlow, error) {
 	var flows []*storage.NetworkFlow
+	log.Info("SHREWS => Read =>")
 
 	for rows.Next() {
 		var srcType storage.NetworkEntityInfo_Type
@@ -472,6 +477,7 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 		}
 	}
 
+	log.Infof("SHREWS => Read => %s", flows)
 	return flows, nil
 }
 
@@ -491,6 +497,7 @@ func (s *flowStoreImpl) Delete(ctx context.Context, propsSrcEntityID string, pro
 // Walk iterates over all of the objects in the store and applies the closure
 // Todo: investigate this method to see if it is doing what it should
 func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFlow) error) error {
+	log.Info("SHREWS => Walk")
 	rows, err := s.db.Query(ctx, walkStmt)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
@@ -549,6 +556,8 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
 
+	log.Info("SHREWS => GetAllFlows => ")
+
 	var rows pgx.Rows
 	var err error
 	// Default to Now as that is when we are reading them
@@ -570,11 +579,13 @@ func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp)
 		return nil, types.Timestamp{}, pgutils.ErrNilIfNoRows(err)
 	}
 
+	log.Infof("SHREWS => GetAllFlows => %s", flows)
 	return flows, lastUpdateTS, nil
 }
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
 func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+	log.Info("SHREWS -> GetMatchingFlows")
 	var rows pgx.Rows
 	var err error
 
@@ -596,6 +607,7 @@ func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage
 
 	flows, err := s.readRows(rows, pred)
 
+	log.Info("SHREWS -> GetMatchingFlows out")
 	return flows, lastUpdateTS, err
 }
 

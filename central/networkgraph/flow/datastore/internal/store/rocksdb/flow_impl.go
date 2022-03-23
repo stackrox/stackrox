@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/common"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
@@ -23,6 +24,7 @@ type flowStoreImpl struct {
 }
 
 var (
+	log          = logging.LoggerForModule()
 	updatedTSKey = []byte("\x00")
 
 	readOptions  = generic.DefaultReadOptions()
@@ -66,6 +68,8 @@ func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.Networ
 
 	batch := gorocksdb.NewWriteBatch()
 	defer batch.Destroy()
+
+	log.Infof("SHREWS => OLD UpsertFlows => %s", flows)
 
 	// Add the timestamp key
 	batch.Put(s.getFullKey(updatedTSKey), tsData)
@@ -207,6 +211,7 @@ func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool
 		return nil
 	})
 
+	log.Infof("SHREWS => OLD READ => %s", flows)
 	return
 }
 

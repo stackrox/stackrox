@@ -49,9 +49,9 @@ func (cds *clusterDataStoreImpl) CreateFlowStore(ctx context.Context, clusterID 
 	var underlying store.FlowStore
 
 	if features.PostgresDatastore.Enabled() {
-		underlying, err = cds.storage.CreateFlowStore(clusterID)
+		underlying, err = cds.storage.CreateFlowStore(ctx, clusterID)
 	} else {
-		underlying, err = cds.storage.CreateFlowStore(clusterID)
+		underlying, err = cds.storage.CreateFlowStore(ctx, clusterID)
 	}
 	if err != nil {
 		return nil, err

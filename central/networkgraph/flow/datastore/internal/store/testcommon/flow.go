@@ -33,7 +33,7 @@ type FlowStoreTestSuite struct {
 // SetupSuite runs before any tests
 func (suite *FlowStoreTestSuite) SetupSuite() {
 	var err error
-	suite.tested, err = suite.store.CreateFlowStore("fakecluster")
+	suite.tested, err = suite.store.CreateFlowStore(suite.ctx, "fakecluster")
 	suite.Require().NoError(err)
 }
 
