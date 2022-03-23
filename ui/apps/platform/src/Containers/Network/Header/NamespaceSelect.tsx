@@ -15,7 +15,7 @@ function filterElementsWithValueProp(
     }
 
     return elements.filter((reactElement) =>
-        reactElement?.props?.value?.toLowerCase().includes(filterValue.toLowerCase())
+        reactElement.props.value?.toLowerCase().includes(filterValue.toLowerCase())
     );
 }
 interface NamespaceSelectProps {
