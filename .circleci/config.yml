@@ -3014,6 +3014,19 @@ jobs:
           cluster-id: scale-test
           machine-type: e2-standard-8
 
+  provision-gke-postgres-api-scale-tests:
+    executor: custom
+    resource_class: small
+    steps:
+    - checkout
+    - check-backend-changes
+    - check-label-exists-or-skip:
+        label: ci-postgres-scale-tests
+        run-on-master: false
+    - provision-gke-cluster:
+        cluster-id: postgres-scale-test
+        machine-type: e2-standard-16
+
   provision-openshift-api-e2e-tests:
     machine:
       image: << pipeline.parameters.ci_machine_image >>
@@ -3735,6 +3748,74 @@ jobs:
       - store-k8s-logs
 
       - teardown-gke
+
+  gke-postgres-api-scale-tests:
+    executor: custom
+    environment:
+    - MONITORING_SUPPORT: true
+    - SCANNER_SUPPORT: true
+    - STORAGE: pvc
+    - STORAGE_CLASS: faster
+    - STORAGE_SIZE: 100
+    - LOAD_BALANCER: lb
+    - OUTPUT_FORMAT: helm
+    - ROX_POSTGRES_DATASTORE: true
+
+    steps:
+    - checkout
+    - check-backend-changes
+    - check-label-exists-or-skip:
+        label: ci-postgres-scale-tests
+        run-on-master: false
+    - setup_remote_docker
+    - attach_workspace:
+        at: /go/src/github.com/stackrox/rox
+
+    - *setupRoxctl
+    - setup-gcp
+    - setup-dep-env
+    - attach-gke-cluster:
+        cluster-id: postgres-scale-test
+    - remove-existing-stackrox-resources
+
+    - *setupGoogleAppCreds
+    - *setupLicense
+
+    - run:
+        name: Launch Sensor and Central with scale workload
+        command: |
+          ./deploy/k8s/deploy.sh
+          ./scale/launch_workload.sh scale-test
+          
+          source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
+          cci-export ROX_USERNAME "$ROX_USERNAME"
+          cci-export ROX_PASSWORD "$ROX_PASSWORD"
+
+    - *waitForAPI
+
+    - run:
+        name: Collect scale results
+        command: |
+          mkdir /tmp/pprof
+          # 45 min run so that we are confident that the run has completely finished
+          ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 45
+          zip -r /tmp/pprof.zip /tmp/pprof
+
+    - *storeProfilingResults
+    - collect-k8s-logs
+    - get-and-store-debug-dump
+    - get-and-store-diagnostic-bundle
+    - get-central-data
+
+    - *getPrometheusMetricParser
+    - compare-with-stored-metrics:
+        cluster-flavor: gke
+        test: scale-test
+
+    - check-stackrox-logs
+    - store-k8s-logs
+
+    - teardown-gke
 
   openshift-api-e2e-tests:
     executor: custom
@@ -4669,6 +4750,14 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-scale-tests
+      - provision-gke-postgres-api-scale-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+      - gke-postgres-api-scale-tests:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+          - build
+          - build-scale-monitoring-and-mock-server
+          - provision-gke-postgres-api-scale-tests
       - provision-openshift-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - openshift-api-e2e-tests:
