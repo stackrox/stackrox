@@ -80,7 +80,7 @@ create table if not exists pods (
     ClusterId varchar,
     Started timestamp,
     serialized bytea,
-    PRIMARY KEY(Id)
+        PRIMARY KEY(Id)
 )
 `
 
@@ -116,8 +116,8 @@ create table if not exists pods_LiveInstances (
     Finished timestamp,
     ExitCode integer,
     TerminationReason varchar,
-    PRIMARY KEY(pods_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (pods_Id) REFERENCES pods(Id) ON DELETE CASCADE
+        PRIMARY KEY(pods_Id, idx),
+        CONSTRAINT fk_parent_table_0 FOREIGN KEY (pods_Id) REFERENCES pods(Id) ON DELETE CASCADE
 )
 `
 
@@ -143,8 +143,8 @@ func createTablePodsTerminatedInstances(ctx context.Context, db *pgxpool.Pool) {
 create table if not exists pods_TerminatedInstances (
     pods_Id varchar,
     idx integer,
-    PRIMARY KEY(pods_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (pods_Id) REFERENCES pods(Id) ON DELETE CASCADE
+        PRIMARY KEY(pods_Id, idx),
+        CONSTRAINT fk_parent_table_0 FOREIGN KEY (pods_Id) REFERENCES pods(Id) ON DELETE CASCADE
 )
 `
 
@@ -183,8 +183,8 @@ create table if not exists pods_TerminatedInstances_Instances (
     Finished timestamp,
     ExitCode integer,
     TerminationReason varchar,
-    PRIMARY KEY(pods_Id, pods_TerminatedInstances_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (pods_Id, pods_TerminatedInstances_idx) REFERENCES pods_TerminatedInstances(pods_Id, idx) ON DELETE CASCADE
+        PRIMARY KEY(pods_Id, pods_TerminatedInstances_idx, idx),
+        CONSTRAINT fk_parent_table_0 FOREIGN KEY (pods_Id, pods_TerminatedInstances_idx) REFERENCES pods_TerminatedInstances(pods_Id, idx) ON DELETE CASCADE
 )
 `
 

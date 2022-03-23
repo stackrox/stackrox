@@ -21,10 +21,10 @@ import (
 const (
 	baseTable  = "image_component_relation"
 	countStmt  = "SELECT COUNT(*) FROM image_component_relation"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_relation WHERE ImageId = $1 AND OperatingName = $2 AND ComponentName = $3 AND ComponentVersion = $4)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_relation WHERE ImageId = $1 AND ImageComponentId = $2)"
 
-	getStmt    = "SELECT serialized FROM image_component_relation WHERE ImageId = $1 AND OperatingName = $2 AND ComponentName = $3 AND ComponentVersion = $4"
-	deleteStmt = "DELETE FROM image_component_relation WHERE ImageId = $1 AND OperatingName = $2 AND ComponentName = $3 AND ComponentVersion = $4"
+	getStmt    = "SELECT serialized FROM image_component_relation WHERE ImageId = $1 AND ImageComponentId = $2"
+	deleteStmt = "DELETE FROM image_component_relation WHERE ImageId = $1 AND ImageComponentId = $2"
 	walkStmt   = "SELECT serialized FROM image_component_relation"
 
 	batchAfter = 100
@@ -48,8 +48,8 @@ func init() {
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, imageId string, operatingName string, componentName string, componentVersion string) (bool, error)
-	Get(ctx context.Context, imageId string, operatingName string, componentName string, componentVersion string) (*storage.ImageComponentEdge, bool, error)
+	Exists(ctx context.Context, imageId string, imageComponentId string) (bool, error)
+	Get(ctx context.Context, imageId string, imageComponentId string) (*storage.ImageComponentEdge, bool, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.ImageComponentEdge) error) error
 
@@ -64,17 +64,18 @@ type storeImpl struct {
 func createTableImageComponentRelation(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists image_component_relation (
+    image_component_Id varchar,
+    image_component_Name varchar,
+    image_component_Version varchar,
+    image_component_OperatingSystem varchar,
     Id varchar,
     LayerIndex integer,
     Location varchar,
     ImageId varchar,
-    OperatingName varchar,
-    ComponentName varchar,
-    ComponentVersion varchar,
-        
-    PRIMARY KEY(ImageId, OperatingName, ComponentName, ComponentVersion),
-    CONSTRAINT fk_parent_table FOREIGN KEY (images_Id, images_Scan_OperatingSystem) REFERENCES images(Id, Scan_OperatingSystem) ON DELETE CASCADE
-    CONSTRAINT fk_parent_table FOREIGN KEY (image_component_Id, image_component_Name, image_component_Version) REFERENCES image_component(Id, Name, Version) ON DELETE CASCADE
+    ImageComponentId varchar,
+        PRIMARY KEY(ImageId, ImageComponentId, image_component_Name, image_component_Version, image_component_OperatingSystem, ImageId, ImageComponentId),
+        CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE,
+        CONSTRAINT fk_parent_table_1 FOREIGN KEY (ImageComponentId, image_component_Name, image_component_Version, image_component_OperatingSystem) REFERENCES image_component(Id, Name, Version, OperatingSystem) ON DELETE CASCADE
 )
 `
 
@@ -114,10 +115,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, imageId string, operatingName string, componentName string, componentVersion string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, imageId string, imageComponentId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ImageComponentEdge")
 
-	row := s.db.QueryRow(ctx, existsStmt, imageId, operatingName, componentName, componentVersion)
+	row := s.db.QueryRow(ctx, existsStmt, imageId, imageComponentId)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -126,13 +127,13 @@ func (s *storeImpl) Exists(ctx context.Context, imageId string, operatingName st
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, imageId string, operatingName string, componentName string, componentVersion string) (*storage.ImageComponentEdge, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, imageId string, imageComponentId string) (*storage.ImageComponentEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageComponentEdge")
 
 	conn, release := s.acquireConn(ctx, ops.Get, "ImageComponentEdge")
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, imageId, operatingName, componentName, componentVersion)
+	row := conn.QueryRow(ctx, getStmt, imageId, imageComponentId)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)

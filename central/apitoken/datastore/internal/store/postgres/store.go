@@ -81,7 +81,7 @@ create table if not exists apitokens (
     Revoked bool,
     Role varchar,
     serialized bytea,
-    PRIMARY KEY(Id)
+        PRIMARY KEY(Id)
 )
 `
 

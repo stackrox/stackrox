@@ -103,24 +103,19 @@ type storeImpl struct {
 func {{template "createFunctionName" $schema}}(ctx context.Context, db *pgxpool.Pool) {
     table := `
 create table if not exists {{$schema.Table}} (
-{{- $fields := dict.nil }}
-{{- if .joinTable}}
-    {{- $fields = $schema.Fields}}
-{{- else }}
-    {{- $fields = $schema.ResolvedFields}}
-{{- end}}
-{{- range $idx, $field := $fields }}
+{{- range $idx, $field := $schema.ResolvedFields }}
     {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}},
 {{- end}}
-    {{- $primaryKeys := dict.nil }}
     {{- if .joinTable}}
-        {{$primaryKeys = $schema.LocalPrimaryKeys}}
+        PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys }}){{ if gt (len $schema.Parents) 0 }},{{end}}
+        {{- range $idx, $pksGrps := $schema.ParentKeysGroupedByTable }}
+        CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrps.Fields}}) REFERENCES {{$pksGrps.Table}}({{template "commandSeparatedRefs" $pksGrps.Fields}}) ON DELETE CASCADE{{if lt (add $idx 1) (len $schema.ParentKeysGroupedByTable)}},{{end}}
+        {{- end}}
     {{- else }}
-        {{- $primaryKeys = $schema.ResolvedPrimaryKeys}}
-    {{- end}}
-    PRIMARY KEY({{template "commaSeparatedColumns" $primaryKeys }}){{ if gt (len $schema.Parents) 0 }},{{end}}
-    {{- range $idx, $pksGrps := $schema.ParentKeysGroupedByTable }}
-    CONSTRAINT fk_parent_table FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrps.Fields}}) REFERENCES {{$pksGrps.Table}}({{template "commandSeparatedRefs" $pksGrps.Fields}}) ON DELETE CASCADE
+        PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys }}){{ if gt (len $schema.Parents) 0 }},{{end}}
+        {{- range $idx, $pksGrps := $schema.ParentKeysGroupedByTable }}
+        CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrps.Fields}}) REFERENCES {{$pksGrps.Table}}({{template "commandSeparatedRefs" $pksGrps.Fields}}) ON DELETE CASCADE
+        {{- end}}
     {{- end }}
 )
 `

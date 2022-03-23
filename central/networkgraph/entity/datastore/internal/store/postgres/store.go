@@ -83,7 +83,7 @@ create table if not exists networkentity (
     Info_ExternalSource_Default bool,
     Scope_ClusterId varchar,
     serialized bytea,
-    PRIMARY KEY(Info_Id)
+        PRIMARY KEY(Info_Id)
 )
 `
 
@@ -109,8 +109,8 @@ create table if not exists networkentity_ListenPorts (
     idx integer,
     Port integer,
     L4Protocol integer,
-    PRIMARY KEY(networkentity_Info_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (networkentity_Info_Id) REFERENCES networkentity(Info_Id) ON DELETE CASCADE
+        PRIMARY KEY(networkentity_Info_Id, idx),
+        CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkentity_Info_Id) REFERENCES networkentity(Info_Id) ON DELETE CASCADE
 )
 `
 

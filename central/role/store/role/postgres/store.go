@@ -80,7 +80,7 @@ create table if not exists roles (
     GlobalAccess integer,
     ResourceToAccess jsonb,
     serialized bytea,
-    PRIMARY KEY(Name)
+        PRIMARY KEY(Name)
 )
 `
 

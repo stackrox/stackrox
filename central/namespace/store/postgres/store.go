@@ -82,7 +82,7 @@ create table if not exists namespaces (
     Priority integer,
     Annotations jsonb,
     serialized bytea,
-    PRIMARY KEY(Id)
+        PRIMARY KEY(Id)
 )
 `
 

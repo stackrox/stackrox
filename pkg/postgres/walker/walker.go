@@ -50,8 +50,9 @@ func (c context) childContext(name string, searchDisabled bool, opts PostgresOpt
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
 func Walk(obj reflect.Type, table string) *Schema {
 	schema := &Schema{
-		Table: table,
-		Type:  obj.String(),
+		Table:    table,
+		Type:     obj.String(),
+		TypeName: obj.Elem().Name(),
 	}
 	handleStruct(context{}, schema, obj.Elem())
 	return schema
@@ -93,6 +94,13 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique bool) 
 			opts.PrimaryKey = topLevel && !ignorePK
 		case field == "unique":
 			opts.Unique = !ignoreUnique
+		case strings.HasPrefix(field, "fk"):
+			// If we already have a field acting as foreign key use it as is rather than adding a redundant field using parentify.
+			typeName, ref := stringutils.Split2(field[strings.Index(field, "(")+1:strings.Index(field, ")")], ":")
+			opts.Reference = &ForeignKeyRef{
+				TypeName:      typeName,
+				ProtoBufField: ref,
+			}
 		case field == "":
 		default:
 			// ignore for just right now
@@ -100,6 +108,15 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique bool) 
 		}
 	}
 	return opts
+}
+
+func getProtoBufName(protoBufTag string) string {
+	for _, part := range strings.Split(protoBufTag, ",") {
+		if strings.HasPrefix(part, "name=") {
+			return strings.TrimPrefix(part, "name=")
+		}
+	}
+	return ""
 }
 
 func getSearchOptions(ctx context, searchTag string) SearchField {
@@ -152,18 +169,22 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		}
 
 		searchOpts := getSearchOptions(ctx, structField.Tag.Get("search"))
-
 		field := Field{
-			Schema:  schema,
-			Name:    structField.Name,
-			Search:  searchOpts,
-			Type:    structField.Type.String(),
-			Options: opts,
+			Schema:       schema,
+			Name:         structField.Name,
+			ProtoBufName: getProtoBufName(structField.Tag.Get("protobuf")),
+			Search:       searchOpts,
+			Type:         structField.Type.String(),
+			Options:      opts,
 			ObjectGetter: ObjectGetter{
 				value: ctx.Getter(structField.Name),
 			},
 			ColumnName: ctx.Column(structField.Name),
 		}
+		if field.Options.Reference != nil {
+			field.Reference = field.Options.Reference.ProtoBufField
+		}
+
 		if dt, ok := simpleFieldsMap[structField.Type.Kind()]; ok {
 			schema.AddFieldWithType(field, dt)
 			continue
@@ -200,6 +221,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 				Parents:      []*Schema{schema},
 				Table:        tableName(schema.Table, field.Name),
 				Type:         elemType.String(),
+				TypeName:     elemType.Elem().Name(),
 				ObjectGetter: ctx.Getter(field.Name),
 				EmbeddedIn:   schema.Table,
 			}

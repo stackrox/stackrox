@@ -94,7 +94,7 @@ create table if not exists reportconfigs (
     LastRunStatus_ErrorMsg varchar,
     LastSuccessfulRunTime timestamp,
     serialized bytea,
-    PRIMARY KEY(Id)
+        PRIMARY KEY(Id)
 )
 `
 

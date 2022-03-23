@@ -56,13 +56,13 @@ func (s *ImagesStoreSuite) TestStore() {
 	image := &storage.Image{}
 	s.NoError(testutils.FullInit(image, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundImage, exists, err := store.Get(ctx, image.GetId(), image.GetScan().GetOperatingSystem())
+	foundImage, exists, err := store.Get(ctx, image.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundImage)
 
 	s.NoError(store.Upsert(ctx, image))
-	foundImage, exists, err = store.Get(ctx, image.GetId(), image.GetScan().GetOperatingSystem())
+	foundImage, exists, err = store.Get(ctx, image.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(image, foundImage)
@@ -71,18 +71,18 @@ func (s *ImagesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(imageCount, 1)
 
-	imageExists, err := store.Exists(ctx, image.GetId(), image.GetScan().GetOperatingSystem())
+	imageExists, err := store.Exists(ctx, image.GetId())
 	s.NoError(err)
 	s.True(imageExists)
 	s.NoError(store.Upsert(ctx, image))
 
-	foundImage, exists, err = store.Get(ctx, image.GetId(), image.GetScan().GetOperatingSystem())
+	foundImage, exists, err = store.Get(ctx, image.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(image, foundImage)
 
-	s.NoError(store.Delete(ctx, image.GetId(), image.GetScan().GetOperatingSystem()))
-	foundImage, exists, err = store.Get(ctx, image.GetId(), image.GetScan().GetOperatingSystem())
+	s.NoError(store.Delete(ctx, image.GetId()))
+	foundImage, exists, err = store.Get(ctx, image.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundImage)

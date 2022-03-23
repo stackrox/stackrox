@@ -75,7 +75,7 @@ func createTableWatchedimages(ctx context.Context, db *pgxpool.Pool) {
 create table if not exists watchedimages (
     Name varchar,
     serialized bytea,
-    PRIMARY KEY(Name)
+        PRIMARY KEY(Name)
 )
 `
 

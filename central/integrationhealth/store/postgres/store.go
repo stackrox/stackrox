@@ -80,7 +80,7 @@ create table if not exists integrationhealth (
     ErrorMessage varchar,
     LastTimestamp timestamp,
     serialized bytea,
-    PRIMARY KEY(Id)
+        PRIMARY KEY(Id)
 )
 `
 

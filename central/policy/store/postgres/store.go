@@ -94,7 +94,7 @@ create table if not exists policy (
     MitreVectorsLocked bool,
     IsDefault bool,
     serialized bytea,
-    PRIMARY KEY(Id)
+        PRIMARY KEY(Id)
 )
 `
 
@@ -130,8 +130,8 @@ create table if not exists policy_Whitelists (
     Deployment_Scope_Label_Value varchar,
     Image_Name varchar,
     Expiration timestamp,
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
+        PRIMARY KEY(policy_Id, idx),
+        CONSTRAINT fk_parent_table_0 FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
 )
 `
 
@@ -165,8 +165,8 @@ create table if not exists policy_Exclusions (
     Deployment_Scope_Label_Value varchar,
     Image_Name varchar,
     Expiration timestamp,
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
+        PRIMARY KEY(policy_Id, idx),
+        CONSTRAINT fk_parent_table_0 FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
 )
 `
 
@@ -196,8 +196,8 @@ create table if not exists policy_Scope (
     Namespace varchar,
     Label_Key varchar,
     Label_Value varchar,
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
+        PRIMARY KEY(policy_Id, idx),
+        CONSTRAINT fk_parent_table_0 FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
 )
 `
 
@@ -224,8 +224,8 @@ create table if not exists policy_PolicySections (
     policy_Id varchar,
     idx integer,
     SectionName varchar,
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
+        PRIMARY KEY(policy_Id, idx),
+        CONSTRAINT fk_parent_table_0 FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
 )
 `
 
@@ -256,8 +256,8 @@ create table if not exists policy_PolicySections_PolicyGroups (
     FieldName varchar,
     BooleanOperator integer,
     Negate bool,
-    PRIMARY KEY(policy_Id, policy_PolicySections_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id, policy_PolicySections_idx) REFERENCES policy_PolicySections(policy_Id, idx) ON DELETE CASCADE
+        PRIMARY KEY(policy_Id, policy_PolicySections_idx, idx),
+        CONSTRAINT fk_parent_table_0 FOREIGN KEY (policy_Id, policy_PolicySections_idx) REFERENCES policy_PolicySections(policy_Id, idx) ON DELETE CASCADE
 )
 `
 
@@ -287,8 +287,8 @@ create table if not exists policy_PolicySections_PolicyGroups_Values (
     policy_PolicySections_PolicyGroups_idx integer,
     idx integer,
     Value varchar,
-    PRIMARY KEY(policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx) REFERENCES policy_PolicySections_PolicyGroups(policy_Id, policy_PolicySections_idx, idx) ON DELETE CASCADE
+        PRIMARY KEY(policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx, idx),
+        CONSTRAINT fk_parent_table_0 FOREIGN KEY (policy_Id, policy_PolicySections_idx, policy_PolicySections_PolicyGroups_idx) REFERENCES policy_PolicySections_PolicyGroups(policy_Id, policy_PolicySections_idx, idx) ON DELETE CASCADE
 )
 `
 
@@ -316,8 +316,8 @@ create table if not exists policy_MitreAttackVectors (
     idx integer,
     Tactic varchar,
     Techniques text[],
-    PRIMARY KEY(policy_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
+        PRIMARY KEY(policy_Id, idx),
+        CONSTRAINT fk_parent_table_0 FOREIGN KEY (policy_Id) REFERENCES policy(Id) ON DELETE CASCADE
 )
 `
 

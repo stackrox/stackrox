@@ -83,7 +83,7 @@ create table if not exists multikey (
     Oneofstring varchar,
     Oneofnested_Nested varchar,
     serialized bytea,
-    PRIMARY KEY(Key1, Key2)
+        PRIMARY KEY(Key1, Key2)
 )
 `
 
@@ -114,8 +114,8 @@ create table if not exists multikey_Nested (
     Nested2_Nested2 varchar,
     Nested2_IsNested bool,
     Nested2_Int64 integer,
-    PRIMARY KEY(multikey_Key1, multikey_Key2, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (multikey_Key1, multikey_Key2) REFERENCES multikey(Key1, Key2) ON DELETE CASCADE
+        PRIMARY KEY(multikey_Key1, multikey_Key2, idx),
+        CONSTRAINT fk_parent_table_0 FOREIGN KEY (multikey_Key1, multikey_Key2) REFERENCES multikey(Key1, Key2) ON DELETE CASCADE
 )
 `
 

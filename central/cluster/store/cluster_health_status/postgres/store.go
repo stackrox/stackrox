@@ -89,7 +89,7 @@ create table if not exists cluster_health_status (
     LastContact timestamp,
     HealthInfoComplete bool,
     serialized bytea,
-    PRIMARY KEY(Id)
+        PRIMARY KEY(Id)
 )
 `
 

@@ -83,7 +83,7 @@ create table if not exists k8sroles (
     Annotations jsonb,
     CreatedAt timestamp,
     serialized bytea,
-    PRIMARY KEY(Id)
+        PRIMARY KEY(Id)
 )
 `
 
@@ -112,8 +112,8 @@ create table if not exists k8sroles_Rules (
     Resources text[],
     NonResourceUrls text[],
     ResourceNames text[],
-    PRIMARY KEY(k8sroles_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (k8sroles_Id) REFERENCES k8sroles(Id) ON DELETE CASCADE
+        PRIMARY KEY(k8sroles_Id, idx),
+        CONSTRAINT fk_parent_table_0 FOREIGN KEY (k8sroles_Id) REFERENCES k8sroles(Id) ON DELETE CASCADE
 )
 `
 

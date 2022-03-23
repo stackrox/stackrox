@@ -85,7 +85,7 @@ create table if not exists serviceaccounts (
     Secrets text[],
     ImagePullSecrets text[],
     serialized bytea,
-    PRIMARY KEY(Id)
+        PRIMARY KEY(Id)
 )
 `
 

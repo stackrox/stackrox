@@ -2,6 +2,7 @@ package walker
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -28,6 +29,7 @@ type Schema struct {
 	Fields       []Field
 	Children     []*Schema
 	Type         string
+	TypeName     string
 	ObjectGetter string
 
 	// This indicates the name of the parent schema in which current schema is embedded (in proto). A schema can be
@@ -133,10 +135,31 @@ func (s *Schema) ParentKeys() []Field {
 // as foreign keys for the current schema grouped by parent schema.
 func (s *Schema) ParentKeysGroupedByTable() []TableFieldsGroup {
 	pks := make([]TableFieldsGroup, 0, len(s.Parents))
+	// Find all the local fields that are already defined as foreign keys.
+	embeddedFKS := make(map[ForeignKeyRef]*Field)
+	for idx := range s.Fields {
+		f := &s.Fields[idx]
+		if ref := f.Options.Reference; ref != nil {
+			embeddedFKS[ForeignKeyRef{
+				TypeName:      strings.ToLower(ref.TypeName),
+				ProtoBufField: strings.ToLower(ref.ProtoBufField),
+			}] = f
+		}
+	}
 	for _, parent := range s.Parents {
 		currPks := parent.ResolvedPrimaryKeys()
 		for idx := range currPks {
 			pk := &currPks[idx]
+			// If the referenced parent field is already an embedded as foriegn key in child, use the child field names.
+			if fs := embeddedFKS[ForeignKeyRef{
+				TypeName:      strings.ToLower(parent.TypeName),
+				ProtoBufField: strings.ToLower(pk.ProtoBufName),
+			}]; fs != nil {
+				pk.Name = fs.Name
+				pk.Reference = pk.ColumnName
+				pk.ColumnName = fs.ColumnName
+				continue
+			}
 			tryParentify(pk, parent)
 		}
 		pks = append(pks, TableFieldsGroup{Table: parent.Table, Fields: currPks})
@@ -244,6 +267,13 @@ type PostgresOptions struct {
 	Unique                 bool
 	IgnorePrimaryKey       bool
 	IgnoreUniqueConstraint bool
+	Reference              *ForeignKeyRef
+}
+
+// ForeignKeyRef holds the reference information as provided in the proto tag `fk`.
+type ForeignKeyRef struct {
+	TypeName      string
+	ProtoBufField string
 }
 
 // ObjectGetter is wrapper around determining how to represent the variable in the
@@ -259,12 +289,14 @@ type Field struct {
 	Schema *Schema
 	// Name of the struct field
 	Name         string
+	ProtoBufName string
 	ObjectGetter ObjectGetter
 	ColumnName   string
 	// If set, this is the reference to
 	Reference string
 	// Type is the reflect.TypeOf value of the field
-	Type string
+	Type     string
+	TypeName string
 	// DataType is the internal type
 	DataType DataType
 	SQLType  string
