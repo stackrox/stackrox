@@ -495,7 +495,6 @@ export function postFormatImageSigningPolicyGroup(policy: Policy): Policy {
     }
 
     const serverPolicy = cloneDeep(policy);
-
     policy.policySections.forEach((policySection, sectionIdx) => {
         const { policyGroups } = policySection;
         policyGroups.forEach((policyGroup, groupIdx) => {
