@@ -19,16 +19,12 @@ function filterElementsWithValueProp(
     );
 }
 interface NamespaceSelectProps {
+    id?: string;
     isDisabled?: boolean;
-    direction?: 'up' | 'down';
     className?: string;
 }
 
-function NamespaceSelect({
-    className = '',
-    direction = 'down',
-    isDisabled = false,
-}: NamespaceSelectProps) {
+function NamespaceSelect({ id, className = '', isDisabled = false }: NamespaceSelectProps) {
     const { isOpen, onToggle } = useSelectToggle();
     const { loading, error, availableNamespaceFilters, selectedNamespaceFilters } =
         useNamespaceFilters();
@@ -55,6 +51,7 @@ function NamespaceSelect({
     // TODO Is there a more reliable way to set maxHeight here instead of hard coded px values?
     return (
         <Select
+            id={id}
             isOpen={isOpen}
             onToggle={onToggle}
             onSelect={onSelect}
@@ -64,7 +61,6 @@ function NamespaceSelect({
             isDisabled={isDisabled || loading || Boolean(error)}
             selections={selectedNamespaceFilters}
             variant={SelectVariant.checkbox}
-            direction={direction}
             maxHeight="350px"
             hasInlineFilter
         >

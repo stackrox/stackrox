@@ -43,7 +43,7 @@ function useNamespaceFilters() {
     );
 
     useEffect(() => {
-        if (!data) {
+        if (!data || !data.results) {
             return;
         }
 
