@@ -1,7 +1,9 @@
 import * as api from '../../../constants/apiEndpoints';
 import { selectors, url } from '../../../constants/PoliciesPagePatternFly';
 import withAuth from '../../../helpers/basicAuth';
+import { generateNameWithDate } from '../../../helpers/formHelpers';
 import {
+    doPolicyRowAction,
     searchPolicies,
     visitPolicies,
     visitPoliciesCallback,
@@ -251,5 +253,31 @@ describe('Policies table', () => {
                     .should('be.disabled');
             });
         });
+    });
+
+    it('should have enabled row action to delete user generated policy', () => {
+        visitPolicies();
+
+        const name = generateNameWithDate('A test policy');
+        doPolicyRowAction(selectors.table.firstRow, 'Clone');
+
+        // getInputByLabel('Name').clear().type(name);
+        cy.get('input#name').clear().type(name);
+
+        cy.intercept('POST', `${api.policies.policies}?enableStrictValidation=true`).as(
+            'postPolicies'
+        );
+        cy.get(selectors.wizardBtns.step5).click();
+        cy.get('button:contains("Save")').click();
+        cy.wait('@postPolicies');
+
+        cy.intercept('GET', api.policies.policies).as('getPolicies');
+        cy.intercept('DELETE', api.policies.policy).as('deletePolicy');
+        doPolicyRowAction(`${selectors.table.rows}:contains("${name}")`, 'Delete policy');
+        cy.get('[role="dialog"][aria-label="Confirm delete"] button:contains("Delete")').click();
+        cy.wait(['@deletePolicy', '@getPolicies']);
+
+        cy.get('h1:contains("Policies")');
+        cy.get(`${selectors.table.policyLink}:contains("${name}")`).should('not.exist');
     });
 });
