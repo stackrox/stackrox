@@ -26,16 +26,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:       fmt.Sprintf("output <%s>", common.PrettyChartNameList),
 		ValidArgs: []string{common.ChartCentralServices, common.ChartSecuredClusterServices},
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 1 {
-				return errox.InvalidArgs.New("incorrect number of arguments, see --help for usage information")
-			}
-			// Check that chart template prefix exists
-			if err := cobra.OnlyValidArgs(cmd, args); err != nil {
-				return errox.NewErrInvalidArgs("unknown chart, see --help for list of supported chart names")
-			}
-			return nil
-		},
+		Args:      cobra.ExactValidArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			helmOutputCmd.Construct(args[0], cmd)
 
@@ -136,7 +127,7 @@ func (cfg *helmOutputCommand) outputHelmChart() error {
 			return errors.Wrapf(err, "error writing file %q", f.Name)
 		}
 	}
-	cfg.env.Logger().ErrfLn("Written Helm chart %s to directory %q", cfg.chartName, cfg.outputDir)
+	cfg.env.Logger().InfofLn("Written Helm chart %s to directory %q", cfg.chartName, cfg.outputDir)
 
 	return nil
 }
@@ -145,13 +136,13 @@ func (cfg *helmOutputCommand) getChartMetaValues(release bool) (*charts.MetaValu
 	handleRhacsWarnings(cfg.rhacs, cfg.flavorProvided, cfg.env.Logger())
 	if cfg.rhacs {
 		if cfg.flavorProvided {
-			return nil, errox.NewErrInvalidArgs(fmt.Sprintf("flag '--rhacs' is deprecated and must not be used together with '--%s'. Remove '--rhacs' flag and specify only '--%s'", flags.ImageDefaultsFlagName, flags.ImageDefaultsFlagName))
+			return nil, errox.InvalidArgs.Newf("flag '--rhacs' is deprecated and must not be used together with '--%s'. Remove '--rhacs' flag and specify only '--%s'", flags.ImageDefaultsFlagName, flags.ImageDefaultsFlagName)
 		}
 		cfg.imageFlavor = defaults.ImageFlavorNameRHACSRelease
 	}
 	imageFlavor, err := defaults.GetImageFlavorByName(cfg.imageFlavor, release)
 	if err != nil {
-		return nil, errox.NewErrInvalidArgs(fmt.Sprintf("'--%s': %v", flags.ImageDefaultsFlagName, err))
+		return nil, errox.InvalidArgs.Newf("'--%s': %v", flags.ImageDefaultsFlagName, err)
 	}
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
 }
