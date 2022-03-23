@@ -41,14 +41,10 @@ message Alert {
 
         ResourceType            resource_type       = 1 [(gogoproto.moretags) = "search:\"Resource Type,store\""];
         string                  name                = 2 [(gogoproto.moretags) = "search:\"Resource\""];
-        // This field is deprecated and can be found at the root of Alert. It will be removed from here in a future release.
-        string                  cluster_id          = 3 [deprecated = true]; // This field has moved to Alert
-        // This field is deprecated and can be found at the root of Alert. It will be removed from here in a future release.
-        string                  cluster_name        = 4 [deprecated = true]; // This field has moved to Alert
-        // This field is deprecated and can be found at the root of Alert. It will be removed from here in a future release.
-        string                  namespace           = 5 [deprecated = true]; // This field has moved to Alert
-        // This field is deprecated and can be found at the root of Alert. It will be removed from here in a future release.
-        string                  namespace_id        = 6 [deprecated = true]; // This field has moved to Alert
+        string                  cluster_id          = 3; // This field has to be duplicated in Alert for scope management and search.
+        string                  cluster_name        = 4; // This field has to be duplicated in Alert for scope management and search.
+        string                  namespace           = 5; // This field has to be duplicated in Alert for scope management and search.
+        string                  namespace_id        = 6; // This field has to be duplicated in Alert for scope management and search.
     }
 
     message Violation {
