@@ -103,7 +103,12 @@ create table if not exists process_indicators (
 		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
-	indexes := []string{}
+	indexes := []string{
+
+		"create index if not exists processIndicators_DeploymentId on process_indicators using hash(DeploymentId)",
+
+		"create index if not exists processIndicators_PodUid on process_indicators using hash(PodUid)",
+	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			log.Panicf("Error creating index %s: %v", index, err)

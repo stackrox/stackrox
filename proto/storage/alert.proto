@@ -23,7 +23,7 @@ message Alert {
         string                  cluster_id          = 9;
         string                  cluster_name        = 10;
         message Container {
-            ContainerImage      image               = 3;
+            ContainerImage      image               = 3 [(gogoproto.moretags) = 'search:"-"'];
             string              name                = 10;
         }
         repeated Container      containers          = 11;
