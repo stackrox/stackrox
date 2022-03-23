@@ -11,6 +11,15 @@ export function visitPolicies() {
     cy.wait('@getPolicies');
 }
 
+export function visitPoliciesCallback(callback) {
+    // Include empty search query to distinguish from intercept with search query.
+    cy.intercept('GET', `${api.policies.policies}?query=`).as('getPolicies');
+    cy.visit(policiesUrl);
+    cy.wait('@getPolicies').then(({ response }) => {
+        callback(response.body.policies);
+    });
+}
+
 export function visitPoliciesFromLeftNav() {
     // Include empty search query to distinguish from intercept with search query.
     cy.intercept('GET', `${api.policies.policies}?query=`).as('getPolicies');
