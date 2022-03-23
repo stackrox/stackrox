@@ -188,7 +188,7 @@ describe('Policies table', () => {
         });
     });
 
-    it('should have row action to disable policy if policy has enabled status', () => {
+    it('should have row action to disable policy that has enabled status and then enable it again', () => {
         visitPoliciesCallback((policies) => {
             const policy = policies.find(({ disabled }) => disabled === false);
             const { name } = policy;
@@ -220,44 +220,6 @@ describe('Policies table', () => {
             // Get tr element again after table renders.
             cy.get(trSelector).then(([tr]) => {
                 cy.wrap(tr).find(`${selectors.table.statusCell}:contains("Enabled")`);
-            });
-
-            // Policy has same state before and after the test.
-        });
-    });
-
-    it('should have row action to enable policy if policy has disabled status', () => {
-        visitPoliciesCallback((policies) => {
-            const policy = policies.find(({ disabled }) => disabled === true);
-            const { name } = policy;
-            const trSelector = `tr:has('td[data-label="Policy"] a:contains("${name}")')`;
-
-            cy.intercept('PATCH', api.policies.policy).as('patchPolicy');
-
-            cy.get(trSelector).then(([tr]) => {
-                cy.wrap(tr).find(`${selectors.table.statusCell}:contains("Disabled")`);
-                cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
-                cy.wrap(tr)
-                    .find(`${selectors.table.actionsItemButton}:contains("Enable policy")`)
-                    .should('be.enabled')
-                    .click();
-                cy.wait('@patchPolicy');
-            });
-
-            // Get tr element again after table renders.
-            cy.get(trSelector).then(([tr]) => {
-                cy.wrap(tr).find(`${selectors.table.statusCell}:contains("Enabled")`);
-                cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
-                cy.wrap(tr)
-                    .find(`${selectors.table.actionsItemButton}:contains("Disable policy")`)
-                    .should('be.enabled')
-                    .click();
-                cy.wait('@patchPolicy');
-            });
-
-            // Get tr element again after table renders.
-            cy.get(trSelector).then(([tr]) => {
-                cy.wrap(tr).find(`${selectors.table.statusCell}:contains("Disabled")`);
             });
 
             // Policy has same state before and after the test.
