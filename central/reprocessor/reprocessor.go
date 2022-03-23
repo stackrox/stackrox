@@ -308,7 +308,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		return nil, false
 	}
 
-	result, err := reprocessingFunc(allAccessCtx, imageEnricher.EnrichmentContext{
+	result, err := reprocessingFunc(context.Background(), imageEnricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 	}, image)
 
@@ -459,7 +459,7 @@ func (l *loopImpl) reprocessNodes() {
 }
 
 func (l *loopImpl) reprocessWatchedImage(name string) bool {
-	img, err := imageEnricher.EnrichImageByName(allAccessCtx, l.imageEnricher, imageEnricher.EnrichmentContext{
+	img, err := imageEnricher.EnrichImageByName(context.Background(), l.imageEnricher, imageEnricher.EnrichmentContext{
 		FetchOpt: imageEnricher.IgnoreExistingImages,
 	}, name)
 	if err != nil {
