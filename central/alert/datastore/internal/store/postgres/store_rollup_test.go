@@ -13,6 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -89,4 +91,44 @@ func (s *AlertsStoreRollupSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundAlert)
+}
+
+func BenchmarkAlertGet(b *testing.B) {
+	envIsolator := envisolator.NewEnvIsolator(b)
+	envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	defer envIsolator.RestoreAll()
+
+	if !features.PostgresDatastore.Enabled() {
+		return
+	}
+	source := pgtest.GetConnectionString(nil)
+	config, err := pgxpool.ParseConfig(source)
+
+	pool, err := pgxpool.ConnectConfig(ctx, config)
+	require.NoError(b, err)
+	defer pool.Close()
+
+	Destroy(ctx, pool)
+	store := New(ctx, pool)
+
+	alert := fixtures.GetAlert()
+
+	require.NoError(b, store.Upsert(ctx, alert))
+
+	b.Run("plain get", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, found, err := store.Get(ctx, alert.GetId())
+			require.NoError(b, err)
+			assert.True(b, found)
+		}
+	})
+
+	b.Run("get with rollup", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, found, err := store.(*storeImpl).GetWithRollup(ctx, alert.GetId())
+			require.NoError(b, err)
+			assert.True(b, found)
+		}
+	})
+
 }

@@ -66,6 +66,7 @@ type Store interface {
 
 type storeImpl struct {
 	db *pgxpool.Pool
+	conn *pgxpool.Conn
 }
 
 func createTableAlerts(ctx context.Context, db *pgxpool.Pool) {
@@ -1061,8 +1062,12 @@ func insertIntoAlertsProcessesLineageInfo(ctx context.Context, tx pgx.Tx, obj *s
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableAlerts(ctx, db)
 
+	conn, err := db.Acquire(ctx)
+	if err != nil {
+		panic(err)
+	}
 	return &storeImpl{
-		db: db,
+		conn: conn,
 	}
 }
 
@@ -1128,15 +1133,17 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) GetWithRollup(ctx context.Context, id string) (map[string]interface{}, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Alert")
 
-	row := s.db.QueryRow(ctx, getWithRollupStmt, id)
+	row := s.conn.QueryRow(ctx, getWithRollupStmt, id)
 	var serializedRow []byte
 	if err := row.Scan(&serializedRow); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
 	var out map[string]interface{}
-	if err := json.Unmarshal(serializedRow, &out); err != nil {
-		return nil, false, err
+	if out != nil {
+		if err := json.Unmarshal(serializedRow, &out); err != nil {
+			return nil, false, err
+		}
 	}
 	return out, true, nil
 }
@@ -1145,10 +1152,7 @@ func (s *storeImpl) GetWithRollup(ctx context.Context, id string) (map[string]in
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Alert, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Alert")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "Alert")
-	defer release()
-
-	row := conn.QueryRow(ctx, getStmt, id)
+	row := s.conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -1163,11 +1167,8 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Alert, bool, e
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		panic(err)
+	return s.conn, func() {
 	}
-	return conn, conn.Release
 }
 
 // Delete removes the specified ID from the store
