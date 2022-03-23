@@ -641,7 +641,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         shortName: 'Exposed node port',
         negatedName: `Exposed node port doesn't match`,
         category: policyCriteriaCategories.NETWORKING,
-        type: 'number',
+        type: 'text',
         placeholder: '22',
         canBooleanLogic: true,
     },

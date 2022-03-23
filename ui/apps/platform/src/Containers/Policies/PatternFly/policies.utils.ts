@@ -380,6 +380,7 @@ function preFormatNestedPolicyFields(policy: Policy): Policy {
     }
 
     const clientPolicy = cloneDeep(policy);
+    clientPolicy.serverPolicySections = policy.policySections;
     // itreating through each value in a policy group in a policy section to parse value string
     policy.policySections.forEach((policySection, sectionIdx) => {
         const { policyGroups } = policySection;
@@ -419,18 +420,30 @@ function postFormatNestedPolicyFields(policy: Policy): Policy {
     }
 
     const serverPolicy = cloneDeep(policy);
-    // itereating through each value in a policy group in a policy section to format to a flat value string
-    policy.policySections.forEach((policySection, sectionIdx) => {
-        const { policyGroups } = policySection;
-        policyGroups.forEach((policyGroup, groupIdx) => {
-            const { values } = policyGroup;
-            values.forEach((value, valueIdx) => {
-                serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[valueIdx] = {
-                    value: formatValueStr(value as ValueObj, policyGroup.fieldName),
-                };
+    if (policy.criteriaLocked) {
+        serverPolicy.policySections = policy.serverPolicySections;
+    } else {
+        // itereating through each value in a policy group in a policy section to format to a flat value string
+        policy.policySections.forEach((policySection, sectionIdx) => {
+            const { policyGroups } = policySection;
+            policyGroups.forEach((policyGroup, groupIdx) => {
+                const { values } = policyGroup;
+                values.forEach((value, valueIdx) => {
+                    serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
+                        valueIdx
+                    ] = {
+                        value: formatValueStr(value as ValueObj, policyGroup.fieldName),
+                    };
+                });
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                delete serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].fieldKey;
             });
         });
-    });
+    }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    delete serverPolicy.serverPolicySections;
     return serverPolicy;
 }
 
