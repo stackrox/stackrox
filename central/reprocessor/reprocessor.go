@@ -45,6 +45,8 @@ var (
 
 	allAccessCtx = sac.WithAllAccess(context.Background())
 
+	emptyCtx = context.Background()
+
 	imageClusterIDFieldPath = imageMapping.ImageDeploymentOptions.MustGet(search.ClusterID.String()).GetFieldPath()
 )
 
@@ -308,7 +310,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		return nil, false
 	}
 
-	result, err := reprocessingFunc(context.Background(), imageEnricher.EnrichmentContext{
+	result, err := reprocessingFunc(emptyCtx, imageEnricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 	}, image)
 
@@ -459,7 +461,7 @@ func (l *loopImpl) reprocessNodes() {
 }
 
 func (l *loopImpl) reprocessWatchedImage(name string) bool {
-	img, err := imageEnricher.EnrichImageByName(context.Background(), l.imageEnricher, imageEnricher.EnrichmentContext{
+	img, err := imageEnricher.EnrichImageByName(emptyCtx, l.imageEnricher, imageEnricher.EnrichmentContext{
 		FetchOpt: imageEnricher.IgnoreExistingImages,
 	}, name)
 	if err != nil {
