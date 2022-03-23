@@ -19,17 +19,18 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
+// Todo: This one is custom at the moment.  Figured I would get it down to what it needs to do first such that it
+// fits within the existing interface to minimize my blast radius.
 const (
 	baseTable  = "networkflow"
 	countStmt  = "SELECT COUNT(*) FROM networkflow"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkflow WHERE Props_SrcEntity_Id = $1 AND Props_DstEntity_Id = $2 AND Props_DstPort = $3 AND Props_L4Protocol = $4 AND ClusterId = $5)"
 
-	// Todo:  Curious if I can use Viswa json stuff in here.
-	getStmt    = "SELECT Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE Props_SrcEntity_Id = $1 AND Props_DstEntity_Id = $2 AND Props_DstPort = $3 AND Props_L4Protocol = $4 AND ClusterId = $5"
+	getStmt    = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE Props_SrcEntity_Id = $1 AND Props_DstEntity_Id = $2 AND Props_DstPort = $3 AND Props_L4Protocol = $4 AND ClusterId = $5"
 	deleteStmt = "DELETE FROM networkflow WHERE Props_SrcEntity_Id = $1 AND Props_DstEntity_Id = $2 AND Props_DstPort = $3 AND Props_L4Protocol = $4 AND ClusterId = $5"
-	walkStmt   = "SELECT Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow"
+	walkStmt   = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow"
 
-	getSinceStmt           = "SELECT Props_SrcEntity_Id, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE (LastSeenTimestamp >= $1 OR LastSeenTimestamp IS NULL) AND ClusterId = $2"
+	getSinceStmt           = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE (LastSeenTimestamp >= $1 OR LastSeenTimestamp IS NULL) AND ClusterId = $2"
 	deleteDeploymentStmt   = "DELETE FROM networkflow WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2))"
 	deleteOrphanByTimeStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND LastSeenTimestamp IS NOT NULL AND LastSeenTimestamp < $2"
 )
@@ -60,8 +61,8 @@ type FlowStore interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) (bool, error)
 	Get(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) (*storage.NetworkFlow, bool, error)
-	Upsert(ctx context.Context, lastUpdateTS timestamp.MicroTS, obj *storage.NetworkFlow) error
-	UpsertMany(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs []*storage.NetworkFlow) error
+	Upsert(ctx context.Context, obj *storage.NetworkFlow) error
+	UpsertMany(ctx context.Context, objs []*storage.NetworkFlow) error
 	Delete(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) error
 
 	Walk(ctx context.Context, fn func(obj *storage.NetworkFlow) error) error
@@ -73,8 +74,7 @@ type FlowStore interface {
 	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
 	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
 
-	// Todo:  UpsertFlows looks like any old pg upsert.  this one passes in the time.  I wonder if I need that as a parameter?
-	// Todo:  After looking around at network flows decided to pass it in as a parameter to make conversion simpler.
+	// Same as other Upserts but it takes in a time
 	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
 	// Same as Delete except it takes in the object vs the IDs.  Keep an eye on it.
 	RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error
@@ -94,6 +94,7 @@ type flowStoreImpl struct {
 }
 
 func createTableNetworkflow(ctx context.Context, db *pgxpool.Pool) {
+	// Todo: I THINK flows only have srcType, srcId, destType, destID, port, protocol, time and cluster  So may be able to shrink this.
 	table := `
 create table if not exists networkflow (
     Props_SrcEntity_Type integer,
@@ -140,7 +141,7 @@ create table if not exists networkflow (
 
 }
 
-func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, lastUpdateTS timestamp.MicroTS, obj *storage.NetworkFlow) error {
+func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, obj *storage.NetworkFlow) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -160,9 +161,6 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, las
 		obj.GetProps().GetDstEntity().GetExternalSource().GetDefault(),
 		obj.GetProps().GetDstPort(),
 		obj.GetProps().GetL4Protocol(),
-		// Todo:  Figure this out.  The existing flow code seemed to use the time passed in to the method.
-		// While the existing test suite wanted to use the time on the flow.
-		//pgutils.NilOrTime(lastUpdateTS.GogoProtobuf()),
 		pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
 		clusterID,
 	}
@@ -177,7 +175,7 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, las
 	return nil
 }
 
-func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
+func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkFlow) error {
 
 	inputRows := [][]interface{}{}
 
@@ -257,10 +255,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, last
 
 			obj.GetProps().GetL4Protocol(),
 
-			// Todo:  Figure this out.  The existing flow code seemed to use the time passed in to the method.
-			// While the existing test suite wanted to use the time on the flow.
 			pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
-			//pgutils.NilOrTime(lastUpdateTS.GogoProtobuf()),
 
 			s.clusterID,
 		})
@@ -300,7 +295,7 @@ func New(ctx context.Context, db *pgxpool.Pool, clusterID string) FlowStore {
 	}
 }
 
-func (s *flowStoreImpl) copyFrom(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
+func (s *flowStoreImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFlow) error {
 	conn, release := s.acquireConn(ctx, ops.Get, "NetworkFlow")
 	defer release()
 
@@ -309,7 +304,7 @@ func (s *flowStoreImpl) copyFrom(ctx context.Context, lastUpdateTS timestamp.Mic
 		return err
 	}
 
-	if err := s.copyFromNetworkflow(ctx, tx, lastUpdateTS, objs...); err != nil {
+	if err := s.copyFromNetworkflow(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -321,7 +316,7 @@ func (s *flowStoreImpl) copyFrom(ctx context.Context, lastUpdateTS timestamp.Mic
 	return nil
 }
 
-func (s *flowStoreImpl) upsert(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
+func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow) error {
 	conn, release := s.acquireConn(ctx, ops.Get, "NetworkFlow")
 	defer release()
 
@@ -333,7 +328,7 @@ func (s *flowStoreImpl) upsert(ctx context.Context, lastUpdateTS timestamp.Micro
 			return err
 		}
 
-		if err := insertIntoNetworkflow(ctx, tx, s.clusterID, lastUpdateTS, obj); err != nil {
+		if err := insertIntoNetworkflow(ctx, tx, s.clusterID, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -347,26 +342,32 @@ func (s *flowStoreImpl) upsert(ctx context.Context, lastUpdateTS timestamp.Micro
 	return nil
 }
 
-func (s *flowStoreImpl) Upsert(ctx context.Context, lastUpdateTS timestamp.MicroTS, obj *storage.NetworkFlow) error {
+func (s *flowStoreImpl) Upsert(ctx context.Context, obj *storage.NetworkFlow) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NetworkFlow")
 
-	return s.upsert(ctx, lastUpdateTS, obj)
+	return s.upsert(ctx, obj)
 }
 
-func (s *flowStoreImpl) UpsertMany(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs []*storage.NetworkFlow) error {
+func (s *flowStoreImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkFlow) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
 
 	if len(objs) < batchAfter {
-		return s.upsert(ctx, lastUpdateTS, objs...)
+		return s.upsert(ctx, objs...)
 	} else {
-		return s.copyFrom(ctx, lastUpdateTS, objs...)
+		return s.copyFrom(ctx, objs...)
 	}
 }
 
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
 
-	return s.upsert(ctx, lastUpdateTS, flows...)
+	// RocksDB implementation was adding the lastUpdatedTS to a key.  That is not necessary in PG world so that
+	// parameter is not being passed forward and should be removed from the interface once RocksDB is removed.
+	if len(flows) < batchAfter {
+		return s.upsert(ctx, flows...)
+	} else {
+		return s.copyFrom(ctx, flows...)
+	}
 }
 
 // Count returns the number of objects in the store
@@ -429,13 +430,16 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 	var flows []*storage.NetworkFlow
 
 	for rows.Next() {
-		var srcId string
-		var destId string
+		var srcType storage.NetworkEntityInfo_Type
+		var srcID string
+		var destType storage.NetworkEntityInfo_Type
+		var destID string
 		var port uint32
 		var protocol storage.L4Protocol
 		var lastTime *time.Time
-		var clusterId string
-		if err := rows.Scan(&srcId, &destId, &port, &protocol, &lastTime, &clusterId); err != nil {
+		var clusterID string
+
+		if err := rows.Scan(&srcType, &srcID, &destType, &destID, &port, &protocol, &lastTime, &clusterID); err != nil {
 			log.Info(err)
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
@@ -445,17 +449,24 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 		if lastTime != nil {
 			ts = protoconv.MustConvertTimeToTimestamp(*lastTime)
 		}
+
 		flow := &storage.NetworkFlow{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: srcId},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: destId},
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: srcType,
+					Id:   srcID,
+				},
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: destType,
+					Id:   destID},
 				DstPort:    port,
 				L4Protocol: protocol,
 			},
 			LastSeenTimestamp: ts,
-			ClusterId:         clusterId,
+			ClusterId:         clusterID,
 		}
 
+		// Apply the predicate function.  Will phase out as we move away form Rocks to where clause
 		if pred == nil || pred(flow.Props) {
 			flows = append(flows, flow)
 		}
@@ -465,13 +476,13 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 }
 
 // Delete removes the specified ID from the store
-func (s *flowStoreImpl) Delete(ctx context.Context, propsSrcEntityId string, propsDstEntityId string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) error {
+func (s *flowStoreImpl) Delete(ctx context.Context, propsSrcEntityID string, propsDstEntityID string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
 	conn, release := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	defer release()
 
-	if _, err := conn.Exec(ctx, deleteStmt, propsSrcEntityId, propsDstEntityId, propsDstPort, propsL4Protocol, s.clusterID); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, propsSrcEntityID, propsDstEntityID, propsDstPort, propsL4Protocol, s.clusterID); err != nil {
 		return err
 	}
 	return nil
@@ -487,23 +498,34 @@ func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFl
 	defer rows.Close()
 	for rows.Next() {
 		//var data []byte
-		var srcId string
-		var destId string
+		var srcID string
+		var destID string
 		var port uint32
 		var protocol storage.L4Protocol
+		var lastTime *time.Time
 		var clusterID string
 
-		if err := rows.Scan(&srcId, &destId, &port, &protocol, &clusterID); err != nil {
+		if err := rows.Scan(&srcID, &destID, &port, &protocol, &lastTime, &clusterID); err != nil {
 			return err
 		}
-		var msg storage.NetworkFlow
-		msg.Props.SrcEntity.Id = srcId
-		msg.Props.DstEntity.Id = destId
-		msg.Props.DstPort = port
-		msg.Props.L4Protocol = protocol
-		msg.ClusterId = clusterID
 
-		if err := fn(&msg); err != nil {
+		// Todo: figure out a better way to deal with this time object
+		var ts *types.Timestamp
+		if lastTime != nil {
+			ts = protoconv.MustConvertTimeToTimestamp(*lastTime)
+		}
+		flow := &storage.NetworkFlow{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: srcID},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: destID},
+				DstPort:    port,
+				L4Protocol: protocol,
+			},
+			LastSeenTimestamp: ts,
+			ClusterId:         clusterID,
+		}
+
+		if err := fn(flow); err != nil {
 			return err
 		}
 	}
@@ -529,8 +551,8 @@ func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp)
 
 	var rows pgx.Rows
 	var err error
-	var lastUpdateTS *types.Timestamp
-	lastUpdateTS = protoconv.MustConvertTimeToTimestamp(time.Now())
+	// Default to Now as that is when we are reading them
+	lastUpdateTS := *types.TimestampNow()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is null
 	if since == nil {
@@ -539,25 +561,25 @@ func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp)
 		rows, err = s.db.Query(ctx, getSinceStmt, pgutils.NilOrTime(since), s.clusterID)
 	}
 	if err != nil {
-		return nil, *lastUpdateTS, pgutils.ErrNilIfNoRows(err)
+		return nil, types.Timestamp{}, pgutils.ErrNilIfNoRows(err)
 	}
 	defer rows.Close()
 
 	flows, err := s.readRows(rows, nil)
+	if err != nil {
+		return nil, types.Timestamp{}, pgutils.ErrNilIfNoRows(err)
+	}
 
-	// Todo:  Figure out why the time is returned and what it is used for.
-	return flows, *lastUpdateTS, nil
+	return flows, lastUpdateTS, nil
 }
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
 func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
-	log.Info("SHREWS GetMatchingFlows")
-	log.Info(since)
 	var rows pgx.Rows
 	var err error
-	// The entry for this should be present, but make sure we have a sane default if it is not
-	var lastUpdateTS *types.Timestamp
-	lastUpdateTS = protoconv.MustConvertTimeToTimestamp(time.Now())
+
+	// Default to Now as that is when we are reading them
+	lastUpdateTS := *types.TimestampNow()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is null
 	if since == nil {
@@ -568,13 +590,13 @@ func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage
 	}
 
 	if err != nil {
-		return nil, *since, pgutils.ErrNilIfNoRows(err)
+		return nil, types.Timestamp{}, pgutils.ErrNilIfNoRows(err)
 	}
 	defer rows.Close()
 
 	flows, err := s.readRows(rows, pred)
 
-	return flows, *lastUpdateTS, err
+	return flows, lastUpdateTS, err
 }
 
 // RemoveFlow removes the specified ID from the store

@@ -92,7 +92,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	s.Nil(foundNetworkFlow)
 
 	// Todo: The time and how it gets stored is hosing up the equal checks.  figure out best way to deal with that.
-	s.NoError(store.Upsert(ctx, timestamp.Now(), networkFlow))
+	s.NoError(store.Upsert(ctx, networkFlow))
 	foundNetworkFlow, exists, err = store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
 	s.NoError(err)
 	s.True(exists)
@@ -105,7 +105,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	networkFlowExists, err := store.Exists(ctx, networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
 	s.NoError(err)
 	s.True(networkFlowExists)
-	s.NoError(store.Upsert(ctx, timestamp.Now(), networkFlow))
+	s.NoError(store.Upsert(ctx, networkFlow))
 
 	foundNetworkFlow, exists, err = store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
 	s.NoError(err)
@@ -125,7 +125,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 		networkFlows = append(networkFlows, networkFlow)
 	}
 
-	s.NoError(store.UpsertMany(ctx, timestamp.Now(), networkFlows))
+	s.NoError(store.UpsertMany(ctx, networkFlows))
 
 	networkFlowCount, err = store.Count(ctx)
 	s.NoError(err)
@@ -222,7 +222,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	result = append(result, "Copy From")
 	result = append(result, strconv.Itoa(len(flows)))
 	a := time.Now()
-	s.NoError(store.UpsertMany(ctx, timestamp.Now(), flows))
+	s.NoError(store.UpsertMany(ctx, flows))
 
 	delta := time.Now().Sub(a)
 	result = append(result, strconv.FormatInt(delta.Milliseconds(), 10))
