@@ -17,7 +17,7 @@ require (
 	github.com/PagerDuty/go-pagerduty v1.4.2
 	github.com/RoaringBitmap/roaring v0.9.4
 	github.com/VividCortex/ewma v1.2.0
-	github.com/andygrunwald/go-jira v1.14.0
+	github.com/andygrunwald/go-jira v1.15.1
 	github.com/antihax/optional v1.0.0
 	github.com/aws/aws-sdk-go v1.42.43
 	github.com/blevesearch/bleve v1.0.14
