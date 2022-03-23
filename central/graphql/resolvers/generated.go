@@ -1216,6 +1216,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SecretType(0)))
 	utils.Must(builder.AddType("SecurityContext", []string{
 		"addCapabilities: [String!]!",
+		"allowPrivilegeEscalation: Boolean!",
 		"dropCapabilities: [String!]!",
 		"privileged: Boolean!",
 		"readOnlyRootFilesystem: Boolean!",
@@ -10562,6 +10563,11 @@ func (resolver *Resolver) wrapSecurityContexts(values []*storage.SecurityContext
 
 func (resolver *securityContextResolver) AddCapabilities(ctx context.Context) []string {
 	value := resolver.data.GetAddCapabilities()
+	return value
+}
+
+func (resolver *securityContextResolver) AllowPrivilegeEscalation(ctx context.Context) bool {
+	value := resolver.data.GetAllowPrivilegeEscalation()
 	return value
 }
 
