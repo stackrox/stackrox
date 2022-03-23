@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
@@ -23,11 +24,21 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	helmOutputCmd := &helmOutputCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
-		Use: fmt.Sprintf("output <%s>", common.PrettyChartNameList),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := helmOutputCmd.Construct(args, cmd); err != nil {
-				return err
+		Use:       fmt.Sprintf("output <%s>", common.PrettyChartNameList),
+		ValidArgs: []string{common.ChartCentralServices, common.ChartSecuredClusterServices},
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return errox.InvalidArgs.New("incorrect number of arguments, see --help for usage information")
 			}
+			// Check that chart template prefix exists
+			if err := cobra.OnlyValidArgs(cmd, args); err != nil {
+				return errox.NewErrInvalidArgs("unknown chart, see --help for list of supported chart names")
+			}
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			helmOutputCmd.Construct(args[0], cmd)
+
 			if err := helmOutputCmd.Validate(); err != nil {
 				return err
 			}
@@ -37,8 +48,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 	c.PersistentFlags().StringVar(&helmOutputCmd.outputDir, "output-dir", "", "path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")
 	c.PersistentFlags().BoolVar(&helmOutputCmd.removeOutputDir, "remove", false, "remove the output directory if it already exists")
-	c.PersistentFlags().BoolVar(&helmOutputCmd.rhacs, "rhacs", false,
-		fmt.Sprintf("render RHACS chart flavor (deprecated: use '--%s=%s' instead)", flags.ImageDefaultsFlagName, defaults.ImageFlavorNameRHACSRelease))
+	c.PersistentFlags().BoolVar(&helmOutputCmd.rhacs, "rhacs", false, "render RHACS chart flavor")
+
+	deprecationNote := fmt.Sprintf("use '--%s=%s' instead", flags.ImageDefaultsFlagName, defaults.ImageFlavorNameRHACSRelease)
+	utils.Must(c.PersistentFlags().MarkDeprecated("rhacs", deprecationNote))
 
 	if !buildinfo.ReleaseBuild {
 		flags.AddHelmChartDebugSetting(c)
@@ -60,36 +73,22 @@ type helmOutputCommand struct {
 	flavorProvided          bool
 	chartTemplatePathPrefix image.ChartPrefix
 	env                     environment.Environment
-	logger                  environment.Logger
 }
 
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
-func (cfg *helmOutputCommand) Construct(args []string, cmd *cobra.Command) error {
-	if len(args) != 1 {
-		return errors.New("incorrect number of arguments, see --help for usage information")
-	}
-
-	cfg.chartName = args[0]
+func (cfg *helmOutputCommand) Construct(chartName string, cmd *cobra.Command) {
+	cfg.chartName = chartName
 	cfg.flavorProvided = cmd.Flags().Changed(flags.ImageDefaultsFlagName)
-
-	cfg.logger = cfg.env.Logger()
-
-	return nil
 }
 
 // Validate will validate the injected values and check whether it's possible to execute the operation with the
 // provided values
 func (cfg *helmOutputCommand) Validate() error {
-	// Check that chart template prefix exists
-	chartTemplatePathPrefix := common.ChartTemplates[cfg.chartName]
-	if chartTemplatePathPrefix == "" {
-		return errox.NewErrInvalidArgs("unknown chart, see --help for list of supported chart names")
-	}
-	cfg.chartTemplatePathPrefix = chartTemplatePathPrefix
+	cfg.chartTemplatePathPrefix = common.ChartTemplates[cfg.chartName]
 
 	if cfg.outputDir == "" {
 		cfg.outputDir = fmt.Sprintf("./stackrox-%s-chart", cfg.chartName)
-		cfg.logger.ErrfLn("No output directory specified, using default directory %q", cfg.outputDir)
+		cfg.env.Logger().WarnfLn("No output directory specified, using default directory %q", cfg.outputDir)
 	}
 
 	if _, err := os.Stat(cfg.outputDir); err == nil {
@@ -97,10 +96,10 @@ func (cfg *helmOutputCommand) Validate() error {
 			if err := os.RemoveAll(cfg.outputDir); err != nil {
 				return errors.Wrapf(err, "failed to remove output dir %s", cfg.outputDir)
 			}
-			cfg.logger.ErrfLn("Removed output directory %s", cfg.outputDir)
+			cfg.env.Logger().WarnfLn("Removed output directory %s", cfg.outputDir)
 		} else {
-			cfg.logger.ErrfLn("Directory %q already exists, use --remove or select a different directory with --output-dir.", cfg.outputDir)
-			return errox.AlreadyExists.New(fmt.Sprintf("directory %q already exists", cfg.outputDir))
+			cfg.env.Logger().ErrfLn("Directory %q already exists, use --remove or select a different directory with --output-dir.", cfg.outputDir)
+			return errox.AlreadyExists.Newf("directory %q already exists", cfg.outputDir)
 		}
 	} else if !os.IsNotExist(err) {
 		return errors.Wrapf(err, "failed to check if directory %q exists", cfg.outputDir)
@@ -113,7 +112,7 @@ func (cfg *helmOutputCommand) outputHelmChart() error {
 	// load chart template meta values
 	chartMetaValues, err := cfg.getChartMetaValues(buildinfo.ReleaseBuild)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to get chart meta values")
 	}
 
 	// load image with templates
@@ -137,22 +136,22 @@ func (cfg *helmOutputCommand) outputHelmChart() error {
 			return errors.Wrapf(err, "error writing file %q", f.Name)
 		}
 	}
-	cfg.logger.ErrfLn("Written Helm chart %s to directory %q", cfg.chartName, cfg.outputDir)
+	cfg.env.Logger().ErrfLn("Written Helm chart %s to directory %q", cfg.chartName, cfg.outputDir)
 
 	return nil
 }
 
 func (cfg *helmOutputCommand) getChartMetaValues(release bool) (*charts.MetaValues, error) {
-	handleRhacsWarnings(cfg.rhacs, cfg.flavorProvided, cfg.logger)
+	handleRhacsWarnings(cfg.rhacs, cfg.flavorProvided, cfg.env.Logger())
 	if cfg.rhacs {
 		if cfg.flavorProvided {
-			return nil, errox.InvalidArgs.New(fmt.Sprintf("flag '--rhacs' is deprecated and must not be used together with '--%s'. Remove '--rhacs' flag and specify only '--%s'", flags.ImageDefaultsFlagName, flags.ImageDefaultsFlagName))
+			return nil, errox.NewErrInvalidArgs(fmt.Sprintf("flag '--rhacs' is deprecated and must not be used together with '--%s'. Remove '--rhacs' flag and specify only '--%s'", flags.ImageDefaultsFlagName, flags.ImageDefaultsFlagName))
 		}
 		cfg.imageFlavor = defaults.ImageFlavorNameRHACSRelease
 	}
 	imageFlavor, err := defaults.GetImageFlavorByName(cfg.imageFlavor, release)
 	if err != nil {
-		return nil, errox.InvalidArgs.New(fmt.Sprintf("invalid arguments: '--%s': %v", flags.ImageDefaultsFlagName, err))
+		return nil, errox.NewErrInvalidArgs(fmt.Sprintf("'--%s': %v", flags.ImageDefaultsFlagName, err))
 	}
 	return charts.GetMetaValuesForFlavor(imageFlavor), nil
 }
