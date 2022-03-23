@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { Select, SelectOption } from '@patternfly/react-core';
@@ -10,13 +10,13 @@ import { actions as pageActions } from 'reducers/network/page';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { Cluster } from 'types/cluster.proto';
 
-interface ClusterSelectProps {
+type ClusterSelectProps = {
     selectClusterId: (clusterId: string) => void;
     closeSidePanel: () => void;
     clusters: Cluster[];
     selectedClusterId?: string;
     isDisabled?: boolean;
-}
+};
 
 const ClusterSelect = ({
     selectClusterId,
@@ -24,7 +24,7 @@ const ClusterSelect = ({
     clusters,
     selectedClusterId = '',
     isDisabled = false,
-}: ClusterSelectProps) => {
+}: ClusterSelectProps): ReactElement => {
     const { closeSelect, isOpen, onToggle } = useSelectToggle();
     function changeCluster(_e, clusterId) {
         selectClusterId(clusterId);
@@ -32,15 +32,11 @@ const ClusterSelect = ({
         closeSidePanel();
     }
 
-    if (!clusters.length) {
-        return null;
-    }
-
     return (
         <Select
             isOpen={isOpen}
             onToggle={onToggle}
-            isDisabled={isDisabled}
+            isDisabled={isDisabled || !clusters.length}
             selections={selectedClusterId}
             placeholderText="Select a cluster"
             onSelect={changeCluster}

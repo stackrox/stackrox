@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import { Divider, Flex, PageSection, Title } from '@patternfly/react-core';
 
 import CIDRFormButton from './CIDRFormButton';
 import FilterToolbar from './FilterToolbar';
 import SimulatorButton from './SimulatorButton';
 
-interface HeaderProps {
+type HeaderProps = {
     isSimulationOn: boolean;
-}
+};
 
-function Header({ isSimulationOn }: HeaderProps) {
+function Header({ isSimulationOn }: HeaderProps): ReactElement {
     return (
         <>
             <PageSection variant="light">
