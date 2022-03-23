@@ -28,6 +28,11 @@ import (
 	"golang.org/x/time/rate"
 )
 
+var (
+	// ctx used within all tests.
+	ctx = context.Background()
+)
+
 func emptyImageGetter(ctx context.Context, id string) (*storage.Image, bool, error) {
 	return nil, false, nil
 }
@@ -415,7 +420,7 @@ func TestEnricherFlow(t *testing.T) {
 			if c.imageGetter != nil {
 				enricherImpl.imageGetter = c.imageGetter
 			}
-			result, err := enricherImpl.EnrichImage(context.Background(), c.ctx, c.image)
+			result, err := enricherImpl.EnrichImage(ctx, c.ctx, c.image)
 			require.NoError(t, err)
 			assert.Equal(t, c.result, result)
 
@@ -459,7 +464,7 @@ func TestCVESuppression(t *testing.T) {
 	}
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
-	results, err := enricherImpl.EnrichImage(context.Background(), EnrichmentContext{}, img)
+	results, err := enricherImpl.EnrichImage(ctx, EnrichmentContext{}, img)
 	require.NoError(t, err)
 	assert.True(t, results.ImageUpdated)
 	assert.True(t, img.Scan.Components[0].Vulns[0].Suppressed)
@@ -489,7 +494,7 @@ func TestZeroIntegrations(t *testing.T) {
 		mockReporter, emptySignatureIntegrationGetter)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
-	results, err := enricherImpl.EnrichImage(context.Background(), EnrichmentContext{}, img)
+	results, err := enricherImpl.EnrichImage(ctx, EnrichmentContext{}, img)
 	assert.Error(t, err)
 	expectedErrMsg := "image enrichment errors: [error getting metadata for image:  error: not found: no image registries are integrated: please add an image integration, error scanning image:  error: no image scanners are integrated]"
 	assert.Equal(t, expectedErrMsg, err.Error())
@@ -518,7 +523,7 @@ func TestZeroIntegrationsInternal(t *testing.T) {
 		mockReporter, emptySignatureIntegrationGetter)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
-	results, err := enricherImpl.EnrichImage(context.Background(), EnrichmentContext{Internal: true}, img)
+	results, err := enricherImpl.EnrichImage(ctx, EnrichmentContext{Internal: true}, img)
 	assert.NoError(t, err)
 	assert.False(t, results.ImageUpdated)
 	assert.Equal(t, ScanNotDone, results.ScanResult)
@@ -548,7 +553,7 @@ func TestRegistryMissingFromImage(t *testing.T) {
 		mockReporter, emptySignatureIntegrationGetter)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{FullName: "testimage"}}
-	results, err := enricherImpl.EnrichImage(context.Background(), EnrichmentContext{}, img)
+	results, err := enricherImpl.EnrichImage(ctx, EnrichmentContext{}, img)
 	assert.Error(t, err)
 	expectedErrMsg := fmt.Sprintf("image enrichment error: error getting metadata for image: "+
 		"testimage error: invalid arguments: no registry is indicated for image %q", img.GetName().GetFullName())
@@ -582,7 +587,7 @@ func TestZeroRegistryIntegrations(t *testing.T) {
 		mockReporter, emptySignatureIntegrationGetter)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
-	results, err := enricherImpl.EnrichImage(context.Background(), EnrichmentContext{}, img)
+	results, err := enricherImpl.EnrichImage(ctx, EnrichmentContext{}, img)
 	assert.Error(t, err)
 	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: not found: no image registries are integrated: please add an image integration"
 	assert.Equal(t, expectedErrMsg, err.Error())
@@ -616,7 +621,7 @@ func TestNoMatchingRegistryIntegration(t *testing.T) {
 		mockReporter, emptySignatureIntegrationGetter)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
-	results, err := enricherImpl.EnrichImage(context.Background(), EnrichmentContext{}, img)
+	results, err := enricherImpl.EnrichImage(ctx, EnrichmentContext{}, img)
 	assert.Error(t, err)
 	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: no matching image registries found: please add an image integration for reg"
 	assert.Equal(t, expectedErrMsg, err.Error())
@@ -648,7 +653,7 @@ func TestZeroScannerIntegrations(t *testing.T) {
 		mockReporter, emptySignatureIntegrationGetter)
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}}
-	results, err := enricherImpl.EnrichImage(context.Background(), EnrichmentContext{}, img)
+	results, err := enricherImpl.EnrichImage(ctx, EnrichmentContext{}, img)
 	assert.Error(t, err)
 	expectedErrMsg := "image enrichment error: error scanning image:  error: no image scanners are integrated"
 	assert.Equal(t, expectedErrMsg, err.Error())
@@ -817,7 +822,7 @@ func TestEnrichWithSignature_Success(t *testing.T) {
 				signatureFetcher:        c.sigFetcher,
 				signatureFetcherLimiter: rate.NewLimiter(rate.Every(10*time.Millisecond), 1),
 			}
-			updated, err := e.enrichWithSignature(context.Background(), c.ctx, c.img)
+			updated, err := e.enrichWithSignature(ctx, c.ctx, c.img)
 			assert.NoError(t, err)
 			assert.Equal(t, c.updated, updated)
 			assert.ElementsMatch(t, c.expectedSigs, c.img.GetSignature().GetSignatures())
@@ -869,7 +874,7 @@ func TestEnrichWithSignature_Failures(t *testing.T) {
 			e := enricherImpl{
 				integrations: c.integrationSet,
 			}
-			updated, err := e.enrichWithSignature(context.Background(),
+			updated, err := e.enrichWithSignature(ctx,
 				EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly}, c.img)
 			require.Error(t, err)
 			assert.False(t, updated)
@@ -959,7 +964,7 @@ func TestEnrichWithSignatureVerificationData_Success(t *testing.T) {
 				signatureVerifier:          c.sigVerifier,
 			}
 
-			updated, err := e.enrichWithSignatureVerificationData(context.Background(), c.ctx, c.img)
+			updated, err := e.enrichWithSignatureVerificationData(ctx, c.ctx, c.img)
 			assert.NoError(t, err)
 			assert.Equal(t, c.updated, updated)
 			assert.ElementsMatch(t, c.expectedVerificationResults, c.img.GetSignatureVerificationData().GetResults())
@@ -975,7 +980,7 @@ func TestEnrichWithSignatureVerificationData_Failure(t *testing.T) {
 		Signatures: []*storage.Signature{createSignature("sig", "pay")},
 	}}
 
-	updated, err := e.enrichWithSignatureVerificationData(context.Background(),
+	updated, err := e.enrichWithSignatureVerificationData(ctx,
 		EnrichmentContext{FetchOpt: ForceRefetch}, img)
 	require.Error(t, err)
 	assert.False(t, updated)
