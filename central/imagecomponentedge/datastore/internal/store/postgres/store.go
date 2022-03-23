@@ -73,7 +73,7 @@ create table if not exists image_component_relation (
     Location varchar,
     ImageId varchar,
     ImageComponentId varchar,
-    PRIMARY KEY(ImageId, ImageComponentId, image_component_Name, image_component_Version, image_component_OperatingSystem, ImageId, ImageComponentId),
+    PRIMARY KEY(ImageId, ImageComponentId, image_component_Name, image_component_Version, image_component_OperatingSystem),
     CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE,
     CONSTRAINT fk_parent_table_1 FOREIGN KEY (ImageComponentId, image_component_Name, image_component_Version, image_component_OperatingSystem) REFERENCES image_component(Id, Name, Version, OperatingSystem) ON DELETE CASCADE
 )

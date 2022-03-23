@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -214,8 +215,18 @@ func (s *Schema) ForeignKeys() []Field {
 // ResolvedPrimaryKeys are all the primary keys of the current schema which is the union
 // of keys from the parent schemas and also any local keys
 func (s *Schema) ResolvedPrimaryKeys() []Field {
-	pks := s.ParentKeys()
-	pks = append(pks, s.LocalPrimaryKeys()...)
+	localPKSet := set.NewStringSet()
+	pks := s.LocalPrimaryKeys()
+	for _, pk := range pks {
+		localPKSet.Add(pk.ColumnName)
+	}
+
+	// If the resolved primary key is already present as local primary key, do not add it.
+	for _, pk := range s.ParentKeys() {
+		if localPKSet.Add(pk.ColumnName) {
+			pks = append(pks, pk)
+		}
+	}
 	return pks
 }
 
