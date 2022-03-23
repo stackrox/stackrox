@@ -1,6 +1,7 @@
 package derivelocalvalues
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -28,25 +29,22 @@ func (suite *helmDeriveLocalValuesTestSuite) SetupTest() {
 
 func (suite *helmDeriveLocalValuesTestSuite) TestInvalidCommandArgs() {
 	cases := map[string]struct {
-		args        []string
-		shouldFail  bool
-		error       error
-		errorString string
+		args       []string
+		shouldFail bool
+		errStdout  string
 	}{
 		"should not return an error if valid number of arguments given": {
 			args: []string{"test_chartName"},
 		},
 		"should return an error if no arguments given": {
-			args:        []string{},
-			shouldFail:  true,
-			error:       errox.InvalidArgs,
-			errorString: "incorrect number of arguments, see --help for usage information",
+			args:       []string{},
+			shouldFail: true,
+			errStdout:  "Error: accepts 1 arg(s), received 0\n",
 		},
 		"should return an error if too many arguments given": {
-			args:        []string{"test_chartName", "another_arg"},
-			shouldFail:  true,
-			error:       errox.InvalidArgs,
-			errorString: "incorrect number of arguments, see --help for usage information",
+			args:       []string{"test_chartName", "another_arg"},
+			shouldFail: true,
+			errStdout:  "Error: accepts 1 arg(s), received 2\n",
 		},
 	}
 
@@ -60,12 +58,14 @@ func (suite *helmDeriveLocalValuesTestSuite) TestInvalidCommandArgs() {
 			cmd.RunE = func(cmd *cobra.Command, args []string) error {
 				return nil
 			}
+			// Redirect stdErr
+			errOut := bytes.NewBufferString("")
+			cmd.SetErr(errOut)
 
 			err := cmd.Execute()
 			if c.shouldFail {
 				suite.Require().Error(err)
-				suite.Assert().ErrorIs(err, c.error)
-				suite.Assert().Equal(c.errorString, err.Error())
+				suite.Assert().Equal(c.errStdout, errOut.String())
 			} else {
 				suite.Require().NoError(err)
 			}
@@ -74,22 +74,12 @@ func (suite *helmDeriveLocalValuesTestSuite) TestInvalidCommandArgs() {
 }
 
 func (suite *helmDeriveLocalValuesTestSuite) TestConstruct() {
-	cases := map[string]struct {
-		passedChartName string
-		chartName       string
-	}{
-		"should set chart name": {
-			chartName: "test_chartName",
-		},
-	}
+	chartName := "test_chartName"
 
-	for name, c := range cases {
-		suite.Run(name, func() {
-			helmCmd := suite.helmDeriveLocalValuesCommand
-			helmCmd.Construct(c.chartName)
-			suite.Assert().Equal(c.chartName, helmCmd.chartName)
-		})
-	}
+	helmCmd := suite.helmDeriveLocalValuesCommand
+	helmCmd.Construct(chartName)
+	suite.Assert().Equal(chartName, helmCmd.chartName)
+
 }
 
 func (suite *helmDeriveLocalValuesTestSuite) TestValidate() {
@@ -116,16 +106,17 @@ func (suite *helmDeriveLocalValuesTestSuite) TestValidate() {
 			outputPath: standardOutput,
 		},
 		"should fail if both output and outputDir are empty": {
-			shouldFail:  true,
-			error:       errox.InvalidArgs,
-			errorString: "invalid arguments: no output file specified using either \"--output\" or \"--output-dir\".\\nIf the derived Helm configuration should really be written to stdout, please use \"--output=-\"",
+			shouldFail: true,
+			error:      errox.InvalidArgs,
+			errorString: `invalid arguments: no output file specified using either "--output" or "--output-dir".
+If the derived Helm configuration should really be written to stdout, please use "--output=-"`,
 		},
 		"should fail if both output and outputDir given": {
 			output:      "path_to_file",
 			outputDir:   "path_to_folder",
 			shouldFail:  true,
 			error:       errox.InvalidArgs,
-			errorString: "invalid arguments: specify either \"--output\" or \"--output-dir\" but not both",
+			errorString: `invalid arguments: specify either "--output" or "--output-dir" but not both`,
 		},
 	}
 

@@ -10,8 +10,10 @@ import (
 )
 
 const (
-	defaultNamespace = "stackrox"
-	standardOutput   = ""
+	defaultNamespace        = "stackrox"
+	standardOutput          = ""
+	noOutputFileExplanation = `no output file specified using either "--output" or "--output-dir".
+If the derived Helm configuration should really be written to stdout, please use "--output=-"`
 )
 
 // Command for deriving local values from existing StackRox Kubernetes resources.
@@ -19,13 +21,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	helmDeriveLocalValuesCmd := &helmDeriveLocalValuesCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
-		Use: fmt.Sprintf("derive-local-values --output <path> <%s>", common.MakePrettyChartNameList(supportedCharts...)),
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 1 {
-				return errox.InvalidArgs.New("incorrect number of arguments, see --help for usage information")
-			}
-			return nil
-		},
+		Use:  fmt.Sprintf("derive-local-values --output <path> <%s>", common.MakePrettyChartNameList(supportedCharts...)),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			helmDeriveLocalValuesCmd.Construct(args[0])
@@ -68,12 +65,11 @@ func (cfg *helmDeriveLocalValuesCommand) Construct(chartName string) {
 // provided values
 func (cfg *helmDeriveLocalValuesCommand) Validate() error {
 	if cfg.output == "" && cfg.outputDir == "" {
-		return errox.NewErrInvalidArgs(`no output file specified using either "--output" or "--output-dir".\n` +
-			`If the derived Helm configuration should really be written to stdout, please use "--output=-"`)
+		return errox.InvalidArgs.CausedBy(noOutputFileExplanation)
 	}
 
 	if cfg.output != "" && cfg.outputDir != "" {
-		return errox.NewErrInvalidArgs(`specify either "--output" or "--output-dir" but not both`)
+		return errox.InvalidArgs.CausedBy(`specify either "--output" or "--output-dir" but not both`)
 	}
 
 	if cfg.output == "-" {
