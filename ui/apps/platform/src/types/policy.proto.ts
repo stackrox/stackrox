@@ -40,6 +40,7 @@ export type Policy = {
     SORT_lifecycleStage: string; // For internal use only.
     SORT_enforcement: boolean; // For internal use only.
     policyVersion: string;
+    serverPolicySections: PolicySection[]; // For internal use only.
     policySections: PolicySection[];
     mitreAttackVectors: PolicyMitreAttackVector[];
     readonly criteriaLocked: boolean; // If true, the policy's criteria fields are rendered read-only.
@@ -119,7 +120,8 @@ export type PolicyGroup = {
 export type PolicyBooleanOperator = 'OR' | 'AND';
 
 export type PolicyValue = {
-    value: string | ValueObj;
+    value?: string | ValueObj;
+    arrayValue?: string[];
 };
 
 // TODO supersedes MitreAttackVectorId in src/services/MitreService.ts

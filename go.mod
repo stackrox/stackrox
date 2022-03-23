@@ -17,7 +17,7 @@ require (
 	github.com/PagerDuty/go-pagerduty v1.4.2
 	github.com/RoaringBitmap/roaring v0.9.4
 	github.com/VividCortex/ewma v1.2.0
-	github.com/andygrunwald/go-jira v1.14.0
+	github.com/andygrunwald/go-jira v1.15.1
 	github.com/antihax/optional v1.0.0
 	github.com/aws/aws-sdk-go v1.42.43
 	github.com/blevesearch/bleve v1.0.14
@@ -37,7 +37,7 @@ require (
 	github.com/dexidp/dex v0.0.0-20210917061239-f0186ff2651e
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
-	github.com/docker/docker v20.10.12+incompatible
+	github.com/docker/docker v20.10.13+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
 	github.com/facebookincubator/flog v0.0.0-20190930132826-d2511d0ce33c // indirect
@@ -86,7 +86,7 @@ require (
 	github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
 	github.com/operator-framework/operator-sdk v0.19.4
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.32.1
 	github.com/russellhaering/gosaml2 v0.7.0
@@ -104,7 +104,7 @@ require (
 	github.com/steveyen/gtreap v0.1.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
-	github.com/tidwall/gjson v1.9.2
+	github.com/tidwall/gjson v1.14.0
 	github.com/tkuchiki/go-timezone v0.2.2
 	github.com/vbauerster/mpb/v4 v4.12.2
 	go.etcd.io/bbolt v1.3.6
@@ -127,11 +127,11 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.1
-	k8s.io/api v0.22.7
-	k8s.io/apimachinery v0.22.7
+	k8s.io/api v0.22.8
+	k8s.io/apimachinery v0.22.8
 	k8s.io/apiserver v0.22.5
-	k8s.io/client-go v0.22.7
-	k8s.io/kubectl v0.22.5
+	k8s.io/client-go v0.22.8
+	k8s.io/kubectl v0.22.8
 	k8s.io/kubelet v0.22.7
 	k8s.io/utils v0.0.0-20211208161948-7d6a63dca704
 	sigs.k8s.io/controller-runtime v0.10.3

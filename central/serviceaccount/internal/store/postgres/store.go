@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -12,8 +13,10 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 const (
@@ -28,10 +31,22 @@ const (
 	getManyStmt = "SELECT serialized FROM serviceaccounts WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM serviceaccounts WHERE Id = ANY($1::text[])"
+
+	batchAfter = 100
+
+	// using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	batchSize = 10000
+)
+
+var (
+	schema = walker.Walk(reflect.TypeOf((*storage.ServiceAccount)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {
-	globaldb.RegisterTable(baseTable, "ServiceAccount")
+	globaldb.RegisterTable(schema)
 }
 
 type Store interface {
@@ -76,13 +91,13 @@ create table if not exists serviceaccounts (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -104,7 +119,7 @@ func insertIntoServiceaccounts(ctx context.Context, tx pgx.Tx, obj *storage.Serv
 		obj.GetClusterId(),
 		obj.GetLabels(),
 		obj.GetAnnotations(),
-		pgutils.NilOrStringTimestamp(obj.GetCreatedAt()),
+		pgutils.NilOrTime(obj.GetCreatedAt()),
 		obj.GetAutomountToken(),
 		obj.GetSecrets(),
 		obj.GetImagePullSecrets(),
@@ -120,6 +135,108 @@ func insertIntoServiceaccounts(ctx context.Context, tx pgx.Tx, obj *storage.Serv
 	return nil
 }
 
+func (s *storeImpl) copyFromServiceaccounts(ctx context.Context, tx pgx.Tx, objs ...*storage.ServiceAccount) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"namespace",
+
+		"clustername",
+
+		"clusterid",
+
+		"labels",
+
+		"annotations",
+
+		"createdat",
+
+		"automounttoken",
+
+		"secrets",
+
+		"imagepullsecrets",
+
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			obj.GetId(),
+
+			obj.GetName(),
+
+			obj.GetNamespace(),
+
+			obj.GetClusterName(),
+
+			obj.GetClusterId(),
+
+			obj.GetLabels(),
+
+			obj.GetAnnotations(),
+
+			pgutils.NilOrTime(obj.GetCreatedAt()),
+
+			obj.GetAutomountToken(),
+
+			obj.GetSecrets(),
+
+			obj.GetImagePullSecrets(),
+
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"serviceaccounts"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableServiceaccounts(ctx, db)
@@ -127,6 +244,27 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ServiceAccount) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "ServiceAccount")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.copyFromServiceaccounts(ctx, tx, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ServiceAccount) error {
@@ -161,7 +299,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ServiceAccount) err
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ServiceAccount) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ServiceAccount")
 
-	return s.upsert(ctx, objs...)
+	if len(objs) < batchAfter {
+		return s.upsert(ctx, objs...)
+	} else {
+		return s.copyFrom(ctx, objs...)
+	}
 }
 
 // Count returns the number of objects in the store

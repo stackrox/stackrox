@@ -813,33 +813,8 @@ commands:
     - run:
         name: Verify that docs are up to date
         command: |
-          [[ "$CIRCLE_TAG" =~ << pipeline.parameters.release_rc_tag_bash_regex >> ]] || {
-            echo "Skipping step as this is not a release or RC build ..."
-            exit 0
-          }
-          version="${BASH_REMATCH[1]}"
-          <<# parameters.only-on-release >>
-          [[ -z "${BASH_REMATCH[3]}" ]] || {
-            echo "Skipping as this is an RC build"
-            exit 0
-          }
-          <</ parameters.only-on-release >>
-
-          expected_content_branch="rhacs-docs-${version}"
-          actual_content_branch="$(git config -f .gitmodules submodule.docs/content.branch)"
-          [[ "$actual_content_branch" == "$expected_content_branch" ]] || {
-            echo >&2 "Expected docs/content submodule to point to branch ${expected_content_branch}, got: ${actual_content_branch}"
-            exit 1
-          }
-
-          echo "Verifying that there is no newer commit on the branch ..."
-          git submodule update --remote docs/content
-          git diff --exit-code HEAD || {
-            echo >&2 "The docs/content submodule is out of date for the ${expected_content_branch} branch; please run"
-            echo >&2 "  git submodule update --remote docs/content"
-            echo >&2 "and commit the result."
-            exit 1
-          }
+          source scripts/ci/lib.sh
+          check_docs "${CIRCLE_TAG:-}" "<< parameters.only-on-release >>"
 
   check-scanner-and-collector-release-step:
     parameters:
@@ -849,43 +824,8 @@ commands:
     - run:
         name: Check on release builds that COLLECTOR_VERSION and SCANNER_VERSION are release
         command: |
-          function is_release() {
-            [[ "$1" =~ << pipeline.parameters.release_rc_tag_bash_regex >> && -z "${BASH_REMATCH[3]}" ]]
-          }
-          function is_rc() {
-            [[ "$1" =~ << pipeline.parameters.release_rc_tag_bash_regex >> && -n "${BASH_REMATCH[3]}" ]]
-          }
-          # Self-test to make sure functions actually work.
-          is_release "3.67.2" && is_rc "3.67.2-rc.1" && ! is_release "3.67.2-rc.1" && ! is_rc "3.67.2"
-          ! is_release "3.68.x-23-g8a2e05d0ec-dirty" && ! is_rc "3.68.x-23-g8a2e05d0ec-dirty"
-
-          set -x
-          main_release_like=0
-          main_rc=0
-          main_tag="$(make --quiet tag)"
-          if is_release "$main_tag"; then
-            main_release_like=1
-          fi
-          if is_rc "$main_tag"; then
-            main_release_like=1
-            main_rc=1
-          fi
-
-          release_mismatch=0
-          if ! is_release "$(make --quiet collector-tag)" && [[ "$main_release_like" == "1" ]]; then
-            echo >&2 "Collector tag does not look like a release tag. Please update COLLECTOR_VERSION file before releasing."
-            release_mismatch=1
-          fi
-          if ! is_release "$(make --quiet scanner-tag)" && [[ "$main_release_like" == "1" ]]; then
-            echo >&2 "Scanner tag does not look like a release tag. Please update SCANNER_VERSION file before releasing."
-            release_mismatch=1
-          fi
-
-          if [[ "$release_mismatch" == "1" && ( "$main_rc" == "0" || "<< parameters.fail-on-rc >>" == "true" ) ]]; then
-            # Note that the script avoids doing early exits in order for the most of its logic to be executed drung
-            # regular pipeline runs so that it does not get rusty by the time of the release.
-            exit 1
-          fi
+          source scripts/ci/lib.sh
+          check_scanner_and_collector "<< parameters.fail-on-rc >>"
 
   setup-go-build-env:
     steps:
@@ -2182,7 +2122,7 @@ jobs:
       - image: postgres:14.2-alpine
         environment:
           POSTGRES_PASSWORD: password
-    resource_class: large
+    resource_class: xlarge
     environment:
       ROX_IMAGE_FLAVOR: stackrox.io
     steps:

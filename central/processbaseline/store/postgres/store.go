@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -12,8 +13,10 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 const (
@@ -28,10 +31,22 @@ const (
 	getManyStmt = "SELECT serialized FROM processbaselines WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM processbaselines WHERE Id = ANY($1::text[])"
+
+	batchAfter = 100
+
+	// using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	batchSize = 10000
+)
+
+var (
+	schema = walker.Walk(reflect.TypeOf((*storage.ProcessBaseline)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {
-	globaldb.RegisterTable(baseTable, "ProcessBaseline")
+	globaldb.RegisterTable(schema)
 }
 
 type Store interface {
@@ -74,13 +89,13 @@ create table if not exists processbaselines (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -102,7 +117,7 @@ create table if not exists processbaselines_Elements (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -111,7 +126,7 @@ create table if not exists processbaselines_Elements (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -131,7 +146,7 @@ create table if not exists processbaselines_ElementGraveyard (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -140,7 +155,7 @@ create table if not exists processbaselines_ElementGraveyard (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -160,10 +175,10 @@ func insertIntoProcessbaselines(ctx context.Context, tx pgx.Tx, obj *storage.Pro
 		obj.GetKey().GetContainerName(),
 		obj.GetKey().GetClusterId(),
 		obj.GetKey().GetNamespace(),
-		pgutils.NilOrStringTimestamp(obj.GetCreated()),
-		pgutils.NilOrStringTimestamp(obj.GetUserLockedTimestamp()),
-		pgutils.NilOrStringTimestamp(obj.GetStackRoxLockedTimestamp()),
-		pgutils.NilOrStringTimestamp(obj.GetLastUpdate()),
+		pgutils.NilOrTime(obj.GetCreated()),
+		pgutils.NilOrTime(obj.GetUserLockedTimestamp()),
+		pgutils.NilOrTime(obj.GetStackRoxLockedTimestamp()),
+		pgutils.NilOrTime(obj.GetLastUpdate()),
 		serialized,
 	}
 
@@ -238,6 +253,212 @@ func insertIntoProcessbaselinesElementGraveyard(ctx context.Context, tx pgx.Tx, 
 	return nil
 }
 
+func (s *storeImpl) copyFromProcessbaselines(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessBaseline) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
+	copyCols := []string{
+
+		"id",
+
+		"key_deploymentid",
+
+		"key_containername",
+
+		"key_clusterid",
+
+		"key_namespace",
+
+		"created",
+
+		"userlockedtimestamp",
+
+		"stackroxlockedtimestamp",
+
+		"lastupdate",
+
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			obj.GetId(),
+
+			obj.GetKey().GetDeploymentId(),
+
+			obj.GetKey().GetContainerName(),
+
+			obj.GetKey().GetClusterId(),
+
+			obj.GetKey().GetNamespace(),
+
+			pgutils.NilOrTime(obj.GetCreated()),
+
+			pgutils.NilOrTime(obj.GetUserLockedTimestamp()),
+
+			pgutils.NilOrTime(obj.GetStackRoxLockedTimestamp()),
+
+			pgutils.NilOrTime(obj.GetLastUpdate()),
+
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processbaselines"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for _, obj := range objs {
+
+		if err = s.copyFromProcessbaselinesElements(ctx, tx, obj.GetId(), obj.GetElements()...); err != nil {
+			return err
+		}
+		if err = s.copyFromProcessbaselinesElementGraveyard(ctx, tx, obj.GetId(), obj.GetElementGraveyard()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromProcessbaselinesElements(ctx context.Context, tx pgx.Tx, processbaselines_Id string, objs ...*storage.BaselineElement) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"processbaselines_id",
+
+		"idx",
+
+		"element_processname",
+
+		"auto",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			processbaselines_Id,
+
+			idx,
+
+			obj.GetElement().GetProcessName(),
+
+			obj.GetAuto(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processbaselines_elements"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromProcessbaselinesElementGraveyard(ctx context.Context, tx pgx.Tx, processbaselines_Id string, objs ...*storage.BaselineElement) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"processbaselines_id",
+
+		"idx",
+
+		"element_processname",
+
+		"auto",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			processbaselines_Id,
+
+			idx,
+
+			obj.GetElement().GetProcessName(),
+
+			obj.GetAuto(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processbaselines_elementgraveyard"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableProcessbaselines(ctx, db)
@@ -245,6 +466,27 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaseline) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "ProcessBaseline")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.copyFromProcessbaselines(ctx, tx, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessBaseline) error {
@@ -279,7 +521,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ProcessBaseline) er
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessBaseline) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ProcessBaseline")
 
-	return s.upsert(ctx, objs...)
+	if len(objs) < batchAfter {
+		return s.upsert(ctx, objs...)
+	} else {
+		return s.copyFrom(ctx, objs...)
+	}
 }
 
 // Count returns the number of objects in the store

@@ -16,10 +16,10 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -92,5 +92,18 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
+
+	var {{$name}}s []*{{.Type}}
+    for i := 0; i < 200; i++ {
+        {{$name}} := &{{.Type}}{}
+        s.NoError(testutils.FullInit({{$name}}, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+        {{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
+    }
+
+    s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
+
+    {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
+    s.NoError(err)
+    s.Equal({{.TrimmedType|lowerCamelCase}}Count, 200)
 }
 

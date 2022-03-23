@@ -1,9 +1,15 @@
 package datastore
 
 import (
+	"context"
+
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/index"
+	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
+	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterRocksDB "github.com/stackrox/rox/central/cluster/store/cluster/rocksdb"
+	clusterHealthStatusStore "github.com/stackrox/rox/central/cluster/store/cluster_health_status"
+	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/cluster_health_status/postgres"
 	healthRocksDB "github.com/stackrox/rox/central/cluster/store/cluster_health_status/rocksdb"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
@@ -22,6 +28,7 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -33,11 +40,22 @@ var (
 )
 
 func initialize() {
-	clusterStorage, err := clusterRocksDB.New(globaldb.GetRocksDB())
-	utils.CrashOnError(err)
-	clusterHealthStorage, err := healthRocksDB.New(globaldb.GetRocksDB())
-	utils.CrashOnError(err)
-	indexer := index.New(globalindex.GetGlobalTmpIndex())
+	var clusterStorage clusterStore.Store
+	var clusterHealthStorage clusterHealthStatusStore.Store
+	var indexer index.Indexer
+	var err error
+
+	if features.PostgresDatastore.Enabled() {
+		clusterStorage = clusterPostgres.New(context.TODO(), globaldb.GetPostgres())
+		clusterHealthStorage = clusterHealthPostgres.New(context.TODO(), globaldb.GetPostgres())
+		indexer = clusterPostgres.NewIndexer(globaldb.GetPostgres())
+	} else {
+		clusterStorage, err = clusterRocksDB.New(globaldb.GetRocksDB())
+		utils.CrashOnError(err)
+		clusterHealthStorage, err = healthRocksDB.New(globaldb.GetRocksDB())
+		utils.CrashOnError(err)
+		indexer = index.New(globalindex.GetGlobalTmpIndex())
+	}
 
 	ad, err = New(clusterStorage,
 		clusterHealthStorage,
@@ -58,6 +76,7 @@ func initialize() {
 		dackbox.GetGlobalDackBox(),
 		ranking.ClusterRanker(),
 		networkBaselineManager.Singleton())
+
 	utils.CrashOnError(err)
 }
 

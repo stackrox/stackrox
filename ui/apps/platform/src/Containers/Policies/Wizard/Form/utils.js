@@ -1,6 +1,10 @@
 import keyBy from 'lodash/keyBy';
 
 import { removeEmptyPolicyFields } from 'utils/policyUtils';
+import {
+    postFormatImageSigningPolicyGroup,
+    preFormatImageSigningPolicyGroup,
+} from '../../PatternFly/policies.utils';
 import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
 
 function filterAndMapExclusions(exclusions, filterFunc, mapFunc) {
@@ -208,6 +212,7 @@ export function preFormatPolicyFields(policy) {
     let formattedPolicy = removeEmptyPolicyFields(policy);
     formattedPolicy = preFormatExclusionField(formattedPolicy);
     formattedPolicy = preFormatNestedPolicyFields(formattedPolicy);
+    formattedPolicy = preFormatImageSigningPolicyGroup(formattedPolicy);
     return formattedPolicy;
 }
 
@@ -216,6 +221,7 @@ export function formatPolicyFields(policy) {
     serverPolicy = postFormatLifecycleField(serverPolicy);
     serverPolicy = postFormatEnforcementField(serverPolicy);
     serverPolicy = postFormatExclusionField(serverPolicy);
+    serverPolicy = postFormatImageSigningPolicyGroup(serverPolicy);
     serverPolicy = postFormatNestedPolicyFields(serverPolicy);
     return serverPolicy;
 }

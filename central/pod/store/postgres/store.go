@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -12,8 +13,10 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 const (
@@ -28,10 +31,22 @@ const (
 	getManyStmt = "SELECT serialized FROM pods WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM pods WHERE Id = ANY($1::text[])"
+
+	batchAfter = 100
+
+	// using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	batchSize = 10000
+)
+
+var (
+	schema = walker.Walk(reflect.TypeOf((*storage.Pod)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {
-	globaldb.RegisterTable(baseTable, "Pod")
+	globaldb.RegisterTable(schema)
 }
 
 type Store interface {
@@ -71,13 +86,13 @@ create table if not exists pods (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -108,7 +123,7 @@ create table if not exists pods_LiveInstances (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -117,7 +132,7 @@ create table if not exists pods_LiveInstances (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -135,7 +150,7 @@ create table if not exists pods_TerminatedInstances (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -144,7 +159,7 @@ create table if not exists pods_TerminatedInstances (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -175,7 +190,7 @@ create table if not exists pods_TerminatedInstances_Instances (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -184,7 +199,7 @@ create table if not exists pods_TerminatedInstances_Instances (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -204,7 +219,7 @@ func insertIntoPods(ctx context.Context, tx pgx.Tx, obj *storage.Pod) error {
 		obj.GetDeploymentId(),
 		obj.GetNamespace(),
 		obj.GetClusterId(),
-		pgutils.NilOrStringTimestamp(obj.GetStarted()),
+		pgutils.NilOrTime(obj.GetStarted()),
 		serialized,
 	}
 
@@ -253,9 +268,9 @@ func insertIntoPodsLiveInstances(ctx context.Context, tx pgx.Tx, obj *storage.Co
 		obj.GetContainingPodId(),
 		obj.GetContainerName(),
 		obj.GetContainerIps(),
-		pgutils.NilOrStringTimestamp(obj.GetStarted()),
+		pgutils.NilOrTime(obj.GetStarted()),
 		obj.GetImageDigest(),
-		pgutils.NilOrStringTimestamp(obj.GetFinished()),
+		pgutils.NilOrTime(obj.GetFinished()),
 		obj.GetExitCode(),
 		obj.GetTerminationReason(),
 	}
@@ -312,9 +327,9 @@ func insertIntoPodsTerminatedInstancesInstances(ctx context.Context, tx pgx.Tx, 
 		obj.GetContainingPodId(),
 		obj.GetContainerName(),
 		obj.GetContainerIps(),
-		pgutils.NilOrStringTimestamp(obj.GetStarted()),
+		pgutils.NilOrTime(obj.GetStarted()),
 		obj.GetImageDigest(),
-		pgutils.NilOrStringTimestamp(obj.GetFinished()),
+		pgutils.NilOrTime(obj.GetFinished()),
 		obj.GetExitCode(),
 		obj.GetTerminationReason(),
 	}
@@ -328,6 +343,326 @@ func insertIntoPodsTerminatedInstancesInstances(ctx context.Context, tx pgx.Tx, 
 	return nil
 }
 
+func (s *storeImpl) copyFromPods(ctx context.Context, tx pgx.Tx, objs ...*storage.Pod) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
+	copyCols := []string{
+
+		"id",
+
+		"name",
+
+		"deploymentid",
+
+		"namespace",
+
+		"clusterid",
+
+		"started",
+
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			obj.GetId(),
+
+			obj.GetName(),
+
+			obj.GetDeploymentId(),
+
+			obj.GetNamespace(),
+
+			obj.GetClusterId(),
+
+			pgutils.NilOrTime(obj.GetStarted()),
+
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"pods"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for _, obj := range objs {
+
+		if err = s.copyFromPodsLiveInstances(ctx, tx, obj.GetId(), obj.GetLiveInstances()...); err != nil {
+			return err
+		}
+		if err = s.copyFromPodsTerminatedInstances(ctx, tx, obj.GetId(), obj.GetTerminatedInstances()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, pods_Id string, objs ...*storage.ContainerInstance) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"pods_id",
+
+		"idx",
+
+		"instanceid_containerruntime",
+
+		"instanceid_id",
+
+		"instanceid_node",
+
+		"containingpodid",
+
+		"containername",
+
+		"containerips",
+
+		"started",
+
+		"imagedigest",
+
+		"finished",
+
+		"exitcode",
+
+		"terminationreason",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			pods_Id,
+
+			idx,
+
+			obj.GetInstanceId().GetContainerRuntime(),
+
+			obj.GetInstanceId().GetId(),
+
+			obj.GetInstanceId().GetNode(),
+
+			obj.GetContainingPodId(),
+
+			obj.GetContainerName(),
+
+			obj.GetContainerIps(),
+
+			pgutils.NilOrTime(obj.GetStarted()),
+
+			obj.GetImageDigest(),
+
+			pgutils.NilOrTime(obj.GetFinished()),
+
+			obj.GetExitCode(),
+
+			obj.GetTerminationReason(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"pods_liveinstances"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromPodsTerminatedInstances(ctx context.Context, tx pgx.Tx, pods_Id string, objs ...*storage.Pod_ContainerInstanceList) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"pods_id",
+
+		"idx",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			pods_Id,
+
+			idx,
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"pods_terminatedinstances"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for idx, obj := range objs {
+
+		if err = s.copyFromPodsTerminatedInstancesInstances(ctx, tx, pods_Id, idx, obj.GetInstances()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromPodsTerminatedInstancesInstances(ctx context.Context, tx pgx.Tx, pods_Id string, pods_TerminatedInstances_idx int, objs ...*storage.ContainerInstance) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"pods_id",
+
+		"pods_terminatedinstances_idx",
+
+		"idx",
+
+		"instanceid_containerruntime",
+
+		"instanceid_id",
+
+		"instanceid_node",
+
+		"containingpodid",
+
+		"containername",
+
+		"containerips",
+
+		"started",
+
+		"imagedigest",
+
+		"finished",
+
+		"exitcode",
+
+		"terminationreason",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			pods_Id,
+
+			pods_TerminatedInstances_idx,
+
+			idx,
+
+			obj.GetInstanceId().GetContainerRuntime(),
+
+			obj.GetInstanceId().GetId(),
+
+			obj.GetInstanceId().GetNode(),
+
+			obj.GetContainingPodId(),
+
+			obj.GetContainerName(),
+
+			obj.GetContainerIps(),
+
+			pgutils.NilOrTime(obj.GetStarted()),
+
+			obj.GetImageDigest(),
+
+			pgutils.NilOrTime(obj.GetFinished()),
+
+			obj.GetExitCode(),
+
+			obj.GetTerminationReason(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"pods_terminatedinstances_instances"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTablePods(ctx, db)
@@ -335,6 +670,27 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Pod) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "Pod")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.copyFromPods(ctx, tx, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Pod) error {
@@ -369,7 +725,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Pod) error {
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Pod) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Pod")
 
-	return s.upsert(ctx, objs...)
+	if len(objs) < batchAfter {
+		return s.upsert(ctx, objs...)
+	} else {
+		return s.copyFrom(ctx, objs...)
+	}
 }
 
 // Count returns the number of objects in the store

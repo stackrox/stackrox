@@ -86,4 +86,17 @@ func (s *ClusterHealthStatusStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundClusterHealthStatus)
+
+	var clusterHealthStatuss []*storage.ClusterHealthStatus
+	for i := 0; i < 200; i++ {
+		clusterHealthStatus := &storage.ClusterHealthStatus{}
+		s.NoError(testutils.FullInit(clusterHealthStatus, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		clusterHealthStatuss = append(clusterHealthStatuss, clusterHealthStatus)
+	}
+
+	s.NoError(store.UpsertMany(ctx, clusterHealthStatuss))
+
+	clusterHealthStatusCount, err = store.Count(ctx)
+	s.NoError(err)
+	s.Equal(clusterHealthStatusCount, 200)
 }

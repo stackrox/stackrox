@@ -10,6 +10,23 @@ set -u
 
 source "$SCRIPTS_ROOT/scripts/lib.sh"
 
+# Caution when editing: make sure groups would correspond to BASH_REMATCH use.
+RELEASE_RC_TAG_BASH_REGEX='^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
+
+is_release_version() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: is_release_version <version>"
+    fi
+    [[ "$1" =~ $RELEASE_RC_TAG_BASH_REGEX && -z "${BASH_REMATCH[3]}" ]]
+}
+
+is_RC_version() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: is_RC_version <version>"
+    fi
+    [[ "$1" =~ $RELEASE_RC_TAG_BASH_REGEX && -n "${BASH_REMATCH[3]}" ]]
+}
+
 ensure_CI() {
     if ! is_CI; then
         die "A CI environment is required."
@@ -186,6 +203,86 @@ push_matching_collector_scanner_images() {
         "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}"
         "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}"
     done
+}
+
+check_docs() {
+    info "Check docs version"
+
+    if [[ "$#" -lt 1 ]]; then
+        die "missing arg. usage: check_docs <tag>"
+    fi
+
+    local tag="$1"
+    local only_run_on_releases="${2:-false}"
+
+    [[ "$tag" =~ $RELEASE_RC_TAG_BASH_REGEX ]] || {
+        info "Skipping step as this is not a release or RC build"
+        exit 0
+    }
+
+    if [[ "$only_run_on_releases" == "true" ]]; then
+        [[ -z "${BASH_REMATCH[3]}" ]] || {
+            info "Skipping as this is an RC build"
+            exit 0
+        }
+    fi
+
+    local version="${BASH_REMATCH[1]}"
+    local expected_content_branch="rhacs-docs-${version}"
+    local actual_content_branch
+    actual_content_branch="$(git config -f .gitmodules submodule.docs/content.branch)"
+    [[ "$actual_content_branch" == "$expected_content_branch" ]] || {
+        echo >&2 "Expected docs/content submodule to point to branch ${expected_content_branch}, got: ${actual_content_branch}"
+        exit 1
+    }
+
+    git submodule update --remote docs/content
+    git diff --exit-code HEAD || {
+        echo >&2 "The docs/content submodule is out of date for the ${expected_content_branch} branch; please run"
+        echo >&2 "  git submodule update --remote docs/content"
+        echo >&2 "and commit the result."
+        exit 1
+    }
+
+    info "The docs version is as expected"
+    exit 0
+}
+
+check_scanner_and_collector() {
+    info "Check on release builds that COLLECTOR_VERSION and SCANNER_VERSION are release"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: check_scanner_and_collector <fail-on-rc>"
+    fi
+
+    local fail_on_rc="$1"
+    local main_release_like=0
+    local main_rc=0
+    local main_tag
+    main_tag="$(make --quiet tag)"
+    if is_release_version "$main_tag"; then
+        main_release_like=1
+    fi
+    if is_RC_version "$main_tag"; then
+        main_release_like=1
+        main_rc=1
+    fi
+
+    local release_mismatch=0
+    if ! is_release_version "$(make --quiet collector-tag)" && [[ "$main_release_like" == "1" ]]; then
+        echo >&2 "Collector tag does not look like a release tag. Please update COLLECTOR_VERSION file before releasing."
+        release_mismatch=1
+    fi
+    if ! is_release_version "$(make --quiet scanner-tag)" && [[ "$main_release_like" == "1" ]]; then
+        echo >&2 "Scanner tag does not look like a release tag. Please update SCANNER_VERSION file before releasing."
+        release_mismatch=1
+    fi
+
+    if [[ "$release_mismatch" == "1" && ( "$main_rc" == "0" || "$fail_on_rc" == "true" ) ]]; then
+        # Note that the script avoids doing early exits in order for the most of its logic to be executed drung
+        # regular pipeline runs so that it does not get rusty by the time of the release.
+        exit 1
+    fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

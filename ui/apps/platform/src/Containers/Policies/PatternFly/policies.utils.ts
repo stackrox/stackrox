@@ -19,6 +19,7 @@ import {
 } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
+import { imageSigningCriteriaName } from '../Wizard/Form/descriptors';
 
 function isValidAction(action: unknown): action is ExtendedPageAction {
     return action === 'clone' || action === 'create' || action === 'edit' || action === 'generate';
@@ -380,6 +381,7 @@ function preFormatNestedPolicyFields(policy: Policy): Policy {
     }
 
     const clientPolicy = cloneDeep(policy);
+    clientPolicy.serverPolicySections = policy.policySections;
     // itreating through each value in a policy group in a policy section to parse value string
     policy.policySections.forEach((policySection, sectionIdx) => {
         const { policyGroups } = policySection;
@@ -419,21 +421,30 @@ function postFormatNestedPolicyFields(policy: Policy): Policy {
     }
 
     const serverPolicy = cloneDeep(policy);
-    // itereating through each value in a policy group in a policy section to format to a flat value string
-    policy.policySections.forEach((policySection, sectionIdx) => {
-        const { policyGroups } = policySection;
-        policyGroups.forEach((policyGroup, groupIdx) => {
-            const { values } = policyGroup;
-            values.forEach((value, valueIdx) => {
-                serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[valueIdx] = {
-                    value: formatValueStr(value as ValueObj, policyGroup.fieldName),
-                };
+    if (policy.criteriaLocked) {
+        serverPolicy.policySections = policy.serverPolicySections;
+    } else {
+        // itereating through each value in a policy group in a policy section to format to a flat value string
+        policy.policySections.forEach((policySection, sectionIdx) => {
+            const { policyGroups } = policySection;
+            policyGroups.forEach((policyGroup, groupIdx) => {
+                const { values } = policyGroup;
+                values.forEach((value, valueIdx) => {
+                    serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
+                        valueIdx
+                    ] = {
+                        value: formatValueStr(value as ValueObj, policyGroup.fieldName),
+                    };
+                });
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                delete serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].fieldKey;
             });
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            delete serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].fieldKey;
         });
-    });
+    }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    delete serverPolicy.serverPolicySections;
     return serverPolicy;
 }
 
@@ -478,14 +489,66 @@ export function postFormatExclusionField(policy): Policy {
     return serverPolicy;
 }
 
+export function postFormatImageSigningPolicyGroup(policy: Policy): Policy {
+    if (!policy.policySections) {
+        return policy;
+    }
+
+    const serverPolicy = cloneDeep(policy);
+    policy.policySections.forEach((policySection, sectionIdx) => {
+        const { policyGroups } = policySection;
+        policyGroups.forEach((policyGroup, groupIdx) => {
+            const { values } = policyGroup;
+            if (policyGroup.fieldName === imageSigningCriteriaName) {
+                const { arrayValue } = values[0];
+                arrayValue?.forEach((value, valueIdx) => {
+                    serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
+                        valueIdx
+                    ] = {
+                        value,
+                    };
+                });
+            }
+        });
+    });
+
+    return serverPolicy;
+}
+
+export function preFormatImageSigningPolicyGroup(policy: Policy): Policy {
+    if (!policy.policySections) {
+        return policy;
+    }
+
+    const clientPolicy = cloneDeep(policy);
+    policy.policySections.forEach((policySection, sectionIdx) => {
+        const { policyGroups } = policySection;
+        policyGroups.forEach((policyGroup, groupIdx) => {
+            const { values, fieldName } = policyGroup;
+            if (fieldName === imageSigningCriteriaName) {
+                const arrayValue = values.map((v) => v.value as string);
+                clientPolicy.policySections[sectionIdx].policyGroups[groupIdx].values = [
+                    {
+                        arrayValue,
+                    },
+                ];
+            }
+        });
+    });
+
+    return clientPolicy;
+}
+
 export function getClientWizardPolicy(policy): Policy {
     let formattedPolicy = preFormatExclusionField(policy);
     formattedPolicy = preFormatNestedPolicyFields(formattedPolicy);
+    formattedPolicy = preFormatImageSigningPolicyGroup(formattedPolicy);
     return formattedPolicy;
 }
 
 export function getServerPolicy(policy): Policy {
     let serverPolicy = postFormatExclusionField(policy);
+    serverPolicy = postFormatImageSigningPolicyGroup(serverPolicy);
     serverPolicy = postFormatNestedPolicyFields(serverPolicy);
     return serverPolicy;
 }

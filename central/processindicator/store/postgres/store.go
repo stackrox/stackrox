@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -12,8 +13,10 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 const (
@@ -28,10 +31,22 @@ const (
 	getManyStmt = "SELECT serialized FROM process_indicators WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM process_indicators WHERE Id = ANY($1::text[])"
+
+	batchAfter = 100
+
+	// using copyFrom, we may not even want to batch.  It would probably be simpler
+	// to deal with failures if we just sent it all.  Something to think about as we
+	// proceed and move into more e2e and larger performance testing
+	batchSize = 10000
+)
+
+var (
+	schema = walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), baseTable)
+	log    = logging.LoggerForModule()
 )
 
 func init() {
-	globaldb.RegisterTable(baseTable, "ProcessIndicator")
+	globaldb.RegisterTable(schema)
 }
 
 type Store interface {
@@ -85,13 +100,13 @@ create table if not exists process_indicators (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -112,7 +127,7 @@ create table if not exists process_indicators_LineageInfo (
 
 	_, err := db.Exec(ctx, table)
 	if err != nil {
-		panic("error creating table: " + table)
+		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
 	indexes := []string{
@@ -121,7 +136,7 @@ create table if not exists process_indicators_LineageInfo (
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
-			panic(err)
+			log.Panicf("Error creating index %s: %v", index, err)
 		}
 	}
 
@@ -143,7 +158,7 @@ func insertIntoProcessIndicators(ctx context.Context, tx pgx.Tx, obj *storage.Pr
 		obj.GetPodUid(),
 		obj.GetSignal().GetId(),
 		obj.GetSignal().GetContainerId(),
-		pgutils.NilOrStringTimestamp(obj.GetSignal().GetTime()),
+		pgutils.NilOrTime(obj.GetSignal().GetTime()),
 		obj.GetSignal().GetName(),
 		obj.GetSignal().GetArgs(),
 		obj.GetSignal().GetExecFilePath(),
@@ -154,7 +169,7 @@ func insertIntoProcessIndicators(ctx context.Context, tx pgx.Tx, obj *storage.Pr
 		obj.GetSignal().GetScraped(),
 		obj.GetClusterId(),
 		obj.GetNamespace(),
-		pgutils.NilOrStringTimestamp(obj.GetContainerStartTime()),
+		pgutils.NilOrTime(obj.GetContainerStartTime()),
 		obj.GetImageId(),
 		serialized,
 	}
@@ -200,6 +215,202 @@ func insertIntoProcessIndicatorsLineageInfo(ctx context.Context, tx pgx.Tx, obj 
 	return nil
 }
 
+func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessIndicator) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
+	copyCols := []string{
+
+		"id",
+
+		"deploymentid",
+
+		"containername",
+
+		"podid",
+
+		"poduid",
+
+		"signal_id",
+
+		"signal_containerid",
+
+		"signal_time",
+
+		"signal_name",
+
+		"signal_args",
+
+		"signal_execfilepath",
+
+		"signal_pid",
+
+		"signal_uid",
+
+		"signal_gid",
+
+		"signal_lineage",
+
+		"signal_scraped",
+
+		"clusterid",
+
+		"namespace",
+
+		"containerstarttime",
+
+		"imageid",
+
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		serialized, marshalErr := obj.Marshal()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+
+			obj.GetId(),
+
+			obj.GetDeploymentId(),
+
+			obj.GetContainerName(),
+
+			obj.GetPodId(),
+
+			obj.GetPodUid(),
+
+			obj.GetSignal().GetId(),
+
+			obj.GetSignal().GetContainerId(),
+
+			pgutils.NilOrTime(obj.GetSignal().GetTime()),
+
+			obj.GetSignal().GetName(),
+
+			obj.GetSignal().GetArgs(),
+
+			obj.GetSignal().GetExecFilePath(),
+
+			obj.GetSignal().GetPid(),
+
+			obj.GetSignal().GetUid(),
+
+			obj.GetSignal().GetGid(),
+
+			obj.GetSignal().GetLineage(),
+
+			obj.GetSignal().GetScraped(),
+
+			obj.GetClusterId(),
+
+			obj.GetNamespace(),
+
+			pgutils.NilOrTime(obj.GetContainerStartTime()),
+
+			obj.GetImageId(),
+
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_indicators"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	for _, obj := range objs {
+
+		if err = s.copyFromProcessIndicatorsLineageInfo(ctx, tx, obj.GetId(), obj.GetSignal().GetLineageInfo()...); err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
+func (s *storeImpl) copyFromProcessIndicatorsLineageInfo(ctx context.Context, tx pgx.Tx, process_indicators_Id string, objs ...*storage.ProcessSignal_LineageInfo) error {
+
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	copyCols := []string{
+
+		"process_indicators_id",
+
+		"idx",
+
+		"parentuid",
+
+		"parentexecfilepath",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+
+			process_indicators_Id,
+
+			idx,
+
+			obj.GetParentUid(),
+
+			obj.GetParentExecFilePath(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_indicators_lineageinfo"}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	return err
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableProcessIndicators(ctx, db)
@@ -207,6 +418,27 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	return &storeImpl{
 		db: db,
 	}
+}
+
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessIndicator) error {
+	conn, release := s.acquireConn(ctx, ops.Get, "ProcessIndicator")
+	defer release()
+
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.copyFromProcessIndicators(ctx, tx, objs...); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessIndicator) error {
@@ -241,7 +473,11 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.ProcessIndicator) e
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessIndicator) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "ProcessIndicator")
 
-	return s.upsert(ctx, objs...)
+	if len(objs) < batchAfter {
+		return s.upsert(ctx, objs...)
+	} else {
+		return s.copyFrom(ctx, objs...)
+	}
 }
 
 // Count returns the number of objects in the store

@@ -6,7 +6,8 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	"github.com/stackrox/rox/central/cluster/index"
-	"github.com/stackrox/rox/central/cluster/store"
+	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
+	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/cluster_health_status"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
@@ -75,8 +76,8 @@ type DataStore interface {
 
 // New returns an instance of DataStore.
 func New(
-	clusterStorage store.ClusterStore,
-	clusterHealthStorage store.ClusterHealthStore,
+	clusterStorage clusterStore.Store,
+	clusterHealthStorage clusterHealthStore.Store,
 	indexer index.Indexer,
 	ads alertDataStore.DataStore,
 	namespaceDS namespaceDataStore.DataStore,
