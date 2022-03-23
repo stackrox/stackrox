@@ -511,6 +511,7 @@ export function postFormatImageSigningPolicyGroup(policy: Policy): Policy {
             }
         });
     });
+
     return serverPolicy;
 }
 
