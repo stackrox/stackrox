@@ -136,7 +136,7 @@ describe('Policies table', () => {
         cy.intercept('GET', api.policies.policy).as('getPolicy');
         cy.intercept('GET', api.policies.policies).as('getPolicies');
 
-        cy.get('tbody tr:first-child').then(([tr]) => {
+        cy.get(selectors.table.firstRow).then(([tr]) => {
             cy.wrap(tr)
                 .find(selectors.table.policyLink)
                 .invoke('text')
@@ -165,7 +165,7 @@ describe('Policies table', () => {
         cy.intercept('GET', api.policies.policy).as('getPolicy');
         cy.intercept('GET', api.policies.policies).as('getPolicies');
 
-        cy.get('tbody tr:first-child').then(([tr]) => {
+        cy.get(selectors.table.firstRow).then(([tr]) => {
             cy.wrap(tr)
                 .find(selectors.table.policyLink)
                 .invoke('text')
