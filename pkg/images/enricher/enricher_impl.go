@@ -535,7 +535,7 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 		return false, ctx.Err()
 	}
 
-	log.Infof("Found signature verification results for image %q: %+v", img.GetName().GetFullName())
+	log.Infof("Found signature verification results for image %q: %+v", img.GetName().GetFullName(), res)
 
 	img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
 		Results: res,
