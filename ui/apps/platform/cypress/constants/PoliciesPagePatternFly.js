@@ -32,6 +32,7 @@ export const selectors = {
     },
     wizardBtns: {
         step3: '.pf-c-wizard__nav-link:contains("criteria")',
+        step5: '.pf-c-wizard__nav-link:contains("Review policy")',
     },
     step3: {
         defaultPolicyAlert: '[data-testid="default-policy-alert"]',
