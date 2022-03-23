@@ -38,7 +38,7 @@ const (
 var (
 	schema = walker.Walk(reflect.TypeOf((*storage.ImageComponentEdge)(nil)), baseTable).
 		WithReference(walker.Walk(reflect.TypeOf((*storage.Image)(nil)), "images")).
-		WithReference(walker.Walk(reflect.TypeOf((*storage.ImageComponent)(nil)), "image_component"))
+		WithReference(walker.Walk(reflect.TypeOf((*storage.ImageComponent)(nil)), "image_components"))
 	log = logging.LoggerForModule()
 )
 
@@ -64,18 +64,18 @@ type storeImpl struct {
 func createTableImageComponentRelation(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists image_component_relation (
-    image_component_Id varchar,
-    image_component_Name varchar,
-    image_component_Version varchar,
-    image_component_OperatingSystem varchar,
+    image_components_Id varchar,
+    image_components_Name varchar,
+    image_components_Version varchar,
+    image_components_OperatingSystem varchar,
     Id varchar,
     LayerIndex integer,
     Location varchar,
     ImageId varchar,
     ImageComponentId varchar,
-    PRIMARY KEY(ImageId, ImageComponentId, image_component_Name, image_component_Version, image_component_OperatingSystem),
+    PRIMARY KEY(ImageId, ImageComponentId, image_components_Name, image_components_Version, image_components_OperatingSystem),
     CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE,
-    CONSTRAINT fk_parent_table_1 FOREIGN KEY (ImageComponentId, image_component_Name, image_component_Version, image_component_OperatingSystem) REFERENCES image_component(Id, Name, Version, OperatingSystem) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_1 FOREIGN KEY (ImageComponentId, image_components_Name, image_components_Version, image_components_OperatingSystem) REFERENCES image_components(Id, Name, Version, OperatingSystem) ON DELETE CASCADE
 )
 `
 
