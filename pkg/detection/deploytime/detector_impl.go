@@ -41,7 +41,10 @@ func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployme
 		}
 
 		// Generate violations.
-		violations, err := compiled.MatchAgainstDeployment(&cacheReceptacle, deployment, images)
+		violations, err := compiled.MatchAgainstDeployment(&cacheReceptacle, booleanpolicy.EnhancedDeployment{
+			Deployment: deployment,
+			Images:     images,
+		})
 		if err != nil {
 			return errors.Wrapf(err, "evaluating violations for policy %s; deployment %s/%s", compiled.Policy().GetName(), deployment.GetNamespace(), deployment.GetName())
 		}
