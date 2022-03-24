@@ -244,6 +244,9 @@ func TestIsMissingSignatureError(t *testing.T) {
 				Err: &unauthorizedErr,
 			}, "something went wrong"),
 		},
+		"neither registry nor cosign error": {
+			err: errors.New("something error"),
+		},
 	}
 
 	for name, c := range cases {
@@ -314,6 +317,9 @@ func TestIsUnauthorizedError(t *testing.T) {
 				StatusCode: http.StatusForbidden,
 			},
 			unauthorizedError: true,
+		},
+		"neither transport nor registry error": {
+			err: errors.New("some random error"),
 		},
 	}
 

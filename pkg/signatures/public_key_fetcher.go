@@ -178,15 +178,14 @@ func isMissingSignatureError(err error) bool {
 // isUnauthorizedError is checking whether the returned error indicates that there was a http.StatusUnauthorized was
 // returned during fetching of signatures.
 func isUnauthorizedError(err error) bool {
-	if transportErr, ok := err.(*transport.Error); ok && transportErr.StatusCode == http.StatusUnauthorized ||
-		transportErr.StatusCode == http.StatusForbidden {
-		return true
+	if transportErr, ok := err.(*transport.Error); ok {
+		return transportErr.StatusCode == http.StatusUnauthorized ||
+			transportErr.StatusCode == http.StatusForbidden
 	}
 
-	if registryErr := errToRegistryError(err); registryErr != nil && registryErr.Response != nil &&
-		registryErr.Response.StatusCode == http.StatusUnauthorized ||
-		registryErr.Response.StatusCode == http.StatusForbidden {
-		return true
+	if registryErr := errToRegistryError(err); registryErr != nil && registryErr.Response != nil {
+		return registryErr.Response.StatusCode == http.StatusUnauthorized ||
+			registryErr.Response.StatusCode == http.StatusForbidden
 	}
 
 	return false
