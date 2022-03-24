@@ -138,7 +138,7 @@ create table if not exists cluster_cves_References (
     URI varchar,
     Tags text[],
     PRIMARY KEY(cluster_cves_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (cluster_cves_Id) REFERENCES cluster_cves(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (cluster_cves_Id) REFERENCES cluster_cves(Id) ON DELETE CASCADE
 )
 `
 

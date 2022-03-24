@@ -168,7 +168,7 @@ create table if not exists alerts_Whitelists (
     Image_Name varchar,
     Expiration timestamp,
     PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -203,7 +203,7 @@ create table if not exists alerts_Exclusions (
     Image_Name varchar,
     Expiration timestamp,
     PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -234,7 +234,7 @@ create table if not exists alerts_Scope (
     Label_Key varchar,
     Label_Value varchar,
     PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -262,7 +262,7 @@ create table if not exists alerts_PolicySections (
     idx integer,
     SectionName varchar,
     PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -294,7 +294,7 @@ create table if not exists alerts_PolicySections_PolicyGroups (
     BooleanOperator integer,
     Negate bool,
     PRIMARY KEY(alerts_Id, alerts_PolicySections_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id, alerts_PolicySections_idx) REFERENCES alerts_PolicySections(alerts_Id, idx) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id, alerts_PolicySections_idx) REFERENCES alerts_PolicySections(alerts_Id, idx) ON DELETE CASCADE
 )
 `
 
@@ -325,7 +325,7 @@ create table if not exists alerts_PolicySections_PolicyGroups_Values (
     idx integer,
     Value varchar,
     PRIMARY KEY(alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx) REFERENCES alerts_PolicySections_PolicyGroups(alerts_Id, alerts_PolicySections_idx, idx) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id, alerts_PolicySections_idx, alerts_PolicySections_PolicyGroups_idx) REFERENCES alerts_PolicySections_PolicyGroups(alerts_Id, alerts_PolicySections_idx, idx) ON DELETE CASCADE
 )
 `
 
@@ -354,7 +354,7 @@ create table if not exists alerts_MitreAttackVectors (
     Tactic varchar,
     Techniques text[],
     PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -389,7 +389,7 @@ create table if not exists alerts_Containers (
     Image_IsClusterLocal bool,
     Name varchar,
     PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -430,7 +430,7 @@ create table if not exists alerts_Violations (
     Type integer,
     Time timestamp,
     PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -461,7 +461,7 @@ create table if not exists alerts_Violations_Attrs (
     Key varchar,
     Value varchar,
     PRIMARY KEY(alerts_Id, alerts_Violations_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id, alerts_Violations_idx) REFERENCES alerts_Violations(alerts_Id, idx) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id, alerts_Violations_idx) REFERENCES alerts_Violations(alerts_Id, idx) ON DELETE CASCADE
 )
 `
 
@@ -508,7 +508,7 @@ create table if not exists alerts_Processes (
     ContainerStartTime timestamp,
     ImageId varchar,
     PRIMARY KEY(alerts_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id) REFERENCES alerts(Id) ON DELETE CASCADE
 )
 `
 
@@ -539,7 +539,7 @@ create table if not exists alerts_Processes_LineageInfo (
     ParentUid integer,
     ParentExecFilePath varchar,
     PRIMARY KEY(alerts_Id, alerts_Processes_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (alerts_Id, alerts_Processes_idx) REFERENCES alerts_Processes(alerts_Id, idx) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (alerts_Id, alerts_Processes_idx) REFERENCES alerts_Processes(alerts_Id, idx) ON DELETE CASCADE
 )
 `
 

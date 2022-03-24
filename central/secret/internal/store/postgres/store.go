@@ -135,7 +135,7 @@ create table if not exists secrets_Files (
     Cert_EndDate timestamp,
     Cert_Algorithm varchar,
     PRIMARY KEY(secrets_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
 )
 `
 
@@ -166,7 +166,7 @@ create table if not exists secrets_Files_Registries (
     Name varchar,
     Username varchar,
     PRIMARY KEY(secrets_Id, secrets_Files_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (secrets_Id, secrets_Files_idx) REFERENCES secrets_Files(secrets_Id, idx) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (secrets_Id, secrets_Files_idx) REFERENCES secrets_Files(secrets_Id, idx) ON DELETE CASCADE
 )
 `
 
@@ -195,7 +195,7 @@ create table if not exists secrets_ContainerRelationships (
     Id varchar,
     Path varchar,
     PRIMARY KEY(secrets_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
 )
 `
 
@@ -224,7 +224,7 @@ create table if not exists secrets_DeploymentRelationships (
     Id varchar,
     Name varchar,
     PRIMARY KEY(secrets_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
 )
 `
 

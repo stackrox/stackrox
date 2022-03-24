@@ -56,6 +56,12 @@ const (
 
 var (
     schema = walker.Walk(reflect.TypeOf((*{{.Type}})(nil)), baseTable)
+    {{- $schema := .Schema }}
+    {{- range $idx, $ref := $schema.Parents}}
+        {{- if ne $ref.Table $schema.EmbeddedIn -}}.
+        WithReference(walker.Walk(reflect.TypeOf(({{$ref.Type}})(nil)), "{{$ref.Table}}"))
+        {{- end }}
+    {{- end }}
     log = logging.LoggerForModule()
 )
 
@@ -67,9 +73,11 @@ type Store interface {
     Count(ctx context.Context) (int, error)
     Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error)
     Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error)
+{{- if not .JoinTable }}
     Upsert(ctx context.Context, obj *{{.Type}}) error
     UpsertMany(ctx context.Context, objs []*{{.Type}}) error
     Delete(ctx context.Context, {{template "paramList" $pks}}) error
+{{- end }}
 
 {{- if $singlePK }}
     GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
@@ -91,17 +99,17 @@ type storeImpl struct {
 {{- end}}
 
 {{- define "createTable"}}
-{{- $schema := . }}
+{{- $schema := .schema }}
 func {{template "createFunctionName" $schema}}(ctx context.Context, db *pgxpool.Pool) {
     table := `
 create table if not exists {{$schema.Table}} (
 {{- range $idx, $field := $schema.ResolvedFields }}
     {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}},
 {{- end}}
-    PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys}}){{ if gt (len $schema.Parents) 0 }},{{end}}
-    {{- range $parent, $pks := $schema.ParentKeysAsMap }}
-    CONSTRAINT fk_parent_table FOREIGN KEY ({{template "commaSeparatedColumns" $pks}}) REFERENCES {{$parent}}({{template "commandSeparatedRefs" $pks}}) ON DELETE CASCADE
-    {{- end }}
+    PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys }}){{ if gt (len $schema.Parents) 0 }},{{end}}
+{{- range $idx, $pksGrps := $schema.ParentKeysGroupedByTable }}
+    CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrps.Fields}}) REFERENCES {{$pksGrps.Table}}({{template "commandSeparatedRefs" $pksGrps.Fields}}) ON DELETE CASCADE{{if lt (add $idx 1) (len $schema.ParentKeysGroupedByTable)}},{{end}}
+{{- end}}
 )
 `
 
@@ -125,17 +133,16 @@ create table if not exists {{$schema.Table}} (
     {{template "createFunctionName" $child}}(ctx, db)
     {{- end}}
 }
-{{range $idx, $child := $schema.Children}}{{template "createTable" $child}}{{end}}
+{{range $idx, $child := $schema.Children}}{{template "createTable" dict "schema" $child "joinTable" false }}{{end}}
 {{end}}
-{{- template "createTable" .Schema}}
+{{- template "createTable" dict "schema" .Schema "joinTable" .JoinTable}}
 
 {{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}
 {{- end}}
 
 {{- define "insertObject"}}
-{{- $schema := . }}
-
-func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.Parents}}, idx int{{end}}) error {
+{{- $schema := .schema }}
+func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{if not .joinTable}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.Parents}}, idx int{{end}}{{end}}) error {
     {{if not $schema.Parents }}
     serialized, marshalErr := obj.Marshal()
     if marshalErr != nil {
@@ -179,10 +186,13 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
     {{- end}}
     return nil
 }
-{{range $idx, $child := $schema.Children}}{{ template "insertObject" $child }}{{end}}
+
+{{range $idx, $child := $schema.Children}}{{ template "insertObject" dict "schema" $child "joinTable" false }}{{end}}
 {{- end}}
 
-{{ template "insertObject" .Schema }}
+{{- if not .JoinTable }}
+{{ template "insertObject" dict "schema" .Schema "joinTable" .JoinTable }}
+{{- end}}
 
 {{- define "copyFunctionName"}}{{- $schema := . }}copyFrom{{$schema.Table|upperCamelCase}}
 {{- end}}
@@ -282,7 +292,9 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 {{range $idx, $child := $schema.Children}}{{ template "copyObject" $child }}{{end}}
 {{- end}}
 
+{{- if not .JoinTable }}
 {{ template "copyObject" .Schema }}
+{{- end }}
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
@@ -292,6 +304,8 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
         db: db,
     }
 }
+
+{{- if not .JoinTable }}
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
     conn, release := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
@@ -338,13 +352,13 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
 }
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "{{.TrimmedType}}")
+    defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "{{.TrimmedType}}")
 
     return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "{{.TrimmedType}}")
+    defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "{{.TrimmedType}}")
 
     if len(objs) < batchAfter {
         return s.upsert(ctx, objs...)
@@ -352,6 +366,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
         return s.copyFrom(ctx, objs...)
     }
 }
+{{- end }}
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
@@ -406,11 +421,12 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 	return conn, conn.Release
 }
 
+{{- if not .JoinTable }}
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
+    conn, release := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, {{template "argList" $pks}}); err != nil {
@@ -418,6 +434,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
 	}
 	return nil
 }
+{{- end}}
 
 {{- if $singlePK }}
 
@@ -486,6 +503,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
 	return elems, missingIndices, nil
 }
 
+{{- if not .JoinTable }}
 // Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.TrimmedType}}")
@@ -497,6 +515,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
 	}
 	return nil
 }
+{{- end }}
 {{- end }}
 
 // Walk iterates over all of the objects in the store and applies the closure

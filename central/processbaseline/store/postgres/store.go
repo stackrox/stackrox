@@ -111,7 +111,7 @@ create table if not exists processbaselines_Elements (
     Element_ProcessName varchar,
     Auto bool,
     PRIMARY KEY(processbaselines_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (processbaselines_Id) REFERENCES processbaselines(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (processbaselines_Id) REFERENCES processbaselines(Id) ON DELETE CASCADE
 )
 `
 
@@ -140,7 +140,7 @@ create table if not exists processbaselines_ElementGraveyard (
     Element_ProcessName varchar,
     Auto bool,
     PRIMARY KEY(processbaselines_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (processbaselines_Id) REFERENCES processbaselines(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (processbaselines_Id) REFERENCES processbaselines(Id) ON DELETE CASCADE
 )
 `
 
