@@ -587,7 +587,6 @@ func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp)
 func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
 	log.Info("SHREWS -> GetMatchingFlows")
 	log.Info(since)
-	log.Info(pred)
 	var rows pgx.Rows
 	var err error
 
