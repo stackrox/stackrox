@@ -224,6 +224,13 @@ func TestTreeAllExcluded(_ *testing.T) *ScopeTree {
 	}
 }
 
+// TestTreeInvalidPartialRootWithoutChildren provides a mock ScopeTree for testing purposes.
+func TestTreeInvalidPartialRootWithoutChildren(_ *testing.T) *ScopeTree {
+	return &ScopeTree{
+		State: Partial,
+	}
+}
+
 // TestTreeInvalidExcludedRootPartialBranch provides a mock ScopeTree with an excluded root for testing purposes.
 func TestTreeInvalidExcludedRootPartialBranch(_ *testing.T) *ScopeTree {
 	return &ScopeTree{

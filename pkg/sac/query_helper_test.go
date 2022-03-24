@@ -21,8 +21,6 @@ const (
 	nsAtreides     = "Atreides"
 	nsHarkonnen    = "Harkonnen"
 	nsSpacingGuild = "Spacing Guild"
-	nsBeneGesserit = "Bene Gesserit"
-	nsFremen       = "Fremen"
 )
 
 type testCase struct {
@@ -57,6 +55,11 @@ func TestClusterScopeFilterGeneration(topLevelTest *testing.T) {
 		{
 			description:    "Invalid scope tree with excluded root generates a MatchNone query filter",
 			scopeGenerator: effectiveaccessscope.TestTreeInvalidExcludedRootPartialBranch,
+			expected:       getMatchNoneQuery(),
+		},
+		{
+			description:    "Invalid scope tree with partial root and no cluster nodes generates a MatchNone query filter",
+			scopeGenerator: effectiveaccessscope.TestTreeInvalidPartialRootWithoutChildren,
 			expected:       getMatchNoneQuery(),
 		},
 		{
@@ -126,6 +129,11 @@ func TestNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 		{
 			description:    "Generated query filter for invalid tree with excluded root is MatchNone",
 			scopeGenerator: effectiveaccessscope.TestTreeInvalidExcludedRootPartialBranch,
+			expected:       getMatchNoneQuery(),
+		},
+		{
+			description:    "Generated query filter for invalid tree with partial root but no cluster children is MatchNone",
+			scopeGenerator: effectiveaccessscope.TestTreeInvalidPartialRootWithoutChildren,
 			expected:       getMatchNoneQuery(),
 		},
 		{
@@ -204,7 +212,6 @@ func TestNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 				search.DisjunctionQuery(namespaceMatch(nsAtreides), namespaceMatch(nsHarkonnen)),
 			),
 		},
-		// TestTreeTwoClustersFullyIncluded
 		{
 			description:    "Generated query filter for two fully included cluster tree is the disjunction of the cluster ID matches",
 			scopeGenerator: effectiveaccessscope.TestTreeTwoClustersFullyIncluded,
