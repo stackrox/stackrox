@@ -184,11 +184,18 @@ func (a *resourceLevelScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
 }
 
 func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(_ permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
-	// TODO(ROX-9537): Implement it
 	// 1. Get all roles and filter them to get only roles with desired access level (here: READ_ACCESS)
 	// 2. For every role get it's effective access scope (EAS)
 	// 3. Merge all EAS into a single tree
-	panic("Implement me: ROX-9537")
+	eas := effectiveaccessscope.DenyAllEffectiveAccessScope()
+	for _, role := range a.roles {
+		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
+		if err != nil {
+			return nil, err
+		}
+		eas.Merge(scope)
+	}
+	return eas, nil
 }
 
 func (a *resourceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {

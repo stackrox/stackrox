@@ -199,6 +199,7 @@ func (h *searchHelper) filterResults(ctx context.Context, resourceScopeChecker S
 
 type pgSearchHelper struct {
 	resource      permissions.Resource
+	resourceMD    permissions.ResourceMetadata
 	resourceScope permissions.ResourceScope
 	optionsMap    search.OptionsMap
 }
@@ -252,7 +253,11 @@ func (h *pgSearchHelper) executeSearch(ctx context.Context, q *v1.Query, searche
 	}
 
 	// Generate query filter here
-	effectiveaccessscope, err := scopeChecker.EffectiveAccessScope()
+	resourceWithAccess := permissions.ResourceWithAccess{
+		Resource: h.resourceMD,
+		Access:   storage.Access_READ_ACCESS,
+	}
+	effectiveaccessscope, err := scopeChecker.EffectiveAccessScope(resourceWithAccess)
 	if err != nil {
 		return nil, err
 	}

@@ -501,7 +501,7 @@ var secretUnrestrictedSACObjectSearchTestCases = map[string]secretSACSearchResul
 }
 
 func (s *secretDatastoreSACTestSuite) runCountTest(testParams secretSACSearchResult) {
-	//if features.PostgresDatastore.Enabled() {
+	// if features.PostgresDatastore.Enabled() {
 	//	s.T().Skip("Skipping search tests in postgres mode")
 	//}
 	ctx := s.testContexts[testParams.scopeKey]
