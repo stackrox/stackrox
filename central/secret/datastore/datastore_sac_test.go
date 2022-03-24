@@ -501,9 +501,6 @@ var secretUnrestrictedSACObjectSearchTestCases = map[string]secretSACSearchResul
 }
 
 func (s *secretDatastoreSACTestSuite) runCountTest(testParams secretSACSearchResult) {
-	// if features.PostgresDatastore.Enabled() {
-	//	s.T().Skip("Skipping search tests in postgres mode")
-	//}
 	ctx := s.testContexts[testParams.scopeKey]
 	resultCount, err := s.datastore.Count(ctx, nil)
 	s.NoError(err)
@@ -528,9 +525,6 @@ func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedCount() {
 }
 
 func (s *secretDatastoreSACTestSuite) runCountSecretsTest(testParams secretSACSearchResult) {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Skipping search tests in postgres mode")
-	}
 	ctx := s.testContexts[testParams.scopeKey]
 	resultCount, err := s.datastore.CountSecrets(ctx)
 	s.NoError(err)
@@ -609,9 +603,6 @@ func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedSearchSecrets() {
 }
 
 func (s *secretDatastoreSACTestSuite) runSearchListSecretsTest(testParams secretSACSearchResult) {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Skipping search tests in postgres mode")
-	}
 	ctx := s.testContexts[testParams.scopeKey]
 	searchResults, err := s.datastore.SearchListSecrets(ctx, nil)
 	s.NoError(err)
@@ -640,9 +631,6 @@ func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedSearchListSecrets() 
 }
 
 func (s *secretDatastoreSACTestSuite) runSearchRawSecretsTest(testParams secretSACSearchResult) {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Skipping search tests in postgres mode")
-	}
 	ctx := s.testContexts[testParams.scopeKey]
 	searchResults, err := s.datastore.SearchRawSecrets(ctx, nil)
 	s.NoError(err)
