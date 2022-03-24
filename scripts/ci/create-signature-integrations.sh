@@ -9,7 +9,7 @@ die() {
 }
 
 [[ -z "${ROX_PASSWORD}" ]] && die "Required env variable ROX_PASSWORD not set"
-roxEndpoint="${ROX_API_ENDPOINT:-localhost:8000}"
+roxEndpoint="${API_ENDPOINT:-localhost:8000}"
 roxUser="${ROX_ADMIN_USER:-admin}"
 roxPassword="${ROX_PASSWORD}"
 
@@ -22,14 +22,14 @@ declare -a integrations=(
 for integrationJSON in "${integrations[@]}"
 do
   tmpOutput=$(mktemp)
-  status=$(curl -k -u "${roxUser}:${ROX_PASSWORD}" -X POST \
-    -d ${integrationJSON} \
-    -o tmpOutput \
-    - w "%{http_code}\n" \
-    https://${roxEndpoint})
+  status=$(curl -k -u "${roxUser}:${roxPassword}" -X POST \
+    -d "${integrationJSON}" \
+    -o "$tmpOutput" \
+    -w "%{http_code}\n" \
+    https://"${roxEndpoint}"/v1/signatureintegrations )
 
-  if [ "${status}" != "200" ] || [ "${status}" != "429" ]; then
-    cat $tmpOutput
+  if [ "${status}" != "200" ] && [ "${status}" != "429" ] && [ "${status}" != "409" ]; then
+    cat "$tmpOutput"
     exit 1
   fi
 done
