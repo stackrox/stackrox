@@ -1,7 +1,6 @@
 #!/bin/bash
 # Run E2E tests (Groovy + Spock + Fabric8 + Gradle)
 set -eu
-
 source "scripts/common.sh"
 source "scripts/config.sh"
 cd "$STACKROX_SOURCE_ROOT"  # all paths should be relative to here
