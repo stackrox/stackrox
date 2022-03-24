@@ -22,15 +22,22 @@ func BuildClusterLevelSACQueryFilter(root *effectiveaccessscope.ScopeTree) (*v1.
 	clusterFilters := make([]*v1.Query, 0, len(clusterIDs))
 	for _, clusterID := range clusterIDs {
 		clusterAccessScope := root.GetClusterByID(clusterID)
+		if clusterAccessScope == nil {
+			continue
+		}
 		if clusterAccessScope.State == effectiveaccessscope.Included {
 			clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID)
 			clusterFilters = append(clusterFilters, clusterQuery.ProtoQuery())
 		}
 	}
-	if len(clusterFilters) == 0 {
-		return nil, ErrResourceAccessDenied
+	switch len(clusterFilters) {
+	case 0:
+		return getMatchNoneQuery(), nil
+	case 1:
+		return clusterFilters[0], nil
+	default:
+		return search.DisjunctionQuery(clusterFilters...), nil
 	}
-	return search.DisjunctionQuery(clusterFilters...), nil
 }
 
 // BuildClusterNamespaceLevelSACQueryFilter builds a Scoped Access Control query filter that can be
@@ -49,6 +56,9 @@ func BuildClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTr
 	clusterFilters := make([]*v1.Query, 0, len(clusterIDs))
 	for _, clusterID := range clusterIDs {
 		clusterAccessScope := root.GetClusterByID(clusterID)
+		if clusterAccessScope == nil {
+			continue
+		}
 		if clusterAccessScope.State == effectiveaccessscope.Included {
 			clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID)
 			clusterFilters = append(clusterFilters, clusterQuery.ProtoQuery())
@@ -69,10 +79,14 @@ func BuildClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTr
 			}
 		}
 	}
-	if len(clusterFilters) == 0 {
-		return nil, ErrResourceAccessDenied
+	switch len(clusterFilters) {
+	case 0:
+		return getMatchNoneQuery(), nil
+	case 1:
+		return clusterFilters[0], nil
+	default:
+		return search.DisjunctionQuery(clusterFilters...), nil
 	}
-	return search.DisjunctionQuery(clusterFilters...), nil
 }
 
 func getMatchNoneQuery() *v1.Query {
