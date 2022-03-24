@@ -277,6 +277,11 @@ func TestIsUnauthorizedError(t *testing.T) {
 			StatusCode: http.StatusUnauthorized,
 		},
 	}
+	forbiddenErr := dockerRegistry.HttpStatusError{
+		Response: &http.Response{
+			StatusCode: http.StatusForbidden,
+		},
+	}
 
 	emptyResponseErr := dockerRegistry.HttpStatusError{}
 
@@ -300,6 +305,12 @@ func TestIsUnauthorizedError(t *testing.T) {
 			}, "something went wrong"),
 			unauthorizedError: true,
 		},
+		"registry error with status code forbidden should indicate unauthorized error": {
+			err: errors.Wrap(&url.Error{
+				Err: &forbiddenErr,
+			}, "something went wrong"),
+			unauthorizedError: true,
+		},
 		"transport error with status code unauthorized should indicate unauthorized error": {
 			err: &transport.Error{
 				StatusCode: http.StatusUnauthorized,
@@ -310,6 +321,12 @@ func TestIsUnauthorizedError(t *testing.T) {
 			err: &transport.Error{
 				StatusCode: http.StatusNotFound,
 			},
+		},
+		"transport error with status code forbidden should indicate unauthorized error": {
+			err: &transport.Error{
+				StatusCode: http.StatusForbidden,
+			},
+			unauthorizedError: true,
 		},
 	}
 
