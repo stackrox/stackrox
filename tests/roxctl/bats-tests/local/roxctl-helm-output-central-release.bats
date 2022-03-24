@@ -61,13 +61,13 @@ teardown() {
 @test "roxctl-release helm output central-services --image-defaults=development_build should fail" {
   run roxctl-release helm output central-services --image-defaults=development_build --output-dir "$out_dir"
   assert_failure
-  assert_line --regexp "ERROR:[[:space:]]+invalid arguments: '--image-defaults': unexpected value 'development_build', allowed values are \[stackrox.io rhacs\]"
+  assert_line --regexp "ERROR:[[:space:]]+unable to get chart meta values: '--image-defaults': unexpected value 'development_build', allowed values are \[stackrox.io rhacs\]"
 }
 
 @test "roxctl-release helm output central-services --image-defaults='' should fail with unexpected value of --image-defaults" {
   run roxctl-release helm output central-services --image-defaults='' --output-dir "$out_dir"
   assert_failure
-  assert_line --regexp "ERROR:[[:space:]]+invalid arguments: '--image-defaults': unexpected value '', allowed values are \[stackrox.io rhacs\]"
+  assert_line --regexp "ERROR:[[:space:]]+unable to get chart meta values: '--image-defaults': unexpected value '', allowed values are \[stackrox.io rhacs\]"
 }
 
 @test "roxctl-release helm output central-services --rhacs --image-defaults=stackrox.io should return error about --rhacs colliding with --image-defaults" {
