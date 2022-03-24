@@ -11,6 +11,17 @@ import (
 
 // All resource types that we want to define (for the purposes of enforcing
 // API permissions) must be defined here.
+//
+// Description for each type and the meaning of the respective Read and Write
+// operations is available in
+//     "ui/apps/platform/src/Containers/AccessControl/PermissionSets/ResourceDescription.tsx"
+//
+// UI defines possible values for resource type in
+//     "ui/apps/platform/src/types/roleResources.ts"
+//
+// Each time you touch the list below, you likely need to update both
+// aforementioned files.
+//
 // KEEP THE FOLLOWING LIST SORTED IN LEXICOGRAPHIC ORDER.
 var (
 	APIToken                         = newResourceMetadata("APIToken", permissions.GlobalScope)
