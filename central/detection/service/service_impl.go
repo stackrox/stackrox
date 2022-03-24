@@ -23,6 +23,7 @@ import (
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -190,7 +191,10 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}
 
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
-	alerts, err := s.detector.Detect(detectionCtx, deployment, images, filter)
+	alerts, err := s.detector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
+		Deployment: deployment,
+		Images:     images,
+	}, filter)
 	if err != nil {
 		return nil, err
 	}

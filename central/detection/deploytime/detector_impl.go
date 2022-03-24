@@ -2,6 +2,7 @@ package deploytime
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,8 +23,8 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 }
 
 // Detect runs detection on an deployment, returning any generated alerts.
-func (d *detectorImpl) Detect(ctx deploytime.DetectionContext, deployment *storage.Deployment, images []*storage.Image, policyFilters ...detection.FilterOption) ([]*storage.Alert, error) {
-	alerts, err := d.singleDetector.Detect(ctx, deployment, images, policyFilters...)
+func (d *detectorImpl) Detect(ctx deploytime.DetectionContext, enhancedDeployment booleanpolicy.EnhancedDeployment, policyFilters ...detection.FilterOption) ([]*storage.Alert, error) {
+	alerts, err := d.singleDetector.Detect(ctx, enhancedDeployment, policyFilters...)
 	if err != nil {
 		return nil, err
 	}

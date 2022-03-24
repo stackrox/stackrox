@@ -3,6 +3,7 @@ package unified
 import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/detection/runtime"
@@ -24,7 +25,10 @@ func (d *detectorImpl) ReconcilePolicies(newList []*storage.Policy) {
 }
 
 func (d *detectorImpl) DetectDeployment(ctx deploytime.DetectionContext, deployment *storage.Deployment, images []*storage.Image) []*storage.Alert {
-	alerts, err := d.deploytimeDetector.Detect(ctx, deployment, images)
+	alerts, err := d.deploytimeDetector.Detect(ctx, booleanpolicy.EnhancedDeployment{
+		Deployment: deployment,
+		Images:     images,
+	})
 	if err != nil {
 		log.Errorf("Error running detection on deployment %q: %v", deployment.GetName(), err)
 	}
