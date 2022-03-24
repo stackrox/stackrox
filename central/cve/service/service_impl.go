@@ -39,9 +39,9 @@ var (
 
 // serviceImpl provides APIs for CVEs.
 type serviceImpl struct {
-	cves        datastore.DataStore
-	vulnReqMgr  vulnReqMgr.Manager
-	indexQ      queue.WaitableQueue
+	cves       datastore.DataStore
+	vulnReqMgr vulnReqMgr.Manager
+	indexQ     queue.WaitableQueue
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

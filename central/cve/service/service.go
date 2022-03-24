@@ -31,8 +31,8 @@ func New(
 	vulnReqMgr vulnReqMgr.Manager,
 ) Service {
 	return &serviceImpl{
-		cves:        cveDataStore,
-		indexQ:      indexQ,
-		vulnReqMgr:  vulnReqMgr,
+		cves:       cveDataStore,
+		indexQ:     indexQ,
+		vulnReqMgr: vulnReqMgr,
 	}
 }
