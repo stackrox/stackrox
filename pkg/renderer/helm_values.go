@@ -69,7 +69,22 @@ central:
     tag: {{ .K8sConfig.ImageOverrides.Main.Tag }}
     {{- end }}
   {{- end }}
-
+  {{- if .K8sConfig.ImageOverrides.CentralDB }}
+  dbImage:
+    {{- if .K8sConfig.ImageOverrides.CentralDB.Registry }}
+    registry: {{ .K8sConfig.ImageOverrides.CentralDB.Registry }}
+    {{- end }}
+    {{- if .K8sConfig.ImageOverrides.CentralDB.Name }}
+    name: {{ .K8sConfig.ImageOverrides.CentralDB.Name }}
+    {{- end }}
+    {{- if .K8sConfig.ImageOverrides.CentralDB.Tag }}
+    # WARNING: You are using a non-default Central DB image tag. Upgrades via
+    # 'helm upgrade' will not work as expected. To ensure a smooth upgrade experience,
+    # make sure StackRox images are mirrored with the same tags as in the stackrox.io
+    # registry.
+    tag: {{ .K8sConfig.ImageOverrides.CentralDB.Tag }}
+    {{- end }}
+  {{- end }}
   persistence:
     {{- if .HostPath }}
     hostPath: {{ .HostPath.HostPath }}
