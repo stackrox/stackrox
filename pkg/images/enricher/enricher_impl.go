@@ -488,8 +488,8 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 		// If no signature is given but there are signature verification results on the image, make sure we delete
 		// the stale signature verification results.
 		if len(img.GetSignatureVerificationData().GetResults()) != 0 {
-			log.Infof("Deleting all signature verification data for image %q since no"+
-				" signatures are available anymore", img.GetName().GetFullName())
+			// log.Infof("Deleting all signature verification data for image %q since no"+
+			//	" signatures are available anymore", img.GetName().GetFullName())
 			img.SignatureVerificationData = nil
 			return true, nil
 		}
@@ -507,8 +507,8 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 		// If no signature integrations are available, we need to delete any existing verification results from the
 		// image and signal an update to the verification data.
 		if len(img.GetSignatureVerificationData().GetResults()) != 0 {
-			log.Infof("Deleteing all signature verification data for image %q since no "+
-				"signature integration is available anymore", img.GetName().GetFullName())
+			// log.Infof("Deleteing all signature verification data for image %q since no "+
+			//	"signature integration is available anymore", img.GetName().GetFullName())
 			img.SignatureVerificationData = nil
 			return true, nil
 		}
@@ -535,7 +535,7 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 		return false, ctx.Err()
 	}
 
-	log.Infof("Found signature verification results for image %q: %+v", img.GetName().GetFullName(), res)
+	// log.Infof("Found signature verification results for image %q: %+v", img.GetName().GetFullName(), res)
 
 	img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
 		Results: res,
@@ -611,11 +611,11 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 
 	// Do not signal updates when no signatures have been fetched.
 	if len(fetchedSignatures) == 0 {
-		log.Infof("No signatures found for image %q", img.GetName().GetFullName())
+		// log.Infof("No signatures found for image %q", img.GetName().GetFullName())
 		return false, nil
 	}
 
-	log.Infof("Found signatures for image %q: %+v", img.GetName().GetFullName(), fetchedSignatures)
+	// log.Infof("Found signatures for image %q: %+v", img.GetName().GetFullName(), fetchedSignatures)
 
 	img.Signature = &storage.ImageSignature{
 		Signatures: fetchedSignatures,
