@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -39,20 +38,14 @@ func (cds *clusterDataStoreImpl) GetFlowStore(ctx context.Context, clusterID str
 }
 
 func (cds *clusterDataStoreImpl) CreateFlowStore(ctx context.Context, clusterID string) (FlowDataStore, error) {
-	var err error
 	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	var underlying store.FlowStore
+	underlying, err := cds.storage.CreateFlowStore(ctx, clusterID)
 
-	if features.PostgresDatastore.Enabled() {
-		underlying, err = cds.storage.CreateFlowStore(ctx, clusterID)
-	} else {
-		underlying, err = cds.storage.CreateFlowStore(ctx, clusterID)
-	}
 	if err != nil {
 		return nil, err
 	}

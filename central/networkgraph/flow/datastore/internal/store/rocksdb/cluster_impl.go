@@ -1,10 +1,11 @@
 package rocksdb
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/common"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	"golang.org/x/net/context"
 )
 
 // NewClusterStore returns a new ClusterStore instance using the provided rocksdb instance.

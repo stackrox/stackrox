@@ -1,6 +1,6 @@
 package store
 
-import "golang.org/x/net/context"
+import "context"
 
 // ClusterStore stores the network edges per cluster.
 type ClusterStore interface {

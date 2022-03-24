@@ -1,9 +1,10 @@
 package postgres
 
 import (
+	"context"
+
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
-	"golang.org/x/net/context"
 )
 
 // NewClusterStore returns a new ClusterStore instance using the provided rocksdb instance.

@@ -1,6 +1,7 @@
 package testcommon
 
 import (
+	"context"
 	"time"
 
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
@@ -9,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
-	"golang.org/x/net/context"
 )
 
 // NewFlowStoreTest creates a new flow test suite that can be shared between cluster store impls

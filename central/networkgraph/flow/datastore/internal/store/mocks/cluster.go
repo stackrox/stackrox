@@ -5,11 +5,11 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
 	store "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
-	context "golang.org/x/net/context"
 )
 
 // MockClusterStore is a mock of ClusterStore interface.

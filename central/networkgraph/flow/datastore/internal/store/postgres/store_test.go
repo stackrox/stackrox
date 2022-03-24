@@ -86,14 +86,14 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	}
 	//s.NoError(testutils.FullInit(networkFlow, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundNetworkFlow, exists, err := store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
+	foundNetworkFlow, exists, err := store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetType(), networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetType(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkFlow)
 
 	// Todo: The time and how it gets stored is hosing up the equal checks.  figure out best way to deal with that.
 	s.NoError(store.Upsert(ctx, networkFlow))
-	foundNetworkFlow, exists, err = store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
+	foundNetworkFlow, exists, err = store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetType(), networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetType(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
 	s.NoError(err)
 	s.True(exists)
 	//s.Equal(networkFlow, foundNetworkFlow)
@@ -102,18 +102,18 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(networkFlowCount, 1)
 
-	networkFlowExists, err := store.Exists(ctx, networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
+	networkFlowExists, err := store.Exists(ctx, networkFlow.GetProps().GetSrcEntity().GetType(), networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetType(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
 	s.NoError(err)
 	s.True(networkFlowExists)
 	s.NoError(store.Upsert(ctx, networkFlow))
 
-	foundNetworkFlow, exists, err = store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
+	foundNetworkFlow, exists, err = store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetType(), networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetType(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
 	s.NoError(err)
 	s.True(exists)
 	//s.Equal(networkFlow, foundNetworkFlow)
 
-	s.NoError(store.Delete(ctx, networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol()))
-	foundNetworkFlow, exists, err = store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
+	s.NoError(store.Delete(ctx, networkFlow.GetProps().GetSrcEntity().GetType(), networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetType(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol()))
+	foundNetworkFlow, exists, err = store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetType(), networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetType(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkFlow)
