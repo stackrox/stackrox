@@ -133,9 +133,6 @@ describe('Network page', () => {
         cy.visit(riskURL);
         cy.get(selectors.table.rows).eq(0).click({ force: true });
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton, { timeout: 10000 }).click();
-
-        selectNamespaceFilters('stackrox');
-
         cy.get(networkPageSelectors.networkEntityTabbedOverlay.header, { timeout: 15000 }).should(
             'be.visible'
         );
@@ -152,7 +149,6 @@ describe('Network Deployment Details', () => {
         cy.visit(riskURL);
         cy.get(`${selectors.table.rows}:contains('central')`).click();
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
-        selectNamespaceFilters('stackrox');
         cy.get(`${selectors.tab.tabs}:contains('Details')`).click();
         cy.get(`[data-testid="exposure"]:contains('ClusterIP')`);
         cy.get(`[data-testid="level"]:contains('ClusterIP')`);
@@ -211,7 +207,6 @@ describe('Network Flows Table', () => {
         cy.visit(riskURL);
         cy.get(`${selectors.table.rows}:contains('central')`).click();
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
-        selectNamespaceFilters('stackrox');
         cy.get(`${selectors.tab.tabs}:contains('Network Flows')`).click();
         cy.get(`${selectors.table.th}:contains('Entity')`);
         cy.get(`${selectors.table.th}:contains('Traffic')`);
