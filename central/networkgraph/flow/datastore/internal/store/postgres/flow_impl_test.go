@@ -14,7 +14,6 @@ import (
 
 func TestFlowStore(t *testing.T) {
 	ctx := context.Background()
-	//clusterId := "22"
 	envIsolator := envisolator.NewEnvIsolator(t)
 	envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -28,7 +27,9 @@ func TestFlowStore(t *testing.T) {
 	pool, _ := pgxpool.ConnectConfig(ctx, config)
 	defer pool.Close()
 
-	store := NewClusterStore(pool)
-	flowSuite := testcommon.NewFlowStoreTest(store)
-	suite.Run(t, flowSuite)
+	if features.PostgresDatastore.Enabled() {
+		store := NewClusterStore(pool)
+		flowSuite := testcommon.NewFlowStoreTest(store)
+		suite.Run(t, flowSuite)
+	}
 }

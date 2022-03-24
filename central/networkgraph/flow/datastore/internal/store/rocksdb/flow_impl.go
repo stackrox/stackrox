@@ -49,7 +49,9 @@ func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage
 		return nil, types.Timestamp{}, err
 	}
 	defer s.db.DecRocksDBInProgressOps()
+	log.Infof("SHREWS == OLD GetMatchingFlows")
 	flows, ts, err = s.readFlows(pred, since)
+
 	return flows, ts, err
 }
 
@@ -69,7 +71,7 @@ func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.Networ
 	batch := gorocksdb.NewWriteBatch()
 	defer batch.Destroy()
 
-	log.Infof("SHREWS => OLD UpsertFlows => %s", flows)
+	log.Infof("SHREWS => OLD UpsertFlows => %d", len(flows))
 
 	// Add the timestamp key
 	batch.Put(s.getFullKey(updatedTSKey), tsData)
@@ -211,7 +213,7 @@ func (s *flowStoreImpl) readFlows(pred func(*storage.NetworkFlowProperties) bool
 		return nil
 	})
 
-	log.Infof("SHREWS => OLD READ => %s", flows)
+	log.Infof("SHREWS => OLD READ => %d", len(flows))
 	return
 }
 

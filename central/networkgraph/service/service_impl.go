@@ -304,6 +304,7 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 	graphBuilder *flowGraphBuilder,
 	deployments []*storage.ListDeployment,
 ) error {
+	log.Info("SHREWS -- addDeploymentFlowsToGraph")
 	// Build a possibly reduced map of only those deployments for which we can see network flows.
 	networkFlowsChecker := networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ClusterID(request.GetClusterId())
 	filteredSlice, err := sac.FilterSliceReflect(ctx, networkFlowsChecker, deployments, func(deployment *storage.ListDeployment) sac.ScopePredicate {
@@ -333,6 +334,7 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 	var pred func(*storage.NetworkFlowProperties) bool
 	if request.GetQuery() != "" || !canSeeAllFlows {
 		pred = func(props *storage.NetworkFlowProperties) bool {
+			log.Info("SHREWS in pred")
 			srcEnt := props.GetSrcEntity()
 			dstEnt := props.GetDstEntity()
 

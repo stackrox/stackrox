@@ -132,7 +132,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	s.Equal(networkFlowCount, 100)
 
 	// been working with 600 but that is slow
-	entityCount := 100
+	entityCount := 6
 
 	// Build a few cluster IDs
 	clusters := []string{
@@ -279,4 +279,6 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	log.Info(results)
 	err = w.WriteAll(results) // calls Flush internally
 	log.Info("Successfully loaded the DB")
+
+	Destroy(ctx, pool)
 }

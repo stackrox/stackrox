@@ -148,6 +148,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	// TODO(ROX-???): this needs to be changed should we ever generate egress policies!
 	flows, _, err := clusterFlowStore.GetMatchingFlows(networkGraphGenElevatedCtx, func(flowProps *storage.NetworkFlowProperties) bool {
 		dstEnt := flowProps.GetDstEntity()
+		log.Info("SHREWS -- In the generator_impl.go predicate function")
 		return dstEnt.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && relevantDeploymentsMap[dstEnt.GetId()] != nil
 	}, since)
 	if err != nil {
