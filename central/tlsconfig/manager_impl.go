@@ -56,7 +56,7 @@ func newManager(namespace string) (*managerImpl, error) {
 		internalCerts:            internalCerts,
 	}
 
-	certwatch.WatchCertDir("default", DefaultCertPath, loadDefaultCertificate, mgr.UpdateDefaultCert)
+	certwatch.WatchCertDir(DefaultCertPath, loadDefaultCertificate, mgr.UpdateDefaultCert)
 
 	return mgr, nil
 }
