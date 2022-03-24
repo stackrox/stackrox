@@ -7,10 +7,6 @@ function docker_login {
   docker login docker.io
   docker login stackrox.io
   docker login collector.stackrox.io
-
-  # docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD" docker.io
-  # docker login -u "$STACKROX_IO_USERNAME"    -p "$STACKROX_IO_PASSWORD"    stackrox.io
-  # docker login -u "$STACKROX_IO_USERNAME"    -p "$STACKROX_IO_PASSWORD"    collector.stackrox.io
 }
 
 function stackrox_teardown {
@@ -55,6 +51,9 @@ CURRENT_KUBE_CONTEXT=$(kubectl config current-context)
   || error "Unexpected kube econtext [$CURRENT_KUBE_CONTEXT]"
 export LOAD_BALANCER="lb"
 export MONITORING_SUPPORT=true
+REGISTRY_USERNAME=$(pass docker.io | jq -r '.username')
+REGISTRY_PASSWORD=$(pass docker.io | jq -r '.password')
+export REGISTRY_USERNAME REGISTRY_PASSWORD
 
 docker_login
 stackrox_teardown
