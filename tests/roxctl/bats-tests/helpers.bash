@@ -181,6 +181,9 @@ assert_components_registry() {
       main)
         assert_registry_version_file "${dir}/01-central-13-deployment.yaml" 0 "central" "$regex"
         ;;
+      central-db)
+        assert_registry_version_file "${dir}/01-central-12-central-db.yaml" 0 "central-db" "$regex"
+        ;;
       scanner)
         assert_registry_version_file "${dir}/02-scanner-06-deployment.yaml" 0 "scanner" "$regex"
         ;;
@@ -208,6 +211,13 @@ assert_file_exist() {
   local -r file="$1"
   if [[ ! -e "$file" ]]; then
     fail "ERROR: file '$file' does not exist"
+  fi
+}
+
+assert_file_not_exist() {
+  local -r file="$1"
+  if [[ -e "$file" ]]; then
+    fail "ERROR: file '$file' exists"
   fi
 }
 
@@ -264,6 +274,11 @@ run_image_defaults_registry_test() {
   assert_success
   assert_components_registry "$out_dir/central" "$expected_main_registry" "$any_version" 'main'
   assert_components_registry "$out_dir/scanner" "$expected_scanner_registry" "$any_version" 'scanner' 'scanner-db'
+  if [[ "$ROX_POSTGRES_DATASTORE" =~ "true" ]]; then
+    assert_components_registry "$out_dir/central" "$expected_main_registry" "$any_version" 'central-db'
+  else
+    assert_file_not_exist "$out_dir/central/01-central-12-central-db.yaml"
+  fi
 }
 
 # run_no_rhacs_flag_test asserts that 'roxctl central generate' fails when presented with `--rhacs` parameter

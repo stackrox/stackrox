@@ -62,7 +62,7 @@ spec:
       storage: {{ include "srox.formatStorageSize" $pvcCfg.size }}
 {{ if ._rox.central.enableCentralDB -}}
 ---
-{{- /* TODO(ROX-9249): Configure PVC for both Central and Central DB */}}
+{{- /* TODO(ROX-9807): Move customized PVC from Central to Central DB */}}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

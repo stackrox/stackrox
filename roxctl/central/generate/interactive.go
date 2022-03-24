@@ -317,7 +317,7 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 		}
 
 		// set default values for image-{main,scanner,scanner-db} flags
-		if fw.Flag.Name == flags.FlagNameMainImage || fw.Flag.Name == flags.FlagNameScannerImage || fw.Flag.Name == flags.FlagNameScannerDBImage {
+		if fw.Flag.Name == flags.FlagNameMainImage || fw.Flag.Name == flags.FlagNameScannerImage || fw.Flag.Name == flags.FlagNameScannerDBImage || fw.Flag.Name == flags.FlagNameCentralDBImage {
 			imgDefArg := argSlice.findArgByName(flags.FlagNameImageDefaults)
 			if imgDefArg == nil {
 				panic(fmt.Sprintf("unable to find flag '%s'", flags.FlagNameImageDefaults))
@@ -338,6 +338,10 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 			case flags.FlagNameScannerDBImage:
 				if fw.Flag.DefValue == "" {
 					fw.Flag.DefValue = flavor.ScannerDBImage()
+				}
+			case flags.FlagNameCentralDBImage:
+				if fw.Flag.DefValue == "" {
+					fw.Flag.DefValue = flavor.CentralDBImage()
 				}
 			}
 		}
