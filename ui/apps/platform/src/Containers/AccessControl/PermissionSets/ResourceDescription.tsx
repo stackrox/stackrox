@@ -2,7 +2,8 @@ import React, { ReactElement } from 'react';
 
 import { ResourceName } from 'types/roleResources';
 
-// First draft of description fields for possible future request from backend.
+// Description for permission resource types. 'Read:' and 'Write:' tokens have
+// special meaning and mark parts related to respective operations.
 const resourceDescriptions: Record<ResourceName, string> = {
     APIToken: 'Read: View API tokens. Write: Add or revoke API tokens.',
     Alert: 'Read: View policy violations. Write: Resolve or edit policy violations.',
