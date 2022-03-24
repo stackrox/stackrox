@@ -10,6 +10,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The maximum Admission Controller "fail open" timeout has been set at 25 seconds in Helm template verification performed by the Operator.
   - This change is *not* backwards compatible; if an existing Custom Resource sets the value to > 25 seconds, then it will fail validation in case operator is downgraded. This change is accepted because the operator is still in v1alpha1 and subject to change.
 - The admission webhook timeout is now set to the admission controller timeout plus 2 seconds.
+- The "Process Ancestor" search term has been deprecated.
 
 ## [69.1]
 
