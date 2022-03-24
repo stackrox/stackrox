@@ -579,6 +579,10 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		// registry, but this can be tackled at a latter improvement.
 		if !errors.Is(err, errox.NotAuthorized) {
 			log.Errorf("Error fetching image signatures for image %q: %v", img.GetName().GetFullName(), err)
+		} else {
+			// Log errox.NotAuthorized erros only in debug mode, since we expect them to occur often.
+			log.Debugf("Unauthorized error fetching image signatures for iamge %q: %v",
+				img.GetName().GetFullName(), err)
 		}
 	}
 

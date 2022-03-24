@@ -208,11 +208,7 @@ func errToURLError(err error) *url.Error {
 // errToRegistryError is a helper for casting an error to a registry.HttpStatusError.
 func errToRegistryError(err error) *dockerRegistry.HttpStatusError {
 	urlErr := errToURLError(err)
-	if urlErr == nil {
-		return nil
-	}
-
-	if urlErr.Err == nil {
+	if urlErr == nil || urlErr.Err == nil {
 		return nil
 	}
 
