@@ -56,15 +56,14 @@ const (
 
 var (
     schema = walker.Walk(reflect.TypeOf((*{{.Type}})(nil)), baseTable)
-    {{- $schema := .Schema }}
-    {{- range $idx, $ref := .References}}
-        {{- if ne $ref.RefSchema.Table $schema.EmbeddedIn -}}.
+    {{- $schema := .Schema -}}
+    {{- range $idx, $ref := .References -}}
+        .
         WithReference(&walker.ReferenceInfo{
             ForeignKey: "{{$ref.ForeignKey}}",
             RefSchema:  walker.Walk(reflect.TypeOf(({{$ref.RefSchema.Type}})(nil)), "{{$ref.RefSchema.Table}}"),
             Reference:  "{{$ref.Reference}}",
         })
-        {{- end }}
     {{- end }}
     log = logging.LoggerForModule()
 )

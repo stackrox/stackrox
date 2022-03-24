@@ -2,18 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"text/template"
 	"unicode"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/stringutils"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 func splitWords(s string) []string {

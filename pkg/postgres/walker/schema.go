@@ -4,13 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	serializedField = Field{
 		Name: "serialized",
 		ObjectGetter: ObjectGetter{
@@ -101,24 +98,31 @@ func parentify(parent, name string) string {
 // ResolvedFields is the total set of fields for the schema including
 // fields that are derived from the parent schemas. e.g. parent primary keys, array indexes, etc.
 func (s *Schema) ResolvedFields() []Field {
-	var pks []Field
+	// Find all the local fields that are already defined as foreign keys.
+	localFKs := s.localFKs()
+
+	var allPks []Field
 	for _, parent := range s.Parents {
-		pks = parent.ResolvedPrimaryKeys()
+		pks := parent.ResolvedPrimaryKeys()
 		for idx := range pks {
 			pk := &pks[idx]
+			if _, found := localFK(pk, localFKs); found {
+				continue
+			}
 			tryParentify(pk, parent)
 			pk.ObjectGetter = ObjectGetter{
 				variable: true,
 				value:    pk.Name,
 			}
+			allPks = append(allPks, *pk)
 		}
 	}
 
-	pks = append(pks, s.Fields...)
+	allPks = append(allPks, s.Fields...)
 	if len(s.Parents) == 0 || s.EmbeddedIn == "" {
-		pks = append(pks, serializedField)
+		allPks = append(allPks, serializedField)
 	}
-	return pks
+	return allPks
 }
 
 // ParentKeys are the keys from the parent schemas that should be defined
@@ -137,29 +141,17 @@ func (s *Schema) ParentKeys() []Field {
 func (s *Schema) ParentKeysGroupedByTable() []TableFieldsGroup {
 	pks := make([]TableFieldsGroup, 0, len(s.Parents))
 	// Find all the local fields that are already defined as foreign keys.
-	embeddedFKs := make(map[foreignKeyRef]*Field)
-	for idx := range s.Fields {
-		f := &s.Fields[idx]
-		if ref := f.Options.Reference; ref != nil {
-			embeddedFKs[foreignKeyRef{
-				typeName:      strings.ToLower(ref.RefSchema.Type),
-				protoBufField: strings.ToLower(ref.Reference),
-			}] = f
-		}
-	}
+	localFKs := s.localFKs()
 
 	for _, parent := range s.Parents {
 		currPks := parent.ResolvedPrimaryKeys()
 		for idx := range currPks {
 			pk := &currPks[idx]
 			// If the referenced parent field is already an embedded as foriegn key in child, use the child field names.
-			if fs := embeddedFKs[foreignKeyRef{
-				typeName:      strings.ToLower(parent.Type),
-				protoBufField: strings.ToLower(pk.ProtoBufName),
-			}]; fs != nil {
-				pk.Name = fs.Name
+			if field, found := localFK(pk, localFKs); found {
+				pk.Name = field.Name
 				pk.Reference = pk.ColumnName
-				pk.ColumnName = fs.ColumnName
+				pk.ColumnName = field.ColumnName
 				continue
 			}
 			tryParentify(pk, parent)
@@ -167,6 +159,31 @@ func (s *Schema) ParentKeysGroupedByTable() []TableFieldsGroup {
 		pks = append(pks, TableFieldsGroup{Table: parent.Table, Fields: currPks})
 	}
 	return pks
+}
+
+func (s *Schema) localFKs() map[foreignKeyRef]*Field {
+	localFKs := make(map[foreignKeyRef]*Field)
+	for idx := range s.Fields {
+		f := &s.Fields[idx]
+		if ref := f.Options.Reference; ref != nil {
+			localFKs[foreignKeyRef{
+				typeName:      strings.ToLower(ref.RefSchema.Type),
+				protoBufField: strings.ToLower(ref.Reference),
+			}] = f
+		}
+	}
+	return localFKs
+}
+
+func localFK(field *Field, localFKMap map[foreignKeyRef]*Field) (*Field, bool) {
+	f := localFKMap[foreignKeyRef{
+		typeName:      strings.ToLower(field.Schema.Type),
+		protoBufField: strings.ToLower(field.ProtoBufName),
+	}]
+	if f == nil {
+		return nil, false
+	}
+	return f, true
 }
 
 // ForeignKeysReferencesTo returns the foreign keys of the current schema referencing specified schema name.
@@ -186,10 +203,16 @@ func (s *Schema) ForeignKeysReferencesTo(tableName string) []Field {
 		return nil
 	}
 
+	// Find all the local fields that are already defined as foreign keys.
+	localFKs := s.localFKs()
+
 	// Only get the immediate references, and not the resolved ones.
 	pks := pSchema.LocalPrimaryKeys()
 	for idx := range pks {
 		fk := &pks[idx]
+		if _, found := localFK(fk, localFKs); found {
+			continue
+		}
 		tryParentify(fk, pSchema)
 	}
 	// If we are here, it means all references to the required referenced table have been computed. Hence, stop.
@@ -201,11 +224,17 @@ func (s *Schema) ForeignKeys() []Field {
 	if len(s.Parents) == 0 {
 		return nil
 	}
+	// Find all the local fields that are already defined as foreign keys.
+	localFKs := s.localFKs()
+
 	var fks []Field
 	for _, parent := range s.Parents {
 		pks := parent.LocalPrimaryKeys()
 		for idx := range pks {
 			pk := &pks[idx]
+			if _, found := localFK(pk, localFKs); found {
+				continue
+			}
 			tryParentify(pk, parent)
 		}
 		fks = append(fks, pks...)
@@ -244,6 +273,8 @@ func (s *Schema) LocalPrimaryKeys() []Field {
 	return pks
 }
 
+// WithReference adds the specified references to this schema and returns it. This enables attaching additional
+// references to the schema which is not embedded within specified reference.
 func (s *Schema) WithReference(refs ...*ReferenceInfo) *Schema {
 	for _, ref := range refs {
 		var parentFound bool

@@ -72,7 +72,6 @@ type storeImpl struct {
 func createTableImageComponentRelation(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists image_component_relation (
-    image_components_Id varchar,
     image_components_Name varchar,
     image_components_Version varchar,
     image_components_OperatingSystem varchar,

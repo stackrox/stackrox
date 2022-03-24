@@ -19,13 +19,13 @@ import (
 )
 
 const (
-	baseTable  = "component_image_cve_relation"
-	countStmt  = "SELECT COUNT(*) FROM component_image_cve_relation"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM component_image_cve_relation WHERE ImageComponentId = $1 AND CveId = $2 AND CveOperatingSystem = $3)"
+	baseTable  = "image_component_cve_relation"
+	countStmt  = "SELECT COUNT(*) FROM image_component_cve_relation"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2 AND CveOperatingSystem = $3)"
 
-	getStmt    = "SELECT serialized FROM component_image_cve_relation WHERE ImageComponentId = $1 AND CveId = $2 AND CveOperatingSystem = $3"
-	deleteStmt = "DELETE FROM component_image_cve_relation WHERE ImageComponentId = $1 AND CveId = $2 AND CveOperatingSystem = $3"
-	walkStmt   = "SELECT serialized FROM component_image_cve_relation"
+	getStmt    = "SELECT serialized FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2 AND CveOperatingSystem = $3"
+	deleteStmt = "DELETE FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2 AND CveOperatingSystem = $3"
+	walkStmt   = "SELECT serialized FROM image_component_cve_relation"
 
 	batchAfter = 100
 
@@ -74,11 +74,12 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableComponentImageCveRelation(ctx context.Context, db *pgxpool.Pool) {
+func createTableImageComponentCveRelation(ctx context.Context, db *pgxpool.Pool) {
 	table := `
-create table if not exists component_image_cve_relation (
-    image_cves_Id varchar,
-    image_cves_OperatingSystem varchar,
+create table if not exists image_component_cve_relation (
+    image_components_Name varchar,
+    image_components_Version varchar,
+    image_components_OperatingSystem varchar,
     Id varchar,
     IsFixable bool,
     FixedBy varchar,
@@ -108,7 +109,7 @@ create table if not exists component_image_cve_relation (
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableComponentImageCveRelation(ctx, db)
+	createTableImageComponentCveRelation(ctx, db)
 
 	return &storeImpl{
 		db: db,
@@ -193,13 +194,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ComponentCVEE
 
 //// Used for testing
 
-func dropTableComponentImageCveRelation(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS component_image_cve_relation CASCADE")
+func dropTableImageComponentCveRelation(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_cve_relation CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableComponentImageCveRelation(ctx, db)
+	dropTableImageComponentCveRelation(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces
