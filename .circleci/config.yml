@@ -3758,7 +3758,6 @@ jobs:
     - STORAGE_CLASS: faster
     - STORAGE_SIZE: 100
     - LOAD_BALANCER: lb
-    - OUTPUT_FORMAT: helm
     - ROX_POSTGRES_DATASTORE: true
 
     steps:
