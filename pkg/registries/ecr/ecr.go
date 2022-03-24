@@ -115,6 +115,7 @@ func (e *ecr) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
 
 // Config returns the config via this registry's implementation.
 func (e *ecr) Config() *types.Config {
+	// TODO(ROX-9868): Return nil-config to caller.
 	if err := e.refreshDockerClient(); err != nil {
 		log.Errorf("Error refreshing docker client for registry %q: %v", e.Name(), err)
 	}
