@@ -1,13 +1,20 @@
 tests:
-- name: non slim mode
+- name: non collector slim mode
   set:
     collector.slimMode: false
   expect: |
     assertMainIs("registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:3.0.99.0")
     assertCollectorIs("registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8:3.0.99.0")
-- name: slim mode
+
+- name: collector slim mode
   set:
     collector.slimMode: true
   expect: |
     assertMainIs("registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:3.0.99.0")
     assertCollectorIs("registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8:3.0.99.0")
+
+- name: scanner image
+  set:
+    scanner.disable: false
+  expect:
+    assertScannerIs("registry.redhat.io/advanced-cluster-security/")
