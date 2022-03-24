@@ -105,7 +105,7 @@ create table if not exists processwhitelistresults_BaselineStatuses (
     BaselineStatus integer,
     AnomalousProcessesExecuted bool,
     PRIMARY KEY(processwhitelistresults_DeploymentId, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (processwhitelistresults_DeploymentId) REFERENCES processwhitelistresults(DeploymentId) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (processwhitelistresults_DeploymentId) REFERENCES processwhitelistresults(DeploymentId) ON DELETE CASCADE
 )
 `
 

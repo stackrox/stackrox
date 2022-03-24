@@ -2,9 +2,15 @@ package walker
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	serializedField = Field{
 		Name: "serialized",
 		ObjectGetter: ObjectGetter{
@@ -24,7 +30,21 @@ type Schema struct {
 	Fields       []Field
 	Children     []*Schema
 	Type         string
+	TypeName     string
 	ObjectGetter string
+
+	// This indicates the name of the parent schema in which current schema is embedded (in proto). A schema can be
+	// embedded exactly one porent. For the top-most schema this field is unset.
+	//
+	// We use `Parents` and `Children` which mean (referenced table and referencing table) in SQL world,
+	// but in our context it reflects the nesting of proto messages.
+	EmbeddedIn string
+}
+
+// TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,
+type TableFieldsGroup struct {
+	Table  string
+	Fields []Field
 }
 
 // FieldsBySearchLabel returns the resulting fields in the schema by their field label
@@ -95,7 +115,7 @@ func (s *Schema) ResolvedFields() []Field {
 	}
 
 	pks = append(pks, s.Fields...)
-	if len(s.Parents) == 0 {
+	if len(s.Parents) == 0 || s.EmbeddedIn == "" {
 		pks = append(pks, serializedField)
 	}
 	return pks
@@ -105,24 +125,45 @@ func (s *Schema) ResolvedFields() []Field {
 // as foreign keys for the current schema.
 func (s *Schema) ParentKeys() []Field {
 	var fields []Field
-	pksAsMap := s.ParentKeysAsMap()
-	for _, pks := range pksAsMap {
-		fields = append(fields, pks...)
+	pksGrps := s.ParentKeysGroupedByTable()
+	for _, pks := range pksGrps {
+		fields = append(fields, pks.Fields...)
 	}
 	return fields
 }
 
-// ParentKeysAsMap returns the keys from the parent schemas that should be defined
-// as foreign keys for the current schema mapped by parent schema.
-func (s *Schema) ParentKeysAsMap() map[string][]Field {
-	pks := make(map[string][]Field)
+// ParentKeysGroupedByTable returns the keys from the parent schemas that should be defined
+// as foreign keys for the current schema grouped by parent schema.
+func (s *Schema) ParentKeysGroupedByTable() []TableFieldsGroup {
+	pks := make([]TableFieldsGroup, 0, len(s.Parents))
+	// Find all the local fields that are already defined as foreign keys.
+	embeddedFKS := make(map[ForeignKeyRef]*Field)
+	for idx := range s.Fields {
+		f := &s.Fields[idx]
+		if ref := f.Options.Reference; ref != nil {
+			embeddedFKS[ForeignKeyRef{
+				TypeName:      strings.ToLower(ref.TypeName),
+				ProtoBufField: strings.ToLower(ref.ProtoBufField),
+			}] = f
+		}
+	}
 	for _, parent := range s.Parents {
 		currPks := parent.ResolvedPrimaryKeys()
 		for idx := range currPks {
 			pk := &currPks[idx]
+			// If the referenced parent field is already an embedded as foriegn key in child, use the child field names.
+			if fs := embeddedFKS[ForeignKeyRef{
+				TypeName:      strings.ToLower(parent.TypeName),
+				ProtoBufField: strings.ToLower(pk.ProtoBufName),
+			}]; fs != nil {
+				pk.Name = fs.Name
+				pk.Reference = pk.ColumnName
+				pk.ColumnName = fs.ColumnName
+				continue
+			}
 			tryParentify(pk, parent)
 		}
-		pks[parent.Table] = currPks
+		pks = append(pks, TableFieldsGroup{Table: parent.Table, Fields: currPks})
 	}
 	return pks
 }
@@ -174,8 +215,20 @@ func (s *Schema) ForeignKeys() []Field {
 // ResolvedPrimaryKeys are all the primary keys of the current schema which is the union
 // of keys from the parent schemas and also any local keys
 func (s *Schema) ResolvedPrimaryKeys() []Field {
-	pks := s.ParentKeys()
-	pks = append(pks, s.LocalPrimaryKeys()...)
+	localPKSet := set.NewStringSet()
+	localPKS := s.LocalPrimaryKeys()
+	for _, pk := range localPKS {
+		localPKSet.Add(pk.ColumnName)
+	}
+
+	var pks []Field
+	// If the resolved primary key is already present as local primary key, do not add it.
+	for _, pk := range s.ParentKeys() {
+		if localPKSet.Add(pk.ColumnName) {
+			pks = append(pks, pk)
+		}
+	}
+	pks = append(pks, localPKS...)
 	return pks
 }
 
@@ -188,6 +241,20 @@ func (s *Schema) LocalPrimaryKeys() []Field {
 		}
 	}
 	return pks
+}
+
+// WithReference adds the specified schema as a reference to this schema and returns it. The referencing receiver
+// schema is not a direct field in proto object of the specified reference.
+func (s *Schema) WithReference(ref *Schema) *Schema {
+	for _, p := range s.Parents {
+		if p.Table == ref.Table {
+			log.Panicf("%s already has a reference registered with table name %s", s.Table, ref.Table)
+			return s
+		}
+	}
+	s.Parents = append(s.Parents, ref)
+	ref.Children = append(ref.Children, s)
+	return s
 }
 
 // NoPrimaryKey returns true if the current schema does not have a primary key defined
@@ -213,6 +280,13 @@ type PostgresOptions struct {
 	Unique                 bool
 	IgnorePrimaryKey       bool
 	IgnoreUniqueConstraint bool
+	Reference              *ForeignKeyRef
+}
+
+// ForeignKeyRef holds the reference information as provided in the proto tag `fk`.
+type ForeignKeyRef struct {
+	TypeName      string
+	ProtoBufField string
 }
 
 // ObjectGetter is wrapper around determining how to represent the variable in the
@@ -228,12 +302,14 @@ type Field struct {
 	Schema *Schema
 	// Name of the struct field
 	Name         string
+	ProtoBufName string
 	ObjectGetter ObjectGetter
 	ColumnName   string
 	// If set, this is the reference to
 	Reference string
 	// Type is the reflect.TypeOf value of the field
-	Type string
+	Type     string
+	TypeName string
 	// DataType is the internal type
 	DataType DataType
 	SQLType  string

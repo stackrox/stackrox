@@ -19,6 +19,7 @@ import {
 } from '@patternfly/react-core';
 
 import ColorPicker from 'Components/ColorPicker';
+import { getProductBranding } from 'constants/productBranding';
 import { ConfigTelemetryDetailContent } from '../ConfigTelemetryDetailWidget';
 import { PrivateConfig, PublicConfig, TelemetryConfig } from '../SystemConfigTypes';
 import FormSelect from './FormSelect';
@@ -41,6 +42,8 @@ const SystemConfigForm = ({
     values,
     setFieldValue,
 }: SystemConfigFormProps): ReactElement => {
+    const { type } = getProductBranding();
+
     function onChange(value, event) {
         return setFieldValue(event.target.id, value, false);
     }
@@ -411,28 +414,30 @@ const SystemConfigForm = ({
                         </CardBody>
                     </Card>
                 </GridItem>
-                <GridItem md={6}>
-                    <Card>
-                        <CardHeader>
-                            <CardHeaderMain>
-                                <CardTitle>Online Telemetry Data Collection</CardTitle>
-                            </CardHeaderMain>
-                            <CardActions>
-                                <Switch
-                                    id="telemetryConfig.enabled"
-                                    label="Enabled"
-                                    labelOff="Disabled"
-                                    isChecked={values?.telemetryConfig?.enabled}
-                                    onChange={onChange}
-                                />
-                            </CardActions>
-                        </CardHeader>
-                        <Divider component="div" />
-                        <CardBody>
-                            <ConfigTelemetryDetailContent />
-                        </CardBody>
-                    </Card>
-                </GridItem>
+                {type === 'RHACS_BRANDING' && (
+                    <GridItem md={6}>
+                        <Card>
+                            <CardHeader>
+                                <CardHeaderMain>
+                                    <CardTitle>Online Telemetry Data Collection</CardTitle>
+                                </CardHeaderMain>
+                                <CardActions>
+                                    <Switch
+                                        id="telemetryConfig.enabled"
+                                        label="Enabled"
+                                        labelOff="Disabled"
+                                        isChecked={values?.telemetryConfig?.enabled}
+                                        onChange={onChange}
+                                    />
+                                </CardActions>
+                            </CardHeader>
+                            <Divider component="div" />
+                            <CardBody>
+                                <ConfigTelemetryDetailContent />
+                            </CardBody>
+                        </Card>
+                    </GridItem>
+                )}
             </Grid>
         </Form>
     );

@@ -48,6 +48,15 @@ type properties struct {
 	Singular       string
 	WriteOptions   bool
 	OptionsPath    string
+
+	// Refs indicate the additional referentiol relationships. Each string is <table_name>:<proto_type>.
+	// These are non-embedding relations, that is, this table is not embedded into referenced table to
+	// construct the proto message.
+	Refs []string
+
+	// When set to true, it means that the schema represents a join table. The generation of mutating functions
+	// such as inserts, updates, deletes, is skipped. This is because join tables should be filled from parents.
+	JoinTable bool
 }
 
 func renderFile(templateMap map[string]interface{}, temp *template.Template, templateFileName string) error {
@@ -84,6 +93,8 @@ func main() {
 	c.Flags().StringVar(&props.Singular, "singular", "", "the singular name of the object")
 	c.Flags().StringVar(&props.OptionsPath, "options-path", "/index/mappings", "path to write out the options to")
 	c.Flags().StringVar(&props.SearchCategory, "search-category", "", "the search category to index under")
+	c.Flags().StringSliceVar(&props.Refs, "references", []string{}, "additional foreign key references as <table_name:type>")
+	c.Flags().BoolVar(&props.JoinTable, "join-table", false, "indicates the schema represents a join table. The generation of mutating functions is skipped")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
@@ -98,6 +109,15 @@ func main() {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
 
+		for _, ref := range props.Refs {
+			refTable, refObjType := stringutils.Split2(ref, ":")
+			refMsgType := proto.MessageType(refObjType)
+			if refMsgType == nil {
+				log.Fatalf("could not find message for type: %s", refObjType)
+			}
+			schema.WithReference(walker.Walk(refMsgType, refTable))
+		}
+
 		templateMap := map[string]interface{}{
 			"Type":           props.Type,
 			"TrimmedType":    stringutils.GetAfter(props.Type, "."),
@@ -105,6 +125,7 @@ func main() {
 			"Schema":         schema,
 			"SearchCategory": fmt.Sprintf("SearchCategory_%s", props.SearchCategory),
 			"OptionsPath":    path.Join(packagenames.Rox, props.OptionsPath),
+			"JoinTable":      props.JoinTable,
 		}
 
 		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
@@ -118,6 +139,7 @@ func main() {
 				return err
 			}
 		}
+
 		return nil
 	}
 	if err := c.Execute(); err != nil {

@@ -107,7 +107,7 @@ create table if not exists simpleaccessscopes_IncludedNamespaces (
     ClusterName varchar,
     NamespaceName varchar,
     PRIMARY KEY(simpleaccessscopes_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
 )
 `
 
@@ -134,7 +134,7 @@ create table if not exists simpleaccessscopes_ClusterLabelSelectors (
     simpleaccessscopes_Id varchar,
     idx integer,
     PRIMARY KEY(simpleaccessscopes_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
 )
 `
 
@@ -166,7 +166,7 @@ create table if not exists simpleaccessscopes_ClusterLabelSelectors_Requirements
     Op integer,
     Values text[],
     PRIMARY KEY(simpleaccessscopes_Id, simpleaccessscopes_ClusterLabelSelectors_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (simpleaccessscopes_Id, simpleaccessscopes_ClusterLabelSelectors_idx) REFERENCES simpleaccessscopes_ClusterLabelSelectors(simpleaccessscopes_Id, idx) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id, simpleaccessscopes_ClusterLabelSelectors_idx) REFERENCES simpleaccessscopes_ClusterLabelSelectors(simpleaccessscopes_Id, idx) ON DELETE CASCADE
 )
 `
 
@@ -193,7 +193,7 @@ create table if not exists simpleaccessscopes_NamespaceLabelSelectors (
     simpleaccessscopes_Id varchar,
     idx integer,
     PRIMARY KEY(simpleaccessscopes_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id) REFERENCES simpleaccessscopes(Id) ON DELETE CASCADE
 )
 `
 
@@ -225,7 +225,7 @@ create table if not exists simpleaccessscopes_NamespaceLabelSelectors_Requiremen
     Op integer,
     Values text[],
     PRIMARY KEY(simpleaccessscopes_Id, simpleaccessscopes_NamespaceLabelSelectors_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (simpleaccessscopes_Id, simpleaccessscopes_NamespaceLabelSelectors_idx) REFERENCES simpleaccessscopes_NamespaceLabelSelectors(simpleaccessscopes_Id, idx) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (simpleaccessscopes_Id, simpleaccessscopes_NamespaceLabelSelectors_idx) REFERENCES simpleaccessscopes_NamespaceLabelSelectors(simpleaccessscopes_Id, idx) ON DELETE CASCADE
 )
 `
 

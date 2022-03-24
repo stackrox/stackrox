@@ -103,7 +103,7 @@ create table if not exists signatureintegrations_PublicKeys (
     Name varchar,
     PublicKeyPemEnc varchar,
     PRIMARY KEY(signatureintegrations_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (signatureintegrations_Id) REFERENCES signatureintegrations(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (signatureintegrations_Id) REFERENCES signatureintegrations(Id) ON DELETE CASCADE
 )
 `
 

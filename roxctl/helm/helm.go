@@ -17,7 +17,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 
 	c.AddCommand(output.Command(cliEnvironment))
-	c.AddCommand(derivelocalvalues.Command())
+	c.AddCommand(derivelocalvalues.Command(cliEnvironment))
 
 	return c
 }

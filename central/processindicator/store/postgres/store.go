@@ -121,7 +121,7 @@ create table if not exists process_indicators_LineageInfo (
     ParentUid integer,
     ParentExecFilePath varchar,
     PRIMARY KEY(process_indicators_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (process_indicators_Id) REFERENCES process_indicators(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (process_indicators_Id) REFERENCES process_indicators(Id) ON DELETE CASCADE
 )
 `
 

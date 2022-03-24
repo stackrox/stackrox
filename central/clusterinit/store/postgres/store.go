@@ -108,7 +108,7 @@ create table if not exists clusterinitbundles_Attributes (
     Key varchar,
     Value varchar,
     PRIMARY KEY(clusterinitbundles_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (clusterinitbundles_Id) REFERENCES clusterinitbundles(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (clusterinitbundles_Id) REFERENCES clusterinitbundles(Id) ON DELETE CASCADE
 )
 `
 
