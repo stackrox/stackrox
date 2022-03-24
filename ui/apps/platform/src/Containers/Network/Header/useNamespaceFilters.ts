@@ -6,7 +6,7 @@ import { useQuery } from '@apollo/client';
 import { selectors } from 'reducers';
 import { CLUSTER_WITH_NAMESPACES } from 'queries/cluster';
 
-type SelectorState = { selectedClusterId: string; selectedNamespaceFilters: string[] };
+type SelectorState = { selectedClusterId: string | null; selectedNamespaceFilters: string[] };
 type SelectorResult = SelectorState;
 
 const selector = createStructuredSelector<SelectorState, SelectorResult>({
@@ -32,14 +32,14 @@ function useNamespaceFilters() {
         SelectorState,
         SelectorResult
     >(selector);
-    const queryVariables = {
-        variables: {
-            id: selectedClusterId,
-        },
-    };
+    // If the selectedClusterId has not been set yet, do not run the gql query
+    const queryOptions = selectedClusterId
+        ? { variables: { id: selectedClusterId } }
+        : { skip: true };
+
     const { loading, error, data } = useQuery<NamespaceMetadataResp, { id: string }>(
         CLUSTER_WITH_NAMESPACES,
-        queryVariables
+        queryOptions
     );
 
     useEffect(() => {
