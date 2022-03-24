@@ -111,6 +111,7 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	// Otherwise, attempt to scan locally.
 	scanImageFn := scanImage
 	if features.LocalImageScanning.Enabled() && ci.GetIsClusterLocal() {
+		log.Infof("Attempting to scan local image %q", ci.GetName().GetFullName())
 		scanImageFn = scanImageLocal
 	}
 

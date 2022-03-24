@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/imageutil"
 	"github.com/stackrox/rox/sensor/common/scan"
@@ -53,9 +54,12 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 		}
 	}
 
+	log := logging.LoggerForModule()
+
 	// Note: The Admission Controller does NOT know if the image is cluster-local,
 	// so we determine it here.
 	req.Image.IsClusterLocal = imageutil.IsInternalImage(req.GetImage().GetName())
+	log.Infof("Image %q is cluster-local? %v", req.GetImage().GetName().GetFullName(), req.GetImage().GetIsClusterLocal())
 
 	// Ask Central to scan the image if the image is not internal.
 	if !features.LocalImageScanning.Enabled() || !req.GetImage().GetIsClusterLocal() {
@@ -71,6 +75,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 		}, nil
 	}
 
+	log.Infof("Attemptint to scan local image %q", req.GetImage().GetName().GetFullName())
 	img, err := scan.ScanImage(ctx, s.centralClient, req.GetImage())
 	if err != nil {
 		return nil, errors.Wrap(err, "scanning image via local scanner")
