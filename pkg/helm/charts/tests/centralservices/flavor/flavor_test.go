@@ -20,6 +20,8 @@ func customFlavor(t *testing.T) defaults.ImageFlavor {
 		MainRegistry:           "example.io",
 		MainImageName:          "custom-main",
 		MainImageTag:           "1.2.3",
+		CentralDBImageName:     "custom-central-db",
+		CentralDBImageTag:      "1.2.4",
 		ScannerImageName:       "custom-scanner",
 		ScannerSlimImageName:   "scanner-slim",
 		ScannerImageTag:        "3.2.1",

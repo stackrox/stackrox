@@ -158,6 +158,10 @@ function launch_central {
 
     add_args -i "${MAIN_IMAGE}"
 
+    if [[ "${ROX_POSTGRES_DATASTORE}" == "true" && -n "${CENTRAL_DB_IMAGE}" ]]; then
+        add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
+    fi
+
     pkill -f kubectl'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
     pkill -9 -f kubectl'.*port-forward.*' || true
     command -v oc && pkill -f oc'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs

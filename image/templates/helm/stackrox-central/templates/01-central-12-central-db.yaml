@@ -30,7 +30,7 @@ spec:
       serviceAccountName: central-db
       initContainers:
       - name: init-db
-        image: {{ ._rox.central.image.fullRef | replace "main" "central-db" | quote }}
+        image: {{ ._rox.central.dbImage.fullRef | quote }}
         env:
         - name: PGDATA
           value: "/var/lib/postgresql/data/pgdata"
@@ -52,8 +52,7 @@ spec:
           runAsGroup: 70
       containers:
       - name: central-db
-        {{- /* TODO(ROX-9249): Need to provide Central DB configuration. Use the same image registry and tag for Central DB image for now. */}}
-        image: {{ ._rox.central.image.fullRef | replace "main" "central-db" | quote }}
+        image: {{ ._rox.central.dbImage.fullRef | quote }}
         env:
         - name: POSTGRES_HOST_AUTH_METHOD
           value: "password"
