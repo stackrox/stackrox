@@ -174,31 +174,18 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 	require.NoError(t, err, "setting up registry")
 	defer registryServer.Close()
 
-	cases := map[string]struct {
-		registry registryTypes.ImageRegistry
-		img      string
-	}{
-		"non-existing repository": {
-			registry: &mockRegistry{cfg: &registryTypes.Config{}},
-			img:      fmt.Sprintf("%s/%s", registryServer.Listener.Addr().String(), "some/private/repo"),
-		},
-		"failed parse reference": {
-			img: "fa@wrongreference",
-		},
-	}
 	f := &cosignPublicKeySignatureFetcher{}
-	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			cimg, err := imgUtils.GenerateImageFromString("nginx")
-			require.NoError(t, err, "creating test image")
-			cimg.Name.FullName = c.img
-			img := types.ToImage(cimg)
-			res, err := f.FetchSignatures(context.Background(), img, c.registry)
-			assert.Nil(t, res)
-			require.Error(t, err)
-			assert.False(t, retry.IsRetryable(err))
-		})
-	}
+
+	cimg, err := imgUtils.GenerateImageFromString("nginx")
+	require.NoError(t, err, "creating test image")
+
+	// Fail with a non-retryable error when an image is given with a wrong reference.
+	cimg.Name.FullName = "fa@wrongreference"
+	img := types.ToImage(cimg)
+	res, err := f.FetchSignatures(context.Background(), img, nil)
+	assert.Nil(t, res)
+	require.Error(t, err)
+	assert.False(t, retry.IsRetryable(err))
 }
 
 func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
