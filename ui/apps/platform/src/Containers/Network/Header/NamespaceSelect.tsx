@@ -61,7 +61,7 @@ function NamespaceSelect({ id, className = '', isDisabled = false }: NamespaceSe
             isDisabled={isDisabled || loading || Boolean(error)}
             selections={selectedNamespaceFilters}
             variant={SelectVariant.checkbox}
-            maxHeight="350px"
+            maxHeight="275px"
             hasInlineFilter
         >
             {availableNamespaceFilters.map((nsFilter) => (
