@@ -15,6 +15,9 @@ defs: |
 
   def assertScannerIs(name):
     container(.deployments.scanner; "scanner") | assertThat(.image == name);
+
+  def assertScannerDBIs(name):
+    container(.deployments["scanner-db"]; "db") | assertThat(.image == name);
 server:
   visibleSchemas:
   - kubernetes-1.20.2
