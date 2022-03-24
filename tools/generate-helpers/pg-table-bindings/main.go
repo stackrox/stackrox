@@ -49,9 +49,8 @@ type properties struct {
 	WriteOptions   bool
 	OptionsPath    string
 
-	// Refs indicate the additional referentiol relationships. Each string is <table_name>:<proto_type>.
-	// These are non-embedding relations, that is, this table is not embedded into referenced table to
-	// construct the proto message.
+	// Refs are referentiol relationships. These are non-embedding relations, that is, this table is not embedded
+	// into referenced table to construct the proto message.
 	Refs []string
 
 	// When set to true, it means that the schema represents a join table. The generation of mutating functions
@@ -93,7 +92,7 @@ func main() {
 	c.Flags().StringVar(&props.Singular, "singular", "", "the singular name of the object")
 	c.Flags().StringVar(&props.OptionsPath, "options-path", "/index/mappings", "path to write out the options to")
 	c.Flags().StringVar(&props.SearchCategory, "search-category", "", "the search category to index under")
-	c.Flags().StringSliceVar(&props.Refs, "references", []string{}, "additional foreign key references as <table_name:type>")
+	c.Flags().StringSliceVar(&props.Refs, "references", []string{}, "attach references to the the table fields. Input format <ref_table_name>:<ref_object_type>(fk_protobuf_field1:ref_protobuf_field1;fk_protobuf_field2:ref_protobuf_field2)")
 	c.Flags().BoolVar(&props.JoinTable, "join-table", false, "indicates the schema represents a join table. The generation of mutating functions is skipped")
 
 	c.RunE = func(*cobra.Command, []string) error {
@@ -109,14 +108,7 @@ func main() {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
 
-		for _, ref := range props.Refs {
-			refTable, refObjType := stringutils.Split2(ref, ":")
-			refMsgType := proto.MessageType(refObjType)
-			if refMsgType == nil {
-				log.Fatalf("could not find message for type: %s", refObjType)
-			}
-			schema.WithReference(walker.Walk(refMsgType, refTable))
-		}
+		refs := compileFKArgsForSchema(schema, props.Refs)
 
 		templateMap := map[string]interface{}{
 			"Type":           props.Type,
@@ -126,6 +118,7 @@ func main() {
 			"SearchCategory": fmt.Sprintf("SearchCategory_%s", props.SearchCategory),
 			"OptionsPath":    path.Join(packagenames.Rox, props.OptionsPath),
 			"JoinTable":      props.JoinTable,
+			"References":     refs,
 		}
 
 		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
@@ -139,7 +132,6 @@ func main() {
 				return err
 			}
 		}
-
 		return nil
 	}
 	if err := c.Execute(); err != nil {

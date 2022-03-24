@@ -106,6 +106,6 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
     {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
     s.NoError(err)
     s.Equal({{.TrimmedType|lowerCamelCase}}Count, 200)
-	{{- end }}
+    {{- end }}
 }
 

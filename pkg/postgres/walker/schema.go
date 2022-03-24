@@ -36,7 +36,7 @@ type Schema struct {
 	// This indicates the name of the parent schema in which current schema is embedded (in proto). A schema can be
 	// embedded exactly one porent. For the top-most schema this field is unset.
 	//
-	// We use `Parents` and `Children` which mean (referenced table and referencing table) in SQL world,
+	// We use `Parents` and `Children` which mean referenced table and referencing table in SQL world,
 	// but in our context it reflects the nesting of proto messages.
 	EmbeddedIn string
 }
@@ -137,24 +137,25 @@ func (s *Schema) ParentKeys() []Field {
 func (s *Schema) ParentKeysGroupedByTable() []TableFieldsGroup {
 	pks := make([]TableFieldsGroup, 0, len(s.Parents))
 	// Find all the local fields that are already defined as foreign keys.
-	embeddedFKS := make(map[ForeignKeyRef]*Field)
+	embeddedFKs := make(map[foreignKeyRef]*Field)
 	for idx := range s.Fields {
 		f := &s.Fields[idx]
 		if ref := f.Options.Reference; ref != nil {
-			embeddedFKS[ForeignKeyRef{
-				TypeName:      strings.ToLower(ref.TypeName),
-				ProtoBufField: strings.ToLower(ref.ProtoBufField),
+			embeddedFKs[foreignKeyRef{
+				typeName:      strings.ToLower(ref.RefSchema.Type),
+				protoBufField: strings.ToLower(ref.Reference),
 			}] = f
 		}
 	}
+
 	for _, parent := range s.Parents {
 		currPks := parent.ResolvedPrimaryKeys()
 		for idx := range currPks {
 			pk := &currPks[idx]
 			// If the referenced parent field is already an embedded as foriegn key in child, use the child field names.
-			if fs := embeddedFKS[ForeignKeyRef{
-				TypeName:      strings.ToLower(parent.TypeName),
-				ProtoBufField: strings.ToLower(pk.ProtoBufName),
+			if fs := embeddedFKs[foreignKeyRef{
+				typeName:      strings.ToLower(parent.Type),
+				protoBufField: strings.ToLower(pk.ProtoBufName),
 			}]; fs != nil {
 				pk.Name = fs.Name
 				pk.Reference = pk.ColumnName
@@ -243,17 +244,28 @@ func (s *Schema) LocalPrimaryKeys() []Field {
 	return pks
 }
 
-// WithReference adds the specified schema as a reference to this schema and returns it. The referencing receiver
-// schema is not a direct field in proto object of the specified reference.
-func (s *Schema) WithReference(ref *Schema) *Schema {
-	for _, p := range s.Parents {
-		if p.Table == ref.Table {
-			log.Panicf("%s already has a reference registered with table name %s", s.Table, ref.Table)
-			return s
+func (s *Schema) WithReference(refs ...*ReferenceInfo) *Schema {
+	for _, ref := range refs {
+		var parentFound bool
+		for _, p := range s.Parents {
+			if p.Table == ref.RefSchema.Table {
+				parentFound = true
+				break
+			}
+		}
+		if !parentFound {
+			s.Parents = append(s.Parents, ref.RefSchema)
+			ref.RefSchema.Children = append(ref.RefSchema.Children, s)
+		}
+
+		for idx := range s.Fields {
+			field := &s.Fields[idx]
+			if field.ProtoBufName == ref.ForeignKey {
+				field.Options.Reference = ref
+				field.Reference = ref.Reference
+			}
 		}
 	}
-	s.Parents = append(s.Parents, ref)
-	ref.Children = append(ref.Children, s)
 	return s
 }
 
@@ -280,13 +292,19 @@ type PostgresOptions struct {
 	Unique                 bool
 	IgnorePrimaryKey       bool
 	IgnoreUniqueConstraint bool
-	Reference              *ForeignKeyRef
+	Reference              *ReferenceInfo
 }
 
-// ForeignKeyRef holds the reference information as provided in the proto tag `fk`.
-type ForeignKeyRef struct {
-	TypeName      string
-	ProtoBufField string
+type foreignKeyRef struct {
+	typeName      string
+	protoBufField string
+}
+
+// ReferenceInfo holds the foreign key reference information.
+type ReferenceInfo struct {
+	ForeignKey string
+	RefSchema  *Schema
+	Reference  string
 }
 
 // ObjectGetter is wrapper around determining how to represent the variable in the

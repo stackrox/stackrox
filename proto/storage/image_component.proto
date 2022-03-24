@@ -26,12 +26,18 @@ message ImageComponent {
 
 message ComponentCVEEdge {
     // base 64 encoded Component:CVE ids.
-    string     id         = 1;
+    string      id                  = 1;
 
-    bool       is_fixable = 2 [(gogoproto.moretags) = "search:\"Fixable,store\""];
+    bool        is_fixable          = 2 [(gogoproto.moretags) = "search:\"Fixable,store\""];
 
     // Whether there is a version the CVE is fixed in the component.
     oneof has_fixed_by {
-        string fixed_by   = 3 [(gogoproto.moretags) = "search:\"Fixed By,store,hidden\""];
+        string  fixed_by            = 3 [(gogoproto.moretags) = "search:\"Fixed By,store,hidden\""];
     }
+
+    // TODO: replace the image_component_id with component_name, component_version, component_operating_system.
+
+    string      image_component_id   = 4 [(gogoproto.moretags) = 'sql:"pk"'];
+    string      cve_id               = 5 [(gogoproto.moretags) = 'sql:"pk"'];
+    string      cve_operating_system = 6 [(gogoproto.moretags) = 'sql:"pk"'];
 }

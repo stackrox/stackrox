@@ -57,9 +57,13 @@ const (
 var (
     schema = walker.Walk(reflect.TypeOf((*{{.Type}})(nil)), baseTable)
     {{- $schema := .Schema }}
-    {{- range $idx, $ref := $schema.Parents}}
-        {{- if ne $ref.Table $schema.EmbeddedIn -}}.
-        WithReference(walker.Walk(reflect.TypeOf(({{$ref.Type}})(nil)), "{{$ref.Table}}"))
+    {{- range $idx, $ref := .References}}
+        {{- if ne $ref.RefSchema.Table $schema.EmbeddedIn -}}.
+        WithReference(&walker.ReferenceInfo{
+            ForeignKey: "{{$ref.ForeignKey}}",
+            RefSchema:  walker.Walk(reflect.TypeOf(({{$ref.RefSchema.Type}})(nil)), "{{$ref.RefSchema.Table}}"),
+            Reference:  "{{$ref.Reference}}",
+        })
         {{- end }}
     {{- end }}
     log = logging.LoggerForModule()
@@ -426,7 +430,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
 
-    conn, release := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
+	conn, release := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, {{template "argList" $pks}}); err != nil {

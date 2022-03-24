@@ -5,6 +5,15 @@ import (
 	"strings"
 	"text/template"
 	"unicode"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/stringutils"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func splitWords(s string) []string {
@@ -73,4 +82,30 @@ var funcMap = template.FuncMap{
 	"upperCamelCase": upperCamelCase,
 	"valueExpansion": valueExpansion,
 	"lowerCase":      strings.ToLower,
+}
+
+func compileFKArgsForSchema(schema *walker.Schema, refArgs []string) []*walker.ReferenceInfo {
+	var refs []*walker.ReferenceInfo
+	for _, refArg := range refArgs {
+		tablePart := refArg[:strings.Index(refArg, "(")]
+		refTable, refObjType := stringutils.Split2(tablePart, ":")
+		refMsgType := proto.MessageType(refObjType)
+		if refMsgType == nil {
+			log.Fatalf("could not find message for type: %s", refObjType)
+		}
+		pSchema := walker.Walk(refMsgType, refTable)
+
+		keyPart := refArg[strings.Index(refArg, "(")+1 : strings.Index(refArg, ")")]
+		for _, part := range strings.Split(keyPart, ";") {
+			fk, refField := stringutils.Split2(part, ":")
+			ref := &walker.ReferenceInfo{
+				ForeignKey: fk,
+				RefSchema:  pSchema,
+				Reference:  refField,
+			}
+			schema = schema.WithReference(ref)
+			refs = append(refs, ref)
+		}
+	}
+	return refs
 }

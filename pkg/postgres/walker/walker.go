@@ -94,13 +94,6 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique bool) 
 			opts.PrimaryKey = topLevel && !ignorePK
 		case field == "unique":
 			opts.Unique = !ignoreUnique
-		case strings.HasPrefix(field, "fk"):
-			// If we already have a field acting as foreign key use it as is rather than adding a redundant field using parentify.
-			typeName, ref := stringutils.Split2(field[strings.Index(field, "(")+1:strings.Index(field, ")")], ":")
-			opts.Reference = &ForeignKeyRef{
-				TypeName:      typeName,
-				ProtoBufField: ref,
-			}
 		case field == "":
 		default:
 			// ignore for just right now
@@ -180,9 +173,6 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 				value: ctx.Getter(structField.Name),
 			},
 			ColumnName: ctx.Column(structField.Name),
-		}
-		if field.Options.Reference != nil {
-			field.Reference = field.Options.Reference.ProtoBufField
 		}
 
 		if dt, ok := simpleFieldsMap[structField.Type.Kind()]; ok {
