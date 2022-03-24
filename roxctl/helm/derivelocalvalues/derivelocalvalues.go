@@ -272,6 +272,10 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, namespace st
 				"registry": extractImageRegistry(k8s.evaluateToString(ctx, "deployment", "central",
 					`{.spec.template.spec.containers[?(@.name == "central")].image}`, ""), "main"),
 			},
+			"dbImage": map[string]interface{}{
+				"registry": extractImageRegistry(k8s.evaluateToString(ctx, "deployment", "central-db",
+					`{.spec.template.spec.containers[?(@.name == "central-db")].image}`, ""), "central-db"),
+			},
 			"resources": k8s.evaluateToObject(ctx, "deployment", "central",
 				`{.spec.template.spec.containers[?(@.name == "central")].resources}`, nil),
 			"persistence": map[string]interface{}{

@@ -67,9 +67,11 @@ type ImagePullSecrets struct {
 // ImageFlavor represents default settings for pulling images.
 type ImageFlavor struct {
 	// MainRegistry is a registry for all images except of collector.
-	MainRegistry  string
-	MainImageName string
-	MainImageTag  string
+	MainRegistry       string
+	MainImageName      string
+	MainImageTag       string
+	CentralDBImageTag  string
+	CentralDBImageName string
 
 	// CollectorRegistry may be different from MainRegistry in case of stackrox.io.
 	CollectorRegistry      string
@@ -95,9 +97,11 @@ type ImageFlavor struct {
 func DevelopmentBuildImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
 	return ImageFlavor{
-		MainRegistry:  "docker.io/stackrox",
-		MainImageName: "main",
-		MainImageTag:  v.MainVersion,
+		MainRegistry:       "docker.io/stackrox",
+		MainImageName:      "main",
+		MainImageTag:       v.MainVersion,
+		CentralDBImageTag:  v.MainVersion,
+		CentralDBImageName: "central-db",
 
 		CollectorRegistry:      "docker.io/stackrox",
 		CollectorImageName:     "collector",
@@ -125,9 +129,11 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 func StackRoxIOReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
-		MainRegistry:  "stackrox.io",
-		MainImageName: "main",
-		MainImageTag:  v.MainVersion,
+		MainRegistry:       "stackrox.io",
+		MainImageName:      "main",
+		MainImageTag:       v.MainVersion,
+		CentralDBImageTag:  v.MainVersion,
+		CentralDBImageName: "central-db",
 
 		CollectorRegistry:      "collector.stackrox.io",
 		CollectorImageName:     "collector",
@@ -155,9 +161,13 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 func RHACSReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
-		MainRegistry:           "registry.redhat.io/advanced-cluster-security",
-		MainImageName:          "rhacs-main-rhel8",
-		MainImageTag:           v.MainVersion,
+		MainRegistry:  "registry.redhat.io/advanced-cluster-security",
+		MainImageName: "rhacs-main-rhel8",
+		MainImageTag:  v.MainVersion,
+		/* TODO(ROX-9858): Create repo rhacs-central-db-rhel8 when starting building rhacs */
+		CentralDBImageTag:  v.MainVersion,
+		CentralDBImageName: "rhacs-central-db-rhel8",
+
 		CollectorRegistry:      "registry.redhat.io/advanced-cluster-security",
 		CollectorImageName:     "rhacs-collector-rhel8",
 		CollectorImageTag:      v.CollectorVersion,
@@ -262,6 +272,11 @@ func (f *ImageFlavor) MainImage() string {
 // MainImageNoTag is the container image repository (image name including registry, excluding tag) for the "main" image.
 func (f *ImageFlavor) MainImageNoTag() string {
 	return fmt.Sprintf("%s/%s", f.MainRegistry, f.MainImageName)
+}
+
+// CentralDBImage is the container image reference (full name) for the central-db image.
+func (f *ImageFlavor) CentralDBImage() string {
+	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.CentralDBImageName, f.CentralDBImageTag)
 }
 
 // CollectorFullImage is the container image reference (full name) for the "collector" image
