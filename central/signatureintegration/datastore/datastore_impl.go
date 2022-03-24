@@ -89,7 +89,7 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	hasUpdatedPublicKeys, err := d.verifyIntegrationIDExistsAndCheckForChangedPublicKeys(ctx, integration)
+	hasUpdatedPublicKeys, err := d.verifyIntegrationIDAndUpdates(ctx, integration)
 	if err != nil {
 		return false, err
 	}
@@ -130,7 +130,7 @@ func (d *datastoreImpl) getSignatureIntegrationByID(ctx context.Context, id stri
 	return integration, nil
 }
 
-func (d *datastoreImpl) verifyIntegrationIDExistsAndCheckForChangedPublicKeys(ctx context.Context,
+func (d *datastoreImpl) verifyIntegrationIDAndUpdates(ctx context.Context,
 	updatedIntegration *storage.SignatureIntegration) (bool, error) {
 	existingIntegration, err := d.getSignatureIntegrationByID(ctx, updatedIntegration.GetId())
 	if err != nil {
