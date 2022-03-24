@@ -2162,34 +2162,38 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		expectedMatches set.FrozenStringSet
 	}{
 		{
-			values:          []string{verifier0},
-			negate:          false,
-			expectedMatches: set.NewFrozenStringSet("verified_by_0"),
+			values: []string{verifier0},
+			negate: true,
+			expectedMatches: set.NewFrozenStringSet("image_no_results", "unverified_image",
+				"verified_by_3", "verified_by_2_and_3"),
 		},
 		{
-			values:          []string{verifier1},
-			negate:          false,
-			expectedMatches: set.NewFrozenStringSet(),
+			values: []string{verifier1},
+			negate: true,
+			expectedMatches: set.NewFrozenStringSet("image_no_results", "unverified_image", "verified_by_0",
+				"verified_by_3", "verified_by_2_and_3"),
 		},
 		{
-			values:          []string{verifier2},
-			negate:          false,
-			expectedMatches: set.NewFrozenStringSet("verified_by_2_and_3"),
+			values: []string{verifier2},
+			negate: true,
+			expectedMatches: set.NewFrozenStringSet("image_no_results", "unverified_image", "verified_by_0",
+				"verified_by_3"),
 		},
 		{
 			values:          []string{verifier0, verifier2},
-			negate:          false,
-			expectedMatches: set.NewFrozenStringSet("verified_by_0", "verified_by_2_and_3"),
+			negate:          true,
+			expectedMatches: set.NewFrozenStringSet("image_no_results", "unverified_image", "verified_by_3"),
 		},
 		{
 			values:          []string{verifier3},
-			negate:          false,
-			expectedMatches: set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3"),
+			negate:          true,
+			expectedMatches: set.NewFrozenStringSet("image_no_results", "unverified_image", "verified_by_0"),
 		},
 		{
-			values:          []string{unverifier},
-			negate:          true,
-			expectedMatches: set.NewFrozenStringSet("unverified_image", "image_no_results"),
+			values: []string{unverifier},
+			negate: true,
+			expectedMatches: set.NewFrozenStringSet("image_no_results", "unverified_image", "verified_by_0",
+				"verified_by_3", "verified_by_2_and_3"),
 		},
 	} {
 		c := testCase
