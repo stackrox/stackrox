@@ -67,6 +67,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
+    {{if not .JoinTable -}}
 	s.NoError(store.Upsert(ctx, {{$name}}))
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
@@ -105,5 +106,6 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
     {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
     s.NoError(err)
     s.Equal({{.TrimmedType|lowerCamelCase}}Count, 200)
+	{{- end }}
 }
 

@@ -110,7 +110,7 @@ create table if not exists networkentity_ListenPorts (
     Port integer,
     L4Protocol integer,
     PRIMARY KEY(networkentity_Info_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (networkentity_Info_Id) REFERENCES networkentity(Info_Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkentity_Info_Id) REFERENCES networkentity(Info_Id) ON DELETE CASCADE
 )
 `
 

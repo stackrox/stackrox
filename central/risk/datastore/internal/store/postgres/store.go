@@ -107,7 +107,7 @@ create table if not exists risk_Results (
     Name varchar,
     Score numeric,
     PRIMARY KEY(risk_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (risk_Id) REFERENCES risk(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (risk_Id) REFERENCES risk(Id) ON DELETE CASCADE
 )
 `
 
@@ -138,7 +138,7 @@ create table if not exists risk_Results_Factors (
     Message varchar,
     Url varchar,
     PRIMARY KEY(risk_Id, risk_Results_idx, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (risk_Id, risk_Results_idx) REFERENCES risk_Results(risk_Id, idx) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (risk_Id, risk_Results_idx) REFERENCES risk_Results(risk_Id, idx) ON DELETE CASCADE
 )
 `
 

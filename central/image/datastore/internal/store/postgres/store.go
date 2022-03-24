@@ -140,7 +140,7 @@ create table if not exists images_Layers (
     Author varchar,
     Empty bool,
     PRIMARY KEY(images_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
 )
 `
 
@@ -171,7 +171,7 @@ create table if not exists images_Results (
     Status integer,
     Description varchar,
     PRIMARY KEY(images_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
 )
 `
 
@@ -200,7 +200,7 @@ create table if not exists images_Signatures (
     Cosign_RawSignature varchar,
     Cosign_SignaturePayload varchar,
     PRIMARY KEY(images_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
 )
 `
 

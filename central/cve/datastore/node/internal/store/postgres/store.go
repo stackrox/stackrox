@@ -138,7 +138,7 @@ create table if not exists node_cves_References (
     URI varchar,
     Tags text[],
     PRIMARY KEY(node_cves_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (node_cves_Id) REFERENCES node_cves(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (node_cves_Id) REFERENCES node_cves(Id) ON DELETE CASCADE
 )
 `
 

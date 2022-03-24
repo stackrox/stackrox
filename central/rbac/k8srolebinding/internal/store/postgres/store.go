@@ -115,7 +115,7 @@ create table if not exists rolebindings_Subjects (
     ClusterId varchar,
     ClusterName varchar,
     PRIMARY KEY(rolebindings_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (rolebindings_Id) REFERENCES rolebindings(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (rolebindings_Id) REFERENCES rolebindings(Id) ON DELETE CASCADE
 )
 `
 

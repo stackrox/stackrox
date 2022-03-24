@@ -138,7 +138,7 @@ create table if not exists image_cves_References (
     URI varchar,
     Tags text[],
     PRIMARY KEY(image_cves_Id, idx),
-    CONSTRAINT fk_parent_table FOREIGN KEY (image_cves_Id) REFERENCES image_cves(Id) ON DELETE CASCADE
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (image_cves_Id) REFERENCES image_cves(Id) ON DELETE CASCADE
 )
 `
 

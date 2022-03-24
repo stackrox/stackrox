@@ -643,6 +643,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"license: License",
 		"name: String!",
+		"operatingSystem: String!",
 		"priority: Int!",
 		"riskScore: Float!",
 		"source: SourceType!",
@@ -6361,6 +6362,11 @@ func (resolver *imageComponentResolver) License(ctx context.Context) (*licenseRe
 
 func (resolver *imageComponentResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *imageComponentResolver) OperatingSystem(ctx context.Context) string {
+	value := resolver.data.GetOperatingSystem()
 	return value
 }
 
