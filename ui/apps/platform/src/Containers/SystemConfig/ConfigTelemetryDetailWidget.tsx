@@ -41,8 +41,8 @@ export const ConfigTelemetryDetailContent = (): ReactElement => {
     return (
         <>
             <p className="pf-u-mb-sm">
-                Online telemetry data collection allows StackRox to better utilize anonymized
-                information to enhance your user experience.
+                Online telemetry data collection allows Red Hat to use anonymized information to
+                enhance your user experience.
             </p>
             <ExpandableSection
                 toggleText={isExpanded ? 'Show Less' : 'Show More'}
@@ -50,13 +50,14 @@ export const ConfigTelemetryDetailContent = (): ReactElement => {
                 isExpanded={isExpanded}
             >
                 <p>
-                    By consenting to online data collection, you allow StackRox to store and perform
-                    analytics on data that arises from the usage and operation of the StackRox
-                    Kubernetes Security Platform. This data may contain both operational metrics of
-                    the platform itself, as well as information about the environment(s) in which it
-                    is being used. While the data is associated with your account, we do not collect
-                    any information pertaining to the purpose of these environments; in particular,
-                    we will never collect the names of nodes, workloads or non-default namespaces.
+                    By consenting to online telemetry data collection, you allow Red Hat to store
+                    and perform analytics on data that arises from the usage and operation of Red
+                    Hat Advanced Cluster Security. This data may contain both operational metrics of
+                    the platform itself, as well as information about the environments in which it
+                    is being used. While the data is associated with your account, it does not
+                    include any information about the purpose of these environments; in particular,
+                    no identifying information like names of nodes, workloads or non-default
+                    namespaces.
                 </p>
                 <p className="pf-u-mt-md">
                     You can revoke your consent to online telemetry data collection at any time. If
