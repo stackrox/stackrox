@@ -280,9 +280,9 @@ func (m *matcherImpl) getViolations(
 }
 
 // MatchDeployment runs detection against the deployment and images.
-func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (Violations, error) {
+func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment) (Violations, error) {
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructDeployment(deployment, images)
+		return augmentedobjs.ConstructDeployment(enhancedDeployment.Deployment, enhancedDeployment.Images)
 	}, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err

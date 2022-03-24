@@ -303,7 +303,10 @@ func (cp *compiledPolicy) MatchAgainstDeployment(cache *booleanpolicy.CacheRecep
 	if cp.deploymentMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against deployments", cp.Policy().GetName())
 	}
-	return cp.deploymentMatcher.MatchDeployment(cache, deployment, images)
+	return cp.deploymentMatcher.MatchDeployment(cache, booleanpolicy.EnhancedDeployment{
+		Deployment: deployment,
+		Images:     images,
+	})
 }
 
 func (cp *compiledPolicy) MatchAgainstImage(cache *booleanpolicy.CacheReceptacle, image *storage.Image) (booleanpolicy.Violations, error) {

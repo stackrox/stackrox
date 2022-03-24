@@ -36,6 +36,12 @@ type CacheReceptacle struct {
 	augmentedNetworkFlow *pathutil.AugmentedObj
 }
 
+// EnhancedDeployment holds the deployment object plus the additional resources used for the matching.
+type EnhancedDeployment struct {
+	Deployment *storage.Deployment
+	Images     []*storage.Image
+}
+
 // Violations represents a list of violation sub-objects.
 type Violations struct {
 	ProcessViolation *storage.Alert_ProcessViolation
@@ -49,7 +55,7 @@ type ImageMatcher interface {
 
 // A DeploymentMatcher matches deployments against a policy.
 type DeploymentMatcher interface {
-	MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (Violations, error)
+	MatchDeployment(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment) (Violations, error)
 }
 
 // A DeploymentWithProcessMatcher matches deployments, and a process, against a policy.
