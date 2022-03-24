@@ -833,7 +833,7 @@ func TestMergeScopeTree(t *testing.T) {
 					},
 					"Not Found": {
 						State:      Excluded,
-						Namespaces: namespacesTree(excludedStandard(errored)),
+						Namespaces: namespacesTree(excludedStandard(nsErrored)),
 						Attributes: treeNodeAttributes{
 							Name: "Not Found",
 						},
@@ -846,10 +846,10 @@ func TestMergeScopeTree(t *testing.T) {
 					"Earth": {
 						State: Partial,
 						Namespaces: namespacesTree(
-							includedStandard(skunkWorks),
-							includedStandard(fraunhofer),
-							includedStandard(cern),
-							excludedStandard(jpl),
+							includedStandard(nsSkunkWorks),
+							includedStandard(nsFraunhofer),
+							includedStandard(nsCERN),
+							excludedStandard(nsJPL),
 						),
 					},
 					"Arrakis": {
@@ -867,9 +867,9 @@ func TestMergeScopeTree(t *testing.T) {
 					"Earth": {
 						State: Partial,
 						Namespaces: namespacesTree(
-							includedStandard(skunkWorks),
-							includedStandard(fraunhofer),
-							includedStandard(cern),
+							includedStandard(nsSkunkWorks),
+							includedStandard(nsFraunhofer),
+							includedStandard(nsCERN),
 						),
 					},
 				},
@@ -883,9 +883,9 @@ func TestMergeScopeTree(t *testing.T) {
 					"Earth": {
 						State: Included,
 						Namespaces: namespacesTree(
-							includedStandard(skunkWorks),
-							includedStandard(fraunhofer),
-							includedStandard(cern),
+							includedStandard(nsSkunkWorks),
+							includedStandard(nsFraunhofer),
+							includedStandard(nsCERN),
 						),
 					},
 					"Arrakis": {
@@ -906,7 +906,7 @@ func TestMergeScopeTree(t *testing.T) {
 					},
 					"Not Found": {
 						State:      Excluded,
-						Namespaces: namespacesTree(excludedStandard(errored)),
+						Namespaces: namespacesTree(excludedStandard(nsErrored)),
 						Attributes: treeNodeAttributes{
 							Name: "Not Found",
 						},
@@ -934,10 +934,10 @@ func TestMergeScopeTree(t *testing.T) {
 					"Earth": {
 						State: Partial,
 						Namespaces: namespacesTree(
-							includedStandard(skunkWorks),
-							includedStandard(fraunhofer),
-							includedStandard(cern),
-							excludedStandard(jpl),
+							includedStandard(nsSkunkWorks),
+							includedStandard(nsFraunhofer),
+							includedStandard(nsCERN),
+							excludedStandard(nsJPL),
 						),
 					},
 					"Arrakis": {
@@ -952,9 +952,9 @@ func TestMergeScopeTree(t *testing.T) {
 					"Earth": {
 						State: Partial,
 						Namespaces: namespacesTree(
-							includedStandard(skunkWorks),
-							includedStandard(fraunhofer),
-							includedStandard(cern),
+							includedStandard(nsSkunkWorks),
+							includedStandard(nsFraunhofer),
+							includedStandard(nsCERN),
 						),
 					},
 					"Arrakis": {
