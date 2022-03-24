@@ -40,7 +40,7 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     rpm --import RPM-GPG-KEY-CentOS-Official && \
     microdnf upgrade && \
     rpm -i /tmp/snappy.rpm && \
-    microdnf install lz4 bzip2 && \
+    microdnf install lz4 bzip2 findutils && \
     microdnf clean all && \
     rm /tmp/snappy.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
