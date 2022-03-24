@@ -12,6 +12,18 @@ type treeNodeAttributes struct {
 	Labels map[string]string
 }
 
+func (t *treeNodeAttributes) copy() *treeNodeAttributes {
+	labels := make(map[string]string, len(t.Labels))
+	for k, v := range t.Labels {
+		labels[k] = v
+	}
+	return &treeNodeAttributes{
+		ID:     t.ID,
+		Name:   t.Name,
+		Labels: labels,
+	}
+}
+
 func nodeAttributesForCluster(cluster *storage.Cluster, detail v1.ComputeEffectiveAccessScopeRequest_Detail) treeNodeAttributes {
 	attributes := treeNodeAttributes{
 		ID: cluster.GetId(),

@@ -916,6 +916,258 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 	}
 }
 
+func TestMergeScopeTree(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name    string
+		a, b, c *ScopeTree
+	}{
+		{
+			name: "∅ + all = all",
+			a:    DenyAllEffectiveAccessScope(),
+			b:    UnrestrictedEffectiveAccessScope(),
+			c:    UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name: "all + ∅ = all",
+			a:    UnrestrictedEffectiveAccessScope(),
+			b:    DenyAllEffectiveAccessScope(),
+			c:    UnrestrictedEffectiveAccessScope(),
+		},
+		{
+			name: "∅ + ∅ = ∅",
+			a:    DenyAllEffectiveAccessScope(),
+			b:    DenyAllEffectiveAccessScope(),
+			c:    DenyAllEffectiveAccessScope(),
+		},
+		{
+			name: "merge namespaces and clusters",
+			a: &ScopeTree{
+				State: Partial,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Earth": {
+						State: Excluded,
+					},
+					"Arrakis": {
+						State:      Partial,
+						Attributes: treeNodeAttributes{ID: "planet.arrakis", Name: "Arrakis"},
+					},
+					"Not Found": {
+						State:      Excluded,
+						Namespaces: namespacesTree(excludedStandard(errored)),
+						Attributes: treeNodeAttributes{
+							Name: "Not Found",
+						},
+					},
+				},
+			},
+			b: &ScopeTree{
+				State: Partial,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Earth": {
+						State: Partial,
+						Namespaces: namespacesTree(
+							includedStandard(skunkWorks),
+							includedStandard(fraunhofer),
+							includedStandard(cern),
+							excludedStandard(jpl),
+						),
+					},
+					"Arrakis": {
+						State:      Partial,
+						Attributes: treeNodeAttributes{ID: "planet.arrakis", Name: "Arrakis"},
+					},
+				},
+			},
+			c: &ScopeTree{
+				State: Partial,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Arrakis": {
+						State: Partial,
+					},
+					"Earth": {
+						State: Partial,
+						Namespaces: namespacesTree(
+							includedStandard(skunkWorks),
+							includedStandard(fraunhofer),
+							includedStandard(cern),
+						),
+					},
+				},
+			},
+		},
+		{
+			name: "short circuit when cluster is included",
+			a: &ScopeTree{
+				State: Partial,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Earth": {
+						State: Included,
+						Namespaces: namespacesTree(
+							includedStandard(skunkWorks),
+							includedStandard(fraunhofer),
+							includedStandard(cern),
+						),
+					},
+					"Arrakis": {
+						State:      Partial,
+						Attributes: treeNodeAttributes{ID: "planet.arrakis", Name: "Arrakis"},
+					},
+				},
+			},
+			b: &ScopeTree{
+				State: Partial,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Earth": {
+						State: Excluded,
+					},
+					"Arrakis": {
+						State:      Partial,
+						Attributes: treeNodeAttributes{ID: "planet.arrakis", Name: "Arrakis"},
+					},
+					"Not Found": {
+						State:      Excluded,
+						Namespaces: namespacesTree(excludedStandard(errored)),
+						Attributes: treeNodeAttributes{
+							Name: "Not Found",
+						},
+					},
+				},
+			},
+			c: &ScopeTree{
+				State: Partial,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Arrakis": {
+						State: Partial,
+					},
+					"Earth": {
+						State: Included,
+					},
+				},
+			},
+		},
+		{
+			name: "∅ + something = something",
+			a:    DenyAllEffectiveAccessScope(),
+			b: &ScopeTree{
+				State: Partial,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Earth": {
+						State: Partial,
+						Namespaces: namespacesTree(
+							includedStandard(skunkWorks),
+							includedStandard(fraunhofer),
+							includedStandard(cern),
+							excludedStandard(jpl),
+						),
+					},
+					"Arrakis": {
+						State:      Partial,
+						Attributes: treeNodeAttributes{ID: "planet.arrakis", Name: "Arrakis"},
+					},
+				},
+			},
+			c: &ScopeTree{
+				State: Partial,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Earth": {
+						State: Partial,
+						Namespaces: namespacesTree(
+							includedStandard(skunkWorks),
+							includedStandard(fraunhofer),
+							includedStandard(cern),
+						),
+					},
+					"Arrakis": {
+						State:      Partial,
+						Attributes: treeNodeAttributes{ID: "planet.arrakis", Name: "Arrakis"},
+					},
+				},
+			},
+		},
+		{
+			name: "∅ + partial = partial",
+			a:    DenyAllEffectiveAccessScope(),
+			b: &ScopeTree{
+				State: Partial,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Earth": {
+						State: Included,
+					},
+				},
+			},
+			c: &ScopeTree{
+				State: Partial,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Earth": {
+						State: Included,
+					},
+				},
+			},
+		},
+		{
+			name: "nil + nil = nil",
+			a:    nil,
+			b:    nil,
+			c:    nil,
+		},
+		{
+			name: "∅ + nil = ∅",
+			a:    DenyAllEffectiveAccessScope(),
+			b:    nil,
+			c:    DenyAllEffectiveAccessScope(),
+		},
+		{
+			name: "excluded + included = included",
+			a: &ScopeTree{
+				State: Partial,
+			},
+			b: &ScopeTree{
+				State: Partial,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Earth": {
+						State: Included,
+					},
+				},
+			},
+			c: &ScopeTree{
+				State: Partial,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Earth": {
+						State: Included,
+					},
+				},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		a, b, c := tc.a, tc.b, tc.c
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			a.Merge(b)
+
+			aJSON, err := a.ToJSON()
+			assert.NoError(t, err)
+			cJSON, err := c.ToJSON()
+			assert.NoError(t, err)
+			assert.JSONEq(t, cJSON, aJSON)
+
+			if b != nil {
+				for _, cluster := range b.Clusters {
+					cluster.State = Excluded
+					for name := range cluster.Namespaces {
+						cluster.Namespaces[name].State = Excluded
+					}
+				}
+			}
+			aJSON, err = a.ToJSON()
+			assert.NoError(t, err)
+			assert.JSONEq(t, cJSON, aJSON, "values were not copied")
+		})
+	}
+}
+
 func TestUnrestrictedEffectiveAccessScope(t *testing.T) {
 	expected := &ScopeTree{
 		State:           Included,
