@@ -58,7 +58,14 @@ func (resolver *Resolver) componentsV2Query(ctx context.Context, query *v1.Query
 	ret := make([]ComponentResolver, 0, len(compRes))
 	for i, resolver := range compRes {
 		resolver.ctx = ctx
+		topVuln, err := resolver.TopVuln(ctx)
+		if err != nil {
+			return nil, err
+		}
 		log.Errorf("osward -- top cvss for resolver %d %f", i, resolver.data.GetTopCvss())
+		log.Errorf("osward -- top cvss for resolver %d %f", i, topVuln.Cvss(ctx))
+		// TODO GetTopCvss returns values that don't correlate to the expected values that show up in the UI
+		// it's actually sorted by this value though
 		ret = append(ret, resolver)
 	}
 	return ret, err
@@ -119,6 +126,7 @@ func (eicr *imageComponentResolver) LastScanned(ctx context.Context) (*graphql.T
 	return timestamp(images[0].GetScan().GetScanTime())
 }
 
+// this function
 // TopVuln returns the first vulnerability with the top CVSS score.
 func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityResolver, error) {
 	if eicr.data.GetSetTopCvss() == nil {
@@ -129,7 +137,7 @@ func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityR
 	query.Pagination = &v1.QueryPagination{
 		SortOptions: []*v1.QuerySortOption{
 			{
-				Field:    search.CVSS.String(),
+				Field:    search.ComponentTopCVSS.String(),
 				Reversed: true,
 			},
 			{
