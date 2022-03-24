@@ -288,7 +288,7 @@
 
 {{ if and ._rox.env.openshift (eq ._rox.scanner.disable false) }}
   {{ if eq ._rox.scanner.mode "full" }}
-    {{ include "srox.fail" print ("Scanner full mode is not allowed in Secured Cluster. To solve this set to slim mode: scanner.mode=slim.") }}
+    {{ include "srox.fail" (print "Scanner full mode is not allowed in Secured Cluster. To solve this set to slim mode: scanner.mode=slim.") }}
   {{ end }}
 
   {{ $_ = set $._rox.scanner "slimImage" ._rox.image.scanner }}
