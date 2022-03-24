@@ -139,4 +139,4 @@ tests:
       mode: full
   expectError: true
   expect: |
-    .error | assertThat(contains("To solve this set to slim mode: scanner.mode=slim"))
+    .error | assertThat(contains("set to slim mode: scanner.mode=slim"))

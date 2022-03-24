@@ -107,4 +107,4 @@ tests:
       mode: slim
   expectError: true
   expect: |
-    .error | assertThat(contains("To solve this set to full mode: scanner.mode=full"))
+    .error | assertThat(contains("set to full mode: scanner.mode=full"))
