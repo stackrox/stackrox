@@ -338,6 +338,8 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	defer s.internalScanSemaphore.Release(1)
 
+	forceSigVerificationUpdate := true
+	forceScanUpdate := true
 	imgID := request.GetImageId()
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
 	if imgID != "" {
@@ -348,24 +350,24 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		// This is safe even if img is nil.
 		scanTime := existingImg.GetScan().GetScanTime()
 
-		forceSigVerificationUpdate := false
-		// Check whether the time of the signature verification requires an update via the enrichment pipeline so we
-		// make sure to not return stale data. Only do this when the image signature verification feature is enabled.
-		// If no verification result is given, we can assume that the image doesn't have any signatures associated with
-		// it.
-		if features.ImageSignatureVerification.Enabled() &&
+		// Check whether too much time has passed, if yes we have to do a signature verification update via the
+		// enrichment pipeline to ensure we do not return stale data. Only do this when the image signature verification
+		// feature is enabled. If no verification result is given, we can assume that the image doesn't have any
+		// signatures associated with it.
+		if exists && features.ImageSignatureVerification.Enabled() &&
 			len(existingImg.GetSignatureVerificationData().GetResults()) > 0 {
 			// For now, all verification results within the signature verification data will have approximately the same
 			// time, their margin being ns.
 			verificationTime := existingImg.GetSignatureVerificationData().GetResults()[0].GetVerificationTime()
-			forceSigVerificationUpdate = forceSigVerificationUpdate || timestamp.FromProtobuf(verificationTime).
+			forceSigVerificationUpdate = !timestamp.FromProtobuf(verificationTime).
 				Add(reprocessInterval).After(timestamp.Now())
 		}
 
+		forceScanUpdate = !timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now())
+
 		// Central does not reprocess cluster-local images. If the image exists and not too much time has passed,
 		// then return the image. Otherwise, run the enrichment pipeline to ensure we do not return stale data.
-		if exists && (timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now())) &&
-			!forceSigVerificationUpdate {
+		if exists && !forceScanUpdate && !forceSigVerificationUpdate {
 			return internalScanRespFromImage(existingImg), nil
 		}
 	}
@@ -378,11 +380,13 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		IsClusterLocal: true,
 	}
 
-	if _, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes()); err != nil {
-		return nil, err
+	if forceScanUpdate {
+		if _, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes()); err != nil {
+			return nil, err
+		}
 	}
 
-	if features.ImageSignatureVerification.Enabled() {
+	if features.ImageSignatureVerification.Enabled() && forceSigVerificationUpdate {
 		if _, err := s.enricher.EnrichWithSignatureVerificationData(ctx, img); err != nil {
 			return nil, err
 		}
