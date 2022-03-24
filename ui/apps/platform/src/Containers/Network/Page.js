@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { connect, useDispatch, useSelector } from 'react-redux';
 import { useRouteMatch } from 'react-router-dom';
 import { createSelector, createStructuredSelector } from 'reselect';
@@ -78,6 +78,7 @@ function NetworkPage({ closeSidePanel, setDialogueStage, setNetworkModification 
     const { isNetworkSimulationOn } = useNetworkPolicySimulation();
     const { isBaselineSimulationOn } = useNetworkBaselineSimulation();
     const isSimulationOn = isNetworkSimulationOn || isBaselineSimulationOn;
+    const [isInitialRender, setIsInitialRender] = useState(true);
 
     const {
         params: { deploymentId },
@@ -88,19 +89,22 @@ function NetworkPage({ closeSidePanel, setDialogueStage, setNetworkModification 
     const dispatch = useDispatch();
 
     useEffect(() => {
-        if (!deploymentId) {
+        if (!deploymentId || !isInitialRender) {
             return;
         }
         // If the page is visited with a deployment id, we need to enable that deployment's
-        // namespace filter
-        fetchDeployment(deploymentId).then(({ namespace }) => {
-            if (selectedNamespaceFilters.includes(namespace)) {
-                return;
+        // namespace filter and switch to the correct cluster
+        fetchDeployment(deploymentId).then(({ clusterId, namespace }) => {
+            if (clusterId !== selectedClusterId) {
+                dispatch(graphActions.selectNetworkClusterId(clusterId));
+                dispatch(graphActions.setSelectedNamespaceFilters([namespace]));
+            } else if (!selectedNamespaceFilters.includes(namespace)) {
+                const newFilters = [...selectedNamespaceFilters, namespace];
+                dispatch(graphActions.setSelectedNamespaceFilters(newFilters));
             }
-            const newFilters = [...selectedNamespaceFilters, namespace];
-            dispatch(graphActions.setSelectedNamespaceFilters(newFilters));
         });
-    }, [dispatch, deploymentId, selectedNamespaceFilters]);
+        setIsInitialRender(false);
+    }, [dispatch, deploymentId, selectedClusterId, selectedNamespaceFilters, isInitialRender]);
 
     const clusterName = clusters.find((c) => c.id === selectedClusterId)?.name;
 
