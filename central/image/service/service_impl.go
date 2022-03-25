@@ -118,13 +118,19 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest)
 
 	id := types.NewDigest(request.GetId()).Digest()
 
+	log.Infof("Checking if we have %s", id)
+
 	image, exists, err := s.datastore.GetImage(ctx, id)
 	if err != nil {
+		log.Infof("Error checking if we have %s: %v", id, err)
 		return nil, err
 	}
 	if !exists {
+		log.Infof("We don't have %s", id)
 		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "image with id %q does not exist", request.GetId())
 	}
+
+	log.Infof("We have %s", id)
 
 	if !request.GetIncludeSnoozed() {
 		// This modifies the image object

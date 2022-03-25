@@ -75,7 +75,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 		}, nil
 	}
 
-	log.Infof("Attemptint to scan local image %q", req.GetImage().GetName().GetFullName())
+	log.Infof("Attempting to scan local image %q", req.GetImage().GetName().GetFullName())
 	img, err := scan.ScanImage(ctx, s.centralClient, req.GetImage())
 	if err != nil {
 		return nil, errors.Wrap(err, "scanning image via local scanner")
