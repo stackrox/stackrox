@@ -132,11 +132,11 @@ get_central_diagnostics() {
     ls -l "${output_dir}"
 }
 
-push_main_and_roxctl_images() {
+push_main_image_set() {
     info "Pushing main and roxctl images"
 
     if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: push_main_and_roxctl_images <branch>"
+        die "missing arg. usage: push_main_image_set <branch>"
     fi
 
     require_environment "DOCKER_IO_PUSH_USERNAME"
@@ -146,36 +146,40 @@ push_main_and_roxctl_images() {
 
     local branch="$1"
 
+    main_image_set=("main" "roxctl" "central-db")
+
+    _push_main_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        for image in "${main_image_set[@]}"; do
+            "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "${registry}/${image}:${tag}" | cat
+        done
+    }
+
+    _tag_main_image_set() {
+        local local_tag="$1"
+        local registry="$2"
+        local remote_tag="$3"
+
+        for image in "${main_image_set[@]}"; do
+            docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${remote_tag}"
+        done
+    }
+
     docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "docker.io/stackrox/main:$(make --quiet tag)" | cat
-    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "docker.io/stackrox/roxctl:$(make --quiet tag)" | cat
-    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "docker.io/stackrox/central-db:$(make --quiet tag)" | cat
-    if [[ "$branch" == "master" ]]; then
-        docker tag "docker.io/stackrox/main:$(make --quiet tag)" docker.io/stackrox/main:latest
-        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" docker.io/stackrox/main:latest
-
-        docker tag "docker.io/stackrox/roxctl:$(make --quiet tag)" docker.io/stackrox/roxctl:latest
-        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" docker.io/stackrox/roxctl:latest
-
-        docker tag "docker.io/stackrox/central-db:$(make --quiet tag)" docker.io/stackrox/central-db:latest
-        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" docker.io/stackrox/central-db:latest
-    fi
-
-    QUAY_REPO="rhacs-eng"
     docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
-    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/main:$(make --quiet tag)" | cat
-    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" | cat
-    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/central-db:$(make --quiet tag)" | cat
-    if [[ "$branch" == "master" ]]; then
-        docker tag "quay.io/$QUAY_REPO/main:$(make --quiet tag)" "quay.io/$QUAY_REPO/main:latest"
-        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/main:latest"
 
-        docker tag "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" "quay.io/$QUAY_REPO/roxctl:latest"
-        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/roxctl:latest"
-
-        docker tag "quay.io/$QUAY_REPO/central-db:$(make --quiet tag)" "quay.io/$QUAY_REPO/central-db:latest"
-        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/central-db:latest"
-    fi
+    local tag
+    tag="$(make --quiet tag)"
+    for repo in "docker.io/stackrox" "quay.io/rhacs-eng"; do
+        _tag_main_image_set "$tag" "$repo" "$tag"
+        _push_main_image_set "$repo" "$tag"
+        if [[ "$branch" == "master" ]]; then
+            _tag_main_image_set "$tag" "$repo" "latest"
+            _push_main_image_set "$repo" "latest"
+        fi
+    done
 }
 
 push_matching_collector_scanner_images() {

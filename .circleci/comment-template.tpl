@@ -6,4 +6,4 @@ Tag for [build #{{.Build.Number}}]({{.Build.URL}}) is `{{.Env.TAG}}`.
 export MAIN_IMAGE_TAG='{{.Env.TAG}}'
 ```
 
-🕹️ A `roxctl` binary artifact can be [downloaded from CircleCI](https://circleci.com/gh/stackrox/stackrox/{{.Build.Number}}/artifacts).
+🕹️ A `roxctl` binary can be [downloaded from the CircleCI]({{.Build.URL}}) artifacts.

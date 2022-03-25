@@ -546,9 +546,6 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image $(CU
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
-ifdef CI
-	docker tag stackrox/main:$(TAG) quay.io/$(QUAY_REPO)/main:$(TAG)
-endif
 
 .PHONY: docs-image
 docs-image:
@@ -565,9 +562,6 @@ docker-build-data-image: docs-image
 docker-build-roxctl-image:
 	cp -f bin/linux/roxctl image/bin/roxctl-linux
 	docker build -t stackrox/roxctl:$(TAG) -f image/roxctl.Dockerfile image/
-ifdef CI
-	docker tag stackrox/roxctl:$(TAG) quay.io/$(QUAY_REPO)/roxctl:$(TAG)
-endif
 
 .PHONY: copy-go-binaries-to-image-dir
 copy-go-binaries-to-image-dir:
@@ -632,9 +626,6 @@ central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		--file image/postgres/Dockerfile \
 		image/postgres
-ifdef CI
-	docker tag stackrox/central-db:$(TAG) quay.io/$(QUAY_REPO)/central-db:$(TAG)
-endif
 	@echo "Built central-db image with tag $(TAG)"
 
 ###########

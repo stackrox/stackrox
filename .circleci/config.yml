@@ -983,7 +983,7 @@ commands:
           name: Push new Docker image
           command: |
             source ./scripts/ci/lib.sh
-            push_main_and_roxctl_images "${CIRCLE_BRANCH}"
+            push_main_image_set "${CIRCLE_BRANCH}"
 
       - run:
           name: Push collector & scanner images tagged with main-version to registries
