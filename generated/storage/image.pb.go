@@ -136,7 +136,6 @@ func (ImageScan_Note) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_c926ac8b7cb24b2e, []int{2, 0}
 }
 
-// Status represents the status of the result.
 type ImageSignatureVerificationResult_Status int32
 
 const (
