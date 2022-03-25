@@ -176,6 +176,9 @@ func (s *Schema) localFKs() map[foreignKeyRef]*Field {
 }
 
 func localFK(field *Field, localFKMap map[foreignKeyRef]*Field) (*Field, bool) {
+	if field == nil {
+		return nil, false
+	}
 	f := localFKMap[foreignKeyRef{
 		typeName:      strings.ToLower(field.Schema.Type),
 		protoBufField: strings.ToLower(field.ProtoBufName),
@@ -206,17 +209,22 @@ func (s *Schema) ForeignKeysReferencesTo(tableName string) []Field {
 	// Find all the local fields that are already defined as foreign keys.
 	localFKs := s.localFKs()
 
+	var fks []Field
 	// Only get the immediate references, and not the resolved ones.
-	pks := pSchema.LocalPrimaryKeys()
-	for idx := range pks {
-		fk := &pks[idx]
-		if _, found := localFK(fk, localFKs); found {
+	parentPKs := pSchema.LocalPrimaryKeys()
+	for idx := range parentPKs {
+		parentPK := &parentPKs[idx]
+		if _, found := localFK(parentPK, localFKs); found {
 			continue
 		}
-		tryParentify(fk, pSchema)
+		tryParentify(parentPK, pSchema)
+		fks = append(fks, *parentPK)
+	}
+	for _, fk := range localFKs {
+		fks = append(fks, *fk)
 	}
 	// If we are here, it means all references to the required referenced table have been computed. Hence, stop.
-	return pks
+	return fks
 }
 
 // ForeignKeys are the foreign keys in current schema.
@@ -224,20 +232,24 @@ func (s *Schema) ForeignKeys() []Field {
 	if len(s.Parents) == 0 {
 		return nil
 	}
+
 	// Find all the local fields that are already defined as foreign keys.
 	localFKs := s.localFKs()
 
 	var fks []Field
 	for _, parent := range s.Parents {
-		pks := parent.LocalPrimaryKeys()
-		for idx := range pks {
-			pk := &pks[idx]
-			if _, found := localFK(pk, localFKs); found {
+		parentPKs := parent.LocalPrimaryKeys()
+		for idx := range parentPKs {
+			parentPK := &parentPKs[idx]
+			if _, found := localFK(parentPK, localFKs); found {
 				continue
 			}
-			tryParentify(pk, parent)
+			tryParentify(parentPK, parent)
+			fks = append(fks, *parentPK)
 		}
-		fks = append(fks, pks...)
+	}
+	for _, fk := range localFKs {
+		fks = append(fks, *fk)
 	}
 	return fks
 }
