@@ -8,7 +8,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/datastore"
-	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
 	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -38,12 +37,11 @@ var (
 	}()
 )
 
-// serviceImpl provides APIs for cves.
+// serviceImpl provides APIs for CVEs.
 type serviceImpl struct {
-	cves        datastore.DataStore
-	vulnReqMgr  vulnReqMgr.Manager
-	indexQ      queue.WaitableQueue
-	reprocessor reprocessor.Loop
+	cves       datastore.DataStore
+	vulnReqMgr vulnReqMgr.Manager
+	indexQ     queue.WaitableQueue
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -61,7 +59,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// SuppressCVE suppresses cves for specific duration or indefinitely.
+// SuppressCVEs suppresses CVEs for specific duration or indefinitely.
 func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVERequest) (*v1.Empty, error) {
 	createdAt := types.TimestampNow()
 	if err := s.validateCVEsExist(ctx, request.GetIds()...); err != nil {
@@ -83,7 +81,7 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 	return &v1.Empty{}, nil
 }
 
-// UnsuppressCVE unsuppresses given cves indefinitely.
+// UnsuppressCVEs unsuppresses given CVEs indefinitely.
 func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.UnsuppressCVERequest) (*v1.Empty, error) {
 	if err := s.validateCVEsExist(ctx, request.GetIds()...); err != nil {
 		return nil, err

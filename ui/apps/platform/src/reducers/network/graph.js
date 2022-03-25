@@ -87,6 +87,7 @@ export const types = {
     SET_NETWORK_NODE_MAP: 'network/SET_NETWORK_NODE_MAP',
     SET_SELECTED_NODE: 'network/SET_SELECTED_NODE',
     SET_SELECTED_NAMESPACE: 'network/SET_SELECTED_NAMESPACE',
+    SET_SELECTED_NAMESPACE_FILTERS: 'network/SET_SELECTED_NAMESPACE_FILTERS',
     SELECT_DEFAULT_NETWORK_CLUSTER_ID: 'network/SELECT_DEFAULT_NETWORK_CLUSTER_ID',
     SELECT_NETWORK_CLUSTER_ID: 'network/SELECT_NETWORK_CLUSTER_ID',
     UPDATE_NETWORK_GRAPH_TIMESTAMP: 'network/UPDATE_NETWORK_GRAPH_TIMESTAMP',
@@ -117,6 +118,10 @@ export const actions = {
     }),
     setSelectedNode: (node) => ({ type: types.SET_SELECTED_NODE, node }),
     setSelectedNamespace: (namespace) => ({ type: types.SET_SELECTED_NAMESPACE, namespace }),
+    setSelectedNamespaceFilters: (namespaces) => ({
+        type: types.SET_SELECTED_NAMESPACE_FILTERS,
+        namespaces,
+    }),
     selectDefaultNetworkClusterId: (response) => ({
         type: types.SELECT_DEFAULT_NETWORK_CLUSTER_ID,
         response,
@@ -208,6 +213,13 @@ const selectedNamespace = (state = null, action) => {
     return state;
 };
 
+const selectedNamespaceFilters = (state = [], action) => {
+    if (action.type === types.SET_SELECTED_NAMESPACE_FILTERS) {
+        return action.namespaces;
+    }
+    return state;
+};
+
 const selectedNetworkClusterId = (state = null, action) => {
     if (!state && action.type === types.SELECT_DEFAULT_NETWORK_CLUSTER_ID) {
         const { cluster } = action.response.entities;
@@ -275,6 +287,7 @@ const reducer = combineReducers({
     networkNodeMap,
     selectedNode,
     selectedNamespace,
+    selectedNamespaceFilters,
     selectedNetworkClusterId,
     networkFlowGraphUpdateKey,
     lastUpdatedTimestamp,
@@ -289,6 +302,7 @@ const getNetworkEdgeMap = (state) => state.networkEdgeMap;
 const getNetworkNodeMap = (state) => state.networkNodeMap;
 const getSelectedNode = (state) => state.selectedNode;
 const getSelectedNamespace = (state) => state.selectedNamespace;
+const getSelectedNamespaceFilters = (state) => state.selectedNamespaceFilters;
 const getSelectedNetworkClusterId = (state) => state.selectedNetworkClusterId;
 const getNetworkFlowGraphUpdateKey = (state) => state.networkFlowGraphUpdateKey.key;
 const getLastUpdatedTimestamp = (state) => state.lastUpdatedTimestamp;
@@ -301,6 +315,7 @@ export const selectors = {
     getNetworkNodeMap,
     getSelectedNode,
     getSelectedNamespace,
+    getSelectedNamespaceFilters,
     getSelectedNetworkClusterId,
     getNetworkFlowGraphUpdateKey,
     getLastUpdatedTimestamp,

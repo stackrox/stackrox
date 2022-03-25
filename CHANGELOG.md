@@ -11,6 +11,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - This change is *not* backwards compatible; if an existing Custom Resource sets the value to > 25 seconds, then it will fail validation in case operator is downgraded. This change is accepted because the operator is still in v1alpha1 and subject to change.
 - The admission webhook timeout is now set to the admission controller timeout plus 2 seconds.
 - The "Process Ancestor" search term has been deprecated.
+- Central will now respond with a 421 Misdirected Request status code to requests where the ServerName sent via TLS SNI
+  does not match the `:authority` (`Host`) header. This feature can be turned off by setting the environment variable
+  `ROX_ALLOW_MISDIRECTED_REQUESTS=true`.
 
 ## [69.1]
 

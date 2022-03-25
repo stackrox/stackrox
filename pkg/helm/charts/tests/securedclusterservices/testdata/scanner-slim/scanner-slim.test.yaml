@@ -130,3 +130,12 @@ tests:
         FOO: bar
     expect: |
       envVars(.deployments.scanner; "scanner")["FOO"] | assertThat(. == "bar")
+
+- name: "Installation fails in full mode"
+  values:
+    scanner:
+      disable: false
+      mode: full
+  expectError: true
+  expect: |
+    .error | assertThat(contains("set to slim mode: scanner.mode=slim"))
