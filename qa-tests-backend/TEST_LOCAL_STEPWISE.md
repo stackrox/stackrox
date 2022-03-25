@@ -24,24 +24,15 @@ Plan for running //rox/qa-tests-backend tests locally against a remote cluster:
 qa-test-settings.properties
 ---------------------------
 
-The encode the GCP service account JSON key files for for use as dotenv values
-for `GOOGLE_CREDENTIALS_GCR_SCANNER` and `GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY`:
-* squash whitespace
-* replace `\n` sequences with actual newlines
-* wrap in single quotes
+This file format is described in the `load` method of the
+[java.util.properties][java_util_properties] documentation.
 
-Example (this key has been deleted and verified invalid):
+Example encoding GCP service account credentials:
 ```
-jq -rc '.' < ~/creds/shane-rs361.json \
-    | perl -pn -e 's/\\n/\n/g; chomp if eof; print;' \
-    | { echo -n \'; cat -; echo -n \'; }
+jq -rc '.' < credentials.json | perl -pn -e 's/\\n/\\/g; chomp if eof; print;'
 ```
 
-    '{"type":"service_account","project_id":"stackrox-ci","private_key_id":"76da3877bd9c7096d06ca259a50941c36f1bd476","private_key":"-----BEGIN PRIVATE KEY-----
-    [REDACTED]
-    -----END PRIVATE KEY-----
-    ","client_email":"shane-rs361@stackrox-ci.iam.gserviceaccount.com","client_id":"109083408863444657465","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"https://www.googleapis.com/robot/v1/metadata/x509/shane-rs361%40stackrox-ci.iam.gserviceaccount.com"}'
-
+[java_util_properties]: https://docs.oracle.com/javase/9/docs/api/java/util/Properties.html
 
 Setup Service Account
 ---------------------
