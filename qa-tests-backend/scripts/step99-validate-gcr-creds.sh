@@ -38,11 +38,4 @@ docker pull us.gcr.io/stackrox-ci/qa/registry-image:0.3
 # Switch back to own user creds
 gcloud auth login shane@stackrox.com
 
-# Validate properties file with Python dotenv module
-pass qa-test-settings.properties > /tmp/qa-test-settings.properties
-dotenv --file /tmp/qa-test-settings.properties get GOOGLE_CREDENTIALS_GCR_SCANNER | jq -r '.'
-dotenv --file /tmp/qa-test-settings.properties get GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY | jq -r '.'
-
-# Validate properties file with Groovy dotenv module
-pass qa-test-settings.properties > /tmp/qa-test-settings.properties
-echo TODO
+echo "See also LocalQaPropsTest."
