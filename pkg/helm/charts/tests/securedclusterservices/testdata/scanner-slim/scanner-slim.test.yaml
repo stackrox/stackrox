@@ -17,6 +17,7 @@ tests:
     set:
       env.openshift: 3
 
+
 - name: "scanner is disabled should not be installed by default"
   expect: |
     .deployments["scanner"] | assertThat(. == null)

@@ -11,15 +11,3 @@ tests:
   expect: |
     assertMainIs("docker.io/stackrox/main:3.0.99.0")
     assertCollectorIs("docker.io/stackrox/collector:99.9.9-slim")
-
-- name: scanner image
-  server:
-    visibleSchemas:
-    - openshift-4.1.0
-    availableSchemas:
-    - openshift-4.1.0
-  set:
-    scanner.disable: false
-  expect: |
-    assertScannerIs("docker.io/stackrox/scanner-slim:99.9.9")
-    assertScannerDBIs("docker.io/stackrox/scanner-db-slim:99.9.9")
