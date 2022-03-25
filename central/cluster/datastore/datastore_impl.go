@@ -847,6 +847,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			Name:               clusterName,
 			InitBundleId:       bundleID,
 			MostRecentSensorId: hello.GetDeploymentIdentification().Clone(),
+			ManagedBy:          manager,
 		}
 		clusterConfig := helmConfig.GetClusterConfig()
 		configureFromHelmConfig(cluster, clusterConfig)
