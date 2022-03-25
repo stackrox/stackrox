@@ -55,6 +55,7 @@ func scanImage(ctx context.Context, svc v1.ImageServiceClient, ci *storage.Conta
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
+	log.Infof("Calling ScanImageInternal directly")
 	return svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 		Image: ci,
 	})
