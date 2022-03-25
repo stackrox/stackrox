@@ -36,7 +36,7 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *sto
 		log.Infof("Yes, Central has %s", ci.GetName().GetFullName())
 		return img, nil
 	}
-	log.Infof("Central may not have %s", ci.GetName().GetFullName())
+	log.Infof("Central may not have %s: %v", ci.GetName().GetFullName(), err)
 
 	// The image either does not exist in Central yet or there was some other error when reaching out.
 	// Attempt to scan locally.
