@@ -37,12 +37,14 @@ function compare_fixable_vulns {
   local count=1
 
   echo "Getting scan status for ${image_name}"
+  wait=30
+  count=0
   scan_present=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.status')
   until [ "$scan_present" = "scanned" ] || [ "$count" -gt 100 ]; do
-    echo "Waiting for scan to complete..."
+    echo "${count} Waiting ${wait}s for scan to complete..."
     scan_present=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.status')
     count=$((count+1))
-    sleep 15
+    sleep $wait
   done
 
   # if scan never completes, print error message, mark image as failed, and move on to the next
