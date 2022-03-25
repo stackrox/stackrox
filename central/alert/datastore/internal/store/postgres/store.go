@@ -137,7 +137,14 @@ create table if not exists alerts (
 		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
-	indexes := []string{}
+	indexes := []string{
+
+		"create index if not exists alerts_LifecycleStage on alerts using btree(LifecycleStage)",
+
+		"create index if not exists alerts_Deployment_Id on alerts using hash(Deployment_Id)",
+
+		"create index if not exists alerts_State on alerts using btree(State)",
+	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			log.Panicf("Error creating index %s: %v", index, err)
@@ -520,6 +527,10 @@ create table if not exists alerts_Processes (
 	indexes := []string{
 
 		"create index if not exists alertsProcesses_idx on alerts_Processes using btree(idx)",
+
+		"create index if not exists alertsProcesses_DeploymentId on alerts_Processes using hash(DeploymentId)",
+
+		"create index if not exists alertsProcesses_PodUid on alerts_Processes using hash(PodUid)",
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
