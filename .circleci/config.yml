@@ -2641,15 +2641,20 @@ jobs:
           paths:
             - CI_TAG
 
+  pre-build-ui-stackrox:
+    executor: custom
+    resource_class: large
+    environment:
+      EKS_AUTOMATION_VERSION: 0.2.17
+    steps:
+      - pre-build-ui:
+          branding: STACKROX_BRANDING
+
   pre-build-ui-rhacs:
     executor: custom
     resource_class: large
     environment:
       EKS_AUTOMATION_VERSION: 0.2.17
-      # All CI builds go out with commercial product branding.
-      # TODO(ROX-9513): a separate CI setup is required for open source/community builds.
-      # Note that the `REACT_APP` prefix is a convention used by React tooling that is required to inject this env
-      # variable into the build. See https://create-react-app.dev/docs/adding-custom-environment-variables/
       REACT_APP_ROX_PRODUCT_BRANDING: RHACS_BRANDING
     steps:
       - pre-build-ui:
@@ -2769,11 +2774,20 @@ jobs:
 
       - cleanup-clusters-on-fail
 
+  build-stackrox:
+    executor: custom
+    resource_class: medium
+    environment:
+      EKS_AUTOMATION_VERSION: 0.2.17
+    steps:
+      - build:
+          branding: STACKROX_BRANDING
+
   build-rhacs:
     executor: custom
     resource_class: medium
     environment:
-      - EKS_AUTOMATION_VERSION: 0.2.17
+      EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - build:
           branding: RHACS_BRANDING
@@ -4663,6 +4677,10 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - pre-create-tag:
           <<: *runOnAllTagsWithQuayIOPullCtx
+      - pre-build-ui-stackrox:
+          <<: *runOnAllTagsWithQuayIOPullCtx
+          requires:
+            - pre-create-tag
       - pre-build-ui-rhacs:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -4675,6 +4693,12 @@ workflows:
           <<: *runOnAllTagsWithPushCtx
           requires:
             - pre-create-tag
+      - build-stackrox:
+          <<: *runOnAllTagsWithPushCtx
+          requires:
+            - pre-build-ui-stackrox
+            - pre-build-cli
+            - pre-build-go-binaries
       - build-rhacs:
           <<: *runOnAllTagsWithPushCtx
           requires:
@@ -4692,6 +4716,7 @@ workflows:
       - gke-api-nongroovy-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-nongroovy-tests
@@ -4704,6 +4729,7 @@ workflows:
       - gke-ui-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-ui-e2e-tests
@@ -4712,6 +4738,7 @@ workflows:
       - gke-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-e2e-tests
@@ -4720,6 +4747,7 @@ workflows:
       - gke-postgres-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-postgres-api-e2e-tests
@@ -4728,6 +4756,7 @@ workflows:
       - gke-kernel-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-kernel-api-e2e-tests
@@ -4736,6 +4765,7 @@ workflows:
       - gke-api-upgrade-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+            - build-stackrox
             - build-rhacs
             - provision-gke-api-upgrade-tests
       - provision-gke-api-scale-tests:
@@ -4743,6 +4773,7 @@ workflows:
       - gke-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-scale-tests
@@ -4759,6 +4790,7 @@ workflows:
       - openshift-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-openshift-api-e2e-tests
@@ -4767,6 +4799,7 @@ workflows:
       - openshift-crio-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-openshift-crio-api-e2e-tests
@@ -4775,6 +4808,7 @@ workflows:
       - eks-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-eks-api-e2e-tests
@@ -4792,6 +4826,7 @@ workflows:
       - openshift-4-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+            - build-stackrox
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-openshift-4-api-e2e-tests
@@ -4802,12 +4837,14 @@ workflows:
       - openshift-4-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+            - build-stackrox
             - build-rhacs
             - build-operator
             - provision-openshift-4-operator-e2e-tests
       - openshift-4-6-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+            - build-stackrox
             - build-rhacs
             - build-operator
             - provision-openshift-4-6-operator-e2e-tests
@@ -4828,6 +4865,7 @@ workflows:
           context:
             - custom-executor-pull
           requires:
+            - build-stackrox
             - build-rhacs
             - go-unit-tests
             - ui-unit-tests
@@ -4886,6 +4924,7 @@ workflows:
             - custom-executor-pull
             - docker-io-and-stackrox-io-push
           requires:
+            - build-stackrox
             - build-rhacs
             - go-unit-tests
             - ui-unit-tests
@@ -4899,6 +4938,7 @@ workflows:
             branches:
               ignore: /.*/
           requires:
+            - build-stackrox
             - build-rhacs
 
       - openshift-ci-upgrade-test:
@@ -4908,6 +4948,7 @@ workflows:
             branches:
               only: /.*(osci).*/
           requires:
+            - build-stackrox
             - build-rhacs
 
       - retrigger-master-workflow:
@@ -4951,7 +4992,7 @@ workflows:
 
   build-rhacs:
     when:
-      equal: [ "build", << pipeline.parameters.workflow_name >> ]
+      equal: [ "build-rhacs", << pipeline.parameters.workflow_name >> ]
     jobs:
       - pre-create-tag:
           context: custom-executor-pull
