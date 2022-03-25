@@ -74,6 +74,131 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
+func createTableImageComponents(ctx context.Context, db *pgxpool.Pool) {
+	table := `
+create table if not exists image_components (
+    Id varchar,
+    Name varchar,
+    Version varchar,
+    License_Name varchar,
+    License_Type varchar,
+    License_Url varchar,
+    Priority integer,
+    Source integer,
+    RiskScore numeric,
+    TopCvss numeric,
+    FixedBy varchar,
+    OperatingSystem varchar,
+    serialized bytea,
+    PRIMARY KEY(Id, Name, Version, OperatingSystem)
+)
+`
+
+	_, err := db.Exec(ctx, table)
+	if err != nil {
+		log.Panicf("Error creating table %s: %v", table, err)
+	}
+
+	indexes := []string{}
+	for _, index := range indexes {
+		if _, err := db.Exec(ctx, index); err != nil {
+			log.Panicf("Error creating index %s: %v", index, err)
+		}
+	}
+
+}
+
+func createTableImageCves(ctx context.Context, db *pgxpool.Pool) {
+	table := `
+create table if not exists image_cves (
+    Id varchar,
+    OperatingSystem varchar,
+    Cvss numeric,
+    ImpactScore numeric,
+    Summary varchar,
+    Link varchar,
+    PublishedOn timestamp,
+    CreatedAt timestamp,
+    LastModified timestamp,
+    ScoreVersion integer,
+    CvssV2_Vector varchar,
+    CvssV2_AttackVector integer,
+    CvssV2_AccessComplexity integer,
+    CvssV2_Authentication integer,
+    CvssV2_Confidentiality integer,
+    CvssV2_Integrity integer,
+    CvssV2_Availability integer,
+    CvssV2_ExploitabilityScore numeric,
+    CvssV2_ImpactScore numeric,
+    CvssV2_Score numeric,
+    CvssV2_Severity integer,
+    CvssV3_Vector varchar,
+    CvssV3_ExploitabilityScore numeric,
+    CvssV3_ImpactScore numeric,
+    CvssV3_AttackVector integer,
+    CvssV3_AttackComplexity integer,
+    CvssV3_PrivilegesRequired integer,
+    CvssV3_UserInteraction integer,
+    CvssV3_Scope integer,
+    CvssV3_Confidentiality integer,
+    CvssV3_Integrity integer,
+    CvssV3_Availability integer,
+    CvssV3_Score numeric,
+    CvssV3_Severity integer,
+    Suppressed bool,
+    SuppressActivation timestamp,
+    SuppressExpiry timestamp,
+    Severity integer,
+    serialized bytea,
+    PRIMARY KEY(Id, OperatingSystem)
+)
+`
+
+	_, err := db.Exec(ctx, table)
+	if err != nil {
+		log.Panicf("Error creating table %s: %v", table, err)
+	}
+
+	indexes := []string{}
+	for _, index := range indexes {
+		if _, err := db.Exec(ctx, index); err != nil {
+			log.Panicf("Error creating index %s: %v", index, err)
+		}
+	}
+
+	createTableImageCvesReferences(ctx, db)
+}
+
+func createTableImageCvesReferences(ctx context.Context, db *pgxpool.Pool) {
+	table := `
+create table if not exists image_cves_References (
+    image_cves_Id varchar,
+    image_cves_OperatingSystem varchar,
+    idx integer,
+    URI varchar,
+    Tags text[],
+    PRIMARY KEY(image_cves_Id, image_cves_OperatingSystem, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (image_cves_Id, image_cves_OperatingSystem) REFERENCES image_cves(Id, OperatingSystem) ON DELETE CASCADE
+)
+`
+
+	_, err := db.Exec(ctx, table)
+	if err != nil {
+		log.Panicf("Error creating table %s: %v", table, err)
+	}
+
+	indexes := []string{
+
+		"create index if not exists imageCvesReferences_idx on image_cves_References using btree(idx)",
+	}
+	for _, index := range indexes {
+		if _, err := db.Exec(ctx, index); err != nil {
+			log.Panicf("Error creating index %s: %v", index, err)
+		}
+	}
+
+}
+
 func createTableImageComponentCveRelation(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists image_component_cve_relation (
@@ -109,6 +234,8 @@ create table if not exists image_component_cve_relation (
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
+	createTableImageComponents(ctx, db)
+	createTableImageCves(ctx, db)
 	createTableImageComponentCveRelation(ctx, db)
 
 	return &storeImpl{
