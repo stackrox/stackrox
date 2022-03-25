@@ -258,7 +258,7 @@
   {{ $action := ternary "deploy StackRox Central Services without Scanner" "upgrade StackRox Central Services without Scanner (possibly removing an existing Scanner deployment)" $.Release.IsInstall }}
   {{ include "srox.warn" (list $ (printf "You have chosen to %s. Certain features dependent on image scanning might not work." $action)) }}
 {{ else if not $scannerCfg.disable }}
-  {{ if or (ne $scannerCfg.mode "full") (eq $scannerCfg.mode "") }}
+  {{ if and (ne $scannerCfg.mode "full") (ne $scannerCfg.mode "") }}
     {{ include "srox.fail" (print "Only scanner full mode is allowed in Central. To solve this, set to full mode: scanner.mode=full.") }}
   {{ end }}
   {{ include "srox.scannerInit" (list $ $scannerCfg) }}
