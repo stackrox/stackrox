@@ -46,7 +46,6 @@ const initialPolicy: Policy = {
     rationale: '',
     remediation: '',
     categories: [],
-    fields: null,
     exclusions: [],
     scope: [],
     enforcementActions: [],
