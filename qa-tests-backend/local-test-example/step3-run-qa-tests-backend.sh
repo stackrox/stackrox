@@ -56,4 +56,5 @@ export ROX_USERNAME ROX_PASSWORD
 echo "Access Central console at http://$API_HOSTNAME:$API_PORT"
 echo "Login with ($ROX_USERNAME, $ROX_PASSWORD)"
 
-gradle test --tests='LocalQaPropsTest'
+#gradle test --tests='LocalQaPropsTest'
+gradle test --tests='ReconciliationTest'
