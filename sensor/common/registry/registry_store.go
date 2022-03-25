@@ -77,6 +77,7 @@ func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string,
 
 	regs := rs.getRegistries(namespace)
 	err = regs.UpdateImageIntegration(&storage.ImageIntegration{
+		Id:         registry,
 		Name:       registry,
 		Type:       "docker",
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
