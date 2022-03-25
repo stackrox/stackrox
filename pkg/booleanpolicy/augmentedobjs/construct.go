@@ -183,10 +183,6 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 
 // ConstructImage constructs the augmented image object.
 func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
-	if image.GetSignatureVerificationData().GetResults() == nil {
-		image.SignatureVerificationData = &storage.ImageSignatureVerificationData{Results: []*storage.ImageSignatureVerificationResult{}}
-	}
-
 	obj := pathutil.NewAugmentedObj(image)
 
 	// Since policies query for Dockerfile Line as a single compound field, we simulate it by creating a "composite"
