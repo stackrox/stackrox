@@ -27,13 +27,16 @@ var (
 func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
 	// 1. Check if Central already knows about this image.
 	// If Central already knows about it, then return its results.
+	log.Infof("Does Central have %s - %s?", ci.GetName().GetFullName(), ci.GetId())
 	img, err := centralClient.GetImage(ctx, &v1.GetImageRequest{
 		Id:               ci.GetId(),
 		StripDescription: true,
 	})
 	if err == nil {
+		log.Infof("Yes, Central has %s", ci.GetName().GetFullName())
 		return img, nil
 	}
+	log.Infof("Central may not have %s", ci.GetName().GetFullName())
 
 	// The image either does not exist in Central yet or there was some other error when reaching out.
 	// Attempt to scan locally.
