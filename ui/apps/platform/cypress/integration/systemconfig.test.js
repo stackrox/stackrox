@@ -98,8 +98,7 @@ describe('System Configuration', () => {
         cy.get(getNumericInputByLabel('Resolved Deploy-Phase Violations')).clear().type(0);
         cy.get(getNumericInputByLabel('Images No Longer Deployed')).clear().type(0);
 
-        cy.get(selectors.pageHeader.saveButton).click();
-        cy.wait(['@putSystemConfiguration', '@getSystemConfiguration']); // visit has intercept for get
+        saveSystemConfiguration();
 
         cy.get(selectors.dataRetention.allRuntimeViolationsBox).should('contain', neverDeletedText);
         cy.get(selectors.dataRetention.resolvedDeployViolationsBox).should(
