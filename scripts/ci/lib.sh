@@ -146,7 +146,7 @@ push_main_image_set() {
 
     local branch="$1"
 
-    main_image_set=("main" "roxctl" "central-db")
+    local main_image_set=("main" "roxctl" "central-db")
 
     _push_main_image_set() {
         local registry="$1"
@@ -172,12 +172,12 @@ push_main_image_set() {
 
     local tag
     tag="$(make --quiet tag)"
-    for repo in "docker.io/stackrox" "quay.io/rhacs-eng"; do
-        _tag_main_image_set "$tag" "$repo" "$tag"
-        _push_main_image_set "$repo" "$tag"
+    for registry in "docker.io/stackrox" "quay.io/rhacs-eng"; do
+        _tag_main_image_set "$tag" "$registry" "$tag"
+        _push_main_image_set "$registry" "$tag"
         if [[ "$branch" == "master" ]]; then
-            _tag_main_image_set "$tag" "$repo" "latest"
-            _push_main_image_set "$repo" "latest"
+            _tag_main_image_set "$tag" "$registry" "latest"
+            _push_main_image_set "$registry" "latest"
         fi
     done
 }
@@ -193,19 +193,23 @@ push_matching_collector_scanner_images() {
     docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
     docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
 
-    MAIN_TAG="$(make --quiet tag)"
-    SCANNER_VERSION="$(make --quiet scanner-tag)"
-    COLLECTOR_VERSION="$(make --quiet collector-tag)"
+    local main_tag
+    main_tag="$(make --quiet tag)"
+    local scanner_version
+    scanner_version="$(make --quiet scanner-tag)"
+    local collector_version
+    collector_version="$(make --quiet collector-tag)"
 
-    REGISTRIES=( "docker.io/stackrox" "quay.io/rhacs-eng" )
-    for TARGET_REGISTRY in "${REGISTRIES[@]}"; do
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner:${MAIN_TAG}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/scanner-slim:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner-slim:${MAIN_TAG}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/scanner-db-slim:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db-slim:${MAIN_TAG}"
+    local source_registry="quay.io/rhacs-eng"
+    local target_registries=( "docker.io/stackrox" "quay.io/rhacs-eng" )
+    for target_registry in "${target_registries[@]}"; do
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}"
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}"
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}"
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}"
 
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}"
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}"
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}"
     done
 }
 
