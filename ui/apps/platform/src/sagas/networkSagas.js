@@ -32,7 +32,12 @@ import { filterModes } from 'constants/networkFilterModes';
 import { getDeployment } from './deploymentSagas';
 
 // get generators
-function* getNetworkGraphs(clusterId, query) {
+function* getNetworkGraphs(clusterId, namespaces, query) {
+    // Do not query the backend for network graph updates if no namespace is selected
+    if (!namespaces.length) {
+        return;
+    }
+
     try {
         const timeWindow = yield select(selectors.getNetworkActivityTimeWindow);
         const modification = yield select(selectors.getNetworkPolicyModification);
@@ -43,11 +48,19 @@ function* getNetworkGraphs(clusterId, query) {
             call(
                 service.fetchNetworkFlowGraph,
                 clusterId,
+                namespaces,
                 query,
                 timeWindowToDate(timeWindow),
                 includePorts
             ),
-            call(service.fetchNetworkPolicyGraph, clusterId, query, modification, includePorts),
+            call(
+                service.fetchNetworkPolicyGraph,
+                clusterId,
+                namespaces,
+                query,
+                modification,
+                includePorts
+            ),
         ]);
         yield put(graphNetworkActions.setNetworkEdgeMap(flowGraph, policyGraph));
         yield put(graphNetworkActions.setNetworkNodeMap(flowGraph, policyGraph));
@@ -163,21 +176,23 @@ function* sendNetworkModificationApplication() {
 // misc action generators
 function* filterNetworkPageBySearch() {
     const clusterId = yield select(selectors.getSelectedNetworkClusterId);
+    const selectedNamespaces = yield select(selectors.getSelectedNamespaceFilters);
     const searchOptions = yield select(selectors.getNetworkSearchOptions);
     if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
         return;
     }
     if (clusterId) {
         const filters = searchOptionsToQuery(searchOptions);
-        yield fork(getNetworkGraphs, clusterId, filters);
+        yield fork(getNetworkGraphs, clusterId, selectedNamespaces, filters);
     }
 }
 
 function* filterNetworkPageByBaselineSimulation() {
     const clusterId = yield select(selectors.getSelectedNetworkClusterId);
+    const selectedNamespaces = yield select(selectors.getSelectedNamespaceFilters);
     const node = yield select(selectors.getSelectedNode);
     const filter = queryService.objectToWhereClause({ Deployment: node.name });
-    yield fork(getNetworkGraphs, clusterId, filter);
+    yield fork(getNetworkGraphs, clusterId, selectedNamespaces, filter);
     /*
      * We want to switch to the allowed filter when showing the simulated state because we want to
      * show the possible added, removed, modified edges
@@ -246,6 +261,10 @@ function* generateNetworkModification() {
     }
 }
 
+function* resetNamespaceFilters() {
+    yield put(graphNetworkActions.setSelectedNamespaceFilters([]));
+}
+
 // watch generators
 function* watchLocation() {
     let pollTask = null;
@@ -309,7 +328,14 @@ function* watchGenerateNetworkModification() {
 }
 
 function* watchSelectNetworkCluster() {
-    yield takeLatest(graphNetworkTypes.SELECT_NETWORK_CLUSTER_ID, filterNetworkPageBySearch);
+    yield all([
+        takeLatest(graphNetworkTypes.SELECT_NETWORK_CLUSTER_ID, filterNetworkPageBySearch),
+        takeLatest(graphNetworkTypes.SELECT_NETWORK_CLUSTER_ID, resetNamespaceFilters),
+    ]);
+}
+
+function* watchSetSelectNamespaceFilters() {
+    yield takeLatest(graphNetworkTypes.SET_SELECTED_NAMESPACE_FILTERS, filterNetworkPageBySearch);
 }
 
 function* watchSetActivityTimeWindow() {
@@ -351,6 +377,7 @@ export default function* network() {
         fork(watchUndoNetworkModification),
         fork(watchGenerateNetworkModification),
         fork(watchSelectNetworkCluster),
+        fork(watchSetSelectNamespaceFilters),
         fork(watchSetActivityTimeWindow),
         fork(watchNetworkNodesUpdate),
         fork(watchNetworkPolicyModification),

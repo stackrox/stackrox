@@ -9,6 +9,7 @@ import {
     filterNamespaces,
     filterClusters,
     filterInternet,
+    selectNamespaceFilters,
 } from '../../helpers/networkGraph';
 
 describe('External Entities on Network Graph', () => {
@@ -26,6 +27,7 @@ describe('External Entities on Network Graph', () => {
         );
 
         cy.visit(networkUrl);
+        selectNamespaceFilters('stackrox');
         cy.wait('@networkGraph');
         cy.wait('@networkPolicies');
     });

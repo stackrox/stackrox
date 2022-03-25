@@ -2,7 +2,7 @@ import { url as networkUrl, selectors as networkPageSelectors } from '../../cons
 import selectors from '../../selectors';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
-import { clickOnNodeByName } from '../../helpers/networkGraph';
+import { clickOnNodeByName, selectNamespaceFilters } from '../../helpers/networkGraph';
 
 const tableDataRows = 'table tr[data-testid="data-row"]';
 const tableStatusHeaders = 'table tr[data-testid="subhead-row"]';
@@ -24,6 +24,7 @@ describe('Network Baseline Flows', () => {
         cy.route('PATCH', api.network.networkBaselineUnlock).as('networkBaselineUnlock');
 
         cy.visit(networkUrl);
+        selectNamespaceFilters('stackrox');
         cy.wait('@networkPoliciesGraph');
         cy.wait('@networkGraph');
     });

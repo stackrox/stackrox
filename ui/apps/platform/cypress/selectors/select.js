@@ -18,9 +18,14 @@ const singleSelect = {
     options: '.react-select__option',
 };
 
+const patternFlySelect = {
+    openMenu: '.pf-c-select__menu',
+};
+
 const selectors = {
     multiSelect,
     singleSelect,
+    patternFlySelect,
 };
 
 export default selectors;
