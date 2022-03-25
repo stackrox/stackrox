@@ -876,6 +876,153 @@ commands:
 
           when: always
 
+  pre-build-ui:
+    parameters:
+      branding:
+        type: string
+        default: stackrox
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+      - restore-npm-deps-cache
+      - fetch-ui-deps
+
+      - run:
+          name: Prepare UI tree state file
+          command: |
+            git log -n 1 --pretty=format:%H -- ui/ >/tmp/ui-tree-state
+            # Add the node version to the UI tree state, since a different node version
+            # should bust the cache.
+            node -v >>/tmp/ui-tree-state
+
+      - restore_cache:
+          name: Restoring UI build cache
+          key: ui-build-cache-v1-<< parameters.branding >>-{{ checksum "/tmp/ui-tree-state" }}
+
+      - run:
+          name: Build UI
+          command: |
+            if [[ -d ui/build ]]; then
+              exit 0  # build cache is always complete
+            fi
+            make -C ui build
+
+      - save_cache:
+          name: Saving UI build cache
+          key: ui-build-cache-v1-<< parameters.branding >>-{{ checksum "/tmp/ui-tree-state" }}
+          paths:
+            - ui/build
+
+      - save-npm-deps-cache
+
+      - run:
+          name: Separate the UI brand
+          command: |
+            mv ui ui-<< parameters.branding >>
+
+      - persist_to_workspace:
+          root: /go/src/github.com/stackrox/rox
+          paths:
+            - ui-<< parameters.branding >>/build # Copied directly into the image downstream.
+            - ui-<< parameters.branding >>/deps
+            - ui-<< parameters.branding >>/node_modules # node_modules dirs here and below are used for OSS license auditing downstream
+            - ui-<< parameters.branding >>/apps/*/node_modules
+            - ui-<< parameters.branding >>/packages/*/node_modules
+
+      - cleanup-clusters-on-fail
+
+  build:
+    parameters:
+      branding:
+        type: string
+        default: stackrox
+    steps:
+      - checkout-with-submodules
+      - check-docs-step:
+          only-on-release: true
+      - check-scanner-and-collector-release-step:
+          fail-on-rc: false
+
+      - setup_remote_docker:
+          version: 20.10.7
+      - setup-dep-env:
+          docker-login: true
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - run:
+          name: Restore the branded UI
+          command: |
+            mv ui-<< parameters.branding >> ui
+
+      - *refreshAlpineBaseImage
+
+      - restore-go-mod-cache
+      - setup-go-build-env
+
+      - run:
+          name: Generate OSS notice
+          command: |
+            make ossls-notice
+
+      - run:
+          name: Build main image
+          command: make docker-build-main-image
+
+      - run:
+          name: Check debugger presence in the main image
+          command: make check-debugger
+
+      - run:
+          name: Build roxctl image
+          command: make docker-build-roxctl-image
+
+      - run:
+          name: Push new Docker image
+          command: |
+            source ./scripts/ci/lib.sh
+            push_main_and_roxctl_images "${CIRCLE_BRANCH}"
+
+      - run:
+          name: Push collector & scanner images tagged with main-version to docker.io/stackrox and quay.io/rhacs-eng
+          command: |
+            source ./scripts/ci/lib.sh
+            push_matching_collector_scanner_images
+
+      - run:
+          name: Publish new versions of NPM packages if any
+          command: |
+            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
+              echo "//npm.pkg.github.com/:_authToken=\"$GITHUB_PACKAGES_PUBLISH_TOKEN\"" > ~/.npmrc
+              make ui-publish-packages
+            else
+              echo "Not on master, skipping publishing NPM packages."
+            fi
+
+      - *saveGoModCache
+
+      - ci-artifacts/store:
+          path: bin/linux/roxctl
+          destination: roxctl/roxctl-linux
+
+      - ci-artifacts/store:
+          path: bin/darwin/roxctl
+          destination: roxctl/roxctl-darwin
+
+      - run:
+          name: Comment on PR
+          command: |
+            wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
+            echo "2a2640f44737873dfe30da0d5b8453419d48a494f277a70fd9108e4204fc4a53 hub-comment_linux_amd64" | sha256sum -c -
+            sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
+
+            export TAG=$(make --quiet tag)
+            hub-comment -template-file .circleci/comment-template.tpl
+
+      - cleanup-clusters-on-fail
+
   cleanup-clusters-on-fail:
     steps:
       # This only runs if the build has passed, thus short-circuiting the steps below.
@@ -2492,7 +2639,7 @@ jobs:
           paths:
             - CI_TAG
 
-  pre-build-ui:
+  pre-build-ui-rhacs:
     executor: custom
     resource_class: large
     environment:
@@ -2503,50 +2650,8 @@ jobs:
       # variable into the build. See https://create-react-app.dev/docs/adding-custom-environment-variables/
       REACT_APP_ROX_PRODUCT_BRANDING: RHACS_BRANDING
     steps:
-      - checkout
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-      - restore-npm-deps-cache
-      - fetch-ui-deps
-
-      - run:
-          name: Prepare UI tree state file
-          command: |
-            git log -n 1 --pretty=format:%H -- ui/ >/tmp/ui-tree-state
-            # Add the node version to the UI tree state, since a different node version
-            # should bust the cache.
-            node -v >>/tmp/ui-tree-state
-
-      - restore_cache:
-          name: Restoring UI build cache
-          key: ui-build-cache-v1-{{ checksum "/tmp/ui-tree-state" }}
-
-      - run:
-          name: Build UI
-          command: |
-            if [[ -d ui/build ]]; then
-              exit 0  # build cache is always complete
-            fi
-            make -C ui build
-
-      - save_cache:
-          name: Saving UI build cache
-          key: ui-build-cache-v1-{{ checksum "/tmp/ui-tree-state" }}
-          paths:
-            - ui/build
-
-      - save-npm-deps-cache
-
-      - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
-          paths:
-            - ui/build # Copied directly into the image downstream.
-            - ui/deps
-            - ui/node_modules # node_modules dirs here and below are used for OSS license auditing downstream
-            - ui/apps/*/node_modules
-            - ui/packages/*/node_modules
-
-      - cleanup-clusters-on-fail
+      - pre-build-ui:
+          branding: RHACS_BRANDING
 
   pre-build-cli:
     executor: custom
@@ -2662,91 +2767,14 @@ jobs:
 
       - cleanup-clusters-on-fail
 
-  build:
+  build-rhacs:
     executor: custom
     resource_class: medium
     environment:
       - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
-      - checkout-with-submodules
-      - check-docs-step:
-          only-on-release: true
-      - check-scanner-and-collector-release-step:
-          fail-on-rc: false
-
-      - setup_remote_docker:
-          version: 20.10.7
-      - setup-dep-env:
-          docker-login: true
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - *refreshAlpineBaseImage
-
-      - restore-go-mod-cache
-      - setup-go-build-env
-
-      - run:
-          name: Generate OSS notice
-          command: |
-            make ossls-notice
-
-      - run:
-          name: Build main image
-          command: make docker-build-main-image
-
-      - run:
-          name: Check debugger presence in the main image
-          command: make check-debugger
-
-      - run:
-          name: Build roxctl image
-          command: make docker-build-roxctl-image
-
-      - run:
-          name: Push new Docker image
-          command: |
-            source ./scripts/ci/lib.sh
-            push_main_and_roxctl_images "${CIRCLE_BRANCH}"
-
-      - run:
-          name: Push collector & scanner images tagged with main-version to docker.io/stackrox and quay.io/rhacs-eng
-          command: |
-            source ./scripts/ci/lib.sh
-            push_matching_collector_scanner_images
-
-      - run:
-          name: Publish new versions of NPM packages if any
-          command: |
-            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
-              echo "//npm.pkg.github.com/:_authToken=\"$GITHUB_PACKAGES_PUBLISH_TOKEN\"" > ~/.npmrc
-              make ui-publish-packages
-            else
-              echo "Not on master, skipping publishing NPM packages."
-            fi
-
-      - *saveGoModCache
-
-      - ci-artifacts/store:
-          path: bin/linux/roxctl
-          destination: roxctl/roxctl-linux
-
-      - ci-artifacts/store:
-          path: bin/darwin/roxctl
-          destination: roxctl/roxctl-darwin
-
-      - run:
-          name: Comment on PR
-          command: |
-            wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
-            echo "2a2640f44737873dfe30da0d5b8453419d48a494f277a70fd9108e4204fc4a53 hub-comment_linux_amd64" | sha256sum -c -
-            sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
-
-            export TAG=$(make --quiet tag)
-            hub-comment -template-file .circleci/comment-template.tpl
-
-      - cleanup-clusters-on-fail
+      - build:
+          branding: RHACS_BRANDING
 
   build-race-condition-debug-image:
     executor: custom
@@ -4633,7 +4661,7 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - pre-create-tag:
           <<: *runOnAllTagsWithQuayIOPullCtx
-      - pre-build-ui:
+      - pre-build-ui-rhacs:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
             - pre-create-tag
@@ -4645,10 +4673,10 @@ workflows:
           <<: *runOnAllTagsWithPushCtx
           requires:
             - pre-create-tag
-      - build:
+      - build-rhacs:
           <<: *runOnAllTagsWithPushCtx
           requires:
-            - pre-build-ui
+            - pre-build-ui-rhacs
             - pre-build-cli
             - pre-build-go-binaries
       - build-operator:
@@ -4662,7 +4690,7 @@ workflows:
       - gke-api-nongroovy-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-nongroovy-tests
       - local-roxctl-e2e-tests:
@@ -4674,7 +4702,7 @@ workflows:
       - gke-ui-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-ui-e2e-tests
       - provision-gke-api-e2e-tests:
@@ -4682,7 +4710,7 @@ workflows:
       - gke-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-e2e-tests
       - provision-gke-postgres-api-e2e-tests:
@@ -4690,7 +4718,7 @@ workflows:
       - gke-postgres-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-postgres-api-e2e-tests
       - provision-gke-kernel-api-e2e-tests:
@@ -4698,7 +4726,7 @@ workflows:
       - gke-kernel-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-kernel-api-e2e-tests
       - provision-gke-api-upgrade-tests:
@@ -4706,14 +4734,14 @@ workflows:
       - gke-api-upgrade-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            - build-rhacs
             - provision-gke-api-upgrade-tests
       - provision-gke-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - gke-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-scale-tests
       - provision-gke-postgres-api-scale-tests:
@@ -4721,7 +4749,7 @@ workflows:
       - gke-postgres-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-          - build
+          - build-rhacs
           - build-scale-monitoring-and-mock-server
           - provision-gke-postgres-api-scale-tests
       - provision-openshift-api-e2e-tests:
@@ -4729,7 +4757,7 @@ workflows:
       - openshift-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-openshift-api-e2e-tests
       - provision-openshift-crio-api-e2e-tests:
@@ -4737,7 +4765,7 @@ workflows:
       - openshift-crio-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-openshift-crio-api-e2e-tests
       - provision-eks-api-e2e-tests:
@@ -4745,7 +4773,7 @@ workflows:
       - eks-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-eks-api-e2e-tests
       # ROX-8306 - Disabled due to Azure account issue
@@ -4754,7 +4782,7 @@ workflows:
       # - aks-api-e2e-tests:
       #     <<: *runOnAllTagsWithQuayIOPullCtx
       #     requires:
-      #       - build
+      #       - build-rhacs
       #       - build-scale-monitoring-and-mock-server
       #       - provision-aks-api-e2e-tests
       - provision-openshift-4-api-e2e-tests:
@@ -4762,7 +4790,7 @@ workflows:
       - openshift-4-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-openshift-4-api-e2e-tests
       - provision-openshift-4-operator-e2e-tests:
@@ -4772,13 +4800,13 @@ workflows:
       - openshift-4-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            - build-rhacs
             - build-operator
             - provision-openshift-4-operator-e2e-tests
       - openshift-4-6-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - build
+            - build-rhacs
             - build-operator
             - provision-openshift-4-6-operator-e2e-tests
       - provision-race-condition-tests:
@@ -4798,7 +4826,7 @@ workflows:
           context:
             - custom-executor-pull
           requires:
-            - build
+            - build-rhacs
             - go-unit-tests
             - ui-unit-tests
             - push-release
@@ -4815,7 +4843,7 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-openshift-rosa-api-e2e-tests
-            - build
+            - build-rhacs
           context:
             - com-redhat-cloud
             - quay-rhacs-eng-readonly
@@ -4843,7 +4871,7 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-openshift-aro-api-e2e-tests
-            - build
+            - build-rhacs
           context:
             - com-redhat-cloud
             - quay-rhacs-eng-readonly
@@ -4856,7 +4884,7 @@ workflows:
             - custom-executor-pull
             - docker-io-and-stackrox-io-push
           requires:
-            - build
+            - build-rhacs
             - go-unit-tests
             - ui-unit-tests
 
@@ -4869,7 +4897,7 @@ workflows:
             branches:
               ignore: /.*/
           requires:
-            - build
+            - build-rhacs
 
       - openshift-ci-upgrade-test:
           context:
@@ -4878,7 +4906,7 @@ workflows:
             branches:
               only: /.*(osci).*/
           requires:
-            - build
+            - build-rhacs
 
       - retrigger-master-workflow:
           context: custom-executor-pull
@@ -4908,24 +4936,24 @@ workflows:
   # These workflows can be triggered on demand.
   ##
 
-  # To trigger a build for example:
+  # To trigger a RHACS branded build for example:
   #
   #   curl -X POST --header 'Content-Type: application/json' \
   #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/rox/pipeline -d '{
   #     "branch": "<your branch>",
   #     "parameters": {
   #         "trigger_on_demand": true,
-  #         "workflow_name": "build"
+  #         "workflow_name": "build-rhacs"
   #     }
   # }'
 
-  build:
+  build-rhacs:
     when:
       equal: [ "build", << pipeline.parameters.workflow_name >> ]
     jobs:
       - pre-create-tag:
           context: custom-executor-pull
-      - pre-build-ui:
+      - pre-build-ui-rhacs:
           context: custom-executor-pull
           requires:
             - pre-create-tag
@@ -4937,10 +4965,10 @@ workflows:
           context: docker-io-push
           requires:
             - pre-create-tag
-      - build:
+      - build-rhacs:
           context: docker-io-push
           requires:
-            - pre-build-ui
+            - pre-build-ui-rhacs
             - pre-build-cli
             - pre-build-go-binaries
 
