@@ -955,8 +955,7 @@ commands:
       - run:
           name: Restore the branded UI
           command: |
-            mv ui ui-unbranded
-            mv ui-<< parameters.branding >> ui
+            cp -au ui-<< parameters.branding >>/* ui
 
       - *refreshAlpineBaseImage
 
@@ -987,7 +986,7 @@ commands:
             push_main_and_roxctl_images "${CIRCLE_BRANCH}"
 
       - run:
-          name: Push collector & scanner images tagged with main-version to docker.io/stackrox and quay.io/rhacs-eng
+          name: Push collector & scanner images tagged with main-version to registries
           command: |
             source ./scripts/ci/lib.sh
             push_matching_collector_scanner_images
