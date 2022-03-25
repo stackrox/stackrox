@@ -176,7 +176,7 @@ func (s *Schema) localFKs() map[foreignKeyRef]*Field {
 }
 
 func localFK(field *Field, localFKMap map[foreignKeyRef]*Field) (*Field, bool) {
-	if field == nil {
+	if field == nil || field.Schema == nil {
 		return nil, false
 	}
 	f := localFKMap[foreignKeyRef{

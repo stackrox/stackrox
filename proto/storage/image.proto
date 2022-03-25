@@ -86,23 +86,24 @@ message ImageSignatureVerificationData {
 message ImageSignatureVerificationResult {
     google.protobuf.Timestamp verification_time = 1;
     // verifier_id correlates to the ID of the signature integration used to verify the signature.
-    string verifier_id                          = 2;
+    string verifier_id                          = 2 [(gogoproto.moretags) = 'policy:"verified ID "'];;
     // Status represents the status of the result.
+
     enum Status {
-        UNSET                  = 0;
+        UNSET                  = 0; // ALERT
         // VERIFIED is set when the signature's verification was successful.
-        VERIFIED               = 1;
+        VERIFIED               = 1; // NOT POLICY CRITERIA = ALERT.
         // FAILED_VERIFICATION is set when the signature's verification failed.
-        FAILED_VERIFICATION    = 2;
+        FAILED_VERIFICATION    = 2; // ALERT
         // INVALID_SIGNATURE_ALGO is set when the signature's algorithm is invalid and unsupported.
-        INVALID_SIGNATURE_ALGO = 3;
+        INVALID_SIGNATURE_ALGO = 3; // ALERT
         // CORRUPTED_SIGNATURE is set when the raw signature is corrupted, i.e. wrong base64 encoding.
-        CORRUPTED_SIGNATURE    = 4;
+        CORRUPTED_SIGNATURE    = 4; // ALERT
         // GENERIC_ERROR is set when an error occurred during verification that cannot be associated with a specific
         // status.
-        GENERIC_ERROR          = 5;
+        GENERIC_ERROR          = 5; // ALERT
     }
-    Status status                               = 3;
+    Status status                               = 3 [(gogoproto.moretags) = 'policy:"IMAGE verified"'];
     // description is set in the case of an error with the specific error's message. Otherwise, this will not be set.
     string description                          = 4 ;
 }

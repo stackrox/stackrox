@@ -74,6 +74,7 @@ var (
 	KubeUserName                  = newFieldName("Kubernetes User Name")
 	KubeUserGroups                = newFieldName("Kubernetes User Groups")
 	SourceIPAddress               = newFieldName("Source IP Address")
+	VerifiedIMages                = newFieldName("IMAGE verified")
 )
 
 func newFieldName(field string) string {

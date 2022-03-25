@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
@@ -77,6 +78,23 @@ func wrapForVulnMgmt(f queryBuilderFunc) QueryBuilder {
 			&query.FieldQuery{
 				Field:  search.CVESuppressed.String(),
 				Values: []string{"false"},
+			},
+			&query.FieldQuery{
+				Field:  search.VulnerabilityState.String(),
+				Values: []string{storage.VulnerabilityState_OBSERVED.String()},
+			})
+	})
+}
+
+// getting query == verifier id
+// (verified_id =="X" AND status != verified) OR (verifier_id == "")
+
+func wrapForImageSignature(f queryBuilderFunc) QueryBuilder {
+	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return append(f(group),
+			&query.FieldQuery{
+				Field:  fieldnames.ImageSignatureVerifiedBy.String(),
+				Values: []string{Failed},
 			},
 			&query.FieldQuery{
 				Field:  search.VulnerabilityState.String(),

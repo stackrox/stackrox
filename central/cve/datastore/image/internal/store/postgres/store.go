@@ -22,15 +22,11 @@ import (
 const (
 	baseTable  = "image_cves"
 	countStmt  = "SELECT COUNT(*) FROM image_cves"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_cves WHERE Id = $1)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_cves WHERE Id = $1 AND OperatingSystem = $2)"
 
-	getStmt     = "SELECT serialized FROM image_cves WHERE Id = $1"
-	deleteStmt  = "DELETE FROM image_cves WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM image_cves"
-	getIDsStmt  = "SELECT Id FROM image_cves"
-	getManyStmt = "SELECT serialized FROM image_cves WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM image_cves WHERE Id = ANY($1::text[])"
+	getStmt    = "SELECT serialized FROM image_cves WHERE Id = $1 AND OperatingSystem = $2"
+	deleteStmt = "DELETE FROM image_cves WHERE Id = $1 AND OperatingSystem = $2"
+	walkStmt   = "SELECT serialized FROM image_cves"
 
 	batchAfter = 100
 
@@ -51,14 +47,11 @@ func init() {
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string) (bool, error)
-	Get(ctx context.Context, id string) (*storage.CVE, bool, error)
+	Exists(ctx context.Context, id string, operatingSystem string) (bool, error)
+	Get(ctx context.Context, id string, operatingSystem string) (*storage.CVE, bool, error)
 	Upsert(ctx context.Context, obj *storage.CVE) error
 	UpsertMany(ctx context.Context, objs []*storage.CVE) error
-	Delete(ctx context.Context, id string) error
-	GetIDs(ctx context.Context) ([]string, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error)
-	DeleteMany(ctx context.Context, ids []string) error
+	Delete(ctx context.Context, id string, operatingSystem string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.CVE) error) error
 
@@ -74,6 +67,7 @@ func createTableImageCves(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists image_cves (
     Id varchar,
+    OperatingSystem varchar,
     Cvss numeric,
     ImpactScore numeric,
     Summary varchar,
@@ -111,7 +105,7 @@ create table if not exists image_cves (
     SuppressExpiry timestamp,
     Severity integer,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(Id, OperatingSystem)
 )
 `
 
@@ -134,11 +128,12 @@ func createTableImageCvesReferences(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists image_cves_References (
     image_cves_Id varchar,
+    image_cves_OperatingSystem varchar,
     idx integer,
     URI varchar,
     Tags text[],
-    PRIMARY KEY(image_cves_Id, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (image_cves_Id) REFERENCES image_cves(Id) ON DELETE CASCADE
+    PRIMARY KEY(image_cves_Id, image_cves_OperatingSystem, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (image_cves_Id, image_cves_OperatingSystem) REFERENCES image_cves(Id, OperatingSystem) ON DELETE CASCADE
 )
 `
 
@@ -169,6 +164,7 @@ func insertIntoImageCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
+		obj.GetOperatingSystem(),
 		obj.GetCvss(),
 		obj.GetImpactScore(),
 		obj.GetSummary(),
@@ -208,7 +204,7 @@ func insertIntoImageCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cves (Id, Cvss, ImpactScore, Summary, Link, PublishedOn, CreatedAt, LastModified, ScoreVersion, CvssV2_Vector, CvssV2_AttackVector, CvssV2_AccessComplexity, CvssV2_Authentication, CvssV2_Confidentiality, CvssV2_Integrity, CvssV2_Availability, CvssV2_ExploitabilityScore, CvssV2_ImpactScore, CvssV2_Score, CvssV2_Severity, CvssV3_Vector, CvssV3_ExploitabilityScore, CvssV3_ImpactScore, CvssV3_AttackVector, CvssV3_AttackComplexity, CvssV3_PrivilegesRequired, CvssV3_UserInteraction, CvssV3_Scope, CvssV3_Confidentiality, CvssV3_Integrity, CvssV3_Availability, CvssV3_Score, CvssV3_Severity, Suppressed, SuppressActivation, SuppressExpiry, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Cvss = EXCLUDED.Cvss, ImpactScore = EXCLUDED.ImpactScore, Summary = EXCLUDED.Summary, Link = EXCLUDED.Link, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, LastModified = EXCLUDED.LastModified, ScoreVersion = EXCLUDED.ScoreVersion, CvssV2_Vector = EXCLUDED.CvssV2_Vector, CvssV2_AttackVector = EXCLUDED.CvssV2_AttackVector, CvssV2_AccessComplexity = EXCLUDED.CvssV2_AccessComplexity, CvssV2_Authentication = EXCLUDED.CvssV2_Authentication, CvssV2_Confidentiality = EXCLUDED.CvssV2_Confidentiality, CvssV2_Integrity = EXCLUDED.CvssV2_Integrity, CvssV2_Availability = EXCLUDED.CvssV2_Availability, CvssV2_ExploitabilityScore = EXCLUDED.CvssV2_ExploitabilityScore, CvssV2_ImpactScore = EXCLUDED.CvssV2_ImpactScore, CvssV2_Score = EXCLUDED.CvssV2_Score, CvssV2_Severity = EXCLUDED.CvssV2_Severity, CvssV3_Vector = EXCLUDED.CvssV3_Vector, CvssV3_ExploitabilityScore = EXCLUDED.CvssV3_ExploitabilityScore, CvssV3_ImpactScore = EXCLUDED.CvssV3_ImpactScore, CvssV3_AttackVector = EXCLUDED.CvssV3_AttackVector, CvssV3_AttackComplexity = EXCLUDED.CvssV3_AttackComplexity, CvssV3_PrivilegesRequired = EXCLUDED.CvssV3_PrivilegesRequired, CvssV3_UserInteraction = EXCLUDED.CvssV3_UserInteraction, CvssV3_Scope = EXCLUDED.CvssV3_Scope, CvssV3_Confidentiality = EXCLUDED.CvssV3_Confidentiality, CvssV3_Integrity = EXCLUDED.CvssV3_Integrity, CvssV3_Availability = EXCLUDED.CvssV3_Availability, CvssV3_Score = EXCLUDED.CvssV3_Score, CvssV3_Severity = EXCLUDED.CvssV3_Severity, Suppressed = EXCLUDED.Suppressed, SuppressActivation = EXCLUDED.SuppressActivation, SuppressExpiry = EXCLUDED.SuppressExpiry, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cves (Id, OperatingSystem, Cvss, ImpactScore, Summary, Link, PublishedOn, CreatedAt, LastModified, ScoreVersion, CvssV2_Vector, CvssV2_AttackVector, CvssV2_AccessComplexity, CvssV2_Authentication, CvssV2_Confidentiality, CvssV2_Integrity, CvssV2_Availability, CvssV2_ExploitabilityScore, CvssV2_ImpactScore, CvssV2_Score, CvssV2_Severity, CvssV3_Vector, CvssV3_ExploitabilityScore, CvssV3_ImpactScore, CvssV3_AttackVector, CvssV3_AttackComplexity, CvssV3_PrivilegesRequired, CvssV3_UserInteraction, CvssV3_Scope, CvssV3_Confidentiality, CvssV3_Integrity, CvssV3_Availability, CvssV3_Score, CvssV3_Severity, Suppressed, SuppressActivation, SuppressExpiry, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39) ON CONFLICT(Id, OperatingSystem) DO UPDATE SET Id = EXCLUDED.Id, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, ImpactScore = EXCLUDED.ImpactScore, Summary = EXCLUDED.Summary, Link = EXCLUDED.Link, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, LastModified = EXCLUDED.LastModified, ScoreVersion = EXCLUDED.ScoreVersion, CvssV2_Vector = EXCLUDED.CvssV2_Vector, CvssV2_AttackVector = EXCLUDED.CvssV2_AttackVector, CvssV2_AccessComplexity = EXCLUDED.CvssV2_AccessComplexity, CvssV2_Authentication = EXCLUDED.CvssV2_Authentication, CvssV2_Confidentiality = EXCLUDED.CvssV2_Confidentiality, CvssV2_Integrity = EXCLUDED.CvssV2_Integrity, CvssV2_Availability = EXCLUDED.CvssV2_Availability, CvssV2_ExploitabilityScore = EXCLUDED.CvssV2_ExploitabilityScore, CvssV2_ImpactScore = EXCLUDED.CvssV2_ImpactScore, CvssV2_Score = EXCLUDED.CvssV2_Score, CvssV2_Severity = EXCLUDED.CvssV2_Severity, CvssV3_Vector = EXCLUDED.CvssV3_Vector, CvssV3_ExploitabilityScore = EXCLUDED.CvssV3_ExploitabilityScore, CvssV3_ImpactScore = EXCLUDED.CvssV3_ImpactScore, CvssV3_AttackVector = EXCLUDED.CvssV3_AttackVector, CvssV3_AttackComplexity = EXCLUDED.CvssV3_AttackComplexity, CvssV3_PrivilegesRequired = EXCLUDED.CvssV3_PrivilegesRequired, CvssV3_UserInteraction = EXCLUDED.CvssV3_UserInteraction, CvssV3_Scope = EXCLUDED.CvssV3_Scope, CvssV3_Confidentiality = EXCLUDED.CvssV3_Confidentiality, CvssV3_Integrity = EXCLUDED.CvssV3_Integrity, CvssV3_Availability = EXCLUDED.CvssV3_Availability, CvssV3_Score = EXCLUDED.CvssV3_Score, CvssV3_Severity = EXCLUDED.CvssV3_Severity, Suppressed = EXCLUDED.Suppressed, SuppressActivation = EXCLUDED.SuppressActivation, SuppressExpiry = EXCLUDED.SuppressExpiry, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -217,30 +213,31 @@ func insertIntoImageCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error
 	var query string
 
 	for childIdx, child := range obj.GetReferences() {
-		if err := insertIntoImageCvesReferences(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoImageCvesReferences(ctx, tx, child, obj.GetId(), obj.GetOperatingSystem(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from image_cves_References where image_cves_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetReferences()))
+	query = "delete from image_cves_References where image_cves_Id = $1 AND image_cves_OperatingSystem = $2 AND idx >= $3"
+	_, err = tx.Exec(ctx, query, obj.GetId(), obj.GetOperatingSystem(), len(obj.GetReferences()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoImageCvesReferences(ctx context.Context, tx pgx.Tx, obj *storage.CVE_Reference, image_cves_Id string, idx int) error {
+func insertIntoImageCvesReferences(ctx context.Context, tx pgx.Tx, obj *storage.CVE_Reference, image_cves_Id string, image_cves_OperatingSystem string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
 		image_cves_Id,
+		image_cves_OperatingSystem,
 		idx,
 		obj.GetURI(),
 		obj.GetTags(),
 	}
 
-	finalStr := "INSERT INTO image_cves_References (image_cves_Id, idx, URI, Tags) VALUES($1, $2, $3, $4) ON CONFLICT(image_cves_Id, idx) DO UPDATE SET image_cves_Id = EXCLUDED.image_cves_Id, idx = EXCLUDED.idx, URI = EXCLUDED.URI, Tags = EXCLUDED.Tags"
+	finalStr := "INSERT INTO image_cves_References (image_cves_Id, image_cves_OperatingSystem, idx, URI, Tags) VALUES($1, $2, $3, $4, $5) ON CONFLICT(image_cves_Id, image_cves_OperatingSystem, idx) DO UPDATE SET image_cves_Id = EXCLUDED.image_cves_Id, image_cves_OperatingSystem = EXCLUDED.image_cves_OperatingSystem, idx = EXCLUDED.idx, URI = EXCLUDED.URI, Tags = EXCLUDED.Tags"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -255,13 +252,11 @@ func (s *storeImpl) copyFromImageCves(ctx context.Context, tx pgx.Tx, objs ...*s
 
 	var err error
 
-	// This is a copy so first we must delete the rows and re-add them
-	// Which is essentially the desired behaviour of an upsert.
-	var deletes []string
-
 	copyCols := []string{
 
 		"id",
+
+		"operatingsystem",
 
 		"cvss",
 
@@ -351,6 +346,8 @@ func (s *storeImpl) copyFromImageCves(ctx context.Context, tx pgx.Tx, objs ...*s
 
 			obj.GetId(),
 
+			obj.GetOperatingSystem(),
+
 			obj.GetCvss(),
 
 			obj.GetImpactScore(),
@@ -426,20 +423,14 @@ func (s *storeImpl) copyFromImageCves(ctx context.Context, tx pgx.Tx, objs ...*s
 			serialized,
 		})
 
-		// Add the id to be deleted.
-		deletes = append(deletes, obj.GetId())
+		if _, err := tx.Exec(ctx, deleteStmt, obj.GetId(), obj.GetOperatingSystem()); err != nil {
+			return err
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
-
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"image_cves"}, copyCols, pgx.CopyFromRows(inputRows))
 
@@ -454,7 +445,7 @@ func (s *storeImpl) copyFromImageCves(ctx context.Context, tx pgx.Tx, objs ...*s
 
 	for _, obj := range objs {
 
-		if err = s.copyFromImageCvesReferences(ctx, tx, obj.GetId(), obj.GetReferences()...); err != nil {
+		if err = s.copyFromImageCvesReferences(ctx, tx, obj.GetId(), obj.GetOperatingSystem(), obj.GetReferences()...); err != nil {
 			return err
 		}
 	}
@@ -462,7 +453,7 @@ func (s *storeImpl) copyFromImageCves(ctx context.Context, tx pgx.Tx, objs ...*s
 	return err
 }
 
-func (s *storeImpl) copyFromImageCvesReferences(ctx context.Context, tx pgx.Tx, image_cves_Id string, objs ...*storage.CVE_Reference) error {
+func (s *storeImpl) copyFromImageCvesReferences(ctx context.Context, tx pgx.Tx, image_cves_Id string, image_cves_OperatingSystem string, objs ...*storage.CVE_Reference) error {
 
 	inputRows := [][]interface{}{}
 
@@ -471,6 +462,8 @@ func (s *storeImpl) copyFromImageCvesReferences(ctx context.Context, tx pgx.Tx, 
 	copyCols := []string{
 
 		"image_cves_id",
+
+		"image_cves_operatingsystem",
 
 		"idx",
 
@@ -486,6 +479,8 @@ func (s *storeImpl) copyFromImageCvesReferences(ctx context.Context, tx pgx.Tx, 
 		inputRows = append(inputRows, []interface{}{
 
 			image_cves_Id,
+
+			image_cves_OperatingSystem,
 
 			idx,
 
@@ -595,10 +590,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string, operatingSystem string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "CVE")
 
-	row := s.db.QueryRow(ctx, existsStmt, id)
+	row := s.db.QueryRow(ctx, existsStmt, id, operatingSystem)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -607,13 +602,13 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string) (*storage.CVE, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string, operatingSystem string) (*storage.CVE, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "CVE")
 
 	conn, release := s.acquireConn(ctx, ops.Get, "CVE")
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, id)
+	row := conn.QueryRow(ctx, getStmt, id, operatingSystem)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -636,90 +631,13 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, id string) error {
+func (s *storeImpl) Delete(ctx context.Context, id string, operatingSystem string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "CVE")
 
 	conn, release := s.acquireConn(ctx, ops.Remove, "CVE")
 	defer release()
 
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
-		return err
-	}
-	return nil
-}
-
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.CVEIDs")
-
-	rows, err := s.db.Query(ctx, getIDsStmt)
-	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
-	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, nil
-}
-
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "CVE")
-
-	conn, release := s.acquireConn(ctx, ops.GetMany, "CVE")
-	defer release()
-
-	rows, err := conn.Query(ctx, getManyStmt, ids)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			missingIndices := make([]int, 0, len(ids))
-			for i := range ids {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
-		return nil, nil, err
-	}
-	defer rows.Close()
-	resultsByID := make(map[string]*storage.CVE)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
-		msg := &storage.CVE{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
-		}
-		resultsByID[msg.GetId()] = msg
-	}
-	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input ids
-	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.CVE, 0, len(resultsByID))
-	for i, id := range ids {
-		if result, ok := resultsByID[id]; !ok {
-			missingIndices = append(missingIndices, i)
-		} else {
-			elems = append(elems, result)
-		}
-	}
-	return elems, missingIndices, nil
-}
-
-// Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "CVE")
-
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "CVE")
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, id, operatingSystem); err != nil {
 		return err
 	}
 	return nil
