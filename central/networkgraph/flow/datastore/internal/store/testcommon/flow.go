@@ -39,8 +39,10 @@ func (suite *FlowStoreTestSuite) SetupSuite() {
 
 // TestStore tests generic network flow store functionality
 func (suite *FlowStoreTestSuite) TestStore() {
-	t1 := time.Now().Add(-5 * time.Minute)
-	t2 := time.Now()
+	// Postgres timestamp only goes to the microsecond level, so we need to truncate these test times
+	// to ensure the comparisons of the results works correctly.
+	t1 := time.Now().Add(-5 * time.Minute).Truncate(time.Microsecond)
+	t2 := time.Now().Truncate(time.Microsecond)
 	flows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{

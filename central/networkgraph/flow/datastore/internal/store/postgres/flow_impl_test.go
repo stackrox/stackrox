@@ -15,11 +15,12 @@ import (
 func TestFlowStore(t *testing.T) {
 	ctx := context.Background()
 	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
 	if !features.PostgresDatastore.Enabled() {
 		t.Skip("Skip postgres store tests")
 		t.SkipNow()
+	} else {
+		envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 	}
 
 	source := pgtest.GetConnectionString(t)
@@ -27,9 +28,7 @@ func TestFlowStore(t *testing.T) {
 	pool, _ := pgxpool.ConnectConfig(ctx, config)
 	defer pool.Close()
 
-	if features.PostgresDatastore.Enabled() {
-		store := NewClusterStore(pool)
-		flowSuite := testcommon.NewFlowStoreTest(store)
-		suite.Run(t, flowSuite)
-	}
+	store := NewClusterStore(pool)
+	flowSuite := testcommon.NewFlowStoreTest(store)
+	suite.Run(t, flowSuite)
 }
