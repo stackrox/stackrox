@@ -1,5 +1,4 @@
 #!/bin/bash
-# USED FOR RUNNING QA-TESTS-BACKEND LOCALLY
 set -eu
 source "local-test-example/common.sh"
 source "local-test-example/config.sh"

@@ -1,6 +1,4 @@
 #!/bin/bash
-# USED FOR RUNNING QA-TESTS-BACKEND LOCALLY
-# Run E2E tests (Groovy + Spock + Fabric8 + Gradle)
 set -eu
 source "local-test-example/common.sh"
 source "local-test-example/config.sh"
