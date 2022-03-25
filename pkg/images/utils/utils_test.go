@@ -201,7 +201,7 @@ func TestExtractOpenShiftProject_fullName(t *testing.T) {
 
 func TestExtractOpenShiftProject_solelyRemote(t *testing.T) {
 	imgName := &storage.ImageName{
-		Remote:   "stackrox/nginx",
+		Remote: "stackrox/nginx",
 	}
 	assert.Equal(t, "stackrox", ExtractOpenShiftProject(imgName))
 }
