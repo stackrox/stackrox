@@ -25,27 +25,14 @@ var (
 // ScanImage runs the pipeline required to scan an image with a local Scanner.
 //nolint:revive
 func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
-	// 1. Check if Central already knows about this image.
-	// If Central already knows about it, then return its results.
-	img, err := centralClient.GetImage(ctx, &v1.GetImageRequest{
-		Id:               ci.GetId(),
-		StripDescription: true,
-	})
-	if err == nil {
-		return img, nil
-	}
-
-	// The image either does not exist in Central yet or there was some other error when reaching out.
-	// Attempt to scan locally.
-
-	// 2. Check if there is a local Scanner.
+	// Check if there is a local Scanner.
 	// No need to continue if there is no local Scanner.
 	scannerClient := scannerclient.GRPCClientSingleton()
 	if scannerClient == nil {
 		return nil, ErrNoLocalScanner
 	}
 
-	// 3. Find the registry in which this image lives.
+	// Find the registry in which this image lives.
 	reg, err := registry.Singleton().GetRegistryForImage(ci.GetName())
 	if err != nil {
 		return nil, errors.Wrap(err, "determining image registry")
@@ -54,7 +41,7 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *sto
 	name := ci.GetName().GetFullName()
 	image := types.ToImage(ci)
 
-	// 4. Retrieve the metadata for the image from the registry.
+	// Retrieve the metadata for the image from the registry.
 	metadata, err := reg.Metadata(image)
 	if err != nil {
 		log.Debugf("Failed to get metadata for image %s: %v", name, err)
@@ -62,7 +49,7 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *sto
 	}
 	log.Debugf("Retrieved metadata for image %s: %v", name, metadata)
 
-	// 5. Get the image analysis from the local Scanner.
+	// Get the image analysis from the local Scanner.
 	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, reg.Config())
 	if err != nil {
 		return nil, errors.Wrapf(err, "scanning image %s", name)
@@ -76,7 +63,7 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *sto
 	// Try to determine the SHA with best-effort.
 	sha := utils.GetSHAFromIDAndMetadata(image.GetId(), metadata)
 
-	// 6. Get the image's vulnerabilities from Central.
+	// Get the image's vulnerabilities from Central.
 	centralResp, err := centralClient.GetImageVulnerabilitiesInternal(ctx, &v1.GetImageVulnerabilitiesInternalRequest{
 		ImageId:        sha,
 		ImageName:      image.GetName(),
@@ -91,6 +78,6 @@ func ScanImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *sto
 	}
 	log.Debugf("Retrieved image vulnerabilities for %s", name)
 
-	// 7. Return the completely scanned image.
+	// Return the completely scanned image.
 	return centralResp.GetImage(), nil
 }
