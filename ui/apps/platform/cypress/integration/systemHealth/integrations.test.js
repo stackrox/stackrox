@@ -96,7 +96,6 @@ describe('System Health Integrations fixtures', () => {
 
     // re-enable when we update this test to work with ROX-7120 System Health in PatternFly
     it.skip('should have counts in healthy text', () => {
-
         // 2 / 3 healthy integrations
         cy.intercept('GET', integrationHealthApi.imageIntegrations, {
             body: {
