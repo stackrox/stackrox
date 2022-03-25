@@ -321,6 +321,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
 	// contained a digest
 	if request.GetImageId() != "" {
+		log.Infof("Saving image %s - %s", request.GetImageName(), request.GetImageId())
 		_ = s.saveImage(img)
 	}
 
