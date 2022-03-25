@@ -1,7 +1,8 @@
 #!/bin/bash
+# USED FOR RUNNING QA-TESTS-BACKEND LOCALLY
 set -eu
-source "scripts/common.sh"
-source "scripts/config.sh"
+source "local-test-example/common.sh"
+source "local-test-example/config.sh"
 
 function install_golang_1_17_2 {
   # Default path to 'go' is /usr/local/go/bin/go

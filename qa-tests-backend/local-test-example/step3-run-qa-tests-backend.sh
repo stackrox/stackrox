@@ -1,8 +1,9 @@
 #!/bin/bash
+# USED FOR RUNNING QA-TESTS-BACKEND LOCALLY
 # Run E2E tests (Groovy + Spock + Fabric8 + Gradle)
 set -eu
-source "scripts/common.sh"
-source "scripts/config.sh"
+source "local-test-example/common.sh"
+source "local-test-example/config.sh"
 cd "$STACKROX_SOURCE_ROOT"  # all paths should be relative to here
 
 SCRIPT_ROOT=$(realpath "$(dirname "$0")")  # brew install coreutils

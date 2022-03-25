@@ -1,4 +1,5 @@
 #!/bin/bash
+# USED FOR RUNNING QA-TESTS-BACKEND LOCALLY
 
 #export MAIN_IMAGE_TAG="3.68.0"
 # https://app.circleci.com/pipelines/github/stackrox/stackrox/7557/workflows/3446e686-5b5e-4ab3-90a6-1c06a8201626/jobs/331096
