@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -25,6 +26,11 @@ func Validate(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	return errorList
 }
 
+// IsManagerManualOrUnknown returns whether a given manager is Manual or Unknown
+func IsManagerManualOrUnknown(manager storage.ManagerType) bool {
+	return manager == storage.ManagerType_MANAGER_TYPE_MANUAL || manager == storage.ManagerType_MANAGER_TYPE_UNKNOWN
+}
+
 // ValidatePartial partially validates a cluster object.
 // Some fields are allowed to be left empty for the server to complete with default values.
 func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
@@ -33,22 +39,17 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 		errorList.AddString("Cluster name is required")
 	}
 	if cluster.GetMainImage() != "" {
-		if _, err := reference.ParseAnyReference(cluster.GetMainImage()); err != nil {
-			errorList.AddError(errors.Wrapf(err, "invalid main image '%s'", cluster.GetMainImage()))
+		if imageWithoutTag, err := utils.DropImageTagAndDigest(cluster.GetMainImage()); err != nil {
+			errorList.AddError(err)
+		} else if imageWithoutTag != cluster.GetMainImage() && IsManagerManualOrUnknown(cluster.GetManagedBy()) {
+			errorList.AddString("main image should not contain tags or digests")
 		}
 	}
 	if cluster.GetCollectorImage() != "" {
-		ref, err := reference.ParseAnyReference(cluster.GetCollectorImage())
-		if err != nil {
-			errorList.AddError(errors.Wrapf(err, "invalid collector image '%s'", cluster.GetCollectorImage()))
-		}
-
-		if cluster.GetHelmConfig() == nil {
-			namedTagged, ok := ref.(reference.NamedTagged)
-			if ok {
-				errorList.AddStringf("collector image may not specify a tag.  Please "+
-					"remove tag '%s' to continue", namedTagged.Tag())
-			}
+		if imageWithoutTag, err := utils.DropImageTagAndDigest(cluster.GetCollectorImage()); err != nil {
+			errorList.AddError(err)
+		} else if imageWithoutTag != cluster.GetCollectorImage() && IsManagerManualOrUnknown(cluster.GetManagedBy()) {
+			errorList.AddString("collector image should not contain tags or digests")
 		}
 	}
 	if cluster.GetCentralApiEndpoint() == "" {

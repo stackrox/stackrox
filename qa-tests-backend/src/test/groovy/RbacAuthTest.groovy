@@ -44,7 +44,7 @@ spec:
                                 ( {
                                     ClusterService.createCluster(
                                         "automation",
-                                        "stackrox/main:latest",
+                                        "stackrox/main",
                                         "central.stackrox:443")
                                 })],
             "NetworkPolicy": [(RoleOuterClass.Access.READ_ACCESS):
