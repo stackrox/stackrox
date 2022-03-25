@@ -955,6 +955,7 @@ commands:
       - run:
           name: Restore the branded UI
           command: |
+            mv ui ui-unbranded
             mv ui-<< parameters.branding >> ui
 
       - *refreshAlpineBaseImage
