@@ -152,8 +152,11 @@ export function getUndoModificationForDeployment(deploymentId) {
  *
  * @returns {Promise<Object, Error>}
  */
-export function fetchNetworkPolicyGraph(clusterId, query, modification, includePorts) {
+export function fetchNetworkPolicyGraph(clusterId, namespaces, query, modification, includePorts) {
     const urlParams = query ? { query } : {};
+    const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
+    urlParams.query = query ? `${query}+${namespaceQuery}` : namespaceQuery;
+
     if (includePorts) {
         urlParams.includePorts = true;
     }
@@ -196,8 +199,10 @@ export function fetchNetworkPolicyGraph(clusterId, query, modification, includeP
  *
  * @returns {Promise<Object, Error>}
  */
-export function fetchNetworkFlowGraph(clusterId, query, date, includePorts) {
+export function fetchNetworkFlowGraph(clusterId, namespaces, query, date, includePorts) {
     const urlParams = query ? { query } : {};
+    const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
+    urlParams.query = query ? `${query}+${namespaceQuery}` : namespaceQuery;
     if (date) {
         urlParams.since = date.toISOString();
     }

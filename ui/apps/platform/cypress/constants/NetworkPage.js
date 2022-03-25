@@ -59,4 +59,8 @@ export const selectors = {
     networkEntityTabbedOverlay: scopeSelectors(networkEntityTabbedOverlay, {
         header: '[data-testid="network-entity-tabbed-overlay-header"]',
     }),
+    toolbar: scopeSelectors('[data-testid="network-graph-toolbar"]', {
+        namespaceSelect: '.namespace-select > button',
+        filterSelect: search.multiSelectInput,
+    }),
 };
