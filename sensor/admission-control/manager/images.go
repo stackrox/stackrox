@@ -67,7 +67,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 	// Note: Sensor is required to scan images in the local registry.
 	if !m.sensorConnStatus.Get() && s.centralConn != nil && s.centralConn.GetState() != connectivity.Shutdown {
 		// Central route
-		log.Infof("Calling ScanImageInternal directly")
+		log.Infof("Calling ScanImageInternal directly for %s", img.GetName().GetFullName())
 		resp, err := v1.NewImageServiceClient(s.centralConn).ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 			Image:      img,
 			CachedOnly: !s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),

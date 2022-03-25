@@ -63,7 +63,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 
 	// Ask Central to scan the image if the image is not internal.
 	if !features.LocalImageScanning.Enabled() || !req.GetImage().GetIsClusterLocal() {
-		log.Infof("Calling ScanImageInternal directly")
+		log.Infof("Calling ScanImageInternal directly for %s", req.GetImage())
 		scanResp, err := s.centralClient.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
 			Image:      req.GetImage(),
 			CachedOnly: !req.GetScanInline(),
