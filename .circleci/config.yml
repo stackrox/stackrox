@@ -983,22 +983,22 @@ commands:
           name: Push new Docker image
           command: |
             source ./scripts/ci/lib.sh
-            push_main_image_set "${CIRCLE_BRANCH}"
+            push_main_image_set "${CIRCLE_BRANCH}" "<< parameters.branding >>"
 
       - run:
           name: Push collector & scanner images tagged with main-version to registries
           command: |
             source ./scripts/ci/lib.sh
-            push_matching_collector_scanner_images
+            push_matching_collector_scanner_images "<< parameters.branding >>"
 
       - run:
           name: Publish new versions of NPM packages if any
           command: |
-            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
+            if [[ "${CIRCLE_BRANCH}" == "master" && "<< parameters.branding >>" == "STACKROX_BRANDING"]]; then
               echo "//npm.pkg.github.com/:_authToken=\"$GITHUB_PACKAGES_PUBLISH_TOKEN\"" > ~/.npmrc
               make ui-publish-packages
             else
-              echo "Not on master, skipping publishing NPM packages."
+              echo "Not on master and not the StackRox brand, skipping publishing NPM packages."
             fi
 
       - *saveGoModCache
@@ -1014,12 +1014,14 @@ commands:
       - run:
           name: Comment on PR
           command: |
-            wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
-            echo "2a2640f44737873dfe30da0d5b8453419d48a494f277a70fd9108e4204fc4a53 hub-comment_linux_amd64" | sha256sum -c -
-            sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
+            if [[ "<< parameters.branding >>" == "STACKROX_BRANDING"]]; then
+              wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
+              echo "2a2640f44737873dfe30da0d5b8453419d48a494f277a70fd9108e4204fc4a53 hub-comment_linux_amd64" | sha256sum -c -
+              sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
 
-            export TAG=$(make --quiet tag)
-            hub-comment -template-file .circleci/comment-template.tpl
+              export TAG=$(make --quiet tag)
+              hub-comment -template-file .circleci/comment-template.tpl
+            fi
 
       - cleanup-clusters-on-fail
 

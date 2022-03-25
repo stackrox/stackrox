@@ -135,16 +135,12 @@ get_central_diagnostics() {
 push_main_image_set() {
     info "Pushing main and roxctl images"
 
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: push_main_image_set <branch>"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: push_main_image_set <branch> <brand>"
     fi
 
-    require_environment "DOCKER_IO_PUSH_USERNAME"
-    require_environment "DOCKER_IO_PUSH_PASSWORD"
-    require_environment "QUAY_RHACS_ENG_RW_USERNAME"
-    require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
-
     local branch="$1"
+    local brand="$2"
 
     local main_image_set=("main" "roxctl" "central-db")
 
@@ -167,12 +163,25 @@ push_main_image_set() {
         done
     }
 
-    docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-    docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
+        die "add stackrox support"
+    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
+        require_environment "DOCKER_IO_PUSH_USERNAME"
+        require_environment "DOCKER_IO_PUSH_PASSWORD"
+        require_environment "QUAY_RHACS_ENG_RW_USERNAME"
+        require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
+
+        docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+        docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+
+        local destination_registries=("docker.io/stackrox" "quay.io/rhacs-eng")
+    else
+        die "$brand is not a supported brand"
+    fi
 
     local tag
     tag="$(make --quiet tag)"
-    for registry in "docker.io/stackrox" "quay.io/rhacs-eng"; do
+    for registry in "${destination_registries[@]}"; do
         _tag_main_image_set "$tag" "$registry" "$tag"
         _push_main_image_set "$registry" "$tag"
         if [[ "$branch" == "master" ]]; then
@@ -185,13 +194,28 @@ push_main_image_set() {
 push_matching_collector_scanner_images() {
     info "Pushing collector & scanner images tagged with main-version to docker.io/stackrox and quay.io/rhacs-eng"
 
-    require_environment "DOCKER_IO_PUSH_USERNAME"
-    require_environment "DOCKER_IO_PUSH_PASSWORD"
-    require_environment "QUAY_RHACS_ENG_RW_USERNAME"
-    require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: push_matching_collector_scanner_images <brand>"
+    fi
 
-    docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-    docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+    local brand="$1"
+
+    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
+        die "add stackrox support"
+    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
+        require_environment "DOCKER_IO_PUSH_USERNAME"
+        require_environment "DOCKER_IO_PUSH_PASSWORD"
+        require_environment "QUAY_RHACS_ENG_RW_USERNAME"
+        require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
+
+        docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+        docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+
+        local source_registry="quay.io/rhacs-eng"
+        local target_registries=( "docker.io/stackrox" "quay.io/rhacs-eng" )
+    else
+        die "$brand is not a supported brand"
+    fi
 
     local main_tag
     main_tag="$(make --quiet tag)"
@@ -200,8 +224,6 @@ push_matching_collector_scanner_images() {
     local collector_version
     collector_version="$(make --quiet collector-tag)"
 
-    local source_registry="quay.io/rhacs-eng"
-    local target_registries=( "docker.io/stackrox" "quay.io/rhacs-eng" )
     for target_registry in "${target_registries[@]}"; do
         "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}"
         "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}"
