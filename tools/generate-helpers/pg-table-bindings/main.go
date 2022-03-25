@@ -108,7 +108,7 @@ func main() {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
 
-		refs := compileFKArgsForSchema(schema, props.Refs)
+		refs := compileFKArgsAndattachToSchema(schema, props.Refs)
 
 		templateMap := map[string]interface{}{
 			"Type":           props.Type,

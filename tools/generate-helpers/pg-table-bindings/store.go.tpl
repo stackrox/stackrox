@@ -56,6 +56,7 @@ const (
 
 var (
     schema = walker.Walk(reflect.TypeOf((*{{.Type}})(nil)), baseTable)
+    {{- /* Attach reference schemas, if provided. */ -}}
     {{- $schema := .Schema -}}
     {{- range $idx, $ref := .References -}}
         .
@@ -133,11 +134,24 @@ create table if not exists {{$schema.Table}} (
     }
 
     {{range $idx, $child := $schema.Children}}
+    {{- if eq $child.EmbeddedIn $schema.Table }}
     {{template "createFunctionName" $child}}(ctx, db)
     {{- end}}
+    {{- end}}
 }
-{{range $idx, $child := $schema.Children}}{{template "createTable" dict "schema" $child "joinTable" false }}{{end}}
+
+{{range $idx, $child := $schema.Children}}
+{{- if eq $child.EmbeddedIn $schema.Table }}
+{{template "createTable" dict "schema" $child "joinTable" false }}{{end}}
+{{- end}}
 {{end}}
+
+{{- /* If references have been attached synthetically, start at the referenced tables. */ -}}
+
+{{- range $idx, $parent := .Schema.Parents }}
+    {{- template "createTable" dict "schema" $parent "joinTable" false}}
+{{- end }}
+{{- /* For the input base schema */ -}}
 {{- template "createTable" dict "schema" .Schema "joinTable" .JoinTable}}
 
 {{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}
@@ -301,6 +315,9 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
+    {{- range $idx, $parent := .Schema.Parents}}
+    {{template "createFunctionName" $parent}}(ctx, db)
+    {{- end}}
     {{template "createFunctionName" .Schema}}(ctx, db)
 
     return &storeImpl{

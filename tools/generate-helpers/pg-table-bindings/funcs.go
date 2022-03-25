@@ -80,7 +80,7 @@ var funcMap = template.FuncMap{
 	"lowerCase":      strings.ToLower,
 }
 
-func compileFKArgsForSchema(schema *walker.Schema, refArgs []string) []*walker.ReferenceInfo {
+func compileFKArgsAndattachToSchema(schema *walker.Schema, refArgs []string) []*walker.ReferenceInfo {
 	var refs []*walker.ReferenceInfo
 	for _, refArg := range refArgs {
 		tablePart := refArg[:strings.Index(refArg, "(")]
