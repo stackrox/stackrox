@@ -100,3 +100,11 @@ tests:
     .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 3)
     .networkpolicys["scanner"].spec.ingress | assertThat(length == 2)
     .networkpolicys["scanner"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
+
+- name: "Installation fails with slim mode"
+  values:
+    scanner:
+      mode: slim
+  expectError: true
+  expect: |
+    .error | assertThat(contains("set to full mode: scanner.mode=full"))

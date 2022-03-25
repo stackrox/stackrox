@@ -23,10 +23,10 @@ const resourceDescriptions: Record<ResourceName, string> = {
         'Read: View recent compliance runs and their completion status. Write: Trigger compliance runs.',
     Config: 'Read: View options for data retention, security notices, and other related configurations. Write: Modify options for data retention, security notices, and other related configurations.',
     DebugLogs:
-        "Read: View the current logging verbosity level in Red Hat Advanced Cluster Security for Kubernetes components. Download diagnostic bundle. Note: diagnostic bundle contains information about all clusters and namespaces regardless of user's access scope. Don't give this permission to users with limited access scope. Write: Modify the logging verbosity level.",
+        "Read: View the current logging verbosity level of all components, including Central, Scanner, Sensor, Collector, and Admission controller. Download diagnostic bundle. Note: The diagnostic bundle contains information about all clusters and namespaces regardless of the user's role and access scope. Don't give this permission to users with limited access scope. Write: Modify the logging verbosity level.",
     Deployment: 'Read: View deployments (workloads) in secured clusters. Write: N/A',
     Detection: 'Read: Check build-time policies against images or deployment YAMLs. Write: N/A',
-    Group: 'Read: View the RBAC rules that match user metadata to Red Hat Advanced Cluster Security for Kubernetes roles. Write: Add, modify, or delete RBAC rules.',
+    Group: 'Read: View the RBAC rules that match user metadata to the system roles. Write: Add, modify, or delete RBAC rules.',
     Image: 'Read: View images, their components, and their vulnerabilities. Write: N/A',
     ImageComponent: 'Internal use only',
     ImageIntegration:
@@ -38,8 +38,7 @@ const resourceDescriptions: Record<ResourceName, string> = {
         'Read: View role bindings for Kubernetes role-based access control in secured clusters. Write: N/A',
     K8sSubject:
         'Read: View users and groups for Kubernetes role-based access control in secured clusters. Write: N/A',
-    Licenses:
-        'Read: View the status of the license for the StackRox Kubernetes Security Platform. Write: Upload a new license key.',
+    Licenses: 'Read: View the status of the license. Write: Upload a new license key.',
     Namespace: 'Read: View Kubernetes namespaces in secured clusters. Write: N/A',
     NetworkBaseline: 'Read: View network baseline results. Write: Modify network baselines.',
     NetworkGraph:
@@ -57,7 +56,7 @@ const resourceDescriptions: Record<ResourceName, string> = {
     ProcessWhitelist:
         'Read: View process baselines. Write: Add or remove processes from baselines.',
     Risk: 'Read: View Risk results. Write: N/A',
-    Role: 'Read: View Red Hat Advanced Cluster Security for Kubernetes RBAC roles and permission sets. Write: Add, modify, or delete roles and permission sets.',
+    Role: 'Read: View roles and permission sets. Write: Add, modify, or delete roles and permission sets.',
     ScannerBundle: 'Read: Download the scanner bundle. Write: N/A',
     ScannerDefinitions:
         'Read: List image scanner integrations. Write: Add, modify, or delete image scanner integrations.',
@@ -66,10 +65,10 @@ const resourceDescriptions: Record<ResourceName, string> = {
         'Read: Check the status of automatic upgrades. Write: Disable or enable automatic upgrades for secured clusters.',
     ServiceAccount: 'Read: List Kubernetes service accounts in secured clusters. Write: N/A',
     ServiceIdentity:
-        'Read: View metadata about Red Hat Advanced Cluster Security for Kubernetes service-to-service authentication. Write: Revoke or reissue service-to-service authentication credentials.',
+        'Read: View metadata about service-to-service authentication. Write: Revoke or reissue service-to-service authentication credentials.',
     SignatureIntegration:
         'Read: View signature integrations and configurations. Write: Add, modify, or delete signature integrations and configurations.',
-    User: 'Read: View users that have accessed the Red Hat Advanced Cluster Security for Kubernetes instance, including the metadata that the authentication provider provides about them. Write: N/A',
+    User: 'Read: View information about the users who have accessed the user interface or APIs, including the metadata from the authentication providers. Write: N/A',
     VulnerabilityManagementRequests:
         'Read: View all pending deferral or false positive requests for vulnerabilities. Write: Request a deferral on a vulnerability, mark it as a false positive or move a pending or previously approved request (made by the same user) back to observed.',
     VulnerabilityManagementApprovals:
