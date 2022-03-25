@@ -402,7 +402,8 @@ func TestConvert(t *testing.T) {
 												v1.Capability("SYS_RESOURCE"),
 											},
 										},
-										ReadOnlyRootFilesystem: &[]bool{true}[0],
+										ReadOnlyRootFilesystem:   &[]bool{true}[0],
+										AllowPrivilegeEscalation: &[]bool{true}[0],
 									},
 									VolumeMounts: []v1.VolumeMount{
 										{
@@ -623,9 +624,10 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						SecurityContext: &storage.SecurityContext{
-							Privileged:             true,
-							AddCapabilities:        []string{"IPC_LOCK", "SYS_RESOURCE"},
-							ReadOnlyRootFilesystem: true,
+							Privileged:               true,
+							AddCapabilities:          []string{"IPC_LOCK", "SYS_RESOURCE"},
+							ReadOnlyRootFilesystem:   true,
+							AllowPrivilegeEscalation: true,
 						},
 						Volumes: []*storage.Volume{
 
