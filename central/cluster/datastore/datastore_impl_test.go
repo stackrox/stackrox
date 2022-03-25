@@ -757,7 +757,7 @@ func (suite *ClusterDataStoreTestSuite) TestLookupOrCreateClusterFromConfig() {
 			bundleID:            bundleID,
 			expectedManagerType: storage.ManagerType_MANAGER_TYPE_MANUAL,
 			expectedHelmConfig:  nil,
-			expectClusterUpsert: true,
+			expectClusterUpsert: false,
 		},
 		// Updating Helm configuration
 		{
