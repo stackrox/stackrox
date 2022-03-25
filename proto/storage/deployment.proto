@@ -266,7 +266,7 @@ message SecurityContext {
         string localhost_profile = 2;
     }
     SeccompProfile seccomp_profile = 6;
-    bool allow_privilege_escalation = 7 [(gogoproto.moretags) = "policy:\"Allow Privilege Escalation\""];
+    bool allow_privilege_escalation = 7 [(gogoproto.moretags) = 'policy:"Allow Privilege Escalation"'];
 }
 
 // Next available tag: 9
