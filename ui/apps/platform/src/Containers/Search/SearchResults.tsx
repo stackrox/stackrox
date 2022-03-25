@@ -377,10 +377,7 @@ function SearchResults({
 
     return !globalSearchOptions.length ? (
         <Bullseye>
-            <EmptyStateTemplate
-                title="Search all data across Advanced Cluster Security"
-                headingLevel="h1"
-            >
+            <EmptyStateTemplate title="Search all data" headingLevel="h1">
                 Choose one or more filter values to search.
             </EmptyStateTemplate>
         </Bullseye>

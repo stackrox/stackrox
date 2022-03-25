@@ -7,6 +7,7 @@ import { url as violationsUrl } from '../constants/ViolationsPage';
 import selectors from '../constants/GeneralPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
+import { selectNamespaceFilters } from '../helpers/networkGraph';
 
 //
 // Sanity / general checks for UI being up and running
@@ -32,6 +33,7 @@ describe('General sanity checks', () => {
             cy.intercept('GET', api.network.networkGraph).as('networkGraph');
             cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
             cy.visit(networkUrl);
+            selectNamespaceFilters('stackrox');
             cy.wait(['@networkGraph', '@networkPolicies']);
 
             cy.title().should('match', new RegExp(`Network Graph | ${productNameRegExp}`));

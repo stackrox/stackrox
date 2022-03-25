@@ -11,6 +11,7 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { Cluster } from 'types/cluster.proto';
 
 type ClusterSelectProps = {
+    id?: string;
     selectClusterId: (clusterId: string) => void;
     closeSidePanel: () => void;
     clusters: Cluster[];
@@ -19,6 +20,7 @@ type ClusterSelectProps = {
 };
 
 const ClusterSelect = ({
+    id,
     selectClusterId,
     closeSidePanel,
     clusters,
@@ -34,6 +36,7 @@ const ClusterSelect = ({
 
     return (
         <Select
+            id={id}
             isOpen={isOpen}
             onToggle={onToggle}
             isDisabled={isDisabled || !clusters.length}
@@ -43,8 +46,8 @@ const ClusterSelect = ({
         >
             {clusters
                 .filter((cluster) => networkGraphClusters[cluster.type])
-                .map(({ id, name }) => (
-                    <SelectOption key={id} value={id}>
+                .map(({ id: clusterId, name }) => (
+                    <SelectOption key={clusterId} value={clusterId}>
                         {name}
                     </SelectOption>
                 ))}

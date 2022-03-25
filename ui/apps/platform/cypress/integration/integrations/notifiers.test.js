@@ -150,7 +150,7 @@ describe('Notifiers Test', () => {
             getInputByLabel('Email server').type('smtp.example.com:465');
             getInputByLabel('Username').clear().type('scooby');
             getInputByLabel('Password').clear().type('monkey');
-            getInputByLabel('From').clear().type('ACS');
+            getInputByLabel('From').clear().type('Scooby');
             getInputByLabel('Sender').clear().type('scooby@doo.com', {
                 parseSpecialCharSequences: false,
             });
