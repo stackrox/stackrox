@@ -17,7 +17,7 @@ const (
 
 	// EmptySignatureIntegrationID is used as placeholder for images that do not have any signatures associated with
 	// them.
-	EmptySignatureIntegrationID = "io.stackrox.signatureintegration.XXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXX"
+	EmptySignatureIntegrationID = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000000"
 )
 
 func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process *storage.ProcessIndicator) (int, error) {
