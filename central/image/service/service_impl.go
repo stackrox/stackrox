@@ -363,10 +363,11 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 				Add(reprocessInterval).After(timestamp.Now())
 		}
 
+		// If the scan exists and not too much time has passed, we don't need to update scans.
 		forceScanUpdate = !timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now())
 
-		// Central does not reprocess cluster-local images. If the image exists and not too much time has passed,
-		// then return the image. Otherwise, run the enrichment pipeline to ensure we do not return stale data.
+		// If the image exists and scan / signature verification results do not need an update yet, return it.
+		// Otherwise, reprocess the image.
 		if exists && !forceScanUpdate && !forceSigVerificationUpdate {
 			return internalScanRespFromImage(existingImg), nil
 		}
