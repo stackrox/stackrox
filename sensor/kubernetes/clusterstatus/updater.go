@@ -159,8 +159,17 @@ func (u *updaterImpl) getOpenshiftVersion() (string, error) {
 			var err error
 
 			cfg := u.client.OpenshiftConfig()
+			if cfg == nil {
+				log.Infof("cfg is nil, %v", u.client)
+			}
 			v1 := cfg.ConfigV1()
+			if v1 != nil {
+				log.Infof("v1 is nil, %v", cfg)
+			}
 			op := v1.ClusterOperators()
+			if op == nil {
+				log.Infof("op is nil, %v", v1)
+			}
 			clusterOperator, err = op.Get(ctx, "openshift-apiserver", metav1.GetOptions{})
 			if err != nil {
 				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
