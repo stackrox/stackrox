@@ -994,7 +994,7 @@ commands:
       - run:
           name: Publish new versions of NPM packages if any
           command: |
-            if [[ "${CIRCLE_BRANCH}" == "master" && "<< parameters.branding >>" == "STACKROX_BRANDING"]]; then
+            if [[ "${CIRCLE_BRANCH}" == "master" && "<< parameters.branding >>" == "STACKROX_BRANDING" ]]; then
               echo "//npm.pkg.github.com/:_authToken=\"$GITHUB_PACKAGES_PUBLISH_TOKEN\"" > ~/.npmrc
               make ui-publish-packages
             else
