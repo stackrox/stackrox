@@ -157,7 +157,11 @@ func (u *updaterImpl) getOpenshiftVersion() (string, error) {
 			ctx, cancel := context.WithTimeout(context.Background(), getVersionTimeout)
 			defer cancel()
 			var err error
-			clusterOperator, err = u.client.OpenshiftConfig().ConfigV1().ClusterOperators().Get(ctx, "openshift-apiserver", metav1.GetOptions{})
+
+			cfg := u.client.OpenshiftConfig()
+			v1 := cfg.ConfigV1()
+			op := v1.ClusterOperators()
+			clusterOperator, err = op.Get(ctx, "openshift-apiserver", metav1.GetOptions{})
 			if err != nil {
 				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
 					return retry.MakeRetryable(err)
