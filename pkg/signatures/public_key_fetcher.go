@@ -194,10 +194,6 @@ func isUnauthorizedError(err error) bool {
 // errToURLError is a helper for casting an error to a url.Error.
 func errToURLError(err error) *url.Error {
 	causeErr := errors.Cause(err)
-	if causeErr == err {
-		return nil
-	}
-
 	if urlErr, ok := causeErr.(*url.Error); ok {
 		return urlErr
 	}
