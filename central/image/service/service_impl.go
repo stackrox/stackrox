@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -58,6 +59,7 @@ var (
 		},
 		idcheck.SensorsOnly(): {
 			"/v1.ImageService/GetImageVulnerabilitiesInternal",
+			"/v1.ImageService/EnrichLocalImageInternal",
 		},
 		user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
 			"/v1.ImageService/DeleteImages",
@@ -198,25 +200,25 @@ func (s *serviceImpl) saveImage(img *storage.Image) error {
 
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
-		s, err := status.New(codes.Unavailable, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
-		if pkgUtils.Should(err) == nil {
-			return nil, s.Err()
-		}
+	err := s.acquireScanSemaphore()
+	if err != nil {
+		return nil, err
 	}
+
 	defer s.internalScanSemaphore.Release(1)
 
-	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
-	// images
-	if request.GetImage().GetId() != "" {
-		img, exists, err := s.datastore.GetImage(ctx, request.GetImage().GetId())
+	imgID := request.GetImage().GetId()
+
+	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
+	if imgID != "" {
+		existingImg, exists, err := s.datastore.GetImage(ctx, imgID)
 		if err != nil {
 			return nil, err
 		}
 		// If the scan exists, return the scan.
 		// Otherwise, run the enrichment pipeline.
 		if exists {
-			return internalScanRespFromImage(img), nil
+			return internalScanRespFromImage(existingImg), nil
 		}
 	}
 
@@ -224,7 +226,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	fetchOpt := enricher.UseCachesIfPossible
 	if request.GetCachedOnly() {
 		fetchOpt = enricher.NoExternalMetadata
-	} else if request.GetImage().GetId() == "" {
+	} else if imgID == "" {
 		fetchOpt = enricher.ForceRefetch
 	}
 
@@ -237,7 +239,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
 	// contained a digest
-	if request.GetImage().GetId() != "" {
+	if imgID != "" {
 		_ = s.saveImage(img)
 	}
 
@@ -275,44 +277,125 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 // specified by the given components and scan notes.
 // This is meant to be called by Sensor.
 func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
-		s, err := status.New(codes.Unavailable, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
-		if pkgUtils.Should(err) == nil {
-			return nil, s.Err()
-		}
+	err := s.acquireScanSemaphore()
+	if err != nil {
+		return nil, err
 	}
 	defer s.internalScanSemaphore.Release(1)
 
-	// Attempt to pull the image from the store if the ID != "".
-	if request.GetImageId() != "" {
-		img, exists, err := s.datastore.GetImage(ctx, request.GetImageId())
+	imgID := request.GetImageId()
+
+	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
+	if imgID != "" {
+		existingImg, exists, err := s.datastore.GetImage(ctx, imgID)
 		if err != nil {
 			return nil, err
 		}
-
 		// This is safe even if img is nil.
-		scanTime := img.GetScan().GetScanTime()
+		scanTime := existingImg.GetScan().GetScanTime()
 		// If the scan exists, and reprocessing has not run since, return the scan.
 		// Otherwise, run the enrichment pipeline to ensure we do not return stale data.
 		if exists && timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now()) {
-			return internalScanRespFromImage(img), nil
+			return internalScanRespFromImage(existingImg), nil
 		}
 	}
 
 	img := &storage.Image{
-		Id:             request.GetImageId(),
+		Id:             imgID,
 		Name:           request.GetImageName(),
 		Metadata:       request.GetMetadata(),
 		IsClusterLocal: request.GetIsClusterLocal(),
 	}
-	_, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes())
+	_, err = s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes())
 	if err != nil {
 		return nil, err
 	}
 
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
 	// contained a digest
-	if request.GetImageId() != "" {
+	if imgID != "" {
+		_ = s.saveImage(img)
+	}
+
+	return internalScanRespFromImage(img), nil
+}
+
+func (s *serviceImpl) acquireScanSemaphore() error {
+	if err := s.internalScanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(maxSemaphoreWaitTime)), 1); err != nil {
+		s, err := status.New(codes.Unavailable, err.Error()).WithDetails(&v1.ScanImageInternalResponseDetails_TooManyParallelScans{})
+		if pkgUtils.Should(err) == nil {
+			return s.Err()
+		}
+	}
+	return nil
+}
+
+func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.EnrichLocalImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+	err := s.acquireScanSemaphore()
+	if err != nil {
+		return nil, err
+	}
+
+	defer s.internalScanSemaphore.Release(1)
+
+	forceSigVerificationUpdate := true
+	forceScanUpdate := true
+	imgID := request.GetImageId()
+	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
+	if imgID != "" {
+		existingImg, exists, err := s.datastore.GetImage(ctx, imgID)
+		if err != nil {
+			return nil, err
+		}
+		// This is safe even if img is nil.
+		scanTime := existingImg.GetScan().GetScanTime()
+
+		// Check whether too much time has passed, if yes we have to do a signature verification update via the
+		// enrichment pipeline to ensure we do not return stale data. Only do this when the image signature verification
+		// feature is enabled. If no verification result is given, we can assume that the image doesn't have any
+		// signatures associated with it.
+		if exists && features.ImageSignatureVerification.Enabled() &&
+			len(existingImg.GetSignatureVerificationData().GetResults()) > 0 {
+			// For now, all verification results within the signature verification data will have approximately the same
+			// time, their margin being ns.
+			verificationTime := existingImg.GetSignatureVerificationData().GetResults()[0].GetVerificationTime()
+			forceSigVerificationUpdate = !timestamp.FromProtobuf(verificationTime).
+				Add(reprocessInterval).After(timestamp.Now())
+		}
+
+		// If the scan exists and not too much time has passed, we don't need to update scans.
+		forceScanUpdate = !timestamp.FromProtobuf(scanTime).Add(reprocessInterval).After(timestamp.Now())
+
+		// If the image exists and scan / signature verification results do not need an update yet, return it.
+		// Otherwise, reprocess the image.
+		if exists && !forceScanUpdate && !forceSigVerificationUpdate {
+			return internalScanRespFromImage(existingImg), nil
+		}
+	}
+
+	img := &storage.Image{
+		Id:             imgID,
+		Name:           request.GetImageName(),
+		Signature:      request.GetImageSignature(),
+		Metadata:       request.GetMetadata(),
+		IsClusterLocal: true,
+	}
+
+	if forceScanUpdate {
+		if _, err := s.enricher.EnrichWithVulnerabilities(img, request.GetComponents(), request.GetNotes()); err != nil {
+			return nil, err
+		}
+	}
+
+	if features.ImageSignatureVerification.Enabled() && forceSigVerificationUpdate {
+		if _, err := s.enricher.EnrichWithSignatureVerificationData(ctx, img); err != nil {
+			return nil, err
+		}
+	}
+
+	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
+	// contained a digest
+	if imgID != "" {
 		_ = s.saveImage(img)
 	}
 
