@@ -11,7 +11,18 @@ import (
 
 // All resource types that we want to define (for the purposes of enforcing
 // API permissions) must be defined here.
-// KEEP THE FOLLOWING LIST SORTED IN LEXICOGRAPHIC ORDER.
+//
+// Description for each type and the meaning of the respective Read and Write
+// operations is available in
+//     "ui/apps/platform/src/Containers/AccessControl/PermissionSets/ResourceDescription.tsx"
+//
+// UI defines possible values for resource type in
+//     "ui/apps/platform/src/types/roleResources.ts"
+//
+// Each time you touch the list below, you likely need to update both
+// aforementioned files.
+//
+// KEEP THE FOLLOWING LIST SORTED IN LEXICOGRAPHIC ORDER (case-sensitive).
 var (
 	APIToken                         = newResourceMetadata("APIToken", permissions.GlobalScope)
 	Alert                            = newResourceMetadata("Alert", permissions.NamespaceScope)
@@ -19,12 +30,12 @@ var (
 	AuthPlugin                       = newResourceMetadata("AuthPlugin", permissions.GlobalScope)
 	AuthProvider                     = newResourceMetadata("AuthProvider", permissions.GlobalScope)
 	BackupPlugins                    = newResourceMetadata("BackupPlugins", permissions.GlobalScope)
+	CVE                              = newResourceMetadata("CVE", permissions.NamespaceScope)
 	Cluster                          = newResourceMetadata("Cluster", permissions.ClusterScope)
 	Compliance                       = newResourceMetadata("Compliance", permissions.ClusterScope)
 	ComplianceRunSchedule            = newResourceMetadata("ComplianceRunSchedule", permissions.GlobalScope)
 	ComplianceRuns                   = newResourceMetadata("ComplianceRuns", permissions.ClusterScope)
 	Config                           = newResourceMetadata("Config", permissions.GlobalScope)
-	CVE                              = newResourceMetadata("CVE", permissions.NamespaceScope)
 	DebugLogs                        = newResourceMetadata("DebugLogs", permissions.GlobalScope)
 	Deployment                       = newResourceMetadata("Deployment", permissions.NamespaceScope)
 	Detection                        = newResourceMetadata("Detection", permissions.GlobalScope)
@@ -47,8 +58,8 @@ var (
 	Policy                           = newResourceMetadata("Policy", permissions.GlobalScope)
 	ProbeUpload                      = newResourceMetadata("ProbeUpload", permissions.GlobalScope)
 	ProcessWhitelist                 = newResourceMetadata("ProcessWhitelist", permissions.NamespaceScope)
-	Role                             = newResourceMetadata("Role", permissions.GlobalScope)
 	Risk                             = newResourceMetadata("Risk", permissions.NamespaceScope)
+	Role                             = newResourceMetadata("Role", permissions.GlobalScope)
 	ScannerBundle                    = newResourceMetadata("ScannerBundle", permissions.GlobalScope)
 	ScannerDefinitions               = newResourceMetadata("ScannerDefinitions", permissions.GlobalScope)
 	Secret                           = newResourceMetadata("Secret", permissions.NamespaceScope)
@@ -57,8 +68,8 @@ var (
 	ServiceIdentity                  = newResourceMetadata("ServiceIdentity", permissions.GlobalScope)
 	SignatureIntegration             = newResourceMetadataWithFeatureFlag("SignatureIntegration", permissions.GlobalScope, features.ImageSignatureVerification)
 	User                             = newResourceMetadata("User", permissions.GlobalScope)
-	VulnerabilityManagementRequests  = newResourceMetadata("VulnerabilityManagementRequests", permissions.GlobalScope)
 	VulnerabilityManagementApprovals = newResourceMetadata("VulnerabilityManagementApprovals", permissions.GlobalScope)
+	VulnerabilityManagementRequests  = newResourceMetadata("VulnerabilityManagementRequests", permissions.GlobalScope)
 	VulnerabilityReports             = newResourceMetadataWithFeatureFlag("VulnerabilityReports", permissions.GlobalScope, features.VulnReporting)
 	WatchedImage                     = newResourceMetadata("WatchedImage", permissions.GlobalScope)
 
