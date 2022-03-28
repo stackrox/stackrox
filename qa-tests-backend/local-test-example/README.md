@@ -7,7 +7,7 @@ This directory contains codified steps to setup for local testing.
 
 Useful for troubleshooting 'qa-test-backend' test failures.
 
-This is just an example. Edit the settings and test targets as needed.
+This is just an example. Edit scripts and test targets as needed.
 
 
 Example Development Workflow
@@ -21,9 +21,9 @@ cd $GOPATH/src/github.com/stackrox/stackrox/qa-tests-backend
 ./step1-setup-macos.sh
 ```
 
-2. Use https://infra.rox.systems/ to spin up a remote cluster
+2. Use https://infra.rox.systems/ to provision a remote cluster
 
-3. Set local kubeconfig, kubecontext, and verify you have access to the cluster
+3. Configure local kubeconfig, kubecontext, and verify you have access to the cluster
 
 ```
 set_temp_kubeconfig_from_paste_buffer () {
