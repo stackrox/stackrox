@@ -1,29 +1,13 @@
-import * as api from '../../constants/apiEndpoints';
-import { url as networkUrl, selectors as networkPageSelectors } from '../../constants/NetworkPage';
+import { selectors as networkPageSelectors } from '../../constants/NetworkPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     mouseOverEdgeByNames,
     ensureEdgeNotPresent,
-    selectNamespaceFilters,
+    visitNetworkGraphWithMockedData,
 } from '../../helpers/networkGraph';
 import selectors from '../../selectors/index';
 
 const { cytoscapeContainer } = networkPageSelectors;
-
-function navigateToNetworkGraphWithMockedData() {
-    cy.server();
-
-    cy.fixture('network/networkGraph.json').as('networkGraphJson');
-    cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
-
-    cy.fixture('network/networkPolicies.json').as('networkPoliciesJson');
-    cy.route('GET', api.network.networkPoliciesGraph, '@networkPoliciesJson').as('networkPolicies');
-
-    cy.visit(networkUrl);
-    selectNamespaceFilters('stackrox');
-    cy.wait('@networkGraph');
-    cy.wait('@networkPolicies');
-}
 
 describe('Network Graph connections filter', () => {
     withAuth();
@@ -36,7 +20,7 @@ describe('Network Graph connections filter', () => {
     const allowedSubstring = 'allowed connection';
 
     it('active appears in namespace edge tooltip', () => {
-        navigateToNetworkGraphWithMockedData();
+        visitNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.activeFilter).click();
 
@@ -50,7 +34,7 @@ describe('Network Graph connections filter', () => {
     });
 
     it('allowed appears in namespace edge tooltip', () => {
-        navigateToNetworkGraphWithMockedData();
+        visitNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.allowedFilter).click();
 
@@ -64,7 +48,7 @@ describe('Network Graph connections filter', () => {
     });
 
     it('active and allowed both appear for all in namespace edge tooltip', () => {
-        navigateToNetworkGraphWithMockedData();
+        visitNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.allFilter).click();
 
@@ -78,7 +62,7 @@ describe('Network Graph connections filter', () => {
     });
 
     it('should not show namespace edges when user hides them', () => {
-        navigateToNetworkGraphWithMockedData();
+        visitNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.allFilter).click();
         cy.get(networkPageSelectors.buttons.hideNsEdgesFilter).click();
