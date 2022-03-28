@@ -4367,7 +4367,7 @@ jobs:
       - run:
           name: Check for fixable vulns
           command: |
-            ./release/scripts/vuln_check.sh
+            ./release/scripts/vuln_check.sh || ./release/scripts/vuln_check.sh
 
   ###
   # Infrastructure and workflow utility jobs
