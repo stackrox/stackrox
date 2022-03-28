@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -301,7 +302,10 @@ func (d *detectorImpl) runDetector() {
 		case <-d.detectorStopper.StopDone():
 			return
 		case scanOutput := <-d.enricher.outputChan():
-			alerts := d.unifiedDetector.DetectDeployment(deploytime.DetectionContext{}, scanOutput.deployment, scanOutput.images)
+			alerts := d.unifiedDetector.DetectDeployment(deploytime.DetectionContext{}, booleanpolicy.EnhancedDeployment{
+				Deployment: scanOutput.deployment,
+				Images:     scanOutput.images,
+			})
 
 			sort.Slice(alerts, func(i, j int) bool {
 				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
@@ -465,8 +469,13 @@ func (d *detectorImpl) processIndicator(pi *storage.ProcessIndicator) {
 	}
 	images := d.enricher.getImages(deployment)
 
+	enhancedDeployment := booleanpolicy.EnhancedDeployment{
+		Deployment: deployment,
+		Images:     images,
+	}
+
 	// Run detection now
-	alerts := d.unifiedDetector.DetectProcess(deployment, images, pi, d.baselineEval.IsOutsideLockedBaseline(pi))
+	alerts := d.unifiedDetector.DetectProcess(enhancedDeployment, pi, d.baselineEval.IsOutsideLockedBaseline(pi))
 	if len(alerts) == 0 {
 		// No need to process runtime alerts that have no violations
 		return
@@ -541,7 +550,11 @@ func (d *detectorImpl) processAlertsForFlowOnEntity(
 	}
 
 	images := d.enricher.getImages(deployment)
-	alerts := d.unifiedDetector.DetectNetworkFlowForDeployment(deployment, images, flowDetails)
+	enhancedDeployment := booleanpolicy.EnhancedDeployment{
+		Deployment: deployment,
+		Images:     images,
+	}
+	alerts := d.unifiedDetector.DetectNetworkFlowForDeployment(enhancedDeployment, flowDetails)
 	if len(alerts) == 0 {
 		// No need to process runtime alerts that have no violations
 		return

@@ -60,7 +60,7 @@ type DeploymentMatcher interface {
 
 // A DeploymentWithProcessMatcher matches deployments, and a process, against a policy.
 type DeploymentWithProcessMatcher interface {
-	MatchDeploymentWithProcess(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processNotInBaseline bool) (Violations, error)
+	MatchDeploymentWithProcess(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, pi *storage.ProcessIndicator, processNotInBaseline bool) (Violations, error)
 }
 
 // A KubeEventMatcher matches kubernetes event against a policy.
@@ -75,7 +75,7 @@ type AuditLogEventMatcher interface {
 
 // A DeploymentWithNetworkFlowMatcher matches deployments, and a network flow against a policy.
 type DeploymentWithNetworkFlowMatcher interface {
-	MatchDeploymentWithNetworkFlowInfo(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, flow *augmentedobjs.NetworkFlowDetails) (Violations, error)
+	MatchDeploymentWithNetworkFlowInfo(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) (Violations, error)
 }
 
 type sectionAndEvaluator struct {

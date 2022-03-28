@@ -1412,7 +1412,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 					for _, process := range suite.deploymentsToIndicators[deploymentID] {
 						match := getViolationsWithAndWithoutCaching(t, func(cache *CacheReceptacle) (Violations, error) {
-							return processMatcher.MatchDeploymentWithProcess(nil, deployment, suite.getImagesForDeployment(deployment), process, false)
+							return processMatcher.MatchDeploymentWithProcess(nil, EnhancedDeployment{deployment, suite.getImagesForDeployment(deployment)}, process, false)
 						})
 						require.NoError(t, err)
 						if expectedProcesses.Contains(process.GetId()) {
@@ -2716,7 +2716,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 			actualViolations := make(map[string][]*storage.Alert_Violation)
 			for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 				for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
-					violations, err := m.MatchDeploymentWithProcess(nil, dep, suite.getImagesForDeployment(dep), indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
+					violations, err := m.MatchDeploymentWithProcess(nil, EnhancedDeployment{dep, suite.getImagesForDeployment(dep)}, indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
 					suite.Require().NoError(err)
 					if len(violations.AlertViolations) > 0 {
 						actualMatches[dep.GetId()] = append(actualMatches[dep.GetId()], key)
@@ -2914,7 +2914,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 		LastSeenTimestamp:    timestamp,
 	}
 
-	violations, err := m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow)
+	violations, err := m.MatchDeploymentWithNetworkFlowInfo(nil, EnhancedDeployment{deployment, suite.getImagesForDeployment(deployment)}, flow)
 	suite.NoError(err)
 	assertNetworkBaselineMessagesEqual(
 		suite,
@@ -2923,7 +2923,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 
 	// And if the flow is in the baseline, no violations should exist
 	flow.NotInNetworkBaseline = false
-	violations, err = m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow)
+	violations, err = m.MatchDeploymentWithNetworkFlowInfo(nil, EnhancedDeployment{deployment, suite.getImagesForDeployment(deployment)}, flow)
 	suite.NoError(err)
 	suite.Empty(violations)
 }
@@ -3319,7 +3319,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 					for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
-						_, err := m.MatchDeploymentWithProcess(nil, dep, images, indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
+						_, err := m.MatchDeploymentWithProcess(nil, EnhancedDeployment{dep, images}, indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
 						require.NoError(b, err)
 					}
 				}
@@ -3339,7 +3339,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 				b.Run("no caching", func(b *testing.B) {
 					for i := 0; i < b.N; i++ {
 						var err error
-						resNoCaching, err = m.MatchDeploymentWithProcess(nil, privilegedDep, images, indicator, notInBaseline)
+						resNoCaching, err = m.MatchDeploymentWithProcess(nil, EnhancedDeployment{privilegedDep, images}, indicator, notInBaseline)
 						require.NoError(b, err)
 					}
 				})
@@ -3349,7 +3349,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 					var cache CacheReceptacle
 					for i := 0; i < b.N; i++ {
 						var err error
-						resWithCaching, err = m.MatchDeploymentWithProcess(&cache, privilegedDep, images, indicator, notInBaseline)
+						resWithCaching, err = m.MatchDeploymentWithProcess(&cache, EnhancedDeployment{privilegedDep, images}, indicator, notInBaseline)
 						require.NoError(b, err)
 					}
 				})
