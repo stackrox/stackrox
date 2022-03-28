@@ -76,6 +76,7 @@ setup_deployment_env() {
     REPO=rhacs-eng
     ci_export MONITORING_IMAGE "quay.io/$REPO/monitoring:$(cat "$(git rev-parse --show-toplevel)/MONITORING_VERSION")"
     ci_export MAIN_IMAGE_REPO "quay.io/$REPO/main"
+    ci_export CENTRAL_DB_IMAGE_REPO "quay.io/$REPO/central-db"
     ci_export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
     ci_export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
     ci_export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
