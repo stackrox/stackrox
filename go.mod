@@ -92,7 +92,7 @@ require (
 	github.com/russellhaering/gosaml2 v0.7.0
 	github.com/russellhaering/goxmldsig v1.2.0
 	github.com/sergi/go-diff v1.2.0
-	github.com/sigstore/cosign v1.5.1
+	github.com/sigstore/cosign v1.5.2
 	github.com/sigstore/sigstore v1.1.1-0.20220130134424-bae9b66b8442
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/pflag v1.0.5
