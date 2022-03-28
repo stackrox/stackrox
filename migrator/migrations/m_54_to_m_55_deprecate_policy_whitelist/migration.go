@@ -102,18 +102,7 @@ func migrateWhitelistsToExclusions(db *bolt.DB) error {
 	return err
 }
 
-// migratePolicy is semantically different from `EnsureConvertedToLatest()` in
-// the booleanpolicy package in that it does not reject policies with both
-// `exclusions` and `whitelists` but only logs the error. This is on purpose:
-// we don't want to accept malformed policies as input but we tolerate this
-// unlikely case here to avoid blocking a migration for a non-critical issue.
+// Removing the whitelist and exclusion logic here since we have made whitelist a reserved field
 func migratePolicy(p *storage.Policy) {
-	// It's fine to receive `exclusions` but not both `exclusions` and `whitelists`.
-	if len(p.GetWhitelists()) > 0 && len(p.GetExclusions()) > 0 {
-		log.WriteToStderrf("both 'exclusions' and 'whitelists' are present in policy with name %q; combining the fields", p.GetName())
-	}
-
-	p.Exclusions = append(p.Exclusions, p.Whitelists...)
-	p.Whitelists = nil
 	p.PolicyVersion = newVersion
 }

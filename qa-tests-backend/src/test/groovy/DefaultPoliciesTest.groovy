@@ -120,8 +120,10 @@ class DefaultPoliciesTest extends BaseSpecification {
                         PolicySection.newBuilder().addPolicyGroups(
                                 PolicyGroup.newBuilder()
                                         .setFieldName("Fixed By")
-                                        .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(".*"))
-                        )
+                                        .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(".*")
+                                        .build())
+                                .build()
+                        ).build()
                 ).build()
         anyFixedPolicyId = PolicyService.createNewPolicy(anyFixedPolicy)
         assert anyFixedPolicyId

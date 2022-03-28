@@ -16,16 +16,7 @@ import objects.Volume
 import io.stackrox.proto.storage.Rbac
 import io.stackrox.proto.storage.NodeOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
-import io.stackrox.proto.storage.PolicyOuterClass.PolicyFields
-import io.stackrox.proto.storage.PolicyOuterClass.ImageNamePolicy
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
-import io.stackrox.proto.storage.PolicyOuterClass.DockerfileLineRuleField
-import io.stackrox.proto.storage.PolicyOuterClass.PortPolicy
-import io.stackrox.proto.storage.PolicyOuterClass.ResourcePolicy
-import io.stackrox.proto.storage.PolicyOuterClass.KeyValuePolicy
-import io.stackrox.proto.storage.PolicyOuterClass.NumericalPolicy
-import io.stackrox.proto.storage.PolicyOuterClass.Comparator
-import io.stackrox.proto.storage.PolicyOuterClass.VolumePolicy
 import io.stackrox.proto.storage.ScopeOuterClass.Scope
 import groups.BAT
 import groups.SMOKE
@@ -127,7 +118,8 @@ class PolicyConfigurationTest extends BaseSpecification {
             .setCommand(["sleep", "60000"])
             .setSkipReplicaWait(Env.CI_JOBNAME && Env.CI_JOBNAME.contains("openshift-crio"))
 
-    static final private Service NPSERVICE = new Service(DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_NP })
+    static final private Service NPSERVICE =
+            new Service(DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_NP })
             .setType(Service.Type.NODEPORT)
 
     @Shared
@@ -168,7 +160,8 @@ class PolicyConfigurationTest extends BaseSpecification {
         Timer t = new Timer(60, 1)
         def image
         while (image == null && t.IsValid()) {
-            image = ImageService.getImage("sha256:86ae264c3f4acb99b2dee4d0098c40cb8c46dcf9e1148f05d3a51c4df6758c12")
+            image = ImageService.getImage(
+                    "sha256:86ae264c3f4acb99b2dee4d0098c40cb8c46dcf9e1148f05d3a51c4df6758c12")
         }
         assert image != null
 
@@ -178,7 +171,8 @@ class PolicyConfigurationTest extends BaseSpecification {
 
         then:
         "Ensure that the latest tag violation shows up"
-        def hasViolation = waitForViolation(NGINX_LATEST_NAME, "Latest Tag", WAIT_FOR_VIOLATION_TIMEOUT)
+        def hasViolation =
+                waitForViolation(NGINX_LATEST_NAME, "Latest Tag", WAIT_FOR_VIOLATION_TIMEOUT)
         println "Has violation ${hasViolation}"
         assert hasViolation
 
@@ -251,13 +245,15 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("Image Assurance")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setImageName(
-                                        ImageNamePolicy.newBuilder()
-                                                .setTag("1.7.9")
-                                                .build())
-                                .build())
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Image Tag")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("1.7.9")
+                                                        .build())
+                                                .build()
+                                ).build()
+                        ).build()       | DEPLOYMENTNGINX | null
 
         "Image Remote"                        |
                 Policy.newBuilder()
@@ -268,13 +264,15 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("Image Assurance")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setImageName(
-                                        ImageNamePolicy.newBuilder()
-                                                .setRemote("library/nginx")
-                                                .build())
-                                .build())
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Image Remote")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("library/nginx")
+                                                        .build()).build()
+                                ).build()
+                        ).build()  | DEPLOYMENTNGINX | null
 
         "Days since image was created"        |
                 Policy.newBuilder()
@@ -285,10 +283,14 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setImageAgeDays(1)
-                                .build())
-                        .build()                 | DEPLOYMENTNGINX | { containerRuntimeVersion.contains("docker") &&
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Image Age")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("1")
+                                                        .build()).build()
+                                ).build()
+                        ).build()   | DEPLOYMENTNGINX | { containerRuntimeVersion.contains("docker") &&
                                                                        !ClusterService.isAKS() } // ROX-6994
 
         "Dockerfile Line"                     |
@@ -300,12 +302,15 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setLineRule(DockerfileLineRuleField.newBuilder()
-                                        .setValue("apt-get.*")
-                                        .setInstruction("RUN")
-                                        .build()))
-                        .build()                 | DEPLOYMENTNGINX | { containerRuntimeVersion.contains("docker") &&
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Dockerfile Line")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("RUN=apt-get.*")
+                                                        .build()).build()
+                                ).build()
+                        ).build() | DEPLOYMENTNGINX | { containerRuntimeVersion.contains("docker") &&
                                                                        !ClusterService.isAKS() } // ROX-6994
 
 //        TODO(ROX-3102)
@@ -331,9 +336,15 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setCve("CVE-2017-5638"))
-                        .build()                       | STRUTS | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("CVE")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("CVE-2017-5638")
+                                                        .build()).build()
+                                ).build()
+                        ).build()  | STRUTS | null
 
         "Port"                                |
                 Policy.newBuilder()
@@ -344,10 +355,14 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setPortPolicy(PortPolicy.newBuilder()
-                                        .setPort(22).build()))
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Exposed Port")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("22")
+                                                        .build()).build()
+                                ).build()
+                        ).build() | DEPLOYMENTNGINX | null
         "Port Exposure through Load Balancer" |
                 Policy.newBuilder()
                         .setName("TestPortExposurePolicy")
@@ -357,11 +372,19 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setPortExposurePolicy(PolicyOuterClass.PortExposurePolicy.newBuilder()
-                                        .addAllExposureLevels(EXPOSURE_VALUES)))
-                        .build()                       | DEPLOYMENTNGINX_LB | null
-        "Port Exposure by  Node Port"         |
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Port Exposure Method")
+                                                .addAllValues([PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue(EXPOSURE_VALUES[0].toString()).build(),
+                                                    PolicyOuterClass.PolicyValue.newBuilder()
+                                                            .setValue(EXPOSURE_VALUES[1].toString()).build(),
+                                                ])
+                                                .build()
+                                ).build()
+                        ).build() | DEPLOYMENTNGINX_LB | null
+        "Port Exposure by Node Port"         |
                 Policy.newBuilder()
                         .setName("TestPortExposurePolicy")
                         .setDescription("Testportexposure")
@@ -370,10 +393,18 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setPortExposurePolicy(PolicyOuterClass.PortExposurePolicy.newBuilder()
-                                        .addAllExposureLevels(EXPOSURE_VALUES)))
-                        .build()                       | DEPLOYMENTNGINX_NP | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Port Exposure Method")
+                                                .addAllValues([PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue(EXPOSURE_VALUES[0].toString()).build(),
+                                                        PolicyOuterClass.PolicyValue.newBuilder()
+                                                                .setValue(EXPOSURE_VALUES[1].toString()).build(),
+                                                ])
+                                        .build()
+                                ).build()
+                        ).build() | DEPLOYMENTNGINX_NP | null
 
         "Required Label"                      |
                 Policy.newBuilder()
@@ -384,11 +415,15 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setRequiredLabel(KeyValuePolicy.newBuilder()
-                                        .setKey("app1")
-                                        .setValue("test1").build()))
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Required Label")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("app1=test1")
+                                                        .build()).build()
+                                ).build()
+                        ).build()           | DEPLOYMENTNGINX | null
 
         "Required Annotations"                |
                 Policy.newBuilder()
@@ -399,11 +434,15 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setRequiredAnnotation(KeyValuePolicy.newBuilder()
-                                        .setKey("test")
-                                        .setValue("annotation").build()))
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Required Annotation")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("test=annotation")
+                                                        .build()).build()
+                                ).build()
+                        ).build()       | DEPLOYMENTNGINX | null
 
         "Environment Variable is available"   |
                 Policy.newBuilder()
@@ -414,14 +453,15 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setEnv(KeyValuePolicy.newBuilder()
-                                        .setKey("CLUSTER_NAME")
-                                        .setValue("main")
-                                        .setEnvVarSource(DeploymentOuterClass.
-                                                ContainerConfig.EnvironmentConfig.EnvVarSource.RAW)
-                                        .build()))
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Environment Variable")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("RAW=CLUSTER_NAME=main")
+                                                        .build()).build()
+                                ).build()
+                        ).build()       | DEPLOYMENTNGINX | null
 
         "Container Port"                      |
                 Policy.newBuilder()
@@ -432,10 +472,14 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setPortPolicy(PortPolicy.newBuilder()
-                                        .setPort(22)).build())
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Exposed Port")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("22")
+                                                        .build()).build()
+                                ).build()
+                        ).build()       | DEPLOYMENTNGINX | null
 
         "Privileged"                          |
                 Policy.newBuilder()
@@ -446,9 +490,14 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setPrivileged(true))
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Privileged Container")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("true")
+                                                        .build()).build()
+                                ).build()
+                        ).build()       | DEPLOYMENTNGINX | null
 
         "Protocol"                            |
                 Policy.newBuilder()
@@ -459,10 +508,14 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setPortPolicy(PortPolicy.newBuilder()
-                                        .setProtocol("TCP").build()))
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Exposed Port Protocol")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("TCP")
+                                                        .build()).build()
+                                ).build()
+                        ).build()       | DEPLOYMENTNGINX | null
 
         "Protocol (case-insensitive)"                            |
                 Policy.newBuilder()
@@ -473,10 +526,14 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setPortPolicy(PortPolicy.newBuilder()
-                                        .setProtocol("tcp").build()))
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Exposed Port Protocol")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("tcp")
+                                                        .build()).build()
+                                ).build()
+                        ).build()   | DEPLOYMENTNGINX | null
 
         "Limits"                              |
                 Policy.newBuilder()
@@ -487,15 +544,18 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setContainerResourcePolicy(ResourcePolicy.newBuilder()
-                                        .setCpuResourceLimit(NumericalPolicy.newBuilder()
-                                                .setOp(Comparator.EQUALS)
-                                                .setValue(0).build())
-                                        .setMemoryResourceLimit(NumericalPolicy.newBuilder()
-                                                .setOp(Comparator.EQUALS)
-                                                .setValue(0).build())))
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Container CPU Limit")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(">= 0")
+                                                        .build()).build()).addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Container Memory Limit")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(">= 0")
+                                                        .build()).build()
+                                ).build()
+                        ).build() | DEPLOYMENTNGINX | null
 
         "Requests"                            |
                 Policy.newBuilder()
@@ -506,15 +566,18 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setContainerResourcePolicy(ResourcePolicy.newBuilder()
-                                        .setMemoryResourceRequest(NumericalPolicy.newBuilder()
-                                                .setOp(Comparator.EQUALS)
-                                                .setOpValue(0).build())
-                                        .setCpuResourceRequest(NumericalPolicy.newBuilder()
-                                                .setOp(Comparator.EQUALS)
-                                                .setValue(0).build())))
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Container CPU Request")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(">= 0")
+                                                        .build()).build()).addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Container Memory Request")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(">= 0")
+                                                        .build()).build()
+                                ).build()
+                        ).build()   | DEPLOYMENTNGINX | null
 
         "VolumeName"                          |
                 Policy.newBuilder()
@@ -525,10 +588,14 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setVolumePolicy(VolumePolicy.newBuilder()
-                                        .setName("test-writable-volume").build()))
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Volume Name")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("test-writable-volume")
+                                                        .build()).build())
+                        ).build() | DEPLOYMENTNGINX | null
 
         /*"VolumeType" | @Bug : ROX-884
                   Policy.newBuilder()
@@ -553,10 +620,13 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("Security Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setHostMountPolicy(PolicyOuterClass.HostMountPolicy.newBuilder()
-                                        .setReadOnly(false)).build())
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Writable Host Mount")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("true")
+                                                        .build()).build())
+                        ).build() | DEPLOYMENTNGINX | null
 
         "Writable Volume"                     |
                 Policy.newBuilder()
@@ -567,11 +637,13 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("Security Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setVolumePolicy(
-                                        PolicyOuterClass.VolumePolicy.newBuilder().setReadOnly(false).build())
-                                .build())
-                        .build()                       | DEPLOYMENTNGINX | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Writable Mounted Volume")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("true")
+                                                        .build()).build())
+                        ).build() | DEPLOYMENTNGINX | null
 
         "RBAC API access"                     |
                 Policy.newBuilder()
@@ -582,10 +654,14 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("Security Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setPermissionPolicy(PolicyOuterClass.PermissionPolicy.newBuilder()
-                                        .setPermissionLevel(Rbac.PermissionLevel.ELEVATED_CLUSTER_WIDE)))
-                        .build()                       | DEPLOYMENT_RBAC | null
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Minimum RBAC Permissions")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue(Rbac.PermissionLevel.ELEVATED_CLUSTER_WIDE.toString())
+                                                        .build()).build())
+                        ).build() | DEPLOYMENT_RBAC | null
     }
 
     @Unroll
@@ -600,13 +676,14 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setEnv(KeyValuePolicy.newBuilder()
-                                        .setKey("KEY")
-                                        .setValue("VALUE")
-                                        .setEnvVarSource(envVarSource)
-                                        .build()))
-                        .build())
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Environment Variable")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("KEY=VALUE")
+                                                        .build()).build())
+                        ).build())
 
         where:
         "Data inputs are :"
@@ -667,12 +744,14 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setImageName(ImageNamePolicy.newBuilder()
-                                        .setTag("latest").build()
-                                ).build()
-                        )
-                        .addScope(Scope.newBuilder()
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Image Tag")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("latest")
+                                                        .build()).build())
+                        ).addScope(Scope.newBuilder()
                                 .setLabel(Scope.Label.newBuilder()
                                         .setKey("app")
                                         .setValue("qa-test").build()
@@ -694,10 +773,13 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setImageName(ImageNamePolicy.newBuilder()
-                                        .setTag("latest").build()
-                                ).build()
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Image Tag")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("latest")
+                                                        .build()).build())
                         )
                         .addScope(Scope.newBuilder()
                                 .setNamespace(Constants.ORCHESTRATOR_NAMESPACE).build()
@@ -718,10 +800,13 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setImageName(ImageNamePolicy.newBuilder()
-                                        .setTag("latest").build()
-                                ).build()
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Image Tag")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("latest")
+                                                        .build()).build())
                         )
                         .addScope(Scope.newBuilder()
                                 .setCluster(ClusterService.getClusterId())
@@ -749,10 +834,13 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .addCategories("DevOps Best Practices")
                         .setDisabled(false)
                         .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setImageName(ImageNamePolicy.newBuilder()
-                                        .setTag("latest").build()
-                                ).build()
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Image Tag")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("latest")
+                                                        .build()).build())
                         )
                         .addScope(Scope.newBuilder()
                                 .setNamespace(Constants.ORCHESTRATOR_NAMESPACE).build()

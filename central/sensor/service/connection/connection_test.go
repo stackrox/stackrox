@@ -10,7 +10,6 @@ import (
 	clusterMgrMock "github.com/stackrox/rox/central/sensor/service/common/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
@@ -54,31 +53,6 @@ func (c *mockServer) Send(msg *central.MsgToSensor) error {
 
 func (c *mockServer) Recv() (*central.MsgFromSensor, error) {
 	return nil, nil
-}
-
-// TestGetPolicySyncMsgFromPolicies verifies that the sensor connection is
-// capable of downgrading policies to the version known of the underlying
-// sensor. The test uses specific policy versions and not a general approach.
-func (s *testSuite) TestGetPolicySyncMsgFromPolicies() {
-	centralVersion := policyversion.CurrentVersion()
-	sensorVersion := policyversion.Version1()
-	sensorHello := &central.SensorHello{
-		PolicyVersion: sensorVersion.String(),
-	}
-	sensorMockConn := &sensorConnection{
-		sensorHello: sensorHello,
-	}
-	policy := &storage.Policy{
-		PolicyVersion: centralVersion.String(),
-	}
-
-	msg, err := sensorMockConn.getPolicySyncMsgFromPolicies([]*storage.Policy{policy})
-	s.NoError(err)
-
-	policySync := msg.GetPolicySync()
-	s.Require().NotNil(policySync)
-	s.NotEmpty(policySync.Policies)
-	s.Equal(sensorVersion.String(), policySync.Policies[0].GetPolicyVersion())
 }
 
 func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {

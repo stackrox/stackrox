@@ -299,7 +299,7 @@ func (c *sensorConnection) getPolicySyncMsg(ctx context.Context) (*central.MsgTo
 func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Policy) (*central.MsgToSensor, error) {
 	// Older sensors do not broadcast the policy version they support, so if we
 	// observe an empty string, we guess the version at Version1 and persist it.
-	sensorPolicyVersionStr := stringutils.FirstNonEmpty(c.sensorHello.GetPolicyVersion(), policyversion.Version1().String())
+	sensorPolicyVersionStr := stringutils.FirstNonEmpty(c.sensorHello.GetPolicyVersion())
 
 	// Forward policies as is if we don't understand sensor's version.
 	if sensorPolicyVersion, err := policyversion.FromString(sensorPolicyVersionStr); err != nil {

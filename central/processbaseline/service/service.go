@@ -22,9 +22,6 @@ type Service interface {
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
 	v1.ProcessBaselineServiceServer
-
-	// TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
-	v1.ProcessWhitelistServiceServer
 }
 
 // New returns a new Service instance using the given DataStore.

@@ -3,7 +3,6 @@ package policyversion
 import (
 	"testing"
 
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,48 +45,10 @@ func TestVersionCompare(t *testing.T) {
 	}
 
 	testCases := []TestCase{
-		{PolicyVersion{versions[0]}, Version1(), -1},
-		{Version1(), PolicyVersion{versions[0]}, 1},
-		{Version1(), Version1(), 0},
-		{PolicyVersion{version1_1}, Version1(), 1},
 		{PolicyVersion{versions[len(versions)-1]}, PolicyVersion{versions[len(versions)-2]}, 1},
 	}
 
 	for _, tc := range testCases {
 		assert.Equal(t, tc.compare, Compare(tc.a, tc.b), "a: '%+v', b: '%+v'", tc.a, tc.b)
-	}
-}
-
-func TestIsBooleanPolicy(t *testing.T) {
-	testCasesTrue := []*storage.Policy{
-		{
-			PolicyVersion: version1,
-		},
-		{
-			PolicyVersion: version1_1,
-		},
-		{
-			PolicyVersion: CurrentVersion().String(),
-		},
-	}
-
-	for _, testCase := range testCasesTrue {
-		assert.True(t, IsBooleanPolicy(testCase), "policy: '%+v'", testCase)
-	}
-
-	testCasesFalse := []*storage.Policy{
-		{
-			PolicyVersion: legacyVersion,
-		},
-		{
-			PolicyVersion: "0.1",
-		},
-		{
-			PolicyVersion: "2",
-		},
-	}
-
-	for _, testCase := range testCasesFalse {
-		assert.False(t, IsBooleanPolicy(testCase), "policy: '%+v'", testCase)
 	}
 }

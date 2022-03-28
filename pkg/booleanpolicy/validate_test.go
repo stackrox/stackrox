@@ -122,13 +122,6 @@ func (s *PolicyValueValidator) TestEnvKeyValuePolicyValidation() {
 		assert.NoError(s.T(), Validate(&storage.Policy{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
-			Fields: &storage.PolicyFields{
-				Env: &storage.KeyValuePolicy{
-					Key:          "key",
-					Value:        "value",
-					EnvVarSource: p,
-				},
-			},
 			PolicySections: []*storage.PolicySection{
 				{
 					PolicyGroups: []*storage.PolicyGroup{
@@ -148,12 +141,6 @@ func (s *PolicyValueValidator) TestEnvKeyValuePolicyValidation() {
 		assert.NoError(s.T(), Validate(&storage.Policy{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
-			Fields: &storage.PolicyFields{
-				Env: &storage.KeyValuePolicy{
-					Key:          "key",
-					EnvVarSource: p,
-				},
-			},
 			PolicySections: []*storage.PolicySection{
 				{
 					PolicyGroups: []*storage.PolicyGroup{
@@ -180,13 +167,6 @@ func (s *PolicyValueValidator) TestEnvKeyValuePolicyValidation() {
 		assert.Error(s.T(), Validate(&storage.Policy{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
-			Fields: &storage.PolicyFields{
-				Env: &storage.KeyValuePolicy{
-					Key:          "key",
-					Value:        "value",
-					EnvVarSource: p,
-				},
-			},
 			PolicySections: []*storage.PolicySection{
 				{
 					PolicyGroups: []*storage.PolicyGroup{
@@ -206,12 +186,6 @@ func (s *PolicyValueValidator) TestEnvKeyValuePolicyValidation() {
 		assert.NoError(s.T(), Validate(&storage.Policy{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
-			Fields: &storage.PolicyFields{
-				Env: &storage.KeyValuePolicy{
-					Key:          "key",
-					EnvVarSource: p,
-				},
-			},
 			PolicySections: []*storage.PolicySection{
 				{
 					PolicyGroups: []*storage.PolicyGroup{

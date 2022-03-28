@@ -13,9 +13,7 @@ var (
 	// If key represents version N, value must be a downgrader from N to N-1.
 	// If for version X there is no entry here, X cannot be downgraded.
 	// The map must not change during the application runtime.
-	downgraders = map[string]downgrader{
-		version1_1: downgradeVersion1_1ToVersion1,
-	}
+	downgraders = map[string]downgrader{}
 
 	// i-th element is a downgrader from version[i] to version[i-1] or
 	// nil, which indicates that downgrade from i to i-1 is impossible.
@@ -55,12 +53,6 @@ func DowngradePolicyTo(p *storage.Policy, targetVersion PolicyVersion) error {
 	}
 
 	return nil
-}
-
-func downgradeVersion1_1ToVersion1(p *storage.Policy) {
-	p.Whitelists = append(p.Whitelists, p.Exclusions...)
-	p.Exclusions = nil
-	p.PolicyVersion = version1
 }
 
 // organizeByVersionRank builds a slice of possibly nil downgraders so that

@@ -5,6 +5,9 @@ import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
+import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
+import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
 import objects.Deployment
 import objects.GCRImageIntegration
@@ -174,15 +177,19 @@ class AdmissionControllerTest extends BaseSpecification {
 
         printlnDated "Admission control configuration updated"
 
+        def policyGroup = PolicyGroup.newBuilder()
+                .setFieldName("CVE")
+                .setBooleanOperator(PolicyOuterClass.BooleanOperator.AND)
+        policyGroup.addAllValues([PolicyValue.newBuilder().setValue("CVE-2019-3462").build(),])
+
         PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
                 .setName("Matching CVE (CVE-2019-3462)")
                 .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
                 .addCategories("Testing")
                 .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
                 .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
-                .setFields(
-                        PolicyOuterClass.PolicyFields.newBuilder().setCve("CVE-2019-3462").build()
-                )
+                .addPolicySections(
+                        PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build())
                 .build()
         policy = PolicyService.policyClient.postPolicy(
                 PolicyServiceOuterClass.PostPolicyRequest.newBuilder()
