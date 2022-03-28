@@ -81,7 +81,6 @@ create table if not exists rolebindings (
     ClusterRole bool,
     Labels jsonb,
     Annotations jsonb,
-    CreatedAt timestamp,
     RoleId varchar,
     serialized bytea,
     PRIMARY KEY(Id)
@@ -108,12 +107,8 @@ func createTableRolebindingsSubjects(ctx context.Context, db *pgxpool.Pool) {
 create table if not exists rolebindings_Subjects (
     rolebindings_Id varchar,
     idx integer,
-    Id varchar,
     Kind integer,
     Name varchar,
-    Namespace varchar,
-    ClusterId varchar,
-    ClusterName varchar,
     PRIMARY KEY(rolebindings_Id, idx),
     CONSTRAINT fk_parent_table_0 FOREIGN KEY (rolebindings_Id) REFERENCES rolebindings(Id) ON DELETE CASCADE
 )
@@ -153,12 +148,11 @@ func insertIntoRolebindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole
 		obj.GetClusterRole(),
 		obj.GetLabels(),
 		obj.GetAnnotations(),
-		pgutils.NilOrTime(obj.GetCreatedAt()),
 		obj.GetRoleId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO rolebindings (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, CreatedAt, RoleId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, CreatedAt = EXCLUDED.CreatedAt, RoleId = EXCLUDED.RoleId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO rolebindings (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, RoleId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, RoleId = EXCLUDED.RoleId, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -186,15 +180,11 @@ func insertIntoRolebindingsSubjects(ctx context.Context, tx pgx.Tx, obj *storage
 		// parent primary keys start
 		rolebindings_Id,
 		idx,
-		obj.GetId(),
 		obj.GetKind(),
 		obj.GetName(),
-		obj.GetNamespace(),
-		obj.GetClusterId(),
-		obj.GetClusterName(),
 	}
 
-	finalStr := "INSERT INTO rolebindings_Subjects (rolebindings_Id, idx, Id, Kind, Name, Namespace, ClusterId, ClusterName) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(rolebindings_Id, idx) DO UPDATE SET rolebindings_Id = EXCLUDED.rolebindings_Id, idx = EXCLUDED.idx, Id = EXCLUDED.Id, Kind = EXCLUDED.Kind, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName"
+	finalStr := "INSERT INTO rolebindings_Subjects (rolebindings_Id, idx, Kind, Name) VALUES($1, $2, $3, $4) ON CONFLICT(rolebindings_Id, idx) DO UPDATE SET rolebindings_Id = EXCLUDED.rolebindings_Id, idx = EXCLUDED.idx, Kind = EXCLUDED.Kind, Name = EXCLUDED.Name"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -231,8 +221,6 @@ func (s *storeImpl) copyFromRolebindings(ctx context.Context, tx pgx.Tx, objs ..
 
 		"annotations",
 
-		"createdat",
-
 		"roleid",
 
 		"serialized",
@@ -264,8 +252,6 @@ func (s *storeImpl) copyFromRolebindings(ctx context.Context, tx pgx.Tx, objs ..
 			obj.GetLabels(),
 
 			obj.GetAnnotations(),
-
-			pgutils.NilOrTime(obj.GetCreatedAt()),
 
 			obj.GetRoleId(),
 
@@ -320,17 +306,9 @@ func (s *storeImpl) copyFromRolebindingsSubjects(ctx context.Context, tx pgx.Tx,
 
 		"idx",
 
-		"id",
-
 		"kind",
 
 		"name",
-
-		"namespace",
-
-		"clusterid",
-
-		"clustername",
 	}
 
 	for idx, obj := range objs {
@@ -343,17 +321,9 @@ func (s *storeImpl) copyFromRolebindingsSubjects(ctx context.Context, tx pgx.Tx,
 
 			idx,
 
-			obj.GetId(),
-
 			obj.GetKind(),
 
 			obj.GetName(),
-
-			obj.GetNamespace(),
-
-			obj.GetClusterId(),
-
-			obj.GetClusterName(),
 		})
 
 		// if we hit our batch size we need to push the data

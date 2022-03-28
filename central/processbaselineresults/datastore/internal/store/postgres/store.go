@@ -74,8 +74,6 @@ func createTableProcesswhitelistresults(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists processwhitelistresults (
     DeploymentId varchar,
-    ClusterId varchar,
-    Namespace varchar,
     serialized bytea,
     PRIMARY KEY(DeploymentId)
 )
@@ -87,37 +85,6 @@ create table if not exists processwhitelistresults (
 	}
 
 	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableProcesswhitelistresultsBaselineStatuses(ctx, db)
-}
-
-func createTableProcesswhitelistresultsBaselineStatuses(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists processwhitelistresults_BaselineStatuses (
-    processwhitelistresults_DeploymentId varchar,
-    idx integer,
-    ContainerName varchar,
-    BaselineStatus integer,
-    AnomalousProcessesExecuted bool,
-    PRIMARY KEY(processwhitelistresults_DeploymentId, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (processwhitelistresults_DeploymentId) REFERENCES processwhitelistresults(DeploymentId) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists processwhitelistresultsBaselineStatuses_idx on processwhitelistresults_BaselineStatuses using btree(idx)",
-	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			log.Panicf("Error creating index %s: %v", index, err)
@@ -136,45 +103,10 @@ func insertIntoProcesswhitelistresults(ctx context.Context, tx pgx.Tx, obj *stor
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetDeploymentId(),
-		obj.GetClusterId(),
-		obj.GetNamespace(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO processwhitelistresults (DeploymentId, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetBaselineStatuses() {
-		if err := insertIntoProcesswhitelistresultsBaselineStatuses(ctx, tx, child, obj.GetDeploymentId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from processwhitelistresults_BaselineStatuses where processwhitelistresults_DeploymentId = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetDeploymentId(), len(obj.GetBaselineStatuses()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoProcesswhitelistresultsBaselineStatuses(ctx context.Context, tx pgx.Tx, obj *storage.ContainerNameAndBaselineStatus, processwhitelistresults_DeploymentId string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		processwhitelistresults_DeploymentId,
-		idx,
-		obj.GetContainerName(),
-		obj.GetBaselineStatus(),
-		obj.GetAnomalousProcessesExecuted(),
-	}
-
-	finalStr := "INSERT INTO processwhitelistresults_BaselineStatuses (processwhitelistresults_DeploymentId, idx, ContainerName, BaselineStatus, AnomalousProcessesExecuted) VALUES($1, $2, $3, $4, $5) ON CONFLICT(processwhitelistresults_DeploymentId, idx) DO UPDATE SET processwhitelistresults_DeploymentId = EXCLUDED.processwhitelistresults_DeploymentId, idx = EXCLUDED.idx, ContainerName = EXCLUDED.ContainerName, BaselineStatus = EXCLUDED.BaselineStatus, AnomalousProcessesExecuted = EXCLUDED.AnomalousProcessesExecuted"
+	finalStr := "INSERT INTO processwhitelistresults (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -197,10 +129,6 @@ func (s *storeImpl) copyFromProcesswhitelistresults(ctx context.Context, tx pgx.
 
 		"deploymentid",
 
-		"clusterid",
-
-		"namespace",
-
 		"serialized",
 	}
 
@@ -216,10 +144,6 @@ func (s *storeImpl) copyFromProcesswhitelistresults(ctx context.Context, tx pgx.
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetDeploymentId(),
-
-			obj.GetClusterId(),
-
-			obj.GetNamespace(),
 
 			serialized,
 		})
@@ -240,68 +164,6 @@ func (s *storeImpl) copyFromProcesswhitelistresults(ctx context.Context, tx pgx.
 			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processwhitelistresults"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for _, obj := range objs {
-
-		if err = s.copyFromProcesswhitelistresultsBaselineStatuses(ctx, tx, obj.GetDeploymentId(), obj.GetBaselineStatuses()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromProcesswhitelistresultsBaselineStatuses(ctx context.Context, tx pgx.Tx, processwhitelistresults_DeploymentId string, objs ...*storage.ContainerNameAndBaselineStatus) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"processwhitelistresults_deploymentid",
-
-		"idx",
-
-		"containername",
-
-		"baselinestatus",
-
-		"anomalousprocessesexecuted",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			processwhitelistresults_DeploymentId,
-
-			idx,
-
-			obj.GetContainerName(),
-
-			obj.GetBaselineStatus(),
-
-			obj.GetAnomalousProcessesExecuted(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processwhitelistresults_baselinestatuses"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -554,12 +416,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessBaseli
 
 func dropTableProcesswhitelistresults(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS processwhitelistresults CASCADE")
-	dropTableProcesswhitelistresultsBaselineStatuses(ctx, db)
-
-}
-
-func dropTableProcesswhitelistresultsBaselineStatuses(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS processwhitelistresults_BaselineStatuses CASCADE")
 
 }
 

@@ -80,10 +80,6 @@ create table if not exists serviceaccounts (
     ClusterId varchar,
     Labels jsonb,
     Annotations jsonb,
-    CreatedAt timestamp,
-    AutomountToken bool,
-    Secrets text[],
-    ImagePullSecrets text[],
     serialized bytea,
     PRIMARY KEY(Id)
 )
@@ -119,14 +115,10 @@ func insertIntoServiceaccounts(ctx context.Context, tx pgx.Tx, obj *storage.Serv
 		obj.GetClusterId(),
 		obj.GetLabels(),
 		obj.GetAnnotations(),
-		pgutils.NilOrTime(obj.GetCreatedAt()),
-		obj.GetAutomountToken(),
-		obj.GetSecrets(),
-		obj.GetImagePullSecrets(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO serviceaccounts (Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations, CreatedAt, AutomountToken, Secrets, ImagePullSecrets, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, CreatedAt = EXCLUDED.CreatedAt, AutomountToken = EXCLUDED.AutomountToken, Secrets = EXCLUDED.Secrets, ImagePullSecrets = EXCLUDED.ImagePullSecrets, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO serviceaccounts (Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -161,14 +153,6 @@ func (s *storeImpl) copyFromServiceaccounts(ctx context.Context, tx pgx.Tx, objs
 
 		"annotations",
 
-		"createdat",
-
-		"automounttoken",
-
-		"secrets",
-
-		"imagepullsecrets",
-
 		"serialized",
 	}
 
@@ -196,14 +180,6 @@ func (s *storeImpl) copyFromServiceaccounts(ctx context.Context, tx pgx.Tx, objs
 			obj.GetLabels(),
 
 			obj.GetAnnotations(),
-
-			pgutils.NilOrTime(obj.GetCreatedAt()),
-
-			obj.GetAutomountToken(),
-
-			obj.GetSecrets(),
-
-			obj.GetImagePullSecrets(),
 
 			serialized,
 		})

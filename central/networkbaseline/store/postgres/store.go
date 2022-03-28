@@ -74,11 +74,6 @@ func createTableNetworkbaseline(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists networkbaseline (
     DeploymentId varchar,
-    ClusterId varchar,
-    Namespace varchar,
-    ObservationPeriodEnd timestamp,
-    Locked bool,
-    DeploymentName varchar,
     serialized bytea,
     PRIMARY KEY(DeploymentId)
 )
@@ -105,15 +100,7 @@ func createTableNetworkbaselinePeers(ctx context.Context, db *pgxpool.Pool) {
 create table if not exists networkbaseline_Peers (
     networkbaseline_DeploymentId varchar,
     idx integer,
-    Entity_Info_Type integer,
-    Entity_Info_Id varchar,
-    Entity_Info_Deployment_Name varchar,
-    Entity_Info_Deployment_Namespace varchar,
-    Entity_Info_Deployment_Cluster varchar,
-    Entity_Info_ExternalSource_Name varchar,
-    Entity_Info_ExternalSource_Cidr varchar,
     Entity_Info_ExternalSource_Default bool,
-    Entity_Scope_ClusterId varchar,
     PRIMARY KEY(networkbaseline_DeploymentId, idx),
     CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId) REFERENCES networkbaseline(DeploymentId) ON DELETE CASCADE
 )
@@ -134,69 +121,6 @@ create table if not exists networkbaseline_Peers (
 		}
 	}
 
-	createTableNetworkbaselinePeersListenPorts(ctx, db)
-	createTableNetworkbaselinePeersProperties(ctx, db)
-}
-
-func createTableNetworkbaselinePeersListenPorts(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists networkbaseline_Peers_ListenPorts (
-    networkbaseline_DeploymentId varchar,
-    networkbaseline_Peers_idx integer,
-    idx integer,
-    Port integer,
-    L4Protocol integer,
-    PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_Peers_idx) REFERENCES networkbaseline_Peers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists networkbaselinePeersListenPorts_idx on networkbaseline_Peers_ListenPorts using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableNetworkbaselinePeersProperties(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists networkbaseline_Peers_Properties (
-    networkbaseline_DeploymentId varchar,
-    networkbaseline_Peers_idx integer,
-    idx integer,
-    Ingress bool,
-    Port integer,
-    Protocol integer,
-    PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_Peers_idx) REFERENCES networkbaseline_Peers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists networkbaselinePeersProperties_idx on networkbaseline_Peers_Properties using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func createTableNetworkbaselineForbiddenPeers(ctx context.Context, db *pgxpool.Pool) {
@@ -204,15 +128,7 @@ func createTableNetworkbaselineForbiddenPeers(ctx context.Context, db *pgxpool.P
 create table if not exists networkbaseline_ForbiddenPeers (
     networkbaseline_DeploymentId varchar,
     idx integer,
-    Entity_Info_Type integer,
-    Entity_Info_Id varchar,
-    Entity_Info_Deployment_Name varchar,
-    Entity_Info_Deployment_Namespace varchar,
-    Entity_Info_Deployment_Cluster varchar,
-    Entity_Info_ExternalSource_Name varchar,
-    Entity_Info_ExternalSource_Cidr varchar,
     Entity_Info_ExternalSource_Default bool,
-    Entity_Scope_ClusterId varchar,
     PRIMARY KEY(networkbaseline_DeploymentId, idx),
     CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId) REFERENCES networkbaseline(DeploymentId) ON DELETE CASCADE
 )
@@ -233,69 +149,6 @@ create table if not exists networkbaseline_ForbiddenPeers (
 		}
 	}
 
-	createTableNetworkbaselineForbiddenPeersListenPorts(ctx, db)
-	createTableNetworkbaselineForbiddenPeersProperties(ctx, db)
-}
-
-func createTableNetworkbaselineForbiddenPeersListenPorts(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists networkbaseline_ForbiddenPeers_ListenPorts (
-    networkbaseline_DeploymentId varchar,
-    networkbaseline_ForbiddenPeers_idx integer,
-    idx integer,
-    Port integer,
-    L4Protocol integer,
-    PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx) REFERENCES networkbaseline_ForbiddenPeers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists networkbaselineForbiddenPeersListenPorts_idx on networkbaseline_ForbiddenPeers_ListenPorts using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableNetworkbaselineForbiddenPeersProperties(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists networkbaseline_ForbiddenPeers_Properties (
-    networkbaseline_DeploymentId varchar,
-    networkbaseline_ForbiddenPeers_idx integer,
-    idx integer,
-    Ingress bool,
-    Port integer,
-    Protocol integer,
-    PRIMARY KEY(networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx) REFERENCES networkbaseline_ForbiddenPeers(networkbaseline_DeploymentId, idx) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists networkbaselineForbiddenPeersProperties_idx on networkbaseline_ForbiddenPeers_Properties using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, obj *storage.NetworkBaseline) error {
@@ -308,15 +161,10 @@ func insertIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, obj *storage.Netw
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetDeploymentId(),
-		obj.GetClusterId(),
-		obj.GetNamespace(),
-		pgutils.NilOrTime(obj.GetObservationPeriodEnd()),
-		obj.GetLocked(),
-		obj.GetDeploymentName(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO networkbaseline (DeploymentId, ClusterId, Namespace, ObservationPeriodEnd, Locked, DeploymentName, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ObservationPeriodEnd = EXCLUDED.ObservationPeriodEnd, Locked = EXCLUDED.Locked, DeploymentName = EXCLUDED.DeploymentName, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO networkbaseline (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -355,83 +203,10 @@ func insertIntoNetworkbaselinePeers(ctx context.Context, tx pgx.Tx, obj *storage
 		// parent primary keys start
 		networkbaseline_DeploymentId,
 		idx,
-		obj.GetEntity().GetInfo().GetType(),
-		obj.GetEntity().GetInfo().GetId(),
-		obj.GetEntity().GetInfo().GetDeployment().GetName(),
-		obj.GetEntity().GetInfo().GetDeployment().GetNamespace(),
-		obj.GetEntity().GetInfo().GetDeployment().GetCluster(),
-		obj.GetEntity().GetInfo().GetExternalSource().GetName(),
-		obj.GetEntity().GetInfo().GetExternalSource().GetCidr(),
 		obj.GetEntity().GetInfo().GetExternalSource().GetDefault(),
-		obj.GetEntity().GetScope().GetClusterId(),
 	}
 
-	finalStr := "INSERT INTO networkbaseline_Peers (networkbaseline_DeploymentId, idx, Entity_Info_Type, Entity_Info_Id, Entity_Info_Deployment_Name, Entity_Info_Deployment_Namespace, Entity_Info_Deployment_Cluster, Entity_Info_ExternalSource_Name, Entity_Info_ExternalSource_Cidr, Entity_Info_ExternalSource_Default, Entity_Scope_ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(networkbaseline_DeploymentId, idx) DO UPDATE SET networkbaseline_DeploymentId = EXCLUDED.networkbaseline_DeploymentId, idx = EXCLUDED.idx, Entity_Info_Type = EXCLUDED.Entity_Info_Type, Entity_Info_Id = EXCLUDED.Entity_Info_Id, Entity_Info_Deployment_Name = EXCLUDED.Entity_Info_Deployment_Name, Entity_Info_Deployment_Namespace = EXCLUDED.Entity_Info_Deployment_Namespace, Entity_Info_Deployment_Cluster = EXCLUDED.Entity_Info_Deployment_Cluster, Entity_Info_ExternalSource_Name = EXCLUDED.Entity_Info_ExternalSource_Name, Entity_Info_ExternalSource_Cidr = EXCLUDED.Entity_Info_ExternalSource_Cidr, Entity_Info_ExternalSource_Default = EXCLUDED.Entity_Info_ExternalSource_Default, Entity_Scope_ClusterId = EXCLUDED.Entity_Scope_ClusterId"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetEntity().GetInfo().GetDeployment().GetListenPorts() {
-		if err := insertIntoNetworkbaselinePeersListenPorts(ctx, tx, child, networkbaseline_DeploymentId, idx, childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from networkbaseline_Peers_ListenPorts where networkbaseline_DeploymentId = $1 AND networkbaseline_Peers_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, networkbaseline_DeploymentId, idx, len(obj.GetEntity().GetInfo().GetDeployment().GetListenPorts()))
-	if err != nil {
-		return err
-	}
-	for childIdx, child := range obj.GetProperties() {
-		if err := insertIntoNetworkbaselinePeersProperties(ctx, tx, child, networkbaseline_DeploymentId, idx, childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from networkbaseline_Peers_Properties where networkbaseline_DeploymentId = $1 AND networkbaseline_Peers_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, networkbaseline_DeploymentId, idx, len(obj.GetProperties()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoNetworkbaselinePeersListenPorts(ctx context.Context, tx pgx.Tx, obj *storage.NetworkEntityInfo_Deployment_ListenPort, networkbaseline_DeploymentId string, networkbaseline_Peers_idx int, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		networkbaseline_DeploymentId,
-		networkbaseline_Peers_idx,
-		idx,
-		obj.GetPort(),
-		obj.GetL4Protocol(),
-	}
-
-	finalStr := "INSERT INTO networkbaseline_Peers_ListenPorts (networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx, Port, L4Protocol) VALUES($1, $2, $3, $4, $5) ON CONFLICT(networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx) DO UPDATE SET networkbaseline_DeploymentId = EXCLUDED.networkbaseline_DeploymentId, networkbaseline_Peers_idx = EXCLUDED.networkbaseline_Peers_idx, idx = EXCLUDED.idx, Port = EXCLUDED.Port, L4Protocol = EXCLUDED.L4Protocol"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func insertIntoNetworkbaselinePeersProperties(ctx context.Context, tx pgx.Tx, obj *storage.NetworkBaselineConnectionProperties, networkbaseline_DeploymentId string, networkbaseline_Peers_idx int, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		networkbaseline_DeploymentId,
-		networkbaseline_Peers_idx,
-		idx,
-		obj.GetIngress(),
-		obj.GetPort(),
-		obj.GetProtocol(),
-	}
-
-	finalStr := "INSERT INTO networkbaseline_Peers_Properties (networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx, Ingress, Port, Protocol) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(networkbaseline_DeploymentId, networkbaseline_Peers_idx, idx) DO UPDATE SET networkbaseline_DeploymentId = EXCLUDED.networkbaseline_DeploymentId, networkbaseline_Peers_idx = EXCLUDED.networkbaseline_Peers_idx, idx = EXCLUDED.idx, Ingress = EXCLUDED.Ingress, Port = EXCLUDED.Port, Protocol = EXCLUDED.Protocol"
+	finalStr := "INSERT INTO networkbaseline_Peers (networkbaseline_DeploymentId, idx, Entity_Info_ExternalSource_Default) VALUES($1, $2, $3) ON CONFLICT(networkbaseline_DeploymentId, idx) DO UPDATE SET networkbaseline_DeploymentId = EXCLUDED.networkbaseline_DeploymentId, idx = EXCLUDED.idx, Entity_Info_ExternalSource_Default = EXCLUDED.Entity_Info_ExternalSource_Default"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -446,83 +221,10 @@ func insertIntoNetworkbaselineForbiddenPeers(ctx context.Context, tx pgx.Tx, obj
 		// parent primary keys start
 		networkbaseline_DeploymentId,
 		idx,
-		obj.GetEntity().GetInfo().GetType(),
-		obj.GetEntity().GetInfo().GetId(),
-		obj.GetEntity().GetInfo().GetDeployment().GetName(),
-		obj.GetEntity().GetInfo().GetDeployment().GetNamespace(),
-		obj.GetEntity().GetInfo().GetDeployment().GetCluster(),
-		obj.GetEntity().GetInfo().GetExternalSource().GetName(),
-		obj.GetEntity().GetInfo().GetExternalSource().GetCidr(),
 		obj.GetEntity().GetInfo().GetExternalSource().GetDefault(),
-		obj.GetEntity().GetScope().GetClusterId(),
 	}
 
-	finalStr := "INSERT INTO networkbaseline_ForbiddenPeers (networkbaseline_DeploymentId, idx, Entity_Info_Type, Entity_Info_Id, Entity_Info_Deployment_Name, Entity_Info_Deployment_Namespace, Entity_Info_Deployment_Cluster, Entity_Info_ExternalSource_Name, Entity_Info_ExternalSource_Cidr, Entity_Info_ExternalSource_Default, Entity_Scope_ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(networkbaseline_DeploymentId, idx) DO UPDATE SET networkbaseline_DeploymentId = EXCLUDED.networkbaseline_DeploymentId, idx = EXCLUDED.idx, Entity_Info_Type = EXCLUDED.Entity_Info_Type, Entity_Info_Id = EXCLUDED.Entity_Info_Id, Entity_Info_Deployment_Name = EXCLUDED.Entity_Info_Deployment_Name, Entity_Info_Deployment_Namespace = EXCLUDED.Entity_Info_Deployment_Namespace, Entity_Info_Deployment_Cluster = EXCLUDED.Entity_Info_Deployment_Cluster, Entity_Info_ExternalSource_Name = EXCLUDED.Entity_Info_ExternalSource_Name, Entity_Info_ExternalSource_Cidr = EXCLUDED.Entity_Info_ExternalSource_Cidr, Entity_Info_ExternalSource_Default = EXCLUDED.Entity_Info_ExternalSource_Default, Entity_Scope_ClusterId = EXCLUDED.Entity_Scope_ClusterId"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetEntity().GetInfo().GetDeployment().GetListenPorts() {
-		if err := insertIntoNetworkbaselineForbiddenPeersListenPorts(ctx, tx, child, networkbaseline_DeploymentId, idx, childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from networkbaseline_ForbiddenPeers_ListenPorts where networkbaseline_DeploymentId = $1 AND networkbaseline_ForbiddenPeers_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, networkbaseline_DeploymentId, idx, len(obj.GetEntity().GetInfo().GetDeployment().GetListenPorts()))
-	if err != nil {
-		return err
-	}
-	for childIdx, child := range obj.GetProperties() {
-		if err := insertIntoNetworkbaselineForbiddenPeersProperties(ctx, tx, child, networkbaseline_DeploymentId, idx, childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from networkbaseline_ForbiddenPeers_Properties where networkbaseline_DeploymentId = $1 AND networkbaseline_ForbiddenPeers_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, networkbaseline_DeploymentId, idx, len(obj.GetProperties()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoNetworkbaselineForbiddenPeersListenPorts(ctx context.Context, tx pgx.Tx, obj *storage.NetworkEntityInfo_Deployment_ListenPort, networkbaseline_DeploymentId string, networkbaseline_ForbiddenPeers_idx int, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		networkbaseline_DeploymentId,
-		networkbaseline_ForbiddenPeers_idx,
-		idx,
-		obj.GetPort(),
-		obj.GetL4Protocol(),
-	}
-
-	finalStr := "INSERT INTO networkbaseline_ForbiddenPeers_ListenPorts (networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx, Port, L4Protocol) VALUES($1, $2, $3, $4, $5) ON CONFLICT(networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx) DO UPDATE SET networkbaseline_DeploymentId = EXCLUDED.networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx = EXCLUDED.networkbaseline_ForbiddenPeers_idx, idx = EXCLUDED.idx, Port = EXCLUDED.Port, L4Protocol = EXCLUDED.L4Protocol"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func insertIntoNetworkbaselineForbiddenPeersProperties(ctx context.Context, tx pgx.Tx, obj *storage.NetworkBaselineConnectionProperties, networkbaseline_DeploymentId string, networkbaseline_ForbiddenPeers_idx int, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		networkbaseline_DeploymentId,
-		networkbaseline_ForbiddenPeers_idx,
-		idx,
-		obj.GetIngress(),
-		obj.GetPort(),
-		obj.GetProtocol(),
-	}
-
-	finalStr := "INSERT INTO networkbaseline_ForbiddenPeers_Properties (networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx, Ingress, Port, Protocol) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx, idx) DO UPDATE SET networkbaseline_DeploymentId = EXCLUDED.networkbaseline_DeploymentId, networkbaseline_ForbiddenPeers_idx = EXCLUDED.networkbaseline_ForbiddenPeers_idx, idx = EXCLUDED.idx, Ingress = EXCLUDED.Ingress, Port = EXCLUDED.Port, Protocol = EXCLUDED.Protocol"
+	finalStr := "INSERT INTO networkbaseline_ForbiddenPeers (networkbaseline_DeploymentId, idx, Entity_Info_ExternalSource_Default) VALUES($1, $2, $3) ON CONFLICT(networkbaseline_DeploymentId, idx) DO UPDATE SET networkbaseline_DeploymentId = EXCLUDED.networkbaseline_DeploymentId, idx = EXCLUDED.idx, Entity_Info_ExternalSource_Default = EXCLUDED.Entity_Info_ExternalSource_Default"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -545,16 +247,6 @@ func (s *storeImpl) copyFromNetworkbaseline(ctx context.Context, tx pgx.Tx, objs
 
 		"deploymentid",
 
-		"clusterid",
-
-		"namespace",
-
-		"observationperiodend",
-
-		"locked",
-
-		"deploymentname",
-
 		"serialized",
 	}
 
@@ -570,16 +262,6 @@ func (s *storeImpl) copyFromNetworkbaseline(ctx context.Context, tx pgx.Tx, objs
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetDeploymentId(),
-
-			obj.GetClusterId(),
-
-			obj.GetNamespace(),
-
-			pgutils.NilOrTime(obj.GetObservationPeriodEnd()),
-
-			obj.GetLocked(),
-
-			obj.GetDeploymentName(),
 
 			serialized,
 		})
@@ -635,23 +317,7 @@ func (s *storeImpl) copyFromNetworkbaselinePeers(ctx context.Context, tx pgx.Tx,
 
 		"idx",
 
-		"entity_info_type",
-
-		"entity_info_id",
-
-		"entity_info_deployment_name",
-
-		"entity_info_deployment_namespace",
-
-		"entity_info_deployment_cluster",
-
-		"entity_info_externalsource_name",
-
-		"entity_info_externalsource_cidr",
-
 		"entity_info_externalsource_default",
-
-		"entity_scope_clusterid",
 	}
 
 	for idx, obj := range objs {
@@ -664,23 +330,7 @@ func (s *storeImpl) copyFromNetworkbaselinePeers(ctx context.Context, tx pgx.Tx,
 
 			idx,
 
-			obj.GetEntity().GetInfo().GetType(),
-
-			obj.GetEntity().GetInfo().GetId(),
-
-			obj.GetEntity().GetInfo().GetDeployment().GetName(),
-
-			obj.GetEntity().GetInfo().GetDeployment().GetNamespace(),
-
-			obj.GetEntity().GetInfo().GetDeployment().GetCluster(),
-
-			obj.GetEntity().GetInfo().GetExternalSource().GetName(),
-
-			obj.GetEntity().GetInfo().GetExternalSource().GetCidr(),
-
 			obj.GetEntity().GetInfo().GetExternalSource().GetDefault(),
-
-			obj.GetEntity().GetScope().GetClusterId(),
 		})
 
 		// if we hit our batch size we need to push the data
@@ -689,130 +339,6 @@ func (s *storeImpl) copyFromNetworkbaselinePeers(ctx context.Context, tx pgx.Tx,
 			// delete for the top level parent
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline_peers"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for idx, obj := range objs {
-
-		if err = s.copyFromNetworkbaselinePeersListenPorts(ctx, tx, networkbaseline_DeploymentId, idx, obj.GetEntity().GetInfo().GetDeployment().GetListenPorts()...); err != nil {
-			return err
-		}
-		if err = s.copyFromNetworkbaselinePeersProperties(ctx, tx, networkbaseline_DeploymentId, idx, obj.GetProperties()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromNetworkbaselinePeersListenPorts(ctx context.Context, tx pgx.Tx, networkbaseline_DeploymentId string, networkbaseline_Peers_idx int, objs ...*storage.NetworkEntityInfo_Deployment_ListenPort) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"networkbaseline_deploymentid",
-
-		"networkbaseline_peers_idx",
-
-		"idx",
-
-		"port",
-
-		"l4protocol",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			networkbaseline_DeploymentId,
-
-			networkbaseline_Peers_idx,
-
-			idx,
-
-			obj.GetPort(),
-
-			obj.GetL4Protocol(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline_peers_listenports"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromNetworkbaselinePeersProperties(ctx context.Context, tx pgx.Tx, networkbaseline_DeploymentId string, networkbaseline_Peers_idx int, objs ...*storage.NetworkBaselineConnectionProperties) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"networkbaseline_deploymentid",
-
-		"networkbaseline_peers_idx",
-
-		"idx",
-
-		"ingress",
-
-		"port",
-
-		"protocol",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			networkbaseline_DeploymentId,
-
-			networkbaseline_Peers_idx,
-
-			idx,
-
-			obj.GetIngress(),
-
-			obj.GetPort(),
-
-			obj.GetProtocol(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline_peers_properties"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -838,23 +364,7 @@ func (s *storeImpl) copyFromNetworkbaselineForbiddenPeers(ctx context.Context, t
 
 		"idx",
 
-		"entity_info_type",
-
-		"entity_info_id",
-
-		"entity_info_deployment_name",
-
-		"entity_info_deployment_namespace",
-
-		"entity_info_deployment_cluster",
-
-		"entity_info_externalsource_name",
-
-		"entity_info_externalsource_cidr",
-
 		"entity_info_externalsource_default",
-
-		"entity_scope_clusterid",
 	}
 
 	for idx, obj := range objs {
@@ -867,23 +377,7 @@ func (s *storeImpl) copyFromNetworkbaselineForbiddenPeers(ctx context.Context, t
 
 			idx,
 
-			obj.GetEntity().GetInfo().GetType(),
-
-			obj.GetEntity().GetInfo().GetId(),
-
-			obj.GetEntity().GetInfo().GetDeployment().GetName(),
-
-			obj.GetEntity().GetInfo().GetDeployment().GetNamespace(),
-
-			obj.GetEntity().GetInfo().GetDeployment().GetCluster(),
-
-			obj.GetEntity().GetInfo().GetExternalSource().GetName(),
-
-			obj.GetEntity().GetInfo().GetExternalSource().GetCidr(),
-
 			obj.GetEntity().GetInfo().GetExternalSource().GetDefault(),
-
-			obj.GetEntity().GetScope().GetClusterId(),
 		})
 
 		// if we hit our batch size we need to push the data
@@ -892,130 +386,6 @@ func (s *storeImpl) copyFromNetworkbaselineForbiddenPeers(ctx context.Context, t
 			// delete for the top level parent
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline_forbiddenpeers"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for idx, obj := range objs {
-
-		if err = s.copyFromNetworkbaselineForbiddenPeersListenPorts(ctx, tx, networkbaseline_DeploymentId, idx, obj.GetEntity().GetInfo().GetDeployment().GetListenPorts()...); err != nil {
-			return err
-		}
-		if err = s.copyFromNetworkbaselineForbiddenPeersProperties(ctx, tx, networkbaseline_DeploymentId, idx, obj.GetProperties()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromNetworkbaselineForbiddenPeersListenPorts(ctx context.Context, tx pgx.Tx, networkbaseline_DeploymentId string, networkbaseline_ForbiddenPeers_idx int, objs ...*storage.NetworkEntityInfo_Deployment_ListenPort) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"networkbaseline_deploymentid",
-
-		"networkbaseline_forbiddenpeers_idx",
-
-		"idx",
-
-		"port",
-
-		"l4protocol",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			networkbaseline_DeploymentId,
-
-			networkbaseline_ForbiddenPeers_idx,
-
-			idx,
-
-			obj.GetPort(),
-
-			obj.GetL4Protocol(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline_forbiddenpeers_listenports"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromNetworkbaselineForbiddenPeersProperties(ctx context.Context, tx pgx.Tx, networkbaseline_DeploymentId string, networkbaseline_ForbiddenPeers_idx int, objs ...*storage.NetworkBaselineConnectionProperties) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"networkbaseline_deploymentid",
-
-		"networkbaseline_forbiddenpeers_idx",
-
-		"idx",
-
-		"ingress",
-
-		"port",
-
-		"protocol",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			networkbaseline_DeploymentId,
-
-			networkbaseline_ForbiddenPeers_idx,
-
-			idx,
-
-			obj.GetIngress(),
-
-			obj.GetPort(),
-
-			obj.GetProtocol(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline_forbiddenpeers_properties"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1275,35 +645,11 @@ func dropTableNetworkbaseline(ctx context.Context, db *pgxpool.Pool) {
 
 func dropTableNetworkbaselinePeers(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkbaseline_Peers CASCADE")
-	dropTableNetworkbaselinePeersListenPorts(ctx, db)
-	dropTableNetworkbaselinePeersProperties(ctx, db)
-
-}
-
-func dropTableNetworkbaselinePeersListenPorts(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkbaseline_Peers_ListenPorts CASCADE")
-
-}
-
-func dropTableNetworkbaselinePeersProperties(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkbaseline_Peers_Properties CASCADE")
 
 }
 
 func dropTableNetworkbaselineForbiddenPeers(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkbaseline_ForbiddenPeers CASCADE")
-	dropTableNetworkbaselineForbiddenPeersListenPorts(ctx, db)
-	dropTableNetworkbaselineForbiddenPeersProperties(ctx, db)
-
-}
-
-func dropTableNetworkbaselineForbiddenPeersListenPorts(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkbaseline_ForbiddenPeers_ListenPorts CASCADE")
-
-}
-
-func dropTableNetworkbaselineForbiddenPeersProperties(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkbaseline_ForbiddenPeers_Properties CASCADE")
 
 }
 

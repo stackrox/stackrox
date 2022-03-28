@@ -74,11 +74,6 @@ func createTableRoles(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists roles (
     Name varchar,
-    Description varchar,
-    PermissionSetId varchar,
-    AccessScopeId varchar,
-    GlobalAccess integer,
-    ResourceToAccess jsonb,
     serialized bytea,
     PRIMARY KEY(Name)
 )
@@ -108,15 +103,10 @@ func insertIntoRoles(ctx context.Context, tx pgx.Tx, obj *storage.Role) error {
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetName(),
-		obj.GetDescription(),
-		obj.GetPermissionSetId(),
-		obj.GetAccessScopeId(),
-		obj.GetGlobalAccess(),
-		obj.GetResourceToAccess(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO roles (Name, Description, PermissionSetId, AccessScopeId, GlobalAccess, ResourceToAccess, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, Description = EXCLUDED.Description, PermissionSetId = EXCLUDED.PermissionSetId, AccessScopeId = EXCLUDED.AccessScopeId, GlobalAccess = EXCLUDED.GlobalAccess, ResourceToAccess = EXCLUDED.ResourceToAccess, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO roles (Name, serialized) VALUES($1, $2) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -139,16 +129,6 @@ func (s *storeImpl) copyFromRoles(ctx context.Context, tx pgx.Tx, objs ...*stora
 
 		"name",
 
-		"description",
-
-		"permissionsetid",
-
-		"accessscopeid",
-
-		"globalaccess",
-
-		"resourcetoaccess",
-
 		"serialized",
 	}
 
@@ -164,16 +144,6 @@ func (s *storeImpl) copyFromRoles(ctx context.Context, tx pgx.Tx, objs ...*stora
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetName(),
-
-			obj.GetDescription(),
-
-			obj.GetPermissionSetId(),
-
-			obj.GetAccessScopeId(),
-
-			obj.GetGlobalAccess(),
-
-			obj.GetResourceToAccess(),
 
 			serialized,
 		})

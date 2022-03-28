@@ -74,12 +74,6 @@ func createTableApitokens(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists apitokens (
     Id varchar,
-    Name varchar,
-    Roles text[],
-    IssuedAt timestamp,
-    Expiration timestamp,
-    Revoked bool,
-    Role varchar,
     serialized bytea,
     PRIMARY KEY(Id)
 )
@@ -109,16 +103,10 @@ func insertIntoApitokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetad
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetName(),
-		obj.GetRoles(),
-		pgutils.NilOrTime(obj.GetIssuedAt()),
-		pgutils.NilOrTime(obj.GetExpiration()),
-		obj.GetRevoked(),
-		obj.GetRole(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO apitokens (Id, Name, Roles, IssuedAt, Expiration, Revoked, Role, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Roles = EXCLUDED.Roles, IssuedAt = EXCLUDED.IssuedAt, Expiration = EXCLUDED.Expiration, Revoked = EXCLUDED.Revoked, Role = EXCLUDED.Role, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO apitokens (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -141,18 +129,6 @@ func (s *storeImpl) copyFromApitokens(ctx context.Context, tx pgx.Tx, objs ...*s
 
 		"id",
 
-		"name",
-
-		"roles",
-
-		"issuedat",
-
-		"expiration",
-
-		"revoked",
-
-		"role",
-
 		"serialized",
 	}
 
@@ -168,18 +144,6 @@ func (s *storeImpl) copyFromApitokens(ctx context.Context, tx pgx.Tx, objs ...*s
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetId(),
-
-			obj.GetName(),
-
-			obj.GetRoles(),
-
-			pgutils.NilOrTime(obj.GetIssuedAt()),
-
-			pgutils.NilOrTime(obj.GetExpiration()),
-
-			obj.GetRevoked(),
-
-			obj.GetRole(),
 
 			serialized,
 		})

@@ -74,7 +74,6 @@ func createTableSignatureintegrations(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists signatureintegrations (
     Id varchar,
-    Name varchar UNIQUE,
     serialized bytea,
     PRIMARY KEY(Id)
 )
@@ -86,36 +85,6 @@ create table if not exists signatureintegrations (
 	}
 
 	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableSignatureintegrationsPublicKeys(ctx, db)
-}
-
-func createTableSignatureintegrationsPublicKeys(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists signatureintegrations_PublicKeys (
-    signatureintegrations_Id varchar,
-    idx integer,
-    Name varchar,
-    PublicKeyPemEnc varchar,
-    PRIMARY KEY(signatureintegrations_Id, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (signatureintegrations_Id) REFERENCES signatureintegrations(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists signatureintegrationsPublicKeys_idx on signatureintegrations_PublicKeys using btree(idx)",
-	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			log.Panicf("Error creating index %s: %v", index, err)
@@ -134,43 +103,10 @@ func insertIntoSignatureintegrations(ctx context.Context, tx pgx.Tx, obj *storag
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetName(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO signatureintegrations (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetCosign().GetPublicKeys() {
-		if err := insertIntoSignatureintegrationsPublicKeys(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from signatureintegrations_PublicKeys where signatureintegrations_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetCosign().GetPublicKeys()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoSignatureintegrationsPublicKeys(ctx context.Context, tx pgx.Tx, obj *storage.CosignPublicKeyVerification_PublicKey, signatureintegrations_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		signatureintegrations_Id,
-		idx,
-		obj.GetName(),
-		obj.GetPublicKeyPemEnc(),
-	}
-
-	finalStr := "INSERT INTO signatureintegrations_PublicKeys (signatureintegrations_Id, idx, Name, PublicKeyPemEnc) VALUES($1, $2, $3, $4) ON CONFLICT(signatureintegrations_Id, idx) DO UPDATE SET signatureintegrations_Id = EXCLUDED.signatureintegrations_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, PublicKeyPemEnc = EXCLUDED.PublicKeyPemEnc"
+	finalStr := "INSERT INTO signatureintegrations (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -193,8 +129,6 @@ func (s *storeImpl) copyFromSignatureintegrations(ctx context.Context, tx pgx.Tx
 
 		"id",
 
-		"name",
-
 		"serialized",
 	}
 
@@ -210,8 +144,6 @@ func (s *storeImpl) copyFromSignatureintegrations(ctx context.Context, tx pgx.Tx
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetId(),
-
-			obj.GetName(),
 
 			serialized,
 		})
@@ -232,64 +164,6 @@ func (s *storeImpl) copyFromSignatureintegrations(ctx context.Context, tx pgx.Tx
 			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"signatureintegrations"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for _, obj := range objs {
-
-		if err = s.copyFromSignatureintegrationsPublicKeys(ctx, tx, obj.GetId(), obj.GetCosign().GetPublicKeys()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromSignatureintegrationsPublicKeys(ctx context.Context, tx pgx.Tx, signatureintegrations_Id string, objs ...*storage.CosignPublicKeyVerification_PublicKey) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"signatureintegrations_id",
-
-		"idx",
-
-		"name",
-
-		"publickeypemenc",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			signatureintegrations_Id,
-
-			idx,
-
-			obj.GetName(),
-
-			obj.GetPublicKeyPemEnc(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"signatureintegrations_publickeys"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -542,12 +416,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.SignatureInte
 
 func dropTableSignatureintegrations(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS signatureintegrations CASCADE")
-	dropTableSignatureintegrationsPublicKeys(ctx, db)
-
-}
-
-func dropTableSignatureintegrationsPublicKeys(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS signatureintegrations_PublicKeys CASCADE")
 
 }
 

@@ -78,7 +78,6 @@ create table if not exists pods (
     DeploymentId varchar,
     Namespace varchar,
     ClusterId varchar,
-    Started timestamp,
     serialized bytea,
     PRIMARY KEY(Id)
 )
@@ -97,7 +96,6 @@ create table if not exists pods (
 	}
 
 	createTablePodsLiveInstances(ctx, db)
-	createTablePodsTerminatedInstances(ctx, db)
 }
 
 func createTablePodsLiveInstances(ctx context.Context, db *pgxpool.Pool) {
@@ -105,17 +103,7 @@ func createTablePodsLiveInstances(ctx context.Context, db *pgxpool.Pool) {
 create table if not exists pods_LiveInstances (
     pods_Id varchar,
     idx integer,
-    InstanceId_ContainerRuntime integer,
-    InstanceId_Id varchar,
-    InstanceId_Node varchar,
-    ContainingPodId varchar,
-    ContainerName varchar,
-    ContainerIps text[],
-    Started timestamp,
     ImageDigest varchar,
-    Finished timestamp,
-    ExitCode integer,
-    TerminationReason varchar,
     PRIMARY KEY(pods_Id, idx),
     CONSTRAINT fk_parent_table_0 FOREIGN KEY (pods_Id) REFERENCES pods(Id) ON DELETE CASCADE
 )
@@ -129,73 +117,6 @@ create table if not exists pods_LiveInstances (
 	indexes := []string{
 
 		"create index if not exists podsLiveInstances_idx on pods_LiveInstances using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTablePodsTerminatedInstances(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists pods_TerminatedInstances (
-    pods_Id varchar,
-    idx integer,
-    PRIMARY KEY(pods_Id, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (pods_Id) REFERENCES pods(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists podsTerminatedInstances_idx on pods_TerminatedInstances using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTablePodsTerminatedInstancesInstances(ctx, db)
-}
-
-func createTablePodsTerminatedInstancesInstances(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists pods_TerminatedInstances_Instances (
-    pods_Id varchar,
-    pods_TerminatedInstances_idx integer,
-    idx integer,
-    InstanceId_ContainerRuntime integer,
-    InstanceId_Id varchar,
-    InstanceId_Node varchar,
-    ContainingPodId varchar,
-    ContainerName varchar,
-    ContainerIps text[],
-    Started timestamp,
-    ImageDigest varchar,
-    Finished timestamp,
-    ExitCode integer,
-    TerminationReason varchar,
-    PRIMARY KEY(pods_Id, pods_TerminatedInstances_idx, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (pods_Id, pods_TerminatedInstances_idx) REFERENCES pods_TerminatedInstances(pods_Id, idx) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists podsTerminatedInstancesInstances_idx on pods_TerminatedInstances_Instances using btree(idx)",
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
@@ -219,11 +140,10 @@ func insertIntoPods(ctx context.Context, tx pgx.Tx, obj *storage.Pod) error {
 		obj.GetDeploymentId(),
 		obj.GetNamespace(),
 		obj.GetClusterId(),
-		pgutils.NilOrTime(obj.GetStarted()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO pods (Id, Name, DeploymentId, Namespace, ClusterId, Started, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, Started = EXCLUDED.Started, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO pods (Id, Name, DeploymentId, Namespace, ClusterId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -242,17 +162,6 @@ func insertIntoPods(ctx context.Context, tx pgx.Tx, obj *storage.Pod) error {
 	if err != nil {
 		return err
 	}
-	for childIdx, child := range obj.GetTerminatedInstances() {
-		if err := insertIntoPodsTerminatedInstances(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from pods_TerminatedInstances where pods_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetTerminatedInstances()))
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -262,79 +171,10 @@ func insertIntoPodsLiveInstances(ctx context.Context, tx pgx.Tx, obj *storage.Co
 		// parent primary keys start
 		pods_Id,
 		idx,
-		obj.GetInstanceId().GetContainerRuntime(),
-		obj.GetInstanceId().GetId(),
-		obj.GetInstanceId().GetNode(),
-		obj.GetContainingPodId(),
-		obj.GetContainerName(),
-		obj.GetContainerIps(),
-		pgutils.NilOrTime(obj.GetStarted()),
 		obj.GetImageDigest(),
-		pgutils.NilOrTime(obj.GetFinished()),
-		obj.GetExitCode(),
-		obj.GetTerminationReason(),
 	}
 
-	finalStr := "INSERT INTO pods_LiveInstances (pods_Id, idx, InstanceId_ContainerRuntime, InstanceId_Id, InstanceId_Node, ContainingPodId, ContainerName, ContainerIps, Started, ImageDigest, Finished, ExitCode, TerminationReason) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(pods_Id, idx) DO UPDATE SET pods_Id = EXCLUDED.pods_Id, idx = EXCLUDED.idx, InstanceId_ContainerRuntime = EXCLUDED.InstanceId_ContainerRuntime, InstanceId_Id = EXCLUDED.InstanceId_Id, InstanceId_Node = EXCLUDED.InstanceId_Node, ContainingPodId = EXCLUDED.ContainingPodId, ContainerName = EXCLUDED.ContainerName, ContainerIps = EXCLUDED.ContainerIps, Started = EXCLUDED.Started, ImageDigest = EXCLUDED.ImageDigest, Finished = EXCLUDED.Finished, ExitCode = EXCLUDED.ExitCode, TerminationReason = EXCLUDED.TerminationReason"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func insertIntoPodsTerminatedInstances(ctx context.Context, tx pgx.Tx, obj *storage.Pod_ContainerInstanceList, pods_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		pods_Id,
-		idx,
-	}
-
-	finalStr := "INSERT INTO pods_TerminatedInstances (pods_Id, idx) VALUES($1, $2) ON CONFLICT(pods_Id, idx) DO UPDATE SET pods_Id = EXCLUDED.pods_Id, idx = EXCLUDED.idx"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetInstances() {
-		if err := insertIntoPodsTerminatedInstancesInstances(ctx, tx, child, pods_Id, idx, childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from pods_TerminatedInstances_Instances where pods_Id = $1 AND pods_TerminatedInstances_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, pods_Id, idx, len(obj.GetInstances()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoPodsTerminatedInstancesInstances(ctx context.Context, tx pgx.Tx, obj *storage.ContainerInstance, pods_Id string, pods_TerminatedInstances_idx int, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		pods_Id,
-		pods_TerminatedInstances_idx,
-		idx,
-		obj.GetInstanceId().GetContainerRuntime(),
-		obj.GetInstanceId().GetId(),
-		obj.GetInstanceId().GetNode(),
-		obj.GetContainingPodId(),
-		obj.GetContainerName(),
-		obj.GetContainerIps(),
-		pgutils.NilOrTime(obj.GetStarted()),
-		obj.GetImageDigest(),
-		pgutils.NilOrTime(obj.GetFinished()),
-		obj.GetExitCode(),
-		obj.GetTerminationReason(),
-	}
-
-	finalStr := "INSERT INTO pods_TerminatedInstances_Instances (pods_Id, pods_TerminatedInstances_idx, idx, InstanceId_ContainerRuntime, InstanceId_Id, InstanceId_Node, ContainingPodId, ContainerName, ContainerIps, Started, ImageDigest, Finished, ExitCode, TerminationReason) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) ON CONFLICT(pods_Id, pods_TerminatedInstances_idx, idx) DO UPDATE SET pods_Id = EXCLUDED.pods_Id, pods_TerminatedInstances_idx = EXCLUDED.pods_TerminatedInstances_idx, idx = EXCLUDED.idx, InstanceId_ContainerRuntime = EXCLUDED.InstanceId_ContainerRuntime, InstanceId_Id = EXCLUDED.InstanceId_Id, InstanceId_Node = EXCLUDED.InstanceId_Node, ContainingPodId = EXCLUDED.ContainingPodId, ContainerName = EXCLUDED.ContainerName, ContainerIps = EXCLUDED.ContainerIps, Started = EXCLUDED.Started, ImageDigest = EXCLUDED.ImageDigest, Finished = EXCLUDED.Finished, ExitCode = EXCLUDED.ExitCode, TerminationReason = EXCLUDED.TerminationReason"
+	finalStr := "INSERT INTO pods_LiveInstances (pods_Id, idx, ImageDigest) VALUES($1, $2, $3) ON CONFLICT(pods_Id, idx) DO UPDATE SET pods_Id = EXCLUDED.pods_Id, idx = EXCLUDED.idx, ImageDigest = EXCLUDED.ImageDigest"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -365,8 +205,6 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx pgx.Tx, objs ...*storag
 
 		"clusterid",
 
-		"started",
-
 		"serialized",
 	}
 
@@ -390,8 +228,6 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx pgx.Tx, objs ...*storag
 			obj.GetNamespace(),
 
 			obj.GetClusterId(),
-
-			pgutils.NilOrTime(obj.GetStarted()),
 
 			serialized,
 		})
@@ -427,9 +263,6 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx pgx.Tx, objs ...*storag
 		if err = s.copyFromPodsLiveInstances(ctx, tx, obj.GetId(), obj.GetLiveInstances()...); err != nil {
 			return err
 		}
-		if err = s.copyFromPodsTerminatedInstances(ctx, tx, obj.GetId(), obj.GetTerminatedInstances()...); err != nil {
-			return err
-		}
 	}
 
 	return err
@@ -447,27 +280,7 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, po
 
 		"idx",
 
-		"instanceid_containerruntime",
-
-		"instanceid_id",
-
-		"instanceid_node",
-
-		"containingpodid",
-
-		"containername",
-
-		"containerips",
-
-		"started",
-
 		"imagedigest",
-
-		"finished",
-
-		"exitcode",
-
-		"terminationreason",
 	}
 
 	for idx, obj := range objs {
@@ -480,27 +293,7 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, po
 
 			idx,
 
-			obj.GetInstanceId().GetContainerRuntime(),
-
-			obj.GetInstanceId().GetId(),
-
-			obj.GetInstanceId().GetNode(),
-
-			obj.GetContainingPodId(),
-
-			obj.GetContainerName(),
-
-			obj.GetContainerIps(),
-
-			pgutils.NilOrTime(obj.GetStarted()),
-
 			obj.GetImageDigest(),
-
-			pgutils.NilOrTime(obj.GetFinished()),
-
-			obj.GetExitCode(),
-
-			obj.GetTerminationReason(),
 		})
 
 		// if we hit our batch size we need to push the data
@@ -509,147 +302,6 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, po
 			// delete for the top level parent
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"pods_liveinstances"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromPodsTerminatedInstances(ctx context.Context, tx pgx.Tx, pods_Id string, objs ...*storage.Pod_ContainerInstanceList) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"pods_id",
-
-		"idx",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			pods_Id,
-
-			idx,
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"pods_terminatedinstances"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for idx, obj := range objs {
-
-		if err = s.copyFromPodsTerminatedInstancesInstances(ctx, tx, pods_Id, idx, obj.GetInstances()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromPodsTerminatedInstancesInstances(ctx context.Context, tx pgx.Tx, pods_Id string, pods_TerminatedInstances_idx int, objs ...*storage.ContainerInstance) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"pods_id",
-
-		"pods_terminatedinstances_idx",
-
-		"idx",
-
-		"instanceid_containerruntime",
-
-		"instanceid_id",
-
-		"instanceid_node",
-
-		"containingpodid",
-
-		"containername",
-
-		"containerips",
-
-		"started",
-
-		"imagedigest",
-
-		"finished",
-
-		"exitcode",
-
-		"terminationreason",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			pods_Id,
-
-			pods_TerminatedInstances_idx,
-
-			idx,
-
-			obj.GetInstanceId().GetContainerRuntime(),
-
-			obj.GetInstanceId().GetId(),
-
-			obj.GetInstanceId().GetNode(),
-
-			obj.GetContainingPodId(),
-
-			obj.GetContainerName(),
-
-			obj.GetContainerIps(),
-
-			pgutils.NilOrTime(obj.GetStarted()),
-
-			obj.GetImageDigest(),
-
-			pgutils.NilOrTime(obj.GetFinished()),
-
-			obj.GetExitCode(),
-
-			obj.GetTerminationReason(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"pods_terminatedinstances_instances"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -903,23 +555,11 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Pod) error) e
 func dropTablePods(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS pods CASCADE")
 	dropTablePodsLiveInstances(ctx, db)
-	dropTablePodsTerminatedInstances(ctx, db)
 
 }
 
 func dropTablePodsLiveInstances(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS pods_LiveInstances CASCADE")
-
-}
-
-func dropTablePodsTerminatedInstances(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS pods_TerminatedInstances CASCADE")
-	dropTablePodsTerminatedInstancesInstances(ctx, db)
-
-}
-
-func dropTablePodsTerminatedInstancesInstances(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS pods_TerminatedInstances_Instances CASCADE")
 
 }
 
