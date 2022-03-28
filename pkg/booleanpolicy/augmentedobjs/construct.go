@@ -14,6 +14,10 @@ import (
 const (
 	// CompositeFieldCharSep is the separating character used when we create a composite field.
 	CompositeFieldCharSep = "\t"
+
+	// EmptySignatureIntegrationID is used as placeholder for images that do not have any signatures associated with
+	// them.
+	EmptySignatureIntegrationID = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000000"
 )
 
 func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process *storage.ProcessIndicator) (int, error) {
@@ -212,6 +216,7 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 	}
 
 	if features.ImageSignatureVerification.Enabled() {
+		var addedAtLeastOnSignatureVerificationResult bool
 		// Since policies query for image verification status as a single boolean field, we add it to the image here.
 		for i, result := range image.GetSignatureVerificationData().GetResults() {
 			if result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
@@ -231,6 +236,24 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 				if err != nil {
 					return nil, utils.Should(err)
 				}
+
+				addedAtLeastOnSignatureVerificationResult = true
+			}
+		}
+		// Policies are weird man. When the object is not created, the policy will not match, but it should match.
+		// Any image that DOESN'T have any signature should also be visible here (I guess?).
+		// This means, we will have to create a dummy entry within the object that will
+		if !addedAtLeastOnSignatureVerificationResult {
+			err := obj.AddPlainObjAt(
+				&imageSignatureVerification{
+					VerifiedBy: EmptySignatureIntegrationID,
+				},
+				pathutil.FieldStep("SignatureVerificationData"),
+				pathutil.FieldStep("Results"),
+				pathutil.IndexStep(0),
+				pathutil.FieldStep(imageSignatureVerifiedKey))
+			if err != nil {
+				return nil, utils.Should(err)
 			}
 		}
 	}
