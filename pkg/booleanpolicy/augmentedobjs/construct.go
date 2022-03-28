@@ -183,6 +183,19 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 
 // ConstructImage constructs the augmented image object.
 func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
+	// When evaluating policies, the evaluator will stop when any of the objects within the path
+	// are nil and immediately return, not matching. Within the image signature criteria, we have
+	// a combination of "Match if the signature verification result is not as expected" OR "Match if
+	// there is no signature verification result". This means that we have to add the SignatureVerificationData
+	// and SignatureVerificationResults object here as a workaround and add the placeholder value,
+	// making it possible to also match for nil objects.
+	// We have to do this at the beginning, so the augmented object contains the field steps.
+	if image != nil && image.GetSignatureVerificationData().GetResults() == nil {
+		image.SignatureVerificationData = &storage.ImageSignatureVerificationData{
+			Results: []*storage.ImageSignatureVerificationResult{{}},
+		}
+	}
+
 	obj := pathutil.NewAugmentedObj(image)
 
 	// Since policies query for Dockerfile Line as a single compound field, we simulate it by creating a "composite"
@@ -240,23 +253,33 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 				addedAtLeastOnSignatureVerificationResult = true
 			}
 		}
-		// Policies are weird man. When the object is not created, the policy will not match, but it should match.
+		// When the object is not created, the policy will not match, but it should match.
 		// Any image that DOESN'T have any signature should also be visible here (I guess?).
-		// This means, we will have to create a dummy entry within the object that will
+		// This means, we will have to create a dummy entry within the object that will make it
+		// possible for us to match the policy and create alerts.
 		if !addedAtLeastOnSignatureVerificationResult {
-			err := obj.AddPlainObjAt(
-				&imageSignatureVerification{
-					VerifiedBy: EmptySignatureIntegrationID,
-				},
-				pathutil.FieldStep("SignatureVerificationData"),
-				pathutil.FieldStep("Results"),
-				pathutil.IndexStep(0),
-				pathutil.FieldStep(imageSignatureVerifiedKey))
-			if err != nil {
+			if err := addPlaceHolderSignatureVerificationResult(obj); err != nil {
 				return nil, utils.Should(err)
 			}
 		}
 	}
 
 	return obj, nil
+}
+
+// addPlaceHolderSignatureVerificationResult will add a placeholder signature verification result holding
+// EmptySignatureIntegrationID.
+func addPlaceHolderSignatureVerificationResult(obj *pathutil.AugmentedObj) error {
+	err := obj.AddPlainObjAt(
+		&imageSignatureVerification{
+			VerifiedBy: EmptySignatureIntegrationID,
+		},
+		pathutil.FieldStep("SignatureVerificationData"),
+		pathutil.FieldStep("Results"),
+		pathutil.IndexStep(0),
+		pathutil.FieldStep(imageSignatureVerifiedKey))
+	if err != nil {
+		return err
+	}
+	return nil
 }

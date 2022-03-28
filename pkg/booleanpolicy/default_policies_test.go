@@ -2127,6 +2127,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 
 	var images = []*storage.Image{
 		imageWithSignatureVerificationResults("image_no_results", []*storage.ImageSignatureVerificationResult{{}}),
+		imageWithSignatureVerificationResults("image_nil_results", nil),
 		imageWithSignatureVerificationResults("verified_by_0", []*storage.ImageSignatureVerificationResult{{
 			VerifierId: verifier0,
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
