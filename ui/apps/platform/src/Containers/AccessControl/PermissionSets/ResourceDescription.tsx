@@ -2,7 +2,8 @@ import React, { ReactElement } from 'react';
 
 import { ResourceName } from 'types/roleResources';
 
-// First draft of description fields for possible future request from backend.
+// Description for permission resource types. 'Read:' and 'Write:' tokens have
+// special meaning and mark parts related to respective operations.
 const resourceDescriptions: Record<ResourceName, string> = {
     APIToken: 'Read: View API tokens. Write: Add or revoke API tokens.',
     Alert: 'Read: View policy violations. Write: Resolve or edit policy violations.',
@@ -69,10 +70,10 @@ const resourceDescriptions: Record<ResourceName, string> = {
     SignatureIntegration:
         'Read: View signature integrations and configurations. Write: Add, modify, or delete signature integrations and configurations.',
     User: 'Read: View information about the users who have accessed the user interface or APIs, including the metadata from the authentication providers. Write: N/A',
-    VulnerabilityManagementRequests:
-        'Read: View all pending deferral or false positive requests for vulnerabilities. Write: Request a deferral on a vulnerability, mark it as a false positive or move a pending or previously approved request (made by the same user) back to observed.',
     VulnerabilityManagementApprovals:
         'Read: View all pending deferral or false positive requests for vulnerabilities. Write: Approve or deny any pending deferral or false positive requests and move any previously approved requests back to observed.',
+    VulnerabilityManagementRequests:
+        'Read: View all pending deferral or false positive requests for vulnerabilities. Write: Request a deferral on a vulnerability, mark it as a false positive or move a pending or previously approved request (made by the same user) back to observed.',
     VulnerabilityReports:
         'Read: View all vulnerability report configurations. Write: Add, modify or delete vulnerability report configurations.',
     WatchedImage:
