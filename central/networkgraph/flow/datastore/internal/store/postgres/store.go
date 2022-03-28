@@ -38,8 +38,6 @@ const (
 	getSinceStmt           = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE (LastSeenTimestamp >= $1 OR LastSeenTimestamp IS NULL) AND ClusterId = $2"
 	deleteDeploymentStmt   = "DELETE FROM networkflow WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2))"
 	deleteOrphanByTimeStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND LastSeenTimestamp IS NOT NULL AND LastSeenTimestamp < $2"
-
-	maxTimeStampStmt = "SELECT MAX(LastSeenTimestamp) FROM networkflow where ClusterId = $1"
 )
 
 var (
@@ -489,12 +487,8 @@ func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp)
 
 	var rows pgx.Rows
 	var err error
-
-	var lastUpdateTS *time.Time
-	row := s.db.QueryRow(ctx, maxTimeStampStmt, s.clusterID)
-	if err := row.Scan(&lastUpdateTS); err != nil {
-		*lastUpdateTS = time.Now()
-	}
+	// Default to Now as that is when we are reading them
+	lastUpdateTS := *types.TimestampNow()
 
 	// handling case when since is nil.  Assumption is we want everything in that case vs when date is not null
 	if since == nil {
@@ -512,12 +506,7 @@ func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp)
 		return nil, types.Timestamp{}, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var ts *types.Timestamp
-	if lastUpdateTS != nil {
-		ts = protoconv.MustConvertTimeToTimestamp(*lastUpdateTS)
-	}
-
-	return flows, *ts, nil
+	return flows, lastUpdateTS, nil
 }
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
