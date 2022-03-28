@@ -102,7 +102,10 @@ func migrateWhitelistsToExclusions(db *bolt.DB) error {
 	return err
 }
 
-// Removing the whitelist and exclusion logic here since we have made whitelist a reserved field
+// As of March 2022, we are removing some code from this migration logic so that the codebase compiles -
+// we have made the policy fields as a reserved field in policy.proto.
+// Removing the whitelist and exclusion logic here since we have made whitelist a reserved field.
+// We will no longer support any policy version other than 1.1 for any policy workflows (including migration).
 func migratePolicy(p *storage.Policy) {
 	p.PolicyVersion = newVersion
 }
