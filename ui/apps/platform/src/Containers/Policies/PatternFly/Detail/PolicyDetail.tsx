@@ -222,7 +222,9 @@ function PolicyDetail({
                                                   isDisabled={isDefault}
                                                   onClick={() => setIsDeleteOpen(true)}
                                               >
-                                                  Delete policy
+                                                  {isDefault
+                                                      ? 'Cannot delete a default policy'
+                                                      : 'Delete policy'}
                                               </DropdownItem>,
                                           ]
                                         : [
