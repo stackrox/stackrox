@@ -1,5 +1,3 @@
-import { PermissionLevel } from './rbac.proto';
-
 export type ListPolicy = {
     id: string;
     name: string;
@@ -29,8 +27,6 @@ export type Policy = {
     rationale: string;
     remediation: string;
     categories: string[];
-    fields: PolicyFields | null;
-    // whitelists is deprecated and superseded by exlusions
     exclusions: PolicyExclusion[];
     scope: PolicyScope[];
     enforcementActions: EnforcementAction[];
@@ -128,139 +124,4 @@ export type PolicyValue = {
 export type PolicyMitreAttackVector = {
     tactic: string; // tactic id
     techniques: string[]; // technique ids
-};
-
-export type PolicyFields = {
-    imageName: PolicyImageName | null;
-
-    // Registry metadata
-    imageAgeDays?: string; // int64
-    lineRule: DockerfileLineRuleField | null;
-
-    // Scan Metadata
-    cvss: NumericalPolicy | null;
-    cve: string;
-
-    component: PolicyComponent | null;
-    scanAgeDays?: string; // int64
-
-    noScanExists?: boolean; // Whether to alert if no scan exists for an image.
-
-    env: PolicyKeyValue | null;
-    command: string;
-    args: string;
-    directory: string;
-    user: string;
-
-    volumePolicy: VolumePolicy | null;
-
-    portPolicy: PortPolicy | null;
-    requiredLabel: PolicyKeyValue | null;
-    requiredAnnotation: PolicyKeyValue | null;
-    disallowedAnnotation: PolicyKeyValue | null;
-
-    privileged?: boolean;
-    dropCapabilities: string[];
-    addCapabilities: string[];
-
-    containerResourcePolicy: ResourcePolicy | null;
-    processPolicy: ProcessPolicy | null;
-
-    readOnlyRootFs?: boolean;
-    fixedBy: string;
-
-    portExposurePolicy: PortExposurePolicy | null;
-    permissionPolicy: PermissionPolicy | null;
-    hostMountPolicy: HostMountPolicy | null;
-    whitelistEnabled?: boolean;
-
-    requiredImageLabel: PolicyKeyValue | null;
-    disallowedImageLabel: PolicyKeyValue | null;
-};
-
-export type PolicyImageName = {
-    registry: string; // e.g. docker.io
-    remote: string; // e.g. stackrox/container-summarizer
-    tag: string; // e.g. latest
-};
-
-export type DockerfileLineRuleField = {
-    instruction: string;
-    value: string;
-};
-
-export type NumericalPolicy = {
-    op: PolicyComparator;
-    value: number; // float
-};
-
-export type PolicyComparator =
-    | 'LESS_THAN'
-    | 'LESS_THAN_OR_EQUALS'
-    | 'EQUALS'
-    | 'GREATER_THAN_OR_EQUALS'
-    | 'GREATER_THAN';
-
-export type PolicyComponent = {
-    name: string;
-    version: string;
-};
-
-export type PolicyKeyValue = {
-    key: string;
-    value: string;
-    envVarSource: EnvVarSource;
-};
-
-// TODO import from types/deployment.proto.ts
-export type EnvVarSource =
-    | 'UNSET'
-    | 'RAW'
-    | 'SECRET_KEY'
-    | 'CONFIG_MAP_KEY'
-    | 'FIELD'
-    | 'RESOURCE_FIELD'
-    | 'UNKNOWN';
-
-export type VolumePolicy = {
-    name: string;
-    source: string;
-    destination: string;
-    readOnly?: boolean;
-    type: string;
-};
-
-export type PortPolicy = {
-    port: number; // int32
-    protocol: string;
-};
-
-export type ResourcePolicy = {
-    cpuResourceRequest: NumericalPolicy | null;
-    cpuResourceLimit: NumericalPolicy | null;
-    memoryResourceRequest: NumericalPolicy | null;
-    memoryResourceLimit: NumericalPolicy | null;
-};
-
-export type ProcessPolicy = {
-    name: string;
-    args: string;
-    ancestor: string;
-    uid: string;
-};
-
-export type PortExposurePolicy = {
-    exposureLevels: PortExposureLevel[];
-};
-
-// TODO import from types/deployment.proto.ts
-export type PortExposureLevel = 'UNSET' | 'EXTERNAL' | 'NODE' | 'INTERNAL' | 'HOST';
-
-// K8S RBAC Permission level configuration.
-export type PermissionPolicy = {
-    permissionLevel: PermissionLevel;
-};
-
-export type HostMountPolicy = {
-    readOnly?: boolean;
 };
