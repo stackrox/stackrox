@@ -164,7 +164,12 @@ push_main_image_set() {
     }
 
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        die "add stackrox support"
+        require_environment "QUAY_STACKROX_IO_RW_USERNAME"
+        require_environment "QUAY_STACKROX_IO_RW_PASSWORD"
+
+        docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
+
+        local destination_registries=("quay.io/stackrox-io")
     elif [[ "$brand" == "RHACS_BRANDING" ]]; then
         require_environment "DOCKER_IO_PUSH_USERNAME"
         require_environment "DOCKER_IO_PUSH_PASSWORD"
@@ -201,7 +206,13 @@ push_matching_collector_scanner_images() {
     local brand="$1"
 
     if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        die "add stackrox support"
+        require_environment "QUAY_STACKROX_IO_RW_USERNAME"
+        require_environment "QUAY_STACKROX_IO_RW_PASSWORD"
+
+        docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
+
+        local source_registry="quay.io/stackrox-io"
+        local target_registries=( "quay.io/stackrox-io" )
     elif [[ "$brand" == "RHACS_BRANDING" ]]; then
         require_environment "DOCKER_IO_PUSH_USERNAME"
         require_environment "DOCKER_IO_PUSH_PASSWORD"

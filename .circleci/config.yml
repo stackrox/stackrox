@@ -29,6 +29,7 @@ runOnAllTagsWithPushCtx: &runOnAllTagsWithPushCtx
   <<: *runOnAllTags
   context:
   - docker-io-push
+  - quay-stackrox-io-readwrite
   - quay-rhacs-eng-readwrite
   - quay-rhacs-eng-readonly
 
