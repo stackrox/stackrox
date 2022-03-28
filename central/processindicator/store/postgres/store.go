@@ -78,21 +78,13 @@ create table if not exists process_indicators (
     ContainerName varchar,
     PodId varchar,
     PodUid varchar,
-    Signal_Id varchar,
     Signal_ContainerId varchar,
-    Signal_Time timestamp,
     Signal_Name varchar,
     Signal_Args varchar,
     Signal_ExecFilePath varchar,
-    Signal_Pid integer,
     Signal_Uid integer,
-    Signal_Gid integer,
-    Signal_Lineage text[],
-    Signal_Scraped bool,
     ClusterId varchar,
     Namespace varchar,
-    ContainerStartTime timestamp,
-    ImageId varchar,
     serialized bytea,
     PRIMARY KEY(Id)
 )
@@ -108,36 +100,6 @@ create table if not exists process_indicators (
 		"create index if not exists processIndicators_DeploymentId on process_indicators using hash(DeploymentId)",
 
 		"create index if not exists processIndicators_PodUid on process_indicators using hash(PodUid)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableProcessIndicatorsLineageInfo(ctx, db)
-}
-
-func createTableProcessIndicatorsLineageInfo(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists process_indicators_LineageInfo (
-    process_indicators_Id varchar,
-    idx integer,
-    ParentUid integer,
-    ParentExecFilePath varchar,
-    PRIMARY KEY(process_indicators_Id, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (process_indicators_Id) REFERENCES process_indicators(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists processIndicatorsLineageInfo_idx on process_indicators_LineageInfo using btree(idx)",
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
@@ -161,57 +123,17 @@ func insertIntoProcessIndicators(ctx context.Context, tx pgx.Tx, obj *storage.Pr
 		obj.GetContainerName(),
 		obj.GetPodId(),
 		obj.GetPodUid(),
-		obj.GetSignal().GetId(),
 		obj.GetSignal().GetContainerId(),
-		pgutils.NilOrTime(obj.GetSignal().GetTime()),
 		obj.GetSignal().GetName(),
 		obj.GetSignal().GetArgs(),
 		obj.GetSignal().GetExecFilePath(),
-		obj.GetSignal().GetPid(),
 		obj.GetSignal().GetUid(),
-		obj.GetSignal().GetGid(),
-		obj.GetSignal().GetLineage(),
-		obj.GetSignal().GetScraped(),
 		obj.GetClusterId(),
 		obj.GetNamespace(),
-		pgutils.NilOrTime(obj.GetContainerStartTime()),
-		obj.GetImageId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO process_indicators (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_Id, Signal_ContainerId, Signal_Time, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Pid, Signal_Uid, Signal_Gid, Signal_Lineage, Signal_Scraped, ClusterId, Namespace, ContainerStartTime, ImageId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_Id = EXCLUDED.Signal_Id, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Time = EXCLUDED.Signal_Time, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Pid = EXCLUDED.Signal_Pid, Signal_Uid = EXCLUDED.Signal_Uid, Signal_Gid = EXCLUDED.Signal_Gid, Signal_Lineage = EXCLUDED.Signal_Lineage, Signal_Scraped = EXCLUDED.Signal_Scraped, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, ContainerStartTime = EXCLUDED.ContainerStartTime, ImageId = EXCLUDED.ImageId, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetSignal().GetLineageInfo() {
-		if err := insertIntoProcessIndicatorsLineageInfo(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from process_indicators_LineageInfo where process_indicators_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetSignal().GetLineageInfo()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoProcessIndicatorsLineageInfo(ctx context.Context, tx pgx.Tx, obj *storage.ProcessSignal_LineageInfo, process_indicators_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		process_indicators_Id,
-		idx,
-		obj.GetParentUid(),
-		obj.GetParentExecFilePath(),
-	}
-
-	finalStr := "INSERT INTO process_indicators_LineageInfo (process_indicators_Id, idx, ParentUid, ParentExecFilePath) VALUES($1, $2, $3, $4) ON CONFLICT(process_indicators_Id, idx) DO UPDATE SET process_indicators_Id = EXCLUDED.process_indicators_Id, idx = EXCLUDED.idx, ParentUid = EXCLUDED.ParentUid, ParentExecFilePath = EXCLUDED.ParentExecFilePath"
+	finalStr := "INSERT INTO process_indicators (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_ContainerId, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -242,11 +164,7 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 
 		"poduid",
 
-		"signal_id",
-
 		"signal_containerid",
-
-		"signal_time",
 
 		"signal_name",
 
@@ -254,23 +172,11 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 
 		"signal_execfilepath",
 
-		"signal_pid",
-
 		"signal_uid",
-
-		"signal_gid",
-
-		"signal_lineage",
-
-		"signal_scraped",
 
 		"clusterid",
 
 		"namespace",
-
-		"containerstarttime",
-
-		"imageid",
 
 		"serialized",
 	}
@@ -296,11 +202,7 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 
 			obj.GetPodUid(),
 
-			obj.GetSignal().GetId(),
-
 			obj.GetSignal().GetContainerId(),
-
-			pgutils.NilOrTime(obj.GetSignal().GetTime()),
 
 			obj.GetSignal().GetName(),
 
@@ -308,23 +210,11 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 
 			obj.GetSignal().GetExecFilePath(),
 
-			obj.GetSignal().GetPid(),
-
 			obj.GetSignal().GetUid(),
-
-			obj.GetSignal().GetGid(),
-
-			obj.GetSignal().GetLineage(),
-
-			obj.GetSignal().GetScraped(),
 
 			obj.GetClusterId(),
 
 			obj.GetNamespace(),
-
-			pgutils.NilOrTime(obj.GetContainerStartTime()),
-
-			obj.GetImageId(),
 
 			serialized,
 		})
@@ -345,64 +235,6 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_indicators"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for _, obj := range objs {
-
-		if err = s.copyFromProcessIndicatorsLineageInfo(ctx, tx, obj.GetId(), obj.GetSignal().GetLineageInfo()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromProcessIndicatorsLineageInfo(ctx context.Context, tx pgx.Tx, process_indicators_Id string, objs ...*storage.ProcessSignal_LineageInfo) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"process_indicators_id",
-
-		"idx",
-
-		"parentuid",
-
-		"parentexecfilepath",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			process_indicators_Id,
-
-			idx,
-
-			obj.GetParentUid(),
-
-			obj.GetParentExecFilePath(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_indicators_lineageinfo"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -655,12 +487,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessIndica
 
 func dropTableProcessIndicators(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS process_indicators CASCADE")
-	dropTableProcessIndicatorsLineageInfo(ctx, db)
-
-}
-
-func dropTableProcessIndicatorsLineageInfo(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS process_indicators_LineageInfo CASCADE")
 
 }
 

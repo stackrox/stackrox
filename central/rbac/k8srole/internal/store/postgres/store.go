@@ -81,7 +81,6 @@ create table if not exists k8sroles (
     ClusterRole bool,
     Labels jsonb,
     Annotations jsonb,
-    CreatedAt timestamp,
     serialized bytea,
     PRIMARY KEY(Id)
 )
@@ -93,39 +92,6 @@ create table if not exists k8sroles (
 	}
 
 	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableK8srolesRules(ctx, db)
-}
-
-func createTableK8srolesRules(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists k8sroles_Rules (
-    k8sroles_Id varchar,
-    idx integer,
-    Verbs text[],
-    ApiGroups text[],
-    Resources text[],
-    NonResourceUrls text[],
-    ResourceNames text[],
-    PRIMARY KEY(k8sroles_Id, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (k8sroles_Id) REFERENCES k8sroles(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists k8srolesRules_idx on k8sroles_Rules using btree(idx)",
-	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			log.Panicf("Error creating index %s: %v", index, err)
@@ -151,46 +117,10 @@ func insertIntoK8sroles(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole) er
 		obj.GetClusterRole(),
 		obj.GetLabels(),
 		obj.GetAnnotations(),
-		pgutils.NilOrTime(obj.GetCreatedAt()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO k8sroles (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetRules() {
-		if err := insertIntoK8srolesRules(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from k8sroles_Rules where k8sroles_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetRules()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoK8srolesRules(ctx context.Context, tx pgx.Tx, obj *storage.PolicyRule, k8sroles_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		k8sroles_Id,
-		idx,
-		obj.GetVerbs(),
-		obj.GetApiGroups(),
-		obj.GetResources(),
-		obj.GetNonResourceUrls(),
-		obj.GetResourceNames(),
-	}
-
-	finalStr := "INSERT INTO k8sroles_Rules (k8sroles_Id, idx, Verbs, ApiGroups, Resources, NonResourceUrls, ResourceNames) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(k8sroles_Id, idx) DO UPDATE SET k8sroles_Id = EXCLUDED.k8sroles_Id, idx = EXCLUDED.idx, Verbs = EXCLUDED.Verbs, ApiGroups = EXCLUDED.ApiGroups, Resources = EXCLUDED.Resources, NonResourceUrls = EXCLUDED.NonResourceUrls, ResourceNames = EXCLUDED.ResourceNames"
+	finalStr := "INSERT INTO k8sroles (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -227,8 +157,6 @@ func (s *storeImpl) copyFromK8sroles(ctx context.Context, tx pgx.Tx, objs ...*st
 
 		"annotations",
 
-		"createdat",
-
 		"serialized",
 	}
 
@@ -259,8 +187,6 @@ func (s *storeImpl) copyFromK8sroles(ctx context.Context, tx pgx.Tx, objs ...*st
 
 			obj.GetAnnotations(),
 
-			pgutils.NilOrTime(obj.GetCreatedAt()),
-
 			serialized,
 		})
 
@@ -280,76 +206,6 @@ func (s *storeImpl) copyFromK8sroles(ctx context.Context, tx pgx.Tx, objs ...*st
 			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"k8sroles"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for _, obj := range objs {
-
-		if err = s.copyFromK8srolesRules(ctx, tx, obj.GetId(), obj.GetRules()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromK8srolesRules(ctx context.Context, tx pgx.Tx, k8sroles_Id string, objs ...*storage.PolicyRule) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"k8sroles_id",
-
-		"idx",
-
-		"verbs",
-
-		"apigroups",
-
-		"resources",
-
-		"nonresourceurls",
-
-		"resourcenames",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			k8sroles_Id,
-
-			idx,
-
-			obj.GetVerbs(),
-
-			obj.GetApiGroups(),
-
-			obj.GetResources(),
-
-			obj.GetNonResourceUrls(),
-
-			obj.GetResourceNames(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"k8sroles_rules"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -602,12 +458,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.K8SRole) erro
 
 func dropTableK8sroles(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS k8sroles CASCADE")
-	dropTableK8srolesRules(ctx, db)
-
-}
-
-func dropTableK8srolesRules(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS k8sroles_Rules CASCADE")
 
 }
 

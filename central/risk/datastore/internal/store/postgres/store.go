@@ -74,7 +74,6 @@ func createTableRisk(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists risk (
     Id varchar,
-    Subject_Id varchar,
     Subject_Namespace varchar,
     Subject_ClusterId varchar,
     Subject_Type integer,
@@ -96,67 +95,6 @@ create table if not exists risk (
 		}
 	}
 
-	createTableRiskResults(ctx, db)
-}
-
-func createTableRiskResults(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists risk_Results (
-    risk_Id varchar,
-    idx integer,
-    Name varchar,
-    Score numeric,
-    PRIMARY KEY(risk_Id, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (risk_Id) REFERENCES risk(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists riskResults_idx on risk_Results using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableRiskResultsFactors(ctx, db)
-}
-
-func createTableRiskResultsFactors(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists risk_Results_Factors (
-    risk_Id varchar,
-    risk_Results_idx integer,
-    idx integer,
-    Message varchar,
-    Url varchar,
-    PRIMARY KEY(risk_Id, risk_Results_idx, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (risk_Id, risk_Results_idx) REFERENCES risk_Results(risk_Id, idx) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists riskResultsFactors_idx on risk_Results_Factors using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
@@ -169,7 +107,6 @@ func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetSubject().GetId(),
 		obj.GetSubject().GetNamespace(),
 		obj.GetSubject().GetClusterId(),
 		obj.GetSubject().GetType(),
@@ -177,72 +114,7 @@ func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO risk (Id, Subject_Id, Subject_Namespace, Subject_ClusterId, Subject_Type, Score, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Subject_Id = EXCLUDED.Subject_Id, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type, Score = EXCLUDED.Score, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetResults() {
-		if err := insertIntoRiskResults(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from risk_Results where risk_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetResults()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoRiskResults(ctx context.Context, tx pgx.Tx, obj *storage.Risk_Result, risk_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		risk_Id,
-		idx,
-		obj.GetName(),
-		obj.GetScore(),
-	}
-
-	finalStr := "INSERT INTO risk_Results (risk_Id, idx, Name, Score) VALUES($1, $2, $3, $4) ON CONFLICT(risk_Id, idx) DO UPDATE SET risk_Id = EXCLUDED.risk_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Score = EXCLUDED.Score"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetFactors() {
-		if err := insertIntoRiskResultsFactors(ctx, tx, child, risk_Id, idx, childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from risk_Results_Factors where risk_Id = $1 AND risk_Results_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, risk_Id, idx, len(obj.GetFactors()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoRiskResultsFactors(ctx context.Context, tx pgx.Tx, obj *storage.Risk_Result_Factor, risk_Id string, risk_Results_idx int, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		risk_Id,
-		risk_Results_idx,
-		idx,
-		obj.GetMessage(),
-		obj.GetUrl(),
-	}
-
-	finalStr := "INSERT INTO risk_Results_Factors (risk_Id, risk_Results_idx, idx, Message, Url) VALUES($1, $2, $3, $4, $5) ON CONFLICT(risk_Id, risk_Results_idx, idx) DO UPDATE SET risk_Id = EXCLUDED.risk_Id, risk_Results_idx = EXCLUDED.risk_Results_idx, idx = EXCLUDED.idx, Message = EXCLUDED.Message, Url = EXCLUDED.Url"
+	finalStr := "INSERT INTO risk (Id, Subject_Namespace, Subject_ClusterId, Subject_Type, Score, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type, Score = EXCLUDED.Score, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -264,8 +136,6 @@ func (s *storeImpl) copyFromRisk(ctx context.Context, tx pgx.Tx, objs ...*storag
 	copyCols := []string{
 
 		"id",
-
-		"subject_id",
 
 		"subject_namespace",
 
@@ -290,8 +160,6 @@ func (s *storeImpl) copyFromRisk(ctx context.Context, tx pgx.Tx, objs ...*storag
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetId(),
-
-			obj.GetSubject().GetId(),
 
 			obj.GetSubject().GetNamespace(),
 
@@ -320,126 +188,6 @@ func (s *storeImpl) copyFromRisk(ctx context.Context, tx pgx.Tx, objs ...*storag
 			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"risk"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for _, obj := range objs {
-
-		if err = s.copyFromRiskResults(ctx, tx, obj.GetId(), obj.GetResults()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromRiskResults(ctx context.Context, tx pgx.Tx, risk_Id string, objs ...*storage.Risk_Result) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"risk_id",
-
-		"idx",
-
-		"name",
-
-		"score",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			risk_Id,
-
-			idx,
-
-			obj.GetName(),
-
-			obj.GetScore(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"risk_results"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for idx, obj := range objs {
-
-		if err = s.copyFromRiskResultsFactors(ctx, tx, risk_Id, idx, obj.GetFactors()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromRiskResultsFactors(ctx context.Context, tx pgx.Tx, risk_Id string, risk_Results_idx int, objs ...*storage.Risk_Result_Factor) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"risk_id",
-
-		"risk_results_idx",
-
-		"idx",
-
-		"message",
-
-		"url",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			risk_Id,
-
-			risk_Results_idx,
-
-			idx,
-
-			obj.GetMessage(),
-
-			obj.GetUrl(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"risk_results_factors"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -692,18 +440,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Risk) error) 
 
 func dropTableRisk(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS risk CASCADE")
-	dropTableRiskResults(ctx, db)
-
-}
-
-func dropTableRiskResults(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS risk_Results CASCADE")
-	dropTableRiskResultsFactors(ctx, db)
-
-}
-
-func dropTableRiskResultsFactors(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS risk_Results_Factors CASCADE")
 
 }
 

@@ -75,13 +75,8 @@ func createTableProcessbaselines(ctx context.Context, db *pgxpool.Pool) {
 create table if not exists processbaselines (
     Id varchar,
     Key_DeploymentId varchar,
-    Key_ContainerName varchar,
     Key_ClusterId varchar,
     Key_Namespace varchar,
-    Created timestamp,
-    UserLockedTimestamp timestamp,
-    StackRoxLockedTimestamp timestamp,
-    LastUpdate timestamp,
     serialized bytea,
     PRIMARY KEY(Id)
 )
@@ -93,66 +88,6 @@ create table if not exists processbaselines (
 	}
 
 	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableProcessbaselinesElements(ctx, db)
-	createTableProcessbaselinesElementGraveyard(ctx, db)
-}
-
-func createTableProcessbaselinesElements(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists processbaselines_Elements (
-    processbaselines_Id varchar,
-    idx integer,
-    Element_ProcessName varchar,
-    Auto bool,
-    PRIMARY KEY(processbaselines_Id, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (processbaselines_Id) REFERENCES processbaselines(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists processbaselinesElements_idx on processbaselines_Elements using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableProcessbaselinesElementGraveyard(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists processbaselines_ElementGraveyard (
-    processbaselines_Id varchar,
-    idx integer,
-    Element_ProcessName varchar,
-    Auto bool,
-    PRIMARY KEY(processbaselines_Id, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (processbaselines_Id) REFERENCES processbaselines(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists processbaselinesElementGraveyard_idx on processbaselines_ElementGraveyard using btree(idx)",
-	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			log.Panicf("Error creating index %s: %v", index, err)
@@ -172,79 +107,12 @@ func insertIntoProcessbaselines(ctx context.Context, tx pgx.Tx, obj *storage.Pro
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetKey().GetDeploymentId(),
-		obj.GetKey().GetContainerName(),
 		obj.GetKey().GetClusterId(),
 		obj.GetKey().GetNamespace(),
-		pgutils.NilOrTime(obj.GetCreated()),
-		pgutils.NilOrTime(obj.GetUserLockedTimestamp()),
-		pgutils.NilOrTime(obj.GetStackRoxLockedTimestamp()),
-		pgutils.NilOrTime(obj.GetLastUpdate()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO processbaselines (Id, Key_DeploymentId, Key_ContainerName, Key_ClusterId, Key_Namespace, Created, UserLockedTimestamp, StackRoxLockedTimestamp, LastUpdate, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ContainerName = EXCLUDED.Key_ContainerName, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace, Created = EXCLUDED.Created, UserLockedTimestamp = EXCLUDED.UserLockedTimestamp, StackRoxLockedTimestamp = EXCLUDED.StackRoxLockedTimestamp, LastUpdate = EXCLUDED.LastUpdate, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetElements() {
-		if err := insertIntoProcessbaselinesElements(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from processbaselines_Elements where processbaselines_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetElements()))
-	if err != nil {
-		return err
-	}
-	for childIdx, child := range obj.GetElementGraveyard() {
-		if err := insertIntoProcessbaselinesElementGraveyard(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from processbaselines_ElementGraveyard where processbaselines_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetElementGraveyard()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoProcessbaselinesElements(ctx context.Context, tx pgx.Tx, obj *storage.BaselineElement, processbaselines_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		processbaselines_Id,
-		idx,
-		obj.GetElement().GetProcessName(),
-		obj.GetAuto(),
-	}
-
-	finalStr := "INSERT INTO processbaselines_Elements (processbaselines_Id, idx, Element_ProcessName, Auto) VALUES($1, $2, $3, $4) ON CONFLICT(processbaselines_Id, idx) DO UPDATE SET processbaselines_Id = EXCLUDED.processbaselines_Id, idx = EXCLUDED.idx, Element_ProcessName = EXCLUDED.Element_ProcessName, Auto = EXCLUDED.Auto"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func insertIntoProcessbaselinesElementGraveyard(ctx context.Context, tx pgx.Tx, obj *storage.BaselineElement, processbaselines_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		processbaselines_Id,
-		idx,
-		obj.GetElement().GetProcessName(),
-		obj.GetAuto(),
-	}
-
-	finalStr := "INSERT INTO processbaselines_ElementGraveyard (processbaselines_Id, idx, Element_ProcessName, Auto) VALUES($1, $2, $3, $4) ON CONFLICT(processbaselines_Id, idx) DO UPDATE SET processbaselines_Id = EXCLUDED.processbaselines_Id, idx = EXCLUDED.idx, Element_ProcessName = EXCLUDED.Element_ProcessName, Auto = EXCLUDED.Auto"
+	finalStr := "INSERT INTO processbaselines (Id, Key_DeploymentId, Key_ClusterId, Key_Namespace, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -269,19 +137,9 @@ func (s *storeImpl) copyFromProcessbaselines(ctx context.Context, tx pgx.Tx, obj
 
 		"key_deploymentid",
 
-		"key_containername",
-
 		"key_clusterid",
 
 		"key_namespace",
-
-		"created",
-
-		"userlockedtimestamp",
-
-		"stackroxlockedtimestamp",
-
-		"lastupdate",
 
 		"serialized",
 	}
@@ -301,19 +159,9 @@ func (s *storeImpl) copyFromProcessbaselines(ctx context.Context, tx pgx.Tx, obj
 
 			obj.GetKey().GetDeploymentId(),
 
-			obj.GetKey().GetContainerName(),
-
 			obj.GetKey().GetClusterId(),
 
 			obj.GetKey().GetNamespace(),
-
-			pgutils.NilOrTime(obj.GetCreated()),
-
-			pgutils.NilOrTime(obj.GetUserLockedTimestamp()),
-
-			pgutils.NilOrTime(obj.GetStackRoxLockedTimestamp()),
-
-			pgutils.NilOrTime(obj.GetLastUpdate()),
 
 			serialized,
 		})
@@ -334,118 +182,6 @@ func (s *storeImpl) copyFromProcessbaselines(ctx context.Context, tx pgx.Tx, obj
 			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processbaselines"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for _, obj := range objs {
-
-		if err = s.copyFromProcessbaselinesElements(ctx, tx, obj.GetId(), obj.GetElements()...); err != nil {
-			return err
-		}
-		if err = s.copyFromProcessbaselinesElementGraveyard(ctx, tx, obj.GetId(), obj.GetElementGraveyard()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromProcessbaselinesElements(ctx context.Context, tx pgx.Tx, processbaselines_Id string, objs ...*storage.BaselineElement) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"processbaselines_id",
-
-		"idx",
-
-		"element_processname",
-
-		"auto",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			processbaselines_Id,
-
-			idx,
-
-			obj.GetElement().GetProcessName(),
-
-			obj.GetAuto(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processbaselines_elements"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromProcessbaselinesElementGraveyard(ctx context.Context, tx pgx.Tx, processbaselines_Id string, objs ...*storage.BaselineElement) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"processbaselines_id",
-
-		"idx",
-
-		"element_processname",
-
-		"auto",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			processbaselines_Id,
-
-			idx,
-
-			obj.GetElement().GetProcessName(),
-
-			obj.GetAuto(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processbaselines_elementgraveyard"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -698,18 +434,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessBaseli
 
 func dropTableProcessbaselines(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS processbaselines CASCADE")
-	dropTableProcessbaselinesElements(ctx, db)
-	dropTableProcessbaselinesElementGraveyard(ctx, db)
-
-}
-
-func dropTableProcessbaselinesElements(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS processbaselines_Elements CASCADE")
-
-}
-
-func dropTableProcessbaselinesElementGraveyard(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS processbaselines_ElementGraveyard CASCADE")
 
 }
 

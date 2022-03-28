@@ -74,20 +74,10 @@ func createTableClusterHealthStatus(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists cluster_health_status (
     Id varchar,
-    CollectorHealthInfo_Version varchar,
-    CollectorHealthInfo_TotalDesiredPods integer,
-    CollectorHealthInfo_TotalReadyPods integer,
-    CollectorHealthInfo_TotalRegisteredNodes integer,
-    CollectorHealthInfo_StatusErrors text[],
-    AdmissionControlHealthInfo_TotalDesiredPods integer,
-    AdmissionControlHealthInfo_TotalReadyPods integer,
-    AdmissionControlHealthInfo_StatusErrors text[],
     SensorHealthStatus integer,
     CollectorHealthStatus integer,
     OverallHealthStatus integer,
     AdmissionControlHealthStatus integer,
-    LastContact timestamp,
-    HealthInfoComplete bool,
     serialized bytea,
     PRIMARY KEY(Id)
 )
@@ -117,24 +107,14 @@ func insertIntoClusterHealthStatus(ctx context.Context, tx pgx.Tx, obj *storage.
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetCollectorHealthInfo().GetVersion(),
-		obj.GetCollectorHealthInfo().GetTotalDesiredPods(),
-		obj.GetCollectorHealthInfo().GetTotalReadyPods(),
-		obj.GetCollectorHealthInfo().GetTotalRegisteredNodes(),
-		obj.GetCollectorHealthInfo().GetStatusErrors(),
-		obj.GetAdmissionControlHealthInfo().GetTotalDesiredPods(),
-		obj.GetAdmissionControlHealthInfo().GetTotalReadyPods(),
-		obj.GetAdmissionControlHealthInfo().GetStatusErrors(),
 		obj.GetSensorHealthStatus(),
 		obj.GetCollectorHealthStatus(),
 		obj.GetOverallHealthStatus(),
 		obj.GetAdmissionControlHealthStatus(),
-		pgutils.NilOrTime(obj.GetLastContact()),
-		obj.GetHealthInfoComplete(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO cluster_health_status (Id, CollectorHealthInfo_Version, CollectorHealthInfo_TotalDesiredPods, CollectorHealthInfo_TotalReadyPods, CollectorHealthInfo_TotalRegisteredNodes, CollectorHealthInfo_StatusErrors, AdmissionControlHealthInfo_TotalDesiredPods, AdmissionControlHealthInfo_TotalReadyPods, AdmissionControlHealthInfo_StatusErrors, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, LastContact, HealthInfoComplete, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CollectorHealthInfo_Version = EXCLUDED.CollectorHealthInfo_Version, CollectorHealthInfo_TotalDesiredPods = EXCLUDED.CollectorHealthInfo_TotalDesiredPods, CollectorHealthInfo_TotalReadyPods = EXCLUDED.CollectorHealthInfo_TotalReadyPods, CollectorHealthInfo_TotalRegisteredNodes = EXCLUDED.CollectorHealthInfo_TotalRegisteredNodes, CollectorHealthInfo_StatusErrors = EXCLUDED.CollectorHealthInfo_StatusErrors, AdmissionControlHealthInfo_TotalDesiredPods = EXCLUDED.AdmissionControlHealthInfo_TotalDesiredPods, AdmissionControlHealthInfo_TotalReadyPods = EXCLUDED.AdmissionControlHealthInfo_TotalReadyPods, AdmissionControlHealthInfo_StatusErrors = EXCLUDED.AdmissionControlHealthInfo_StatusErrors, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, LastContact = EXCLUDED.LastContact, HealthInfoComplete = EXCLUDED.HealthInfoComplete, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO cluster_health_status (Id, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -157,22 +137,6 @@ func (s *storeImpl) copyFromClusterHealthStatus(ctx context.Context, tx pgx.Tx, 
 
 		"id",
 
-		"collectorhealthinfo_version",
-
-		"collectorhealthinfo_totaldesiredpods",
-
-		"collectorhealthinfo_totalreadypods",
-
-		"collectorhealthinfo_totalregisterednodes",
-
-		"collectorhealthinfo_statuserrors",
-
-		"admissioncontrolhealthinfo_totaldesiredpods",
-
-		"admissioncontrolhealthinfo_totalreadypods",
-
-		"admissioncontrolhealthinfo_statuserrors",
-
 		"sensorhealthstatus",
 
 		"collectorhealthstatus",
@@ -180,10 +144,6 @@ func (s *storeImpl) copyFromClusterHealthStatus(ctx context.Context, tx pgx.Tx, 
 		"overallhealthstatus",
 
 		"admissioncontrolhealthstatus",
-
-		"lastcontact",
-
-		"healthinfocomplete",
 
 		"serialized",
 	}
@@ -201,22 +161,6 @@ func (s *storeImpl) copyFromClusterHealthStatus(ctx context.Context, tx pgx.Tx, 
 
 			obj.GetId(),
 
-			obj.GetCollectorHealthInfo().GetVersion(),
-
-			obj.GetCollectorHealthInfo().GetTotalDesiredPods(),
-
-			obj.GetCollectorHealthInfo().GetTotalReadyPods(),
-
-			obj.GetCollectorHealthInfo().GetTotalRegisteredNodes(),
-
-			obj.GetCollectorHealthInfo().GetStatusErrors(),
-
-			obj.GetAdmissionControlHealthInfo().GetTotalDesiredPods(),
-
-			obj.GetAdmissionControlHealthInfo().GetTotalReadyPods(),
-
-			obj.GetAdmissionControlHealthInfo().GetStatusErrors(),
-
 			obj.GetSensorHealthStatus(),
 
 			obj.GetCollectorHealthStatus(),
@@ -224,10 +168,6 @@ func (s *storeImpl) copyFromClusterHealthStatus(ctx context.Context, tx pgx.Tx, 
 			obj.GetOverallHealthStatus(),
 
 			obj.GetAdmissionControlHealthStatus(),
-
-			pgutils.NilOrTime(obj.GetLastContact()),
-
-			obj.GetHealthInfoComplete(),
 
 			serialized,
 		})

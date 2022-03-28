@@ -74,11 +74,6 @@ func createTableIntegrationhealth(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists integrationhealth (
     Id varchar,
-    Name varchar,
-    Type integer,
-    Status integer,
-    ErrorMessage varchar,
-    LastTimestamp timestamp,
     serialized bytea,
     PRIMARY KEY(Id)
 )
@@ -108,15 +103,10 @@ func insertIntoIntegrationhealth(ctx context.Context, tx pgx.Tx, obj *storage.In
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetName(),
-		obj.GetType(),
-		obj.GetStatus(),
-		obj.GetErrorMessage(),
-		pgutils.NilOrTime(obj.GetLastTimestamp()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO integrationhealth (Id, Name, Type, Status, ErrorMessage, LastTimestamp, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Status = EXCLUDED.Status, ErrorMessage = EXCLUDED.ErrorMessage, LastTimestamp = EXCLUDED.LastTimestamp, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO integrationhealth (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -139,16 +129,6 @@ func (s *storeImpl) copyFromIntegrationhealth(ctx context.Context, tx pgx.Tx, ob
 
 		"id",
 
-		"name",
-
-		"type",
-
-		"status",
-
-		"errormessage",
-
-		"lasttimestamp",
-
 		"serialized",
 	}
 
@@ -164,16 +144,6 @@ func (s *storeImpl) copyFromIntegrationhealth(ctx context.Context, tx pgx.Tx, ob
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetId(),
-
-			obj.GetName(),
-
-			obj.GetType(),
-
-			obj.GetStatus(),
-
-			obj.GetErrorMessage(),
-
-			pgutils.NilOrTime(obj.GetLastTimestamp()),
 
 			serialized,
 		})

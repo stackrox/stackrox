@@ -74,9 +74,6 @@ func createTablePermissionsets(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists permissionsets (
     Id varchar,
-    Name varchar UNIQUE,
-    Description varchar,
-    ResourceToAccess jsonb,
     serialized bytea,
     PRIMARY KEY(Id)
 )
@@ -106,13 +103,10 @@ func insertIntoPermissionsets(ctx context.Context, tx pgx.Tx, obj *storage.Permi
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetName(),
-		obj.GetDescription(),
-		obj.GetResourceToAccess(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO permissionsets (Id, Name, Description, ResourceToAccess, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, ResourceToAccess = EXCLUDED.ResourceToAccess, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO permissionsets (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -135,12 +129,6 @@ func (s *storeImpl) copyFromPermissionsets(ctx context.Context, tx pgx.Tx, objs 
 
 		"id",
 
-		"name",
-
-		"description",
-
-		"resourcetoaccess",
-
 		"serialized",
 	}
 
@@ -156,12 +144,6 @@ func (s *storeImpl) copyFromPermissionsets(ctx context.Context, tx pgx.Tx, objs 
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetId(),
-
-			obj.GetName(),
-
-			obj.GetDescription(),
-
-			obj.GetResourceToAccess(),
 
 			serialized,
 		})

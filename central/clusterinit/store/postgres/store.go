@@ -74,12 +74,6 @@ func createTableClusterinitbundles(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists clusterinitbundles (
     Id varchar,
-    Name varchar,
-    CreatedAt timestamp,
-    CreatedBy_Id varchar,
-    CreatedBy_AuthProviderId varchar,
-    IsRevoked bool,
-    ExpiresAt timestamp,
     serialized bytea,
     PRIMARY KEY(Id)
 )
@@ -91,36 +85,6 @@ create table if not exists clusterinitbundles (
 	}
 
 	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableClusterinitbundlesAttributes(ctx, db)
-}
-
-func createTableClusterinitbundlesAttributes(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists clusterinitbundles_Attributes (
-    clusterinitbundles_Id varchar,
-    idx integer,
-    Key varchar,
-    Value varchar,
-    PRIMARY KEY(clusterinitbundles_Id, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (clusterinitbundles_Id) REFERENCES clusterinitbundles(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists clusterinitbundlesAttributes_idx on clusterinitbundles_Attributes using btree(idx)",
-	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			log.Panicf("Error creating index %s: %v", index, err)
@@ -139,48 +103,10 @@ func insertIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, obj *storage.I
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetName(),
-		pgutils.NilOrTime(obj.GetCreatedAt()),
-		obj.GetCreatedBy().GetId(),
-		obj.GetCreatedBy().GetAuthProviderId(),
-		obj.GetIsRevoked(),
-		pgutils.NilOrTime(obj.GetExpiresAt()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO clusterinitbundles (Id, Name, CreatedAt, CreatedBy_Id, CreatedBy_AuthProviderId, IsRevoked, ExpiresAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, CreatedAt = EXCLUDED.CreatedAt, CreatedBy_Id = EXCLUDED.CreatedBy_Id, CreatedBy_AuthProviderId = EXCLUDED.CreatedBy_AuthProviderId, IsRevoked = EXCLUDED.IsRevoked, ExpiresAt = EXCLUDED.ExpiresAt, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetCreatedBy().GetAttributes() {
-		if err := insertIntoClusterinitbundlesAttributes(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from clusterinitbundles_Attributes where clusterinitbundles_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetCreatedBy().GetAttributes()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoClusterinitbundlesAttributes(ctx context.Context, tx pgx.Tx, obj *storage.UserAttribute, clusterinitbundles_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		clusterinitbundles_Id,
-		idx,
-		obj.GetKey(),
-		obj.GetValue(),
-	}
-
-	finalStr := "INSERT INTO clusterinitbundles_Attributes (clusterinitbundles_Id, idx, Key, Value) VALUES($1, $2, $3, $4) ON CONFLICT(clusterinitbundles_Id, idx) DO UPDATE SET clusterinitbundles_Id = EXCLUDED.clusterinitbundles_Id, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value"
+	finalStr := "INSERT INTO clusterinitbundles (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -203,18 +129,6 @@ func (s *storeImpl) copyFromClusterinitbundles(ctx context.Context, tx pgx.Tx, o
 
 		"id",
 
-		"name",
-
-		"createdat",
-
-		"createdby_id",
-
-		"createdby_authproviderid",
-
-		"isrevoked",
-
-		"expiresat",
-
 		"serialized",
 	}
 
@@ -230,18 +144,6 @@ func (s *storeImpl) copyFromClusterinitbundles(ctx context.Context, tx pgx.Tx, o
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetId(),
-
-			obj.GetName(),
-
-			pgutils.NilOrTime(obj.GetCreatedAt()),
-
-			obj.GetCreatedBy().GetId(),
-
-			obj.GetCreatedBy().GetAuthProviderId(),
-
-			obj.GetIsRevoked(),
-
-			pgutils.NilOrTime(obj.GetExpiresAt()),
 
 			serialized,
 		})
@@ -262,64 +164,6 @@ func (s *storeImpl) copyFromClusterinitbundles(ctx context.Context, tx pgx.Tx, o
 			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"clusterinitbundles"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for _, obj := range objs {
-
-		if err = s.copyFromClusterinitbundlesAttributes(ctx, tx, obj.GetId(), obj.GetCreatedBy().GetAttributes()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromClusterinitbundlesAttributes(ctx context.Context, tx pgx.Tx, clusterinitbundles_Id string, objs ...*storage.UserAttribute) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"clusterinitbundles_id",
-
-		"idx",
-
-		"key",
-
-		"value",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			clusterinitbundles_Id,
-
-			idx,
-
-			obj.GetKey(),
-
-			obj.GetValue(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"clusterinitbundles_attributes"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -572,12 +416,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.InitBundleMet
 
 func dropTableClusterinitbundles(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS clusterinitbundles CASCADE")
-	dropTableClusterinitbundlesAttributes(ctx, db)
-
-}
-
-func dropTableClusterinitbundlesAttributes(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS clusterinitbundles_Attributes CASCADE")
 
 }
 
