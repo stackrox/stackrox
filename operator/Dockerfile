@@ -80,4 +80,4 @@ USER 65534:65534
 
 # Wrap entrypoint with capsh to drop inhereited capabilities which were passed by default via the moby container engine.
 # See issue https://bugzilla.redhat.com/show_bug.cgi?id=2066837
-ENTRYPOINT ["capsh", "--inh=''", "-c /usr/local/bin/stackrox-operator"]
+ENTRYPOINT ["capsh", "--inh=''", "--", "-c /usr/local/bin/stackrox-operator"]
