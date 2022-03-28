@@ -286,16 +286,20 @@ func (s *storeImpl) Get(ctx context.Context, deploymentId string) (*storage.Netw
 	}
 	defer release()
 
+	log.Infof("SHREWS before query %s - %s", deploymentId, time.Now())
 	row := conn.QueryRow(ctx, getStmt, deploymentId)
 	var data []byte
+	log.Infof("SHREWS before scan %s - %s", deploymentId, time.Now())
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
-
+	log.Infof("SHREWS before marshall %s - %s", deploymentId, time.Now())
 	var msg storage.NetworkBaseline
 	if err := proto.Unmarshal(data, &msg); err != nil {
 		return nil, false, err
 	}
+	log.Infof("SHREWS after marshall %s - %s", deploymentId, time.Now())
+	log.Infof("SHREWS => %s", &msg)
 	return &msg, true, nil
 }
 
