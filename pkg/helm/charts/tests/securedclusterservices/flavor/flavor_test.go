@@ -34,14 +34,16 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 	testbuildinfo.SetForTest(t)
 	// having a function as value allows to successfully run this test without dependency to GOTAGS='' and GOTAGS='release'
 	imageFlavorCases := map[string]func() defaults.ImageFlavor{
-		// TODO(ROX-9877): Re-enable development flavor test
-		// "development": func() defaults.ImageFlavor {
-		// 	return defaults.DevelopmentBuildImageFlavor()
-		// },
+		"development": func() defaults.ImageFlavor {
+			testutils.SetVersion(t, testutils.GetExampleVersion(t))
+			return defaults.DevelopmentBuildImageFlavor()
+		},
 		"stackrox": func() defaults.ImageFlavor {
+			testutils.SetVersion(t, testutils.GetExampleVersionUnified(t))
 			return defaults.StackRoxIOReleaseImageFlavor()
 		},
 		"rhacs": func() defaults.ImageFlavor {
+			testutils.SetVersion(t, testutils.GetExampleVersionUnified(t))
 			return defaults.RHACSReleaseImageFlavor()
 		},
 	}
@@ -49,7 +51,6 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 	for name, f := range imageFlavorCases {
 		imageFlavor := f()
 		t.Run(name, func(t *testing.T) {
-			testutils.SetVersion(t, testutils.GetExampleVersionUnified(t))
 			helmChartTestUtils.RunHelmTestSuite(t, testDir, image.SecuredClusterServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
 				Flavor: &imageFlavor,
 				MetaValuesOverridesFunc: func(values *charts.MetaValues) {
