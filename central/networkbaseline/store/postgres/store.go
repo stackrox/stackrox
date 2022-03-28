@@ -75,7 +75,7 @@ func createTableNetworkbaseline(ctx context.Context, db *pgxpool.Pool) {
 create table if not exists networkbaseline (
     DeploymentId varchar,
     serialized bytea,
-    PRIMARY KEY(DeploymentId)
+    PRIMARY KEY(DeploymentId) INCLUDE (serialized)
 )
 `
 
