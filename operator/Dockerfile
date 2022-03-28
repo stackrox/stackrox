@@ -78,4 +78,6 @@ COPY --from=builder ${roxpath}/stackrox-operator /usr/local/bin/
 # Error: container has runAsNonRoot and image has non-numeric user (nobody), cannot verify user is non-root (pod: "stackrox-operator-controller-manager-75bc744454-bkbjr_stackrox-operator-system(49874aae-2695-4d3a-afd3-8723914d2af5)", container: manager)
 USER 65534:65534
 
-ENTRYPOINT ["/usr/local/bin/stackrox-operator"]
+# Wrap entrypoint with capsh to drop inhereited capabilities which were passed by default via the moby container engine.
+# See issue https://bugzilla.redhat.com/show_bug.cgi?id=2066837
+ENTRYPOINT ["capsh", "--inh=''", "-c /usr/local/bin/stackrox-operator"]
