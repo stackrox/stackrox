@@ -183,6 +183,10 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 
 // ConstructImage constructs the augmented image object.
 func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
+	if image == nil {
+		return pathutil.NewAugmentedObj(image), nil
+	}
+
 	// When evaluating policies, the evaluator will stop when any of the objects within the path
 	// are nil and immediately return, not matching. Within the image signature criteria, we have
 	// a combination of "Match if the signature verification result is not as expected" OR "Match if
@@ -190,13 +194,15 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 	// and SignatureVerificationResults object here as a workaround and add the placeholder value,
 	// making it possible to also match for nil objects.
 	// We have to do this at the beginning, so the augmented object contains the field steps.
-	if image != nil && image.GetSignatureVerificationData().GetResults() == nil {
-		image.SignatureVerificationData = &storage.ImageSignatureVerificationData{
+	img := *image
+
+	if img.GetSignatureVerificationData().GetResults() == nil {
+		img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
 			Results: []*storage.ImageSignatureVerificationResult{{}},
 		}
 	}
 
-	obj := pathutil.NewAugmentedObj(image)
+	obj := pathutil.NewAugmentedObj(&img)
 
 	// Since policies query for Dockerfile Line as a single compound field, we simulate it by creating a "composite"
 	// dockerfile line under each layer.
