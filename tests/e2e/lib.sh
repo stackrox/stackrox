@@ -157,8 +157,16 @@ remove_existing_stackrox_resources() {
 wait_for_api() {
     info "Waiting for Central to start"
 
-    max_seconds=600
     start_time="$(date '+%s')"
+    if [ "$ORCH" == "openshift" ]; then
+        # OpenShift starts many services that take time to pull, schedule, and
+        # reach ready state. Increasing nodes/cores might help but isn't necessary
+        # from a testing or resource utilization perspective. So for now just
+        # give OpenShift some extra time for Central to reach ready state.
+        max_seconds=1200
+    else
+        max_seconds=300
+    fi
 
     while true; do
         central_json="$(kubectl -n stackrox get deploy/central -o json)"
