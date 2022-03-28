@@ -45,6 +45,8 @@ var (
 
 	allAccessCtx = sac.WithAllAccess(context.Background())
 
+	emptyCtx = context.Background()
+
 	imageClusterIDFieldPath = imageMapping.ImageDeploymentOptions.MustGet(search.ClusterID.String()).GetFieldPath()
 )
 
@@ -308,8 +310,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		return nil, false
 	}
 
-	// TODO(ROX-9687): Replace with injected context for enricher functions.
-	result, err := reprocessingFunc(context.TODO(), imageEnricher.EnrichmentContext{
+	result, err := reprocessingFunc(emptyCtx, imageEnricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 	}, image)
 
@@ -460,7 +461,7 @@ func (l *loopImpl) reprocessNodes() {
 }
 
 func (l *loopImpl) reprocessWatchedImage(name string) bool {
-	img, err := imageEnricher.EnrichImageByName(l.imageEnricher, imageEnricher.EnrichmentContext{
+	img, err := imageEnricher.EnrichImageByName(emptyCtx, l.imageEnricher, imageEnricher.EnrichmentContext{
 		FetchOpt: imageEnricher.IgnoreExistingImages,
 	}, name)
 	if err != nil {
@@ -517,10 +518,9 @@ func (l *loopImpl) forceEnrichImageSignatureVerificationResults(ctx context.Cont
 	return l.imageEnricher.EnrichWithSignatureVerificationData(ctx, image)
 }
 
-func (l *loopImpl) enrichImage(_ context.Context, enrichCtx imageEnricher.EnrichmentContext,
+func (l *loopImpl) enrichImage(ctx context.Context, enrichCtx imageEnricher.EnrichmentContext,
 	image *storage.Image) (imageEnricher.EnrichmentResult, error) {
-	// TODO(ROX-9687): Use injected context here.
-	return l.imageEnricher.EnrichImage(enrichCtx, image)
+	return l.imageEnricher.EnrichImage(ctx, enrichCtx, image)
 }
 
 func (l *loopImpl) enrichLoop() {

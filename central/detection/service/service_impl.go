@@ -135,11 +135,11 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 
 	img := types.ToImage(image)
 
-	eCtx := enricher.EnrichmentContext{}
+	enrichmentContext := enricher.EnrichmentContext{}
 	if req.GetNoExternalMetadata() {
-		eCtx.FetchOpt = enricher.NoExternalMetadata
+		enrichmentContext.FetchOpt = enricher.NoExternalMetadata
 	}
-	enrichResult, err := s.imageEnricher.EnrichImage(eCtx, img)
+	enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 }
 
 func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment, policyCategories ...string) (*apiV1.DeployDetectionResponse_Run, error) {
-	images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(enrichmentContext, deployment)
+	images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(ctx, enrichmentContext, deployment)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +205,7 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}, nil
 }
 
-func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, eCtx enricher.EnrichmentContext, obj k8sRuntime.Object, policyCategories []string) (*apiV1.DeployDetectionResponse_Run, error) {
+func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, obj k8sRuntime.Object, policyCategories []string) (*apiV1.DeployDetectionResponse_Run, error) {
 	if !kubernetes.IsDeploymentResource(obj.GetObjectKind().GroupVersionKind().Kind) {
 		return nil, nil
 	}
@@ -214,7 +214,7 @@ func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, eCtx enricher.Enr
 	if err != nil {
 		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Could not convert to deployment from resource: %v", err)
 	}
-	return s.enrichAndDetect(ctx, eCtx, deployment, policyCategories...)
+	return s.enrichAndDetect(ctx, enrichmentContext, deployment, policyCategories...)
 }
 
 func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {

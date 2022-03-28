@@ -38,18 +38,18 @@ func (m *MockImageEnricher) EXPECT() *MockImageEnricherMockRecorder {
 }
 
 // EnrichImage mocks base method.
-func (m *MockImageEnricher) EnrichImage(ctx enricher.EnrichmentContext, image *storage.Image) (enricher.EnrichmentResult, error) {
+func (m *MockImageEnricher) EnrichImage(ctx context.Context, enrichCtx enricher.EnrichmentContext, image *storage.Image) (enricher.EnrichmentResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnrichImage", ctx, image)
+	ret := m.ctrl.Call(m, "EnrichImage", ctx, enrichCtx, image)
 	ret0, _ := ret[0].(enricher.EnrichmentResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // EnrichImage indicates an expected call of EnrichImage.
-func (mr *MockImageEnricherMockRecorder) EnrichImage(ctx, image interface{}) *gomock.Call {
+func (mr *MockImageEnricherMockRecorder) EnrichImage(ctx, enrichCtx, image interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImage", reflect.TypeOf((*MockImageEnricher)(nil).EnrichImage), ctx, image)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImage", reflect.TypeOf((*MockImageEnricher)(nil).EnrichImage), ctx, enrichCtx, image)
 }
 
 // EnrichWithSignatureVerificationData mocks base method.

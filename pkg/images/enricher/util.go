@@ -1,6 +1,8 @@
 package enricher
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -9,7 +11,7 @@ import (
 )
 
 // EnrichImageByName takes an image name, and returns the corresponding enriched image.
-func EnrichImageByName(enricher ImageEnricher, enrichmentCtx EnrichmentContext, name string) (*storage.Image, error) {
+func EnrichImageByName(ctx context.Context, enricher ImageEnricher, enrichmentCtx EnrichmentContext, name string) (*storage.Image, error) {
 	if name == "" {
 		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "image name must be specified")
 	}
@@ -19,7 +21,7 @@ func EnrichImageByName(enricher ImageEnricher, enrichmentCtx EnrichmentContext, 
 	}
 	img := types.ToImage(containerImage)
 
-	enrichmentResult, err := enricher.EnrichImage(enrichmentCtx, img)
+	enrichmentResult, err := enricher.EnrichImage(ctx, enrichmentCtx, img)
 	if err != nil {
 		return nil, err
 	}
