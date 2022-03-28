@@ -62,7 +62,7 @@ SCORECARD_STORAGE_IMAGE ?= $(SCORECARD_STORAGE_IMAGE_BASE):$(SCORECARD_STORAGE_I
 SCORECARD_WAIT_TIME_DURATION ?= 40s
 
 # SCORECARD_ARGS should be passed to any invocation of "$(OPERATOR_SDK) scorecard".
-SCORECARD_ARGS ?= --storage-image="$(SCORECARD_STORAGE_IMAGE)" --wait-time="$(SCORECARD_WAIT_TIME_DURATION)"
+SCORECARD_ARGS ?= --storage-image="$(SCORECARD_STORAGE_IMAGE)" --wait-time="$(SCORECARD_WAIT_TIME_DURATION)" --verbose
 
 # TEST_NAMESPACE is where the operator is installed for e2e tests by CI.
 TEST_NAMESPACE ?= stackrox-operator
