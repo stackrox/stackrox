@@ -137,7 +137,7 @@ func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityR
 	query.Pagination = &v1.QueryPagination{
 		SortOptions: []*v1.QuerySortOption{
 			{
-				Field:    search.ComponentTopCVSS.String(),
+				Field:    search.CVSS.String(),
 				Reversed: true,
 			},
 			{
@@ -149,22 +149,13 @@ func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityR
 		Offset: 0,
 	}
 
-	vulnLoader, err := loaders.GetCVELoader(ctx)
-	if err != nil {
-		return nil, err
-	}
-	vulns, err := vulnLoader.FromQuery(ctx, query)
+	vulns, err := eicr.root.vulnerabilitiesV2Query(ctx, query)
 	if err != nil || len(vulns) == 0 {
 		return nil, err
 	} else if len(vulns) > 1 {
 		return nil, errors.New("multiple vulnerabilities matched for top component vulnerability")
 	}
-
-	return &cVEResolver{
-		ctx:  eicr.ctx,
-		root: eicr.root,
-		data: vulns[0],
-	}, nil
+	return vulns[0], nil
 }
 
 // Vulns resolves the vulnerabilities contained in the image component.
