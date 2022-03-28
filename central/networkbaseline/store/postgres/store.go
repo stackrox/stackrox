@@ -91,64 +91,6 @@ create table if not exists networkbaseline (
 		}
 	}
 
-	createTableNetworkbaselinePeers(ctx, db)
-	createTableNetworkbaselineForbiddenPeers(ctx, db)
-}
-
-func createTableNetworkbaselinePeers(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists networkbaseline_Peers (
-    networkbaseline_DeploymentId varchar,
-    idx integer,
-    Entity_Info_ExternalSource_Default bool,
-    PRIMARY KEY(networkbaseline_DeploymentId, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId) REFERENCES networkbaseline(DeploymentId) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists networkbaselinePeers_idx on networkbaseline_Peers using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableNetworkbaselineForbiddenPeers(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists networkbaseline_ForbiddenPeers (
-    networkbaseline_DeploymentId varchar,
-    idx integer,
-    Entity_Info_ExternalSource_Default bool,
-    PRIMARY KEY(networkbaseline_DeploymentId, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (networkbaseline_DeploymentId) REFERENCES networkbaseline(DeploymentId) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists networkbaselineForbiddenPeers_idx on networkbaseline_ForbiddenPeers using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, obj *storage.NetworkBaseline) error {
@@ -165,66 +107,6 @@ func insertIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, obj *storage.Netw
 	}
 
 	finalStr := "INSERT INTO networkbaseline (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	var query string
-
-	for childIdx, child := range obj.GetPeers() {
-		if err := insertIntoNetworkbaselinePeers(ctx, tx, child, obj.GetDeploymentId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from networkbaseline_Peers where networkbaseline_DeploymentId = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetDeploymentId(), len(obj.GetPeers()))
-	if err != nil {
-		return err
-	}
-	for childIdx, child := range obj.GetForbiddenPeers() {
-		if err := insertIntoNetworkbaselineForbiddenPeers(ctx, tx, child, obj.GetDeploymentId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from networkbaseline_ForbiddenPeers where networkbaseline_DeploymentId = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetDeploymentId(), len(obj.GetForbiddenPeers()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func insertIntoNetworkbaselinePeers(ctx context.Context, tx pgx.Tx, obj *storage.NetworkBaselinePeer, networkbaseline_DeploymentId string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		networkbaseline_DeploymentId,
-		idx,
-		obj.GetEntity().GetInfo().GetExternalSource().GetDefault(),
-	}
-
-	finalStr := "INSERT INTO networkbaseline_Peers (networkbaseline_DeploymentId, idx, Entity_Info_ExternalSource_Default) VALUES($1, $2, $3) ON CONFLICT(networkbaseline_DeploymentId, idx) DO UPDATE SET networkbaseline_DeploymentId = EXCLUDED.networkbaseline_DeploymentId, idx = EXCLUDED.idx, Entity_Info_ExternalSource_Default = EXCLUDED.Entity_Info_ExternalSource_Default"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func insertIntoNetworkbaselineForbiddenPeers(ctx context.Context, tx pgx.Tx, obj *storage.NetworkBaselinePeer, networkbaseline_DeploymentId string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		networkbaseline_DeploymentId,
-		idx,
-		obj.GetEntity().GetInfo().GetExternalSource().GetDefault(),
-	}
-
-	finalStr := "INSERT INTO networkbaseline_ForbiddenPeers (networkbaseline_DeploymentId, idx, Entity_Info_ExternalSource_Default) VALUES($1, $2, $3) ON CONFLICT(networkbaseline_DeploymentId, idx) DO UPDATE SET networkbaseline_DeploymentId = EXCLUDED.networkbaseline_DeploymentId, idx = EXCLUDED.idx, Entity_Info_ExternalSource_Default = EXCLUDED.Entity_Info_ExternalSource_Default"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -282,110 +164,6 @@ func (s *storeImpl) copyFromNetworkbaseline(ctx context.Context, tx pgx.Tx, objs
 			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for _, obj := range objs {
-
-		if err = s.copyFromNetworkbaselinePeers(ctx, tx, obj.GetDeploymentId(), obj.GetPeers()...); err != nil {
-			return err
-		}
-		if err = s.copyFromNetworkbaselineForbiddenPeers(ctx, tx, obj.GetDeploymentId(), obj.GetForbiddenPeers()...); err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromNetworkbaselinePeers(ctx context.Context, tx pgx.Tx, networkbaseline_DeploymentId string, objs ...*storage.NetworkBaselinePeer) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"networkbaseline_deploymentid",
-
-		"idx",
-
-		"entity_info_externalsource_default",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			networkbaseline_DeploymentId,
-
-			idx,
-
-			obj.GetEntity().GetInfo().GetExternalSource().GetDefault(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline_peers"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromNetworkbaselineForbiddenPeers(ctx context.Context, tx pgx.Tx, networkbaseline_DeploymentId string, objs ...*storage.NetworkBaselinePeer) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"networkbaseline_deploymentid",
-
-		"idx",
-
-		"entity_info_externalsource_default",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			networkbaseline_DeploymentId,
-
-			idx,
-
-			obj.GetEntity().GetInfo().GetExternalSource().GetDefault(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline_forbiddenpeers"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -638,18 +416,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkBaseli
 
 func dropTableNetworkbaseline(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkbaseline CASCADE")
-	dropTableNetworkbaselinePeers(ctx, db)
-	dropTableNetworkbaselineForbiddenPeers(ctx, db)
-
-}
-
-func dropTableNetworkbaselinePeers(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkbaseline_Peers CASCADE")
-
-}
-
-func dropTableNetworkbaselineForbiddenPeers(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkbaseline_ForbiddenPeers CASCADE")
 
 }
 
