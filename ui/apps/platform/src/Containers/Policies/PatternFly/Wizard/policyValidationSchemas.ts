@@ -48,40 +48,47 @@ type PolicyStep3 = Pick<Policy, 'policySections'>;
 
 const validationSchemaStep3: yup.ObjectSchema<PolicyStep3> = yup.object().shape({
 */
-const validationSchemaStep3 = yup.object().shape({
-    policySections: yup
-        .array()
-        .of(
-            yup.object().shape({
-                /*
+const validationSchemaStep3 = yup.object().shape(
+    {
+        policySections: yup
+            .array()
+            .of(
+                yup.object().shape({
+                    /*
                 sectionName: yup.string().defined(),
                 */
-                policyGroups: yup
-                    .array()
-                    .of(
-                        yup.object().shape({
-                            fieldName: yup.string().trim().required(),
-                            booleanOperator: yup.string().oneOf(['OR', 'AND']).required(),
-                            negate: yup.boolean().required(),
-                            values: yup
-                                .array()
-                                .of(
-                                    yup.object().shape({
-                                        value: yup.string(), // dryrun validates whether value is required
-                                        arrayValue: yup.array().of(yup.string()),
-                                    })
-                                )
-                                .min(1)
-                                .required(),
-                        })
-                    )
-                    .min(1)
-                    .required(),
-            })
-        )
-        .min(1)
-        .required(),
-});
+                    policyGroups: yup
+                        .array()
+                        .of(
+                            yup.object().shape({
+                                fieldName: yup.string().trim().required(),
+                                booleanOperator: yup.string().oneOf(['OR', 'AND']).required(),
+                                negate: yup.boolean().required(),
+                                values: yup
+                                    .array()
+                                    .of(
+                                        yup.object().shape({
+                                            value: yup.string(), // dryrun validates whether value is required
+                                            arrayValue: yup.array().when('value', {
+                                                is: (value) => !value || value.length === 0,
+                                                then: (schema) => schema.min(1).required(),
+                                                otherwise: (schema) => schema.max(0),
+                                            }),
+                                        })
+                                    )
+                                    .min(1)
+                                    .required(),
+                            })
+                        )
+                        .min(1)
+                        .required(),
+                })
+            )
+            .min(1)
+            .required(),
+    },
+    [['value', 'arrayValue']]
+);
 
 const scopeSchema: yup.ObjectSchema<WizardScope> = yup.object().shape({
     cluster: yup.string(),
