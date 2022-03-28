@@ -799,5 +799,23 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{}, operatorsForbidden,
 	)
 
+	f.registerFieldMetadata(fieldnames.MissingIngressNetworkPolicy,
+		querybuilders.ForFieldLabel(augmentedobjs.MissingIngressPolicyCustomTag), nil,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{}, operatorsForbidden,
+	)
+
+	f.registerFieldMetadata(fieldnames.MissingEgressNetworkPolicy,
+		querybuilders.ForFieldLabel(augmentedobjs.MissingEgressPolicyCustomTag), nil,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{}, operatorsForbidden,
+	)
+
 	return f
 }

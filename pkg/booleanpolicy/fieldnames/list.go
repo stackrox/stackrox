@@ -39,6 +39,8 @@ var (
 	ImageUser                     = newFieldName("Image User")
 	IsImpersonatedUser            = newFieldName("Is Impersonated User")
 	LivenessProbeDefined          = newFieldName("Liveness Probe Defined")
+	MissingIngressNetworkPolicy   = newFieldName("Missing Ingress Network Policy")
+	MissingEgressNetworkPolicy    = newFieldName("Missing Egress Network Policy")
 	MinimumRBACPermissions        = newFieldName("Minimum RBAC Permissions")
 	MountPropagation              = newFieldName("Mount Propagation")
 	Namespace                     = newFieldName("Namespace")

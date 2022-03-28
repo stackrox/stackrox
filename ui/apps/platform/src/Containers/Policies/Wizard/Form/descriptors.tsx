@@ -646,6 +646,34 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: true,
     },
     {
+        label: 'Missing Ingress Network Policy',
+        name: 'Missing Ingress Network Policy',
+        shortName: 'Missing Ingress Network Policy',
+        category: policyCriteriaCategories.NETWORKING,
+        type: 'select',
+        options: [
+            {
+                label: 'default',
+                value: 'true',
+            },
+        ],
+        canBooleanLogic: true,
+    },
+    {
+        label: 'Missing Egress Network Policy',
+        name: 'Missing Egress Network Policy',
+        shortName: 'Missing Egress Network Policy',
+        category: policyCriteriaCategories.NETWORKING,
+        type: 'select',
+        options: [
+            {
+                label: 'default',
+                value: 'true',
+            },
+        ],
+        canBooleanLogic: true,
+    },
+    {
         label: 'Protocol',
         name: 'Exposed Port Protocol',
         shortName: 'Exposed port protocol',
