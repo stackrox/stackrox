@@ -21,25 +21,16 @@ import (
 
 type fakeImageServiceClient struct {
 	v1.ImageServiceClient
-	failGet    bool
-	failEnrich bool
-	img        *storage.Image
+	fail bool
+	img  *storage.Image
 	// Used to check if enrichment on central's side was triggered or not.
 	enrichTriggered bool
-}
-
-func (i *fakeImageServiceClient) GetImage(ctx context.Context, req *v1.GetImageRequest,
-	_ ...grpc.CallOption) (*storage.Image, error) {
-	if i.failGet {
-		return nil, errors.New("failed retrieving image")
-	}
-	return i.img, nil
 }
 
 func (i *fakeImageServiceClient) EnrichLocalImageInternal(ctx context.Context,
 	req *v1.EnrichLocalImageInternalRequest, _ ...grpc.CallOption) (*v1.ScanImageInternalResponse, error) {
 	i.enrichTriggered = true
-	if i.failEnrich {
+	if i.fail {
 		return nil, errors.New("failed enrichment")
 	}
 	return &v1.ScanImageInternalResponse{Image: i.img}, nil
@@ -54,11 +45,10 @@ func TestScanSuite(t *testing.T) {
 	suite.Run(t, new(scanTestSuite))
 }
 
-func (suite *scanTestSuite) createMockImageServiceClient(img *storage.Image, failGet, failEnrich bool) *fakeImageServiceClient {
+func (suite *scanTestSuite) createMockImageServiceClient(img *storage.Image, fail bool) *fakeImageServiceClient {
 	return &fakeImageServiceClient{
-		failGet:    failGet,
-		failEnrich: failEnrich,
-		img:        img,
+		fail: fail,
+		img:  img,
 	}
 }
 
@@ -92,8 +82,7 @@ func (suite *scanTestSuite) TestLocalEnrichment() {
 
 	img := types.ToImage(containerImg)
 
-	// Skip short-circuiting so that we move through the complete flow.
-	imageServiceClient := suite.createMockImageServiceClient(img, true, false)
+	imageServiceClient := suite.createMockImageServiceClient(img, false)
 
 	resultImg, err := EnrichLocalImage(context.Background(), imageServiceClient, containerImg)
 
@@ -102,24 +91,6 @@ func (suite *scanTestSuite) TestLocalEnrichment() {
 	suite.Assert().Equal(img, resultImg, "resulting image is not equal to expected one")
 
 	suite.Assert().True(imageServiceClient.enrichTriggered, "enrichment on central was not triggered")
-}
-
-func (suite *scanTestSuite) TestShortCircuitWhenImageExists() {
-	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
-	suite.Require().NoError(err, "failed creating test image")
-
-	img := types.ToImage(containerImg)
-
-	// Return the image on the first request to central.
-	imageServiceClient := suite.createMockImageServiceClient(img, false, false)
-
-	resultImg, err := EnrichLocalImage(context.Background(), imageServiceClient, containerImg)
-
-	suite.Require().NoError(err, "unexpected error when enriching image")
-
-	suite.Assert().Equal(img, resultImg, "resulting image is not equal to expected one")
-
-	suite.Assert().False(imageServiceClient.enrichTriggered, "enrichment on central was triggered")
 }
 
 func (suite *scanTestSuite) TestEnrichImageFailures() {
@@ -135,19 +106,19 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 
 	cases := map[string]testCase{
 		"fail getting a matching registry": {
-			fakeImageServiceClient: suite.createMockImageServiceClient(nil, true, false),
+			fakeImageServiceClient: suite.createMockImageServiceClient(nil, false),
 			getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
 				return nil, errors.New("image doesn't match any registry")
 			},
 		},
 		"fail retrieving image metadata": {
-			fakeImageServiceClient: suite.createMockImageServiceClient(nil, true, false),
+			fakeImageServiceClient: suite.createMockImageServiceClient(nil, false),
 			getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
 				return &fakeRegistry{fail: true}, nil
 			},
 		},
 		"fail scanning the image locally": {
-			fakeImageServiceClient: suite.createMockImageServiceClient(nil, true, false),
+			fakeImageServiceClient: suite.createMockImageServiceClient(nil, false),
 			getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
 				return &fakeRegistry{fail: false}, nil
 			},
@@ -162,7 +133,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 	// until we have deprecated this feature flag.
 	if features.ImageSignatureVerification.Enabled() {
 		cases["fail enrich image via central"] = testCase{
-			fakeImageServiceClient: suite.createMockImageServiceClient(nil, true, true),
+			fakeImageServiceClient: suite.createMockImageServiceClient(nil, true),
 			getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
 				return &fakeRegistry{fail: false}, nil
 			},
@@ -171,7 +142,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 			enrichmentTriggered:      true,
 		}
 		cases["fail fetching signatures"] = testCase{
-			fakeImageServiceClient: suite.createMockImageServiceClient(nil, true, false),
+			fakeImageServiceClient: suite.createMockImageServiceClient(nil, false),
 			getMatchingRegistry: func(image *storage.ImageName) (registryTypes.Registry, error) {
 				return &fakeRegistry{fail: false}, nil
 			},

@@ -36,18 +36,6 @@ var (
 // vulnerabilities will be fetched from central, returning the fully enriched image.
 // It will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
 func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
-	// 1. Check if Central already knows about this image.
-	// If Central already knows about it, then return its results.
-	img, err := centralClient.GetImage(ctx, &v1.GetImageRequest{
-		Id:               ci.GetId(),
-		StripDescription: true,
-	})
-	if err == nil {
-		return img, nil
-	}
-
-	// If we received an error, we will try and enrich data locally.
-
 	imgName := ci.GetName()
 
 	// Find the associated registry of the image.
@@ -60,7 +48,7 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 
 	image := types.ToImage(ci)
 	// Retrieve the image's metadata.
-	metadata, err := matchingRegistry.Metadata(img)
+	metadata, err := matchingRegistry.Metadata(image)
 	if err != nil {
 		return nil, errors.Wrapf(err, "fetching image metadata for image %q", imgName)
 	}
@@ -68,7 +56,7 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 	log.Debugf("Received metadata for image %q: %v", imgName, metadata)
 
 	// Retrieve the image ID with best-effort from image and metadata.
-	imgID := utils.GetSHAFromIDAndMetadata(img.GetId(), metadata)
+	imgID := utils.GetSHAFromIDAndMetadata(image.GetId(), metadata)
 
 	// Scan the image via local scanner.
 	scannerResp, err := scanImg(ctx, image, matchingRegistry)
@@ -98,8 +86,11 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 		ImageSignature: &storage.ImageSignature{Signatures: sigs},
 	})
 	if err != nil {
+		log.Debugf("Unable to retrieve image vulnerabilities for %q: %v", imgName, err)
 		return nil, errors.Wrapf(err, "enriching image %q via central", imgName)
 	}
+
+	log.Debugf("Retrieved image enrichment results for %q", imgName)
 
 	return centralResp.GetImage(), nil
 }
