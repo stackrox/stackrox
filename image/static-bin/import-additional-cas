@@ -2,4 +2,5 @@
 
 set -euo pipefail
 
-cp -L /usr/local/share/ca-certificates/* /etc/pki/ca-trust/source/anchors && update-ca-trust || echo "No custom certificates"
+cp -L /usr/local/share/ca-certificates/* /etc/pki/injected-ca-trust/* \
+    /etc/pki/ca-trust/source/anchors && update-ca-trust || echo "No custom certificates"
