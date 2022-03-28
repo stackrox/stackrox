@@ -170,12 +170,13 @@ is_openshift_cluster() {
         echo "//====== CLUSTER is not set at this point ======//"
     fi
 
-    [[ CIRCLE_STAGE =~ openshift ]] && return 0
-    [[ CIRCLE_JOB =~ openshift ]] && return 0
-    [[ CIRCLE_STAGE =~ osd ]] && return 0
-    [[ CIRCLE_JOB =~ osd ]] && return 0
-    [[ REDHAT_PULL_SECRET =~ cloud.openshift.com ]] && return 0
-    [[ -n GOOGLE_OPENSHIFT_CREDENTIALS ]] && return 0
+    [[ "$CIRCLE_STAGE" =~ openshift ]] && return 0
+    [[ "$CIRCLE_JOB" =~ openshift ]] && return 0
+    [[ "$CIRCLE_STAGE" =~ osd ]] && return 0
+    [[ "$CIRCLE_JOB" =~ osd ]] && return 0
+    [[ "$REDHAT_PULL_SECRET" =~ cloud.openshift.com ]] && return 0
+    [[ -n "$GOOGLE_OPENSHIFT_CREDENTIALS" ]] && return 0
+
     return 1
 }
 
