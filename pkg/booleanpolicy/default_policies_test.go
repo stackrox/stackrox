@@ -2118,10 +2118,10 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 	}
 
 	const (
-		verifier0  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000000"
-		verifier1  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000001"
-		verifier2  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000002"
-		verifier3  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000003"
+		verifier0  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000001"
+		verifier1  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000002"
+		verifier2  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000003"
+		verifier3  = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000004"
 		unverifier = "io.stackrox.signatureintegration.00000000-0000-0000-0000-00000000000F"
 	)
 
@@ -2151,12 +2151,16 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		}}),
 	}
 
-	allImages := set.NewStringSet()
-	for _, img := range images {
-		allImages.Add(img.GetName().GetFullName())
+	var allImages set.FrozenStringSet
+	{
+		ai := set.NewStringSet()
+		for _, img := range images {
+			ai.Add(img.GetName().GetFullName())
+		}
+		allImages = ai.Freeze()
 	}
 
-	for _, testCase := range []struct {
+	for i, testCase := range []struct {
 		values          []string
 		negate          bool
 		expectedMatches set.FrozenStringSet
@@ -2167,9 +2171,19 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 			expectedMatches: set.NewFrozenStringSet("verified_by_0"),
 		},
 		{
+			values:          []string{verifier0},
+			negate:          true,
+			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_0")),
+		},
+		{
 			values:          []string{verifier1},
 			negate:          false,
 			expectedMatches: set.NewFrozenStringSet(),
+		},
+		{
+			values:          []string{verifier1},
+			negate:          true,
+			expectedMatches: allImages,
 		},
 		{
 			values:          []string{verifier2},
@@ -2177,24 +2191,34 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 			expectedMatches: set.NewFrozenStringSet("verified_by_2_and_3"),
 		},
 		{
+			values:          []string{verifier2},
+			negate:          true,
+			expectedMatches: allImages,
+		},
+		{
 			values:          []string{verifier0, verifier2},
 			negate:          false,
 			expectedMatches: set.NewFrozenStringSet("verified_by_0", "verified_by_2_and_3"),
 		},
 		{
+			values:          []string{verifier0, verifier2},
+			negate:          true,
+			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_0")),
+		},
+		{
 			values:          []string{verifier3},
-			negate:          false,
-			expectedMatches: set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3"),
+			negate:          true,
+			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_3")),
 		},
 		{
 			values:          []string{unverifier},
 			negate:          true,
-			expectedMatches: set.NewFrozenStringSet("unverified_image", "image_no_results"),
+			expectedMatches: allImages,
 		},
 	} {
 		c := testCase
 
-		suite.Run(fmt.Sprintf("ImageMatcher %+v", c), func() {
+		suite.Run(fmt.Sprintf("ImageMatcher %d: %+v", i, c), func() {
 			imgMatcher, err := BuildImageMatcher(policyWithSingleFieldAndValues(fieldnames.ImageSignatureVerifiedBy, c.values, c.negate, storage.BooleanOperator_OR))
 			suite.NoError(err)
 			matchedImages := set.NewStringSet()
@@ -2205,11 +2229,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 					continue
 				}
 				matchedImages.Add(img.GetName().GetFullName())
-				if c.negate {
-					suite.Falsef(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match %q", img.GetName().GetFullName())
-				} else {
-					suite.Truef(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image should not match %q", img.GetName().GetFullName())
-				}
+				suite.Truef(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image %q should not match", img.GetName().GetFullName())
 
 				messages := set.NewStringSet()
 				for _, r := range img.GetSignatureVerificationData().GetResults() {
@@ -2225,11 +2245,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 					}
 				}
 			}
-			if c.negate {
-				suite.True(c.expectedMatches.Difference(allImages.Difference(matchedImages).Freeze()).IsEmpty())
-			} else {
-				suite.True(c.expectedMatches.Difference(matchedImages.Freeze()).IsEmpty())
-			}
+			suite.True(c.expectedMatches.Difference(matchedImages.Freeze()).IsEmpty(), matchedImages)
 		})
 	}
 }
