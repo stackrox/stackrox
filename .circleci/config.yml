@@ -1015,7 +1015,7 @@ commands:
       - run:
           name: Comment on PR
           command: |
-            if [[ "<< parameters.branding >>" == "STACKROX_BRANDING"]]; then
+            if [[ "<< parameters.branding >>" == "STACKROX_BRANDING" ]]; then
               wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
               echo "2a2640f44737873dfe30da0d5b8453419d48a494f277a70fd9108e4204fc4a53 hub-comment_linux_amd64" | sha256sum -c -
               sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
