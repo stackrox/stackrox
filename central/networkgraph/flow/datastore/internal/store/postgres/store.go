@@ -578,6 +578,12 @@ func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func
 	conn, release := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	defer release()
 
+	// want to do all this as a single transaction
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
 	// That operation is easy to do in SQL.  If the valueMatchFn is not null then based on the only place
 	// it is set, we are deleting flows orphaned based on elapsed time.
 	if valueMatchFn != nil {
@@ -586,7 +592,7 @@ func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func
 		// I need to loop over all the IDs in the cluster if keyMatchFn is not null.
 		deleteBefore := time.Now().Add(orphanWindow)
 
-		if _, err := conn.Exec(ctx, deleteOrphanByTimeStmt, s.clusterID, deleteBefore); err != nil {
+		if _, err := tx.Exec(ctx, deleteOrphanByTimeStmt, s.clusterID, deleteBefore); err != nil {
 			return err
 		}
 	}
@@ -597,17 +603,33 @@ func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func
 	// For now continue to pull EVERYTHING and compare it to the function which just checks to see if a deployment exists.
 	// If the deployment does not exist, delete the row.
 	if keyMatchFn != nil {
-		// Call GetMatchingFlows with the function to get the flow to delete.
-		deleteFlows, _, err := s.GetMatchingFlows(ctx, keyMatchFn, nil)
+		// Run the query in the transaction to make sure I don't get stuff that may have been deleted by date.
+		rows, err := tx.Query(ctx, walkStmt)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		deleteFlows, err := s.readRows(rows, keyMatchFn)
+
 		if err != nil {
 			return nil
 		}
 
 		for _, flow := range deleteFlows {
-			if err := s.delete(ctx, flow.GetProps()); err != nil {
+			_, err := tx.Exec(ctx, deleteStmt, flow.GetProps().GetSrcEntity().GetType(), flow.GetProps().GetSrcEntity().GetId(), flow.GetProps().GetDstEntity().GetType(), flow.GetProps().GetDstEntity().GetId(), flow.GetProps().GetDstPort(), flow.GetProps().GetL4Protocol(), s.clusterID)
+
+			if err != nil {
+				if err := tx.Rollback(ctx); err != nil {
+					return err
+				}
 				return err
 			}
 		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
 	}
 
 	return nil
