@@ -231,7 +231,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	}
 
 	img := types.ToImage(request.GetImage())
-	if _, err := s.enricher.EnrichImage(enricher.EnrichmentContext{FetchOpt: fetchOpt, Internal: true}, img); err != nil {
+	if _, err := s.enricher.EnrichImage(ctx, enricher.EnrichmentContext{FetchOpt: fetchOpt, Internal: true}, img); err != nil {
 		log.Errorf("error enriching image %q: %v", request.GetImage().GetName().GetFullName(), err)
 		// purposefully, don't return here because we still need to save it into the DB so there is a reference
 		// even if we weren't able to enrich it
@@ -254,7 +254,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	if request.GetForce() {
 		enrichmentCtx.FetchOpt = enricher.ForceRefetch
 	}
-	img, err := enricher.EnrichImageByName(s.enricher, enrichmentCtx, request.GetImageName())
+	img, err := enricher.EnrichImageByName(ctx, s.enricher, enrichmentCtx, request.GetImageName())
 	if err != nil {
 		return nil, err
 	}
@@ -474,7 +474,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 
 	img := types.ToImage(containerImage)
 
-	enrichmentResult, err := s.enricher.EnrichImage(enricher.EnrichmentContext{FetchOpt: enricher.IgnoreExistingImages}, img)
+	enrichmentResult, err := s.enricher.EnrichImage(ctx, enricher.EnrichmentContext{FetchOpt: enricher.IgnoreExistingImages}, img)
 	if err != nil {
 		return &v1.WatchImageResponse{
 			ErrorMessage: fmt.Sprintf("failed to scan image: %v", err),
