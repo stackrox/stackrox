@@ -325,7 +325,9 @@ func verifyImportInvalidFails(t *testing.T) {
 	conn := testutils.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
-	badPolicy := &storage.Policy{}
+	badPolicy := &storage.Policy{
+		PolicyVersion: "1.1",
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
 		Policies: []*storage.Policy{badPolicy},
