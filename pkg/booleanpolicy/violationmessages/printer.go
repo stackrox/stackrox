@@ -51,6 +51,8 @@ var (
 		fieldnames.ImageSignatureVerifiedBy:     {{required: set.NewStringSet(augmentedobjs.ImageSignatureVerifiedCustomTag), printerFuncKey: printer.ImageSignatureVerifiedKey}},
 		fieldnames.LivenessProbeDefined:         {{required: set.NewStringSet(search.LivenessProbeDefined.String()), printerFuncKey: printer.LivenessProbeDefinedKey}},
 		fieldnames.MinimumRBACPermissions:       {{required: set.NewStringSet(search.ServiceAccountPermissionLevel.String()), printerFuncKey: printer.RbacKey}},
+		fieldnames.MissingIngressNetworkPolicy:  {{required: set.NewStringSet(augmentedobjs.MissingIngressPolicyCustomTag), printerFuncKey: printer.MissingIngressNetworkPolicyKey}},
+		fieldnames.MissingEgressNetworkPolicy:   {{required: set.NewStringSet(augmentedobjs.MissingEgressPolicyCustomTag), printerFuncKey: printer.MissingEgressNetworkPolicyKey}},
 		fieldnames.MountPropagation:             {{required: set.NewStringSet(search.MountPropagation.String()), printerFuncKey: printer.VolumeKey}},
 		fieldnames.Namespace:                    {{required: set.NewStringSet(search.Namespace.String()), printerFuncKey: printer.NamespaceKey}},
 		fieldnames.PortExposure:                 {{required: set.NewStringSet(search.ExposureLevel.String()), printerFuncKey: printer.PortExposureKey}},
