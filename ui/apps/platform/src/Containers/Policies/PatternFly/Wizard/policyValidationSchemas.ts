@@ -4,6 +4,7 @@ import * as yup from 'yup';
 import { Policy } from 'types/policy.proto';
 
 import { WizardPolicyStep4, WizardScope } from '../policies.utils';
+import { imageSigningCriteriaName } from '../../Wizard/Form/descriptors';
 
 type PolicyStep1 = Pick<Policy, 'name' | 'severity' | 'categories'>;
 
@@ -48,40 +49,59 @@ type PolicyStep3 = Pick<Policy, 'policySections'>;
 
 const validationSchemaStep3: yup.ObjectSchema<PolicyStep3> = yup.object().shape({
 */
-const validationSchemaStep3 = yup.object().shape({
-    policySections: yup
-        .array()
-        .of(
-            yup.object().shape({
-                /*
+const validationSchemaStep3 = yup.object().shape(
+    {
+        policySections: yup
+            .array()
+            .of(
+                yup.object().shape({
+                    /*
                 sectionName: yup.string().defined(),
                 */
-                policyGroups: yup
-                    .array()
-                    .of(
-                        yup.object().shape({
-                            fieldName: yup.string().trim().required(),
-                            booleanOperator: yup.string().oneOf(['OR', 'AND']).required(),
-                            negate: yup.boolean().required(),
-                            values: yup
-                                .array()
-                                .of(
-                                    yup.object().shape({
-                                        value: yup.string(), // dryrun validates whether value is required
-                                        arrayValue: yup.array().of(yup.string()),
-                                    })
-                                )
-                                .min(1)
-                                .required(),
-                        })
-                    )
-                    .min(1)
-                    .required(),
-            })
-        )
-        .min(1)
-        .required(),
-});
+                    policyGroups: yup
+                        .array()
+                        .of(
+                            yup.object().shape({
+                                fieldName: yup.string().trim().required(),
+                                booleanOperator: yup.string().oneOf(['OR', 'AND']).required(),
+                                negate: yup.boolean().required(),
+                                values: yup
+                                    .array()
+                                    .of(
+                                        yup.object().shape({
+                                            value: yup.string(), // dryrun validates whether value is required
+                                            arrayValue: yup
+                                                .array(yup.string().required())
+                                                .test((value, context: yup.TestContext) => {
+                                                    if (
+                                                        // from[1] means one level up in the object
+                                                        context.from &&
+                                                        context.from[1]?.value?.fieldName ===
+                                                            imageSigningCriteriaName
+                                                    ) {
+                                                        return (
+                                                            Array.isArray(value) &&
+                                                            value.length !== 0
+                                                        );
+                                                    }
+
+                                                    return true;
+                                                }),
+                                        })
+                                    )
+                                    .min(1)
+                                    .required(),
+                            })
+                        )
+                        .min(1)
+                        .required(),
+                })
+            )
+            .min(1)
+            .required(),
+    },
+    [['value', 'arrayValue']]
+);
 
 const scopeSchema: yup.ObjectSchema<WizardScope> = yup.object().shape({
     cluster: yup.string(),
