@@ -4783,6 +4783,7 @@ workflows:
       - gke-postgres-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
+          - build-stackrox
           - build-rhacs
           - build-scale-monitoring-and-mock-server
           - provision-gke-postgres-api-scale-tests
@@ -4819,6 +4820,7 @@ workflows:
       # - aks-api-e2e-tests:
       #     <<: *runOnAllTagsWithQuayIOPullCtx
       #     requires:
+      #       - build-stackrox
       #       - build-rhacs
       #       - build-scale-monitoring-and-mock-server
       #       - provision-aks-api-e2e-tests
@@ -4884,6 +4886,7 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-openshift-rosa-api-e2e-tests
+            - build-stackrox
             - build-rhacs
           context:
             - com-redhat-cloud
