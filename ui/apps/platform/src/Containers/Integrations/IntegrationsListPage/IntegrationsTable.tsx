@@ -49,7 +49,6 @@ function IntegrationsTable({
     const permissions = useIntegrationPermissions();
     const { source, type } = useParams();
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
-    const columns = [...tableColumnDescriptor[source][type]].filter(getIsColumnFeatureFlagEnabled);
     const {
         selected,
         allRowsSelected,
@@ -61,12 +60,12 @@ function IntegrationsTable({
     } = useTableSelection<Integration>(integrations);
     const featureFlags = useFeatureFlags();
 
-    function getIsColumnFeatureFlagEnabled(column) {
-        if (typeof column.featureFlagDependency === 'string') {
-            return isBackendFeatureFlagEnabled(featureFlags, column.featureFlagDependency);
+    const columns = tableColumnDescriptor[source][type].filter(({ featureFlagDependency }) => {
+        if (typeof featureFlagDependency === 'string') {
+            return isBackendFeatureFlagEnabled(featureFlags, featureFlagDependency);
         }
         return true;
-    }
+    });
 
     const isAPIToken = getIsAPIToken(source, type);
     const isClusterInitBundle = getIsClusterInitBundle(source, type);
