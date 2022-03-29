@@ -23,15 +23,3 @@ message ImageComponent {
     string                         fixed_by         = 9;
     string                         operating_system = 10 [(gogoproto.moretags) = 'sql:"pk"'];
 }
-
-message ComponentCVEEdge {
-    // base 64 encoded Component:CVE ids.
-    string     id         = 1;
-
-    bool       is_fixable = 2 [(gogoproto.moretags) = "search:\"Fixable,store\""];
-
-    // Whether there is a version the CVE is fixed in the component.
-    oneof has_fixed_by {
-        string fixed_by   = 3 [(gogoproto.moretags) = "search:\"Fixed By,store,hidden\""];
-    }
-}
