@@ -161,7 +161,7 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, obj
 		clusterID,
 	}
 
-	finalStr := "INSERT INTO networkflow (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) DO UPDATE SET Props_SrcEntity_Type = EXCLUDED.Props_SrcEntity_Type, Props_SrcEntity_Id = EXCLUDED.Props_SrcEntity_Id, Props_DstEntity_Type = EXCLUDED.Props_DstEntity_Type, Props_DstEntity_Id = EXCLUDED.Props_DstEntity_Id, Props_DstPort = EXCLUDED.Props_DstPort, Props_L4Protocol = EXCLUDED.Props_L4Protocol, LastSeenTimestamp = EXCLUDED.LastSeenTimestamp, ClusterId = EXCLUDED.ClusterId"
+	finalStr := "INSERT INTO networkflow (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT ON CONSTRAINT networkflow_pkey DO UPDATE SET LastSeenTimestamp = EXCLUDED.LastSeenTimestamp"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		log.Info("Insert error")
@@ -271,12 +271,15 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 	defer release()
 
 	// Moved the transaction outside the loop which greatly improved the performance of these individual inserts.
-
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
 	for _, obj := range objs {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
-			return err
-		}
+		//tx, err := conn.Begin(ctx)
+		//if err != nil {
+		//	return err
+		//}
 
 		if err := insertIntoNetworkflow(ctx, tx, s.clusterID, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
@@ -284,11 +287,14 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 			}
 			return err
 		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
-		}
+		//if err := tx.Commit(ctx); err != nil {
+		//	return err
+		//}
 	}
 
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
 	return nil
 }
 
