@@ -58,13 +58,15 @@ func (resolver *Resolver) componentsV2Query(ctx context.Context, query *v1.Query
 	}
 
 	ret := make([]ComponentResolver, 0, len(compRes))
-	for i, resolver := range compRes {
+	for _, resolver := range compRes {
 		resolver.ctx = ctx
-		topVuln, err := resolver.TopVuln(ctx)
-		if err != nil {
-			return nil, err
-		}
-		log.Errorf("osward -- %d resolver.data.GetTopCvss, topVuln.Cvss %f %f", i, resolver.data.GetTopCvss(), topVuln.Cvss(ctx))
+
+		//topVuln, err := resolver.TopVuln(ctx)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//log.Errorf("osward -- %d resolver.data.GetTopCvss, topVuln.Cvss %f %f", i, resolver.data.GetTopCvss(), topVuln.Cvss(ctx))
+
 		ret = append(ret, resolver)
 	}
 	return ret, err
@@ -128,7 +130,6 @@ func (eicr *imageComponentResolver) LastScanned(ctx context.Context) (*graphql.T
 // this function
 // TopVuln returns the first vulnerability with the top CVSS score.
 func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityResolver, error) {
-	log.Errorf("osward -- in TopVuln function")
 	if eicr.data.GetSetTopCvss() == nil {
 		return nil, nil
 	}
@@ -155,6 +156,7 @@ func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityR
 	} else if len(vulns) > 1 {
 		return nil, errors.New("multiple vulnerabilities matched for top component vulnerability")
 	}
+	log.Errorf("osward -- TopVuln result: %f", vulns[0].Cvss(ctx))
 	return vulns[0], nil
 }
 
