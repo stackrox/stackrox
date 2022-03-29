@@ -469,13 +469,11 @@ func (d *detectorImpl) processIndicator(pi *storage.ProcessIndicator) {
 	}
 	images := d.enricher.getImages(deployment)
 
-	enhancedDeployment := booleanpolicy.EnhancedDeployment{
+	// Run detection now
+	alerts := d.unifiedDetector.DetectProcess(booleanpolicy.EnhancedDeployment{
 		Deployment: deployment,
 		Images:     images,
-	}
-
-	// Run detection now
-	alerts := d.unifiedDetector.DetectProcess(enhancedDeployment, pi, d.baselineEval.IsOutsideLockedBaseline(pi))
+	}, pi, d.baselineEval.IsOutsideLockedBaseline(pi))
 	if len(alerts) == 0 {
 		// No need to process runtime alerts that have no violations
 		return
@@ -550,11 +548,10 @@ func (d *detectorImpl) processAlertsForFlowOnEntity(
 	}
 
 	images := d.enricher.getImages(deployment)
-	enhancedDeployment := booleanpolicy.EnhancedDeployment{
+	alerts := d.unifiedDetector.DetectNetworkFlowForDeployment(booleanpolicy.EnhancedDeployment{
 		Deployment: deployment,
 		Images:     images,
-	}
-	alerts := d.unifiedDetector.DetectNetworkFlowForDeployment(enhancedDeployment, flowDetails)
+	}, flowDetails)
 	if len(alerts) == 0 {
 		// No need to process runtime alerts that have no violations
 		return
