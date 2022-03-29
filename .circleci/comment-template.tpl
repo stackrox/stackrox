@@ -12,4 +12,4 @@ export MAIN_IMAGE_TAG='{{.Env.TAG}}'
 docker run -i --rm stackrox/main:{{.Env.TAG}} central generate interactive > bundle.zip
 ```
 
-🕹️ A `roxctl` binary artifact can be [downloaded from CircleCI](https://circleci.com/gh/stackrox/rox/{{.Build.Number}}#artifacts/containers/0).
+🕹️ A `roxctl` binary artifact can be [downloaded from CircleCI](https://circleci.com/gh/stackrox/stackrox/{{.Build.Number}}#artifacts/containers/0).

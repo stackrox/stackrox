@@ -101,7 +101,7 @@ saveGoBuildBinaryCache: &saveGoBuildBinaryCache
     name: Saving Go binary build cache
     key: go-binary-cache-v2-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-{{ .Revision }}
     paths:
-      - /home/circleci/go/src/github.com/stackrox/rox/linux-gocache
+      - /home/circleci/go/src/github.com/stackrox/stackrox/linux-gocache
 
 goModBinaryCacheKey: &goModBinaryCacheKey 'rox-go-binary-pkg-mod-v2-{{ checksum "go.sum" }}'
 restoreGoModBinaryCache: &restoreGoModBinaryCache
@@ -508,7 +508,7 @@ executors:
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
-    working_directory: /go/src/github.com/stackrox/rox
+    working_directory: /go/src/github.com/stackrox/stackrox
 
 commands:
   collect-k8s-logs:
@@ -938,7 +938,7 @@ commands:
           when: on_fail
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - *loginToGCR
       - run:
@@ -1102,7 +1102,7 @@ commands:
       - run:
           name: Save cluster config
           command: |
-            CONFIG_DIR="/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>"
+            CONFIG_DIR="/go/src/github.com/stackrox/stackrox/.ci-clusters/<< parameters.cluster-id >>"
             mkdir -p "$CONFIG_DIR"
             echo "$CLUSTER_NAME" >>"${CONFIG_DIR}/name"
             gcloud config get-value compute/zone >>"${CONFIG_DIR}/zone"
@@ -1117,7 +1117,7 @@ commands:
           when: on_fail
 
       - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
+          root: /go/src/github.com/stackrox/stackrox
           paths:
             - .ci-clusters/<< parameters.cluster-id >>
 
@@ -1130,7 +1130,7 @@ commands:
       - run:
           name: Restore config for << parameters.cluster-id >> cluster
           command: |
-            CONFIG_DIR="/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>"
+            CONFIG_DIR="/go/src/github.com/stackrox/stackrox/.ci-clusters/<< parameters.cluster-id >>"
             export CLUSTER_NAME="$(cat "${CONFIG_DIR}/name")"
             [[ -n "$CLUSTER_NAME" ]]
             export ZONE="$(cat "${CONFIG_DIR}/zone")"
@@ -1150,7 +1150,7 @@ commands:
       - run:
           name: Running refresh token script in the background
           command: |
-            CONFIG_DIR="/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>"
+            CONFIG_DIR="/go/src/github.com/stackrox/stackrox/.ci-clusters/<< parameters.cluster-id >>"
             if [[ ! -x "${CONFIG_DIR}/refresh-token-forever.sh" ]]; then
               exit 0
             fi
@@ -1297,7 +1297,7 @@ commands:
       - setup_remote_docker
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - restore-go-mod-cache
 
@@ -1442,7 +1442,7 @@ commands:
       - checkout
       - check-backend-changes
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
       - run:
           name: QA Automation Platform
           command: echo "there are no tests defined since this is a fake"
@@ -1605,7 +1605,7 @@ commands:
           docker-login: true
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - when:
           condition: << parameters.suffix >>
@@ -2358,7 +2358,7 @@ jobs:
     # To trigger a run you might do something like:
     #
     #   curl -X POST --header 'Content-Type: application/json' \
-    #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/rox/pipeline -d '{
+    #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline -d '{
     #     "branch": "3.0.50.x",
     #     "parameters": {
     #         "trigger_on_demand": true,
@@ -2489,7 +2489,7 @@ jobs:
             make --quiet tag | tee CI_TAG_TMP
             mv CI_TAG_TMP CI_TAG
       - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
+          root: /go/src/github.com/stackrox/stackrox
           paths:
             - CI_TAG
 
@@ -2506,7 +2506,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
       - restore-npm-deps-cache
       - fetch-ui-deps
 
@@ -2539,7 +2539,7 @@ jobs:
       - save-npm-deps-cache
 
       - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
+          root: /go/src/github.com/stackrox/stackrox
           paths:
             - ui/build # Copied directly into the image downstream.
             - ui/deps
@@ -2557,7 +2557,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
       - restore-go-mod-cache
       - setup-go-build-env
       - *restoreGoBuildCache
@@ -2592,7 +2592,7 @@ jobs:
       - *saveGoBuildCache
 
       - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
+          root: /go/src/github.com/stackrox/stackrox
           paths:
             - bin/linux/roxctl
             - bin/darwin/roxctl
@@ -2603,7 +2603,7 @@ jobs:
   pre-build-go-binaries:
     machine:
       image: << pipeline.parameters.ci_machine_image >>
-    working_directory: ~/go/src/github.com/stackrox/rox
+    working_directory: ~/go/src/github.com/stackrox/stackrox
     environment:
       GOPATH: /home/circleci/go
       EKS_AUTOMATION_VERSION: 0.2.17
@@ -2611,7 +2611,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: ~/go/src/github.com/stackrox/rox
+          at: ~/go/src/github.com/stackrox/stackrox
       - run:
           name: Create cci-export utility and setup env
           command: |
@@ -2648,7 +2648,7 @@ jobs:
           command: make swagger-docs
 
       - persist_to_workspace:
-          root: ~/go/src/github.com/stackrox/rox
+          root: ~/go/src/github.com/stackrox/stackrox
           paths:
             - bin/linux/central
             - bin/linux/migrator
@@ -2681,7 +2681,7 @@ jobs:
           docker-login: true
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - *refreshAlpineBaseImage
 
@@ -2812,7 +2812,7 @@ jobs:
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "quay.io/rhacs-eng/collector-slim:${MAIN_TAG}"
 
       - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
+          root: /go/src/github.com/stackrox/stackrox
           paths:
             - CI_TAG
             - bin/linux/roxctl
@@ -2833,7 +2833,7 @@ jobs:
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - restore-go-mod-cache
       - setup-go-build-env
@@ -3069,7 +3069,7 @@ jobs:
       - setup_remote_docker
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - *loginToGCR
       - run:
@@ -3123,7 +3123,7 @@ jobs:
       - setup_remote_docker
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - *loginToGCR
       - run:
@@ -3176,7 +3176,7 @@ jobs:
       - setup_remote_docker
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - *loginToGCR
       - create-openshift-4-cluster:
@@ -3225,7 +3225,7 @@ jobs:
     - setup_remote_docker
 
     - attach_workspace:
-        at: /go/src/github.com/stackrox/rox
+        at: /go/src/github.com/stackrox/stackrox
 
     - *loginToGCR
     - create-openshift-4-cluster:
@@ -3269,7 +3269,7 @@ jobs:
     - setup_remote_docker
 
     - attach_workspace:
-        at: /go/src/github.com/stackrox/rox
+        at: /go/src/github.com/stackrox/stackrox
 
     - *loginToGCR
     - create-openshift-4-cluster:
@@ -3326,7 +3326,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
       - restore-go-mod-cache
       - *setupRoxctl
       - run:
@@ -3361,7 +3361,7 @@ jobs:
           label: ci-no-api-tests
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - restore-go-mod-cache
       - setup-go-build-env
@@ -3514,7 +3514,7 @@ jobs:
           label: ci-no-ui-tests
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - *setupRoxctl
       - setup_remote_docker
@@ -3647,7 +3647,7 @@ jobs:
           run-on-tags: true
           changed-path: '^migrator/.*$|^image/'
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
       - restore-go-mod-cache
 
       - setup-gcp
@@ -3692,7 +3692,7 @@ jobs:
           run-on-master: false
       - setup_remote_docker
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - *setupRoxctl
       - setup-gcp
@@ -3772,7 +3772,7 @@ jobs:
         run-on-tags: false
     - setup_remote_docker
     - attach_workspace:
-        at: /go/src/github.com/stackrox/rox
+        at: /go/src/github.com/stackrox/stackrox
 
     - *setupRoxctl
     - setup-gcp
@@ -3890,7 +3890,7 @@ jobs:
           docker-login: true
 
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - run:
           name: Sanity check KUBECONFIG
@@ -4050,7 +4050,7 @@ jobs:
     - setup_remote_docker
 
     - attach_workspace:
-        at: /go/src/github.com/stackrox/rox
+        at: /go/src/github.com/stackrox/stackrox
 
     - run:
         name: Restore KUBECONFIG
@@ -4121,7 +4121,7 @@ jobs:
     - setup_remote_docker
 
     - attach_workspace:
-        at: /go/src/github.com/stackrox/rox
+        at: /go/src/github.com/stackrox/stackrox
 
     - run:
         name: Restore KUBECONFIG
@@ -4179,7 +4179,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - run:
           name: "Generate K8s/OpenShift bundles using roxctl.exe"
@@ -4187,7 +4187,7 @@ jobs:
           command: |
             # In Windows, the workspace ends up getting attached relative to the current working directory
             # so we need to do this cd every time.
-            cd go/src/github.com/stackrox/rox
+            cd go/src/github.com/stackrox/stackrox
             ./bin/windows/roxctl.exe central generate k8s none --output-dir rox-k8s-bundle
             ./bin/windows/roxctl.exe central generate openshift none --output-dir rox-openshift-bundle
 
@@ -4197,7 +4197,7 @@ jobs:
           command: |
             # In Windows, the workspace ends up getting attached relative to the current working directory
             # so we need to do this cd every time.
-            cd go/src/github.com/stackrox/rox
+            cd go/src/github.com/stackrox/stackrox
             dir --recursive rox-k8s-bundle
             test -f rox-k8s-bundle/README
             dir --recursive rox-openshift-bundle
@@ -4209,7 +4209,7 @@ jobs:
           command: |
             # In Windows, the workspace ends up getting attached relative to the current working directory
             # so we need to do this cd every time.
-            cd go/src/github.com/stackrox/rox
+            cd go/src/github.com/stackrox/stackrox
             version_from_yaml="$(grep -rnw -e 'image.*main' rox-k8s-bundle/central | sed -E 's/.*main.*:([^" ]+).*/\1/g')"
             version_from_roxctl="$(./bin/windows/roxctl.exe version)"
             printf "Versions:\n  from YAML: %s\nfrom roxctl: %s\n" "${version_from_yaml}" "${version_from_roxctl}"
@@ -4266,7 +4266,7 @@ jobs:
       - checkout
       - setup_remote_docker
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
 
       - run:
           name: Retag docs image with release-version tag in Docker Hub
@@ -4295,7 +4295,7 @@ jobs:
 
             # The docs image uses the same tag as main for releases.
             ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/docs:$MAIN_TAG"   "stackrox.io/docs:$MAIN_TAG"
-            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/roxctl:$MAIN_TAG" "stackrox.io/roxctl:$MAIN_TAG"
+            ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/stackroxctl:$MAIN_TAG" "stackrox.io/roxctl:$MAIN_TAG"
             ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/central-db:$MAIN_TAG" "stackrox.io/central-db:$MAIN_TAG"
 
             ./scripts/ci/pull-retag-push.sh "docker.io/stackrox/collector:${COLLECTOR_TAG}"        "collector.stackrox.io/collector:${COLLECTOR_TAG}"
@@ -4389,7 +4389,7 @@ jobs:
             # in order to produce new images with the updated version of `make tag`.
             # Note that Circle changes the local master ref to point to the tag, so we need to check against origin/master.
             if git branch -a --contains "${CIRCLE_TAG}" | grep -qx '[[:space:]]*remotes/origin/master$'; then
-              curl -sS --fail -X POST -u "${CIRCLE_TOKEN_ROXBOT}:" "https://circleci.com/api/v1.1/project/github/stackrox/rox/build" -d '{"branch": "master"}'
+              curl -sS --fail -X POST -u "${CIRCLE_TOKEN_ROXBOT}:" "https://circleci.com/api/v1.1/project/github/stackrox/stackrox/build" -d '{"branch": "master"}'
             fi
 
   trigger-nightly-build:
@@ -4578,7 +4578,7 @@ jobs:
                   cci-export STORAGE pvc
                   cci-export KUBECONFIG "$PWD/artifacts/kubeconfig"
                   source "$PWD/artifacts/dotenv"
-                  source "/go/src/github.com/stackrox/rox/artifacts/dotenv"
+                  source "/go/src/github.com/stackrox/stackrox/artifacts/dotenv"
                   oc login "$API_ENDPOINT" --username "$CONSOLE_USER" --password "$CONSOLE_PASSWORD" --insecure-skip-tls-verify=true
                   oc get nodes
           destroy-cluster:
@@ -4590,7 +4590,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
+          at: /go/src/github.com/stackrox/stackrox
       - openshift-ci-mimic-env
       - run:
           name: Run the OpenShift CI upgrade test hook
@@ -4914,7 +4914,7 @@ workflows:
   # To trigger a build for example:
   #
   #   curl -X POST --header 'Content-Type: application/json' \
-  #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/rox/pipeline -d '{
+  #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline -d '{
   #     "branch": "<your branch>",
   #     "parameters": {
   #         "trigger_on_demand": true,
