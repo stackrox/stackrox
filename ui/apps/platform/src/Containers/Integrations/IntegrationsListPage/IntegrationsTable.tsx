@@ -17,7 +17,6 @@ import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
-import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
@@ -58,11 +57,11 @@ function IntegrationsTable({
         onSelectAll,
         getSelectedIds,
     } = useTableSelection<Integration>(integrations);
-    const featureFlags = useFeatureFlags();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const columns = tableColumnDescriptor[source][type].filter(({ featureFlagDependency }) => {
         if (typeof featureFlagDependency === 'string') {
-            return isBackendFeatureFlagEnabled(featureFlags, featureFlagDependency);
+            return isFeatureFlagEnabled(featureFlagDependency);
         }
         return true;
     });

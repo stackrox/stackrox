@@ -8,10 +8,26 @@ const featureFlagsSelector = createStructuredSelector<{ featureFlags: FeatureFla
     featureFlags: selectors.getFeatureFlags,
 });
 
-function useFeatureFlags(): FeatureFlag[] {
+type UseFeatureFlags = {
+    isFeatureFlagEnabled: (envVar: string) => boolean;
+};
+
+function useFeatureFlags(): UseFeatureFlags {
     const { featureFlags } = useSelector(featureFlagsSelector);
 
-    return featureFlags;
+    function isFeatureFlagEnabled(envVar: string): boolean {
+        const featureFlag = featureFlags.find((flag) => flag.envVar === envVar);
+        if (!featureFlag) {
+            if (process.env.NODE_ENV === 'development') {
+                // eslint-disable-next-line no-console
+                console.warn(`EnvVar ${envVar} not found in the backend list, possibly stale?`);
+            }
+            return false;
+        }
+        return featureFlag.enabled;
+    }
+
+    return { isFeatureFlagEnabled };
 }
 
 export default useFeatureFlags;
