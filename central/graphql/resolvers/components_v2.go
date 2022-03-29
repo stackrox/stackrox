@@ -58,14 +58,15 @@ func (resolver *Resolver) componentsV2Query(ctx context.Context, query *v1.Query
 	}
 
 	ret := make([]ComponentResolver, 0, len(compRes))
-	for _, resolver := range compRes {
+	for i, resolver := range compRes {
 		resolver.ctx = ctx
 
-		//topVuln, err := resolver.TopVuln(ctx)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//log.Errorf("osward -- %d resolver.data.GetTopCvss, topVuln.Cvss %f %f", i, resolver.data.GetTopCvss(), topVuln.Cvss(ctx))
+		// data being sorted by resolver.data.GetTopCvss, which is sometimes a different number than resolver.TopVuln.Cvss
+		topVuln, err := resolver.TopVuln(ctx)
+		if err != nil {
+			return nil, err
+		}
+		log.Errorf("osward -- %d resolver.data.GetTopCvss, topVuln.Cvss %f %f", i, resolver.data.GetTopCvss(), topVuln.Cvss(ctx))
 
 		ret = append(ret, resolver)
 	}
@@ -149,15 +150,24 @@ func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityR
 		Limit:  1,
 		Offset: 0,
 	}
+	log.Errorf("osward -- ctx, eicr.ctx %s %s", ctx, eicr.ctx)
+	vulnLoader, err := loaders.GetCVELoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	vulns, err := vulnLoader.FromQuery(ctx, query)
 
-	vulns, err := eicr.root.vulnerabilitiesV2Query(ctx, query)
 	if err != nil || len(vulns) == 0 {
 		return nil, err
 	} else if len(vulns) > 1 {
 		return nil, errors.New("multiple vulnerabilities matched for top component vulnerability")
 	}
-	log.Errorf("osward -- TopVuln result: %f", vulns[0].Cvss(ctx))
-	return vulns[0], nil
+	log.Errorf("osward -- TopVuln result: %f", vulns[0].GetCvss())
+	return &cVEResolver{
+		ctx:  eicr.ctx,
+		root: eicr.root,
+		data: vulns[0],
+	}, nil
 }
 
 // Vulns resolves the vulnerabilities contained in the image component.
