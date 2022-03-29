@@ -694,6 +694,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageScan_Note(0)))
 	utils.Must(builder.AddType("ImageSignature", []string{
+		"fetched: Time",
 		"signatures: [Signature]!",
 	}))
 	utils.Must(builder.AddType("ImageSignatureVerificationData", []string{
@@ -6754,6 +6755,11 @@ func (resolver *Resolver) wrapImageSignatures(values []*storage.ImageSignature, 
 		output[i] = &imageSignatureResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *imageSignatureResolver) Fetched(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetFetched()
+	return timestamp(value)
 }
 
 func (resolver *imageSignatureResolver) Signatures(ctx context.Context) ([]*signatureResolver, error) {

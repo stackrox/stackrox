@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/registries"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
@@ -609,11 +610,17 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 
 	// Do not signal updates when no signatures have been fetched.
 	if len(fetchedSignatures) == 0 {
+		// Delete existing signatures on the image if we fetched zero.
+		if len(img.GetSignature().GetSignatures()) != 0 {
+			img.Signature = nil
+			return true, nil
+		}
 		return false, nil
 	}
 
 	img.Signature = &storage.ImageSignature{
 		Signatures: fetchedSignatures,
+		Fetched:    protoconv.ConvertTimeToTimestamp(time.Now()),
 	}
 	return true, nil
 }
