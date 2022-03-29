@@ -9,11 +9,15 @@ import (
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
+// TestClusterScope contains cluster-level scope information (cluster included or list of included namespaces
+// in the cluster) to build test scope checkers
 type TestClusterScope struct {
 	Namespaces []string
 	Included   bool
 }
 
+// TestResourceScope contains resource-level scope information (resource fully included or list of included clusters
+// and associated cluster-level scope information) to build test scope checkers
 type TestResourceScope struct {
 	Clusters map[string]*TestClusterScope
 	Included bool
