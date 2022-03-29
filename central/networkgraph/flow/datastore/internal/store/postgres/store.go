@@ -46,7 +46,7 @@ var (
 	schema = walker.Walk(reflect.TypeOf((*storage.NetworkFlow)(nil)), baseTable)
 
 	// We begin to process in batches after this number of records
-	batchAfter = 100
+	batchAfter = 10000000
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
@@ -158,7 +158,7 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, obj
 
 func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkFlow) error {
 
-	log.Info("copyFromNetworkFlow")
+	log.Infof("copyFromNetworkFlow => %d", len(objs))
 
 	inputRows := [][]interface{}{}
 	var err error
@@ -485,7 +485,7 @@ func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFl
 
 // RemoveFlowsForDeployment removes all flows where the source OR destination match the deployment id
 func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
-	log.Info("RemoveFlowsForDeployment")
+	log.Infof("RemoveFlowsForDeployment => %s", id)
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
