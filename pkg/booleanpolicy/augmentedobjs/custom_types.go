@@ -14,7 +14,7 @@ const (
 	ImageScanCustomTag                 = "Image Scan"
 	ImageSignatureVerifiedCustomTag    = "Image Signature Verified By"
 	MissingIngressPolicyCustomTag      = "Missing Ingress Network Policy"
-	MissingEgressPolicyCustomTag       = "Missing Ingress Network Policy"
+	MissingEgressPolicyCustomTag       = "Missing Egress Network Policy"
 	NotInNetworkBaselineCustomTag      = "Not In Network Baseline"
 	NotInProcessBaselineCustomTag      = "Not In Baseline"
 	KubernetesAPIVerbCustomTag         = "Kubernetes API Verb"
