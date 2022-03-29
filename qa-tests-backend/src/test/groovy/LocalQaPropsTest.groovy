@@ -9,7 +9,7 @@ class LocalQaPropsTest extends Specification {
     def "CheckPropertyFileInputValue > GOOGLE_CREDENTIALS_GCR_SCANNER"() {
         // When using GOOGLE_CREDENTIALS_GCR_SCANNER in qa-test-settings.properties
         // this test can be used to validate the reconstituted json credentials key.
-        // No claims are made regarding key validity or authorixations. Only the
+        // No claims are made regarding key validity or authorizations. Only the
         // validity of the json data and exact content match via sha256 is performed.
         when:
         def originalString = Env.mustGet('GOOGLE_CREDENTIALS_GCR_SCANNER')
