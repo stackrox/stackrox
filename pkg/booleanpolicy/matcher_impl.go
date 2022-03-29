@@ -44,7 +44,7 @@ func (p *processMatcherImpl) checkWhetherProcessMatches(cache *CacheReceptacle, 
 	return false, nil
 }
 
-func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, indicator *storage.ProcessIndicator, processNotInBaseline bool) (Violations, error) {
+func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, indicator *storage.ProcessIndicator, processNotInBaseline bool) (Violations, error) {
 	if cache == nil || cache.augmentedObj == nil {
 		processMatched, err := p.checkWhetherProcessMatches(cache, indicator, processNotInBaseline)
 		if err != nil || !processMatched {
@@ -53,7 +53,7 @@ func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, 
 	}
 
 	violations, err := p.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructDeploymentWithProcess(deployment, images, indicator, processNotInBaseline)
+		return augmentedobjs.ConstructDeploymentWithProcess(enhancedDeployment.Deployment, enhancedDeployment.Images, indicator, processNotInBaseline)
 	}, indicator, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
@@ -160,8 +160,7 @@ func (m *networkFlowMatcherImpl) checkWhetherFlowMatches(
 
 func (m *networkFlowMatcherImpl) MatchDeploymentWithNetworkFlowInfo(
 	cache *CacheReceptacle,
-	deployment *storage.Deployment,
-	images []*storage.Image,
+	enhancedDeployment EnhancedDeployment,
 	flow *augmentedobjs.NetworkFlowDetails,
 ) (Violations, error) {
 	if cache == nil || cache.augmentedObj == nil {
@@ -172,7 +171,7 @@ func (m *networkFlowMatcherImpl) MatchDeploymentWithNetworkFlowInfo(
 	}
 
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructDeploymentWithNetworkFlowInfo(deployment, images, flow)
+		return augmentedobjs.ConstructDeploymentWithNetworkFlowInfo(enhancedDeployment.Deployment, enhancedDeployment.Images, flow)
 	}, nil, nil, flow)
 	if err != nil || violations == nil {
 		return Violations{}, err
@@ -280,9 +279,9 @@ func (m *matcherImpl) getViolations(
 }
 
 // MatchDeployment runs detection against the deployment and images.
-func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (Violations, error) {
+func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment) (Violations, error) {
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructDeployment(deployment, images)
+		return augmentedobjs.ConstructDeployment(enhancedDeployment.Deployment, enhancedDeployment.Images)
 	}, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err

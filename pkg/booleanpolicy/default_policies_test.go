@@ -1412,7 +1412,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 					for _, process := range suite.deploymentsToIndicators[deploymentID] {
 						match := getViolationsWithAndWithoutCaching(t, func(cache *CacheReceptacle) (Violations, error) {
-							return processMatcher.MatchDeploymentWithProcess(nil, deployment, suite.getImagesForDeployment(deployment), process, false)
+							return processMatcher.MatchDeploymentWithProcess(nil, EnhancedDeployment{deployment, suite.getImagesForDeployment(deployment)}, process, false)
 						})
 						require.NoError(t, err)
 						if expectedProcesses.Contains(process.GetId()) {
@@ -1428,7 +1428,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			actualViolations := make(map[string][]*storage.Alert_Violation)
 			for id, deployment := range suite.deployments {
 				violationsForDep := getViolationsWithAndWithoutCaching(t, func(cache *CacheReceptacle) (Violations, error) {
-					return m.MatchDeployment(cache, deployment, suite.getImagesForDeployment(deployment))
+					return m.MatchDeployment(cache, EnhancedDeployment{deployment, suite.getImagesForDeployment(deployment)})
 				})
 				assert.Nil(t, violationsForDep.ProcessViolation)
 				if alertViolations := violationsForDep.AlertViolations; len(alertViolations) > 0 {
@@ -1790,7 +1790,7 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 	} {
 		c := testCase
 		suite.Run(c.dep.GetId(), func() {
-			matched, err := m.MatchDeployment(nil, c.dep, nil)
+			matched, err := m.MatchDeployment(nil, EnhancedDeployment{c.dep, nil})
 			suite.NoError(err)
 			var expectedMessages []*storage.Alert_Violation
 			for _, v := range c.expectedViolations {
@@ -1960,7 +1960,7 @@ func (suite *DefaultPoliciesTestSuite) TestK8sRBACField() {
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
-				violations, err := matcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				violations, err := matcher.MatchDeployment(nil, EnhancedDeployment{dep, suite.getImagesForDeployment(dep)})
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					matched.Add(depRef)
@@ -2021,7 +2021,7 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
-				violations, err := matcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				violations, err := matcher.MatchDeployment(nil, EnhancedDeployment{dep, suite.getImagesForDeployment(dep)})
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					assertMessageMatches(t, depRef, violations.AlertViolations)
@@ -2082,7 +2082,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 			require.NoError(t, err)
 			depMatched := set.NewStringSet()
 			for dep, img := range depToImg {
-				violations, err := depMatcher.MatchDeployment(nil, dep, []*storage.Image{img})
+				violations, err := depMatcher.MatchDeployment(nil, EnhancedDeployment{dep, []*storage.Image{img}})
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					depMatched.Add(img.Scan.OperatingSystem)
@@ -2306,7 +2306,7 @@ func (suite *DefaultPoliciesTestSuite) TestContainerName() {
 			require.NoError(t, err)
 			containerNameMatched := set.NewStringSet()
 			for _, dep := range deps {
-				violations, err := depMatcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				violations, err := depMatcher.MatchDeployment(nil, EnhancedDeployment{dep, suite.getImagesForDeployment(dep)})
 				require.NoError(t, err)
 				// No match in case we are testing for doesnotexist
 				if len(violations.AlertViolations) > 0 {
@@ -2407,7 +2407,7 @@ func (suite *DefaultPoliciesTestSuite) TestAutomountServiceAccountToken() {
 			dep := deployments[c.DeploymentName]
 			matcher, err := BuildDeploymentMatcher(c.Policy)
 			suite.NoError(err, "deployment matcher creation must succeed")
-			violations, err := matcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+			violations, err := matcher.MatchDeployment(nil, EnhancedDeployment{dep, suite.getImagesForDeployment(dep)})
 			suite.NoError(err, "deployment matcher run must succeed")
 			suite.Empty(violations.ProcessViolation)
 			suite.Equal(c.ExpectedAlerts, violations.AlertViolations)
@@ -2459,7 +2459,7 @@ func (suite *DefaultPoliciesTestSuite) TestRuntimeClass() {
 			require.NoError(t, err)
 			matchedRuntimeClasses := set.NewStringSet()
 			for _, dep := range deps {
-				violations, err := depMatcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				violations, err := depMatcher.MatchDeployment(nil, EnhancedDeployment{dep, suite.getImagesForDeployment(dep)})
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					matchedRuntimeClasses.Add(dep.GetRuntimeClass())
@@ -2524,7 +2524,7 @@ func (suite *DefaultPoliciesTestSuite) TestNamespace() {
 			require.NoError(t, err)
 			namespacesMatched := set.NewStringSet()
 			for _, dep := range deps {
-				violations, err := depMatcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				violations, err := depMatcher.MatchDeployment(nil, EnhancedDeployment{dep, suite.getImagesForDeployment(dep)})
 				require.NoError(t, err)
 				// No match in case we are testing for doesnotexist
 				if len(violations.AlertViolations) > 0 {
@@ -2598,7 +2598,7 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
-				violations, err := matcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				violations, err := matcher.MatchDeployment(nil, EnhancedDeployment{dep, suite.getImagesForDeployment(dep)})
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					matched.Add(depRef)
@@ -2732,7 +2732,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 			actualViolations := make(map[string][]*storage.Alert_Violation)
 			for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 				for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
-					violations, err := m.MatchDeploymentWithProcess(nil, dep, suite.getImagesForDeployment(dep), indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
+					violations, err := m.MatchDeploymentWithProcess(nil, EnhancedDeployment{dep, suite.getImagesForDeployment(dep)}, indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
 					suite.Require().NoError(err)
 					if len(violations.AlertViolations) > 0 {
 						actualMatches[dep.GetId()] = append(actualMatches[dep.GetId()], key)
@@ -2930,7 +2930,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 		LastSeenTimestamp:    timestamp,
 	}
 
-	violations, err := m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow)
+	violations, err := m.MatchDeploymentWithNetworkFlowInfo(nil, EnhancedDeployment{deployment, suite.getImagesForDeployment(deployment)}, flow)
 	suite.NoError(err)
 	assertNetworkBaselineMessagesEqual(
 		suite,
@@ -2939,7 +2939,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 
 	// And if the flow is in the baseline, no violations should exist
 	flow.NotInNetworkBaseline = false
-	violations, err = m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow)
+	violations, err = m.MatchDeploymentWithNetworkFlowInfo(nil, EnhancedDeployment{deployment, suite.getImagesForDeployment(deployment)}, flow)
 	suite.NoError(err)
 	suite.Empty(violations)
 }
@@ -3009,7 +3009,7 @@ func (suite *DefaultPoliciesTestSuite) TestReplicasPolicyCriteria() {
 
 			matcher, err := BuildDeploymentMatcher(policy)
 			suite.NoError(err, "deployment matcher creation must succeed")
-			violations, err := matcher.MatchDeployment(nil, deployment, suite.getImagesForDeployment(deployment))
+			violations, err := matcher.MatchDeployment(nil, EnhancedDeployment{deployment, suite.getImagesForDeployment(deployment)})
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
@@ -3092,7 +3092,7 @@ func (suite *DefaultPoliciesTestSuite) TestLivenessProbePolicyCriteria() {
 
 			matcher, err := BuildDeploymentMatcher(policy)
 			suite.NoError(err, "deployment matcher creation must succeed")
-			violations, err := matcher.MatchDeployment(nil, deployment, suite.getImagesForDeployment(deployment))
+			violations, err := matcher.MatchDeployment(nil, EnhancedDeployment{deployment, suite.getImagesForDeployment(deployment)})
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
@@ -3175,7 +3175,7 @@ func (suite *DefaultPoliciesTestSuite) TestReadinessProbePolicyCriteria() {
 
 			matcher, err := BuildDeploymentMatcher(policy)
 			suite.NoError(err, "deployment matcher creation must succeed")
-			violations, err := matcher.MatchDeployment(nil, deployment, suite.getImagesForDeployment(deployment))
+			violations, err := matcher.MatchDeployment(nil, EnhancedDeployment{deployment, suite.getImagesForDeployment(deployment)})
 			suite.NoError(err, "deployment matcher run must succeed")
 
 			suite.Empty(violations.ProcessViolation)
@@ -3335,7 +3335,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 					for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
-						_, err := m.MatchDeploymentWithProcess(nil, dep, images, indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
+						_, err := m.MatchDeploymentWithProcess(nil, EnhancedDeployment{dep, images}, indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
 						require.NoError(b, err)
 					}
 				}
@@ -3355,7 +3355,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 				b.Run("no caching", func(b *testing.B) {
 					for i := 0; i < b.N; i++ {
 						var err error
-						resNoCaching, err = m.MatchDeploymentWithProcess(nil, privilegedDep, images, indicator, notInBaseline)
+						resNoCaching, err = m.MatchDeploymentWithProcess(nil, EnhancedDeployment{privilegedDep, images}, indicator, notInBaseline)
 						require.NoError(b, err)
 					}
 				})
@@ -3365,7 +3365,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 					var cache CacheReceptacle
 					for i := 0; i < b.N; i++ {
 						var err error
-						resWithCaching, err = m.MatchDeploymentWithProcess(&cache, privilegedDep, images, indicator, notInBaseline)
+						resWithCaching, err = m.MatchDeploymentWithProcess(&cache, EnhancedDeployment{privilegedDep, images}, indicator, notInBaseline)
 						require.NoError(b, err)
 					}
 				})
