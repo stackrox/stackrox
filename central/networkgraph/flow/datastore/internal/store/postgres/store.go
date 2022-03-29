@@ -35,8 +35,22 @@ const (
 	walkStmt   = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow"
 
 	// These mimic how the RocksDB version of the flow store work
-	getSinceStmt           = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE (LastSeenTimestamp >= $1 OR LastSeenTimestamp IS NULL) AND ClusterId = $2"
-	deleteDeploymentStmt   = "DELETE FROM networkflow WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2))"
+	getSinceStmt         = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE (LastSeenTimestamp >= $1 OR LastSeenTimestamp IS NULL) AND ClusterId = $2"
+	deleteDeploymentStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2))"
+	//deleteDeploymentStmt = "DELETE FROM networkflow nf USING (SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2)) ORDER BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId FOR UPDATE) del WHERE nf.Props_SrcEntity_Type = del.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = del.Props_SrcEntity_Id AND nf.Props_DstEntity_Type = del.Props_DstEntity_Type AND nf.Props_DstEntity_Id = del.Props_DstEntity_Id AND nf.Props_DstPort = del.Props_DstPort AND nf.Props_L4Protocol = del.Props_L4Protocol AND nf.ClusterId = del.ClusterId"
+
+	//	DELETE FROM table_name t
+	//USING (
+	//SELECT id_A, id_B
+	//FROM   table_name
+	//WHERE  id_A = ANY(array_of_id_A)
+	//AND    id_B = ANY(array_of_id_B)
+	//ORDER  BY id_A, id_B
+	//FOR    UPDATE
+	//) del
+	//WHERE  t.id_A = del.id_A
+	//AND    t.id_B = del.id_B;
+
 	deleteOrphanByTimeStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND LastSeenTimestamp IS NOT NULL AND LastSeenTimestamp < $2"
 )
 
@@ -150,6 +164,8 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, obj
 	finalStr := "INSERT INTO networkflow (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) DO UPDATE SET Props_SrcEntity_Type = EXCLUDED.Props_SrcEntity_Type, Props_SrcEntity_Id = EXCLUDED.Props_SrcEntity_Id, Props_DstEntity_Type = EXCLUDED.Props_DstEntity_Type, Props_DstEntity_Id = EXCLUDED.Props_DstEntity_Id, Props_DstPort = EXCLUDED.Props_DstPort, Props_L4Protocol = EXCLUDED.Props_L4Protocol, LastSeenTimestamp = EXCLUDED.LastSeenTimestamp, ClusterId = EXCLUDED.ClusterId"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
+		log.Info("Insert error")
+		log.Info(obj)
 		return err
 	}
 
@@ -494,7 +510,20 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 	}
 	defer release()
 
-	if _, err := conn.Exec(ctx, deleteDeploymentStmt, s.clusterID, id); err != nil {
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.Exec(ctx, deleteDeploymentStmt, s.clusterID, id); err != nil {
+		log.Info(err)
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
 	return nil
