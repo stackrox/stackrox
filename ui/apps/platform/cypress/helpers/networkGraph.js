@@ -118,7 +118,15 @@ export function filterBySourceTarget(sourceNode, targetNode) {
     };
 }
 
-// visit helpers
+// search filters
+
+export function selectDeploymentFilter(deploymentName) {
+    cy.intercept('GET', api.network.networkGraph).as('networkGraph');
+    cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
+    cy.get(networkGraphSelectors.toolbar.filterSelect).type('Deployment{enter}');
+    cy.get(networkGraphSelectors.toolbar.filterSelect).type(`${deploymentName}{enter}{esc}`);
+    cy.wait(['@networkGraph', '@networkPolicies']);
+}
 
 export function selectNamespaceFilters(...namespaces) {
     cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
@@ -126,6 +134,19 @@ export function selectNamespaceFilters(...namespaces) {
         cy.contains(`${selectSelectors.patternFlySelect.openMenu} span`, ns).click();
     });
     cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
+}
+
+// visit helpers
+
+export function visitNetworkGraphWithNamespaceFilters(...namespaces) {
+    cy.intercept('GET', api.clusters.list).as('clusters');
+    cy.visit(networkUrl);
+    cy.wait('@clusters');
+
+    cy.intercept('GET', api.network.networkGraph).as('networkGraph');
+    cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
+    selectNamespaceFilters(...namespaces);
+    cy.wait(['@networkGraph', '@networkPolicies']);
 }
 
 export function visitNetworkGraphWithMockedData() {
