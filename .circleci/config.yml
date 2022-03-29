@@ -2358,7 +2358,7 @@ jobs:
     # To trigger a run you might do something like:
     #
     #   curl -X POST --header 'Content-Type: application/json' \
-    #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/rox/pipeline -d '{
+    #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline -d '{
     #     "branch": "3.0.50.x",
     #     "parameters": {
     #         "trigger_on_demand": true,
@@ -4914,7 +4914,7 @@ workflows:
   # To trigger a build for example:
   #
   #   curl -X POST --header 'Content-Type: application/json' \
-  #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/rox/pipeline -d '{
+  #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline -d '{
   #     "branch": "<your branch>",
   #     "parameters": {
   #         "trigger_on_demand": true,
