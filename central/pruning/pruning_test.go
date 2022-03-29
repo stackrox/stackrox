@@ -257,6 +257,13 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
 }
 
+func resourceWithAccess(access storage.Access, resource permissions.ResourceMetadata) permissions.ResourceWithAccess {
+	return permissions.ResourceWithAccess{
+		Access:   access,
+		Resource: resource,
+	}
+}
+
 func TestImagePruning(t *testing.T) {
 	var cases = []struct {
 		name        string

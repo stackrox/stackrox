@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"context"
+	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -32,7 +33,7 @@ const (
 )
 
 // GetNamespaceScopedTestContexts provides a set of pre-defined scoped contexts for use in scoped access control tests
-func GetNamespaceScopedTestContexts(ctx context.Context, resource permissions.Resource) map[string]context.Context {
+func GetNamespaceScopedTestContexts(t *testing.T, ctx context.Context, resource permissions.Resource) map[string]context.Context {
 	contextMap := make(map[string]context.Context, 0)
 
 	contextMap[UnrestrictedReadCtx] =
@@ -166,15 +167,18 @@ func GetNamespaceScopedTestContexts(ctx context.Context, resource permissions.Re
 
 	contextMap[MixedClusterAndNamespaceReadCtx] =
 		sac.WithGlobalAccessScopeChecker(ctx,
-			sac.OneStepSCC{
-				sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.OneStepSCC{
-					sac.ResourceScopeKey(resource): sac.OneStepSCC{
-						sac.ClusterScopeKey(testconsts.Cluster1): sac.AllowFixedScopes(sac.NamespaceScopeKeys(testconsts.NamespaceA)),
-						sac.ClusterScopeKey(testconsts.Cluster2): sac.AllowAllAccessScopeChecker(),
-						sac.ClusterScopeKey(testconsts.Cluster3): sac.AllowFixedScopes(sac.NamespaceScopeKeys(testconsts.NamespaceC)),
+			sac.TestScopeCheckerCoreFromFullScopeMap(t,
+				map[storage.Access]map[permissions.Resource]*sac.TestResourceScope{
+					storage.Access_READ_ACCESS: {
+						resource: &sac.TestResourceScope{
+							Clusters: map[string]*sac.TestClusterScope{
+								testconsts.Cluster1: {Namespaces: []string{testconsts.NamespaceA}},
+								testconsts.Cluster2: {Included: true},
+								testconsts.Cluster3: {Namespaces: []string{testconsts.NamespaceC}},
+							},
+						},
 					},
-				},
-			})
+				}))
 
 	return contextMap
 }
