@@ -114,7 +114,7 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique bool) 
 		case strings.HasPrefix(field, "fk"):
 			// If we already have a field acting as foreign key use it as is rather than adding a redundant field using parentify.
 			typeName, ref := stringutils.Split2(field[strings.Index(field, "(")+1:strings.Index(field, ")")], ":")
-			opts.Reference = &ForeignKeyRef{
+			opts.Reference = &foreignKeyRef{
 				TypeName:      typeName,
 				ProtoBufField: ref,
 			}

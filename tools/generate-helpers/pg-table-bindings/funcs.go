@@ -2,10 +2,26 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"text/template"
 	"unicode"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
+
+func compileFKArgAndAttachToSchema(schema *walker.Schema, refs []string) {
+	for _, ref := range refs {
+		refTable, refObjType := stringutils.Split2(ref, ":")
+		refMsgType := proto.MessageType(refObjType)
+		if refMsgType == nil {
+			log.Fatalf("could not find message for type: %s", refObjType)
+		}
+		schema.WithReference(walker.Walk(refMsgType, refTable))
+	}
+}
 
 func splitWords(s string) []string {
 	var words []string
