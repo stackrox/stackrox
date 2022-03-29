@@ -181,14 +181,15 @@ func (s *policyValidator) validateSeverity(policy *storage.Policy) error {
 }
 
 func (s *policyValidator) getCaps(policy *storage.Policy, capsTypes string) []*storage.PolicyValue {
+	capsValues := make([]*storage.PolicyValue, 0)
 	for _, section := range policy.GetPolicySections() {
 		for _, group := range section.GetPolicyGroups() {
 			if group.GetFieldName() == capsTypes {
-				return group.Values
+				capsValues = append(capsValues, group.Values...)
 			}
 		}
 	}
-	return nil
+	return capsValues
 }
 
 func (s *policyValidator) validateCapabilities(policy *storage.Policy) error {
