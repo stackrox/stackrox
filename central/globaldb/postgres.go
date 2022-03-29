@@ -64,6 +64,12 @@ func GetPostgres() *pgxpool.Pool {
 		})); err != nil {
 			log.Fatalf("Timed out trying to open database: %v", err)
 		}
+
+		_, err = postgresDB.Exec(context.TODO(), "create extension if not exists pg_stat_statements")
+		if err != nil {
+			log.Errorf("Could not create pg_stat_statements extension: %v", err)
+		}
+
 	})
 	return postgresDB
 }
