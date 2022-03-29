@@ -183,10 +183,7 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 
 // ConstructImage constructs the augmented image object.
 func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
-	if image == nil {
-		return pathutil.NewAugmentedObj(image), nil
-	}
-
+	img := image.Clone()
 	// When evaluating policies, the evaluator will stop when any of the objects within the path
 	// are nil and immediately return, not matching. Within the image signature criteria, we have
 	// a combination of "Match if the signature verification result is not as expected" OR "Match if
@@ -194,8 +191,6 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 	// and SignatureVerificationResults object here as a workaround and add the placeholder value,
 	// making it possible to also match for nil objects.
 	// We have to do this at the beginning, so the augmented object contains the field steps.
-	img := *image
-
 	if img.GetSignatureVerificationData().GetResults() == nil {
 		img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
 			Results: []*storage.ImageSignatureVerificationResult{{}},
