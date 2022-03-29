@@ -52,5 +52,11 @@
         "image": ".*",
         "tag": ".*",
         "reason": "This is a Quay false fixable on ubi8:8.5"
+    },
+    {
+        "vuln": "RHSA-2022:1065: openssl security update",
+        "image": ".*",
+        "tag": ".*",
+        "reason": "This is a Quay false fixable on ubi8:8.5"
     }
 ]
