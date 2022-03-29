@@ -2,6 +2,14 @@
 
 set -euo pipefail
 
-cp -L /usr/local/share/ca-certificates/* /etc/pki/injected-ca-trust/* \
-    /etc/pki/ca-trust/source/anchors 2>/dev/null \
-    && update-ca-trust || echo "No custom certificates"
+copy_existing () {
+    src=$1
+    if [ -d "$src" ] && [ "$(ls -A "$src")" ]; then
+        cp -L "$src"/* /etc/pki/ca-trust/source/anchors
+    fi
+}
+
+copy_existing /usr/local/share/ca-certificates
+copy_existing /etc/pki/injected-ca-trust
+
+update-ca-trust
