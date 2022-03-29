@@ -154,38 +154,15 @@ remove_existing_stackrox_resources() {
     kubectl get namespace -o name | grep -E '^namespace/qa' | xargs kubectl delete --wait || true
 }
 
-is_openshift_cluster() {
-    # This is called from wait_for_api(). I tried checking ORCH but it isn't
-    # set at this point in test workflow execution. So I reran the CircleCI job
-    # with SSH and found these candidate env vars for identifying whether this
-    # job targets an OSD cluster. We probably only need one. Maybe better to
-    # pass a new variable. Is CLUSTER variable not unset at this point as well?
-    # Seems to be set for run-qa-tests but not in this execution context.
-
-    [[ "${CIRCLE_STAGE:-}" =~ openshift ]] && return 0
-    [[ "${CIRCLE_JOB:-}" =~ openshift ]] && return 0
-    [[ "${CIRCLE_STAGE:-}" =~ osd ]] && return 0
-    [[ "${CIRCLE_JOB:-}" =~ osd ]] && return 0
-    [[ "${REDHAT_PULL_SECRET:-}" =~ cloud.openshift.com ]] && return 0
-    [[ -n "${GOOGLE_OPENSHIFT_CREDENTIALS:-}" ]] && return 0
-
-    return 1
-}
-
+# When working as expected it takes less than one minute for the API server to
+# reach ready. Often times out on OSD. If this call fails in CI we need to
+# identify the source of pull/scheduling latency, request throttling, etc.
+# I tried increasing the timeout from 5m to 20m for OSD but it did not help.
 wait_for_api() {
     info "Waiting for Central to start"
 
     start_time="$(date '+%s')"
-
-    if is_openshift_cluster; then
-        # OpenShift starts many services that take time to pull, schedule, and
-        # reach ready state. Increasing nodes/cores might help but isn't necessary
-        # from a testing or resource utilization perspective. So for now just
-        # give OpenShift some extra time for Central to reach ready state.
-        max_seconds=1200
-    else
-        max_seconds=300
-    fi
+    max_seconds=300
 
     while true; do
         central_json="$(kubectl -n stackrox get deploy/central -o json)"
