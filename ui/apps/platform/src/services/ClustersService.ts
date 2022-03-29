@@ -8,7 +8,6 @@ import axios from './instance';
 import { cluster as clusterSchema } from './schemas';
 
 const clustersUrl = '/v1/clusters';
-const clustersEnvUrl = '/v1/clusters-env'; // deprecated and superseded by clusterDefaultsUrl
 const clusterDefaultsUrl = '/v1/cluster-defaults';
 const clusterInitUrl = '/v1/cluster-init';
 const upgradesUrl = '/v1/sensorupgrades';
@@ -168,16 +167,6 @@ export function downloadClusterHelmValuesYaml(id: string): Promise<void> {
         method: 'post',
         url: '/api/extensions/clusters/helm-config.yaml',
         data: { id },
-    });
-}
-
-/**
- * Fetches the KernelSupportAvailable property.
- * Deprecated and superseded by getClusterDefaults.
- */
-export function fetchKernelSupportAvailable(): Promise<boolean> {
-    return axios.get(`${clustersEnvUrl}/kernel-support-available`).then((response) => {
-        return Boolean(response?.data?.kernelSupportAvailable);
     });
 }
 
