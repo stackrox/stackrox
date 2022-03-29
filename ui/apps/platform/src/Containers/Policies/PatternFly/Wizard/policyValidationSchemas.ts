@@ -4,6 +4,7 @@ import * as yup from 'yup';
 import { Policy } from 'types/policy.proto';
 
 import { WizardPolicyStep4, WizardScope } from '../policies.utils';
+import { imageSigningCriteriaName } from '../../Wizard/Form/descriptors';
 
 type PolicyStep1 = Pick<Policy, 'name' | 'severity' | 'categories'>;
 
@@ -69,11 +70,23 @@ const validationSchemaStep3 = yup.object().shape(
                                     .of(
                                         yup.object().shape({
                                             value: yup.string(), // dryrun validates whether value is required
-                                            arrayValue: yup.array().when('value', {
-                                                is: (value) => !value || value.length === 0,
-                                                then: (schema) => schema.min(1).required(),
-                                                otherwise: (schema) => schema.max(0),
-                                            }),
+                                            arrayValue: yup
+                                                .array(yup.string().required())
+                                                .test((value, context: yup.TestContext) => {
+                                                    if (
+                                                        // from[1] means one level up in the object
+                                                        context.from &&
+                                                        context.from[1]?.value?.fieldName ===
+                                                            imageSigningCriteriaName
+                                                    ) {
+                                                        return (
+                                                            Array.isArray(value) &&
+                                                            value.length !== 0
+                                                        );
+                                                    }
+
+                                                    return true;
+                                                }),
                                         })
                                     )
                                     .min(1)
