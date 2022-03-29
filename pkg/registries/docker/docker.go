@@ -209,7 +209,7 @@ func (r *Registry) Test() error {
 	err := r.Client.Ping()
 
 	if err != nil {
-		logging.Errorf("error testing docker integration: %v", err)
+		log.Errorf("error testing docker integration: %v", err)
 		if e, _ := err.(*registry.ClientError); e != nil {
 			return errors.Errorf("error testing integration (code: %d). Please check Central logs for full error", e.Code())
 		}
