@@ -162,20 +162,12 @@ is_openshift_cluster() {
     # pass a new variable. Is CLUSTER variable not unset at this point as well?
     # Seems to be set for run-qa-tests but not in this execution context.
 
-    if [[ -n "$CLUSTER" ]]; then
-        echo "TODO(sbostick):"
-        echo "//====== CLUSTER is set to [$CLUSTER] and should be used here ======//"
-    else
-        echo "TODO(sbostick):"
-        echo "//====== CLUSTER is not set at this point ======//"
-    fi
-
-    [[ "$CIRCLE_STAGE" =~ openshift ]] && return 0
-    [[ "$CIRCLE_JOB" =~ openshift ]] && return 0
-    [[ "$CIRCLE_STAGE" =~ osd ]] && return 0
-    [[ "$CIRCLE_JOB" =~ osd ]] && return 0
-    [[ "$REDHAT_PULL_SECRET" =~ cloud.openshift.com ]] && return 0
-    [[ -n "$GOOGLE_OPENSHIFT_CREDENTIALS" ]] && return 0
+    [[ "${CIRCLE_STAGE:-}" =~ openshift ]] && return 0
+    [[ "${CIRCLE_JOB:-}" =~ openshift ]] && return 0
+    [[ "${CIRCLE_STAGE:-}" =~ osd ]] && return 0
+    [[ "${CIRCLE_JOB:-}" =~ osd ]] && return 0
+    [[ "${REDHAT_PULL_SECRET:-}" =~ cloud.openshift.com ]] && return 0
+    [[ -n "${GOOGLE_OPENSHIFT_CREDENTIALS:-}" ]] && return 0
 
     return 1
 }
