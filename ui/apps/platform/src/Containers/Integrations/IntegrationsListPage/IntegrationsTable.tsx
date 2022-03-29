@@ -15,7 +15,9 @@ import pluralize from 'pluralize';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import LinkShim from 'Components/PatternFly/LinkShim';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
+import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
@@ -47,7 +49,7 @@ function IntegrationsTable({
     const permissions = useIntegrationPermissions();
     const { source, type } = useParams();
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
-    const columns = [...tableColumnDescriptor[source][type]];
+    const columns = [...tableColumnDescriptor[source][type]].filter(getIsColumnFeatureFlagEnabled);
     const {
         selected,
         allRowsSelected,
@@ -57,6 +59,14 @@ function IntegrationsTable({
         onSelectAll,
         getSelectedIds,
     } = useTableSelection<Integration>(integrations);
+    const featureFlags = useFeatureFlags();
+
+    function getIsColumnFeatureFlagEnabled(column) {
+        if (typeof column.featureFlagDependency === 'string') {
+            return isBackendFeatureFlagEnabled(featureFlags, column.featureFlagDependency);
+        }
+        return true;
+    }
 
     const isAPIToken = getIsAPIToken(source, type);
     const isClusterInitBundle = getIsClusterInitBundle(source, type);
