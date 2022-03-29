@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -262,16 +263,21 @@ func (s *sacFilterTestSuite) TestFiltersSomeDeployments() {
 	namespace2 := "n2"
 	ctx := sac.WithGlobalAccessScopeChecker(
 		context.Background(),
-		sac.OneStepSCC{
-			sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.OneStepSCC{
-				sac.ResourceScopeKey(resources.Cluster.GetResource()): sac.AllowAllAccessScopeChecker(),
-				sac.ResourceScopeKey(resources.Node.GetResource()):    sac.AllowAllAccessScopeChecker(),
-				sac.ResourceScopeKey(resources.Deployment.GetResource()): sac.AllowFixedScopes(
-					sac.ClusterScopeKeys(clusterID),
-					sac.NamespaceScopeKeys(namespace2),
-				),
+		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
+			map[storage.Access]map[permissions.Resource]*sac.TestResourceScope{
+				storage.Access_READ_ACCESS: {
+					resources.Cluster.GetResource(): &sac.TestResourceScope{Included: true},
+					resources.Node.GetResource():    &sac.TestResourceScope{Included: true},
+					resources.Deployment.GetResource(): &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							clusterID: {
+								Namespaces: []string{namespace2},
+							},
+						},
+					},
+				},
 			},
-		})
+		))
 
 	resultToFilter := &storage.ComplianceRunResults{
 		Domain: &storage.ComplianceDomain{

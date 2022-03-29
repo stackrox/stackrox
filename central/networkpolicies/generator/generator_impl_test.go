@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sac"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
@@ -508,22 +509,27 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 	// - NO netpol for depE (not selected)
 	// - netpol for qux (don't need NS metadata for netpol generation, only for peers in other namespaces)
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.OneStepSCC{
-		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.OneStepSCC{
-			sac.ResourceScopeKey(resources.Deployment.Resource): sac.AllowFixedScopes(
-				sac.ClusterScopeKeys("mycluster"),
-				sac.NamespaceScopeKeys("foo", "bar", "baz", "qux"),
-			),
-			sac.ResourceScopeKey(resources.NetworkGraph.Resource): sac.AllowFixedScopes(
-				sac.ClusterScopeKeys("mycluster"),
-				sac.NamespaceScopeKeys("foo", "baz", "qux"),
-			),
-			sac.ResourceScopeKey(resources.Namespace.Resource): sac.AllowFixedScopes(
-				sac.ClusterScopeKeys("mycluster"),
-				sac.NamespaceScopeKeys("foo", "bar", "baz"),
-			),
-		},
-	})
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
+			map[storage.Access]map[permissions.Resource]*sac.TestResourceScope{
+				storage.Access_READ_ACCESS: {
+					resources.Deployment.Resource: &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							"mycluster": {Namespaces: []string{"foo", "bar", "baz", "qux"}},
+						},
+					},
+					resources.NetworkGraph.Resource: &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							"mycluster": {Namespaces: []string{"foo", "baz", "qux"}},
+						},
+					},
+					resources.Namespace.Resource: &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							"mycluster": {Namespaces: []string{"foo", "bar", "baz"}},
+						},
+					},
+				},
+			}))
 
 	ts := types.TimestampNow()
 	req := &v1.GenerateNetworkPoliciesRequest{

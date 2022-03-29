@@ -63,16 +63,17 @@ func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
 	h, err := NewSearchHelper(testNSResource, options)
 	require.NoError(t, err)
 
-	scc := OneStepSCC{
-		AccessModeScopeKey(storage.Access_READ_ACCESS): OneStepSCC{
-			ResourceScopeKey(testNSResource.GetResource()): OneStepSCC{
-				ClusterScopeKey("cluster1"): AllowAllAccessScopeChecker(),
-				ClusterScopeKey("cluster2"): OneStepSCC{
-					NamespaceScopeKey("nsA"): AllowAllAccessScopeChecker(),
+	scc := TestScopeCheckerCoreFromFullScopeMap(t,
+		map[storage.Access]map[permissions.Resource]*TestResourceScope{
+			storage.Access_READ_ACCESS: {
+				testNSResource.GetResource(): &TestResourceScope{
+					Clusters: map[string]*TestClusterScope{
+						"cluster1": {Included: true},
+						"cluster2": {Namespaces: []string{"nsA"}},
+					},
 				},
 			},
-		},
-	}
+		})
 
 	ctx := WithGlobalAccessScopeChecker(context.Background(), scc)
 

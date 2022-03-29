@@ -39,6 +39,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
@@ -381,12 +382,18 @@ func TestImagePruning(t *testing.T) {
 		},
 	}
 
-	scc := sac.OneStepSCC{
-		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.AllowFixedScopes(
-			sac.ResourceScopeKeys(resources.Alert, resources.Config, resources.Deployment, resources.Image, resources.Risk)),
-		sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS): sac.AllowFixedScopes(
-			sac.ResourceScopeKeys(resources.Alert, resources.Image, resources.Deployment, resources.Risk)),
-	}
+	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(t,
+		[]permissions.ResourceWithAccess{
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Config),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Deployment),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Image),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Risk),
+			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Alert),
+			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Deployment),
+			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Image),
+			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Risk),
+		})
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
 
@@ -434,6 +441,13 @@ func TestImagePruning(t *testing.T) {
 
 			assert.ElementsMatch(t, c.expectedIDs, ids)
 		})
+	}
+}
+
+func resourceWithAccess(access storage.Access, resource permissions.ResourceMetadata) permissions.ResourceWithAccess {
+	return permissions.ResourceWithAccess{
+		Access:   access,
+		Resource: resource,
 	}
 }
 
@@ -538,12 +552,16 @@ func TestAlertPruning(t *testing.T) {
 			},
 		},
 	}
-	scc := sac.OneStepSCC{
-		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.AllowFixedScopes(
-			sac.ResourceScopeKeys(resources.Alert, resources.Config, resources.Deployment, resources.Image)),
-		sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS): sac.AllowFixedScopes(
-			sac.ResourceScopeKeys(resources.Alert, resources.Image, resources.Deployment)),
-	}
+	scc := sac.TestScopeCheckerCoreFromAccessResourceMap(t,
+		[]permissions.ResourceWithAccess{
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Alert),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Config),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Deployment),
+			resourceWithAccess(storage.Access_READ_ACCESS, resources.Image),
+			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Alert),
+			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Deployment),
+			resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Image),
+		})
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
 
