@@ -74,7 +74,6 @@ setup_deployment_env() {
     ci_export MAIN_IMAGE_TAG "$(make --quiet tag)"
 
     REPO=rhacs-eng
-    ci_export MONITORING_IMAGE "quay.io/$REPO/monitoring:$(cat "$(git rev-parse --show-toplevel)/MONITORING_VERSION")"
     ci_export MAIN_IMAGE_REPO "quay.io/$REPO/main"
     ci_export CENTRAL_DB_IMAGE_REPO "quay.io/$REPO/central-db"
     ci_export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"

@@ -221,8 +221,6 @@ function launch_central {
     if [[ "${needs_monitoring}" == "true" ]]; then
         echo "Deploying Monitoring..."
         helm_args=(
-          -f "${COMMON_DIR}/monitoring-values.yaml"
-          --set image="${MONITORING_IMAGE}"
           --set persistence.type="${STORAGE}"
           --set exposure.type="${MONITORING_LOAD_BALANCER}"
         )

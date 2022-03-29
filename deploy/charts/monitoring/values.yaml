@@ -1,5 +1,8 @@
 image: null
-password: null
+grafanaImage: grafana/grafana:8.4.5
+grafanaRendererImage: grafana/grafana-image-renderer:3.4.2
+prometheusImage: prom/prometheus:v2.34.0
+password: stackrox
 
 resources:
   requests:
