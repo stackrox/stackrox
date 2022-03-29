@@ -183,7 +183,12 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 
 // ConstructImage constructs the augmented image object.
 func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
-	img := image.Clone()
+	if image == nil {
+		return pathutil.NewAugmentedObj(image), nil
+	}
+
+	img := *image
+
 	// When evaluating policies, the evaluator will stop when any of the objects within the path
 	// are nil and immediately return, not matching. Within the image signature criteria, we have
 	// a combination of "Match if the signature verification result is not as expected" OR "Match if
