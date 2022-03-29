@@ -61,10 +61,109 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
+func createTableImages(ctx context.Context, db *pgxpool.Pool) {
+	table := `
+create table if not exists images (
+    Id varchar,
+    Name_Registry varchar,
+    Name_Remote varchar,
+    Name_Tag varchar,
+    Name_FullName varchar,
+    Metadata_V1_Created timestamp,
+    Metadata_V1_User varchar,
+    Metadata_V1_Command text[],
+    Metadata_V1_Entrypoint text[],
+    Metadata_V1_Volumes text[],
+    Metadata_V1_Labels jsonb,
+    Scan_ScanTime timestamp,
+    Scan_OperatingSystem varchar,
+    Components integer,
+    Cves integer,
+    FixableCves integer,
+    LastUpdated timestamp,
+    RiskScore numeric,
+    TopCvss numeric,
+    serialized bytea,
+    PRIMARY KEY(Id)
+)
+`
+
+	_, err := db.Exec(ctx, table)
+	if err != nil {
+		log.Panicf("Error creating table %s: %v", table, err)
+	}
+
+	indexes := []string{}
+	for _, index := range indexes {
+		if _, err := db.Exec(ctx, index); err != nil {
+			log.Panicf("Error creating index %s: %v", index, err)
+		}
+	}
+
+	createTableImagesLayers(ctx, db)
+}
+
+func createTableImagesLayers(ctx context.Context, db *pgxpool.Pool) {
+	table := `
+create table if not exists images_Layers (
+    images_Id varchar,
+    idx integer,
+    Instruction varchar,
+    Value varchar,
+    PRIMARY KEY(images_Id, idx),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
+)
+`
+
+	_, err := db.Exec(ctx, table)
+	if err != nil {
+		log.Panicf("Error creating table %s: %v", table, err)
+	}
+
+	indexes := []string{
+
+		"create index if not exists imagesLayers_idx on images_Layers using btree(idx)",
+	}
+	for _, index := range indexes {
+		if _, err := db.Exec(ctx, index); err != nil {
+			log.Panicf("Error creating index %s: %v", index, err)
+		}
+	}
+
+}
+
+func createTableImageComponents(ctx context.Context, db *pgxpool.Pool) {
+	table := `
+create table if not exists image_components (
+    Id varchar,
+    Name varchar,
+    Version varchar,
+    Source integer,
+    RiskScore numeric,
+    TopCvss numeric,
+    OperatingSystem varchar,
+    serialized bytea,
+    PRIMARY KEY(Id, Name, Version, OperatingSystem)
+)
+`
+
+	_, err := db.Exec(ctx, table)
+	if err != nil {
+		log.Panicf("Error creating table %s: %v", table, err)
+	}
+
+	indexes := []string{}
+	for _, index := range indexes {
+		if _, err := db.Exec(ctx, index); err != nil {
+			log.Panicf("Error creating index %s: %v", index, err)
+		}
+	}
+
+}
+
 func createTableImageComponentRelation(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists image_component_relation (
-    image_components_Id varchar,
     image_components_Name varchar,
     image_components_Version varchar,
     image_components_OperatingSystem varchar,
@@ -94,6 +193,8 @@ create table if not exists image_component_relation (
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
+	createTableImages(ctx, db)
+	createTableImageComponents(ctx, db)
 	createTableImageComponentRelation(ctx, db)
 
 	return &storeImpl{

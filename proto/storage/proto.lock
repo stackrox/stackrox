@@ -164,7 +164,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Lifecycle Stage\""
+                    "value": "search:\"Lifecycle Stage\"sql:\"index=btree\""
                   }
                 ]
               },
@@ -263,7 +263,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Violation State,store\\\""
+                    "value": "search:\\\"Violation State,store\\\" sql:\\\"index=btree\\\""
                   }
                 ]
               },
@@ -290,7 +290,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Deployment ID,store,hidden\\\""
+                        "value": "search:\\\"Deployment ID,store,hidden\\\" sql:\\\"index=hash\\\""
                       }
                     ]
                   },
@@ -313,22 +313,46 @@
                   {
                     "id": 5,
                     "name": "namespace",
-                    "type": "string"
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\"Namespace\""
+                      }
+                    ]
                   },
                   {
                     "id": 16,
                     "name": "namespace_id",
-                    "type": "string"
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\"Namespace ID,hidden\""
+                      }
+                    ]
                   },
                   {
                     "id": 9,
                     "name": "cluster_id",
-                    "type": "string"
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\"Cluster ID,hidden\""
+                      }
+                    ]
                   },
                   {
                     "id": 10,
                     "name": "cluster_name",
-                    "type": "string"
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\"Cluster,hidden\""
+                      }
+                    ]
                   },
                   {
                     "id": 11,
@@ -373,7 +397,13 @@
                       {
                         "id": 3,
                         "name": "image",
-                        "type": "ContainerImage"
+                        "type": "ContainerImage",
+                        "options": [
+                          {
+                            "name": "(gogoproto.moretags)",
+                            "value": "search:\"-\""
+                          }
+                        ]
                       },
                       {
                         "id": 10,
@@ -435,7 +465,13 @@
                   {
                     "id": 7,
                     "name": "network_flow_info",
-                    "type": "NetworkFlowInfo"
+                    "type": "NetworkFlowInfo",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\"-\"sql:\"-\""
+                      }
+                    ]
                   },
                   {
                     "id": 5,
@@ -702,7 +738,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Namespace ID\\\""
+                        "value": "search:\\\"Namespace ID,hidden\\\""
                       }
                     ]
                   },
@@ -5229,6 +5265,17 @@
                 "id": 6,
                 "name": "seccomp_profile",
                 "type": "SeccompProfile"
+              },
+              {
+                "id": 7,
+                "name": "allow_privilege_escalation",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "policy:\"Allow Privilege Escalation\""
+                  }
+                ]
               }
             ],
             "messages": [
@@ -6654,38 +6701,6 @@
                 ]
               }
             ]
-          },
-          {
-            "name": "ComponentCVEEdge",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "is_fixable",
-                "type": "bool",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Fixable,store\\\""
-                  }
-                ]
-              },
-              {
-                "id": 3,
-                "name": "fixed_by",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Fixed By,store,hidden\\\""
-                  }
-                ]
-              }
-            ]
           }
         ],
         "imports": [
@@ -8075,13 +8090,25 @@
                 "id": 4,
                 "name": "peers",
                 "type": "NetworkBaselinePeer",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"-\""
+                  }
+                ]
               },
               {
                 "id": 5,
                 "name": "forbidden_peers",
                 "type": "NetworkBaselinePeer",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"-\""
+                  }
+                ]
               },
               {
                 "id": 6,
@@ -8190,7 +8217,24 @@
               {
                 "id": 2,
                 "name": "last_seen_timestamp",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"index=brin\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               }
             ]
           },
@@ -8210,12 +8254,24 @@
               {
                 "id": 3,
                 "name": "dst_port",
-                "type": "uint32"
+                "type": "uint32",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               },
               {
                 "id": 4,
                 "name": "l4protocol",
-                "type": "L4Protocol"
+                "type": "L4Protocol",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               }
             ]
           },
@@ -8287,7 +8343,13 @@
               {
                 "id": 1,
                 "name": "type",
-                "type": "Type"
+                "type": "Type",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"index\""
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -11025,7 +11087,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Deployment ID,store,hidden\"policy:\",prefer-parent\""
+                    "value": "search:\"Deployment ID,store,hidden\"policy:\",prefer-parent\"sql:\"index=hash\""
                   }
                 ]
               },
@@ -11058,7 +11120,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Pod UID,hidden\""
+                    "value": "search:\"Pod UID,hidden\"sql:\"index=hash\""
                   }
                 ]
               },
@@ -11253,7 +11315,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\"Process Ancestor\""
+                        "value": "policy:\"Process Ancestor\""
                       }
                     ]
                   }
@@ -11707,6 +11769,71 @@
                   {
                     "name": "(gogoproto.moretags)",
                     "value": "sql:\"pk,fk(ImageComponent:id)\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ComponentCVEEdge",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "is_fixable",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Fixable,store\\\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "fixed_by",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Fixed By,store,hidden\\\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "image_component_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "cve_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "cve_operating_system",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
                   }
                 ]
               }

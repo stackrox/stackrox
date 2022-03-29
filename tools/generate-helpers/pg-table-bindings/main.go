@@ -109,14 +109,7 @@ func main() {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
 
-		for _, ref := range props.Refs {
-			refTable, refObjType := stringutils.Split2(ref, ":")
-			refMsgType := proto.MessageType(refObjType)
-			if refMsgType == nil {
-				log.Fatalf("could not find message for type: %s", refObjType)
-			}
-			schema.WithReference(walker.Walk(refMsgType, refTable))
-		}
+		compileFKArgAndAttachToSchema(schema, props.Refs)
 
 		templateMap := map[string]interface{}{
 			"Type":           props.Type,
