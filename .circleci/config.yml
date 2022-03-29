@@ -3022,9 +3022,10 @@ jobs:
     steps:
     - checkout
     - check-backend-changes
-    - check-label-exists-or-skip:
+    - check-to-run:
         label: ci-postgres-scale-tests
         run-on-master: false
+        run-on-tags: false
     - provision-gke-cluster:
         cluster-id: postgres-scale-test
         machine-type: e2-standard-16
@@ -3765,9 +3766,10 @@ jobs:
     steps:
     - checkout
     - check-backend-changes
-    - check-label-exists-or-skip:
+    - check-to-run:
         label: ci-postgres-scale-tests
         run-on-master: false
+        run-on-tags: false
     - setup_remote_docker
     - attach_workspace:
         at: /go/src/github.com/stackrox/rox
