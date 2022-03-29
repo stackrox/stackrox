@@ -1,5 +1,6 @@
+import * as api from '../constants/apiEndpoints';
+import { selectors as networkGraphSelectors, url as networkUrl } from '../constants/NetworkPage';
 import selectSelectors from '../selectors/select';
-import { selectors as networkGraphSelectors } from '../constants/NetworkPage';
 
 const getNodeErrorMessage = (node) => `Could not find node "${node.name}" of type "${node.type}"`;
 
@@ -117,10 +118,27 @@ export function filterBySourceTarget(sourceNode, targetNode) {
     };
 }
 
+// visit helpers
+
 export function selectNamespaceFilters(...namespaces) {
     cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
     namespaces.forEach((ns) => {
         cy.contains(`${selectSelectors.patternFlySelect.openMenu} span`, ns).click();
     });
     cy.get(networkGraphSelectors.toolbar.namespaceSelect).click();
+}
+
+export function visitNetworkGraphWithMockedData() {
+    cy.intercept('GET', api.clusters.list).as('clusters');
+    cy.intercept('GET', api.network.networkGraph, { fixture: 'network/networkGraph.json' }).as(
+        'networkGraph'
+    );
+    cy.intercept('GET', api.network.networkPoliciesGraph, {
+        fixture: 'network/networkPolicies.json',
+    }).as('networkPolicies');
+
+    cy.visit(networkUrl);
+    cy.wait('@clusters');
+    selectNamespaceFilters('stackrox');
+    cy.wait(['@networkGraph', '@networkPolicies']);
 }
