@@ -1,3 +1,5 @@
+import { FeatureFlag } from 'types/featureFlagService.proto';
+
 export const types = {
     SHOW_DISALLOWED_CONNECTIONS: 'SHOW_DISALLOWED_CONNECTIONS',
 };
@@ -18,7 +20,11 @@ export const knownBackendFlags = {
 
 // isBackendFeatureFlagEnabled returns whether a feature flag retrieved from the backend is enabled.
 // The default should never be required unless there's a programming error.
-export const isBackendFeatureFlagEnabled = (backendFeatureFlags, envVar, defaultVal) => {
+export const isBackendFeatureFlagEnabled = (
+    backendFeatureFlags: FeatureFlag[],
+    envVar: string,
+    defaultVal = false
+): boolean => {
     const featureFlag = backendFeatureFlags.find((flag) => flag.envVar === envVar);
     if (!featureFlag) {
         if (process.env.NODE_ENV === 'development') {
