@@ -284,9 +284,7 @@ class BaseSpecification extends Specification {
         }
         disableAuthzPlugin()
 
-        // Openshift dynamically creates namespaces (and potentially deployments)
-        // so skip resource model divergence checking when cluster is Openshift.
-        if (!ClusterService.isOpenShift3() && !ClusterService.isOpenShift4()) {
+        if (orchestrator.isGKE()) {
             compareResourcesAtSpecEnd()
         }
     }
