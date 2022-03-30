@@ -5124,6 +5124,7 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-openshift-aro-api-e2e-tests
+            - build-stackrox
             - build-rhacs
           context:
             - com-redhat-cloud
@@ -5143,8 +5144,8 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-osd-aws-api-e2e-tests
-            - pre-build-cli
-            - pre-build-go-binaries
+            - build-stackrox
+            - build-rhacs
           context:
             - quay-rhacs-eng-readonly
             - osd-cluster-manager
@@ -5160,8 +5161,8 @@ workflows:
           requires:
             - build-scale-monitoring-and-mock-server
             - provision-osd-gcp-api-e2e-tests
-            - pre-build-cli
-            - pre-build-go-binaries
+            - build-stackrox
+            - build-rhacs
           context:
             - quay-rhacs-eng-readonly
             - osd-cluster-manager
