@@ -50,6 +50,7 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 	// Retrieve the image's metadata.
 	metadata, err := matchingRegistry.Metadata(image)
 	if err != nil {
+		log.Debugf("Failed fetching image metadata for image %q: %v", imgName, err)
 		return nil, errors.Wrapf(err, "fetching image metadata for image %q", imgName)
 	}
 
@@ -61,6 +62,7 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 	// Scan the image via local scanner.
 	scannerResp, err := scanImg(ctx, image, matchingRegistry)
 	if err != nil {
+		log.Debugf("Scan for image %q failed: %v", imgName, err)
 		return nil, errors.Wrapf(err, "scanning image %q locally", imgName)
 	}
 
@@ -70,6 +72,7 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 		sigs, err = fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image,
 			matchingRegistry)
 		if err != nil {
+			log.Debugf("Failed fetching signatures for image %q: %v", imgName, err)
 			return nil, errors.Wrapf(err, "fetching signature for image %q from registry %q",
 				imgName, matchingRegistry.Name())
 		}
