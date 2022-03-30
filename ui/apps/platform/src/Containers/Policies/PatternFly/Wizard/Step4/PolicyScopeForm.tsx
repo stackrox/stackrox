@@ -11,7 +11,6 @@ import {
     Select,
     SelectVariant,
     SelectOption,
-    Form,
     FormGroup,
 } from '@patternfly/react-core';
 
