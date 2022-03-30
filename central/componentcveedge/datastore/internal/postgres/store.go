@@ -192,7 +192,10 @@ func (s *storeImpl) Exists(ctx context.Context, imageComponentId string, cveId s
 func (s *storeImpl) Get(ctx context.Context, imageComponentId string, cveId string, cveOperatingSystem string) (*storage.ComponentCVEEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ComponentCVEEdge")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "ComponentCVEEdge")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ComponentCVEEdge")
+	if err != nil {
+		return nil, false, err
+	}
 	defer release()
 
 	row := conn.QueryRow(ctx, getStmt, imageComponentId, cveId, cveOperatingSystem)
@@ -208,13 +211,13 @@ func (s *storeImpl) Get(ctx context.Context, imageComponentId string, cveId stri
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure

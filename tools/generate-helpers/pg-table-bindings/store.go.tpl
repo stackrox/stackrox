@@ -324,7 +324,10 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 {{- if not .JoinTable }}
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
-    conn, release := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
+    conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
+	if err != nil {
+	    return err
+	}
     defer release()
 
     tx, err := conn.Begin(ctx)
@@ -345,8 +348,11 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*{{.Type}}) error {
-    conn, release := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
-    defer release()
+    conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
+	if err != nil {
+	    return err
+	}
+	defer release()
 
     for _, obj := range objs {
 	    tx, err := conn.Begin(ctx)
@@ -412,7 +418,10 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
+	if err != nil {
+	    return nil, false, err
+	}
 	defer release()
 
 	row := conn.QueryRow(ctx, getStmt, {{template "argList" $pks}})
@@ -428,13 +437,13 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+	    return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 {{- if not .JoinTable }}
@@ -442,7 +451,10 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
+	if err != nil {
+	    return err
+	}
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, {{template "argList" $pks}}); err != nil {
@@ -478,7 +490,10 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "{{.TrimmedType}}")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "{{.TrimmedType}}")
+	conn, release, err := s.acquireConn(ctx, ops.GetMany, "{{.TrimmedType}}")
+	if err != nil {
+	    return nil, nil, err
+	}
 	defer release()
 
 	rows, err := conn.Query(ctx, getManyStmt, ids)
@@ -524,7 +539,10 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.TrimmedType}}")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "{{.TrimmedType}}")
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "{{.TrimmedType}}")
+	if err != nil {
+	    return err
+	}
 	defer release()
 	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err

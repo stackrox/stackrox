@@ -206,7 +206,10 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ImageComponent) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "ImageComponent")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageComponent")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -227,7 +230,10 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ImageComponen
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ImageComponent) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "ImageComponent")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageComponent")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
@@ -293,7 +299,10 @@ func (s *storeImpl) Exists(ctx context.Context, id string, name string, version 
 func (s *storeImpl) Get(ctx context.Context, id string, name string, version string, operatingSystem string) (*storage.ImageComponent, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageComponent")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "ImageComponent")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageComponent")
+	if err != nil {
+		return nil, false, err
+	}
 	defer release()
 
 	row := conn.QueryRow(ctx, getStmt, id, name, version, operatingSystem)
@@ -309,20 +318,23 @@ func (s *storeImpl) Get(ctx context.Context, id string, name string, version str
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string, name string, version string, operatingSystem string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ImageComponent")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "ImageComponent")
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "ImageComponent")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, id, name, version, operatingSystem); err != nil {
