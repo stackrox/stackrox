@@ -54,9 +54,9 @@ function var_match_string {
 }
 
 function assert_file_exists {
-  local fpath="$1"
-  if ! [[ -e "$fpath" ]]; then
-    error "file not found [$fpath]"
+  local path="$1"
+  if ! [[ -e "$path" ]]; then
+    error "file not found [$path]"
   fi
 }
 
