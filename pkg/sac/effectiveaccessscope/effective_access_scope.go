@@ -187,7 +187,8 @@ func FromClustersAndNamespacesMap(includedClusters []string, includedNamespaces 
 		}
 		if clusterTree == nil {
 			clusterTree = &clustersScopeSubTree{
-				State: Partial,
+				State:      Partial,
+				Namespaces: make(map[string]*namespacesScopeSubTree, 0),
 			}
 		}
 		for _, namespace := range namespaces {
