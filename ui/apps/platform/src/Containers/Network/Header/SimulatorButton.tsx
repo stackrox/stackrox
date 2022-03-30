@@ -46,7 +46,7 @@ function SimulatorButton({
         <Button
             data-testid={`simulator-button-${creatingOrSimulating ? 'on' : 'off'}`}
             onClick={toggleSimulation}
-            disabled={isDisabled}
+            isDisabled={isDisabled}
             variant="primary"
         >
             Network Policy Simulator
