@@ -123,7 +123,7 @@ create table if not exists networkflow (
     Props_L4Protocol integer,
     LastSeenTimestamp timestamp,
     ClusterId varchar,
-    PRIMARY KEY(Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId)
+    PRIMARY KEY(Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId)
 ) 
 `
 
@@ -134,7 +134,7 @@ create table if not exists networkflow (
 	}
 
 	indexes := []string{
-		"create index if not exists networkflow_LastSeenTimestamp on networkflow using brin(LastSeenTimestamp) WITH (pages_per_range = 32)",
+		"create index if not exists networkflow_LastSeenTimestamp on networkflow using brin(LastSeenTimestamp)  WITH (pages_per_range = 32)",
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
@@ -146,9 +146,6 @@ create table if not exists networkflow (
 
 func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, obj *storage.NetworkFlow) error {
 
-	if obj.GetLastSeenTimestamp() == nil {
-		obj.LastSeenTimestamp = protoconv.MustConvertTimeToTimestamp(time.Time{})
-	}
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetProps().GetSrcEntity().GetType(),
@@ -161,7 +158,7 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, obj
 		clusterID,
 	}
 
-	finalStr := "INSERT INTO networkflow (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT ON CONSTRAINT networkflow_pkey DO NOTHING"
+	finalStr := "INSERT INTO networkflow (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT ON CONSTRAINT networkflow_pkey DO UPDATE SET LastSeenTimestamp = EXCLUDED.LastSeenTimestamp"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -187,9 +184,6 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 	}
 
 	for idx, obj := range objs {
-		if pgutils.NilOrTime(obj.GetLastSeenTimestamp()) == nil {
-			obj.LastSeenTimestamp = protoconv.MustConvertTimeToTimestamp(time.Time{})
-		}
 		inputRows = append(inputRows, []interface{}{
 			obj.GetProps().GetSrcEntity().GetType(),
 			obj.GetProps().GetSrcEntity().GetId(),
@@ -201,10 +195,10 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 			s.clusterID,
 		})
 
-		//_, err = tx.Exec(ctx, deleteStmt, obj.GetProps().GetSrcEntity().GetType(), obj.GetProps().GetSrcEntity().GetId(), obj.GetProps().GetDstEntity().GetType(), obj.GetProps().GetDstEntity().GetId(), obj.GetProps().GetDstPort(), obj.GetProps().GetL4Protocol(), s.clusterID)
-		//if err != nil {
-		//	return err
-		//}
+		_, err = tx.Exec(ctx, deleteStmt, obj.GetProps().GetSrcEntity().GetType(), obj.GetProps().GetSrcEntity().GetId(), obj.GetProps().GetDstEntity().GetType(), obj.GetProps().GetDstEntity().GetId(), obj.GetProps().GetDstPort(), obj.GetProps().GetL4Protocol(), s.clusterID)
+		if err != nil {
+			return err
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
