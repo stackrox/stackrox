@@ -26,6 +26,9 @@ if [[ "$ROX_VERIFY_IMAGE_SIGNATURE" == "true" ]]; then
   "${DIR}"/signatures/create-signature-integrations.sh
   # Create cronjob which triggers verification update each 15min to trigger a re-verification.
   "${DIR}"/signatures/deploy.sh
+  # Set environment variables.
+  kubectl -n stackrox set env deploy/central ROX_VERIFY_IMAGE_SIGNATURE=true
+  kubectl -n stackrox set env deploy/sensor ROX_VERIFY_IMAGE_SIGNATURE=true
 fi
 
 kubectl -n stackrox delete daemonset collector

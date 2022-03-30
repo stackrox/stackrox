@@ -3683,6 +3683,7 @@ jobs:
       - STORAGE_SIZE: 100
       - LOAD_BALANCER: lb
       - OUTPUT_FORMAT: helm
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - checkout
