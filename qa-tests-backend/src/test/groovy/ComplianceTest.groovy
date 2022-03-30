@@ -1093,6 +1093,8 @@ class ComplianceTest extends BaseSpecification {
         given:
         "get compliance aggregation results"
         Assume.assumeTrue(ClusterService.isOpenShift4())
+
+        // https://issues.redhat.com/browse/ROX-9951 -- fails on OSD
         Assume.assumeTrue(Env.CI_JOBNAME == "openshift-4-api-e2e-tests")
 
         ComplianceRunResults run = BASE_RESULTS.get("rhcos4-moderate-modified")

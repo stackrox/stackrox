@@ -639,7 +639,7 @@ class NetworkFlowTest extends BaseSpecification {
         // ROX-8785 - EKS cannot NetworkPolicy (RS-178)
         Assume.assumeFalse(ClusterService.isEKS())
 
-        // RS-361 - OSD cannot NetworkPolicy
+        // https://issues.redhat.com/browse/ROX-9949 -- fails on OSD
         Assume.assumeFalse(ClusterService.isOpenShift3())
         Assume.assumeFalse(ClusterService.isOpenShift4())
 
