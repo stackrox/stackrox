@@ -205,7 +205,10 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaseline) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "ProcessBaseline")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ProcessBaseline")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -226,7 +229,10 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaseli
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessBaseline) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "ProcessBaseline")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ProcessBaseline")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
@@ -292,7 +298,10 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ProcessBaseline, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ProcessBaseline")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "ProcessBaseline")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ProcessBaseline")
+	if err != nil {
+		return nil, false, err
+	}
 	defer release()
 
 	row := conn.QueryRow(ctx, getStmt, id)
@@ -308,20 +317,23 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ProcessBaselin
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ProcessBaseline")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "ProcessBaseline")
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "ProcessBaseline")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
@@ -354,7 +366,10 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ProcessBaseline, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ProcessBaseline")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "ProcessBaseline")
+	conn, release, err := s.acquireConn(ctx, ops.GetMany, "ProcessBaseline")
+	if err != nil {
+		return nil, nil, err
+	}
 	defer release()
 
 	rows, err := conn.Query(ctx, getManyStmt, ids)
@@ -399,7 +414,10 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Proce
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ProcessBaseline")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "ProcessBaseline")
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "ProcessBaseline")
+	if err != nil {
+		return err
+	}
 	defer release()
 	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err
