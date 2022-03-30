@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
+export KUBE_COMMAND=${KUBE_COMMAND:-kubectl}
+echo "KUBE_COMMAND set to ${KUBE_COMMAND}"
+
+export STACKROX_NAMESPACE="${STACKROX_NAMESPACE:-stackrox}"
+echo "STACKROX_NAMESPACE set to ${STACKROX_NAMESPACE}"
+
 export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.stackrox:443}"
 echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 

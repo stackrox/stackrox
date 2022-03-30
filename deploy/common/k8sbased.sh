@@ -164,8 +164,8 @@ function launch_central {
 
     pkill -f kubectl'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
     pkill -9 -f kubectl'.*port-forward.*' || true
-    command -v oc && pkill -f oc'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
-    command -v oc && pkill -9 -f oc'.*port-forward.*' || true
+    command -v oc >/dev/null && pkill -f oc'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
+    command -v oc >/dev/null && pkill -9 -f oc'.*port-forward.*' || true
 
     if [[ "${STORAGE_CLASS}" == "faster" ]]; then
         kubectl apply -f "${common_dir}/ssd-storageclass.yaml"
@@ -241,8 +241,13 @@ function launch_central {
 
     echo "Deploying Central..."
 
+    ${KUBE_COMMAND} get namespace "${STACKROX_NAMESPACE}" &>/dev/null || \
+      ${KUBE_COMMAND} create namespace "${STACKROX_NAMESPACE}"
+
     if [[ -f "$unzip_dir/values-public.yaml" ]]; then
-      $unzip_dir/scripts/setup.sh
+      if [[ -n "${REGISTRY_USERNAME}" ]]; then
+        $unzip_dir/scripts/setup.sh
+      fi
       central_scripts_dir="$unzip_dir/scripts"
 
       # New helm setup flavor
@@ -291,7 +296,9 @@ function launch_central {
       helm install -n stackrox stackrox-central-services "$unzip_dir/chart" \
           "${helm_args[@]}"
     else
-      $unzip_dir/central/scripts/setup.sh
+      if [[ -n "${REGISTRY_USERNAME}" ]]; then
+        $unzip_dir/central/scripts/setup.sh
+      fi
       central_scripts_dir="$unzip_dir/central/scripts"
       launch_service $unzip_dir central
       echo
@@ -316,7 +323,9 @@ function launch_central {
 
       if [[ "$SCANNER_SUPPORT" == "true" ]]; then
           echo "Deploying Scanner..."
-          $unzip_dir/scanner/scripts/setup.sh
+          if [[ -n "${REGISTRY_USERNAME}" ]]; then
+            $unzip_dir/scanner/scripts/setup.sh
+          fi
           launch_service $unzip_dir scanner
 
           if [[ -n "$CI" ]]; then

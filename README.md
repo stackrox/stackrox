@@ -19,6 +19,7 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
 
 ## Table of contents
 
+* [Deployment](#deployment)
 * [Development](#development)
     + [Quickstart](#quickstart)
       - [Build Tooling](#build-tooling)
@@ -30,6 +31,26 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
       - [Debugging](#debugging)
     + [How to Deploy](#how-to-deploy)
 * [Generating portable installers](#generating-portable-installers)
+
+## Deployment
+
+To quickly deploy the latest development version of StackRox to your kubernetes
+cluster in the stackrox namespace:
+
+```
+git clone git@github.com:stackrox/stackrox.git
+cd stackrox
+MAIN_IMAGE_TAG=latest ./deploy/k8s/deploy.sh
+```
+
+If you are using docker for desktop or minikube use
+`./deploy/k8s/deploy-local.sh`. And for openshift:
+`./deploy/openshift/deploy.sh`.
+
+When the deployment has completed a port-forward should exist so you can connect
+to https://localhost:8000/. Credentials for the 'admin' user can be found in
+`./deploy/k8s/central-deploy/password`
+(`deploy/openshift/central-deploy/password` in the OpenShift case).
 
 ## Development
 
