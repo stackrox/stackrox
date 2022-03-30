@@ -13,7 +13,7 @@ canvas (no DOM elements). Instead using 'cytoscape-popper' and  special
 configuration of 'tippy.js' instance to position the tooltip. */
 // eslint-disable-next-line no-restricted-imports
 import tippy from 'tippy.js';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
 import { edgeGridLayout, getParentPositions } from 'Containers/Network/Graph/networkGraphLayouts';
 import {
@@ -142,8 +142,10 @@ const NetworkGraph = ({
 
         try {
             const popperRef = elm.popperRef();
-            const content = document.createElement('div');
-            ReactDOM.render(component, content);
+
+            const content = document.getElementById('div');
+            const root = createRoot(content);
+            root.render(component);
 
             tippyRef.current = tippy(document.createElement('div'), {
                 content,

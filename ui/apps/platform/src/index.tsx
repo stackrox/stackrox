@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { Store } from 'redux';
 import { ConnectedRouter } from 'connected-react-router';
@@ -40,12 +40,14 @@ import configureApollo from './configureApolloClient';
 
 installRaven();
 
-const rootNode = document.getElementById('root');
+const container = document.getElementById('root');
+const root = createRoot(container);
+
 const history = createHistory();
 const store = configureStore(undefined, history) as Store;
 const apolloClient = configureApollo();
 
-ReactDOM.render(
+root.render(
     <Provider store={store}>
         <ApolloProvider client={apolloClient}>
             <ConnectedRouter history={history}>
@@ -57,6 +59,5 @@ ReactDOM.render(
                 </ThemeProvider>
             </ConnectedRouter>
         </ApolloProvider>
-    </Provider>,
-    rootNode
+    </Provider>
 );
