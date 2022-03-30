@@ -13,7 +13,6 @@ const selectIntegrations = createStructuredSelector({
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations,
     backups: selectors.getBackups,
-    featureFlags: selectors.getFeatureFlags,
     signatureIntegrations: selectors.getSignatureIntegrations,
 });
 
