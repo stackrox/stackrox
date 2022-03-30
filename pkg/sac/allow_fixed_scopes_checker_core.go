@@ -3,6 +3,7 @@ package sac
 import (
 	"context"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
@@ -52,6 +53,84 @@ func (c allowFixedScopesCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerC
 }
 
 func (c allowFixedScopesCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
-	// TODO(ROX-9537): Implement it
-	panic("Implement me: ROX-9537")
+	if len(c) == 0 {
+		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
+	}
+	rootKeySet := c[0]
+	var firstKey *ScopeKey
+	for key := range rootKeySet {
+		firstKey = &key
+		break
+	}
+	switch (*firstKey).(type) {
+	case AccessModeScopeKey:
+		return c.getAccessModeEffectiveAccessScope(resource)
+	case ResourceScopeKey:
+		return c.getResourceEffectiveAccessScope(resource)
+	case ClusterScopeKey:
+		return c.getClusterEffectiveAccessScope()
+	}
+	return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+}
+
+func (c allowFixedScopesCheckerCore) getAccessModeEffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
+	if len(c) == 0 {
+		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
+	}
+	accessAllowed := false
+	for coreAccessKey := range c[0] {
+		coreAccessScopeKey, ok := coreAccessKey.(AccessModeScopeKey)
+		if !ok {
+			continue
+		}
+		coreAccess := storage.Access(coreAccessScopeKey)
+		if coreAccess >= resource.Access {
+			accessAllowed = true
+			break
+		}
+	}
+	if !accessAllowed {
+		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+	}
+	return c[1:].getResourceEffectiveAccessScope(resource)
+}
+
+func (c allowFixedScopesCheckerCore) getResourceEffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
+	if len(c) == 0 {
+		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
+	}
+	resourceAllowed := false
+	for coreResource := range c[0] {
+		if coreResource.String() == resource.Resource.String() {
+			resourceAllowed = true
+			break
+		}
+	}
+	if !resourceAllowed {
+		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+	}
+	return c[1:].getClusterEffectiveAccessScope()
+}
+
+func (c allowFixedScopesCheckerCore) getClusterEffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
+	if len(c) == 0 {
+		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
+	}
+	clusterIDs := make([]string, 0, len(c[0]))
+	for clusterID := range c[0] {
+		clusterIDs = append(clusterIDs, clusterID.String())
+	}
+	if len(c) == 1 {
+		return effectiveaccessscope.FromClustersAndNamespacesMap(clusterIDs, nil), nil
+	}
+	namespaces := make([]string, 0, len(c[1]))
+	for namespace := range c[1] {
+		namespaces = append(namespaces, namespace.String())
+	}
+	clusterNamespaceMap := make(map[string][]string, 0)
+	for clusterIx := range clusterIDs {
+		clusterID := clusterIDs[clusterIx]
+		clusterNamespaceMap[clusterID] = namespaces
+	}
+	return effectiveaccessscope.FromClustersAndNamespacesMap(nil, clusterNamespaceMap), nil
 }
