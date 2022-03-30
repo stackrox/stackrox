@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
 set -eu
 
-# This creates required signature integrations to verify signatures during scale tests.
+# Creates signature integrations required for signature verification.
 
-die() {
-  echo >&2 "$@"
-  exit 1
-}
+TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+source "$TEST_ROOT/tests/e2e/lib.sh"
 
-[[ -z "${ROX_PASSWORD}" ]] && die "Required env variable ROX_PASSWORD not set"
-roxEndpoint="${API_ENDPOINT:-localhost:8000}"
-roxUser="${ROX_ADMIN_USER:-admin}"
-roxPassword="${ROX_PASSWORD}"
+# Wait for central API to be reachable.
+wait_for_api
+
+require_environment "ROX_PASSWORD"
+require_environment "API_ENDPOINT"
 
 declare -a integrations=(
 '{"id": "", "name": "Distroless", "cosign":{"publicKeys":[{"name": "Distroless public key", "publicKeyPemEnc":"-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWZzVzkb8A+DbgDpaJId/bOmV8n7Q\nOqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==\n-----END PUBLIC KEY-----"}]}}'
@@ -22,11 +21,11 @@ declare -a integrations=(
 for integrationJSON in "${integrations[@]}"
 do
   tmpOutput=$(mktemp)
-  status=$(curl -k -u "${roxUser}:${roxPassword}" -X POST \
+  status=$(curl -k -u "admin:${ROX_PASSWORD}" -X POST \
     -d "${integrationJSON}" \
     -o "$tmpOutput" \
     -w "%{http_code}\n" \
-    https://"${roxEndpoint}"/v1/signatureintegrations )
+    https://"${API_ENDPOINT}"/v1/signatureintegrations )
 
   if [ "${status}" != "200" ] && [ "${status}" != "429" ] && [ "${status}" != "409" ]; then
     cat "$tmpOutput"
