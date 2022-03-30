@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/rbac/utils"
 	serviceAccountStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -51,6 +52,10 @@ func NewSAPermissionsMultiplier(roleStore roleStore.DataStore, bindingStore bind
 
 // Score takes a deployment and evaluates its risk based on the permissions granted to the deployment's service account
 func (c *saPermissionsMultiplier) Score(ctx context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
+	// TODO(ROX-9637)
+	if features.PostgresDatastore.Enabled() {
+		return nil
+	}
 	var factors []*storage.Risk_Result_Factor
 	overallScore := float32(0)
 
