@@ -177,16 +177,12 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 				storage.Access_READ_ACCESS: {
 					resources.Deployment.Resource: &sac.TestResourceScope{
 						Clusters: map[string]*sac.TestClusterScope{
-							"mycluster": {
-								Namespaces: []string{"foo", "bar", "baz"},
-							},
+							"mycluster": {Namespaces: []string{"foo", "bar", "baz"}},
 						},
 					},
 					resources.NetworkGraph.Resource: &sac.TestResourceScope{
 						Clusters: map[string]*sac.TestClusterScope{
-							"mycluster": {
-								Namespaces: []string{"foo", "baz", "far"},
-							},
+							"mycluster": {Namespaces: []string{"foo", "baz", "far"}},
 						},
 					},
 				},

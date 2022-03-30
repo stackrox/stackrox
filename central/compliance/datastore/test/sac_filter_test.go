@@ -270,9 +270,7 @@ func (s *sacFilterTestSuite) TestFiltersSomeDeployments() {
 					resources.Node.GetResource():    &sac.TestResourceScope{Included: true},
 					resources.Deployment.GetResource(): &sac.TestResourceScope{
 						Clusters: map[string]*sac.TestClusterScope{
-							clusterID: {
-								Namespaces: []string{namespace2},
-							},
+							clusterID: {Namespaces: []string{namespace2}},
 						},
 					},
 				},

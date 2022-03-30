@@ -10,14 +10,14 @@ import (
 )
 
 // TestClusterScope contains cluster-level scope information (cluster included or list of included namespaces
-// in the cluster) to build test scope checkers
+// in the cluster) to build test scope checkers.
 type TestClusterScope struct {
 	Namespaces []string
 	Included   bool
 }
 
 // TestResourceScope contains resource-level scope information (resource fully included or list of included clusters
-// and associated cluster-level scope information) to build test scope checkers
+// and associated cluster-level scope information) to build test scope checkers.
 type TestResourceScope struct {
 	Clusters map[string]*TestClusterScope
 	Included bool
@@ -98,9 +98,11 @@ func (c *testScopeCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerCore {
 }
 
 func (c *testScopeCheckerCore) TryAllowed() TryAllowedResult {
+	// Global access is denied, need to drill down.
 	if len(c.path) == 0 {
 		return Deny
 	}
+	// Drill down to access level.
 	access := c.path[0]
 	accessKey, accessOK := access.(AccessModeScopeKey)
 	if !accessOK {
@@ -113,6 +115,7 @@ func (c *testScopeCheckerCore) TryAllowed() TryAllowedResult {
 	if len(c.path) == 1 {
 		return Deny
 	}
+	// Drill down to resource level.
 	resource := c.path[1]
 	resourceKey, resourceOK := resource.(ResourceScopeKey)
 	if !resourceOK {
@@ -128,6 +131,7 @@ func (c *testScopeCheckerCore) TryAllowed() TryAllowedResult {
 	if len(c.path) == 2 {
 		return Deny
 	}
+	// Drill down to cluster level.
 	clusterID := c.path[2].String()
 	clusterScope := resourceScope.Clusters[clusterID]
 	if clusterScope == nil {
@@ -139,6 +143,7 @@ func (c *testScopeCheckerCore) TryAllowed() TryAllowedResult {
 	if len(c.path) == 3 {
 		return Deny
 	}
+	// Drill down to namespace level.
 	namespace := c.path[3].String()
 	namespaceAllowed := false
 	for _, allowedNamespace := range clusterScope.Namespaces {

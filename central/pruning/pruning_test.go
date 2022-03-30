@@ -444,13 +444,6 @@ func TestImagePruning(t *testing.T) {
 	}
 }
 
-func resourceWithAccess(access storage.Access, resource permissions.ResourceMetadata) permissions.ResourceWithAccess {
-	return permissions.ResourceWithAccess{
-		Access:   access,
-		Resource: resource,
-	}
-}
-
 func TestAlertPruning(t *testing.T) {
 	existsDeployment := &storage.Deployment{
 		Id:        "deploymentId1",
@@ -1291,4 +1284,11 @@ func getAllAlerts() *v1.Query {
 		storage.ViolationState_RESOLVED.String(),
 		storage.ViolationState_ATTEMPTED.String(),
 	).ProtoQuery()
+}
+
+func resourceWithAccess(access storage.Access, resource permissions.ResourceMetadata) permissions.ResourceWithAccess {
+	return permissions.ResourceWithAccess{
+		Access:   access,
+		Resource: resource,
+	}
 }
