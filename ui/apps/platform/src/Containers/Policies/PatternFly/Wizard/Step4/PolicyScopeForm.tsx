@@ -11,7 +11,6 @@ import {
     Select,
     SelectVariant,
     SelectOption,
-    Form,
     FormGroup,
 } from '@patternfly/react-core';
 
@@ -196,30 +195,30 @@ function PolicyScopeForm() {
                     </div>
                 </FlexItem>
                 <FlexItem>
-                    <Form>
-                        <FormGroup
-                            label="Exclude images (Build lifecycle only)"
-                            fieldId="exclude-images"
-                            helperText="Select all images from the list for which you don't want to trigger a violation for the policy."
+                    <FormGroup
+                        label="Exclude images (Build lifecycle only)"
+                        fieldId="exclude-images"
+                        helperText="Select all images from the list for which you don't want to trigger a violation for the policy."
+                    >
+                        <Select
+                            onToggle={() => setIsExcludeImagesOpen(!isExcludeImagesOpen)}
+                            isOpen={isExcludeImagesOpen}
+                            variant={SelectVariant.typeaheadMulti}
+                            selections={excludedImageNames}
+                            onSelect={handleChangeMultiSelect}
+                            isCreatable
+                            onCreateOption={() => {}}
+                            isDisabled={hasAuditLogEventSource || !hasBuildLifecycle}
+                            onClear={() => setFieldValue('excludedImageNames', [])}
+                            placeholderText="Select images to exclude"
                         >
-                            <Select
-                                onToggle={() => setIsExcludeImagesOpen(!isExcludeImagesOpen)}
-                                isOpen={isExcludeImagesOpen}
-                                variant={SelectVariant.typeaheadMulti}
-                                selections={excludedImageNames}
-                                onSelect={handleChangeMultiSelect}
-                                isDisabled={hasAuditLogEventSource || !hasBuildLifecycle}
-                                onClear={() => setFieldValue('excludedImageNames', [])}
-                                placeholderText="Select images to exclude"
-                            >
-                                {images?.map((image) => (
-                                    <SelectOption key={image.name} value={image.name}>
-                                        {image.name}
-                                    </SelectOption>
-                                ))}
-                            </Select>
-                        </FormGroup>
-                    </Form>
+                            {images?.map((image) => (
+                                <SelectOption key={image.name} value={image.name}>
+                                    {image.name}
+                                </SelectOption>
+                            ))}
+                        </Select>
+                    </FormGroup>
                 </FlexItem>
             </Flex>
         </Flex>
