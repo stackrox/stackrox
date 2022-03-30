@@ -38,11 +38,17 @@ const (
 	getSinceStmt = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE (LastSeenTimestamp >= $1 OR LastSeenTimestamp IS NULL) AND ClusterId = $2"
 	//deleteSrcDeploymentStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2"
 	//deleteDstDeploymentStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2"
-	deleteSrcDeploymentStmt = "DELETE FROM networkflow nf USING (SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId FROM networkflow WHERE Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2 AND ClusterId = $2 ORDER BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId FOR UPDATE) del WHERE nf.Props_SrcEntity_Type = del.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = del.Props_SrcEntity_Id AND nf.Props_DstEntity_Type = del.Props_DstEntity_Type AND nf.Props_DstEntity_Id = del.Props_DstEntity_Id AND nf.Props_DstPort = del.Props_DstPort AND nf.Props_L4Protocol = del.Props_L4Protocol AND nf.ClusterId = del.ClusterId"
+	deleteSrcDeploymentStmt = "DELETE FROM networkflow nf USING (SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId FROM networkflow WHERE Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $1 AND ClusterId = $2 ORDER BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId FOR UPDATE) del WHERE nf.Props_SrcEntity_Type = del.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = del.Props_SrcEntity_Id AND nf.Props_DstEntity_Type = del.Props_DstEntity_Type AND nf.Props_DstEntity_Id = del.Props_DstEntity_Id AND nf.Props_DstPort = del.Props_DstPort AND nf.Props_L4Protocol = del.Props_L4Protocol AND nf.ClusterId = del.ClusterId"
 
-	deleteDstDeploymentStmt = "DELETE FROM networkflow nf USING (SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId FROM networkflow WHERE Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2 AND ClusterId = $2 ORDER BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId FOR UPDATE) del WHERE nf.Props_SrcEntity_Type = del.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = del.Props_SrcEntity_Id AND nf.Props_DstEntity_Type = del.Props_DstEntity_Type AND nf.Props_DstEntity_Id = del.Props_DstEntity_Id AND nf.Props_DstPort = del.Props_DstPort AND nf.Props_L4Protocol = del.Props_L4Protocol AND nf.ClusterId = del.ClusterId"
+	deleteDstDeploymentStmt = "DELETE FROM networkflow nf USING (SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId FROM networkflow WHERE Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $1 AND ClusterId = $2 ORDER BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId FOR UPDATE) del WHERE nf.Props_SrcEntity_Type = del.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = del.Props_SrcEntity_Id AND nf.Props_DstEntity_Type = del.Props_DstEntity_Type AND nf.Props_DstEntity_Id = del.Props_DstEntity_Id AND nf.Props_DstPort = del.Props_DstPort AND nf.Props_L4Protocol = del.Props_L4Protocol AND nf.ClusterId = del.ClusterId"
 
 	deleteOrphanByTimeStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND LastSeenTimestamp IS NOT NULL AND LastSeenTimestamp < $2"
+
+	deleteWithTimeStmt = "DELETE FROM networkflow WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7 AND LastSeenTimestamp <= $8"
+
+	deleteWithNullTimeStmt = "DELETE FROM networkflow WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7 AND LastSeenTimestamp IS NULL"
+
+	getDeploymentStmt = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $1) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $1)) AND ClusterId = $2"
 )
 
 var (
@@ -499,7 +505,7 @@ func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFl
 // RemoveFlowsForDeployment removes all flows where the source OR destination match the deployment id
 func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
 	log.Infof("RemoveFlowsForDeployment => %s", id)
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveFlowByDeployment, "NetworkFlow")
 
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
@@ -507,39 +513,66 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 	}
 	defer release()
 
-	tx, err := conn.Begin(ctx)
+	rows, err := s.db.Query(ctx, getDeploymentStmt, id, s.clusterID)
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
 
-	if _, err := tx.Exec(ctx, deleteSrcDeploymentStmt, id, s.clusterID); err != nil {
-		log.Info(err)
-		if err := tx.Rollback(ctx); err != nil {
-			return err
-		}
-		return err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-
-	tx, err = conn.Begin(ctx)
+	flows, err := s.readRows(rows, nil)
 	if err != nil {
 		return err
 	}
-
-	if _, err := tx.Exec(ctx, deleteDstDeploymentStmt, id, s.clusterID); err != nil {
-		log.Info(err)
-		if err := tx.Rollback(ctx); err != nil {
+	for _, flow := range flows {
+		tx, err := conn.Begin(ctx)
+		if err != nil {
 			return err
 		}
-		return err
+		if flow.GetLastSeenTimestamp() == nil {
+			_, err = tx.Exec(ctx, deleteWithNullTimeStmt, flow.GetProps().GetSrcEntity().GetType(), flow.GetProps().GetSrcEntity().GetId(), flow.GetProps().GetDstEntity().GetType(), flow.GetProps().GetDstEntity().GetId(), flow.GetProps().GetDstPort(), flow.GetProps().GetL4Protocol(), s.clusterID)
+		} else {
+			_, err = tx.Exec(ctx, deleteWithTimeStmt, flow.GetProps().GetSrcEntity().GetType(), flow.GetProps().GetSrcEntity().GetId(), flow.GetProps().GetDstEntity().GetType(), flow.GetProps().GetDstEntity().GetId(), flow.GetProps().GetDstPort(), flow.GetProps().GetL4Protocol(), s.clusterID, pgutils.NilOrTime(flow.GetLastSeenTimestamp()))
+		}
+
+		if err != nil {
+			if err := tx.Rollback(ctx); err != nil {
+				return err
+			}
+		}
+
+		if err := tx.Commit(ctx); err != nil {
+			return err
+		}
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
+	//if _, err := tx.Exec(ctx, deleteSrcDeploymentStmt, id, s.clusterID); err != nil {
+	//	log.Info(err)
+	//	if err := tx.Rollback(ctx); err != nil {
+	//		return err
+	//	}
+	//	return err
+	//}
+	//
+	//if err := tx.Commit(ctx); err != nil {
+	//	return err
+	//}
+	//
+	//tx, err = conn.Begin(ctx)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//if _, err := tx.Exec(ctx, deleteDstDeploymentStmt, id, s.clusterID); err != nil {
+	//	log.Info(err)
+	//	if err := tx.Rollback(ctx); err != nil {
+	//		return err
+	//	}
+	//	return err
+	//}
+	//
+	//if err := tx.Commit(ctx); err != nil {
+	//	return err
+	//}
 	return nil
 }
 
