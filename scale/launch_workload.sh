@@ -21,6 +21,13 @@ if ! kubectl -n stackrox get pvc/stackrox-db > /dev/null; then
   exit 1
 fi
 
+if [[ "$ROX_VERIFY_IMAGE_SIGNATURE" == "true" ]]; then
+  # Create signature integrations to verify image signatures.
+  "${DIR}"/signatures/create-signature-integrations.sh
+  # Create cronjob which triggers verification update each 15min to trigger a re-verification.
+  "${DIR}"/signatures/deploy.sh
+fi
+
 kubectl -n stackrox delete daemonset collector
 
 kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
