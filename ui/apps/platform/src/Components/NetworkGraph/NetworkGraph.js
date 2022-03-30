@@ -431,7 +431,16 @@ const NetworkGraph = ({
         });
 
         let allNodes = [...namespaceList, ...deploymentList, ...namespaceEdgeNodes];
-        const allEdges = getEdges(configObj);
+
+        const namespaces = new Set(namespaceList.map((ns) => ns.data.id));
+        const allEdges = getEdges(configObj).filter((edge) => {
+            // Filter out candidate edges with a sourceNodeNamespace that does not appear
+            // in the namespaceList. When this occurs, edges are sent to Cytoscape that require
+            // a connection to a node that does not exist, causing the component to crash. This
+            // happens when namespace filtering is applied to the network graph and an edge is
+            // created that connects to a namespace the is not part of the current filter.
+            return namespaces.has(edge.data.sourceNodeNamespace);
+        });
 
         const clusterNode = getClusterNode(selectedClusterName);
         allNodes.push(clusterNode);
