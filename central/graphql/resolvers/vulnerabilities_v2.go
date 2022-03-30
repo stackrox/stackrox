@@ -211,7 +211,9 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 		return nil, err
 	}
 
+	log.Errorf("osward -- query passed in %s", query)
 	query = tryUnsuppressedQuery(query)
+	log.Errorf("osward -- query after unsupressed %s", query)
 
 	originalQuery := query.Clone()
 	var queryModified, postSortingNeeded bool
@@ -224,23 +226,27 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 			query.Pagination = nil
 		}
 	}
+	log.Errorf("osward -- sorting needed, query modified %t, %t", postSortingNeeded, queryModified)
 
 	vulns, err := vulnLoader.FromQuery(ctx, query)
 	if err != nil {
 		return nil, err
 	}
+	log.Errorf("osward -- vulns from query %s", vulns)
 	if queryModified {
 		vulns, err = filterNamespacedFields(originalQuery, vulns)
 		if err != nil {
 			return nil, err
 		}
 	}
+	log.Errorf("osward -- after queryModified %s", vulns)
 	if postSortingNeeded {
 		vulns, err = sortNamespacedFields(originalQuery, vulns)
 		if err != nil {
 			return nil, err
 		}
 	}
+	log.Errorf("osward -- after sortingNeeded %s", vulns)
 
 	// If query was modified, it means the result was not paginated since the filtering removes pagination.
 	// If post sorting was needed, which means pagination was not performed because it was removed above.
@@ -253,6 +259,7 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 		}
 		vulns = paginatedVulns.([]*storage.CVE)
 	}
+	log.Errorf("osward -- after pagination %s", vulns)
 
 	vulnResolvers, err := resolver.wrapCVEs(vulns, err)
 	ret := make([]VulnerabilityResolver, 0, len(vulns))

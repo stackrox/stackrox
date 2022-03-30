@@ -51,17 +51,22 @@ func (resolver *Resolver) componentsV2Query(ctx context.Context, query *v1.Query
 	}
 
 	log.Errorf("osward -- componentsV2Query %s", query)
+	// query tries to sort by CVSS
 
+	// component loader returns ImageComponent objects, wrapped as resolvers
 	compRes, err := resolver.wrapImageComponents(componentLoader.FromQuery(ctx, query))
 	if err != nil {
 		return nil, err
 	}
+
+	// at this point the data is already sorted incorrectly
 
 	ret := make([]ComponentResolver, 0, len(compRes))
 	for i, resolver := range compRes {
 		resolver.ctx = ctx
 
 		// data being sorted by resolver.data.GetTopCvss, which is sometimes a different number than resolver.TopVuln.Cvss
+		// resolver.TopVuln is what shows in the front end as the CVSS value
 		topVuln, err := resolver.TopVuln(ctx)
 		if err != nil {
 			return nil, err
@@ -150,7 +155,6 @@ func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityR
 		Limit:  1,
 		Offset: 0,
 	}
-	log.Errorf("osward -- ctx, eicr.ctx %s %s", ctx, eicr.ctx)
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return nil, err
