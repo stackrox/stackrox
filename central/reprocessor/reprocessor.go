@@ -53,7 +53,7 @@ var (
 	allImagesQuery = search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).
 			ProtoQuery()
 
-	onlyImagesWithSignatureVerificationResultsQuery = search.NewQueryBuilder().
+	imagesWithSignatureVerificationResultsQuery = search.NewQueryBuilder().
 							AddStringsHighlighted(search.ClusterID, search.WildcardString).
 							AddStrings(search.ImageSignatureFetchedTime, search.WildcardString).ProtoQuery()
 )
@@ -517,7 +517,7 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 func (l *loopImpl) runSignatureVerificationReprocessing() {
 	l.reprocessWatchedImages()
 	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
-		l.forceEnrichImageSignatureVerificationResults, onlyImagesWithSignatureVerificationResultsQuery)
+		l.forceEnrichImageSignatureVerificationResults, imagesWithSignatureVerificationResultsQuery)
 
 }
 

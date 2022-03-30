@@ -72,6 +72,7 @@ var (
 	ImageName                     = newFieldLabel("Image")
 	ImageSHA                      = newFieldLabel("Image Sha")
 	ImageSignatureFetchedTime     = newFieldLabel("Image Signature Fetched Time")
+	ImageSignatureVerified        = newFieldLabel("Image Signature Verified")
 	ImageRegistry                 = newFieldLabel("Image Registry")
 	ImageRemote                   = newFieldLabel("Image Remote")
 	ImageScanTime                 = newFieldLabel("Image Scan Time")
