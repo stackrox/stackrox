@@ -57,7 +57,7 @@ var (
 	schema = walker.Walk(reflect.TypeOf((*storage.NetworkFlow)(nil)), baseTable)
 
 	// We begin to process in batches after this number of records
-	batchAfter = 10000000
+	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
@@ -161,8 +161,6 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, obj
 	finalStr := "INSERT INTO networkflow (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT ON CONSTRAINT networkflow_pkey DO UPDATE SET LastSeenTimestamp = EXCLUDED.LastSeenTimestamp"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
-		log.Info("Insert error")
-		log.Info(obj)
 		return err
 	}
 
@@ -170,8 +168,6 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, obj
 }
 
 func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkFlow) error {
-
-	log.Infof("copyFromNetworkFlow => %d", len(objs))
 
 	inputRows := [][]interface{}{}
 	var err error
@@ -397,7 +393,6 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 		var clusterID string
 
 		if err := rows.Scan(&srcType, &srcID, &destType, &destID, &port, &protocol, &lastTime, &clusterID); err != nil {
-			log.Info(err)
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
@@ -435,7 +430,6 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 
 // Delete removes the specified ID from the store
 func (s *flowStoreImpl) Delete(ctx context.Context, propsSrcEntityType storage.NetworkEntityInfo_Type, propsSrcEntityID string, propsDstEntityType storage.NetworkEntityInfo_Type, propsDstEntityID string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) error {
-	log.Info("Delete")
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
@@ -469,8 +463,7 @@ func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFl
 		var clusterID string
 
 		if err := rows.Scan(&srcType, &srcID, &destType, &destID, &port, &protocol, &lastTime, &clusterID); err != nil {
-			log.Info(err)
-			return nil
+			return err
 		}
 
 		var ts *types.Timestamp
@@ -504,7 +497,6 @@ func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFl
 
 // RemoveFlowsForDeployment removes all flows where the source OR destination match the deployment id
 func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
-	log.Infof("RemoveFlowsForDeployment => %s", id)
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveFlowByDeployment, "NetworkFlow")
 
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
@@ -545,34 +537,6 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 		}
 	}
 
-	//if _, err := tx.Exec(ctx, deleteSrcDeploymentStmt, id, s.clusterID); err != nil {
-	//	log.Info(err)
-	//	if err := tx.Rollback(ctx); err != nil {
-	//		return err
-	//	}
-	//	return err
-	//}
-	//
-	//if err := tx.Commit(ctx); err != nil {
-	//	return err
-	//}
-	//
-	//tx, err = conn.Begin(ctx)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//if _, err := tx.Exec(ctx, deleteDstDeploymentStmt, id, s.clusterID); err != nil {
-	//	log.Info(err)
-	//	if err := tx.Rollback(ctx); err != nil {
-	//		return err
-	//	}
-	//	return err
-	//}
-	//
-	//if err := tx.Commit(ctx); err != nil {
-	//	return err
-	//}
 	return nil
 }
 
@@ -660,7 +624,6 @@ func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlow
 
 // RemoveFlow removes the specified flow from the store
 func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error {
-	log.Info("RemoveFlow")
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
 	if err := s.delete(ctx, props); err != nil {
@@ -672,7 +635,6 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 // RemoveMatchingFlows removes the specified flows from the store
 // Todo: Figure out what to do with the functions.
 func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
-	log.Info("RemoveMatchingFlows")
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
