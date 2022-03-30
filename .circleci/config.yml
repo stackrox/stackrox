@@ -3709,11 +3709,10 @@ jobs:
           name: Launch Sensor and Central with scale workload
           command: |
             ./deploy/k8s/deploy.sh
-            ./scale/launch_workload.sh scale-test
-
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
             cci-export ROX_USERNAME "$ROX_USERNAME"
             cci-export ROX_PASSWORD "$ROX_PASSWORD"
+            ./scale/launch_workload.sh scale-test
 
       - *waitForAPI
 
