@@ -439,7 +439,7 @@ webhookserver-build: build-prep
 .PHONY: mock-grpc-server-build
 mock-grpc-server-build: build-prep
 	@echo "+ $@"
-	$(GOBUILD) integration-tests/mock-grpc-server
+	CGO_ENABLED=0 $(GOBUILD) integration-tests/mock-grpc-server
 
 .PHONY: gendocs
 gendocs: $(GENERATED_API_DOCS)
@@ -614,7 +614,9 @@ webhookserver-image: webhookserver-build
 mock-grpc-server-image: mock-grpc-server-build clean-image
 	cp bin/linux/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
+ifdef CI
 	docker tag stackrox/grpc-server:$(TAG) quay.io/$(QUAY_REPO)/grpc-server:$(TAG)
+endif
 
 $(CURDIR)/image/postgres/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
