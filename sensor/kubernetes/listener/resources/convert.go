@@ -64,7 +64,7 @@ type deploymentWrap struct {
 	original                 interface{}
 	portConfigs              map[portRef]*storage.PortConfig
 	pods                     []*v1.Pod
-	networkPolicyInformation *networkPolicyInformation
+	networkPolicyInformation networkPolicyInformation
 
 	mutex sync.RWMutex
 }
@@ -544,5 +544,5 @@ func (w *deploymentWrap) Clone() *deploymentWrap {
 }
 
 func (w *deploymentWrap) GetNetworkPolicyInformation() networkPolicyInformation {
-	return *w.networkPolicyInformation
+	return w.networkPolicyInformation
 }
