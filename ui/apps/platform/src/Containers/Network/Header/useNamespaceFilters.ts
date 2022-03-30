@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { useQuery } from '@apollo/client';
+import { gql, useQuery } from '@apollo/client';
 
 import { selectors } from 'reducers';
-import { CLUSTER_WITH_NAMESPACES } from 'queries/cluster';
 
 type SelectorState = { selectedClusterId: string | null; selectedNamespaceFilters: string[] };
 type SelectorResult = SelectorState;
@@ -14,7 +13,6 @@ const selector = createStructuredSelector<SelectorState, SelectorResult>({
     selectedNamespaceFilters: selectors.getSelectedNamespaceFilters,
 });
 
-// TODO This is a minimum expected return type - do we have clearly defined typings elsewhere?
 type NamespaceMetadataResp = {
     id: string;
     results: {
@@ -25,6 +23,19 @@ type NamespaceMetadataResp = {
         }[];
     };
 };
+
+export const NAMESPACES_FOR_CLUSTER_QUERY = gql`
+    query getClusterNamespaceNames($id: ID!) {
+        results: cluster(id: $id) {
+            id
+            namespaces {
+                metadata {
+                    name
+                }
+            }
+        }
+    }
+`;
 
 function useNamespaceFilters() {
     const [availableNamespaceFilters, setAvailableNamespaceFilters] = useState<string[]>([]);
@@ -38,7 +49,7 @@ function useNamespaceFilters() {
         : { skip: true };
 
     const { loading, error, data } = useQuery<NamespaceMetadataResp, { id: string }>(
-        CLUSTER_WITH_NAMESPACES,
+        NAMESPACES_FOR_CLUSTER_QUERY,
         queryOptions
     );
 
