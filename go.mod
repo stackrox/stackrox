@@ -35,7 +35,6 @@ require (
 	github.com/dave/jennifer v1.5.0
 	github.com/deckarep/golang-set v1.8.0
 	github.com/dexidp/dex v0.0.0-20210917061239-f0186ff2651e
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/docker/docker v20.10.13+incompatible
 	github.com/docker/go-connections v0.4.0
@@ -49,6 +48,7 @@ require (
 	github.com/godbus/dbus/v5 v5.0.4
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2
+	github.com/golang-jwt/jwt/v4 v4.3.0
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/certificate-transparency-go v1.1.2
