@@ -164,13 +164,17 @@ func imageWithOS(os string) *storage.Image {
 }
 
 func imageWithSignatureVerificationResults(name string, results []*storage.ImageSignatureVerificationResult) *storage.Image {
-	return &storage.Image{
+	img := &storage.Image{
 		Id:   uuid.NewV4().String(),
 		Name: &storage.ImageName{FullName: name, Remote: "ASFASF"},
-		SignatureVerificationData: &storage.ImageSignatureVerificationData{
-			Results: results,
-		},
 	}
+
+	if results != nil {
+		img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
+			Results: results,
+		}
+	}
+	return img
 }
 
 func deploymentWithImageAnyID(img *storage.Image) *storage.Deployment {
