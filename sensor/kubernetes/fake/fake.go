@@ -25,6 +25,8 @@ import (
 
 const (
 	workloadPath = "/var/scale/stackrox/workload.yaml"
+
+	defaultNamespaceNum = 30
 )
 
 var (
@@ -123,8 +125,8 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 }
 
 // clearActions periodically cleans up the fake client we're using. This needs to exist because we aren't
-// using the client for it's original purpose of unit testing. Essentially, it stores the actions
-// so you can check which actions were run. We don't care about this actions so clear them every 10s
+// using the client for its original purpose of unit testing. Essentially, it stores the actions
+// so you can check which actions were run. We don't care about these actions so clear them every 10s
 func (w *WorkloadManager) clearActions() {
 	t := time.NewTicker(10 * time.Second)
 	for range t.C {
@@ -135,7 +137,11 @@ func (w *WorkloadManager) clearActions() {
 func (w *WorkloadManager) initializePreexistingResources() {
 	var objects []runtime.Object
 
-	for _, n := range getNamespaces() {
+	numNamespaces := defaultNamespaceNum
+	if num := w.workload.NumNamespaces; num != 0 {
+		numNamespaces = num
+	}
+	for _, n := range getNamespaces(numNamespaces) {
 		objects = append(objects, n)
 	}
 

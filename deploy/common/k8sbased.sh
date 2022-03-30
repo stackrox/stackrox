@@ -234,10 +234,10 @@ function launch_central {
         echo
     fi
 
-	if [[ -f "${unzip_dir}/password" ]]; then
-		export ROX_ADMIN_USER=admin
-		export ROX_ADMIN_PASSWORD="$(< "${unzip_dir}/password")"
-	fi
+    if [[ -f "${unzip_dir}/password" ]]; then
+      export ROX_ADMIN_USER=admin
+      export ROX_ADMIN_PASSWORD="$(< "${unzip_dir}/password")"
+    fi
 
     echo "Deploying Central..."
 
@@ -512,14 +512,20 @@ function launch_sensor {
         rm "$k8s_dir/sensor-deploy.zip"
       fi
 
+      namespace=stackrox
+      if [[ -n "$NAMESPACE_OVERRIDE" ]]; then
+        namespace="$NAMESPACE_OVERRIDE"
+        echo "Changing namespace to $NAMESPACE_OVERRIDE"
+        ls $k8s_dir/sensor-deploy/*.yaml | while read file; do sed -i'.original' -e 's/namespace: stackrox/namespace: '"$NAMESPACE_OVERRIDE"'/g' $file; done
+      fi
+
       echo "Deploying Sensor..."
-      $k8s_dir/sensor-deploy/sensor.sh
+      NAMESPACE="$namespace" $k8s_dir/sensor-deploy/sensor.sh
     fi
 
     if [[ -n "${ROX_AFTERGLOW_PERIOD}" ]]; then
        kubectl -n stackrox set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
     fi
-
 
     if [[ -n "${CI}" || $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
        if [[ "${ROX_HOTRELOAD}" == "true" ]]; then
