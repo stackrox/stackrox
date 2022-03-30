@@ -13,4 +13,6 @@ require_environment "ROX_PASSWORD"
 # Substitute ROX_PASSWORD within the shell script that will be used to trigger signature integration updates.
 # Deploy the CRON job..
 dir="$(dirname "${BASH_SOURCE[0]}")"
-envsubst '${ROX_PASSWORD}' < "${dir}/deploy.yaml" | kubectl create -f -
+script_contents=$(envsubst "${ROX_PASSWORD}" < "${dir}/update.sh")
+kubectl create configmap -n stackrox update-script --from-literal=update.sh="${script_contents}"
+kubectl create -f "${dir}/deploy.yaml"
