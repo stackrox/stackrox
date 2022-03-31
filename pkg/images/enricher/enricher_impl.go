@@ -482,14 +482,21 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 		return false, nil
 	}
 
+	imgName := img.GetName().GetFullName()
+
 	// Short-circuit if no signature is available.
 	if len(img.GetSignature().GetSignatures()) == 0 {
 		// If no signature is given but there are signature verification results on the image, make sure we delete
 		// the stale signature verification results.
 		if len(img.GetSignatureVerificationData().GetResults()) != 0 {
 			img.SignatureVerificationData = nil
+			log.Debugf("No signatures associated with image %q but existing results were found, "+
+				"deleting those.", imgName)
 			return true, nil
 		}
+
+		log.Debugf("No signatures associated with image %q so no verification will be done", imgName)
+
 		return false, nil
 	}
 
@@ -505,10 +512,13 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 		// image and signal an update to the verification data.
 		if len(img.GetSignatureVerificationData().GetResults()) != 0 {
 			img.SignatureVerificationData = nil
+			log.Debugf("No signature integrations available but image %q had existing results, "+
+				"deleting those", imgName)
 			return true, nil
 		}
 		// If no integrations are available and no pre-existing results, short-circuit and don't signal updated
 		// verification results.
+		log.Debug("No signature integration available so no verification will be done")
 		return false, nil
 	}
 
@@ -529,6 +539,8 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 	if res == nil {
 		return false, ctx.Err()
 	}
+
+	log.Debugf("Verification results found for image %q: %+v", imgName, res)
 
 	img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
 		Results: res,
@@ -552,8 +564,10 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		return false, nil
 	}
 
+	imgName := img.GetName().GetFullName()
+
 	if err := e.checkRegistryForImage(img); err != nil {
-		return false, errors.Wrapf(err, "checking registry for image %q", img.GetName().GetFullName())
+		return false, errors.Wrapf(err, "checking registry for image %q", imgName)
 	}
 
 	registrySet, err := e.getRegistriesForContext(enrichmentContext)
@@ -563,8 +577,7 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 
 	matchingRegistries, err := getMatchingRegistries(registrySet.GetAll(), img)
 	if err != nil {
-		return false, errors.Wrapf(err, "getting matching registries for image %q",
-			img.GetName().GetFullName())
+		return false, errors.Wrapf(err, "getting matching registries for image %q", imgName)
 	}
 
 	var fetchedSignatures []*storage.Signature
@@ -588,11 +601,11 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		// The best way to handle this would be to keep a list of images which are matching but not authorized for each
 		// registry, but this can be tackled at a latter improvement.
 		if !errors.Is(err, errox.NotAuthorized) {
-			log.Errorf("Error fetching image signatures for image %q: %v", img.GetName().GetFullName(), err)
+			log.Errorf("Error fetching image signatures for image %q: %v", imgName, err)
 		} else {
 			// Log errox.NotAuthorized erros only in debug mode, since we expect them to occur often.
-			log.Debugf("Unauthorized error fetching image signatures for iamge %q: %v",
-				img.GetName().GetFullName(), err)
+			log.Debugf("Unauthorized error fetching image signatures for image %q: %v",
+				imgName, err)
 		}
 	}
 
@@ -600,11 +613,16 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 	if len(fetchedSignatures) == 0 {
 		// Delete existing signatures on the image if we fetched zero.
 		if len(img.GetSignature().GetSignatures()) != 0 {
+			log.Debugf("No signatures found but image %q had existing signatures, "+
+				"deleting those", imgName)
 			img.Signature = nil
 			return true, nil
 		}
+		log.Debugf("No signatures associated with image %q", imgName)
 		return false, nil
 	}
+
+	log.Debugf("Found signatures for image %q: %+v", imgName, fetchedSignatures)
 
 	img.Signature = &storage.ImageSignature{
 		Signatures: fetchedSignatures,
