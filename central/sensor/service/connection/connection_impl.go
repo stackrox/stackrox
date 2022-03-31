@@ -290,44 +290,17 @@ func (c *sensorConnection) getPolicySyncMsg(ctx context.Context) (*central.MsgTo
 }
 
 // getPolicySyncMsgFromPolicies prepares given policies for delivery to sensor. If:
-//   - sensor's policy version is unknown -> guess Version1,
-//   - sensor's policy version is older than central's -> attempt to downgrade
-//     all policies to sensor's version,
-//   - otherwise -> forward policies unmodified.
+//   - sensor's policy version is unknown -> guess Version1.1, and fwd policies unmodified
+//   No downgrades supported to versions < 1.1
 //
-// If there is any error during the downgrade, pass the affected policies as-is.
 func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Policy) (*central.MsgToSensor, error) {
 	// Older sensors do not broadcast the policy version they support, so if we
-	// observe an empty string, we guess the version at Version1 and persist it.
+	// observe an empty string, we guess the version at Version1.1 and persist it.
 	sensorPolicyVersionStr := stringutils.FirstNonEmpty(c.sensorHello.GetPolicyVersion())
 
 	// Forward policies as is if we don't understand sensor's version.
-	if sensorPolicyVersion, err := policyversion.FromString(sensorPolicyVersionStr); err != nil {
+	if _, err := policyversion.FromString(sensorPolicyVersionStr); err != nil {
 		log.Errorf("Cannot understand sensor's policy version %q: %v", sensorPolicyVersionStr, err)
-	} else {
-		// Downgrade all policies if necessary. If we can't downgrade one,
-		// we likely can't convert any of them, so no need to spam the log.
-		if policyversion.Compare(policyversion.CurrentVersion(), sensorPolicyVersion) > 0 {
-			log.Infof("Downgrading %d policies from central's version %q to sensor's version %q",
-				len(policies), policyversion.CurrentVersion().String(), sensorPolicyVersion.String())
-
-			downgradedPolicies := make([]*storage.Policy, 0, len(policies))
-
-			var downgradeErr error
-			for _, p := range policies {
-				cloned := p.Clone()
-				downgradedPolicies = append(downgradedPolicies, cloned)
-				err := policyversion.DowngradePolicyTo(cloned, sensorPolicyVersion)
-				if downgradeErr == nil && err != nil {
-					downgradeErr = err
-				}
-			}
-			if downgradeErr != nil {
-				log.Errorf("Policy downgrade failed: %v", downgradeErr)
-			}
-
-			policies = downgradedPolicies
-		}
 	}
 
 	return &central.MsgToSensor{
