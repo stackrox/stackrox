@@ -14,6 +14,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Central will now respond with a 421 Misdirected Request status code to requests where the ServerName sent via TLS SNI
   does not match the `:authority` (`Host`) header. This feature can be turned off by setting the environment variable
   `ROX_ALLOW_MISDIRECTED_REQUESTS=true`.
+- Fixed permissioms checks in the UI that prevented users with certain limited permissions from creating report configurations.
 
 ## [69.1]
 
