@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
-export MAIN_IMAGE_REPO="${MAIN_IMAGE_REPO:-stackrox/main}"
+export DEFAULT_IMAGE_REGISTRY="${DEFAULT_IMAGE_REGISTRY:-quay.io/stackrox-io}"
+echo "DEFAULT_IMAGE_REGISTRY set to $DEFAULT_IMAGE_REGISTRY"
+
+export MAIN_IMAGE_REPO="${MAIN_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/main}"
 echo "MAIN_IMAGE_REPO set to $MAIN_IMAGE_REPO"
 
-export COLLECTOR_IMAGE_REPO="${COLLECTOR_IMAGE_REPO:-stackrox/collector}"
+export COLLECTOR_IMAGE_REPO="${COLLECTOR_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/collector}"
 echo "COLLECTOR_IMAGE_REPO set to $COLLECTOR_IMAGE_REPO"
 
 export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" tag)}"
@@ -13,13 +16,13 @@ echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 export MAIN_IMAGE="${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
 echo "StackRox image set to $MAIN_IMAGE"
 
-export CENTRAL_DB_IMAGE_REPO="${CENTRAL_DB_IMAGE_REPO:-stackrox/central-db}"
+export CENTRAL_DB_IMAGE_REPO="${CENTRAL_DB_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/central-db}"
 echo "CENTRAL_DB_IMAGE_REPO set to $CENTRAL_DB_IMAGE_REPO"
 
 export CENTRAL_DB_IMAGE="${CENTRAL_DB_IMAGE:-${CENTRAL_DB_IMAGE_REPO}:${MAIN_IMAGE_TAG}}"
 echo "StackRox central db image set to $CENTRAL_DB_IMAGE"
 
-export ROXCTL_IMAGE_REPO="${ROXCTL_IMAGE_REPO:-stackrox/roxctl}"
+export ROXCTL_IMAGE_REPO="${ROXCTL_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/roxctl}"
 echo "ROXCTL_IMAGE_REPO set to $ROXCTL_IMAGE_REPO"
 
 export ROXCTL_IMAGE_TAG="${ROXCTL_IMAGE_TAG:-${MAIN_IMAGE_TAG}}"
@@ -30,11 +33,11 @@ echo "StackRox roxctl image set to $ROXCTL_IMAGE"
 
 export SCANNER_IMAGE="${SCANNER_IMAGE:-}"
 if [[ -z "${SCANNER_IMAGE}" ]]; then
-  SCANNER_IMAGE="stackrox/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+  SCANNER_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 fi
 export SCANNER_DB_IMAGE="${SCANNER_DB_IMAGE:-}"
 if [[ -z "${SCANNER_DB_IMAGE}" ]]; then
-  export SCANNER_DB_IMAGE="stackrox/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+  export SCANNER_DB_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 fi
 echo "StackRox scanner image set to $SCANNER_IMAGE"
 
@@ -136,24 +139,24 @@ function get_cluster_zip {
     STATUS=$(curl_central -X POST \
         -d "$CLUSTER_JSON" \
         -s \
-        -o $TMP \
+        -o "$TMP" \
         -w "%{http_code}\n" \
-        https://$LOCAL_API_ENDPOINT/v1/clusters)
+        "https://$LOCAL_API_ENDPOINT/v1/clusters")
     >&2 echo "Status: $STATUS"
     if [ "$STATUS" != "200" ]; then
-      cat $TMP
+      cat "$TMP"
       exit 1
     fi
 
-    ID="$(cat ${TMP} | jq -r .cluster.id)"
+    ID="$(cat "${TMP}" | jq -r .cluster.id)"
 
     echo "Getting zip file for cluster ${ID}"
     STATUS=$(curl_central -X POST \
         -d "{\"id\": \"$ID\"}" \
         -s \
-        -o $OUTPUT_DIR/sensor-deploy.zip \
+        -o "$OUTPUT_DIR/sensor-deploy.zip" \
         -w "%{http_code}\n" \
-        https://$LOCAL_API_ENDPOINT/api/extensions/clusters/zip)
+        "https://$LOCAL_API_ENDPOINT/api/extensions/clusters/zip")
     echo "Status: $STATUS"
     echo "Saved zip file to $OUTPUT_DIR"
     echo
@@ -177,9 +180,9 @@ function get_identity {
         -s \
         -o "$TMP" \
         -w "%{http_code}\n" \
-        https://$LOCAL_API_ENDPOINT/v1/serviceIdentities)
+        "https://$LOCAL_API_ENDPOINT/v1/serviceIdentities")
     echo "Status: $STATUS"
-    echo "Response: $(cat ${TMP})"
+    echo "Response: $(cat "${TMP}")"
     cat "$TMP" | jq -r .certificate > "$OUTPUT_DIR/sensor-cert.pem"
     cat "$TMP" | jq -r .privateKey > "$OUTPUT_DIR/sensor-key.pem"
     rm "$TMP"
@@ -200,9 +203,9 @@ function get_authority {
         -s \
         -o "$TMP" \
         -w "%{http_code}\n" \
-        https://$LOCAL_API_ENDPOINT/v1/authorities)
+        "https://$LOCAL_API_ENDPOINT/v1/authorities")
     echo "Status: $STATUS"
-    echo "Response: $(cat ${TMP})"
+    echo "Response: $(cat "${TMP}")"
     cat "$TMP" | jq -r .authorities[0].certificate > "$OUTPUT_DIR/ca.pem"
     rm "$TMP"
     echo
@@ -266,7 +269,7 @@ function setup_auth0() {
 	TMP=$(mktemp)
 	STATUS=$(curl_central \
 	    -s \
-        -o $TMP \
+        -o "$TMP" \
         "https://${LOCAL_API_ENDPOINT}/v1/authProviders" \
         -w "%{http_code}\n" \
         -X POST \

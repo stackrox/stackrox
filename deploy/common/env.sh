@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
+export KUBE_COMMAND=${KUBE_COMMAND:-kubectl}
+echo "KUBE_COMMAND set to ${KUBE_COMMAND}"
+
+export STACKROX_NAMESPACE="${STACKROX_NAMESPACE:-stackrox}"
+echo "STACKROX_NAMESPACE set to ${STACKROX_NAMESPACE}"
+
 export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.stackrox:443}"
 echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 
@@ -51,7 +57,7 @@ echo "ROX_DEVELOPMENT_BUILD is set to ${ROX_DEVELOPMENT_BUILD}"
 export API_ENDPOINT="${API_ENDPOINT:-localhost:8000}"
 echo "API_ENDPOINT is set to ${API_ENDPOINT}"
 
-export AUTH0_SUPPORT="${AUTH0_SUPPORT:-true}"
+export AUTH0_SUPPORT="${AUTH0_SUPPORT:-false}"
 echo "AUTH0_SUPPORT is set to ${AUTH0_SUPPORT}"
 
 export ROX_HOTRELOAD="${HOTRELOAD:-false}"
