@@ -57,7 +57,6 @@ func (resolver *Resolver) componentsV2Query(ctx context.Context, query *v1.Query
 	ret := make([]ComponentResolver, 0, len(compRes))
 	for _, resolver := range compRes {
 		resolver.ctx = ctx
-
 		ret = append(ret, resolver)
 	}
 	return ret, err
@@ -139,12 +138,12 @@ func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityR
 		Limit:  1,
 		Offset: 0,
 	}
+
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return nil, err
 	}
 	vulns, err := vulnLoader.FromQuery(ctx, query)
-
 	if err != nil || len(vulns) == 0 {
 		return nil, err
 	} else if len(vulns) > 1 {
