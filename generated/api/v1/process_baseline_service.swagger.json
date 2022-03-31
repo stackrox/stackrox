@@ -222,6 +222,10 @@
     "storageProcessBaseline": {
       "type": "object",
       "properties": {
+        "pbSerialId": {
+          "type": "integer",
+          "format": "int32"
+        },
         "id": {
           "type": "string"
         },
@@ -256,7 +260,8 @@
           "type": "string",
           "format": "date-time"
         }
-      }
+      },
+      "title": "Next Available Tag: 10"
     },
     "storageProcessBaselineKey": {
       "type": "object",

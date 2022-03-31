@@ -1,12 +1,13 @@
 {{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
 {{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
-{{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
+{{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}t1.{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
 {{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
 {{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
 
 {{- $ := . }}
 {{- $pks := .Schema.LocalPrimaryKeys }}
+{{- $idxFields := .Schema.IndexFields }}
 
 {{- $singlePK := dict.nil }}
 {{- if eq (len $pks) 1 }}
@@ -32,19 +33,38 @@ import (
 
 const (
         baseTable = "{{.Table}}"
+{{- if .Schema.HasSerialKey }}
+        joinStmt = " INNER JOIN (SELECT {{template "commaSeparatedColumns" $idxFields}}, MAX({{$singlePK.ColumnName}}) AS Max{{$singlePK.ColumnName}} FROM {{.Table}} GROUP BY {{template "commaSeparatedColumns" $idxFields}}) t2 on {{range $idx, $field := .Schema.Fields}}{{if $field.Options.Index}}t1.{{$field.ColumnName}} = t2.{{$field.ColumnName}} AND{{end}}{{end}} t1.{{$singlePK.ColumnName}} = t2.Max{{$singlePK.ColumnName}} "
+        countStmt = "SELECT COUNT(*) FROM {{.Table}} t1 " + joinStmt
+
+        getStmt = "SELECT t1.serialized FROM {{.Table}} t1 " + joinStmt + " WHERE {{template "whereMatch" $idxFields}}"
+
+        getIDsStmt = "SELECT distinct {{template "commaSeparatedColumns" $idxFields}}) FROM {{.Table}}"
+        getManyStmt = "SELECT t1.serialized FROM {{.Table}} t1 " + joinStmt + " WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
+        deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
+
+
+{{- else }}
         countStmt = "SELECT COUNT(*) FROM {{.Table}}"
-        existsStmt = "SELECT EXISTS(SELECT 1 FROM {{.Table}} WHERE {{template "whereMatch" $pks}})"
-
-        getStmt = "SELECT serialized FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
-        deleteStmt = "DELETE FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
+        getStmt = "SELECT t1.serialized FROM {{.Table}} t1 WHERE {{template "whereMatch" $pks}}"
+        deleteStmt = "DELETE FROM {{.Table}} t1 WHERE {{template "whereMatch" $pks}}"
         walkStmt = "SELECT serialized FROM {{.Table}}"
-
+        existsStmt = "SELECT EXISTS(SELECT 1 FROM {{.Table}} t1 WHERE {{template "whereMatch" $pks}})"
 {{- if $singlePK }}
-        getIDsStmt = "SELECT {{$singlePK.ColumnName}} FROM {{.Table}}"
+        getIDsStmt = "SELECT distinct {{$singlePK.ColumnName}} FROM {{.Table}}"
         getManyStmt = "SELECT serialized FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
-
         deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
 {{- end }}
+
+{{- end }}
+
+
+
+
+
+
+
+
 
         batchAfter = 100
 
@@ -224,9 +244,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
     {{end}}
 
     copyCols := []string {
-    {{range $idx, $field := $schema.ResolvedFields}}
-        "{{$field.ColumnName|lowerCase}}",
-    {{end}}
+    {{range $idx, $field := $schema.ResolvedFields}}"{{$field.ColumnName|lowerCase}}",{{end}}
     }
 
     for idx, obj := range objs {

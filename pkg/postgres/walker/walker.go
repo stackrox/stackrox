@@ -102,13 +102,18 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique bool) 
 			// primary key since the owning entity's primary key is what we'd like to use
 			opts.IgnorePrimaryKey = true
 
-		case field == "pk":
+		case strings.HasPrefix(field, "pk"):
 			// if we have a child object, we don't want to propagate its primary key
 			// an example of this is process_indicator.  It is its own object
 			// at which times it needs to use a primary key.  It can also be a child of
 			// alerts.  When it is a child of alerts, we want to ignore the pk of the
 			// process_indicator in favor of the parent_id and generated idx field.
 			opts.PrimaryKey = topLevel && !ignorePK
+
+			// if we want a serial PK, we need to specify that
+			if strings.Contains(field, "=serial") {
+				opts.SerialKey = topLevel && !ignorePK
+			}
 		case field == "unique":
 			opts.Unique = !ignoreUnique
 		case strings.HasPrefix(field, "fk"):
@@ -271,7 +276,12 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			if typeIsEnum(structField.Type) {
 				schema.AddFieldWithType(field, Enum)
 			} else {
-				schema.AddFieldWithType(field, Integer)
+				if field.Options.SerialKey && field.Options.PrimaryKey && !field.Options.IgnorePrimaryKey {
+					schema.AddFieldWithType(field, Serial)
+					schema.HasSerialKey = true
+				} else {
+					schema.AddFieldWithType(field, Integer)
+				}
 			}
 		case reflect.Float32, reflect.Float64:
 			schema.AddFieldWithType(field, Numeric)

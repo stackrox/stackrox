@@ -39,6 +39,10 @@ type Schema struct {
 	// We use `Parents` and `Children` which mean referenced table and referencing table in SQL world,
 	// but in our context it reflects the nesting of proto messages.
 	EmbeddedIn string
+
+	// This indicates if we are using a serial key and an insert only no update pattern.  Putting this here
+	// will make generation logic a little simpler and more readable in the template
+	HasSerialKey bool
 }
 
 // TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,
@@ -311,6 +315,17 @@ func (s *Schema) LocalPrimaryKeys() []Field {
 	return pks
 }
 
+// IndexFields are the fields used in indexes for the current schema
+func (s *Schema) IndexFields() []Field {
+	var indexes []Field
+	for _, f := range s.Fields {
+		if len(f.Options.Index) > 0 {
+			indexes = append(indexes, f)
+		}
+	}
+	return indexes
+}
+
 // WithReference adds the specified schema as a reference to this schema and returns it. The referencing receiver
 // schema is not a direct field in proto object of the specified reference.
 func (s *Schema) WithReference(ref *Schema) *Schema {
@@ -345,6 +360,7 @@ type PostgresOptions struct {
 	Ignored                bool
 	Index                  string
 	PrimaryKey             bool
+	SerialKey              bool
 	Unique                 bool
 	IgnorePrimaryKey       bool
 	IgnoreUniqueConstraint bool
