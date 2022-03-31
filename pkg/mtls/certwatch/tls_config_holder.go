@@ -37,7 +37,8 @@ func NonCAConfigHolder() (*TLSConfigHolder, error) {
 	return certHolder, nil
 }
 
-// NewTLSConfigHolder creates a new instance of TLSConfigHolder
+// NewTLSConfigHolder creates a new instance of TLSConfigHolder.
+// The realtime configuration will be inherited from the rootCfg.
 func NewTLSConfigHolder(rootCfg *tls.Config) *TLSConfigHolder {
 	return &TLSConfigHolder{
 		rootTLSConfig: rootCfg,
