@@ -111,7 +111,7 @@ export PATH=$PATH:$GOPATH/bin
 # configuration (e.g. ~/.bash_profile)
 
 cd $GOPATH
-mkdir bin pkg src
+mkdir -p bin pkg src
 mkdir -p src/github.com/stackrox
 cd src/github.com/stackrox
 git clone git@github.com:stackrox/stackrox.git
