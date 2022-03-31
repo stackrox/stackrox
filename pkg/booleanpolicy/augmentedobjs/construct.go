@@ -33,7 +33,7 @@ func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process 
 
 // ConstructDeploymentWithProcess constructs an augmented deployment with process information.
 func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processNotInBaseline bool) (*pathutil.AugmentedObj, error) {
-	obj, err := ConstructDeployment(deployment, images)
+	obj, err := ConstructDeployment(deployment, images, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func ConstructDeploymentWithNetworkFlowInfo(
 	images []*storage.Image,
 	flow *NetworkFlowDetails,
 ) (*pathutil.AugmentedObj, error) {
-	obj, err := ConstructDeployment(deployment, images)
+	obj, err := ConstructDeployment(deployment, images, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -143,12 +143,19 @@ func ConstructDeploymentWithNetworkFlowInfo(
 }
 
 // ConstructDeployment constructs the augmented deployment object.
-func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image) (*pathutil.AugmentedObj, error) {
+func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image, applied *NetworkPoliciesApplied) (*pathutil.AugmentedObj, error) {
 	obj := pathutil.NewAugmentedObj(deployment)
 	if len(images) != len(deployment.GetContainers()) {
 		return nil, errors.Errorf("deployment %s/%s had %d containers, but got %d images",
 			deployment.GetNamespace(), deployment.GetName(), len(deployment.GetContainers()), len(images))
 	}
+
+	appliedPolicies := pathutil.NewAugmentedObj(applied)
+	err := obj.AddAugmentedObjAt(appliedPolicies, pathutil.FieldStep(networkPoliciesAppliedKey))
+	if err != nil {
+		return nil, utils.Should(err)
+	}
+
 	for i, image := range images {
 		augmentedImg, err := ConstructImage(image)
 		if err != nil {
