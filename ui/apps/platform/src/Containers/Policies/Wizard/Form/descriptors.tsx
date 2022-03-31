@@ -734,6 +734,27 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: false,
     },
     {
+        label: 'Allow Privilege Escalation',
+        name: 'Allow Privilege Escalation',
+        shortName: 'Allow Privilege Escalation',
+        longName: 'Privilege Escalation allowed on Container',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'Privilege Escalation Allowed',
+                value: true,
+            },
+            {
+                text: 'Privilege Escalation not Allowed',
+                value: false,
+            },
+        ],
+        defaultValue: true,
+        disabled: true,
+        canBooleanLogic: false,
+    },
+    {
         label: 'Share host network namespace',
         name: 'Host Network',
         shortName: 'Host network',
