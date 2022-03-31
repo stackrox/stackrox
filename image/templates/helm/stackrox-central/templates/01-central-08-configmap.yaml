@@ -15,12 +15,11 @@ data:
     {{- if ._rox.central.enableCentralDB }}
     centralDB:
       source: >
-        host=central-db.{{ .Release.Namespace }}.svc
+        host=cong-rds-private.ctarq1pbzdb4.us-west-2.rds.amazonaws.com
         port=5432
         database=postgres
         user=postgres
-        sslmode={{- if eq .Release.Namespace "stackrox" }}verify-full{{- else }}verify-ca{{- end }}
-        sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
+        sslmode=require
         statement_timeout=600000
         pool_min_conns=1
         pool_max_conns=90

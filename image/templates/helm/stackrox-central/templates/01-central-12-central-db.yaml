@@ -137,7 +137,7 @@ metadata:
 type: Opaque
 stringData:
   password: |
-    {{- ._rox.central._dbPassword.value | nindent 4 }}
+    zvzJLNyseaBbbbcDwHGtb9ee8HC2u9Ft
 {{- end }}
 {{- end }}
 {{- end }}
