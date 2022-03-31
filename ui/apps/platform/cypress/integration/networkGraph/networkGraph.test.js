@@ -1,41 +1,25 @@
-import { url as networkUrl, selectors as networkPageSelectors } from '../../constants/NetworkPage';
-
 import * as api from '../../constants/apiEndpoints';
+import { selectors as networkPageSelectors } from '../../constants/NetworkPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     clickOnNodeByName,
     filterDeployments,
     filterNamespaces,
-    selectNamespaceFilters,
+    selectDeploymentFilter,
+    visitNetworkGraphWithMockedData,
+    visitNetworkGraphWithNamespaceFilters,
 } from '../../helpers/networkGraph';
 
 describe('Network Deployment Details', () => {
     withAuth();
 
-    beforeEach(() => {
-        cy.server();
-
-        cy.fixture('network/networkGraph.json').as('networkGraphJson');
-        cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
-
-        cy.fixture('network/networkPolicies.json').as('networkPoliciesJson');
-        cy.route('GET', api.network.networkPoliciesGraph, '@networkPoliciesJson').as(
-            'networkPolicies'
-        );
-
-        cy.fixture('network/centralDeployment.json').as('centralDeploymentJson');
-        cy.route('GET', api.network.deployment, '@centralDeploymentJson').as('centralDeployment');
-
-        cy.visit(networkUrl);
-
-        selectNamespaceFilters('stackrox');
-
-        cy.wait('@networkGraph');
-        cy.wait('@networkPolicies');
-    });
-
     it('should open up the Deployments Side Panel when a deployment is clicked', () => {
+        visitNetworkGraphWithMockedData();
+
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
+            cy.intercept('GET', api.network.deployment, {
+                fixture: 'network/centralDeployment.json',
+            }).as('centralDeployment');
             clickOnNodeByName(cytoscape, {
                 type: 'DEPLOYMENT',
                 name: 'central',
@@ -49,18 +33,8 @@ describe('Network Deployment Details', () => {
 describe('Network Graph Search', () => {
     withAuth();
 
-    beforeEach(() => {
-        cy.server();
-        cy.route('GET', api.network.networkPoliciesGraph).as('networkPoliciesGraph');
-        cy.route('GET', api.network.networkGraph).as('networkGraph');
-    });
-
     it('should filter to show only the deployments from the stackrox namespace and deployments connected to them', () => {
-        cy.visit(networkUrl);
-
-        selectNamespaceFilters('stackrox');
-
-        cy.wait(['@networkPoliciesGraph', '@networkGraph']);
+        visitNetworkGraphWithNamespaceFilters('stackrox');
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
             const deployments = cytoscape.nodes().filter(filterDeployments);
@@ -71,11 +45,7 @@ describe('Network Graph Search', () => {
     });
 
     it('should filter to show only the stackrox namespace and deployments connected to stackrox namespace', () => {
-        cy.visit(networkUrl);
-
-        selectNamespaceFilters('stackrox', 'kube-system');
-
-        cy.wait(['@networkPoliciesGraph', '@networkGraph']);
+        visitNetworkGraphWithNamespaceFilters('stackrox', 'kube-system');
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
             const namespaces = cytoscape.nodes().filter(filterNamespaces);
@@ -87,18 +57,9 @@ describe('Network Graph Search', () => {
     });
 
     it('should filter to show only a specific deployment and deployments connected to it', () => {
-        const deploymentName = 'central';
+        visitNetworkGraphWithNamespaceFilters('stackrox', 'kube-system');
 
-        cy.visit(networkUrl);
-
-        selectNamespaceFilters('stackrox', 'kube-system');
-
-        cy.get(networkPageSelectors.toolbar.filterSelect).then(([$searchMultiSelect]) => {
-            cy.wrap($searchMultiSelect).type('Deployment{enter}');
-            cy.wrap($searchMultiSelect).type(`${deploymentName}{enter}`);
-        });
-
-        cy.wait(['@networkPoliciesGraph', '@networkGraph']);
+        selectDeploymentFilter('central');
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
             const deployments = cytoscape.nodes().filter(filterDeployments);

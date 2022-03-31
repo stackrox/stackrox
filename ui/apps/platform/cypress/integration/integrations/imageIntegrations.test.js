@@ -290,7 +290,6 @@ describe('Image Integrations Test', () => {
         getInputByLabel('Password').type('password');
 
         cy.get(selectors.buttons.test).should('be.enabled');
-        cy.get(selectors.buttons.save).should('be.enabled').click();
         saveImageIntegrationType(integrationType);
     });
 

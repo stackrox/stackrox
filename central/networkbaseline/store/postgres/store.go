@@ -187,7 +187,10 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkBaseline) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "NetworkBaseline")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkBaseline")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -208,7 +211,10 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkBaseli
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkBaseline) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "NetworkBaseline")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkBaseline")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
@@ -274,7 +280,10 @@ func (s *storeImpl) Exists(ctx context.Context, deploymentId string) (bool, erro
 func (s *storeImpl) Get(ctx context.Context, deploymentId string) (*storage.NetworkBaseline, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkBaseline")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "NetworkBaseline")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkBaseline")
+	if err != nil {
+		return nil, false, err
+	}
 	defer release()
 
 	row := conn.QueryRow(ctx, getStmt, deploymentId)
@@ -290,20 +299,23 @@ func (s *storeImpl) Get(ctx context.Context, deploymentId string) (*storage.Netw
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, deploymentId string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkBaseline")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "NetworkBaseline")
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkBaseline")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, deploymentId); err != nil {
@@ -336,7 +348,10 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.NetworkBaseline, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkBaseline")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "NetworkBaseline")
+	conn, release, err := s.acquireConn(ctx, ops.GetMany, "NetworkBaseline")
+	if err != nil {
+		return nil, nil, err
+	}
 	defer release()
 
 	rows, err := conn.Query(ctx, getManyStmt, ids)
@@ -381,7 +396,10 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Netwo
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkBaseline")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "NetworkBaseline")
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "NetworkBaseline")
+	if err != nil {
+		return err
+	}
 	defer release()
 	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err
