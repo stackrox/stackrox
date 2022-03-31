@@ -39,7 +39,7 @@ func (s *NetworkflowStoreSuite) TearDownTest() {
 
 func (s *NetworkflowStoreSuite) TestStore() {
 	ctx := context.Background()
-	clusterId := "22"
+	clusterID := "22"
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -49,7 +49,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	defer pool.Close()
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool, clusterId)
+	store := New(ctx, pool, clusterID)
 
 	deleteBefore := time.Now().Add(orphanWindow)
 	log.Info(deleteBefore)
@@ -61,7 +61,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 			DstPort:    1,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
-		ClusterId: clusterId,
+		ClusterId: clusterID,
 	}
 
 	foundNetworkFlow, exists, err := store.Get(ctx, networkFlow.GetProps().GetSrcEntity().GetType(), networkFlow.GetProps().GetSrcEntity().GetId(), networkFlow.GetProps().GetDstEntity().GetType(), networkFlow.GetProps().GetDstEntity().GetId(), networkFlow.GetProps().GetDstPort(), networkFlow.GetProps().GetL4Protocol())
