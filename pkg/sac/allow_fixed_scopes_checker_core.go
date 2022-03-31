@@ -56,19 +56,16 @@ func (c allowFixedScopesCheckerCore) EffectiveAccessScope(resource permissions.R
 	if len(c) == 0 {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
-	rootKeySet := c[0]
-	var firstKey *ScopeKey
-	for key := range rootKeySet {
-		firstKey = &key
+	for key := range c[0] {
+		switch key.(type) {
+		case AccessModeScopeKey:
+			return c.getAccessModeEffectiveAccessScope(resource)
+		case ResourceScopeKey:
+			return c.getResourceEffectiveAccessScope(resource)
+		case ClusterScopeKey:
+			return c.getClusterEffectiveAccessScope()
+		}
 		break
-	}
-	switch (*firstKey).(type) {
-	case AccessModeScopeKey:
-		return c.getAccessModeEffectiveAccessScope(resource)
-	case ResourceScopeKey:
-		return c.getResourceEffectiveAccessScope(resource)
-	case ClusterScopeKey:
-		return c.getClusterEffectiveAccessScope()
 	}
 	return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 }
