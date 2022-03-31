@@ -17,6 +17,7 @@ import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-tab
 import { addSearchModifier, addSearchKeyword } from 'utils/searchUtils';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
+import { GlobalSearchOption } from 'types/search';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import RelatedLink from './RelatedLink';
 
@@ -27,12 +28,6 @@ type GlobalSearchResult = {
     fieldToMatch: Record<string, unknown>;
     score: number;
     location: string;
-};
-
-type GlobalSearchOption = {
-    value: string;
-    label: string;
-    type?: string;
 };
 
 type SearchTab = {

@@ -4,8 +4,8 @@ export type BasePageAction = 'create' | 'edit';
 
 export type ExtendedPageAction = BasePageAction | 'clone' | 'generate';
 
-export function getQueryObject<T>(search: string): T {
-    return qs.parse(search, { ignoreQueryPrefix: true }) as unknown as T;
+export function getQueryObject<T extends qs.ParsedQs>(search: string): T {
+    return qs.parse(search, { ignoreQueryPrefix: true }) as T;
 }
 
 export function getQueryString<T>(searchObject: T): string {
