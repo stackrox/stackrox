@@ -109,7 +109,7 @@ func filterNamespacedFields(query *v1.Query, cves []*storage.CVE) ([]*storage.CV
 func needsPostSorting(query *v1.Query) bool {
 	for _, so := range query.GetPagination().GetSortOptions() {
 		switch so.GetField() {
-		case search.Severity.String(), search.CVSS.String(), search.CVE.String():
+		case search.Severity.String(), search.CVSS.String(), search.CVE.String(), search.ImpactScore.String(), search.CVEPublishedOn.String():
 			return true
 		default:
 			return false
@@ -140,6 +140,19 @@ func sortNamespacedFields(query *v1.Query, cves []*storage.CVE) ([]*storage.CVE,
 			var result bool
 			if cves[i].GetCvss() != cves[j].GetCvss() {
 				result = cves[i].GetCvss() < cves[j].GetCvss()
+			} else {
+				result = cves[i].GetSeverity() < cves[j].GetSeverity()
+			}
+			if sortOption.Reversed {
+				return !result
+			}
+			return result
+		})
+	case search.CVE.String():
+		sort.Slice(cves, func(i, j int) bool {
+			var result bool
+			if cves[i].GetId() != cves[j].GetId() {
+				result = cves[i].GetId() < cves[j].GetId()
 			} else {
 				result = cves[i].GetSeverity() < cves[j].GetSeverity()
 			}
