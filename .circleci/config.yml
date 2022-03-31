@@ -492,6 +492,9 @@ parameters:
     type: string
     # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
     default: '^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
+  collector_version:
+    type: string
+    default: ""
 
 orbs:
   win: circleci/windows@2.2.0
