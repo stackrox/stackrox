@@ -16,6 +16,8 @@ const (
 	EnumArray   DataType = "enumarray"
 	Integer     DataType = "integer"
 	IntArray    DataType = "intarray"
+	Serial      DataType = "serial"
+	BigSerial   DataType = "bigserial"
 )
 
 // DataTypeToSQLType converts the internal representation to SQL
@@ -40,6 +42,10 @@ func DataTypeToSQLType(dataType DataType) string {
 		sqlType = "int[]"
 	case Bytes:
 		sqlType = "varchar"
+	case Serial:
+		sqlType = "serial"
+	case BigSerial:
+		sqlType = "bigserial"
 	default:
 		panic(dataType)
 	}

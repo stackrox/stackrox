@@ -10916,6 +10916,11 @@
             "name": "ProcessBaseline",
             "fields": [
               {
+                  "id": 9,
+                  "name": "pbSerialId",
+                  "type": "int32"
+                },
+              {
                 "id": 1,
                 "name": "id",
                 "type": "string",

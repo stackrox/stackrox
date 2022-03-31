@@ -21,8 +21,9 @@ message ProcessBaselineKey {
     string namespace         = 4 [(gogoproto.moretags) = "search:\"Namespace,hidden,store\""];
 }
 
+// Next Available Tag: 10
 message ProcessBaseline {
-    int32                    pbId              = 8 [(gogoproto.moretags) = 'sql:"pkSerial"'];
+    int32                    pbSerialId        = 9 [(gogoproto.moretags) = 'sql:"pkSerial"'];
     string                   id                = 1 [(gogoproto.moretags) = 'sql:"index"'];
     ProcessBaselineKey       key               = 2;
 
