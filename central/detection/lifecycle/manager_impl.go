@@ -190,6 +190,7 @@ func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator) {
 }
 
 func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator) (bool, error) {
+	log.Info("checkAndUpdateBaseline")
 	key := &storage.ProcessBaselineKey{
 		DeploymentId:  baselineKey.deploymentID,
 		ContainerName: baselineKey.containerName,
@@ -226,6 +227,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 	}
 	if !exists {
 		_, err = m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true)
+		log.Infof("checkAndUpdateBaseline (not exist) => %s", elements)
 		return false, err
 	}
 
@@ -237,6 +239,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		return userBaseline, nil
 	}
 	_, err = m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true)
+	log.Infof("checkAndUpdateBaseline => %s", userBaseline)
 	return userBaseline, err
 }
 

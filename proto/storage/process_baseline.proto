@@ -22,7 +22,8 @@ message ProcessBaselineKey {
 }
 
 message ProcessBaseline {
-    string                   id                = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    int32                    pbId              = 8 [(gogoproto.moretags) = 'sql:"pkSerial"'];
+    string                   id                = 1 [(gogoproto.moretags) = 'sql:"index"'];
     ProcessBaselineKey       key               = 2;
 
     repeated BaselineElement elements          = 3;
