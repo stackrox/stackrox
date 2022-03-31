@@ -1816,9 +1816,7 @@ commands:
             cci-export SCANNER_IMAGE "quay.io/$REPO/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
             cci-export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 
-            if [[ -z "<< pipeline.parameters.collector_version >>" ]]; then
-              check_and_set COLLECTOR_VERSION "<< pipeline.parameters.collector_version >>"
-            fi
+            check_and_set COLLECTOR_VERSION "<< pipeline.parameters.collector_version >>"
 
       - remove-existing-stackrox-resources
       - *setupGoogleAppCreds
