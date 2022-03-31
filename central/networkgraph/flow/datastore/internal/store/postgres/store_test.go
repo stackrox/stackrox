@@ -25,11 +25,12 @@ func TestNetworkflowStore(t *testing.T) {
 
 func (s *NetworkflowStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
 	if !features.PostgresDatastore.Enabled() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
+	} else {
+		s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 	}
 }
 
