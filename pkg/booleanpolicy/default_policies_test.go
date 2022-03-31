@@ -3126,6 +3126,15 @@ func (suite *DefaultPoliciesTestSuite) TestLivenessProbePolicyCriteria() {
 	}
 }
 
+func getViolations(t *testing.T, policy *storage.Policy, dep EnhancedDeployment) Violations {
+	matcher, err := BuildDeploymentMatcher(policy)
+	assert.NoError(t, err, "deployment matcher creation must succeed")
+	violations, err := matcher.MatchDeployment(nil, dep)
+	assert.NoError(t, err, "deployment matcher run must succeed")
+	assert.Empty(t, violations.ProcessViolation)
+	return violations
+}
+
 func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 	testCases := map[string]struct {
 		netpolsApplied augmentedobjs.NetworkPoliciesApplied
@@ -3168,15 +3177,6 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 		},
 	}
 
-	getViolations := func(policy *storage.Policy, dep EnhancedDeployment) Violations {
-		matcher, err := BuildDeploymentMatcher(policy)
-		suite.NoError(err, "deployment matcher creation must succeed")
-		violations, err := matcher.MatchDeployment(nil, dep)
-		suite.NoError(err, "deployment matcher run must succeed")
-		suite.Empty(violations.ProcessViolation)
-		return violations
-	}
-
 	for name, testCase := range testCases {
 		suite.Run(name, func() {
 			deployment := fixtures.GetDeployment().Clone()
@@ -3189,8 +3189,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 				&testCase.netpolsApplied,
 			)
 
-			v1 := getViolations(missingIngressPolicy, enhanced)
-			v2 := getViolations(missingEgressPolicy, enhanced)
+			v1 := getViolations(suite.T(), missingIngressPolicy, enhanced)
+			v2 := getViolations(suite.T(), missingEgressPolicy, enhanced)
 
 			allAlerts := append(v1.AlertViolations, v2.AlertViolations...)
 			suite.Equal(testCase.alerts, allAlerts)
