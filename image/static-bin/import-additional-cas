@@ -4,7 +4,7 @@ set -euo pipefail
 
 copy_existing () {
     src=$1
-    if [ -d "$src" ] && [ "$(ls -A "$src")" ]; then
+    if [ -d "$src" ] && [ "$(ls -A -I "..*" "$src")" ]; then
         cp -L "$src"/* /etc/pki/ca-trust/source/anchors
     fi
 }
