@@ -4,9 +4,9 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { PageSection, Title } from '@patternfly/react-core';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { integrationsPath } from 'routePaths';
 import { selectors } from 'reducers';
-import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 import integrationsList from '../utils/integrationsList';
 
 import IntegrationTile from './IntegrationTile';
@@ -20,9 +20,11 @@ const IntegrationTilesPage = ({
     backups,
     imageIntegrations,
     notifiers,
-    featureFlags,
     signatureIntegrations,
 }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSignatureIntegrationEnabled = isFeatureFlagEnabled('ROX_VERIFY_IMAGE_SIGNATURE');
+
     function findIntegrations(source, type) {
         const typeLowerMatches = (integration) =>
             integration.type.toLowerCase() === type.toLowerCase();
@@ -58,22 +60,15 @@ const IntegrationTilesPage = ({
         }
     }
 
-    function getIsIntegrationFeatureFlagEnabled(integration) {
-        if (integration.featureFlagDependency) {
-            return isBackendFeatureFlagEnabled(featureFlags, integration.featureFlagDependency);
-        }
-        return true;
-    }
-
     function renderIntegrationTiles(source) {
         return (
             integrationsList[source]
                 // filter out non-visible integrations
                 .filter((integration) => {
-                    const isIntegrationFeatureFlagEnabled =
-                        getIsIntegrationFeatureFlagEnabled(integration);
-                    if (!isIntegrationFeatureFlagEnabled) {
-                        return false;
+                    if (typeof integration.featureFlagDependency === 'string') {
+                        if (!isFeatureFlagEnabled(integration.featureFlagDependency)) {
+                            return false;
+                        }
                     }
                     if (source !== 'authPlugins') {
                         return true;
@@ -110,11 +105,6 @@ const IntegrationTilesPage = ({
     const authProviderTiles = renderIntegrationTiles('authProviders');
     const backupTiles = renderIntegrationTiles('backups');
     const signatureTiles = renderIntegrationTiles('signatureIntegrations');
-
-    const isSignatureIntegrationEnabled = isBackendFeatureFlagEnabled(
-        featureFlags,
-        'ROX_VERIFY_IMAGE_SIGNATURE'
-    );
 
     return (
         <>
@@ -187,12 +177,6 @@ IntegrationTilesPage.propTypes = {
     ).isRequired,
     notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
     imageIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
-    featureFlags: PropTypes.arrayOf(
-        PropTypes.shape({
-            envVar: PropTypes.string.isRequired,
-            enabled: PropTypes.bool.isRequired,
-        })
-    ).isRequired,
     signatureIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
 };
 
@@ -204,7 +188,6 @@ const mapStateToProps = createStructuredSelector({
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations,
     backups: selectors.getBackups,
-    featureFlags: selectors.getFeatureFlags,
     signatureIntegrations: selectors.getSignatureIntegrations,
 });
 
