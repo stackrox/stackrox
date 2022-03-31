@@ -679,7 +679,11 @@ ossls-notice: deps
 
 .PHONY: collector-tag
 collector-tag:
+ifdef COLLECTOR_VERSION
+	@echo $(COLLECTOR_VERSION)
+else
 	@cat COLLECTOR_VERSION
+endif
 
 .PHONY: docs-tag
 docs-tag:
