@@ -109,7 +109,7 @@ func filterNamespacedFields(query *v1.Query, cves []*storage.CVE) ([]*storage.CV
 func needsPostSorting(query *v1.Query) bool {
 	for _, so := range query.GetPagination().GetSortOptions() {
 		switch so.GetField() {
-		case search.Severity.String(), search.CVSS.String():
+		case search.Severity.String(), search.CVSS.String(), search.CVE.String():
 			return true
 		default:
 			return false
@@ -237,6 +237,7 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 	}
 	for _, vuln := range vulns {
 		buffer.WriteString(vuln.GetId())
+		buffer.WriteString(" ")
 	}
 	log.Errorf("osward -- from query %s", buffer.String())
 	buffer.Reset()
@@ -248,6 +249,7 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 	}
 	for _, vuln := range vulns {
 		buffer.WriteString(vuln.GetId())
+		buffer.WriteString(" ")
 	}
 	log.Errorf("osward -- after queryModified %s", buffer.String())
 	buffer.Reset()
@@ -259,6 +261,7 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 	}
 	for _, vuln := range vulns {
 		buffer.WriteString(vuln.GetId())
+		buffer.WriteString(" ")
 	}
 	log.Errorf("osward -- after sortingNeeded %s", buffer.String())
 	buffer.Reset()
@@ -276,6 +279,7 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 	}
 	for _, vuln := range vulns {
 		buffer.WriteString(vuln.GetId())
+		buffer.WriteString(" ")
 	}
 	log.Errorf("osward -- after pagination %s", buffer.String())
 	buffer.Reset()
