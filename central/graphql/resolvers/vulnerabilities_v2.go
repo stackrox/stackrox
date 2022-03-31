@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"bytes"
 	"context"
 	"sort"
 	"strings"
@@ -228,25 +229,39 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 	}
 	log.Errorf("osward -- sorting needed, query modified %t, %t", postSortingNeeded, queryModified)
 
+	var buffer bytes.Buffer
+
 	vulns, err := vulnLoader.FromQuery(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-	log.Errorf("osward -- vulns from query %s", vulns)
+	for _, vuln := range vulns {
+		buffer.WriteString(vuln.GetId())
+	}
+	log.Errorf("osward -- from query %s", buffer.String())
+	buffer.Reset()
 	if queryModified {
 		vulns, err = filterNamespacedFields(originalQuery, vulns)
 		if err != nil {
 			return nil, err
 		}
 	}
-	log.Errorf("osward -- after queryModified %s", vulns)
+	for _, vuln := range vulns {
+		buffer.WriteString(vuln.GetId())
+	}
+	log.Errorf("osward -- after queryModified %s", buffer.String())
+	buffer.Reset()
 	if postSortingNeeded {
 		vulns, err = sortNamespacedFields(originalQuery, vulns)
 		if err != nil {
 			return nil, err
 		}
 	}
-	log.Errorf("osward -- after sortingNeeded %s", vulns)
+	for _, vuln := range vulns {
+		buffer.WriteString(vuln.GetId())
+	}
+	log.Errorf("osward -- after sortingNeeded %s", buffer.String())
+	buffer.Reset()
 
 	// If query was modified, it means the result was not paginated since the filtering removes pagination.
 	// If post sorting was needed, which means pagination was not performed because it was removed above.
@@ -259,7 +274,11 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 		}
 		vulns = paginatedVulns.([]*storage.CVE)
 	}
-	log.Errorf("osward -- after pagination %s", vulns)
+	for _, vuln := range vulns {
+		buffer.WriteString(vuln.GetId())
+	}
+	log.Errorf("osward -- after pagination %s", buffer.String())
+	buffer.Reset()
 
 	vulnResolvers, err := resolver.wrapCVEs(vulns, err)
 	ret := make([]VulnerabilityResolver, 0, len(vulns))
