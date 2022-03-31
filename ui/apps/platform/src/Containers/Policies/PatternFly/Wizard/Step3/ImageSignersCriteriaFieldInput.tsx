@@ -84,7 +84,7 @@ function ImageSignersCriteriaFieldInput({ setValue, value, readOnly = false }): 
             >
                 <ModalBoxBody>
                     <PageSection variant="light">
-                        Select integrated trust image signers from the table below.
+                        Select trusted image signers from the table below.
                         <TableComposable variant="compact" isStickyHeader>
                             <Thead>
                                 <Tr>
