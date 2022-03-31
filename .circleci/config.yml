@@ -1791,6 +1791,17 @@ commands:
       - run:
           name: Configure Deployment Environment
           command: |
+            function check_and_set() {
+                local name="$1"
+                local value="$2"
+                if [[ -z "${value}" ]]; then
+                    echo "Parameter ${name} is missing"
+                    some_missing=1
+                else
+                    cci-export "$name" "${value}"
+                fi
+            }
+
             cci-export KUBECONFIG "$PWD/openshift/artifacts/config"
             cci-export CLAIRIFY_IMAGE_TAG 0.5.2
             cci-export OPENSHIFT_HOST "$(cat openshift/artifacts/master)"
@@ -1806,7 +1817,7 @@ commands:
             cci-export SCANNER_DB_IMAGE "quay.io/$REPO/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 
             if [[ -z "<< pipeline.parameters.collector_version >>" ]]; then
-              cci-export COLLECTOR_VERSION "<< pipeline.parameters.collector_version >>"
+              check_and_set COLLECTOR_VERSION "<< pipeline.parameters.collector_version >>"
             fi
 
       - remove-existing-stackrox-resources
