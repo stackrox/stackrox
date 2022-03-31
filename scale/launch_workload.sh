@@ -21,6 +21,14 @@ if ! kubectl -n stackrox get pvc/stackrox-db > /dev/null; then
   exit 1
 fi
 
+if [[ "$ROX_VERIFY_IMAGE_SIGNATURE" == "true" ]]; then
+  # Set environment variables.
+  kubectl -n stackrox set env deploy/central ROX_VERIFY_IMAGE_SIGNATURE=true
+  kubectl -n stackrox set env deploy/sensor ROX_VERIFY_IMAGE_SIGNATURE=true
+  # Create signature integrations to verify image signatures.
+  "${DIR}"/signatures/create-signature-integrations.sh
+fi
+
 kubectl -n stackrox delete daemonset collector
 
 kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
