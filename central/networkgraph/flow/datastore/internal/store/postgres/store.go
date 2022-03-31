@@ -35,13 +35,11 @@ const (
 	walkStmt   = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow"
 
 	// These mimic how the RocksDB version of the flow store work
-	getSinceStmt = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE (LastSeenTimestamp >= $1 OR LastSeenTimestamp IS NULL) AND ClusterId = $2"
+	getSinceStmt         = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE (LastSeenTimestamp >= $1 OR LastSeenTimestamp IS NULL) AND ClusterId = $2"
+	deleteDeploymentStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2))"
+	//deleteDeploymentStmt = "DELETE FROM networkflow nf USING (SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId FROM networkflow WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2)) ORDER BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId FOR UPDATE) del WHERE nf.Props_SrcEntity_Type = del.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = del.Props_SrcEntity_Id AND nf.Props_DstEntity_Type = del.Props_DstEntity_Type AND nf.Props_DstEntity_Id = del.Props_DstEntity_Id AND nf.Props_DstPort = del.Props_DstPort AND nf.Props_L4Protocol = del.Props_L4Protocol AND nf.ClusterId = del.ClusterId"
 
 	deleteOrphanByTimeStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND LastSeenTimestamp IS NOT NULL AND LastSeenTimestamp < $2"
-	deleteWithTimeStmt     = "DELETE FROM networkflow WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7 AND LastSeenTimestamp <= $8"
-	deleteWithNullTimeStmt = "DELETE FROM networkflow WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7 AND LastSeenTimestamp IS NULL"
-
-	getDeploymentStmt = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $1) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $1)) AND ClusterId = $2"
 )
 
 var (
@@ -108,6 +106,7 @@ func createTableNetworkflow(ctx context.Context, db *pgxpool.Pool) {
 	// The rest of the data is looked up as the graph is built from other sources.
 	table := `
 create table if not exists networkflow (
+    Flow_id bigserial,
     Props_SrcEntity_Type integer,
     Props_SrcEntity_Id varchar,
     Props_DstEntity_Type integer,
@@ -116,7 +115,7 @@ create table if not exists networkflow (
     Props_L4Protocol integer,
     LastSeenTimestamp timestamp,
     ClusterId varchar,
-    PRIMARY KEY(Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId)
+    PRIMARY KEY(Flow_id)
 ) 
 `
 
@@ -127,7 +126,10 @@ create table if not exists networkflow (
 	}
 
 	indexes := []string{
-		"create index if not exists networkflow_LastSeenTimestamp on networkflow using brin(LastSeenTimestamp)  WITH (pages_per_range = 32)",
+		"create index if not exists networkflow_LastSeenTimestamp on networkflow using brin(LastSeenTimestamp) WITH (pages_per_range = 32)",
+		"create index if not exists networkflow_src on networkflow using btree(Props_SrcEntity_Type, Props_SrcEntity_Id, ClusterId)",
+		"create index if not exists networkflow_dst on networkflow using btree(Props_DstEntity_Type, Props_DstEntity_Id, ClusterId)",
+		"create index if not exists networkflow_cluster on networkflow using btree(ClusterId)",
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
@@ -151,7 +153,7 @@ func insertIntoNetworkflow(ctx context.Context, tx pgx.Tx, clusterID string, obj
 		clusterID,
 	}
 
-	finalStr := "INSERT INTO networkflow (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT ON CONSTRAINT networkflow_pkey DO UPDATE SET LastSeenTimestamp = EXCLUDED.LastSeenTimestamp"
+	finalStr := "INSERT INTO networkflow (Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId) VALUES($1, $2, $3, $4, $5, $6, $7, $8)"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -187,11 +189,6 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 			pgutils.NilOrTime(obj.GetLastSeenTimestamp()),
 			s.clusterID,
 		})
-
-		_, err = tx.Exec(ctx, deleteStmt, obj.GetProps().GetSrcEntity().GetType(), obj.GetProps().GetSrcEntity().GetId(), obj.GetProps().GetDstEntity().GetType(), obj.GetProps().GetDstEntity().GetId(), obj.GetProps().GetDstPort(), obj.GetProps().GetL4Protocol(), s.clusterID)
-		if err != nil {
-			return err
-		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -489,7 +486,8 @@ func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFl
 // actually similar to how we deal with RocksDB flow deletion.  Now the refactor in ROX-9921 will likely change
 // how this flow store functions and thus will change how the delete functions.
 func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveFlowByDeployment, "NetworkFlow")
+	log.Infof("RemoveFlowsForDeployment => %s", id)
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
@@ -497,36 +495,21 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 	}
 	defer release()
 
-	rows, err := s.db.Query(ctx, getDeploymentStmt, id, s.clusterID)
+	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
 
-	flows, err := s.readRows(rows, nil)
-	if err != nil {
+	if _, err := tx.Exec(ctx, deleteDeploymentStmt, s.clusterID, id); err != nil {
+		log.Info(err)
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
 		return err
 	}
-	for _, flow := range flows {
-		tx, err := conn.Begin(ctx)
-		if err != nil {
-			return err
-		}
-		if flow.GetLastSeenTimestamp() == nil {
-			_, err = tx.Exec(ctx, deleteWithNullTimeStmt, flow.GetProps().GetSrcEntity().GetType(), flow.GetProps().GetSrcEntity().GetId(), flow.GetProps().GetDstEntity().GetType(), flow.GetProps().GetDstEntity().GetId(), flow.GetProps().GetDstPort(), flow.GetProps().GetL4Protocol(), s.clusterID)
-		} else {
-			_, err = tx.Exec(ctx, deleteWithTimeStmt, flow.GetProps().GetSrcEntity().GetType(), flow.GetProps().GetSrcEntity().GetId(), flow.GetProps().GetDstEntity().GetType(), flow.GetProps().GetDstEntity().GetId(), flow.GetProps().GetDstPort(), flow.GetProps().GetL4Protocol(), s.clusterID, pgutils.NilOrTime(flow.GetLastSeenTimestamp()))
-		}
 
-		if err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
-			}
-		}
-
-		if err := tx.Commit(ctx); err != nil {
-			return err
-		}
+	if err := tx.Commit(ctx); err != nil {
+		return err
 	}
 
 	return nil
