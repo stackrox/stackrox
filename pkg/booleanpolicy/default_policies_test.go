@@ -3136,6 +3136,10 @@ func getViolations(t *testing.T, policy *storage.Policy, dep EnhancedDeployment)
 }
 
 func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
+	if !features.NetworkPolicySystemPolicy.Enabled() {
+		return
+	}
+
 	testCases := map[string]struct {
 		netpolsApplied augmentedobjs.NetworkPoliciesApplied
 		alerts         []*storage.Alert_Violation
