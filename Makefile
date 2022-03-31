@@ -347,7 +347,7 @@ build-prep: deps
 .PHONY: cli-build
 cli-build: build-prep
 	RACE=0 CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
 ifdef CI
 	RACE=0 CGO_ENABLED=0 GOOS=windows $(GOBUILD) ./roxctl
 endif
@@ -359,7 +359,7 @@ cli: cli-build
 	chmod u+w $(GOPATH)/bin/roxctl
 
 cli-linux: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=linux $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
 
 cli-darwin: build-prep
 	RACE=0 CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
