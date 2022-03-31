@@ -21,23 +21,24 @@ import (
 
 // This Flow is custom to match the existing interface and how the functionality works through the system.
 // Basically for draft #1 we are trying to minimize the blast radius.
-// There are many places to improve as we go, for instance, utilizing the DB for queries.  Currently the service
+// There are many places to improve as we go, for instance, utilizing the DB for queries.  Currently, the service
 // layer will pass in functions that loop through all the results and filter them out.  Many of these types of things
 // can be handled via query and become much more efficient.  In order to really see the benefits of Postgres for
 // this store, we will need to refactor how it is used.
 const (
 	baseTable  = "networkflow"
-	countStmt  = "SELECT COUNT(*) FROM networkflow"
+	joinStmt   = " INNER JOIN (SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId, MAX(Flow_Id) AS MaxFlow FROM networkflow GROUP BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) tmpflow on nf.Props_SrcEntity_Type = tmpflow.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = tmpflow.Props_SrcEntity_Id AND nf.Props_DstEntity_Type = tmpflow.Props_DstEntity_Type AND nf.Props_DstEntity_Id = tmpflow.Props_DstEntity_Id AND nf.Props_DstPort = tmpflow.Props_DstPort AND nf.Props_L4Protocol = tmpflow.Props_L4Protocol AND nf.ClusterId = tmpflow.ClusterId and nf.Flow_id = tmpflow.MaxFlow "
+	countStmt  = "SELECT COUNT(*) FROM networkflow nf " + joinStmt
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkflow WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7)"
 
-	getStmt    = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7"
+	getStmt = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM networkflow nf " + joinStmt +
+		" WHERE nf.Props_SrcEntity_Type = $1 AND nf.Props_SrcEntity_Id = $2 AND nf.Props_DstEntity_Type = $3 AND nf.Props_DstEntity_Id = $4 AND nf.Props_DstPort = $5 AND nf.Props_L4Protocol = $6 AND nf.ClusterId = $7"
 	deleteStmt = "DELETE FROM networkflow WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7"
-	walkStmt   = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow"
+	walkStmt   = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM networkflow nf " + joinStmt
 
 	// These mimic how the RocksDB version of the flow store work
-	getSinceStmt         = "SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, LastSeenTimestamp, ClusterId FROM networkflow WHERE (LastSeenTimestamp >= $1 OR LastSeenTimestamp IS NULL) AND ClusterId = $2"
+	getSinceStmt         = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM networkflow nf " + joinStmt + " WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2"
 	deleteDeploymentStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2))"
-	//deleteDeploymentStmt = "DELETE FROM networkflow nf USING (SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId FROM networkflow WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2)) ORDER BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId FOR UPDATE) del WHERE nf.Props_SrcEntity_Type = del.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = del.Props_SrcEntity_Id AND nf.Props_DstEntity_Type = del.Props_DstEntity_Type AND nf.Props_DstEntity_Id = del.Props_DstEntity_Id AND nf.Props_DstPort = del.Props_DstPort AND nf.Props_L4Protocol = del.Props_L4Protocol AND nf.ClusterId = del.ClusterId"
 
 	deleteOrphanByTimeStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND LastSeenTimestamp IS NOT NULL AND LastSeenTimestamp < $2"
 )
@@ -104,6 +105,7 @@ type flowStoreImpl struct {
 func createTableNetworkflow(ctx context.Context, db *pgxpool.Pool) {
 	// The flow store only deals with the identifying information, so this table has been shrunk accordingly
 	// The rest of the data is looked up as the graph is built from other sources.
+	// Serial flow_id allows for inserts and no updates to speed up writes dramatically
 	table := `
 create table if not exists networkflow (
     Flow_id bigserial,
@@ -210,9 +212,6 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 }
 
 // New returns a new Store instance using the provided sql instance.
-// Todo:  Another one to minimize the blast radius as all the upstream calls expect there to be a
-// store per cluster and thus the cluster ID is not passed or stored with the flows.  Obviously with
-// PG we will store the cluster id with the flow and pass it along, but this is how we get it in the first place.
 func New(ctx context.Context, db *pgxpool.Pool, clusterID string) FlowStore {
 	createTableNetworkflow(ctx, db)
 
@@ -479,14 +478,7 @@ func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFl
 }
 
 // RemoveFlowsForDeployment removes all flows where the source OR destination match the deployment id
-// Todo: ROX-9921, deletes for an entire deployment while flows were subsequently or concurrently being
-// inserted for said deployment were causing deadlocks and other levels of nastiness.  Either the deletes
-// or the inserts needed to be slowed down and done with transaction per row type of mechanism for now.
-// So we pull all the records we want to delete and then work our way through them and delete them which is
-// actually similar to how we deal with RocksDB flow deletion.  Now the refactor in ROX-9921 will likely change
-// how this flow store functions and thus will change how the delete functions.
 func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
-	log.Infof("RemoveFlowsForDeployment => %s", id)
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
