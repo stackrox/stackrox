@@ -7,12 +7,10 @@ const nbsp = '\u00A0';
 describe('System Health Vulnerability Definitions local deployment', () => {
     withAuth();
 
-    beforeEach(() => {
-        cy.server();
-        cy.route('GET', integrationHealthApi.vulnDefinitions).as('GetVulnerabilityDefinitionsInfo');
-    });
-
     it('should have widget and up to date text', () => {
+        cy.intercept('GET', integrationHealthApi.vulnDefinitions).as(
+            'GetVulnerabilityDefinitionsInfo'
+        );
         cy.visit(systemHealthUrl);
         cy.wait('@GetVulnerabilityDefinitionsInfo');
 
@@ -32,11 +30,9 @@ describe('System Health Vulnerability Definitions fixtures', () => {
         const currentDatetime = new Date('2020-12-10T03:04:59.377369440Z'); // exactly 24 hours
         cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
 
-        cy.server();
-        cy.route('GET', integrationHealthApi.vulnDefinitions, {
-            lastUpdatedTimestamp: '2020-12-09T03:04:59.377369440Z',
+        cy.intercept('GET', integrationHealthApi.vulnDefinitions, {
+            body: { lastUpdatedTimestamp: '2020-12-09T03:04:59.377369440Z' },
         }).as('GetVulnerabilityDefinitionsInfo');
-
         cy.visit(systemHealthUrl);
         cy.wait('@GetVulnerabilityDefinitionsInfo');
 
