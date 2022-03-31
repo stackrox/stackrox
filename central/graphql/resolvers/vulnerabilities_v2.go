@@ -110,8 +110,10 @@ func needsPostSorting(query *v1.Query) bool {
 	for _, so := range query.GetPagination().GetSortOptions() {
 		switch so.GetField() {
 		case search.Severity.String(), search.CVSS.String(), search.CVE.String(), search.ImpactScore.String():
+			log.Errorf("osward -- sort option (true): %s", so.GetField())
 			return true
 		default:
+			log.Errorf("osward -- sort option (false): %s", so.GetField())
 			return false
 		}
 	}
@@ -238,7 +240,6 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 		return nil, err
 	}
 
-	log.Errorf("osward -- query passed in %s", query)
 	query = tryUnsuppressedQuery(query)
 	log.Errorf("osward -- query after unsupressed %s", query)
 
