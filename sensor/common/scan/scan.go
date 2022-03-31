@@ -26,9 +26,11 @@ var (
 	log = logging.LoggerForModule()
 
 	// Used for testing purposes only to not require setting up registry / scanner.
+	// NOTE: If you change these, make sure to also change the respective values within the tests.
 	scanImg                  = scanImage
-	fetchSignaturesWithRetry = signatures.FetchImageSignaturesWithRetry
+	fetchSignaturesWithRetry = signatures.FetchImageSignaturesWithRetries
 	getMatchingRegistry      = registry.Singleton().GetRegistryForImage
+	scannerClientSingleton   = scannerclient.GRPCClientSingleton
 )
 
 // EnrichLocalImage will enrich a cluster-local image with scan results from local scanner as well as signatures
@@ -36,7 +38,14 @@ var (
 // vulnerabilities will be fetched from central, returning the fully enriched image.
 // It will return any errors that may occur during scanning, fetching signatures or during reaching out to central.
 func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, ci *storage.ContainerImage) (*storage.Image, error) {
-	imgName := ci.GetName()
+	imgName := ci.GetName().GetFullName()
+
+	// Check if there is a local Scanner.
+	// No need to continue if there is no local Scanner.
+	scannerClient := scannerClientSingleton()
+	if scannerClient == nil {
+		return nil, ErrNoLocalScanner
+	}
 
 	// Find the associated registry of the image.
 	matchingRegistry, err := getMatchingRegistry(ci.GetName())
@@ -56,11 +65,8 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 
 	log.Debugf("Received metadata for image %q: %v", imgName, metadata)
 
-	// Retrieve the image ID with best-effort from image and metadata.
-	imgID := utils.GetSHAFromIDAndMetadata(image.GetId(), metadata)
-
 	// Scan the image via local scanner.
-	scannerResp, err := scanImg(ctx, image, matchingRegistry)
+	scannerResp, err := scanImg(ctx, image, matchingRegistry, scannerClient)
 	if err != nil {
 		log.Debugf("Scan for image %q failed: %v", imgName, err)
 		return nil, errors.Wrapf(err, "scanning image %q locally", imgName)
@@ -78,6 +84,9 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 		}
 	}
 
+	// Retrieve the image ID with best-effort from image and metadata.
+	imgID := utils.GetSHAFromIDAndMetadata(image.GetId(), metadata)
+
 	// Send local enriched data to central to receive a fully enrich image. This includes image vulnerabilities and
 	// signature verification results.
 	centralResp, err := centralClient.EnrichLocalImageInternal(ctx, &v1.EnrichLocalImageInternalRequest{
@@ -89,7 +98,7 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 		ImageSignature: &storage.ImageSignature{Signatures: sigs},
 	})
 	if err != nil {
-		log.Debugf("Unable to retrieve image vulnerabilities for %q: %v", imgName, err)
+		log.Debugf("Unable to enrich image %q: %v", imgName, err)
 		return nil, errors.Wrapf(err, "enriching image %q via central", imgName)
 	}
 
@@ -102,14 +111,7 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 // It will return ErrNoLocalScanner if no local scanner is available. It will return any errors that occurred during
 // receiving scan results from local scanner or if the scan status was non-successful.
 func scanImage(ctx context.Context, image *storage.Image,
-	registry registryTypes.Registry) (*scannerV1.GetImageComponentsResponse, error) {
-	// Check if there is a local Scanner.
-	// No need to continue if there is no local Scanner.
-	scannerClient := scannerclient.GRPCClientSingleton()
-	if scannerClient == nil {
-		return nil, ErrNoLocalScanner
-	}
-
+	registry registryTypes.Registry, scannerClient *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
 	// Get the image analysis from the local Scanner.
 	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, registry.Config())
 	if err != nil {

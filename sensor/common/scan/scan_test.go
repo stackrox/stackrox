@@ -13,7 +13,7 @@ import (
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
-	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/common/scannerclient"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -38,7 +38,11 @@ func (i *fakeImageServiceClient) EnrichLocalImageInternal(ctx context.Context,
 
 type scanTestSuite struct {
 	suite.Suite
-	env *envisolator.EnvIsolator
+	env                      *envisolator.EnvIsolator
+	fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
+		registry registryTypes.Registry) ([]*storage.Signature, error)
+	getMatchingRegistry    func(image *storage.ImageName) (registryTypes.Registry, error)
+	scannerClientSingleton func() *scannerclient.Client
 }
 
 func TestScanSuite(t *testing.T) {
@@ -55,6 +59,9 @@ func (suite *scanTestSuite) createMockImageServiceClient(img *storage.Image, fai
 func (suite *scanTestSuite) SetupSuite() {
 	suite.env = envisolator.NewEnvIsolator(suite.T())
 	suite.env.Setenv("ROX_VERIFY_IMAGE_SIGNATURE", "true")
+	suite.fetchSignaturesWithRetry = fetchSignaturesWithRetry
+	suite.getMatchingRegistry = getMatchingRegistry
+	suite.scannerClientSingleton = scannerClientSingleton
 }
 
 func (suite *scanTestSuite) TearDownSuite() {
@@ -63,8 +70,9 @@ func (suite *scanTestSuite) TearDownSuite() {
 
 func (suite *scanTestSuite) AfterTest(_, _ string) {
 	scanImg = scanImage
-	fetchSignaturesWithRetry = signatures.FetchImageSignaturesWithRetry
-	getMatchingRegistry = registry.Singleton().GetRegistryForImage
+	fetchSignaturesWithRetry = suite.fetchSignaturesWithRetry
+	getMatchingRegistry = suite.getMatchingRegistry
+	scannerClientSingleton = suite.scannerClientSingleton
 }
 
 func (suite *scanTestSuite) TestLocalEnrichment() {
@@ -74,6 +82,7 @@ func (suite *scanTestSuite) TestLocalEnrichment() {
 	getMatchingRegistry = func(image *storage.ImageName) (registryTypes.Registry, error) {
 		return &fakeRegistry{fail: false}, nil
 	}
+	scannerClientSingleton = emptyScannerClientSingleton
 
 	// Original values will be restored within the teardown function. This will be done after each test.
 
@@ -96,7 +105,7 @@ func (suite *scanTestSuite) TestLocalEnrichment() {
 func (suite *scanTestSuite) TestEnrichImageFailures() {
 	type testCase struct {
 		scanImg func(ctx context.Context, image *storage.Image,
-			registry registryTypes.Registry) (*scannerV1.GetImageComponentsResponse, error)
+			registry registryTypes.Registry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
 		fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
 			registry registryTypes.Registry) ([]*storage.Signature, error)
 		getMatchingRegistry    func(image *storage.ImageName) (registryTypes.Registry, error)
@@ -156,6 +165,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 			scanImg = c.scanImg
 			fetchSignaturesWithRetry = c.fetchSignaturesWithRetry
 			getMatchingRegistry = c.getMatchingRegistry
+			scannerClientSingleton = emptyScannerClientSingleton
 			// Need to manually trigger after test here, otherwise it would only be called at the end of table tests.
 			defer suite.AfterTest("", "")
 			img, err := EnrichLocalImage(context.Background(), c.fakeImageServiceClient, containerImg)
@@ -168,7 +178,7 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 }
 
 func successfulScan(_ context.Context, _ *storage.Image,
-	_ registryTypes.Registry) (*scannerV1.GetImageComponentsResponse, error) {
+	_ registryTypes.Registry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
 	return &scannerV1.GetImageComponentsResponse{
 		ScannerVersion: "1",
 		Status:         scannerV1.ScanStatus_SUCCEEDED,
@@ -194,13 +204,17 @@ func successfulFetchSignatures(_ context.Context, _ signatures.SignatureFetcher,
 }
 
 func failingScan(_ context.Context, _ *storage.Image,
-	_ registryTypes.Registry) (*scannerV1.GetImageComponentsResponse, error) {
+	_ registryTypes.Registry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
 	return nil, errors.New("failed scanning image")
 }
 
 func failingFetchSignatures(_ context.Context, _ signatures.SignatureFetcher, _ *storage.Image,
 	_ registryTypes.Registry) ([]*storage.Signature, error) {
 	return nil, errors.New("failed fetching signatures")
+}
+
+func emptyScannerClientSingleton() *scannerclient.Client {
+	return &scannerclient.Client{}
 }
 
 type fakeRegistry struct {
