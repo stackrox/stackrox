@@ -71,6 +71,8 @@ func newCosignPublicKeyVerifier(config *storage.CosignPublicKeyVerification) (*c
 // as well as the claim verification of the payload of the signature.
 func (c *cosignPublicKeyVerifier) VerifySignature(ctx context.Context,
 	image *storage.Image) (storage.ImageSignatureVerificationResult_Status, error) {
+	log.Debugf("Verifying signatures of image %q with the following public keys: %+v",
+		image.GetName().GetFullName(), c.parsedPublicKeys)
 	// Short circuit if we do not have any public keys configured to verify against.
 	if len(c.parsedPublicKeys) == 0 {
 		return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, errNoKeysToVerifyAgainst
