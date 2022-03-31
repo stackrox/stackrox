@@ -28,8 +28,10 @@ import { useTheme } from 'Containers/ThemeProvider';
 import asyncComponent from 'Components/AsyncComponent';
 import ProtectedRoute from 'Components/ProtectedRoute';
 import ErrorBoundary from 'Containers/ErrorBoundary';
+/*
 import { knownBackendFlags } from 'utils/featureFlags';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+*/
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
@@ -68,10 +70,14 @@ const AsyncSystemHealthPagePF = asyncComponent(
 
 function Body(): ReactElement {
     const { isDarkMode } = useTheme();
+    /*
     const isSystemHealthPatternFlyEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_SYSTEM_HEALTH_PF
     );
     const isVulnReportingEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
+    */
+    const isSystemHealthPatternFlyEnabled = false;
+    const isVulnReportingEnabled = true;
     return (
         <div
             className={`flex flex-col h-full w-full relative overflow-auto ${
