@@ -235,8 +235,10 @@ describe('Policies table', () => {
             cy.get(trSelector).then(([tr]) => {
                 cy.wrap(tr).find(selectors.table.actionsToggleButton).click();
                 cy.wrap(tr)
-                    .find(`${selectors.table.actionsItemButton}:contains("Delete policy")`)
-                    .should('be.disabled');
+                    .find(
+                        `${selectors.table.actionsItemButton}:contains("Cannot delete a default policy")`
+                    )
+                    .should('have.attr', 'aria-disabled', 'true');
             });
         });
     });
