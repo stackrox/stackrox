@@ -303,8 +303,9 @@ func (d *detectorImpl) runDetector() {
 			return
 		case scanOutput := <-d.enricher.outputChan():
 			alerts := d.unifiedDetector.DetectDeployment(deploytime.DetectionContext{}, booleanpolicy.EnhancedDeployment{
-				Deployment: scanOutput.deployment,
-				Images:     scanOutput.images,
+				Deployment:             scanOutput.deployment,
+				Images:                 scanOutput.images,
+				NetworkPoliciesApplied: scanOutput.networkPoliciesApplied,
 			})
 
 			sort.Slice(alerts, func(i, j int) bool {

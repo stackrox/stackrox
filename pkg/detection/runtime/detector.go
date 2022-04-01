@@ -86,7 +86,7 @@ func (d *detectorImpl) detectForDeployment(
 	var cacheReceptable booleanpolicy.CacheReceptacle
 	deployment := enhancedDeployment.Deployment
 
-	augmentedDeploy, err := augmentedobjs.ConstructDeployment(deployment, enhancedDeployment.Images)
+	augmentedDeploy, err := augmentedobjs.ConstructDeployment(deployment, enhancedDeployment.Images, nil)
 	if err != nil {
 		return nil, err
 	}

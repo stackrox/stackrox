@@ -38,8 +38,9 @@ type CacheReceptacle struct {
 
 // EnhancedDeployment holds the deployment object plus the additional resources used for the matching.
 type EnhancedDeployment struct {
-	Deployment *storage.Deployment
-	Images     []*storage.Image
+	Deployment             *storage.Deployment
+	Images                 []*storage.Image
+	NetworkPoliciesApplied *augmentedobjs.NetworkPoliciesApplied
 }
 
 // Violations represents a list of violation sub-objects.
