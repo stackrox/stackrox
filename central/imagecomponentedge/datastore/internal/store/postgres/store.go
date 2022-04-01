@@ -77,6 +77,7 @@ create table if not exists images (
     Metadata_V1_Labels jsonb,
     Scan_ScanTime timestamp,
     Scan_OperatingSystem varchar,
+    Signature_Fetched timestamp,
     Components integer,
     Cves integer,
     FixableCves integer,

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -48,6 +49,13 @@ var (
 	emptyCtx = context.Background()
 
 	imageClusterIDFieldPath = imageMapping.ImageDeploymentOptions.MustGet(search.ClusterID.String()).GetFieldPath()
+
+	allImagesQuery = search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).
+			ProtoQuery()
+
+	imagesWithSignatureVerificationResultsQuery = search.NewQueryBuilder().
+							AddStringsHighlighted(search.ClusterID, search.WildcardString).
+							AddStrings(search.ImageSignatureFetchedTime, search.WildcardString).ProtoQuery()
 )
 
 // Singleton returns the singleton reprocessor loop
@@ -350,12 +358,12 @@ func (l *loopImpl) waitForIndexing() {
 	}
 }
 
-func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption, imgReprocessingFunc imageReprocessingFunc) {
+func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption,
+	imgReprocessingFunc imageReprocessingFunc, imageQuery *v1.Query) {
 	if l.stopSig.IsDone() {
 		return
 	}
-	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).ProtoQuery()
-	results, err := l.images.Search(allAccessCtx, query)
+	results, err := l.images.Search(allAccessCtx, imageQuery)
 	if err != nil {
 		log.Errorf("error searching for active image IDs: %v", err)
 		return
@@ -500,7 +508,7 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 
 	l.reprocessNodes()
 	l.reprocessWatchedImages()
-	l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImage)
+	l.reprocessImagesAndResyncDeployments(imageFetchOpt, l.enrichImage, allImagesQuery)
 
 	l.reprocessingStarted.Reset()
 	l.reprocessingComplete.Signal()
@@ -509,7 +517,7 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 func (l *loopImpl) runSignatureVerificationReprocessing() {
 	l.reprocessWatchedImages()
 	l.reprocessImagesAndResyncDeployments(imageEnricher.ForceRefetchSignaturesOnly,
-		l.forceEnrichImageSignatureVerificationResults)
+		l.forceEnrichImageSignatureVerificationResults, imagesWithSignatureVerificationResultsQuery)
 
 }
 
