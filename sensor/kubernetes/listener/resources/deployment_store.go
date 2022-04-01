@@ -65,6 +65,24 @@ func (ds *DeploymentStore) getDeploymentsByIDs(namespace string, idSet set.Strin
 	return deployments
 }
 
+func (ds *DeploymentStore) getAllDeploymentsInNamespace(namespace string) (deployments []*deploymentWrap) {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
+	ids := ds.deploymentIDs[namespace]
+	if ids == nil {
+		return
+	}
+	for id := range ids {
+		wrap := ds.deployments[id]
+		if wrap == nil {
+			continue
+		}
+		deployments = append(deployments, wrap)
+	}
+	return
+}
+
 func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector) (matching []*deploymentWrap) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()

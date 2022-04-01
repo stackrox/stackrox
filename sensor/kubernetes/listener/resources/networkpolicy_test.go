@@ -13,7 +13,7 @@ import (
 )
 
 func TestGetSelector(t *testing.T) {
-	if features.NetworkPolicySystemPolicy.Enabled() {
+	if !features.NetworkPolicySystemPolicy.Enabled() {
 		return
 	}
 
@@ -142,7 +142,7 @@ func TestGetSelector(t *testing.T) {
 }
 
 func TestUpdateDeploymentsFromStore(t *testing.T) {
-	if features.NetworkPolicySystemPolicy.Enabled() {
+	if !features.NetworkPolicySystemPolicy.Enabled() {
 		return
 	}
 

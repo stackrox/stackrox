@@ -32,14 +32,14 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, _ interface{}, action centra
 	roxNetpol := networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()
 
 	if features.NetworkPolicySystemPolicy.Enabled() {
-		sel := h.getSelector(roxNetpol, action)
+		sel, isEmpty := h.getSelector(roxNetpol, action)
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			h.netpolStore.Delete(roxNetpol.GetId(), roxNetpol.GetNamespace())
 		} else {
 			h.netpolStore.Upsert(roxNetpol)
 		}
 
-		h.updateDeploymentsFromStore(roxNetpol, sel)
+		h.updateDeploymentsFromStore(roxNetpol, sel, isEmpty)
 
 		return []*central.SensorEvent{
 			{
@@ -63,11 +63,13 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, _ interface{}, action centra
 	}
 }
 
-func (h *networkPolicyDispatcher) getSelector(np *storage.NetworkPolicy, action central.ResourceAction) selector {
+func (h *networkPolicyDispatcher) getSelector(np *storage.NetworkPolicy, action central.ResourceAction) (selector, bool) {
 	var sel selector
+	isEmpty := true
 	oldWrap := h.netpolStore.Get(np.GetId())
 	if oldWrap != nil {
 		sel = SelectorFromMap(oldWrap.GetSpec().GetPodSelector().GetMatchLabels())
+		isEmpty = len(oldWrap.GetSpec().GetPodSelector().GetMatchLabels()) == 0
 	}
 
 	if action == central.ResourceAction_UPDATE_RESOURCE {
@@ -75,15 +77,24 @@ func (h *networkPolicyDispatcher) getSelector(np *storage.NetworkPolicy, action 
 			sel = or(sel, SelectorFromMap(np.GetSpec().GetPodSelector().GetMatchLabels()))
 		} else {
 			sel = SelectorFromMap(np.GetSpec().GetPodSelector().GetMatchLabels())
+			isEmpty = len(np.GetSpec().GetPodSelector().GetMatchLabels()) == 0
 		}
 	} else if action == central.ResourceAction_CREATE_RESOURCE {
 		sel = SelectorFromMap(np.GetSpec().GetPodSelector().GetMatchLabels())
+		isEmpty = len(np.GetSpec().GetPodSelector().GetMatchLabels()) == 0
 	}
-	return sel
+	return sel, isEmpty
 }
 
-func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sel selector) {
-	for _, deploymentWrap := range h.deploymentStore.getMatchingDeployments(np.GetNamespace(), sel) {
-		h.detector.ProcessDeployment(deploymentWrap.GetDeployment(), central.ResourceAction_UPDATE_RESOURCE)
+func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sel selector, isEmptySelector bool) {
+	if !isEmptySelector {
+		for _, deploymentWrap := range h.deploymentStore.getMatchingDeployments(np.GetNamespace(), sel) {
+			h.detector.ProcessDeployment(deploymentWrap.GetDeployment(), central.ResourceAction_UPDATE_RESOURCE)
+		}
+	} else {
+		// Network Policies with no selector match with all the deployments in the namespace
+		for _, deploymentWrap := range h.deploymentStore.getAllDeploymentsInNamespace(np.GetNamespace()) {
+			h.detector.ProcessDeployment(deploymentWrap.GetDeployment(), central.ResourceAction_UPDATE_RESOURCE)
+		}
 	}
 }
