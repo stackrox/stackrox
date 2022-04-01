@@ -54,7 +54,6 @@ type enricherImpl struct {
 
 	signatureIntegrationGetter SignatureIntegrationGetter
 	signatureVerifier          signatureVerifierForIntegrations
-	signatureFetcherLimiter    *rate.Limiter
 	signatureFetcher           signatures.SignatureFetcher
 
 	imageGetter ImageGetter
@@ -568,10 +567,6 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 
 	var fetchedSignatures []*storage.Signature
 	for _, matchingReg := range matchingRegistries {
-		err := e.signatureFetcherLimiter.Wait(ctx)
-		if err != nil {
-			return false, errors.Wrapf(err, "waiting for rate limiter for registry %q", matchingReg.Name())
-		}
 		// FetchImageSignaturesWithRetries will try fetching of signatures with retries.
 		sigs, err := signatures.FetchImageSignaturesWithRetries(ctx, e.signatureFetcher, img, matchingReg)
 		fetchedSignatures = append(fetchedSignatures, sigs...)
