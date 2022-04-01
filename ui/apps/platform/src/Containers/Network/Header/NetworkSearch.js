@@ -16,6 +16,7 @@ import './NetworkSearch.css';
 function NetworkSearch({
     searchOptions,
     searchModifiers,
+    selectedNamespaceFilters,
     setSearchOptions,
     setSearchSuggestions,
     closeSidePanel,
@@ -27,10 +28,15 @@ function NetworkSearch({
         }
     }
 
-    let prependAutocompleteQuery;
     const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY);
-    if (orchestratorComponentShowState !== 'true') {
-        prependAutocompleteQuery = [...orchestratorComponentOption];
+    const prependAutocompleteQuery =
+        orchestratorComponentShowState !== 'true' ? [...orchestratorComponentOption] : [];
+
+    if (selectedNamespaceFilters.length) {
+        prependAutocompleteQuery.push({ value: 'Namespace:', type: 'categoryOption' });
+        selectedNamespaceFilters.forEach((nsFilter) =>
+            prependAutocompleteQuery.push({ value: nsFilter })
+        );
     }
 
     return (
@@ -52,6 +58,7 @@ function NetworkSearch({
 const mapStateToProps = createStructuredSelector({
     searchOptions: selectors.getNetworkSearchOptions,
     searchModifiers: selectors.getNetworkSearchModifiers,
+    selectedNamespaceFilters: selectors.getSelectedNamespaceFilters,
 });
 
 const mapDispatchToProps = {
