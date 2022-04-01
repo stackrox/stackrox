@@ -32,7 +32,7 @@ function* getUserPermissions() {
         const result = yield call(fetchUserRolePermissions);
         yield put(rolesActions.fetchUserRolePermissions.success(result.response));
     } catch (error) {
-        // do nothing
+        yield put(actions.fetchUserRolePermissions.failure(error));
     }
 }
 

@@ -17,14 +17,45 @@ const featureFlags = (state = [], action) => {
     return state;
 };
 
+const featureFlagsError = (state = null, action) => {
+    switch (action.type) {
+        case types.FETCH_FEATURE_FLAGS.FAILURE:
+            return action.error;
+
+        case types.FETCH_FEATURE_FLAGS.SUCCESS:
+            return null;
+
+        default:
+            return state;
+    }
+};
+
+const isLoadingFeatureFlags = (state = true, action) => {
+    // Assume featureFlagSagas call fetchFeatureFlags.
+    switch (action.type) {
+        case types.FETCH_FEATURE_FLAGS.FAILURE:
+        case types.FETCH_FEATURE_FLAGS.SUCCESS:
+            return false;
+
+        default:
+            return state;
+    }
+};
+
 const reducer = combineReducers({
     featureFlags,
+    featureFlagsError,
+    isLoadingFeatureFlags,
 });
 
 const getFeatureFlags = (state) => state.featureFlags;
+const getFeatureFlagsError = (state) => state.featureFlagsError;
+const getIsLoadingFeatureFlags = (state) => state.isLoadingFeatureFlags;
 
 export const selectors = {
     getFeatureFlags,
+    getFeatureFlagsError,
+    getIsLoadingFeatureFlags,
 };
 
 export default reducer;
