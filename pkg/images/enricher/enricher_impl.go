@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/registries"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
-	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
@@ -570,23 +568,13 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 
 	var fetchedSignatures []*storage.Signature
 	for _, matchingReg := range matchingRegistries {
-		// During fetching, there may occur transient errors. If that's the case, we will retry.
-		err = retry.WithRetry(func() error {
-			// Wait until limiter allows entrance.
-			err := e.signatureFetcherLimiter.Wait(ctx)
-			if err != nil {
-				return errors.Wrapf(err, "waiting for rate limiter for registry %q", matchingReg.Name())
-			}
-			// Will always return correctly marked errors as retryable / non-retryable.
-			fetchedSignatures, err = e.fetchAndAppendSignatures(ctx, img, matchingReg, fetchedSignatures)
-			return err
-		},
-			retry.Tries(2),
-			retry.OnlyRetryableErrors(),
-			retry.BetweenAttempts(func(_ int) {
-				time.Sleep(500 * time.Millisecond)
-			}))
-
+		err := e.signatureFetcherLimiter.Wait(ctx)
+		if err != nil {
+			return false, errors.Wrapf(err, "waiting for rate limiter for registry %q", matchingReg.Name())
+		}
+		// FetchImageSignaturesWithRetries will try fetching of signatures with retries.
+		sigs, err := signatures.FetchImageSignaturesWithRetries(ctx, e.signatureFetcher, img, matchingReg)
+		fetchedSignatures = append(fetchedSignatures, sigs...)
 		// Skip other matching registries if we have a successful fetch of signatures, irrespective of whether
 		// signatures were found or not. Retrying this for other registries won't change the fact that signatures are
 		// available or not.
@@ -616,25 +604,6 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		Signatures: fetchedSignatures,
 	}
 	return true, nil
-}
-
-func (e *enricherImpl) fetchAndAppendSignatures(ctx context.Context, img *storage.Image, registry registryTypes.ImageRegistry,
-	fetchedSignatures []*storage.Signature) ([]*storage.Signature, error) {
-	sigFetchCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-	sigs, err := e.signatureFetcher.FetchSignatures(sigFetchCtx, img, registry)
-	if err != nil {
-		return fetchedSignatures, err
-	}
-
-	for _, sig := range sigs {
-		// TODO(ROX-9688): Replace with generated generic contains function.
-		if !containsSignature(sig, fetchedSignatures) {
-			fetchedSignatures = append(fetchedSignatures, sig)
-		}
-	}
-
-	return fetchedSignatures, nil
 }
 
 func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
@@ -791,13 +760,4 @@ func FillScanStats(i *storage.Image) {
 			}
 		}
 	}
-}
-
-func containsSignature(sig *storage.Signature, sigs []*storage.Signature) bool {
-	for _, s := range sigs {
-		if proto.Equal(sig, s) {
-			return true
-		}
-	}
-	return false
 }

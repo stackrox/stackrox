@@ -64,7 +64,7 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, ci *storage.
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
-	img, err := scan.ScanImage(ctx, svc, ci)
+	img, err := scan.EnrichLocalImage(ctx, svc, ci)
 	return &v1.ScanImageInternalResponse{
 		Image: img,
 	}, err
