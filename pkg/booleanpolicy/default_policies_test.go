@@ -3126,12 +3126,12 @@ func (suite *DefaultPoliciesTestSuite) TestLivenessProbePolicyCriteria() {
 	}
 }
 
-func getViolations(t *testing.T, policy *storage.Policy, dep EnhancedDeployment) Violations {
+func (suite *DefaultPoliciesTestSuite) getViolations(policy *storage.Policy, dep EnhancedDeployment) Violations {
 	matcher, err := BuildDeploymentMatcher(policy)
-	assert.NoError(t, err, "deployment matcher creation must succeed")
+	suite.NoError(err, "deployment matcher creation must succeed")
 	violations, err := matcher.MatchDeployment(nil, dep)
-	assert.NoError(t, err, "deployment matcher run must succeed")
-	assert.Empty(t, violations.ProcessViolation)
+	suite.NoError(err, "deployment matcher run must succeed")
+	suite.Empty(violations.ProcessViolation)
 	return violations
 }
 
@@ -3193,8 +3193,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 				&testCase.netpolsApplied,
 			)
 
-			v1 := getViolations(suite.T(), missingIngressPolicy, enhanced)
-			v2 := getViolations(suite.T(), missingEgressPolicy, enhanced)
+			v1 := suite.getViolations(missingIngressPolicy, enhanced)
+			v2 := suite.getViolations(missingEgressPolicy, enhanced)
 
 			allAlerts := append(v1.AlertViolations, v2.AlertViolations...)
 			suite.Equal(testCase.alerts, allAlerts)
