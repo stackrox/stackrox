@@ -43,12 +43,16 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"timeoutSeconds: Int!",
 	}))
 	utils.Must(builder.AddType("Alert", []string{
+		"clusterId: String!",
+		"clusterName: String!",
 		"deployment: Alert_Deployment",
 		"enforcement: Alert_Enforcement",
 		"firstOccurred: Time",
 		"id: ID!",
 		"image: ContainerImage",
 		"lifecycleStage: LifecycleStage!",
+		"namespace: String!",
+		"namespaceId: String!",
 		"policy: Policy",
 		"processViolation: Alert_ProcessViolation",
 		"resolvedAt: Time",
@@ -1718,6 +1722,18 @@ func (resolver *alertResolver) ensureData(ctx context.Context) {
 	}
 }
 
+func (resolver *alertResolver) ClusterId(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *alertResolver) ClusterName(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetClusterName()
+	return value
+}
+
 func (resolver *alertResolver) Deployment(ctx context.Context) (*alert_DeploymentResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetDeployment()
@@ -1756,6 +1772,18 @@ func (resolver *alertResolver) LifecycleStage(ctx context.Context) string {
 		value = resolver.list.GetLifecycleStage()
 	}
 	return value.String()
+}
+
+func (resolver *alertResolver) Namespace(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *alertResolver) NamespaceId(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNamespaceId()
+	return value
 }
 
 func (resolver *alertResolver) Policy(ctx context.Context) (*policyResolver, error) {
