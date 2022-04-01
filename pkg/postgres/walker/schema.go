@@ -315,6 +315,24 @@ func (s *Schema) LocalPrimaryKeys() []Field {
 	return pks
 }
 
+// LogicalPrimaryKeys are the ids that reference the record when we use a serial key
+// Will include the primary key if not serial and the index column if using serial key
+func (s *Schema) LogicalPrimaryKeys() []Field {
+	var pks []Field
+	for _, f := range s.Fields {
+		if s.HasSerialKey {
+			if len(f.Options.Index) > 0 {
+				pks = append(pks, f)
+			}
+		} else {
+			if f.Options.PrimaryKey {
+				pks = append(pks, f)
+			}
+		}
+	}
+	return pks
+}
+
 // IndexFields are the fields used in indexes for the current schema
 func (s *Schema) IndexFields() []Field {
 	var indexes []Field
@@ -411,5 +429,5 @@ func (f Field) Getter(prefix string) string {
 
 // Include returns if the field should be included in the schema
 func (f Field) Include() bool {
-	return f.Options.PrimaryKey || f.Search.Enabled || f.ObjectGetter.variable
+	return f.Options.PrimaryKey || f.Search.Enabled || f.ObjectGetter.variable || len(f.Options.Index) > 0
 }

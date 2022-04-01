@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "watchedimages"
-	countStmt  = "SELECT COUNT(*) FROM watchedimages"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM watchedimages WHERE Name = $1)"
-
-	getStmt     = "SELECT serialized FROM watchedimages WHERE Name = $1"
-	deleteStmt  = "DELETE FROM watchedimages WHERE Name = $1"
-	walkStmt    = "SELECT serialized FROM watchedimages"
-	getIDsStmt  = "SELECT Name FROM watchedimages"
-	getManyStmt = "SELECT serialized FROM watchedimages WHERE Name = ANY($1::text[])"
-
+	baseTable      = "watchedimages"
+	countStmt      = "SELECT COUNT(*) FROM watchedimages"
+	getStmt        = "SELECT t1.serialized FROM watchedimages t1 WHERE t1.Name = $1"
+	deleteStmt     = "DELETE FROM watchedimages t1 WHERE t1.Name = $1"
+	walkStmt       = "SELECT serialized FROM watchedimages"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM watchedimages t1 WHERE t1.Name = $1)"
+	getIDsStmt     = "SELECT distinct Name FROM watchedimages"
+	getManyStmt    = "SELECT serialized FROM watchedimages WHERE Name = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM watchedimages WHERE Name = ANY($1::text[])"
 
 	batchAfter = 100
@@ -102,11 +100,13 @@ func insertIntoWatchedimages(ctx context.Context, tx pgx.Tx, obj *storage.Watche
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetName(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO watchedimages (Name, serialized) VALUES($1, $2) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -126,10 +126,7 @@ func (s *storeImpl) copyFromWatchedimages(ctx context.Context, tx pgx.Tx, objs .
 	var deletes []string
 
 	copyCols := []string{
-
-		"name",
-
-		"serialized",
+		"name", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -267,7 +264,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, name string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "WatchedImage")
-
 	row := s.db.QueryRow(ctx, existsStmt, name)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -285,7 +281,6 @@ func (s *storeImpl) Get(ctx context.Context, name string) (*storage.WatchedImage
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, name)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -317,7 +312,6 @@ func (s *storeImpl) Delete(ctx context.Context, name string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, name); err != nil {
 		return err
 	}

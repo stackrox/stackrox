@@ -55,7 +55,6 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 
 	reportConfiguration := &storage.ReportConfiguration{}
 	s.NoError(testutils.FullInit(reportConfiguration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundReportConfiguration, exists, err := store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 	reportConfigurationCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(reportConfigurationCount, 1)
-
 	reportConfigurationExists, err := store.Exists(ctx, reportConfiguration.GetId())
 	s.NoError(err)
 	s.True(reportConfigurationExists)
 	s.NoError(store.Upsert(ctx, reportConfiguration))
-
 	foundReportConfiguration, exists, err = store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(reportConfiguration, foundReportConfiguration)
-
 	s.NoError(store.Delete(ctx, reportConfiguration.GetId()))
 	foundReportConfiguration, exists, err = store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)

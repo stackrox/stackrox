@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "alerts"
-	countStmt  = "SELECT COUNT(*) FROM alerts"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM alerts WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM alerts WHERE Id = $1"
-	deleteStmt  = "DELETE FROM alerts WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM alerts"
-	getIDsStmt  = "SELECT Id FROM alerts"
-	getManyStmt = "SELECT serialized FROM alerts WHERE Id = ANY($1::text[])"
-
+	baseTable      = "alerts"
+	countStmt      = "SELECT COUNT(*) FROM alerts"
+	getStmt        = "SELECT t1.serialized FROM alerts t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM alerts t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM alerts"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM alerts t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM alerts"
+	getManyStmt    = "SELECT serialized FROM alerts WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM alerts WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -136,38 +134,67 @@ func insertIntoAlerts(ctx context.Context, tx pgx.Tx, obj *storage.Alert) error 
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetPolicy().GetId(),
+
 		obj.GetPolicy().GetName(),
+
 		obj.GetPolicy().GetDescription(),
+
 		obj.GetPolicy().GetDisabled(),
+
 		obj.GetPolicy().GetCategories(),
+
 		obj.GetPolicy().GetLifecycleStages(),
+
 		obj.GetPolicy().GetSeverity(),
+
 		obj.GetPolicy().GetEnforcementActions(),
+
 		pgutils.NilOrTime(obj.GetPolicy().GetLastUpdated()),
+
 		obj.GetPolicy().GetSORTName(),
+
 		obj.GetPolicy().GetSORTLifecycleStage(),
+
 		obj.GetPolicy().GetSORTEnforcement(),
+
 		obj.GetLifecycleStage(),
+
 		obj.GetDeployment().GetId(),
+
 		obj.GetDeployment().GetName(),
+
 		obj.GetDeployment().GetNamespace(),
+
 		obj.GetDeployment().GetNamespaceId(),
+
 		obj.GetDeployment().GetClusterId(),
+
 		obj.GetDeployment().GetClusterName(),
+
 		obj.GetDeployment().GetInactive(),
+
 		obj.GetImage().GetId(),
+
 		obj.GetImage().GetName().GetRegistry(),
+
 		obj.GetImage().GetName().GetRemote(),
+
 		obj.GetImage().GetName().GetTag(),
+
 		obj.GetImage().GetName().GetFullName(),
+
 		pgutils.NilOrTime(obj.GetTime()),
+
 		obj.GetState(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO alerts (Id, Policy_Id, Policy_Name, Policy_Description, Policy_Disabled, Policy_Categories, Policy_LifecycleStages, Policy_Severity, Policy_EnforcementActions, Policy_LastUpdated, Policy_SORTName, Policy_SORTLifecycleStage, Policy_SORTEnforcement, LifecycleStage, Deployment_Id, Deployment_Name, Deployment_Namespace, Deployment_NamespaceId, Deployment_ClusterId, Deployment_ClusterName, Deployment_Inactive, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Time, State, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Disabled = EXCLUDED.Policy_Disabled, Policy_Categories = EXCLUDED.Policy_Categories, Policy_LifecycleStages = EXCLUDED.Policy_LifecycleStages, Policy_Severity = EXCLUDED.Policy_Severity, Policy_EnforcementActions = EXCLUDED.Policy_EnforcementActions, Policy_LastUpdated = EXCLUDED.Policy_LastUpdated, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage, Policy_SORTEnforcement = EXCLUDED.Policy_SORTEnforcement, LifecycleStage = EXCLUDED.LifecycleStage, Deployment_Id = EXCLUDED.Deployment_Id, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Namespace = EXCLUDED.Deployment_Namespace, Deployment_NamespaceId = EXCLUDED.Deployment_NamespaceId, Deployment_ClusterId = EXCLUDED.Deployment_ClusterId, Deployment_ClusterName = EXCLUDED.Deployment_ClusterName, Deployment_Inactive = EXCLUDED.Deployment_Inactive, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Time = EXCLUDED.Time, State = EXCLUDED.State, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -187,64 +214,7 @@ func (s *storeImpl) copyFromAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"policy_id",
-
-		"policy_name",
-
-		"policy_description",
-
-		"policy_disabled",
-
-		"policy_categories",
-
-		"policy_lifecyclestages",
-
-		"policy_severity",
-
-		"policy_enforcementactions",
-
-		"policy_lastupdated",
-
-		"policy_sortname",
-
-		"policy_sortlifecyclestage",
-
-		"policy_sortenforcement",
-
-		"lifecyclestage",
-
-		"deployment_id",
-
-		"deployment_name",
-
-		"deployment_namespace",
-
-		"deployment_namespaceid",
-
-		"deployment_clusterid",
-
-		"deployment_clustername",
-
-		"deployment_inactive",
-
-		"image_id",
-
-		"image_name_registry",
-
-		"image_name_remote",
-
-		"image_name_tag",
-
-		"image_name_fullname",
-
-		"time",
-
-		"state",
-
-		"serialized",
+		"id", "policy_id", "policy_name", "policy_description", "policy_disabled", "policy_categories", "policy_lifecyclestages", "policy_severity", "policy_enforcementactions", "policy_lastupdated", "policy_sortname", "policy_sortlifecyclestage", "policy_sortenforcement", "lifecyclestage", "deployment_id", "deployment_name", "deployment_namespace", "deployment_namespaceid", "deployment_clusterid", "deployment_clustername", "deployment_inactive", "image_id", "image_name_registry", "image_name_remote", "image_name_tag", "image_name_fullname", "time", "state", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -436,7 +406,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Alert")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -454,7 +423,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Alert, bool, e
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -486,7 +454,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "processwhitelistresults"
-	countStmt  = "SELECT COUNT(*) FROM processwhitelistresults"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM processwhitelistresults WHERE DeploymentId = $1)"
-
-	getStmt     = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = $1"
-	deleteStmt  = "DELETE FROM processwhitelistresults WHERE DeploymentId = $1"
-	walkStmt    = "SELECT serialized FROM processwhitelistresults"
-	getIDsStmt  = "SELECT DeploymentId FROM processwhitelistresults"
-	getManyStmt = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
-
+	baseTable      = "processwhitelistresults"
+	countStmt      = "SELECT COUNT(*) FROM processwhitelistresults"
+	getStmt        = "SELECT t1.serialized FROM processwhitelistresults t1 WHERE t1.DeploymentId = $1"
+	deleteStmt     = "DELETE FROM processwhitelistresults t1 WHERE t1.DeploymentId = $1"
+	walkStmt       = "SELECT serialized FROM processwhitelistresults"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM processwhitelistresults t1 WHERE t1.DeploymentId = $1)"
+	getIDsStmt     = "SELECT distinct DeploymentId FROM processwhitelistresults"
+	getManyStmt    = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
 
 	batchAfter = 100
@@ -102,11 +100,13 @@ func insertIntoProcesswhitelistresults(ctx context.Context, tx pgx.Tx, obj *stor
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetDeploymentId(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO processwhitelistresults (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -126,10 +126,7 @@ func (s *storeImpl) copyFromProcesswhitelistresults(ctx context.Context, tx pgx.
 	var deletes []string
 
 	copyCols := []string{
-
-		"deploymentid",
-
-		"serialized",
+		"deploymentid", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -267,7 +264,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, deploymentId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ProcessBaselineResults")
-
 	row := s.db.QueryRow(ctx, existsStmt, deploymentId)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -285,7 +281,6 @@ func (s *storeImpl) Get(ctx context.Context, deploymentId string) (*storage.Proc
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, deploymentId)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -317,7 +312,6 @@ func (s *storeImpl) Delete(ctx context.Context, deploymentId string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, deploymentId); err != nil {
 		return err
 	}

@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "networkbaseline"
-	countStmt  = "SELECT COUNT(*) FROM networkbaseline"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkbaseline WHERE DeploymentId = $1)"
-
-	getStmt     = "SELECT serialized FROM networkbaseline WHERE DeploymentId = $1"
-	deleteStmt  = "DELETE FROM networkbaseline WHERE DeploymentId = $1"
-	walkStmt    = "SELECT serialized FROM networkbaseline"
-	getIDsStmt  = "SELECT DeploymentId FROM networkbaseline"
-	getManyStmt = "SELECT serialized FROM networkbaseline WHERE DeploymentId = ANY($1::text[])"
-
+	baseTable      = "networkbaseline"
+	countStmt      = "SELECT COUNT(*) FROM networkbaseline"
+	getStmt        = "SELECT t1.serialized FROM networkbaseline t1 WHERE t1.DeploymentId = $1"
+	deleteStmt     = "DELETE FROM networkbaseline t1 WHERE t1.DeploymentId = $1"
+	walkStmt       = "SELECT serialized FROM networkbaseline"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM networkbaseline t1 WHERE t1.DeploymentId = $1)"
+	getIDsStmt     = "SELECT distinct DeploymentId FROM networkbaseline"
+	getManyStmt    = "SELECT serialized FROM networkbaseline WHERE DeploymentId = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM networkbaseline WHERE DeploymentId = ANY($1::text[])"
 
 	batchAfter = 100
@@ -75,7 +73,7 @@ func createTableNetworkbaseline(ctx context.Context, db *pgxpool.Pool) {
 create table if not exists networkbaseline (
     DeploymentId varchar,
     serialized bytea,
-    PRIMARY KEY(DeploymentId) INCLUDE (serialized)
+    PRIMARY KEY(DeploymentId)
 )
 `
 
@@ -102,11 +100,13 @@ func insertIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, obj *storage.Netw
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetDeploymentId(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO networkbaseline (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -126,10 +126,7 @@ func (s *storeImpl) copyFromNetworkbaseline(ctx context.Context, tx pgx.Tx, objs
 	var deletes []string
 
 	copyCols := []string{
-
-		"deploymentid",
-
-		"serialized",
+		"deploymentid", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -267,7 +264,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, deploymentId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NetworkBaseline")
-
 	row := s.db.QueryRow(ctx, existsStmt, deploymentId)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -285,21 +281,16 @@ func (s *storeImpl) Get(ctx context.Context, deploymentId string) (*storage.Netw
 		return nil, false, err
 	}
 	defer release()
-
-	log.Infof("SHREWS before query %s - %s", deploymentId, time.Now())
 	row := conn.QueryRow(ctx, getStmt, deploymentId)
 	var data []byte
-	log.Infof("SHREWS before scan %s - %s", deploymentId, time.Now())
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
-	log.Infof("SHREWS before marshall %s - %s", deploymentId, time.Now())
+
 	var msg storage.NetworkBaseline
 	if err := proto.Unmarshal(data, &msg); err != nil {
 		return nil, false, err
 	}
-	log.Infof("SHREWS after marshall %s - %s", deploymentId, time.Now())
-	log.Infof("SHREWS => %s", &msg)
 	return &msg, true, nil
 }
 
@@ -321,7 +312,6 @@ func (s *storeImpl) Delete(ctx context.Context, deploymentId string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, deploymentId); err != nil {
 		return err
 	}

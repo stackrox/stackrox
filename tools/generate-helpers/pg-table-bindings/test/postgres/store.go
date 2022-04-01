@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "singlekey"
-	countStmt  = "SELECT COUNT(*) FROM singlekey"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM singlekey WHERE Key = $1)"
-
-	getStmt     = "SELECT serialized FROM singlekey WHERE Key = $1"
-	deleteStmt  = "DELETE FROM singlekey WHERE Key = $1"
-	walkStmt    = "SELECT serialized FROM singlekey"
-	getIDsStmt  = "SELECT Key FROM singlekey"
-	getManyStmt = "SELECT serialized FROM singlekey WHERE Key = ANY($1::text[])"
-
+	baseTable      = "singlekey"
+	countStmt      = "SELECT COUNT(*) FROM singlekey"
+	getStmt        = "SELECT t1.serialized FROM singlekey t1 WHERE t1.Key = $1"
+	deleteStmt     = "DELETE FROM singlekey t1 WHERE t1.Key = $1"
+	walkStmt       = "SELECT serialized FROM singlekey"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM singlekey t1 WHERE t1.Key = $1)"
+	getIDsStmt     = "SELECT distinct Key FROM singlekey"
+	getManyStmt    = "SELECT serialized FROM singlekey WHERE Key = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM singlekey WHERE Key = ANY($1::text[])"
 
 	batchAfter = 100
@@ -115,21 +113,33 @@ func insertIntoSinglekey(ctx context.Context, tx pgx.Tx, obj *storage.TestSingle
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetKey(),
+
 		obj.GetName(),
+
 		obj.GetStringSlice(),
+
 		obj.GetBool(),
+
 		obj.GetUint64(),
+
 		obj.GetInt64(),
+
 		obj.GetFloat(),
+
 		obj.GetLabels(),
+
 		pgutils.NilOrTime(obj.GetTimestamp()),
+
 		obj.GetEnum(),
+
 		obj.GetEnums(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO singlekey (Key, Name, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(Key) DO UPDATE SET Key = EXCLUDED.Key, Name = EXCLUDED.Name, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -149,30 +159,7 @@ func (s *storeImpl) copyFromSinglekey(ctx context.Context, tx pgx.Tx, objs ...*s
 	var deletes []string
 
 	copyCols := []string{
-
-		"key",
-
-		"name",
-
-		"stringslice",
-
-		"bool",
-
-		"uint64",
-
-		"int64",
-
-		"float",
-
-		"labels",
-
-		"timestamp",
-
-		"enum",
-
-		"enums",
-
-		"serialized",
+		"key", "name", "stringslice", "bool", "uint64", "int64", "float", "labels", "timestamp", "enum", "enums", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -330,7 +317,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, key string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestSingleKeyStruct")
-
 	row := s.db.QueryRow(ctx, existsStmt, key)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -348,7 +334,6 @@ func (s *storeImpl) Get(ctx context.Context, key string) (*storage.TestSingleKey
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, key)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -380,7 +365,6 @@ func (s *storeImpl) Delete(ctx context.Context, key string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, key); err != nil {
 		return err
 	}

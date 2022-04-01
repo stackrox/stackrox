@@ -55,7 +55,6 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 
 	simpleAccessScope := &storage.SimpleAccessScope{}
 	s.NoError(testutils.FullInit(simpleAccessScope, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundSimpleAccessScope, exists, err := store.Get(ctx, simpleAccessScope.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 	simpleAccessScopeCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(simpleAccessScopeCount, 1)
-
 	simpleAccessScopeExists, err := store.Exists(ctx, simpleAccessScope.GetId())
 	s.NoError(err)
 	s.True(simpleAccessScopeExists)
 	s.NoError(store.Upsert(ctx, simpleAccessScope))
-
 	foundSimpleAccessScope, exists, err = store.Get(ctx, simpleAccessScope.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(simpleAccessScope, foundSimpleAccessScope)
-
 	s.NoError(store.Delete(ctx, simpleAccessScope.GetId()))
 	foundSimpleAccessScope, exists, err = store.Get(ctx, simpleAccessScope.GetId())
 	s.NoError(err)

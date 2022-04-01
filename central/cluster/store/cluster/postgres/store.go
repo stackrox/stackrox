@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "clusters"
-	countStmt  = "SELECT COUNT(*) FROM clusters"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM clusters WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM clusters WHERE Id = $1"
-	deleteStmt  = "DELETE FROM clusters WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM clusters"
-	getIDsStmt  = "SELECT Id FROM clusters"
-	getManyStmt = "SELECT serialized FROM clusters WHERE Id = ANY($1::text[])"
-
+	baseTable      = "clusters"
+	countStmt      = "SELECT COUNT(*) FROM clusters"
+	getStmt        = "SELECT t1.serialized FROM clusters t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM clusters t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM clusters"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM clusters t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM clusters"
+	getManyStmt    = "SELECT serialized FROM clusters WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM clusters WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -108,17 +106,25 @@ func insertIntoClusters(ctx context.Context, tx pgx.Tx, obj *storage.Cluster) er
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetName(),
+
 		obj.GetLabels(),
+
 		obj.GetHealthStatus().GetSensorHealthStatus(),
+
 		obj.GetHealthStatus().GetCollectorHealthStatus(),
+
 		obj.GetHealthStatus().GetOverallHealthStatus(),
+
 		obj.GetHealthStatus().GetAdmissionControlHealthStatus(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO clusters (Id, Name, Labels, HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, HealthStatus_SensorHealthStatus = EXCLUDED.HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus = EXCLUDED.HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus = EXCLUDED.HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus = EXCLUDED.HealthStatus_AdmissionControlHealthStatus, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -138,22 +144,7 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"name",
-
-		"labels",
-
-		"healthstatus_sensorhealthstatus",
-
-		"healthstatus_collectorhealthstatus",
-
-		"healthstatus_overallhealthstatus",
-
-		"healthstatus_admissioncontrolhealthstatus",
-
-		"serialized",
+		"id", "name", "labels", "healthstatus_sensorhealthstatus", "healthstatus_collectorhealthstatus", "healthstatus_overallhealthstatus", "healthstatus_admissioncontrolhealthstatus", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -303,7 +294,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Cluster")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -321,7 +311,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Cluster, bool,
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -353,7 +342,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

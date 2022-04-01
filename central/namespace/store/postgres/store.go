@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "namespaces"
-	countStmt  = "SELECT COUNT(*) FROM namespaces"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM namespaces WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM namespaces WHERE Id = $1"
-	deleteStmt  = "DELETE FROM namespaces WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM namespaces"
-	getIDsStmt  = "SELECT Id FROM namespaces"
-	getManyStmt = "SELECT serialized FROM namespaces WHERE Id = ANY($1::text[])"
-
+	baseTable      = "namespaces"
+	countStmt      = "SELECT COUNT(*) FROM namespaces"
+	getStmt        = "SELECT t1.serialized FROM namespaces t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM namespaces t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM namespaces"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM namespaces t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM namespaces"
+	getManyStmt    = "SELECT serialized FROM namespaces WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM namespaces WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -107,16 +105,23 @@ func insertIntoNamespaces(ctx context.Context, tx pgx.Tx, obj *storage.Namespace
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetName(),
+
 		obj.GetClusterId(),
+
 		obj.GetClusterName(),
+
 		obj.GetLabels(),
+
 		obj.GetAnnotations(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO namespaces (Id, Name, ClusterId, ClusterName, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -136,20 +141,7 @@ func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx pgx.Tx, objs ...*
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"name",
-
-		"clusterid",
-
-		"clustername",
-
-		"labels",
-
-		"annotations",
-
-		"serialized",
+		"id", "name", "clusterid", "clustername", "labels", "annotations", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -297,7 +289,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NamespaceMetadata")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -315,7 +306,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.NamespaceMetad
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -347,7 +337,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

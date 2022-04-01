@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "risk"
-	countStmt  = "SELECT COUNT(*) FROM risk"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM risk WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM risk WHERE Id = $1"
-	deleteStmt  = "DELETE FROM risk WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM risk"
-	getIDsStmt  = "SELECT Id FROM risk"
-	getManyStmt = "SELECT serialized FROM risk WHERE Id = ANY($1::text[])"
-
+	baseTable      = "risk"
+	countStmt      = "SELECT COUNT(*) FROM risk"
+	getStmt        = "SELECT t1.serialized FROM risk t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM risk t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM risk"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM risk t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM risk"
+	getManyStmt    = "SELECT serialized FROM risk WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM risk WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -106,15 +104,21 @@ func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetSubject().GetNamespace(),
+
 		obj.GetSubject().GetClusterId(),
+
 		obj.GetSubject().GetType(),
+
 		obj.GetScore(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO risk (Id, Subject_Namespace, Subject_ClusterId, Subject_Type, Score, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type, Score = EXCLUDED.Score, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -134,18 +138,7 @@ func (s *storeImpl) copyFromRisk(ctx context.Context, tx pgx.Tx, objs ...*storag
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"subject_namespace",
-
-		"subject_clusterid",
-
-		"subject_type",
-
-		"score",
-
-		"serialized",
+		"id", "subject_namespace", "subject_clusterid", "subject_type", "score", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -291,7 +284,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Risk")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -309,7 +301,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Risk, bool, er
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -341,7 +332,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

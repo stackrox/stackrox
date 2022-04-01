@@ -55,7 +55,6 @@ func (s *SignatureintegrationsStoreSuite) TestStore() {
 
 	signatureIntegration := &storage.SignatureIntegration{}
 	s.NoError(testutils.FullInit(signatureIntegration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundSignatureIntegration, exists, err := store.Get(ctx, signatureIntegration.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *SignatureintegrationsStoreSuite) TestStore() {
 	signatureIntegrationCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(signatureIntegrationCount, 1)
-
 	signatureIntegrationExists, err := store.Exists(ctx, signatureIntegration.GetId())
 	s.NoError(err)
 	s.True(signatureIntegrationExists)
 	s.NoError(store.Upsert(ctx, signatureIntegration))
-
 	foundSignatureIntegration, exists, err = store.Get(ctx, signatureIntegration.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(signatureIntegration, foundSignatureIntegration)
-
 	s.NoError(store.Delete(ctx, signatureIntegration.GetId()))
 	foundSignatureIntegration, exists, err = store.Get(ctx, signatureIntegration.GetId())
 	s.NoError(err)

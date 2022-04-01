@@ -55,7 +55,6 @@ func (s *PodsStoreSuite) TestStore() {
 
 	pod := &storage.Pod{}
 	s.NoError(testutils.FullInit(pod, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundPod, exists, err := store.Get(ctx, pod.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *PodsStoreSuite) TestStore() {
 	podCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(podCount, 1)
-
 	podExists, err := store.Exists(ctx, pod.GetId())
 	s.NoError(err)
 	s.True(podExists)
 	s.NoError(store.Upsert(ctx, pod))
-
 	foundPod, exists, err = store.Get(ctx, pod.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(pod, foundPod)
-
 	s.NoError(store.Delete(ctx, pod.GetId()))
 	foundPod, exists, err = store.Get(ctx, pod.GetId())
 	s.NoError(err)

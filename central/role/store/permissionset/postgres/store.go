@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "permissionsets"
-	countStmt  = "SELECT COUNT(*) FROM permissionsets"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM permissionsets WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM permissionsets WHERE Id = $1"
-	deleteStmt  = "DELETE FROM permissionsets WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM permissionsets"
-	getIDsStmt  = "SELECT Id FROM permissionsets"
-	getManyStmt = "SELECT serialized FROM permissionsets WHERE Id = ANY($1::text[])"
-
+	baseTable      = "permissionsets"
+	countStmt      = "SELECT COUNT(*) FROM permissionsets"
+	getStmt        = "SELECT t1.serialized FROM permissionsets t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM permissionsets t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM permissionsets"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM permissionsets t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM permissionsets"
+	getManyStmt    = "SELECT serialized FROM permissionsets WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM permissionsets WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -102,11 +100,13 @@ func insertIntoPermissionsets(ctx context.Context, tx pgx.Tx, obj *storage.Permi
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO permissionsets (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -126,10 +126,7 @@ func (s *storeImpl) copyFromPermissionsets(ctx context.Context, tx pgx.Tx, objs 
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"serialized",
+		"id", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -267,7 +264,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "PermissionSet")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -285,7 +281,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.PermissionSet,
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -317,7 +312,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

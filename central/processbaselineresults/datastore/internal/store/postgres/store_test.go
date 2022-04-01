@@ -55,7 +55,6 @@ func (s *ProcesswhitelistresultsStoreSuite) TestStore() {
 
 	processBaselineResults := &storage.ProcessBaselineResults{}
 	s.NoError(testutils.FullInit(processBaselineResults, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundProcessBaselineResults, exists, err := store.Get(ctx, processBaselineResults.GetDeploymentId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *ProcesswhitelistresultsStoreSuite) TestStore() {
 	processBaselineResultsCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(processBaselineResultsCount, 1)
-
 	processBaselineResultsExists, err := store.Exists(ctx, processBaselineResults.GetDeploymentId())
 	s.NoError(err)
 	s.True(processBaselineResultsExists)
 	s.NoError(store.Upsert(ctx, processBaselineResults))
-
 	foundProcessBaselineResults, exists, err = store.Get(ctx, processBaselineResults.GetDeploymentId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(processBaselineResults, foundProcessBaselineResults)
-
 	s.NoError(store.Delete(ctx, processBaselineResults.GetDeploymentId()))
 	foundProcessBaselineResults, exists, err = store.Get(ctx, processBaselineResults.GetDeploymentId())
 	s.NoError(err)

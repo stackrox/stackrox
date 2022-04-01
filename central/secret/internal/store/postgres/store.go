@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "secrets"
-	countStmt  = "SELECT COUNT(*) FROM secrets"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM secrets WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM secrets WHERE Id = $1"
-	deleteStmt  = "DELETE FROM secrets WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM secrets"
-	getIDsStmt  = "SELECT Id FROM secrets"
-	getManyStmt = "SELECT serialized FROM secrets WHERE Id = ANY($1::text[])"
-
+	baseTable      = "secrets"
+	countStmt      = "SELECT COUNT(*) FROM secrets"
+	getStmt        = "SELECT t1.serialized FROM secrets t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM secrets t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM secrets"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM secrets t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM secrets"
+	getManyStmt    = "SELECT serialized FROM secrets WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM secrets WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -167,16 +165,23 @@ func insertIntoSecrets(ctx context.Context, tx pgx.Tx, obj *storage.Secret) erro
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetName(),
+
 		obj.GetClusterId(),
+
 		obj.GetClusterName(),
+
 		obj.GetNamespace(),
+
 		pgutils.NilOrTime(obj.GetCreatedAt()),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO secrets (Id, Name, ClusterId, ClusterName, Namespace, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -202,13 +207,17 @@ func insertIntoSecretsFiles(ctx context.Context, tx pgx.Tx, obj *storage.SecretD
 
 	values := []interface{}{
 		// parent primary keys start
+
 		secrets_Id,
+
 		idx,
+
 		obj.GetType(),
+
 		pgutils.NilOrTime(obj.GetCert().GetEndDate()),
 	}
-
 	finalStr := "INSERT INTO secrets_Files (secrets_Id, idx, Type, Cert_EndDate) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, idx = EXCLUDED.idx, Type = EXCLUDED.Type, Cert_EndDate = EXCLUDED.Cert_EndDate"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -234,13 +243,17 @@ func insertIntoSecretsFilesRegistries(ctx context.Context, tx pgx.Tx, obj *stora
 
 	values := []interface{}{
 		// parent primary keys start
+
 		secrets_Id,
+
 		secrets_Files_idx,
+
 		idx,
+
 		obj.GetName(),
 	}
-
 	finalStr := "INSERT INTO secrets_Files_Registries (secrets_Id, secrets_Files_idx, idx, Name) VALUES($1, $2, $3, $4) ON CONFLICT(secrets_Id, secrets_Files_idx, idx) DO UPDATE SET secrets_Id = EXCLUDED.secrets_Id, secrets_Files_idx = EXCLUDED.secrets_Files_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -260,20 +273,7 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"name",
-
-		"clusterid",
-
-		"clustername",
-
-		"namespace",
-
-		"createdat",
-
-		"serialized",
+		"id", "name", "clusterid", "clustername", "namespace", "createdat", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -345,14 +345,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 	var err error
 
 	copyCols := []string{
-
-		"secrets_id",
-
-		"idx",
-
-		"type",
-
-		"cert_enddate",
+		"secrets_id", "idx", "type", "cert_enddate",
 	}
 
 	for idx, obj := range objs {
@@ -403,14 +396,7 @@ func (s *storeImpl) copyFromSecretsFilesRegistries(ctx context.Context, tx pgx.T
 	var err error
 
 	copyCols := []string{
-
-		"secrets_id",
-
-		"secrets_files_idx",
-
-		"idx",
-
-		"name",
+		"secrets_id", "secrets_files_idx", "idx", "name",
 	}
 
 	for idx, obj := range objs {
@@ -537,7 +523,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Secret")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -555,7 +540,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Secret, bool, 
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -587,7 +571,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

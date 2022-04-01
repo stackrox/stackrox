@@ -55,7 +55,6 @@ func (s *IntegrationhealthStoreSuite) TestStore() {
 
 	integrationHealth := &storage.IntegrationHealth{}
 	s.NoError(testutils.FullInit(integrationHealth, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundIntegrationHealth, exists, err := store.Get(ctx, integrationHealth.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *IntegrationhealthStoreSuite) TestStore() {
 	integrationHealthCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(integrationHealthCount, 1)
-
 	integrationHealthExists, err := store.Exists(ctx, integrationHealth.GetId())
 	s.NoError(err)
 	s.True(integrationHealthExists)
 	s.NoError(store.Upsert(ctx, integrationHealth))
-
 	foundIntegrationHealth, exists, err = store.Get(ctx, integrationHealth.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(integrationHealth, foundIntegrationHealth)
-
 	s.NoError(store.Delete(ctx, integrationHealth.GetId()))
 	foundIntegrationHealth, exists, err = store.Get(ctx, integrationHealth.GetId())
 	s.NoError(err)

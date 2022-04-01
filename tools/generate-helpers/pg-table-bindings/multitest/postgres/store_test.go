@@ -55,7 +55,6 @@ func (s *MultikeyStoreSuite) TestStore() {
 
 	testMultiKeyStruct := &storage.TestMultiKeyStruct{}
 	s.NoError(testutils.FullInit(testMultiKeyStruct, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundTestMultiKeyStruct, exists, err := store.Get(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *MultikeyStoreSuite) TestStore() {
 	testMultiKeyStructCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(testMultiKeyStructCount, 1)
-
 	testMultiKeyStructExists, err := store.Exists(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.True(testMultiKeyStructExists)
 	s.NoError(store.Upsert(ctx, testMultiKeyStruct))
-
 	foundTestMultiKeyStruct, exists, err = store.Get(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(testMultiKeyStruct, foundTestMultiKeyStruct)
-
 	s.NoError(store.Delete(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2()))
 	foundTestMultiKeyStruct, exists, err = store.Get(ctx, testMultiKeyStruct.GetKey1(), testMultiKeyStruct.GetKey2())
 	s.NoError(err)

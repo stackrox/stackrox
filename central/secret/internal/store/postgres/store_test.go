@@ -55,7 +55,6 @@ func (s *SecretsStoreSuite) TestStore() {
 
 	secret := &storage.Secret{}
 	s.NoError(testutils.FullInit(secret, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundSecret, exists, err := store.Get(ctx, secret.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *SecretsStoreSuite) TestStore() {
 	secretCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(secretCount, 1)
-
 	secretExists, err := store.Exists(ctx, secret.GetId())
 	s.NoError(err)
 	s.True(secretExists)
 	s.NoError(store.Upsert(ctx, secret))
-
 	foundSecret, exists, err = store.Get(ctx, secret.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(secret, foundSecret)
-
 	s.NoError(store.Delete(ctx, secret.GetId()))
 	foundSecret, exists, err = store.Get(ctx, secret.GetId())
 	s.NoError(err)

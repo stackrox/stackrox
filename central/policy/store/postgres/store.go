@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "policy"
-	countStmt  = "SELECT COUNT(*) FROM policy"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM policy WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM policy WHERE Id = $1"
-	deleteStmt  = "DELETE FROM policy WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM policy"
-	getIDsStmt  = "SELECT Id FROM policy"
-	getManyStmt = "SELECT serialized FROM policy WHERE Id = ANY($1::text[])"
-
+	baseTable      = "policy"
+	countStmt      = "SELECT COUNT(*) FROM policy"
+	getStmt        = "SELECT t1.serialized FROM policy t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM policy t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM policy"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM policy t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM policy"
+	getManyStmt    = "SELECT serialized FROM policy WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM policy WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -113,22 +111,35 @@ func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetName(),
+
 		obj.GetDescription(),
+
 		obj.GetDisabled(),
+
 		obj.GetCategories(),
+
 		obj.GetLifecycleStages(),
+
 		obj.GetSeverity(),
+
 		obj.GetEnforcementActions(),
+
 		pgutils.NilOrTime(obj.GetLastUpdated()),
+
 		obj.GetSORTName(),
+
 		obj.GetSORTLifecycleStage(),
+
 		obj.GetSORTEnforcement(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO policy (Id, Name, Description, Disabled, Categories, LifecycleStages, Severity, EnforcementActions, LastUpdated, SORTName, SORTLifecycleStage, SORTEnforcement, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Disabled = EXCLUDED.Disabled, Categories = EXCLUDED.Categories, LifecycleStages = EXCLUDED.LifecycleStages, Severity = EXCLUDED.Severity, EnforcementActions = EXCLUDED.EnforcementActions, LastUpdated = EXCLUDED.LastUpdated, SORTName = EXCLUDED.SORTName, SORTLifecycleStage = EXCLUDED.SORTLifecycleStage, SORTEnforcement = EXCLUDED.SORTEnforcement, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -148,32 +159,7 @@ func (s *storeImpl) copyFromPolicy(ctx context.Context, tx pgx.Tx, objs ...*stor
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"name",
-
-		"description",
-
-		"disabled",
-
-		"categories",
-
-		"lifecyclestages",
-
-		"severity",
-
-		"enforcementactions",
-
-		"lastupdated",
-
-		"sortname",
-
-		"sortlifecyclestage",
-
-		"sortenforcement",
-
-		"serialized",
+		"id", "name", "description", "disabled", "categories", "lifecyclestages", "severity", "enforcementactions", "lastupdated", "sortname", "sortlifecyclestage", "sortenforcement", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -333,7 +319,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Policy")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -351,7 +336,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Policy, bool, 
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -383,7 +367,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

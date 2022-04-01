@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "serviceaccounts"
-	countStmt  = "SELECT COUNT(*) FROM serviceaccounts"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM serviceaccounts WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM serviceaccounts WHERE Id = $1"
-	deleteStmt  = "DELETE FROM serviceaccounts WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM serviceaccounts"
-	getIDsStmt  = "SELECT Id FROM serviceaccounts"
-	getManyStmt = "SELECT serialized FROM serviceaccounts WHERE Id = ANY($1::text[])"
-
+	baseTable      = "serviceaccounts"
+	countStmt      = "SELECT COUNT(*) FROM serviceaccounts"
+	getStmt        = "SELECT t1.serialized FROM serviceaccounts t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM serviceaccounts t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM serviceaccounts"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM serviceaccounts t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM serviceaccounts"
+	getManyStmt    = "SELECT serialized FROM serviceaccounts WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM serviceaccounts WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -108,17 +106,25 @@ func insertIntoServiceaccounts(ctx context.Context, tx pgx.Tx, obj *storage.Serv
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetName(),
+
 		obj.GetNamespace(),
+
 		obj.GetClusterName(),
+
 		obj.GetClusterId(),
+
 		obj.GetLabels(),
+
 		obj.GetAnnotations(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO serviceaccounts (Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -138,22 +144,7 @@ func (s *storeImpl) copyFromServiceaccounts(ctx context.Context, tx pgx.Tx, objs
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"name",
-
-		"namespace",
-
-		"clustername",
-
-		"clusterid",
-
-		"labels",
-
-		"annotations",
-
-		"serialized",
+		"id", "name", "namespace", "clustername", "clusterid", "labels", "annotations", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -303,7 +294,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ServiceAccount")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -321,7 +311,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ServiceAccount
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -353,7 +342,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

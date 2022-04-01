@@ -55,7 +55,6 @@ func (s *ImageComponentRelationStoreSuite) TestStore() {
 
 	imageComponentEdge := &storage.ImageComponentEdge{}
 	s.NoError(testutils.FullInit(imageComponentEdge, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundImageComponentEdge, exists, err := store.Get(ctx, imageComponentEdge.GetImageId(), imageComponentEdge.GetImageComponentId())
 	s.NoError(err)
 	s.False(exists)

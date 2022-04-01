@@ -55,7 +55,6 @@ func (s *PermissionsetsStoreSuite) TestStore() {
 
 	permissionSet := &storage.PermissionSet{}
 	s.NoError(testutils.FullInit(permissionSet, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundPermissionSet, exists, err := store.Get(ctx, permissionSet.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *PermissionsetsStoreSuite) TestStore() {
 	permissionSetCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(permissionSetCount, 1)
-
 	permissionSetExists, err := store.Exists(ctx, permissionSet.GetId())
 	s.NoError(err)
 	s.True(permissionSetExists)
 	s.NoError(store.Upsert(ctx, permissionSet))
-
 	foundPermissionSet, exists, err = store.Get(ctx, permissionSet.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(permissionSet, foundPermissionSet)
-
 	s.NoError(store.Delete(ctx, permissionSet.GetId()))
 	foundPermissionSet, exists, err = store.Get(ctx, permissionSet.GetId())
 	s.NoError(err)

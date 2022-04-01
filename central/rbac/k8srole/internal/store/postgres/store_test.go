@@ -55,7 +55,6 @@ func (s *K8srolesStoreSuite) TestStore() {
 
 	k8SRole := &storage.K8SRole{}
 	s.NoError(testutils.FullInit(k8SRole, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundK8SRole, exists, err := store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *K8srolesStoreSuite) TestStore() {
 	k8SRoleCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(k8SRoleCount, 1)
-
 	k8SRoleExists, err := store.Exists(ctx, k8SRole.GetId())
 	s.NoError(err)
 	s.True(k8SRoleExists)
 	s.NoError(store.Upsert(ctx, k8SRole))
-
 	foundK8SRole, exists, err = store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(k8SRole, foundK8SRole)
-
 	s.NoError(store.Delete(ctx, k8SRole.GetId()))
 	foundK8SRole, exists, err = store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)

@@ -22,11 +22,10 @@ import (
 const (
 	baseTable  = "image_components"
 	countStmt  = "SELECT COUNT(*) FROM image_components"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_components WHERE Id = $1 AND Name = $2 AND Version = $3 AND OperatingSystem = $4)"
-
-	getStmt    = "SELECT serialized FROM image_components WHERE Id = $1 AND Name = $2 AND Version = $3 AND OperatingSystem = $4"
-	deleteStmt = "DELETE FROM image_components WHERE Id = $1 AND Name = $2 AND Version = $3 AND OperatingSystem = $4"
+	getStmt    = "SELECT t1.serialized FROM image_components t1 WHERE t1.Id = $1 AND t1.Name = $2 AND t1.Version = $3 AND t1.OperatingSystem = $4"
+	deleteStmt = "DELETE FROM image_components t1 WHERE t1.Id = $1 AND t1.Name = $2 AND t1.Version = $3 AND t1.OperatingSystem = $4"
 	walkStmt   = "SELECT serialized FROM image_components"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_components t1 WHERE t1.Id = $1 AND t1.Name = $2 AND t1.Version = $3 AND t1.OperatingSystem = $4)"
 
 	batchAfter = 100
 
@@ -101,17 +100,25 @@ func insertIntoImageComponents(ctx context.Context, tx pgx.Tx, obj *storage.Imag
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetName(),
+
 		obj.GetVersion(),
+
 		obj.GetSource(),
+
 		obj.GetRiskScore(),
+
 		obj.GetTopCvss(),
+
 		obj.GetOperatingSystem(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO image_components (Id, Name, Version, Source, RiskScore, TopCvss, OperatingSystem, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id, Name, Version, OperatingSystem) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, OperatingSystem = EXCLUDED.OperatingSystem, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -127,22 +134,7 @@ func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs
 	var err error
 
 	copyCols := []string{
-
-		"id",
-
-		"name",
-
-		"version",
-
-		"source",
-
-		"riskscore",
-
-		"topcvss",
-
-		"operatingsystem",
-
-		"serialized",
+		"id", "name", "version", "source", "riskscore", "topcvss", "operatingsystem", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -286,7 +278,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string, name string, version string, operatingSystem string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ImageComponent")
-
 	row := s.db.QueryRow(ctx, existsStmt, id, name, version, operatingSystem)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -304,7 +295,6 @@ func (s *storeImpl) Get(ctx context.Context, id string, name string, version str
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id, name, version, operatingSystem)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -336,7 +326,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string, name string, version 
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id, name, version, operatingSystem); err != nil {
 		return err
 	}

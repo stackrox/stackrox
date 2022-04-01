@@ -55,7 +55,6 @@ func (s *SinglekeyStoreSuite) TestStore() {
 
 	testSingleKeyStruct := &storage.TestSingleKeyStruct{}
 	s.NoError(testutils.FullInit(testSingleKeyStruct, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundTestSingleKeyStruct, exists, err := store.Get(ctx, testSingleKeyStruct.GetKey())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *SinglekeyStoreSuite) TestStore() {
 	testSingleKeyStructCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(testSingleKeyStructCount, 1)
-
 	testSingleKeyStructExists, err := store.Exists(ctx, testSingleKeyStruct.GetKey())
 	s.NoError(err)
 	s.True(testSingleKeyStructExists)
 	s.NoError(store.Upsert(ctx, testSingleKeyStruct))
-
 	foundTestSingleKeyStruct, exists, err = store.Get(ctx, testSingleKeyStruct.GetKey())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(testSingleKeyStruct, foundTestSingleKeyStruct)
-
 	s.NoError(store.Delete(ctx, testSingleKeyStruct.GetKey()))
 	foundTestSingleKeyStruct, exists, err = store.Get(ctx, testSingleKeyStruct.GetKey())
 	s.NoError(err)

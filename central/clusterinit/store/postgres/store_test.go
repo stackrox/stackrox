@@ -55,7 +55,6 @@ func (s *ClusterinitbundlesStoreSuite) TestStore() {
 
 	initBundleMeta := &storage.InitBundleMeta{}
 	s.NoError(testutils.FullInit(initBundleMeta, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundInitBundleMeta, exists, err := store.Get(ctx, initBundleMeta.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *ClusterinitbundlesStoreSuite) TestStore() {
 	initBundleMetaCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(initBundleMetaCount, 1)
-
 	initBundleMetaExists, err := store.Exists(ctx, initBundleMeta.GetId())
 	s.NoError(err)
 	s.True(initBundleMetaExists)
 	s.NoError(store.Upsert(ctx, initBundleMeta))
-
 	foundInitBundleMeta, exists, err = store.Get(ctx, initBundleMeta.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(initBundleMeta, foundInitBundleMeta)
-
 	s.NoError(store.Delete(ctx, initBundleMeta.GetId()))
 	foundInitBundleMeta, exists, err = store.Get(ctx, initBundleMeta.GetId())
 	s.NoError(err)

@@ -55,7 +55,6 @@ func (s *NetworkentityStoreSuite) TestStore() {
 
 	networkEntity := &storage.NetworkEntity{}
 	s.NoError(testutils.FullInit(networkEntity, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundNetworkEntity, exists, err := store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *NetworkentityStoreSuite) TestStore() {
 	networkEntityCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(networkEntityCount, 1)
-
 	networkEntityExists, err := store.Exists(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
 	s.True(networkEntityExists)
 	s.NoError(store.Upsert(ctx, networkEntity))
-
 	foundNetworkEntity, exists, err = store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(networkEntity, foundNetworkEntity)
-
 	s.NoError(store.Delete(ctx, networkEntity.GetInfo().GetId()))
 	foundNetworkEntity, exists, err = store.Get(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)

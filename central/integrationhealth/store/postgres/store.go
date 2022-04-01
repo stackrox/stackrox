@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "integrationhealth"
-	countStmt  = "SELECT COUNT(*) FROM integrationhealth"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM integrationhealth WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM integrationhealth WHERE Id = $1"
-	deleteStmt  = "DELETE FROM integrationhealth WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM integrationhealth"
-	getIDsStmt  = "SELECT Id FROM integrationhealth"
-	getManyStmt = "SELECT serialized FROM integrationhealth WHERE Id = ANY($1::text[])"
-
+	baseTable      = "integrationhealth"
+	countStmt      = "SELECT COUNT(*) FROM integrationhealth"
+	getStmt        = "SELECT t1.serialized FROM integrationhealth t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM integrationhealth t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM integrationhealth"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM integrationhealth t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM integrationhealth"
+	getManyStmt    = "SELECT serialized FROM integrationhealth WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM integrationhealth WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -102,11 +100,13 @@ func insertIntoIntegrationhealth(ctx context.Context, tx pgx.Tx, obj *storage.In
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO integrationhealth (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -126,10 +126,7 @@ func (s *storeImpl) copyFromIntegrationhealth(ctx context.Context, tx pgx.Tx, ob
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"serialized",
+		"id", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -267,7 +264,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "IntegrationHealth")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -285,7 +281,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.IntegrationHea
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -317,7 +312,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

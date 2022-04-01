@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "k8sroles"
-	countStmt  = "SELECT COUNT(*) FROM k8sroles"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM k8sroles WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM k8sroles WHERE Id = $1"
-	deleteStmt  = "DELETE FROM k8sroles WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM k8sroles"
-	getIDsStmt  = "SELECT Id FROM k8sroles"
-	getManyStmt = "SELECT serialized FROM k8sroles WHERE Id = ANY($1::text[])"
-
+	baseTable      = "k8sroles"
+	countStmt      = "SELECT COUNT(*) FROM k8sroles"
+	getStmt        = "SELECT t1.serialized FROM k8sroles t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM k8sroles t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM k8sroles"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM k8sroles t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM k8sroles"
+	getManyStmt    = "SELECT serialized FROM k8sroles WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM k8sroles WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -109,18 +107,27 @@ func insertIntoK8sroles(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole) er
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetName(),
+
 		obj.GetNamespace(),
+
 		obj.GetClusterId(),
+
 		obj.GetClusterName(),
+
 		obj.GetClusterRole(),
+
 		obj.GetLabels(),
+
 		obj.GetAnnotations(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO k8sroles (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -140,24 +147,7 @@ func (s *storeImpl) copyFromK8sroles(ctx context.Context, tx pgx.Tx, objs ...*st
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"name",
-
-		"namespace",
-
-		"clusterid",
-
-		"clustername",
-
-		"clusterrole",
-
-		"labels",
-
-		"annotations",
-
-		"serialized",
+		"id", "name", "namespace", "clusterid", "clustername", "clusterrole", "labels", "annotations", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -309,7 +299,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "K8SRole")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -327,7 +316,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.K8SRole, bool,
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -359,7 +347,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

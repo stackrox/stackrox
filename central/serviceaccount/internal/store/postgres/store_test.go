@@ -55,7 +55,6 @@ func (s *ServiceaccountsStoreSuite) TestStore() {
 
 	serviceAccount := &storage.ServiceAccount{}
 	s.NoError(testutils.FullInit(serviceAccount, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundServiceAccount, exists, err := store.Get(ctx, serviceAccount.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *ServiceaccountsStoreSuite) TestStore() {
 	serviceAccountCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(serviceAccountCount, 1)
-
 	serviceAccountExists, err := store.Exists(ctx, serviceAccount.GetId())
 	s.NoError(err)
 	s.True(serviceAccountExists)
 	s.NoError(store.Upsert(ctx, serviceAccount))
-
 	foundServiceAccount, exists, err = store.Get(ctx, serviceAccount.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(serviceAccount, foundServiceAccount)
-
 	s.NoError(store.Delete(ctx, serviceAccount.GetId()))
 	foundServiceAccount, exists, err = store.Get(ctx, serviceAccount.GetId())
 	s.NoError(err)

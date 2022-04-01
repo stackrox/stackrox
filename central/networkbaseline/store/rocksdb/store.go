@@ -83,13 +83,10 @@ func (b *storeImpl) GetIDs(_ context.Context) ([]string, error) {
 func (b *storeImpl) Get(_ context.Context, id string) (*storage.NetworkBaseline, bool, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Get, "NetworkBaseline")
 
-	log.Infof("SHREWS before rocks query %s - %s", id, time.Now())
 	msg, exists, err := b.crud.Get(id)
-	log.Infof("SHREWS after rocks query %s - %s", id, time.Now())
 	if err != nil || !exists {
 		return nil, false, err
 	}
-	log.Infof("SHREWS => %s", msg.(*storage.NetworkBaseline))
 	return msg.(*storage.NetworkBaseline), true, nil
 }
 

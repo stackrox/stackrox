@@ -55,7 +55,6 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 
 	processIndicator := &storage.ProcessIndicator{}
 	s.NoError(testutils.FullInit(processIndicator, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundProcessIndicator, exists, err := store.Get(ctx, processIndicator.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	processIndicatorCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(processIndicatorCount, 1)
-
 	processIndicatorExists, err := store.Exists(ctx, processIndicator.GetId())
 	s.NoError(err)
 	s.True(processIndicatorExists)
 	s.NoError(store.Upsert(ctx, processIndicator))
-
 	foundProcessIndicator, exists, err = store.Get(ctx, processIndicator.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(processIndicator, foundProcessIndicator)
-
 	s.NoError(store.Delete(ctx, processIndicator.GetId()))
 	foundProcessIndicator, exists, err = store.Get(ctx, processIndicator.GetId())
 	s.NoError(err)

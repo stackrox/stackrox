@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "images"
-	countStmt  = "SELECT COUNT(*) FROM images"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM images WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM images WHERE Id = $1"
-	deleteStmt  = "DELETE FROM images WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM images"
-	getIDsStmt  = "SELECT Id FROM images"
-	getManyStmt = "SELECT serialized FROM images WHERE Id = ANY($1::text[])"
-
+	baseTable      = "images"
+	countStmt      = "SELECT COUNT(*) FROM images"
+	getStmt        = "SELECT t1.serialized FROM images t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM images t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM images"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM images t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM images"
+	getManyStmt    = "SELECT serialized FROM images WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM images WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -150,29 +148,49 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image) error 
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetName().GetRegistry(),
+
 		obj.GetName().GetRemote(),
+
 		obj.GetName().GetTag(),
+
 		obj.GetName().GetFullName(),
+
 		pgutils.NilOrTime(obj.GetMetadata().GetV1().GetCreated()),
+
 		obj.GetMetadata().GetV1().GetUser(),
+
 		obj.GetMetadata().GetV1().GetCommand(),
+
 		obj.GetMetadata().GetV1().GetEntrypoint(),
+
 		obj.GetMetadata().GetV1().GetVolumes(),
+
 		obj.GetMetadata().GetV1().GetLabels(),
+
 		pgutils.NilOrTime(obj.GetScan().GetScanTime()),
+
 		obj.GetScan().GetOperatingSystem(),
+
 		obj.GetComponents(),
+
 		obj.GetCves(),
+
 		obj.GetFixableCves(),
+
 		pgutils.NilOrTime(obj.GetLastUpdated()),
+
 		obj.GetRiskScore(),
+
 		obj.GetTopCvss(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO images (Id, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Components, Cves, FixableCves, LastUpdated, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, LastUpdated = EXCLUDED.LastUpdated, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -198,13 +216,17 @@ func insertIntoImagesLayers(ctx context.Context, tx pgx.Tx, obj *storage.ImageLa
 
 	values := []interface{}{
 		// parent primary keys start
+
 		images_Id,
+
 		idx,
+
 		obj.GetInstruction(),
+
 		obj.GetValue(),
 	}
-
 	finalStr := "INSERT INTO images_Layers (images_Id, idx, Instruction, Value) VALUES($1, $2, $3, $4) ON CONFLICT(images_Id, idx) DO UPDATE SET images_Id = EXCLUDED.images_Id, idx = EXCLUDED.idx, Instruction = EXCLUDED.Instruction, Value = EXCLUDED.Value"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -224,46 +246,7 @@ func (s *storeImpl) copyFromImages(ctx context.Context, tx pgx.Tx, objs ...*stor
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"name_registry",
-
-		"name_remote",
-
-		"name_tag",
-
-		"name_fullname",
-
-		"metadata_v1_created",
-
-		"metadata_v1_user",
-
-		"metadata_v1_command",
-
-		"metadata_v1_entrypoint",
-
-		"metadata_v1_volumes",
-
-		"metadata_v1_labels",
-
-		"scan_scantime",
-
-		"scan_operatingsystem",
-
-		"components",
-
-		"cves",
-
-		"fixablecves",
-
-		"lastupdated",
-
-		"riskscore",
-
-		"topcvss",
-
-		"serialized",
+		"id", "name_registry", "name_remote", "name_tag", "name_fullname", "metadata_v1_created", "metadata_v1_user", "metadata_v1_command", "metadata_v1_entrypoint", "metadata_v1_volumes", "metadata_v1_labels", "scan_scantime", "scan_operatingsystem", "components", "cves", "fixablecves", "lastupdated", "riskscore", "topcvss", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -361,14 +344,7 @@ func (s *storeImpl) copyFromImagesLayers(ctx context.Context, tx pgx.Tx, images_
 	var err error
 
 	copyCols := []string{
-
-		"images_id",
-
-		"idx",
-
-		"instruction",
-
-		"value",
+		"images_id", "idx", "instruction", "value",
 	}
 
 	for idx, obj := range objs {
@@ -495,7 +471,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Image")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -513,7 +488,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Image, bool, e
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -545,7 +519,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

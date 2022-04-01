@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "rolebindings"
-	countStmt  = "SELECT COUNT(*) FROM rolebindings"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM rolebindings WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM rolebindings WHERE Id = $1"
-	deleteStmt  = "DELETE FROM rolebindings WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM rolebindings"
-	getIDsStmt  = "SELECT Id FROM rolebindings"
-	getManyStmt = "SELECT serialized FROM rolebindings WHERE Id = ANY($1::text[])"
-
+	baseTable      = "rolebindings"
+	countStmt      = "SELECT COUNT(*) FROM rolebindings"
+	getStmt        = "SELECT t1.serialized FROM rolebindings t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM rolebindings t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM rolebindings"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM rolebindings t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM rolebindings"
+	getManyStmt    = "SELECT serialized FROM rolebindings WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM rolebindings WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -140,19 +138,29 @@ func insertIntoRolebindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetName(),
+
 		obj.GetNamespace(),
+
 		obj.GetClusterId(),
+
 		obj.GetClusterName(),
+
 		obj.GetClusterRole(),
+
 		obj.GetLabels(),
+
 		obj.GetAnnotations(),
+
 		obj.GetRoleId(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO rolebindings (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, RoleId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, RoleId = EXCLUDED.RoleId, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -178,13 +186,17 @@ func insertIntoRolebindingsSubjects(ctx context.Context, tx pgx.Tx, obj *storage
 
 	values := []interface{}{
 		// parent primary keys start
+
 		rolebindings_Id,
+
 		idx,
+
 		obj.GetKind(),
+
 		obj.GetName(),
 	}
-
 	finalStr := "INSERT INTO rolebindings_Subjects (rolebindings_Id, idx, Kind, Name) VALUES($1, $2, $3, $4) ON CONFLICT(rolebindings_Id, idx) DO UPDATE SET rolebindings_Id = EXCLUDED.rolebindings_Id, idx = EXCLUDED.idx, Kind = EXCLUDED.Kind, Name = EXCLUDED.Name"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -204,26 +216,7 @@ func (s *storeImpl) copyFromRolebindings(ctx context.Context, tx pgx.Tx, objs ..
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"name",
-
-		"namespace",
-
-		"clusterid",
-
-		"clustername",
-
-		"clusterrole",
-
-		"labels",
-
-		"annotations",
-
-		"roleid",
-
-		"serialized",
+		"id", "name", "namespace", "clusterid", "clustername", "clusterrole", "labels", "annotations", "roleid", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -301,14 +294,7 @@ func (s *storeImpl) copyFromRolebindingsSubjects(ctx context.Context, tx pgx.Tx,
 	var err error
 
 	copyCols := []string{
-
-		"rolebindings_id",
-
-		"idx",
-
-		"kind",
-
-		"name",
+		"rolebindings_id", "idx", "kind", "name",
 	}
 
 	for idx, obj := range objs {
@@ -435,7 +421,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "K8SRoleBinding")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -453,7 +438,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.K8SRoleBinding
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -485,7 +469,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

@@ -1,5 +1,6 @@
 
 {{define "paramList"}}{{$name := .TrimmedType|lowerCamelCase}}{{range $idx, $pk := .Schema.LocalPrimaryKeys}}{{if $idx}}, {{end}}{{$pk.Getter $name}}{{end}}{{end}}
+{{define "idxParamList"}}{{$name := .TrimmedType|lowerCamelCase}}{{range $idx, $pk := .Schema.IndexFields}}{{if $idx}}, {{end}}{{$pk.Getter $name}}{{end}}{{end}}
 
 {{- $ := . }}
 {{- $name := .TrimmedType|lowerCamelCase }}
@@ -61,15 +62,22 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 
 	{{$name}} := &{{.Type}}{}
 	s.NoError(testutils.FullInit({{$name}}, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
-	found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get(ctx, {{template "paramList" $}})
+	{{- if .Schema.HasSerialKey }}
+    found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get(ctx, {{template "idxParamList" $}})
+    {{- else }}
+    found{{.TrimmedType|upperCamelCase}}, exists, err := store.Get(ctx, {{template "paramList" $}})
+    {{- end }}
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
     {{if not .JoinTable -}}
 	s.NoError(store.Upsert(ctx, {{$name}}))
+	{{- if .Schema.HasSerialKey }}
+	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "idxParamList" $}})
+	{{- else }}
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
+	{{- end }}
 	s.NoError(err)
 	s.True(exists)
 	s.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}})
@@ -78,18 +86,34 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal({{$name}}Count, 1)
 
-	{{$name}}Exists, err := store.Exists(ctx, {{template "paramList" $}})
+	{{- if .Schema.HasSerialKey }}
+    {{$name}}Exists, err := store.Exists(ctx, {{template "idxParamList" $}})
+    {{- else }}
+    {{$name}}Exists, err := store.Exists(ctx, {{template "paramList" $}})
+    {{- end }}
 	s.NoError(err)
 	s.True({{$name}}Exists)
 	s.NoError(store.Upsert(ctx, {{$name}}))
 
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
+	{{- if .Schema.HasSerialKey }}
+    found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "idxParamList" $}})
+    {{- else }}
+    found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
+    {{- end }}
 	s.NoError(err)
 	s.True(exists)
 	s.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}})
 
-	s.NoError(store.Delete(ctx, {{template "paramList" $}}))
-	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
+	{{- if .Schema.HasSerialKey }}
+    s.NoError(store.Delete(ctx, {{template "idxParamList" $}}))
+    {{- else }}
+    s.NoError(store.Delete(ctx, {{template "paramList" $}}))
+    {{- end }}
+	{{- if .Schema.HasSerialKey }}
+    found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "idxParamList" $}})
+    {{- else }}
+    found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
+    {{- end }}
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})

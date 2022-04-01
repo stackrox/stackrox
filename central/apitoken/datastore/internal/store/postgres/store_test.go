@@ -55,7 +55,6 @@ func (s *ApitokensStoreSuite) TestStore() {
 
 	tokenMetadata := &storage.TokenMetadata{}
 	s.NoError(testutils.FullInit(tokenMetadata, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundTokenMetadata, exists, err := store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *ApitokensStoreSuite) TestStore() {
 	tokenMetadataCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(tokenMetadataCount, 1)
-
 	tokenMetadataExists, err := store.Exists(ctx, tokenMetadata.GetId())
 	s.NoError(err)
 	s.True(tokenMetadataExists)
 	s.NoError(store.Upsert(ctx, tokenMetadata))
-
 	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(tokenMetadata, foundTokenMetadata)
-
 	s.NoError(store.Delete(ctx, tokenMetadata.GetId()))
 	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)

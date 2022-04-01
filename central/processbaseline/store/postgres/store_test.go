@@ -55,7 +55,6 @@ func (s *ProcessbaselinesStoreSuite) TestStore() {
 
 	processBaseline := &storage.ProcessBaseline{}
 	s.NoError(testutils.FullInit(processBaseline, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundProcessBaseline, exists, err := store.Get(ctx, processBaseline.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *ProcessbaselinesStoreSuite) TestStore() {
 	processBaselineCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(processBaselineCount, 1)
-
 	processBaselineExists, err := store.Exists(ctx, processBaseline.GetId())
 	s.NoError(err)
 	s.True(processBaselineExists)
 	s.NoError(store.Upsert(ctx, processBaseline))
-
 	foundProcessBaseline, exists, err = store.Get(ctx, processBaseline.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(processBaseline, foundProcessBaseline)
-
 	s.NoError(store.Delete(ctx, processBaseline.GetId()))
 	foundProcessBaseline, exists, err = store.Get(ctx, processBaseline.GetId())
 	s.NoError(err)

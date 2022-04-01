@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "process_indicators"
-	countStmt  = "SELECT COUNT(*) FROM process_indicators"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM process_indicators WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM process_indicators WHERE Id = $1"
-	deleteStmt  = "DELETE FROM process_indicators WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM process_indicators"
-	getIDsStmt  = "SELECT Id FROM process_indicators"
-	getManyStmt = "SELECT serialized FROM process_indicators WHERE Id = ANY($1::text[])"
-
+	baseTable      = "process_indicators"
+	countStmt      = "SELECT COUNT(*) FROM process_indicators"
+	getStmt        = "SELECT t1.serialized FROM process_indicators t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM process_indicators t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM process_indicators"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM process_indicators t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM process_indicators"
+	getManyStmt    = "SELECT serialized FROM process_indicators WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM process_indicators WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -118,22 +116,35 @@ func insertIntoProcessIndicators(ctx context.Context, tx pgx.Tx, obj *storage.Pr
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetDeploymentId(),
+
 		obj.GetContainerName(),
+
 		obj.GetPodId(),
+
 		obj.GetPodUid(),
+
 		obj.GetSignal().GetContainerId(),
+
 		obj.GetSignal().GetName(),
+
 		obj.GetSignal().GetArgs(),
+
 		obj.GetSignal().GetExecFilePath(),
+
 		obj.GetSignal().GetUid(),
+
 		obj.GetClusterId(),
+
 		obj.GetNamespace(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO process_indicators (Id, DeploymentId, ContainerName, PodId, PodUid, Signal_ContainerId, Signal_Name, Signal_Args, Signal_ExecFilePath, Signal_Uid, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ContainerName = EXCLUDED.ContainerName, PodId = EXCLUDED.PodId, PodUid = EXCLUDED.PodUid, Signal_ContainerId = EXCLUDED.Signal_ContainerId, Signal_Name = EXCLUDED.Signal_Name, Signal_Args = EXCLUDED.Signal_Args, Signal_ExecFilePath = EXCLUDED.Signal_ExecFilePath, Signal_Uid = EXCLUDED.Signal_Uid, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -153,32 +164,7 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"deploymentid",
-
-		"containername",
-
-		"podid",
-
-		"poduid",
-
-		"signal_containerid",
-
-		"signal_name",
-
-		"signal_args",
-
-		"signal_execfilepath",
-
-		"signal_uid",
-
-		"clusterid",
-
-		"namespace",
-
-		"serialized",
+		"id", "deploymentid", "containername", "podid", "poduid", "signal_containerid", "signal_name", "signal_args", "signal_execfilepath", "signal_uid", "clusterid", "namespace", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -338,7 +324,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ProcessIndicator")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -356,7 +341,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ProcessIndicat
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -388,7 +372,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

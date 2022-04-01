@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "clusterinitbundles"
-	countStmt  = "SELECT COUNT(*) FROM clusterinitbundles"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM clusterinitbundles WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM clusterinitbundles WHERE Id = $1"
-	deleteStmt  = "DELETE FROM clusterinitbundles WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM clusterinitbundles"
-	getIDsStmt  = "SELECT Id FROM clusterinitbundles"
-	getManyStmt = "SELECT serialized FROM clusterinitbundles WHERE Id = ANY($1::text[])"
-
+	baseTable      = "clusterinitbundles"
+	countStmt      = "SELECT COUNT(*) FROM clusterinitbundles"
+	getStmt        = "SELECT t1.serialized FROM clusterinitbundles t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM clusterinitbundles t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM clusterinitbundles"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM clusterinitbundles t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM clusterinitbundles"
+	getManyStmt    = "SELECT serialized FROM clusterinitbundles WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM clusterinitbundles WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -102,11 +100,13 @@ func insertIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, obj *storage.I
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO clusterinitbundles (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -126,10 +126,7 @@ func (s *storeImpl) copyFromClusterinitbundles(ctx context.Context, tx pgx.Tx, o
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"serialized",
+		"id", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -267,7 +264,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "InitBundleMeta")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -285,7 +281,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.InitBundleMeta
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -317,7 +312,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

@@ -55,7 +55,6 @@ func (s *RolesStoreSuite) TestStore() {
 
 	role := &storage.Role{}
 	s.NoError(testutils.FullInit(role, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundRole, exists, err := store.Get(ctx, role.GetName())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *RolesStoreSuite) TestStore() {
 	roleCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(roleCount, 1)
-
 	roleExists, err := store.Exists(ctx, role.GetName())
 	s.NoError(err)
 	s.True(roleExists)
 	s.NoError(store.Upsert(ctx, role))
-
 	foundRole, exists, err = store.Get(ctx, role.GetName())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(role, foundRole)
-
 	s.NoError(store.Delete(ctx, role.GetName()))
 	foundRole, exists, err = store.Get(ctx, role.GetName())
 	s.NoError(err)

@@ -22,11 +22,10 @@ import (
 const (
 	baseTable  = "multikey"
 	countStmt  = "SELECT COUNT(*) FROM multikey"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM multikey WHERE Key1 = $1 AND Key2 = $2)"
-
-	getStmt    = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
-	deleteStmt = "DELETE FROM multikey WHERE Key1 = $1 AND Key2 = $2"
+	getStmt    = "SELECT t1.serialized FROM multikey t1 WHERE t1.Key1 = $1 AND t1.Key2 = $2"
+	deleteStmt = "DELETE FROM multikey t1 WHERE t1.Key1 = $1 AND t1.Key2 = $2"
 	walkStmt   = "SELECT serialized FROM multikey"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM multikey t1 WHERE t1.Key1 = $1 AND t1.Key2 = $2)"
 
 	batchAfter = 100
 
@@ -143,24 +142,39 @@ func insertIntoMultikey(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKe
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetKey1(),
+
 		obj.GetKey2(),
+
 		obj.GetStringSlice(),
+
 		obj.GetBool(),
+
 		obj.GetUint64(),
+
 		obj.GetInt64(),
+
 		obj.GetFloat(),
+
 		obj.GetLabels(),
+
 		pgutils.NilOrTime(obj.GetTimestamp()),
+
 		obj.GetEnum(),
+
 		obj.GetEnums(),
+
 		obj.GetString_(),
+
 		obj.GetIntSlice(),
+
 		obj.GetOneofnested().GetNested(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO multikey (Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, String_, IntSlice, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(Key1, Key2) DO UPDATE SET Key1 = EXCLUDED.Key1, Key2 = EXCLUDED.Key2, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, String_ = EXCLUDED.String_, IntSlice = EXCLUDED.IntSlice, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -186,18 +200,27 @@ func insertIntoMultikeyNested(ctx context.Context, tx pgx.Tx, obj *storage.TestM
 
 	values := []interface{}{
 		// parent primary keys start
+
 		multikey_Key1,
+
 		multikey_Key2,
+
 		idx,
+
 		obj.GetNested(),
+
 		obj.GetIsNested(),
+
 		obj.GetInt64(),
+
 		obj.GetNested2().GetNested2(),
+
 		obj.GetNested2().GetIsNested(),
+
 		obj.GetNested2().GetInt64(),
 	}
-
 	finalStr := "INSERT INTO multikey_Nested (multikey_Key1, multikey_Key2, idx, Nested, IsNested, Int64, Nested2_Nested2, Nested2_IsNested, Nested2_Int64) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(multikey_Key1, multikey_Key2, idx) DO UPDATE SET multikey_Key1 = EXCLUDED.multikey_Key1, multikey_Key2 = EXCLUDED.multikey_Key2, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested, IsNested = EXCLUDED.IsNested, Int64 = EXCLUDED.Int64, Nested2_Nested2 = EXCLUDED.Nested2_Nested2, Nested2_IsNested = EXCLUDED.Nested2_IsNested, Nested2_Int64 = EXCLUDED.Nested2_Int64"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -213,36 +236,7 @@ func (s *storeImpl) copyFromMultikey(ctx context.Context, tx pgx.Tx, objs ...*st
 	var err error
 
 	copyCols := []string{
-
-		"key1",
-
-		"key2",
-
-		"stringslice",
-
-		"bool",
-
-		"uint64",
-
-		"int64",
-
-		"float",
-
-		"labels",
-
-		"timestamp",
-
-		"enum",
-
-		"enums",
-
-		"string_",
-
-		"intslice",
-
-		"oneofnested_nested",
-
-		"serialized",
+		"key1", "key2", "stringslice", "bool", "uint64", "int64", "float", "labels", "timestamp", "enum", "enums", "string_", "intslice", "oneofnested_nested", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -324,24 +318,7 @@ func (s *storeImpl) copyFromMultikeyNested(ctx context.Context, tx pgx.Tx, multi
 	var err error
 
 	copyCols := []string{
-
-		"multikey_key1",
-
-		"multikey_key2",
-
-		"idx",
-
-		"nested",
-
-		"isnested",
-
-		"int64",
-
-		"nested2_nested2",
-
-		"nested2_isnested",
-
-		"nested2_int64",
+		"multikey_key1", "multikey_key2", "idx", "nested", "isnested", "int64", "nested2_nested2", "nested2_isnested", "nested2_int64",
 	}
 
 	for idx, obj := range objs {
@@ -478,7 +455,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, key1 string, key2 string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestMultiKeyStruct")
-
 	row := s.db.QueryRow(ctx, existsStmt, key1, key2)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -496,7 +472,6 @@ func (s *storeImpl) Get(ctx context.Context, key1 string, key2 string) (*storage
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, key1, key2)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -528,7 +503,6 @@ func (s *storeImpl) Delete(ctx context.Context, key1 string, key2 string) error 
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, key1, key2); err != nil {
 		return err
 	}

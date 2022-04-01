@@ -55,7 +55,6 @@ func (s *NamespacesStoreSuite) TestStore() {
 
 	namespaceMetadata := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(namespaceMetadata, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundNamespaceMetadata, exists, err := store.Get(ctx, namespaceMetadata.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *NamespacesStoreSuite) TestStore() {
 	namespaceMetadataCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(namespaceMetadataCount, 1)
-
 	namespaceMetadataExists, err := store.Exists(ctx, namespaceMetadata.GetId())
 	s.NoError(err)
 	s.True(namespaceMetadataExists)
 	s.NoError(store.Upsert(ctx, namespaceMetadata))
-
 	foundNamespaceMetadata, exists, err = store.Get(ctx, namespaceMetadata.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(namespaceMetadata, foundNamespaceMetadata)
-
 	s.NoError(store.Delete(ctx, namespaceMetadata.GetId()))
 	foundNamespaceMetadata, exists, err = store.Get(ctx, namespaceMetadata.GetId())
 	s.NoError(err)

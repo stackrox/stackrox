@@ -21,11 +21,10 @@ import (
 const (
 	baseTable  = "image_component_relation"
 	countStmt  = "SELECT COUNT(*) FROM image_component_relation"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_relation WHERE ImageId = $1 AND ImageComponentId = $2)"
-
-	getStmt    = "SELECT serialized FROM image_component_relation WHERE ImageId = $1 AND ImageComponentId = $2"
-	deleteStmt = "DELETE FROM image_component_relation WHERE ImageId = $1 AND ImageComponentId = $2"
+	getStmt    = "SELECT t1.serialized FROM image_component_relation t1 WHERE t1.ImageId = $1 AND t1.ImageComponentId = $2"
+	deleteStmt = "DELETE FROM image_component_relation t1 WHERE t1.ImageId = $1 AND t1.ImageComponentId = $2"
 	walkStmt   = "SELECT serialized FROM image_component_relation"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_relation t1 WHERE t1.ImageId = $1 AND t1.ImageComponentId = $2)"
 
 	batchAfter = 100
 
@@ -217,7 +216,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, imageId string, imageComponentId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ImageComponentEdge")
-
 	row := s.db.QueryRow(ctx, existsStmt, imageId, imageComponentId)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -235,7 +233,6 @@ func (s *storeImpl) Get(ctx context.Context, imageId string, imageComponentId st
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, imageId, imageComponentId)
 	var data []byte
 	if err := row.Scan(&data); err != nil {

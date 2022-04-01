@@ -55,7 +55,6 @@ func (s *ClusterHealthStatusStoreSuite) TestStore() {
 
 	clusterHealthStatus := &storage.ClusterHealthStatus{}
 	s.NoError(testutils.FullInit(clusterHealthStatus, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundClusterHealthStatus, exists, err := store.Get(ctx, clusterHealthStatus.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *ClusterHealthStatusStoreSuite) TestStore() {
 	clusterHealthStatusCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(clusterHealthStatusCount, 1)
-
 	clusterHealthStatusExists, err := store.Exists(ctx, clusterHealthStatus.GetId())
 	s.NoError(err)
 	s.True(clusterHealthStatusExists)
 	s.NoError(store.Upsert(ctx, clusterHealthStatus))
-
 	foundClusterHealthStatus, exists, err = store.Get(ctx, clusterHealthStatus.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(clusterHealthStatus, foundClusterHealthStatus)
-
 	s.NoError(store.Delete(ctx, clusterHealthStatus.GetId()))
 	foundClusterHealthStatus, exists, err = store.Get(ctx, clusterHealthStatus.GetId())
 	s.NoError(err)

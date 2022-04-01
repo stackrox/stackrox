@@ -55,7 +55,6 @@ func (s *RiskStoreSuite) TestStore() {
 
 	risk := &storage.Risk{}
 	s.NoError(testutils.FullInit(risk, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundRisk, exists, err := store.Get(ctx, risk.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *RiskStoreSuite) TestStore() {
 	riskCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(riskCount, 1)
-
 	riskExists, err := store.Exists(ctx, risk.GetId())
 	s.NoError(err)
 	s.True(riskExists)
 	s.NoError(store.Upsert(ctx, risk))
-
 	foundRisk, exists, err = store.Get(ctx, risk.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(risk, foundRisk)
-
 	s.NoError(store.Delete(ctx, risk.GetId()))
 	foundRisk, exists, err = store.Get(ctx, risk.GetId())
 	s.NoError(err)

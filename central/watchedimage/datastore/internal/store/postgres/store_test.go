@@ -55,7 +55,6 @@ func (s *WatchedimagesStoreSuite) TestStore() {
 
 	watchedImage := &storage.WatchedImage{}
 	s.NoError(testutils.FullInit(watchedImage, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundWatchedImage, exists, err := store.Get(ctx, watchedImage.GetName())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *WatchedimagesStoreSuite) TestStore() {
 	watchedImageCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(watchedImageCount, 1)
-
 	watchedImageExists, err := store.Exists(ctx, watchedImage.GetName())
 	s.NoError(err)
 	s.True(watchedImageExists)
 	s.NoError(store.Upsert(ctx, watchedImage))
-
 	foundWatchedImage, exists, err = store.Get(ctx, watchedImage.GetName())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(watchedImage, foundWatchedImage)
-
 	s.NoError(store.Delete(ctx, watchedImage.GetName()))
 	foundWatchedImage, exists, err = store.Get(ctx, watchedImage.GetName())
 	s.NoError(err)

@@ -2,16 +2,23 @@
 {{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
 {{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}t1.{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
 {{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
+{{define "commaSeparatedInsertableColumns"}}{{range $idx, $field := .}}{{if not $field.Options.SerialKey}}{{if gt $idx 1}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}{{end}}
 {{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
 
 {{- $ := . }}
-{{- $pks := .Schema.LocalPrimaryKeys }}
+{{- $pks := .Schema.LogicalPrimaryKeys }}
+{{- $actualPks := .Schema.LocalPrimaryKeys }}
 {{- $idxFields := .Schema.IndexFields }}
 
 {{- $singlePK := dict.nil }}
 {{- if eq (len $pks) 1 }}
 {{ $singlePK = index $pks 0 }}
+{{- end }}
+
+{{- $singleSerialPK := dict.nil }}
+{{- if and (eq (len $actualPks) 1) (.Schema.HasSerialKey) }}
+{{ $singleSerialPK = index $actualPks 0 }}
 {{- end }}
 
 package postgres
@@ -34,15 +41,19 @@ import (
 const (
         baseTable = "{{.Table}}"
 {{- if .Schema.HasSerialKey }}
-        joinStmt = " INNER JOIN (SELECT {{template "commaSeparatedColumns" $idxFields}}, MAX({{$singlePK.ColumnName}}) AS Max{{$singlePK.ColumnName}} FROM {{.Table}} GROUP BY {{template "commaSeparatedColumns" $idxFields}}) t2 on {{range $idx, $field := .Schema.Fields}}{{if $field.Options.Index}}t1.{{$field.ColumnName}} = t2.{{$field.ColumnName}} AND{{end}}{{end}} t1.{{$singlePK.ColumnName}} = t2.Max{{$singlePK.ColumnName}} "
+        joinStmt = " INNER JOIN (SELECT {{template "commaSeparatedColumns" $idxFields}}, MAX({{$singleSerialPK.ColumnName}}) AS Max{{$singleSerialPK.ColumnName}} FROM {{.Table}} GROUP BY {{template "commaSeparatedColumns" $idxFields}}) t2 on {{range $idx, $field := .Schema.Fields}}{{if $field.Options.Index}}t1.{{$field.ColumnName}} = t2.{{$field.ColumnName}} AND{{end}}{{end}} t1.{{$singleSerialPK.ColumnName}} = t2.Max{{$singleSerialPK.ColumnName}} "
         countStmt = "SELECT COUNT(*) FROM {{.Table}} t1 " + joinStmt
 
         getStmt = "SELECT t1.serialized FROM {{.Table}} t1 " + joinStmt + " WHERE {{template "whereMatch" $idxFields}}"
 
-        getIDsStmt = "SELECT distinct {{template "commaSeparatedColumns" $idxFields}}) FROM {{.Table}}"
-        getManyStmt = "SELECT t1.serialized FROM {{.Table}} t1 " + joinStmt + " WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
-        deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
+        getIDsStmt = "SELECT distinct({{template "commaSeparatedColumns" $idxFields}}) FROM {{.Table}}"
+        // Todo:  Come back and make this for a single index column
+        getManyStmt = "SELECT t1.serialized FROM {{.Table}} t1 " + joinStmt + " WHERE t1.{{template "commaSeparatedColumns" $idxFields}} = ANY($1::text[])"
+        deleteManyStmt = "DELETE FROM {{.Table}} WHERE t1.{{template "commaSeparatedColumns" $idxFields}} = ANY($1::text[])"
 
+        deleteStmt = "DELETE FROM {{.Table}} t1 WHERE {{template "whereMatch" $idxFields}}"
+        walkStmt = "SELECT t1.serialized FROM {{.Table}} t1"
+        existsStmt = "SELECT EXISTS(SELECT 1 FROM {{.Table}} t1 WHERE {{template "whereMatch" $idxFields}})"
 
 {{- else }}
         countStmt = "SELECT COUNT(*) FROM {{.Table}}"
@@ -57,14 +68,6 @@ const (
 {{- end }}
 
 {{- end }}
-
-
-
-
-
-
-
-
 
         batchAfter = 100
 
@@ -92,15 +95,24 @@ func init() {
 
 type Store interface {
     Count(ctx context.Context) (int, error)
+{{- if .Schema.HasSerialKey }}
+    Exists(ctx context.Context, {{template "paramList" $idxFields}}) (bool, error)
+    Get(ctx context.Context, {{template "paramList" $idxFields}}) (*{{.Type}}, bool, error)
+{{- else }}
     Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error)
     Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error)
+{{- end }}
 {{- if not .JoinTable }}
     Upsert(ctx context.Context, obj *{{.Type}}) error
     UpsertMany(ctx context.Context, objs []*{{.Type}}) error
+{{- if .Schema.HasSerialKey }}
+    Delete(ctx context.Context, {{template "paramList" $idxFields}}) error
+{{- else }}
     Delete(ctx context.Context, {{template "paramList" $pks}}) error
 {{- end }}
+{{- end }}
 
-{{- if $singlePK }}
+{{- if and ($singlePK) }}
     GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
     GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error)
     DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error
@@ -188,11 +200,18 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
         {{- if eq $field.DataType "datetime" }}
         pgutils.NilOrTime({{$field.Getter "obj"}}),
         {{- else }}
+        {{if not $field.Options.SerialKey}}
         {{$field.Getter "obj"}},{{end}}
+        {{end}}
         {{- end}}
     }
 
+    {{- if $schema.HasSerialKey }}
+    finalStr := "INSERT INTO {{$schema.Table}} ({{template "commaSeparatedInsertableColumns" $schema.ResolvedFields }}) VALUES({{ valueExpansion (sub (len $schema.ResolvedFields) 1 | int) }})"
+    {{- else }}
     finalStr := "INSERT INTO {{$schema.Table}} ({{template "commaSeparatedColumns" $schema.ResolvedFields }}) VALUES({{ valueExpansion (len $schema.ResolvedFields) }}) ON CONFLICT({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys}}) DO UPDATE SET {{template "updateExclusions" $schema.ResolvedFields}}"
+    {{ end }}
+
     _, err := tx.Exec(ctx, finalStr, values...)
     if err != nil {
         return err
@@ -237,14 +256,14 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
     var err error
 
-    {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.Parents) }}
+    {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.Parents) (not $schema.HasSerialKey) }}
     // This is a copy so first we must delete the rows and re-add them
     // Which is essentially the desired behaviour of an upsert.
     var deletes []string
     {{end}}
 
     copyCols := []string {
-    {{range $idx, $field := $schema.ResolvedFields}}"{{$field.ColumnName|lowerCase}}",{{end}}
+    {{range $idx, $field := $schema.ResolvedFields}}{{if not $field.Options.SerialKey}}"{{$field.ColumnName|lowerCase}}",{{end}}{{end}}
     }
 
     for idx, obj := range objs {
@@ -263,11 +282,13 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
             {{if eq $field.DataType "datetime"}}
             pgutils.NilOrTime({{$field.Getter "obj"}}),
             {{- else}}
+            {{if not $field.Options.SerialKey}}
             {{$field.Getter "obj"}},{{end}}
+            {{end}}
             {{end}}
         })
 
-        {{ if not $schema.Parents }}
+        {{ if and (not $schema.Parents) (not $schema.HasSerialKey) }}
         {{if eq (len $schema.LocalPrimaryKeys) 1}}
         // Add the id to be deleted.
         deletes = append(deletes, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
@@ -283,7 +304,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         if (idx + 1) % batchSize == 0 || idx == len(objs) - 1  {
             // copy does not upsert so have to delete first.  parent deletion cascades so only need to
             // delete for the top level parent
-            {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.Parents) }}
+            {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.Parents) (not $schema.HasSerialKey)}}
             _, err = tx.Exec(ctx, deleteManyStmt, deletes);
             if err != nil {
                 return err
@@ -421,10 +442,18 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
+{{- if .Schema.HasSerialKey }}
+func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $idxFields}}) (bool, error) {
+{{- else }}
 func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error) {
+{{- end }}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "{{.TrimmedType}}")
 
-	row := s.db.QueryRow(ctx, existsStmt, {{template "argList" $pks}})
+{{- if .Schema.HasSerialKey }}
+	row := s.db.QueryRow(ctx, existsStmt, {{template "argList" $idxFields}})
+{{- else }}
+    row := s.db.QueryRow(ctx, existsStmt, {{template "argList" $pks}})
+{{- end }}
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -433,7 +462,11 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 }
 
 // Get returns the object, if it exists from the store
+{{- if .Schema.HasSerialKey }}
+func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $idxFields}}) (*{{.Type}}, bool, error) {
+{{- else }}
 func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error) {
+{{- end }}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
 
 	conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
@@ -442,7 +475,11 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
 	}
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, {{template "argList" $pks}})
+{{- if .Schema.HasSerialKey }}
+	row := conn.QueryRow(ctx, getStmt, {{template "argList" $idxFields}})
+{{- else }}
+    row := conn.QueryRow(ctx, getStmt, {{template "argList" $pks}})
+{{- end }}
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -466,7 +503,11 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 
 {{- if not .JoinTable }}
 // Delete removes the specified ID from the store
+{{- if .Schema.HasSerialKey }}
+func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $idxFields}}) error {
+{{- else }}
 func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
+{{- end }}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
 
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
@@ -475,7 +516,11 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
 	}
 	defer release()
 
-	if _, err := conn.Exec(ctx, deleteStmt, {{template "argList" $pks}}); err != nil {
+{{- if .Schema.HasSerialKey }}
+	if _, err := conn.Exec(ctx, deleteStmt, {{template "argList" $idxFields}}); err != nil {
+{{- else }}
+    if _, err := conn.Exec(ctx, deleteStmt, {{template "argList" $pks}}); err != nil {
+{{- end }}
 		return err
 	}
 	return nil

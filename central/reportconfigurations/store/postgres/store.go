@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "reportconfigs"
-	countStmt  = "SELECT COUNT(*) FROM reportconfigs"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM reportconfigs WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM reportconfigs WHERE Id = $1"
-	deleteStmt  = "DELETE FROM reportconfigs WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM reportconfigs"
-	getIDsStmt  = "SELECT Id FROM reportconfigs"
-	getManyStmt = "SELECT serialized FROM reportconfigs WHERE Id = ANY($1::text[])"
-
+	baseTable      = "reportconfigs"
+	countStmt      = "SELECT COUNT(*) FROM reportconfigs"
+	getStmt        = "SELECT t1.serialized FROM reportconfigs t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM reportconfigs t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM reportconfigs"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM reportconfigs t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM reportconfigs"
+	getManyStmt    = "SELECT serialized FROM reportconfigs WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM reportconfigs WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -104,13 +102,17 @@ func insertIntoReportconfigs(ctx context.Context, tx pgx.Tx, obj *storage.Report
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetName(),
+
 		obj.GetType(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO reportconfigs (Id, Name, Type, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -130,14 +132,7 @@ func (s *storeImpl) copyFromReportconfigs(ctx context.Context, tx pgx.Tx, objs .
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"name",
-
-		"type",
-
-		"serialized",
+		"id", "name", "type", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -279,7 +274,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ReportConfiguration")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -297,7 +291,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ReportConfigur
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -329,7 +322,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

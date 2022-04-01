@@ -22,11 +22,10 @@ import (
 const (
 	baseTable  = "node_cves"
 	countStmt  = "SELECT COUNT(*) FROM node_cves"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_cves WHERE Id = $1 AND OperatingSystem = $2)"
-
-	getStmt    = "SELECT serialized FROM node_cves WHERE Id = $1 AND OperatingSystem = $2"
-	deleteStmt = "DELETE FROM node_cves WHERE Id = $1 AND OperatingSystem = $2"
+	getStmt    = "SELECT t1.serialized FROM node_cves t1 WHERE t1.Id = $1 AND t1.OperatingSystem = $2"
+	deleteStmt = "DELETE FROM node_cves t1 WHERE t1.Id = $1 AND t1.OperatingSystem = $2"
 	walkStmt   = "SELECT serialized FROM node_cves"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_cves t1 WHERE t1.Id = $1 AND t1.OperatingSystem = $2)"
 
 	batchAfter = 100
 
@@ -103,19 +102,28 @@ func insertIntoNodeCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error 
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetOperatingSystem(),
+
 		obj.GetCvss(),
+
 		obj.GetImpactScore(),
+
 		pgutils.NilOrTime(obj.GetPublishedOn()),
 		pgutils.NilOrTime(obj.GetCreatedAt()),
+
 		obj.GetSuppressed(),
+
 		pgutils.NilOrTime(obj.GetSuppressExpiry()),
+
 		obj.GetSeverity(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO node_cves (Id, OperatingSystem, Cvss, ImpactScore, PublishedOn, CreatedAt, Suppressed, SuppressExpiry, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id, OperatingSystem) DO UPDATE SET Id = EXCLUDED.Id, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, ImpactScore = EXCLUDED.ImpactScore, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, Suppressed = EXCLUDED.Suppressed, SuppressExpiry = EXCLUDED.SuppressExpiry, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -131,26 +139,7 @@ func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*st
 	var err error
 
 	copyCols := []string{
-
-		"id",
-
-		"operatingsystem",
-
-		"cvss",
-
-		"impactscore",
-
-		"publishedon",
-
-		"createdat",
-
-		"suppressed",
-
-		"suppressexpiry",
-
-		"severity",
-
-		"serialized",
+		"id", "operatingsystem", "cvss", "impactscore", "publishedon", "createdat", "suppressed", "suppressexpiry", "severity", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -298,7 +287,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string, operatingSystem string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "CVE")
-
 	row := s.db.QueryRow(ctx, existsStmt, id, operatingSystem)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -316,7 +304,6 @@ func (s *storeImpl) Get(ctx context.Context, id string, operatingSystem string) 
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id, operatingSystem)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -348,7 +335,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string, operatingSystem strin
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id, operatingSystem); err != nil {
 		return err
 	}

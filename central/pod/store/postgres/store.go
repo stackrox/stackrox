@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "pods"
-	countStmt  = "SELECT COUNT(*) FROM pods"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM pods WHERE Id = $1)"
-
-	getStmt     = "SELECT serialized FROM pods WHERE Id = $1"
-	deleteStmt  = "DELETE FROM pods WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM pods"
-	getIDsStmt  = "SELECT Id FROM pods"
-	getManyStmt = "SELECT serialized FROM pods WHERE Id = ANY($1::text[])"
-
+	baseTable      = "pods"
+	countStmt      = "SELECT COUNT(*) FROM pods"
+	getStmt        = "SELECT t1.serialized FROM pods t1 WHERE t1.Id = $1"
+	deleteStmt     = "DELETE FROM pods t1 WHERE t1.Id = $1"
+	walkStmt       = "SELECT serialized FROM pods"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM pods t1 WHERE t1.Id = $1)"
+	getIDsStmt     = "SELECT distinct Id FROM pods"
+	getManyStmt    = "SELECT serialized FROM pods WHERE Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM pods WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -135,15 +133,21 @@ func insertIntoPods(ctx context.Context, tx pgx.Tx, obj *storage.Pod) error {
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetName(),
+
 		obj.GetDeploymentId(),
+
 		obj.GetNamespace(),
+
 		obj.GetClusterId(),
+
 		serialized,
 	}
-
 	finalStr := "INSERT INTO pods (Id, Name, DeploymentId, Namespace, ClusterId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -169,12 +173,15 @@ func insertIntoPodsLiveInstances(ctx context.Context, tx pgx.Tx, obj *storage.Co
 
 	values := []interface{}{
 		// parent primary keys start
+
 		pods_Id,
+
 		idx,
+
 		obj.GetImageDigest(),
 	}
-
 	finalStr := "INSERT INTO pods_LiveInstances (pods_Id, idx, ImageDigest) VALUES($1, $2, $3) ON CONFLICT(pods_Id, idx) DO UPDATE SET pods_Id = EXCLUDED.pods_Id, idx = EXCLUDED.idx, ImageDigest = EXCLUDED.ImageDigest"
+
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -194,18 +201,7 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx pgx.Tx, objs ...*storag
 	var deletes []string
 
 	copyCols := []string{
-
-		"id",
-
-		"name",
-
-		"deploymentid",
-
-		"namespace",
-
-		"clusterid",
-
-		"serialized",
+		"id", "name", "deploymentid", "namespace", "clusterid", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -275,12 +271,7 @@ func (s *storeImpl) copyFromPodsLiveInstances(ctx context.Context, tx pgx.Tx, po
 	var err error
 
 	copyCols := []string{
-
-		"pods_id",
-
-		"idx",
-
-		"imagedigest",
+		"pods_id", "idx", "imagedigest",
 	}
 
 	for idx, obj := range objs {
@@ -405,7 +396,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Pod")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -423,7 +413,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Pod, bool, err
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -455,7 +444,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

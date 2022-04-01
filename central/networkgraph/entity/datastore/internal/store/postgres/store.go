@@ -20,16 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "networkentity"
-	countStmt  = "SELECT COUNT(*) FROM networkentity"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkentity WHERE Info_Id = $1)"
-
-	getStmt     = "SELECT serialized FROM networkentity WHERE Info_Id = $1"
-	deleteStmt  = "DELETE FROM networkentity WHERE Info_Id = $1"
-	walkStmt    = "SELECT serialized FROM networkentity"
-	getIDsStmt  = "SELECT Info_Id FROM networkentity"
-	getManyStmt = "SELECT serialized FROM networkentity WHERE Info_Id = ANY($1::text[])"
-
+	baseTable      = "networkentity"
+	countStmt      = "SELECT COUNT(*) FROM networkentity"
+	getStmt        = "SELECT t1.serialized FROM networkentity t1 WHERE t1.Info_Id = $1"
+	deleteStmt     = "DELETE FROM networkentity t1 WHERE t1.Info_Id = $1"
+	walkStmt       = "SELECT serialized FROM networkentity"
+	existsStmt     = "SELECT EXISTS(SELECT 1 FROM networkentity t1 WHERE t1.Info_Id = $1)"
+	getIDsStmt     = "SELECT distinct Info_Id FROM networkentity"
+	getManyStmt    = "SELECT serialized FROM networkentity WHERE Info_Id = ANY($1::text[])"
 	deleteManyStmt = "DELETE FROM networkentity WHERE Info_Id = ANY($1::text[])"
 
 	batchAfter = 100
@@ -73,6 +71,7 @@ type storeImpl struct {
 func createTableNetworkentity(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists networkentity (
+    Info_Type integer,
     Info_Id varchar,
     Info_ExternalSource_Default bool,
     serialized bytea,
@@ -85,7 +84,10 @@ create table if not exists networkentity (
 		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
-	indexes := []string{}
+	indexes := []string{
+
+		"create index if not exists networkentity_Info_Type on networkentity using btree(Info_Type)",
+	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			log.Panicf("Error creating index %s: %v", index, err)
@@ -103,12 +105,17 @@ func insertIntoNetworkentity(ctx context.Context, tx pgx.Tx, obj *storage.Networ
 
 	values := []interface{}{
 		// parent primary keys start
+
+		obj.GetInfo().GetType(),
+
 		obj.GetInfo().GetId(),
+
 		obj.GetInfo().GetExternalSource().GetDefault(),
+
 		serialized,
 	}
+	finalStr := "INSERT INTO networkentity (Info_Type, Info_Id, Info_ExternalSource_Default, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Info_Id) DO UPDATE SET Info_Type = EXCLUDED.Info_Type, Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, serialized = EXCLUDED.serialized"
 
-	finalStr := "INSERT INTO networkentity (Info_Id, Info_ExternalSource_Default, serialized) VALUES($1, $2, $3) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -128,12 +135,7 @@ func (s *storeImpl) copyFromNetworkentity(ctx context.Context, tx pgx.Tx, objs .
 	var deletes []string
 
 	copyCols := []string{
-
-		"info_id",
-
-		"info_externalsource_default",
-
-		"serialized",
+		"info_type", "info_id", "info_externalsource_default", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -146,6 +148,8 @@ func (s *storeImpl) copyFromNetworkentity(ctx context.Context, tx pgx.Tx, objs .
 		}
 
 		inputRows = append(inputRows, []interface{}{
+
+			obj.GetInfo().GetType(),
 
 			obj.GetInfo().GetId(),
 
@@ -273,7 +277,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, infoId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NetworkEntity")
-
 	row := s.db.QueryRow(ctx, existsStmt, infoId)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -291,7 +294,6 @@ func (s *storeImpl) Get(ctx context.Context, infoId string) (*storage.NetworkEnt
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, infoId)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -323,7 +325,6 @@ func (s *storeImpl) Delete(ctx context.Context, infoId string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, infoId); err != nil {
 		return err
 	}

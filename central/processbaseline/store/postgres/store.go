@@ -20,17 +20,20 @@ import (
 )
 
 const (
-	baseTable  = "processbaselines"
-	countStmt  = "SELECT COUNT(*) FROM processbaselines"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM processbaselines WHERE Id = $1)"
+	baseTable = "processbaselines"
+	joinStmt  = " INNER JOIN (SELECT Id, MAX(PbSerialId) AS MaxPbSerialId FROM processbaselines GROUP BY Id) t2 on t1.Id = t2.Id AND t1.PbSerialId = t2.MaxPbSerialId "
+	countStmt = "SELECT COUNT(*) FROM processbaselines t1 " + joinStmt
 
-	getStmt     = "SELECT serialized FROM processbaselines WHERE Id = $1"
-	deleteStmt  = "DELETE FROM processbaselines WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM processbaselines"
-	getIDsStmt  = "SELECT Id FROM processbaselines"
-	getManyStmt = "SELECT serialized FROM processbaselines WHERE Id = ANY($1::text[])"
+	getStmt = "SELECT t1.serialized FROM processbaselines t1 " + joinStmt + " WHERE t1.Id = $1"
 
-	deleteManyStmt = "DELETE FROM processbaselines WHERE Id = ANY($1::text[])"
+	getIDsStmt = "SELECT distinct(Id) FROM processbaselines"
+	// Todo:  Come back and make this for a single index column
+	getManyStmt    = "SELECT t1.serialized FROM processbaselines t1 " + joinStmt + " WHERE t1.Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM processbaselines WHERE t1.Id = ANY($1::text[])"
+
+	deleteStmt = "DELETE FROM processbaselines t1 WHERE t1.Id = $1"
+	walkStmt   = "SELECT t1.serialized FROM processbaselines t1"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM processbaselines t1 WHERE t1.Id = $1)"
 
 	batchAfter = 100
 
@@ -73,12 +76,13 @@ type storeImpl struct {
 func createTableProcessbaselines(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists processbaselines (
+    PbSerialId serial,
     Id varchar,
     Key_DeploymentId varchar,
     Key_ClusterId varchar,
     Key_Namespace varchar,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(PbSerialId)
 )
 `
 
@@ -87,7 +91,10 @@ create table if not exists processbaselines (
 		log.Panicf("Error creating table %s: %v", table, err)
 	}
 
-	indexes := []string{}
+	indexes := []string{
+
+		"create index if not exists processbaselines_Id on processbaselines using btree(Id)",
+	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
 			log.Panicf("Error creating index %s: %v", index, err)
@@ -105,14 +112,19 @@ func insertIntoProcessbaselines(ctx context.Context, tx pgx.Tx, obj *storage.Pro
 
 	values := []interface{}{
 		// parent primary keys start
+
 		obj.GetId(),
+
 		obj.GetKey().GetDeploymentId(),
+
 		obj.GetKey().GetClusterId(),
+
 		obj.GetKey().GetNamespace(),
+
 		serialized,
 	}
+	finalStr := "INSERT INTO processbaselines (Id, Key_DeploymentId, Key_ClusterId, Key_Namespace, serialized) VALUES($1, $2, $3, $4, $5)"
 
-	finalStr := "INSERT INTO processbaselines (Id, Key_DeploymentId, Key_ClusterId, Key_Namespace, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -127,21 +139,8 @@ func (s *storeImpl) copyFromProcessbaselines(ctx context.Context, tx pgx.Tx, obj
 
 	var err error
 
-	// This is a copy so first we must delete the rows and re-add them
-	// Which is essentially the desired behaviour of an upsert.
-	var deletes []string
-
 	copyCols := []string{
-
-		"id",
-
-		"key_deploymentid",
-
-		"key_clusterid",
-
-		"key_namespace",
-
-		"serialized",
+		"id", "key_deploymentid", "key_clusterid", "key_namespace", "serialized",
 	}
 
 	for idx, obj := range objs {
@@ -166,20 +165,10 @@ func (s *storeImpl) copyFromProcessbaselines(ctx context.Context, tx pgx.Tx, obj
 			serialized,
 		})
 
-		// Add the id to be deleted.
-		deletes = append(deletes, obj.GetId())
-
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
-
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processbaselines"}, copyCols, pgx.CopyFromRows(inputRows))
 
@@ -285,7 +274,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ProcessBaseline")
-
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -303,7 +291,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ProcessBaselin
 		return nil, false, err
 	}
 	defer release()
-
 	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -335,7 +322,6 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	defer release()
-
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}

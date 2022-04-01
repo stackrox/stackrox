@@ -55,7 +55,6 @@ func (s *AlertsStoreSuite) TestStore() {
 
 	alert := &storage.Alert{}
 	s.NoError(testutils.FullInit(alert, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-
 	foundAlert, exists, err := store.Get(ctx, alert.GetId())
 	s.NoError(err)
 	s.False(exists)
@@ -70,17 +69,14 @@ func (s *AlertsStoreSuite) TestStore() {
 	alertCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(alertCount, 1)
-
 	alertExists, err := store.Exists(ctx, alert.GetId())
 	s.NoError(err)
 	s.True(alertExists)
 	s.NoError(store.Upsert(ctx, alert))
-
 	foundAlert, exists, err = store.Get(ctx, alert.GetId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(alert, foundAlert)
-
 	s.NoError(store.Delete(ctx, alert.GetId()))
 	foundAlert, exists, err = store.Get(ctx, alert.GetId())
 	s.NoError(err)
