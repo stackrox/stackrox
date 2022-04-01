@@ -431,9 +431,11 @@ function PoliciesTable({
                                           isSeparator: true,
                                       },
                                       {
-                                          title: 'Delete policy',
+                                          title: isDefault
+                                              ? 'Cannot delete a default policy'
+                                              : 'Delete policy',
                                           onClick: () => setDeletingIds([id]),
-                                          disabled: isDefault,
+                                          isDisabled: isDefault,
                                       },
                                   ]
                                 : [exportPolicyAction];
