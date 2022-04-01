@@ -1795,6 +1795,7 @@ commands:
           name: Configure Deployment Environment
           command: |
             function check_and_set() {
+                echo "In check_and_set"
                 local name="$1"
                 local value="$2"
                 if [[ -z "${value}" ]]; then
@@ -1802,6 +1803,7 @@ commands:
                     some_missing=1
                 else
                     cci-export "$name" "${value}"
+                    echo "exporting $name $value"
                 fi
             }
 
