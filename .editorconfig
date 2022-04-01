@@ -1,5 +1,2 @@
 [{Makefile,**.mk}]
 indent_style = tab
-
-[**.go]
-indent_style = tab
