@@ -184,12 +184,6 @@ func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, container
 	}()
 }
 
-//func (e *enricher) getNetworkPolicies(deployment *storage.Deployment) *NetworkPolicyAssociation {
-//	ds := resources.DeploymentStoreSingleton()
-//	// TODO: create augmented object
-//	return ds.GetNetworkPolicyInformation(deployment.GetId())
-//}
-
 func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	imageChan := make(chan imageChanResult, len(deployment.GetContainers()))
 	for idx, container := range deployment.GetContainers() {

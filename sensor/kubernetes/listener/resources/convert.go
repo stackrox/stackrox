@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
@@ -61,11 +60,12 @@ type networkPolicyInformation struct {
 
 type deploymentWrap struct {
 	*storage.Deployment
-	registryOverride       string
-	original               interface{}
-	portConfigs            map[portRef]*storage.PortConfig
-	pods                   []*v1.Pod
-	networkPoliciesApplied augmentedobjs.NetworkPoliciesApplied
+	registryOverride string
+	original         interface{}
+	portConfigs      map[portRef]*storage.PortConfig
+	pods             []*v1.Pod
+	// TODO: we could have the networkPoliciesApplied store here. This would require changes in the ProcessDeployment functions of the detector.
+	//networkPoliciesApplied augmentedobjs.NetworkPoliciesApplied
 
 	mutex sync.RWMutex
 }
@@ -542,8 +542,4 @@ func (w *deploymentWrap) Clone() *deploymentWrap {
 	}
 
 	return ret
-}
-
-func (w *deploymentWrap) GetNetworkPolicyInformation() augmentedobjs.NetworkPoliciesApplied {
-	return w.networkPoliciesApplied
 }
