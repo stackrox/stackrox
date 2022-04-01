@@ -145,7 +145,8 @@ func TestCreateCentralTLS(t *testing.T) {
 	for name, c := range cases {
 		c := c
 		if strings.Contains(name, "init bundle secrets should be created") {
-			// See ROX-9023.
+			// See ROX-9967.
+			// TODO(ROX-9969): Remove this exclusion after the init-bundle cert rotation stabilization.
 			continue
 		}
 		t.Run(name, func(t *testing.T) {
