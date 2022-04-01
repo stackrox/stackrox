@@ -53,12 +53,18 @@ func getK8sComponentID(clusterID string, component string) string {
 	return uuid.NewV5(u, component).String()
 }
 
+type networkPolicyInformation struct {
+	MissingIngress bool
+	MissingEgress  bool
+}
+
 type deploymentWrap struct {
 	*storage.Deployment
-	registryOverride string
-	original         interface{}
-	portConfigs      map[portRef]*storage.PortConfig
-	pods             []*v1.Pod
+	registryOverride         string
+	original                 interface{}
+	portConfigs              map[portRef]*storage.PortConfig
+	pods                     []*v1.Pod
+	networkPolicyInformation *networkPolicyInformation
 
 	mutex sync.RWMutex
 }
@@ -535,4 +541,8 @@ func (w *deploymentWrap) Clone() *deploymentWrap {
 	}
 
 	return ret
+}
+
+func (w *deploymentWrap) GetNetworkPolicyInformation() networkPolicyInformation {
+	return *w.networkPolicyInformation
 }

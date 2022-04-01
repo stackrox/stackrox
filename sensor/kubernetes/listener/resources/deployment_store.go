@@ -136,3 +136,15 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 	}
 	return wrap.GetDeployment()
 }
+
+func (ds *DeploymentStore) GetNetworkPolicyInformation(id string) *networkPolicyInformation {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
+	wrap := ds.deployments[id]
+	if wrap == nil {
+		return nil
+	}
+	ret := wrap.GetNetworkPolicyInformation()
+	return &ret
+}
