@@ -1,3 +1,11 @@
+import {
+    SearchEntry,
+    GlobalSearchOption,
+    RestSortOption,
+    GraphQLSortOption,
+    SearchFilter,
+} from 'types/search';
+
 /**
  *  Adds a search modifier to the searchOptions
  *
@@ -5,7 +13,10 @@
  *  @param {!string} modifier a modifier term (ie. 'Cluster:')
  *  @returns {!Object[]} the modified search options
  */
-export function addSearchModifier(searchOptions, modifier) {
+export function addSearchModifier(
+    searchOptions: GlobalSearchOption[],
+    modifier: string
+): GlobalSearchOption[] {
     const chip = { value: modifier, label: modifier, type: 'categoryOption' };
     return [...searchOptions, chip];
 }
@@ -17,7 +28,10 @@ export function addSearchModifier(searchOptions, modifier) {
  *  @param {!string} keyword a keyword term (ie. 'remote')
  *  @returns {!Object[]} the modified search options
  */
-export function addSearchKeyword(searchOptions, keyword) {
+export function addSearchKeyword(
+    searchOptions: GlobalSearchOption[],
+    keyword: string
+): GlobalSearchOption[] {
     const chip = { value: keyword, label: keyword, className: 'Select-create-option-placeholder' };
     return [...searchOptions, chip];
 }
@@ -35,7 +49,10 @@ export function hasSearchModifier(searchOptions, modifier) {
     );
 }
 
-export function getViewStateFromSearch(search, key) {
+export function getViewStateFromSearch(
+    search: Record<string, string | boolean>,
+    key: string
+): boolean {
     return !!(
         key &&
         search &&
@@ -45,7 +62,10 @@ export function getViewStateFromSearch(search, key) {
     ); // and the value of the search for that key cannot be false or the string "false", see https://stack-rox.atlassian.net/browse/ROX-4278
 }
 
-export function filterAllowedSearch(allowed = [], currentSearch = {}) {
+export function filterAllowedSearch(
+    allowed: string[] = [],
+    currentSearch: Record<string, string> = {}
+): Record<string, string> {
     const filtered = Object.keys(currentSearch)
         .filter((key) => allowed.includes(key))
         .reduce((newSearch, key) => {
@@ -58,8 +78,8 @@ export function filterAllowedSearch(allowed = [], currentSearch = {}) {
     return filtered;
 }
 
-export function convertToRestSearch(workflowSearch) {
-    const emptyArray = [];
+export function convertToRestSearch(workflowSearch: Record<string, string>): SearchEntry[] {
+    const emptyArray: SearchEntry[] = [];
     if (!workflowSearch) {
         return emptyArray;
     }
@@ -68,7 +88,11 @@ export function convertToRestSearch(workflowSearch) {
         const keyWithColon = `${key}:`;
         const value = workflowSearch[key];
 
-        const searchOption = { label: keyWithColon, value: keyWithColon, type: 'categoryOption' };
+        const searchOption: SearchEntry = {
+            label: keyWithColon,
+            value: keyWithColon,
+            type: 'categoryOption',
+        };
         const searchValue = { label: value, value: value || '' };
 
         return searchValue.value ? acc.concat(searchOption, searchValue) : acc;
@@ -77,16 +101,27 @@ export function convertToRestSearch(workflowSearch) {
     return restSearch;
 }
 
-export function convertSortToGraphQLFormat({ field, reversed }) {
+export function convertSortToGraphQLFormat({ field, reversed }: RestSortOption): GraphQLSortOption {
     return {
         id: field,
         desc: reversed,
     };
 }
 
-export function convertSortToRestFormat(graphqlSort) {
+export function convertSortToRestFormat(graphqlSort: GraphQLSortOption[]): Partial<RestSortOption> {
     return {
         field: graphqlSort[0]?.id,
         reversed: graphqlSort[0]?.desc,
     };
+}
+
+/*
+ * Return request query string for search filter. Omit filter criterion:
+ * If option does not have value.
+ */
+export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter): string {
+    return Object.entries(searchFilter)
+        .filter(([, value]) => value.length !== 0)
+        .map(([key, value]) => `${key}:${Array.isArray(value) ? value.join(',') : value}`)
+        .join('+');
 }

@@ -17,3 +17,19 @@ export type SearchEntry = {
     value: string; // an option ends with a colon
     label: string; // an option ends with a colon
 };
+
+export type GlobalSearchOption = {
+    value: string;
+    label: string;
+    type?: string;
+};
+
+export type RestSortOption = {
+    field: string;
+    reversed: boolean;
+};
+
+export type GraphQLSortOption = {
+    id: string;
+    desc: boolean;
+};

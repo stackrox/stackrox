@@ -1,4 +1,15 @@
-export const SEARCH_CATEGORIES = {
+export type SearchCategory =
+    | 'ALERTS'
+    | 'DEPLOYMENTS'
+    | 'IMAGES'
+    | 'POLICIES'
+    | 'PROCESS_INDICATORS'
+    | 'SEARCH_UNSET'
+    | 'SECRETS'
+    | 'COMPLIANCE'
+    | 'SUBJECT';
+
+export const SEARCH_CATEGORIES: Record<SearchCategory, SearchCategory> = {
     ALERTS: 'ALERTS',
     DEPLOYMENTS: 'DEPLOYMENTS',
     IMAGES: 'IMAGES',

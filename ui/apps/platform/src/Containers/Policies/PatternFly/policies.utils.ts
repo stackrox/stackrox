@@ -79,17 +79,6 @@ export function getSearchStringForFilter(s: SearchFilter): string {
     );
 }
 
-/*
- * Return request query string for search filter. Omit filter criterion:
- * If option does not have value.
- */
-export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter): string {
-    return Object.entries(searchFilter)
-        .filter(([, value]) => value.length !== 0)
-        .map(([key, value]) => `${key}:${Array.isArray(value) ? value.join(',') : value}`)
-        .join('+');
-}
-
 // categories
 
 export function formatCategories(categories: string[]): string {
