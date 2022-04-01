@@ -10,15 +10,10 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
-	"golang.org/x/time/rate"
 )
 
 var (
 	log = logging.LoggerForModule()
-
-	// registryRateLimiter is a rate limiter for parallel calls to the registry. This will avoid reaching out to the
-	// registry too many times leading to 429 errors.
-	registryRateLimiter = rate.NewLimiter(rate.Every(50*time.Millisecond), 1)
 )
 
 // SignatureVerifier is responsible for verifying signatures using a specific signature verification method.
@@ -124,10 +119,6 @@ func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetch
 	var fetchedSignatures []*storage.Signature
 	var err error
 	err = retry.WithRetry(func() error {
-		err = registryRateLimiter.Wait(ctx)
-		if err != nil {
-			return err
-		}
 		fetchedSignatures, err = fetchAndAppendSignatures(ctx, fetcher, image, registry, fetchedSignatures)
 		return err
 	},
