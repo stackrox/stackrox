@@ -13,11 +13,13 @@ import ResourceScopeFormModal from './ResourceScopeFormModal';
 type ResourceScopeSelectionProps = {
     scopeId: string;
     setFieldValue: (field: string, value: any, shouldValidate?: boolean | undefined) => void;
+    allowCreate: boolean;
 };
 
 function ResourceScopeSelection({
     scopeId,
     setFieldValue,
+    allowCreate,
 }: ResourceScopeSelectionProps): ReactElement {
     const [resourceScopes, setResourceScopes] = useState<AccessScope[]>([]);
     const [lastAddedResourceScopeId, setLastAddedResourceScopeId] = useState('');
@@ -77,15 +79,17 @@ function ResourceScopeSelection({
                         </SelectSingle>
                     </FormLabelGroup>
                 </FlexItem>
-                <FlexItem>
-                    <Button
-                        className="pf-u-mb-md"
-                        variant={ButtonVariant.secondary}
-                        onClick={onToggleResourceScopeModal}
-                    >
-                        Create resource scope
-                    </Button>
-                </FlexItem>
+                {allowCreate && (
+                    <FlexItem>
+                        <Button
+                            className="pf-u-mb-md"
+                            variant={ButtonVariant.secondary}
+                            onClick={onToggleResourceScopeModal}
+                        >
+                            Create resource scope
+                        </Button>
+                    </FlexItem>
+                )}
             </Flex>
             <ResourceScopeFormModal
                 isOpen={isResourceScopeModalOpen}
