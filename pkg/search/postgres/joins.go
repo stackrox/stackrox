@@ -76,7 +76,7 @@ func getJoins(src *walker.Schema, destinations ...*walker.Schema) ([]string, map
 		joinStrMap[dst] = stringutils.JoinNonEmpty(" and ", currJoin.wheres...)
 	}
 
-	return tables.AsSlice(), joinStrMap
+	return tables.AsSortedSlice(func(i, j string) bool { return i < j }), joinStrMap
 }
 
 func joinPathRecursive(currSchema, dstSchema *walker.Schema, joins *joins, visited set.StringSet) bool {

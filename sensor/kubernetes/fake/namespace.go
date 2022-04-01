@@ -9,7 +9,6 @@ import (
 
 var (
 	namespacePool = newPool()
-	numNamespaces = 30
 )
 
 func getNamespace(name string) *corev1.Namespace {
@@ -31,7 +30,7 @@ func getNamespace(name string) *corev1.Namespace {
 	}
 }
 
-func getNamespaces() []*corev1.Namespace {
+func getNamespaces(numNamespaces int) []*corev1.Namespace {
 	namespaces := make([]*corev1.Namespace, 0, numNamespaces)
 	namespaces = append(namespaces, getNamespace("default"))
 	namespacePool.add("default")

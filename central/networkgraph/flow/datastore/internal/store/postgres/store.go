@@ -222,7 +222,10 @@ func New(ctx context.Context, db *pgxpool.Pool, clusterID string) FlowStore {
 }
 
 func (s *flowStoreImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFlow) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkFlow")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -243,7 +246,10 @@ func (s *flowStoreImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkFl
 }
 
 func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkFlow")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	// Moved the transaction outside the loop which greatly improved the performance of these individual inserts.
@@ -325,7 +331,10 @@ func (s *flowStoreImpl) Exists(ctx context.Context, propsSrcEntityType storage.N
 func (s *flowStoreImpl) Get(ctx context.Context, propsSrcEntityType storage.NetworkEntityInfo_Type, propsSrcEntityID string, propsDstEntityType storage.NetworkEntityInfo_Type, propsDstEntityID string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) (*storage.NetworkFlow, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkFlow")
+	if err != nil {
+		return nil, false, err
+	}
 	defer release()
 
 	// We can discuss this a bit, but this statement should only ever return 1 row.  Doing it this way allows
@@ -344,13 +353,13 @@ func (s *flowStoreImpl) Get(ctx context.Context, propsSrcEntityType storage.Netw
 	return flows[0], true, nil
 }
 
-func (s *flowStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *flowStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowProperties) bool) ([]*storage.NetworkFlow, error) {
@@ -407,7 +416,10 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 func (s *flowStoreImpl) Delete(ctx context.Context, propsSrcEntityType storage.NetworkEntityInfo_Type, propsSrcEntityID string, propsDstEntityType storage.NetworkEntityInfo_Type, propsDstEntityID string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, propsSrcEntityType, propsSrcEntityID, propsDstEntityType, propsDstEntityID, propsDstPort, propsL4Protocol, s.clusterID); err != nil {
@@ -472,7 +484,10 @@ func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFl
 func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteDeploymentStmt, id); err != nil {
@@ -535,7 +550,10 @@ func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage
 }
 
 func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlowProperties) error {
-	conn, release := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	// Moved the transaction outside the loop which greatly improved the performance of these individual inserts.
@@ -575,7 +593,10 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	// want to do all this as a single transaction

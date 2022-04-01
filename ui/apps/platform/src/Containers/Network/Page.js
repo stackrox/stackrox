@@ -117,13 +117,15 @@ function NetworkPage({ closeSidePanel, setDialogueStage, setNetworkModification 
         };
     }, [closeSidePanel, setDialogueStage, setNetworkModification]);
 
+    const isGraphDisabled = selectedNamespaceFilters.length === 0;
+
     return (
         <>
-            <Header isSimulationOn={isSimulationOn} />
+            <Header isGraphDisabled={isGraphDisabled} isSimulationOn={isSimulationOn} />
             <section className="flex flex-1 h-full w-full">
                 <div className="flex flex-1 flex-col w-full overflow-hidden">
                     <div className="flex flex-1 flex-col relative">
-                        {selectedNamespaceFilters.length === 0 ? (
+                        {isGraphDisabled ? (
                             <NoSelectedNamespace clusterName={clusterName} />
                         ) : (
                             <GraphFrame />

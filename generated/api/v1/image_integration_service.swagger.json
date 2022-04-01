@@ -283,6 +283,22 @@
     }
   },
   "definitions": {
+    "ECRConfigAuthorizationData": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "An authorization data represents the IAM authentication credentials and\ncan be used to access any Amazon ECR registry that the IAM principal has\naccess to."
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -430,6 +446,9 @@
         },
         "assumeRoleExternalId": {
           "type": "string"
+        },
+        "authorizationData": {
+          "$ref": "#/definitions/ECRConfigAuthorizationData"
         }
       }
     },

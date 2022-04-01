@@ -217,7 +217,10 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NamespaceMetadata) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "NamespaceMetadata")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NamespaceMetadata")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -238,7 +241,10 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NamespaceMeta
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NamespaceMetadata) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "NamespaceMetadata")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NamespaceMetadata")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
@@ -304,7 +310,10 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NamespaceMetadata")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "NamespaceMetadata")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NamespaceMetadata")
+	if err != nil {
+		return nil, false, err
+	}
 	defer release()
 
 	row := conn.QueryRow(ctx, getStmt, id)
@@ -320,20 +329,23 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.NamespaceMetad
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NamespaceMetadata")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "NamespaceMetadata")
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "NamespaceMetadata")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
@@ -366,7 +378,10 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NamespaceMetadata")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "NamespaceMetadata")
+	conn, release, err := s.acquireConn(ctx, ops.GetMany, "NamespaceMetadata")
+	if err != nil {
+		return nil, nil, err
+	}
 	defer release()
 
 	rows, err := conn.Query(ctx, getManyStmt, ids)
@@ -411,7 +426,10 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Names
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NamespaceMetadata")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "NamespaceMetadata")
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "NamespaceMetadata")
+	if err != nil {
+		return err
+	}
 	defer release()
 	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err

@@ -19,16 +19,29 @@ import (
 )
 
 var (
-	ecrRegistryRegex = regexp.MustCompile(`\d+\.dkr\.ecr\.[^.]+\.amazonaws\.com`)
-	log              = logging.LoggerForModule()
+	ecrRegistryRegex     = regexp.MustCompile(`(\d+)\.dkr\.ecr\.([^.]+)\.amazonaws\.com`)
+	ecrRegexAccountGroup = 1
+	ecrRegexRegionGroup  = 2
+
+	log = logging.LoggerForModule()
 )
+
+// RegistryCredentials carries credential information to access AWS-based
+// registries.
+type RegistryCredentials struct {
+	AWSAccount   string
+	AWSRegion    string
+	DockerConfig *config.DockerConfigEntry
+	ExpirestAt   time.Time
+}
 
 // RegistryCredentialsManager is a sensor component that manages
 // credentials for docker registries.
+//go:generate mockgen-wrapper
 type RegistryCredentialsManager interface {
-	// GetDockerConfigEntry returns the most recent docker config credential for the given
+	// GetRegistryCredentials returns the most recent registry credential for the given
 	// registry URI, or `nil` if not available.
-	GetDockerConfigEntry(r string) *config.DockerConfigEntry
+	GetRegistryCredentials(r string) *RegistryCredentials
 	Start()
 	Stop()
 }
@@ -102,11 +115,33 @@ func (m *ecrCredentialsManager) Stop() {
 	m.stopSignal.Signal()
 }
 
-func (m *ecrCredentialsManager) GetDockerConfigEntry(registry string) *config.DockerConfigEntry {
-	if !ecrRegistryRegex.MatchString(registry) {
+func (m *ecrCredentialsManager) GetRegistryCredentials(registry string) *RegistryCredentials {
+	acc, reg, ok := findECRURLAccountAndRegion(registry)
+	if !ok {
+		// Invalid ECR registry URL, so credentials are not available.
 		return nil
 	}
-	return m.getConfigIfValid()
+	cfg := m.getConfigIfValid()
+	if cfg == nil {
+		return nil
+	}
+	return &RegistryCredentials{
+		AWSAccount:   acc,
+		AWSRegion:    reg,
+		DockerConfig: cfg,
+		ExpirestAt:   m.expiresAt,
+	}
+}
+
+// findECRURLAccountAndRegion returns the account and region ECR registry
+// URL, if it's not a valid ECR registry URL returns nils and false.
+func findECRURLAccountAndRegion(registry string) (account, region string, ok bool) {
+	match := ecrRegistryRegex.FindStringSubmatch(registry)
+	if match != nil {
+		account, region = match[ecrRegexAccountGroup], match[ecrRegexRegionGroup]
+		ok = true
+	}
+	return
 }
 
 // refreshAuthToken Contact AWS ECR to get a new auth token.
