@@ -7,6 +7,8 @@ describe('roles reducer', () => {
             resources: [],
             selectedRole: null,
             userRolePermissions: null,
+            userRolePermissionsError: null,
+            isLoadingUserRolePermissions: true,
         };
         const state = reducer(undefined, {});
 
