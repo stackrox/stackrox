@@ -22,6 +22,7 @@ func SecretToSecretList(s *storage.Secret) *storage.ListSecret {
 	return &storage.ListSecret{
 		Id:          s.GetId(),
 		Name:        s.GetName(),
+		ClusterId:   s.GetClusterId(),
 		ClusterName: s.GetClusterName(),
 		Namespace:   s.GetNamespace(),
 		Types:       typeSlice,
