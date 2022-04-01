@@ -50,6 +50,7 @@ function MainPage(): ReactElement {
         }
     }
 
+    // Render Body and NavigationSideBar only when feature flags and permissions are available.
     if (isLoadingFeatureFlags || isLoadingPermissions) {
         return <LoadingSection message="Loading..." />;
     }
