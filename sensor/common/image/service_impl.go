@@ -71,7 +71,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 		}, nil
 	}
 
-	img, err := scan.ScanImage(ctx, s.centralClient, req.GetImage())
+	img, err := scan.EnrichLocalImage(ctx, s.centralClient, req.GetImage())
 	if err != nil {
 		return nil, errors.Wrap(err, "scanning image via local scanner")
 	}
