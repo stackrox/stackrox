@@ -128,7 +128,7 @@
         "@cypress/instrument-cra": "^1.4.0",
         "@stackrox/tailwind-config": "*",
         "@testing-library/jest-dom": "^5.15.0",
-        "@testing-library/react": "^12.1.2",
+        "@testing-library/react": "^13.0.0-alpha.7",
         "@testing-library/react-hooks": "^7.0.2",
         "@types/jest": "^27.4.0",
         "@types/lodash": "^4.14.176",
