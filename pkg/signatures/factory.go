@@ -113,7 +113,7 @@ func createVerifiersFromIntegration(integration *storage.SignatureIntegration) [
 }
 
 // FetchImageSignaturesWithRetries will try and fetch signatures for the given image from the given registry and return them.
-// It will retry on transient errors at most 2 times and return the fetched signatures.
+// It will retry on transient errors and return the fetched signatures.
 func FetchImageSignaturesWithRetries(ctx context.Context, fetcher SignatureFetcher, image *storage.Image,
 	registry registryTypes.Registry) ([]*storage.Signature, error) {
 	var fetchedSignatures []*storage.Signature

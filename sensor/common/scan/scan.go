@@ -108,8 +108,6 @@ func EnrichLocalImage(ctx context.Context, centralClient v1.ImageServiceClient, 
 }
 
 // scanImage will scan the given image and return its components.
-// It will return ErrNoLocalScanner if no local scanner is available. It will return any errors that occurred during
-// receiving scan results from local scanner or if the scan status was non-successful.
 func scanImage(ctx context.Context, image *storage.Image,
 	registry registryTypes.Registry, scannerClient *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
 	// Get the image analysis from the local Scanner.

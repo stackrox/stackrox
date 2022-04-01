@@ -43,6 +43,8 @@ type scanTestSuite struct {
 		registry registryTypes.Registry) ([]*storage.Signature, error)
 	getMatchingRegistry    func(image *storage.ImageName) (registryTypes.Registry, error)
 	scannerClientSingleton func() *scannerclient.Client
+	scanImg                func(ctx context.Context, image *storage.Image, registry registryTypes.Registry,
+		scannerClient *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
 }
 
 func TestScanSuite(t *testing.T) {
@@ -62,6 +64,7 @@ func (suite *scanTestSuite) SetupSuite() {
 	suite.fetchSignaturesWithRetry = fetchSignaturesWithRetry
 	suite.getMatchingRegistry = getMatchingRegistry
 	suite.scannerClientSingleton = scannerClientSingleton
+	suite.scanImg = scanImg
 }
 
 func (suite *scanTestSuite) TearDownSuite() {
@@ -69,7 +72,7 @@ func (suite *scanTestSuite) TearDownSuite() {
 }
 
 func (suite *scanTestSuite) AfterTest(_, _ string) {
-	scanImg = scanImage
+	scanImg = suite.scanImg
 	fetchSignaturesWithRetry = suite.fetchSignaturesWithRetry
 	getMatchingRegistry = suite.getMatchingRegistry
 	scannerClientSingleton = suite.scannerClientSingleton
