@@ -18,6 +18,7 @@ REGISTRY_PASSWORD="$(pass quay-io-ro-password)"; export REGISTRY_PASSWORD
 
 # Disabling build to accelerate dev loop -- takes 3-5 minutes on my laptop
 if false; then
+    go mod tidy
     make style proto-generated-srcs
 else
     echo "SKIPPING BUILD TO SPEEDUP DEV LOOP"
