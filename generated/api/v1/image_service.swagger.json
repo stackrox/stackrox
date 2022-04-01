@@ -1225,6 +1225,10 @@
           "items": {
             "$ref": "#/definitions/storageSignature"
           }
+        },
+        "fetched": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

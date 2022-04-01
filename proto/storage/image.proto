@@ -169,7 +169,8 @@ message ImageMetadata {
 }
 
 message ImageSignature {
-    repeated Signature signatures = 1;
+    repeated Signature signatures                  = 1;
+    google.protobuf.Timestamp fetched              = 2 [(gogoproto.moretags) = "search:\"Image Signature Fetched Time,hidden\""];
 }
 
 message Signature {
