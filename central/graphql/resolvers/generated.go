@@ -10317,8 +10317,10 @@ func (resolver *secretResolver) Annotations(ctx context.Context) labels {
 }
 
 func (resolver *secretResolver) ClusterId(ctx context.Context) string {
-	resolver.ensureData(ctx)
 	value := resolver.data.GetClusterId()
+	if resolver.data == nil {
+		value = resolver.list.GetClusterId()
+	}
 	return value
 }
 
