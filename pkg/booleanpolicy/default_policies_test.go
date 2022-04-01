@@ -3141,11 +3141,11 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 	}
 
 	testCases := map[string]struct {
-		netpolsApplied augmentedobjs.NetworkPoliciesApplied
+		netpolsApplied *augmentedobjs.NetworkPoliciesApplied
 		alerts         []*storage.Alert_Violation
 	}{
 		"Missing Ingress Network Policy": {
-			netpolsApplied: augmentedobjs.NetworkPoliciesApplied{
+			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
 				MissingIngressNetworkPolicy: true,
 				MissingEgressNetworkPolicy:  false,
 			},
@@ -3154,7 +3154,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 			},
 		},
 		"Missing Egress Network Policy": {
-			netpolsApplied: augmentedobjs.NetworkPoliciesApplied{
+			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
 				MissingIngressNetworkPolicy: false,
 				MissingEgressNetworkPolicy:  true,
 			},
@@ -3163,7 +3163,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 			},
 		},
 		"Missing both policies": {
-			netpolsApplied: augmentedobjs.NetworkPoliciesApplied{
+			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
 				MissingIngressNetworkPolicy: true,
 				MissingEgressNetworkPolicy:  true,
 			},
@@ -3173,11 +3173,15 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 			},
 		},
 		"No alerts": {
-			netpolsApplied: augmentedobjs.NetworkPoliciesApplied{
+			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
 				MissingIngressNetworkPolicy: false,
 				MissingEgressNetworkPolicy:  false,
 			},
 			alerts: []*storage.Alert_Violation(nil),
+		},
+		"No violations on nil augmentedobj": {
+			netpolsApplied: nil,
+			alerts:         []*storage.Alert_Violation(nil),
 		},
 	}
 
@@ -3190,7 +3194,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 			enhanced := enhancedDeploymentWithNetworkPolicies(
 				deployment,
 				suite.getImagesForDeployment(deployment),
-				&testCase.netpolsApplied,
+				testCase.netpolsApplied,
 			)
 
 			v1 := suite.getViolations(missingIngressPolicy, enhanced)

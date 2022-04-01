@@ -151,8 +151,7 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 	}
 
 	appliedPolicies := pathutil.NewAugmentedObj(applied)
-	err := obj.AddAugmentedObjAt(appliedPolicies, pathutil.FieldStep(networkPoliciesAppliedKey))
-	if err != nil {
+	if err := obj.AddAugmentedObjAt(appliedPolicies, pathutil.FieldStep(networkPoliciesAppliedKey)); err != nil {
 		return nil, utils.Should(err)
 	}
 
