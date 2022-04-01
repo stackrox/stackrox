@@ -21,7 +21,7 @@ func (n *networkPolicyReconcilerImpl) UpdateNetworkPolicyForDeployment(deploymen
 	netpols := n.netpolStore.Find(cloned.GetNamespace(), cloned.PodLabels)
 	for _, np := range netpols {
 		// TODO: update cloned.networkPolicyInformation
-		cloned.networkPolicyInformation.MissingIngress = np.Spec.GetIngress() == nil
+		cloned.networkPoliciesApplied.MissingIngressNetworkPolicy = np.Spec.GetIngress() == nil && cloned.networkPoliciesApplied.MissingIngressNetworkPolicy
 	}
 	n.deploymentStore.addOrUpdateDeployment(cloned)
 }

@@ -2,6 +2,7 @@ package resources
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"k8s.io/apimachinery/pkg/labels"
@@ -137,7 +138,7 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 	return wrap.GetDeployment()
 }
 
-func (ds *DeploymentStore) GetNetworkPolicyInformation(id string) *networkPolicyInformation {
+func (ds *DeploymentStore) GetNetworkPolicyInformation(id string) *augmentedobjs.NetworkPoliciesApplied {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
