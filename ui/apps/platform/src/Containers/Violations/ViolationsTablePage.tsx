@@ -66,13 +66,15 @@ function ViolationsTablePage(): ReactElement {
         Object.keys(searchFilter).length &&
         Object.values(searchFilter).every((filter) => filter !== '');
 
-    if (hasExecutableFilter && !isViewFiltered) {
-        setIsViewFiltered(true);
-        setPage(1);
-    } else if (!hasExecutableFilter && isViewFiltered) {
-        setIsViewFiltered(false);
-        setPage(1);
-    }
+    useEffect(() => {
+        if (hasExecutableFilter && !isViewFiltered) {
+            setIsViewFiltered(true);
+            setPage(1);
+        } else if (!hasExecutableFilter && isViewFiltered) {
+            setIsViewFiltered(false);
+            setPage(1);
+        }
+    }, [hasExecutableFilter, isViewFiltered, setIsViewFiltered, setPage]);
 
     // When any of the deps to this effect change, we want to reload the alerts and count.
     useEffect(() => {
