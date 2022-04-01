@@ -24,6 +24,7 @@ type NotifierSelectionProps = {
     handleBlur: (e: React.FocusEvent<any, Element>) => void;
     errors: FormikErrors<any>;
     touched: FormikTouched<any>;
+    allowCreate: boolean;
 };
 
 function NotifierSelection({
@@ -33,6 +34,7 @@ function NotifierSelection({
     handleBlur,
     errors,
     touched,
+    allowCreate,
 }: NotifierSelectionProps): ReactElement {
     const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
     const [lastAddedNotifierId, setLastAddedNotifierId] = useState('');
@@ -99,15 +101,17 @@ function NotifierSelection({
                         </SelectSingle>
                     </FormLabelGroup>
                 </FlexItem>
-                <FlexItem>
-                    <Button
-                        className="pf-u-mb-md"
-                        variant={ButtonVariant.secondary}
-                        onClick={onToggleEmailNotifierModal}
-                    >
-                        Create email notifier
-                    </Button>
-                </FlexItem>
+                {allowCreate && (
+                    <FlexItem>
+                        <Button
+                            className="pf-u-mb-md"
+                            variant={ButtonVariant.secondary}
+                            onClick={onToggleEmailNotifierModal}
+                        >
+                            Create email notifier
+                        </Button>
+                    </FlexItem>
+                )}
             </Flex>
             <FormLabelGroup
                 isRequired
