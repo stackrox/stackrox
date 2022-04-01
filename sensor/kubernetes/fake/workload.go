@@ -60,4 +60,5 @@ type Workload struct {
 	NodeWorkload       NodeWorkload         `yaml:"nodeWorkload"`
 	NetworkWorkload    NetworkWorkload      `yaml:"networkWorkload"`
 	RBACWorkload       RBACWorkload         `yaml:"rbacWorkload"`
+	NumNamespaces      int                  `yaml:"numNamespaces"`
 }

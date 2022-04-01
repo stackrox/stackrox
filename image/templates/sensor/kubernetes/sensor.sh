@@ -23,6 +23,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 KUBE_COMMAND=${KUBE_COMMAND:-kubectl}
 SKIP_ORCHESTRATOR_CHECK=${SKIP_ORCHESTRATOR_CHECK:-false}
+NAMESPACE=${NAMESPACE:-stackrox}
 
 if [[ "${SKIP_ORCHESTRATOR_CHECK}" == "true" ]] ; then
     echo >&2  "WARN: Skipping orchestrator check..."
@@ -37,34 +38,34 @@ else
     fi
 fi
 
-${KUBE_COMMAND} get namespace stackrox &>/dev/null || ${KUBE_COMMAND} create namespace stackrox
+${KUBE_COMMAND} get namespace "$NAMESPACE" &>/dev/null || ${KUBE_COMMAND} create namespace "$NAMESPACE"
 
-if ! ${KUBE_COMMAND} get secret/stackrox -n stackrox &>/dev/null; then
+if ! ${KUBE_COMMAND} get secret/stackrox -n "$NAMESPACE" &>/dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{ required "" .MainRegistry }}")"
   [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
-  ${KUBE_COMMAND} create --namespace "stackrox" -f - <<EOF
+  ${KUBE_COMMAND} create --namespace "$NAMESPACE" -f - <<EOF
 apiVersion: v1
 data:
   .dockerconfigjson: ${registry_auth}
 kind: Secret
 metadata:
   name: stackrox
-  namespace: stackrox
+  namespace: "$NAMESPACE"
 type: kubernetes.io/dockerconfigjson
 EOF
 fi
 
-if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox &>/dev/null; then
+if ! ${KUBE_COMMAND} get secret/collector-stackrox -n "$NAMESPACE" &>/dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{ required "" .CollectorRegistry }}")"
   [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
-  ${KUBE_COMMAND} create --namespace "stackrox" -f - <<EOF
+  ${KUBE_COMMAND} create --namespace "$NAMESPACE" -f - <<EOF
 apiVersion: v1
 data:
   .dockerconfigjson: ${registry_auth}
 kind: Secret
 metadata:
   name: collector-stackrox
-  namespace: stackrox
+  namespace: "$NAMESPACE"
 type: kubernetes.io/dockerconfigjson
 EOF
 fi
