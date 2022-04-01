@@ -83,6 +83,19 @@ func ForFieldLabel(label search.FieldLabel) QueryBuilder {
 	return &fieldLabelQueryBuilder{fieldLabel: label}
 }
 
+func ForFieldLabelAlwaysNegated(label search.FieldLabel) QueryBuilder {
+	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return []*query.FieldQuery{
+			{
+				Field:    label.String(),
+				Values:   mapValues(group, nil),
+				Operator: operatorProtoMap[group.GetBooleanOperator()],
+				Negate:   true,
+			},
+		}
+	})
+}
+
 // ForFieldLabelRegex is like ForFieldLabel, but does a regex match.
 func ForFieldLabelRegex(label search.FieldLabel) QueryBuilder {
 	return &fieldLabelQueryBuilder{fieldLabel: label, valueMapFunc: valueToStringRegex}
