@@ -390,7 +390,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Number of Components in Image"   | 1.5f     | null |
                 "Image \"quay.io/rhacs-eng/qa:struts-app\"" +
-                " contains 16[67] components" | []
+                " contains 169 components" | []
 
         "Image Freshness"                 | 1.5f     | null | null | []
 
