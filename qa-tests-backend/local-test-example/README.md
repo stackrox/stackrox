@@ -49,4 +49,3 @@ vim src/test/groovy/LocalQaPropsTest.groovy
 gradle build -x test
 ./step3-run-qa-tests-backend.sh
 ```
-
