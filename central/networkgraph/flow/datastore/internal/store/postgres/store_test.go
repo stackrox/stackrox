@@ -101,6 +101,13 @@ func (s *NetworkflowStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundNetworkFlow)
 
+	s.NoError(store.Upsert(ctx, networkFlow))
+
+	err = store.RemoveFlowsForDeployment(ctx, networkFlow.GetProps().GetSrcEntity().GetId())
+	s.NoError(err)
+	s.False(exists)
+	s.Nil(foundNetworkFlow)
+
 	var networkFlows []*storage.NetworkFlow
 	flowCount := 100
 	for i := 0; i < flowCount; i++ {
