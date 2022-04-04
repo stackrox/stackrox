@@ -73,8 +73,6 @@ type Props = {
 function Body({ hasReadAccess, isFeatureFlagEnabled }: Props): ReactElement {
     const { isDarkMode } = useTheme();
 
-    // MainPage renders Body only when feature flags and permissions are available.
-
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled(
         knownBackendFlags.ROX_SYSTEM_HEALTH_PF
     );
