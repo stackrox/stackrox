@@ -137,7 +137,7 @@ func mapFixedByValue(s string) string {
 func ForImageSignatureVerificationStatus() QueryBuilder {
 	return wrapForImageSignatureVerificationStatus(func(group *storage.PolicyGroup) []*query.FieldQuery {
 		return []*query.FieldQuery{
-			fieldQueryFromGroup(group /*"Image Signature Verifier ID"*/, search.ImageSignatureVerified, func(value string) string {
+			fieldQueryFromGroup(group, search.ImageSignatureVerified, func(value string) string {
 				return value
 			}),
 		}

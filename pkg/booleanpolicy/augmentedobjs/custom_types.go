@@ -78,8 +78,3 @@ type NetworkFlowDetails struct {
 type envVar struct {
 	EnvVar string `search:"Environment Variable"`
 }
-
-type imageSignatureVerification struct {
-	VerifiedBy string `search:"Image Signature Verified By"`
-	Status     string `search:"Image Signature Verification Status"`
-}
