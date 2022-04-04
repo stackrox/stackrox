@@ -2654,6 +2654,7 @@ jobs:
           root: /go/src/github.com/stackrox/rox
           paths:
             - CI_TAG
+            - COLLECTOR_VERSION
 
   pre-build-ui-stackrox:
     executor: custom
