@@ -131,3 +131,15 @@ func mapFixedByValue(s string) string {
 	}
 	return valueToStringRegex(s)
 }
+
+// ForImageSignatureVerificationStatus returns a query builder for Image
+// Signature Verification Status.
+func ForImageSignatureVerificationStatus() QueryBuilder {
+	qbf := func(group *storage.PolicyGroup) []*query.FieldQuery {
+		group.Negate = !group.Negate
+		return []*query.FieldQuery{
+			fieldQueryFromGroup(group, search.ImageSignatureVerifiedBy, nil),
+		}
+	}
+	return queryBuilderFunc(qbf)
+}
