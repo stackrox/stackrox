@@ -29,6 +29,7 @@ func PodStoreSingleton() *PodStore {
 	return podStore
 }
 
+// NetworkPolicySingleton returns a singleton of NetworkPolicyStore
 func NetworkPolicySingleton() *networkPolicyStoreImpl {
 	netpolInit.Do(func() {
 		netpolStore = newNetworkPoliciesStore()
