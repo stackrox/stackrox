@@ -11,9 +11,6 @@ import (
 var (
 	processAncestors = []*storage.ProcessSignal_LineageInfo{
 		{
-			ParentExecFilePath: "java",
-		},
-		{
 			ParentExecFilePath: "bash",
 		},
 	}
@@ -28,7 +25,6 @@ var (
 		"awk",
 		"awx-manage",
 		"basename",
-		"bash",
 		"beam.smp",
 		"bootstrap.sh",
 		"cadvisor",
@@ -65,9 +61,6 @@ var (
 		"dnsmasq-nanny",
 		"docker-entrypoi",
 		"docker-php-entr",
-		"dpkg",
-		"dpkg-query",
-		"dpkg-reconfigur",
 		"egrep",
 		"entrypoint.sh",
 		"env",
@@ -104,9 +97,6 @@ var (
 		"invoke-rc.d",
 		"ip-masq-agent",
 		"ipset",
-		"iptables",
-		"iptables-restor",
-		"iptables-save",
 		"java",
 		"kube-dns",
 		"kube-proxy",
@@ -153,8 +143,6 @@ var (
 		"redis-server",
 		"restore-all-dir",
 		"rm",
-		"rpm",
-		"rsync",
 		"run",
 		"run-parts",
 		"run.sh",
@@ -166,7 +154,6 @@ var (
 		"sed",
 		"server",
 		"service",
-		"sh",
 		"sidecar",
 		"slapadd",
 		"slapd",
@@ -213,7 +200,6 @@ var (
 		"apk",
 		"apt-get",
 		"apt",
-		"dpkg",
 		"chkconfig",
 		"anacron",
 		"cron",

@@ -154,28 +154,44 @@ remove_existing_stackrox_resources() {
     kubectl get namespace -o name | grep -E '^namespace/qa' | xargs kubectl delete --wait || true
 }
 
+# When working as expected it takes less than one minute for the API server to
+# reach ready. Often times out on OSD. If this call fails in CI we need to
+# identify the source of pull/scheduling latency, request throttling, etc.
+# I tried increasing the timeout from 5m to 20m for OSD but it did not help.
 wait_for_api() {
-    info "Waiting for central to start"
+    info "Waiting for Central to start"
 
     start_time="$(date '+%s')"
+    max_seconds=300
+
     while true; do
         central_json="$(kubectl -n stackrox get deploy/central -o json)"
-        if [[ "$(echo "${central_json}" | jq '.status.replicas')" == 1 && "$(echo "${central_json}" | jq '.status.readyReplicas')" == 1 ]]; then
+        replicas="$(jq '.status.replicas' <<<"$central_json")"
+        ready_replicas="$(jq '.status.readyReplicas' <<<"$central_json")"
+        curr_time="$(date '+%s')"
+        elapsed_seconds=$(( curr_time - start_time ))
+
+        # Ready case
+        if [[ "$replicas" == 1 && "$ready_replicas" == 1 ]]; then
+            sleep 30
             break
         fi
-        if (($(date '+%s') - start_time > 300)); then
+
+        # Timeout case
+        if (( elapsed_seconds > max_seconds )); then
             kubectl -n stackrox get pod -o wide
             kubectl -n stackrox get deploy -o wide
-            echo >&2 "Timed out after 5m"
+            echo >&2 "wait_for_api() timeout after $max_seconds seconds."
             exit 1
         fi
-        echo -n .
-        sleep 1
+
+        # Otherwise report and retry
+        echo "waiting ($elapsed_seconds/$max_seconds)"
+        sleep 5
     done
 
-    echo "Central is running"
-
-    info "Waiting for centrals API"
+    info "Central deployment is ready."
+    info "Waiting for Central API endpoint"
 
     API_HOSTNAME=localhost
     API_PORT=8000
@@ -186,7 +202,8 @@ wait_for_api() {
     fi
     API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
     METADATA_URL="https://${API_ENDPOINT}/v1/metadata"
-    echo "METADATA_URL is set to ${METADATA_URL}"
+    info "METADATA_URL is set to ${METADATA_URL}"
+
     set +e
     NUM_SUCCESSES_IN_A_ROW=0
     SUCCESSES_NEEDED_IN_A_ROW=3
@@ -200,7 +217,7 @@ wait_for_api() {
             if [[ "${NUM_SUCCESSES_IN_A_ROW}" == "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
                 break
             fi
-            echo "Status is now: ${status}"
+            info "Status is now: ${status}"
             sleep 2
             continue
         fi
@@ -210,10 +227,10 @@ wait_for_api() {
     done
     echo
     if [[ "${NUM_SUCCESSES_IN_A_ROW}" != "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
-        echo "Failed to connect to Central. Failed with ${NUM_SUCCESSES_IN_A_ROW} successes in a row"
-        echo "port-forwards:"
+        info "Failed to connect to Central. Failed with ${NUM_SUCCESSES_IN_A_ROW} successes in a row"
+        info "port-forwards:"
         pgrep port-forward
-        echo "pods:"
+        info "pods:"
         kubectl -n stackrox get pod
         exit 1
     fi

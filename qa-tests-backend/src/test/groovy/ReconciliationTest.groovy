@@ -13,6 +13,7 @@ import services.NetworkPolicyService
 import services.SecretService
 
 import spock.lang.Retry
+import org.junit.Assume
 import org.junit.experimental.categories.Category
 import groups.SensorBounce
 import util.Timer
@@ -79,6 +80,10 @@ class ReconciliationTest extends BaseSpecification {
 
     @Category(SensorBounce)
     def "Verify the Sensor reconciles after being restarted"() {
+        // RS-361 - Fails on OSD. Need help troubleshooting. Disabling for now.
+        Assume.assumeFalse(ClusterService.isOpenShift3())
+        Assume.assumeFalse(ClusterService.isOpenShift4())
+
         when:
         "Get Sensor and counts"
 

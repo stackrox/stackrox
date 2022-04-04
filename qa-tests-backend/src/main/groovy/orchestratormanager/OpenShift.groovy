@@ -41,7 +41,7 @@ class OpenShift extends Kubernetes {
         }
 
         try {
-            SecurityContextConstraints anyuid = oClient.securityContextConstraints().withName("anyuid").get()
+            SecurityContextConstraints anyuid = oClient.securityContextConstraints().withName("qatest-anyuid").get()
             if (anyuid != null &&
                     (!anyuid.users.contains("system:serviceaccount:" + ns + ":default") ||
                             !anyuid.allowHostNetwork ||
