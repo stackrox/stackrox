@@ -6,6 +6,8 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/suite"
 )
@@ -20,6 +22,7 @@ type NetworkPolicySuite struct {
 	networkStore  *mocks.MockNetworkPolicyStore
 	networkPolicy *Finder
 	mockCtrl      *gomock.Controller
+	envIsolator   *envisolator.EnvIsolator
 }
 
 var _ suite.SetupTestSuite = (*NetworkPolicySuite)(nil)
@@ -29,10 +32,14 @@ func (suite *NetworkPolicySuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.networkStore = mocks.NewMockNetworkPolicyStore(suite.mockCtrl)
 	suite.networkPolicy = &Finder{store: suite.networkStore}
+	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
+
+	suite.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
 }
 
 func (suite *NetworkPolicySuite) TearDownTest() {
 	suite.mockCtrl.Finish()
+	suite.envIsolator.RestoreAll()
 }
 
 func deployment(namespace string, labels map[string]string) *storage.Deployment {
@@ -47,6 +54,13 @@ func policy(classificationEnums []storage.NetworkPolicyType) *storage.NetworkPol
 	netpol.Spec = new(storage.NetworkPolicySpec)
 	netpol.Spec.PolicyTypes = classificationEnums
 	return netpol
+}
+
+func (suite *NetworkPolicySuite) Test_ReturnNilIfFeatureFlagDisabled() {
+	suite.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "false")
+	dep := deployment("", map[string]string{})
+	aug := suite.networkPolicy.GetNetworkPoliciesApplied(dep)
+	suite.Nil(aug, "augmented object should be nil")
 }
 
 func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
