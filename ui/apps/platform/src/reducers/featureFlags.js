@@ -17,22 +17,26 @@ const featureFlags = (state = [], action) => {
     return state;
 };
 
-const featureFlagsError = (state = null, action) => {
+const error = (state = null, action) => {
     switch (action.type) {
-        case types.FETCH_FEATURE_FLAGS.FAILURE:
-            return action.error;
-
+        case types.FETCH_FEATURE_FLAGS.REQUEST:
         case types.FETCH_FEATURE_FLAGS.SUCCESS:
             return null;
+
+        case types.FETCH_FEATURE_FLAGS.FAILURE:
+            return action.error;
 
         default:
             return state;
     }
 };
 
-const isLoadingFeatureFlags = (state = true, action) => {
-    // Assume featureFlagSagas call fetchFeatureFlags.
+const isLoading = (state = true, action) => {
+    // Initialize true for edge case before featureFlagSagas call fetchFeatureFlags.
     switch (action.type) {
+        case types.FETCH_FEATURE_FLAGS.REQUEST:
+            return true;
+
         case types.FETCH_FEATURE_FLAGS.FAILURE:
         case types.FETCH_FEATURE_FLAGS.SUCCESS:
             return false;
@@ -44,13 +48,13 @@ const isLoadingFeatureFlags = (state = true, action) => {
 
 const reducer = combineReducers({
     featureFlags,
-    featureFlagsError,
-    isLoadingFeatureFlags,
+    error,
+    isLoading,
 });
 
 const getFeatureFlags = (state) => state.featureFlags;
-const getFeatureFlagsError = (state) => state.featureFlagsError;
-const getIsLoadingFeatureFlags = (state) => state.isLoadingFeatureFlags;
+const getFeatureFlagsError = (state) => state.error;
+const getIsLoadingFeatureFlags = (state) => state.isLoading;
 
 export const selectors = {
     getFeatureFlags,

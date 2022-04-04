@@ -70,22 +70,26 @@ const userRolePermissions = (state = null, action) => {
     return state;
 };
 
-const userRolePermissionsError = (state = null, action) => {
+const error = (state = null, action) => {
     switch (action.type) {
-        case types.FETCH_USER_ROLE_PERMISSIONS.FAILURE:
-            return action.error;
-
+        case types.FETCH_USER_ROLE_PERMISSIONS.REQUEST:
         case types.FETCH_USER_ROLE_PERMISSIONS.SUCCESS:
             return null;
+
+        case types.FETCH_USER_ROLE_PERMISSIONS.FAILURE:
+            return action.error;
 
         default:
             return state;
     }
 };
 
-const isLoadingUserRolePermissions = (state = true, action) => {
-    // Assume authSagas call fetchUserRolePermissions action.
+const isLoading = (state = true, action) => {
+    // Initialize true for edge case before authSagas call fetchUserRolePermissions action.
     switch (action.type) {
+        case types.FETCH_USER_ROLE_PERMISSIONS.REQUEST:
+            return true;
+
         case types.FETCH_USER_ROLE_PERMISSIONS.FAILURE:
         case types.FETCH_USER_ROLE_PERMISSIONS.SUCCESS:
             return false;
@@ -100,16 +104,16 @@ const reducer = combineReducers({
     resources,
     selectedRole,
     userRolePermissions,
-    userRolePermissionsError,
-    isLoadingUserRolePermissions,
+    error,
+    isLoading,
 });
 
 const getRoles = (state) => state.roles;
 const getResources = (state) => state.resources;
 const getSelectedRole = (state) => state.selectedRole;
 const getUserRolePermissions = (state) => state.userRolePermissions;
-const getUserRolePermissionsError = (state) => state.userRolePermissionsError;
-const getIsLoadingUserRolePermissions = (state) => state.isLoadingUserRolePermissions;
+const getUserRolePermissionsError = (state) => state.error;
+const getIsLoadingUserRolePermissions = (state) => state.isLoading;
 
 /*
  * Given resource string (for example, "APIToken") and role or permissionSet object,
