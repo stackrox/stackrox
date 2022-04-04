@@ -9,7 +9,7 @@ var (
 	psInit   sync.Once
 	podStore *PodStore
 
-	netpolInit sync.Once
+	netpolInit  sync.Once
 	netpolStore *networkPolicyStoreImpl
 )
 

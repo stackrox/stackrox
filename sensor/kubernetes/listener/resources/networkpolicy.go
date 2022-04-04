@@ -21,7 +21,7 @@ type networkPolicyDispatcher struct {
 	store store.NetworkPolicyStore
 }
 
-func newNetworkPolicyDispatcher(nps  store.NetworkPolicyStore) *networkPolicyDispatcher {
+func newNetworkPolicyDispatcher(nps store.NetworkPolicyStore) *networkPolicyDispatcher {
 	return &networkPolicyDispatcher{
 		store: nps,
 	}

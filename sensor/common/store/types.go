@@ -16,6 +16,8 @@ type PodStore interface {
 	GetByName(podName, namespace string) *storage.Pod
 }
 
+// NetworkPolicyStore provides functionality to find matching Network Policies given a deployment
+// object.
 //go:generate mockgen-wrapper
 type NetworkPolicyStore interface {
 	Size() int

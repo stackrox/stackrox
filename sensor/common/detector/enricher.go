@@ -206,14 +206,6 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	return images
 }
 
-//func (e *enricher) getNetworkPoliciesApplied(_ *storage.Deployment) *augmentedobjs.NetworkPoliciesApplied {
-//	// @TODO(ROX-9823): Read from network policies from store (ROX-9822) and create augmentedobj
-//	return &augmentedobjs.NetworkPoliciesApplied{
-//		MissingIngressNetworkPolicy: false,
-//		MissingEgressNetworkPolicy:  false,
-//	}
-//}
-
 func (e *enricher) blockingScan(deployment *storage.Deployment, netpolApplied *augmentedobjs.NetworkPoliciesApplied, action central.ResourceAction) {
 	select {
 	case <-e.stopSig.Done():
