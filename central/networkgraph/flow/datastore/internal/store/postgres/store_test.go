@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
@@ -51,9 +50,6 @@ func (s *NetworkflowStoreSuite) TestStore() {
 
 	Destroy(ctx, pool)
 	store := New(ctx, pool, clusterID)
-
-	deleteBefore := time.Now().Add(orphanWindow)
-	log.Info(deleteBefore)
 
 	networkFlow := &storage.NetworkFlow{
 		Props: &storage.NetworkFlowProperties{
