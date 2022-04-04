@@ -23,8 +23,10 @@ type TestResourceScope struct {
 	Included bool
 }
 
+type TestScopeMap map[storage.Access]map[permissions.Resource]*TestResourceScope
+
 type testScopeCheckerCore struct {
-	scope map[storage.Access]map[permissions.Resource]*TestResourceScope
+	scope TestScopeMap
 	path  []ScopeKey
 }
 
@@ -35,7 +37,7 @@ func TestScopeCheckerCoreFromAccessResourceMap(_ *testing.T, targetResources []p
 		Included: true,
 	}
 	core := &testScopeCheckerCore{
-		scope: make(map[storage.Access]map[permissions.Resource]*TestResourceScope, 0),
+		scope: make(TestScopeMap, 0),
 	}
 	for _, resource := range targetResources {
 		access := resource.Access
@@ -49,7 +51,7 @@ func TestScopeCheckerCoreFromAccessResourceMap(_ *testing.T, targetResources []p
 
 // TestScopeCheckerCoreFromFullScopeMap creates a ScopeCheckerCore that allows scoped access to the input
 // scope tree for testing purposes.
-func TestScopeCheckerCoreFromFullScopeMap(_ *testing.T, targetScope map[storage.Access]map[permissions.Resource]*TestResourceScope) ScopeCheckerCore {
+func TestScopeCheckerCoreFromFullScopeMap(_ *testing.T, targetScope TestScopeMap) ScopeCheckerCore {
 	return &testScopeCheckerCore{
 		scope: targetScope,
 	}
