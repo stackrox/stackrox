@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { useLocation, Location } from 'react-router-dom';
 import { Nav, NavList, NavExpandable, PageSidebar } from '@patternfly/react-core';
 
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { ResourceName } from 'types/roleResources';
 import { knownBackendFlags } from 'utils/featureFlags';
 
 import {
@@ -24,7 +24,6 @@ import {
     systemHealthPath,
 } from 'routePaths';
 
-import usePermissions from 'hooks/usePermissions';
 import LeftNavItem from './LeftNavItem';
 
 const platformConfigurationPaths = [
@@ -36,10 +35,14 @@ const platformConfigurationPaths = [
     systemHealthPath,
 ];
 
-function NavigationSideBar(): ReactElement {
+type Props = {
+    hasReadAccess: (resourceName: ResourceName) => boolean;
+    isFeatureFlagEnabled: (envVar: string) => boolean;
+};
+
+function NavigationSideBar({ hasReadAccess, isFeatureFlagEnabled }: Props): ReactElement {
     const location: Location = useLocation();
-    const { hasReadAccess } = usePermissions();
-    const isVulnReportingEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
+    const isVulnReportingEnabled = isFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
 
     const vulnerabilityManagementPaths = [vulnManagementPath];
     if (

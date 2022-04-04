@@ -17,6 +17,8 @@ import CredentialExpiryBanners from 'Containers/CredentialExpiryBanners/Credenti
 import VersionOutOfDate from 'Containers/VersionOutOfDate';
 import Body from 'Containers/MainPage/Body';
 import Masthead from 'Containers/MainPage/Masthead';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import usePermissions from 'hooks/usePermissions';
 
 const mainPageSelector = createStructuredSelector({
     featureFlags: selectors.getFeatureFlags,
@@ -50,6 +52,9 @@ function MainPage(): ReactElement {
         }
     }
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const { hasReadAccess } = usePermissions();
+
     // Render Body and NavigationSideBar only when feature flags and permissions are available.
     if (isLoadingFeatureFlags || isLoadingPermissions) {
         return <LoadingSection message="Loading..." />;
@@ -66,9 +71,17 @@ function MainPage(): ReactElement {
                     mainContainerId="main-page-container"
                     header={<Masthead />}
                     isManagedSidebar
-                    sidebar={<NavigationSideBar />}
+                    sidebar={
+                        <NavigationSideBar
+                            hasReadAccess={hasReadAccess}
+                            isFeatureFlagEnabled={isFeatureFlagEnabled}
+                        />
+                    }
                 >
-                    <Body />
+                    <Body
+                        hasReadAccess={hasReadAccess}
+                        isFeatureFlagEnabled={isFeatureFlagEnabled}
+                    />
                 </Page>
                 {isGlobalSearchView && <SearchModal onClose={onCloseGlobalSearchModal} />}
             </div>

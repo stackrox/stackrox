@@ -27,8 +27,7 @@ import { useTheme } from 'Containers/ThemeProvider';
 
 import asyncComponent from 'Components/AsyncComponent';
 import ErrorBoundary from 'Containers/ErrorBoundary';
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import usePermissions from 'hooks/usePermissions';
+import { ResourceName } from 'types/roleResources';
 import { knownBackendFlags } from 'utils/featureFlags';
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
@@ -66,18 +65,21 @@ const AsyncSystemHealthPagePF = asyncComponent(
     () => import('Containers/SystemHealth/PatternFly/SystemHealthDashboard')
 );
 
-function Body(): ReactElement {
+type Props = {
+    hasReadAccess: (resourceName: ResourceName) => boolean;
+    isFeatureFlagEnabled: (envVar: string) => boolean;
+};
+
+function Body({ hasReadAccess, isFeatureFlagEnabled }: Props): ReactElement {
     const { isDarkMode } = useTheme();
 
     // MainPage renders Body only when feature flags and permissions are available.
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled(
         knownBackendFlags.ROX_SYSTEM_HEALTH_PF
     );
     const isVulnReportingEnabled = isFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
 
-    const { hasReadAccess } = usePermissions();
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
 
     return (
