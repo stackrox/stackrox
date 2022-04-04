@@ -63,7 +63,7 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 	// Wait until the registry rate limiter allows entrance.
 	err = c.registryRateLimiter.Wait(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "waiting for rate limiter entrance")
+		return nil, errors.Wrapf(err, "waiting for rate limiter entrance for registry %q", registry.Name())
 	}
 
 	// Fetch the signatures by injecting the registry specific authentication options to the google/go-containerregistry
