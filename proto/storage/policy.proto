@@ -197,7 +197,6 @@ message PolicyFields {
 
     KeyValuePolicy required_image_label   = 31;
     KeyValuePolicy disallowed_image_label = 32;
-    string image_signature_verified_by = 33;
 }
 
 message Component {

@@ -131,3 +131,32 @@ func mapFixedByValue(s string) string {
 	}
 	return valueToStringRegex(s)
 }
+
+// ForImageSignatureVerificationStatus returns a query builder for Image
+// Signature Verification Status.
+func ForImageSignatureVerificationStatus() QueryBuilder {
+	return wrapForImageSignatureVerificationStatus(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return []*query.FieldQuery{
+			fieldQueryFromGroup(group /*"Image Signature Verifier ID"*/, search.ImageSignatureVerified, func(value string) string {
+				return value
+			}),
+		}
+	})
+}
+
+func wrapForImageSignatureVerificationStatus(f queryBuilderFunc) QueryBuilder {
+	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return append(f(group),
+			&query.FieldQuery{
+				Field: search.ImageSignatureStatus.String(),
+				Values: []string{
+					storage.ImageSignatureVerificationResult_UNSET.String(),
+					storage.ImageSignatureVerificationResult_FAILED_VERIFICATION.String(),
+					storage.ImageSignatureVerificationResult_INVALID_SIGNATURE_ALGO.String(),
+					storage.ImageSignatureVerificationResult_CORRUPTED_SIGNATURE.String(),
+					storage.ImageSignatureVerificationResult_GENERIC_ERROR.String(),
+				},
+				Operator: query.Or,
+			})
+	})
+}

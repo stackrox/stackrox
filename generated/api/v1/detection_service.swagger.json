@@ -1343,9 +1343,6 @@
         },
         "disallowedImageLabel": {
           "$ref": "#/definitions/storageKeyValuePolicy"
-        },
-        "imageSignatureVerifiedBy": {
-          "type": "string"
         }
       },
       "title": "Next Available Tag: 29"

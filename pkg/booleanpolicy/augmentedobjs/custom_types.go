@@ -81,4 +81,5 @@ type envVar struct {
 
 type imageSignatureVerification struct {
 	VerifiedBy string `search:"Image Signature Verified By"`
+	Status     string `search:"Image Signature Verification Status"`
 }

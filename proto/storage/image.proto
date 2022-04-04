@@ -86,7 +86,7 @@ message ImageSignatureVerificationData {
 message ImageSignatureVerificationResult {
     google.protobuf.Timestamp verification_time = 1;
     // verifier_id correlates to the ID of the signature integration used to verify the signature.
-    string verifier_id                          = 2;
+    string verifier_id                          = 2 [(gogoproto.moretags) = "search:\"Image Signature Verified By,store\""];
     // Status represents the status of the result.
     enum Status {
         UNSET                  = 0;
@@ -102,7 +102,7 @@ message ImageSignatureVerificationResult {
         // status.
         GENERIC_ERROR          = 5;
     }
-    Status status                               = 3;
+    Status status                               = 3 [(gogoproto.moretags) = "search:\"Image Signature Verification Status,store\""];
     // description is set in the case of an error with the specific error's message. Otherwise, this will not be set.
     string description                          = 4 ;
 }

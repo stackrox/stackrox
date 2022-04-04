@@ -36,6 +36,8 @@ var (
 		search.Component:                     newMapper(fieldnames.ImageComponent, leftCompoundMap),
 		search.ImageRegistry:                 newMapper(fieldnames.ImageRegistry, directMap),
 		search.ImageRemote:                   newMapper(fieldnames.ImageRemote, directMap),
+		search.ImageSignatureStatus:          newMapper(fieldnames.ImageSignatureStatus, directMap),
+		search.ImageSignatureVerified:        newMapper(fieldnames.ImageSignatureVerifiedBy, directMap),
 		search.ImageTag:                      newMapper(fieldnames.ImageTag, directMap),
 		search.Port:                          newMapper(fieldnames.ExposedPort, directMap),
 		search.Privileged:                    newMapper(fieldnames.PrivilegedContainer, directMap),
