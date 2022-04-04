@@ -41,7 +41,7 @@ function MainPage(): ReactElement {
     const dispatch = useDispatch();
     const history = useHistory();
     function onCloseGlobalSearchModal(toURL) {
-        dispatch(globalSearchActions.toggleGlobalSearchView);
+        dispatch(globalSearchActions.toggleGlobalSearchView());
         if (typeof toURL === 'string') {
             history.push(toURL);
         }
