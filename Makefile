@@ -8,7 +8,7 @@ ifeq ($(TAG),)
 ifeq (,$(wildcard CI_TAG))
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
 else
-TAG=$(cat CI_TAG)
+TAG=$(shell cat CI_TAG)
 endif
 endif
 
