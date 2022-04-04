@@ -613,8 +613,7 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 	if len(fetchedSignatures) == 0 {
 		// Delete existing signatures on the image if we fetched zero.
 		if len(img.GetSignature().GetSignatures()) != 0 {
-			log.Debugf("No signatures found but image %q had existing signatures, "+
-				"deleting those", imgName)
+			log.Debugf("No signatures found but image %q had existing signatures, deleting those", imgName)
 			img.Signature = nil
 			return true, nil
 		}
