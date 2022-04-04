@@ -104,25 +104,17 @@ The following tools are necessary to test code and build image(s):
 # Create a GOPATH: this is the location of your Go "workspace".
 # (Note that it is not – and must not – be the same as the path Go is installed to.)
 # The default is to have it in ~/go/, or ~/development, but anything you prefer goes.
-# Whatever you decide, create the directory, and add a line in your ~/.bash_profile
-# exporting the env variable:
+# Whatever you decide, create the directory, set GOPATH, and update PATH:
 export GOPATH=$HOME/go # Change this if you choose to use a different workspace.
 export PATH=$PATH:$GOPATH/bin
-source ~/.bash_profile
+# You probably want to permanently set these by adding the following commands to your shell
+# configuration (e.g. ~/.bash_profile)
 
-$ cd $GOPATH
-$ mkdir bin pkg src
-
-# Replace https git-urls with ssh, required to fetch go dependencies.
-$ git config --global --add url.git@github.com:.insteadof https://github.com/
-
-# Instruct Go to bypass the Go package proxy for our private dependencies
-$ go env -w GOPRIVATE=github.com/stackrox
-
-$ cd $GOPATH
-$ mkdir -p src/github.com/stackrox
-$ cd src/github.com/stackrox
-$ git clone git@github.com:stackrox/stackrox.git
+cd $GOPATH
+mkdir -p bin pkg
+mkdir -p src/github.com/stackrox
+cd src/github.com/stackrox
+git clone git@github.com:stackrox/stackrox.git
 ```
 
 #### Local development
