@@ -5,11 +5,10 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/compliance"
-	. "github.com/stackrox/rox/central/compliance/datastore"
+	"github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -22,11 +21,11 @@ func TestSacFilter(t *testing.T) {
 type sacFilterTestSuite struct {
 	suite.Suite
 
-	filter SacFilter
+	filter datastore.SacFilter
 }
 
 func (s *sacFilterTestSuite) SetupTest() {
-	s.filter = NewSacFilter()
+	s.filter = datastore.NewSacFilter()
 }
 
 func (s *sacFilterTestSuite) TestRunNotFiltered() {
@@ -264,7 +263,7 @@ func (s *sacFilterTestSuite) TestFiltersSomeDeployments() {
 	ctx := sac.WithGlobalAccessScopeChecker(
 		context.Background(),
 		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
-			map[storage.Access]map[permissions.Resource]*sac.TestResourceScope{
+			sac.TestScopeMap{
 				storage.Access_READ_ACCESS: {
 					resources.Cluster.GetResource(): &sac.TestResourceScope{Included: true},
 					resources.Node.GetResource():    &sac.TestResourceScope{Included: true},

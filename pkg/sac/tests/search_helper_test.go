@@ -7,7 +7,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	. "github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stretchr/testify/assert"
@@ -60,14 +60,14 @@ func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
 		}, nil
 	}
 
-	h, err := NewSearchHelper(testNSResource, options)
+	h, err := sac.NewSearchHelper(testNSResource, options)
 	require.NoError(t, err)
 
-	scc := TestScopeCheckerCoreFromFullScopeMap(t,
-		map[storage.Access]map[permissions.Resource]*TestResourceScope{
+	scc := sac.TestScopeCheckerCoreFromFullScopeMap(t,
+		sac.TestScopeMap{
 			storage.Access_READ_ACCESS: {
-				testNSResource.GetResource(): &TestResourceScope{
-					Clusters: map[string]*TestClusterScope{
+				testNSResource.GetResource(): &sac.TestResourceScope{
+					Clusters: map[string]*sac.TestClusterScope{
 						"cluster1": {Included: true},
 						"cluster2": {Namespaces: []string{"nsA"}},
 					},
@@ -75,7 +75,7 @@ func TestSearchHelper_TestApply_WithFilter(t *testing.T) {
 			},
 		})
 
-	ctx := WithGlobalAccessScopeChecker(context.Background(), scc)
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
 
 	searchResults, err := h.Apply(mockSearchFunc)(ctx, search.EmptyQuery())
 	require.NoError(t, err)
@@ -109,12 +109,12 @@ func TestSearchHelper_TestApply_WithAllAccess(t *testing.T) {
 		}, nil
 	}
 
-	h, err := NewSearchHelper(testNSResource, options)
+	h, err := sac.NewSearchHelper(testNSResource, options)
 	require.NoError(t, err)
 
-	scc := AllowAllAccessScopeChecker()
+	scc := sac.AllowAllAccessScopeChecker()
 
-	ctx := WithGlobalAccessScopeChecker(context.Background(), scc)
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), scc)
 
 	searchResults, err := h.Apply(mockSearchFunc)(ctx, search.EmptyQuery())
 	require.NoError(t, err)
@@ -131,7 +131,7 @@ func TestSearchHelper_TestNew_WithMissingClusterIDField(t *testing.T) {
 		},
 	})
 
-	_, err := NewSearchHelper(testClusterResource, options)
+	_, err := sac.NewSearchHelper(testClusterResource, options)
 	assert.Error(t, err)
 }
 
@@ -144,7 +144,7 @@ func TestSearchHelper_TestNew_WithFieldNotStored(t *testing.T) {
 		},
 	})
 
-	_, err := NewSearchHelper(testClusterResource, options)
+	_, err := sac.NewSearchHelper(testClusterResource, options)
 	assert.Error(t, err)
 }
 
@@ -157,7 +157,7 @@ func TestSearchHelper_TestNew_WithMissingNSField_NotScoped(t *testing.T) {
 		},
 	})
 
-	_, err := NewSearchHelper(testClusterResource, options)
+	_, err := sac.NewSearchHelper(testClusterResource, options)
 	assert.NoError(t, err)
 }
 
@@ -170,6 +170,6 @@ func TestSearchHelper_TestNew_WithMissingNSField_Scoped(t *testing.T) {
 		},
 	})
 
-	_, err := NewSearchHelper(testNSResource, options)
+	_, err := sac.NewSearchHelper(testNSResource, options)
 	assert.Error(t, err)
 }

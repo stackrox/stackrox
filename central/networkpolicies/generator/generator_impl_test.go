@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sac"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
@@ -511,7 +510,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
-			map[storage.Access]map[permissions.Resource]*sac.TestResourceScope{
+			sac.TestScopeMap{
 				storage.Access_READ_ACCESS: {
 					resources.Deployment.Resource: &sac.TestResourceScope{
 						Clusters: map[string]*sac.TestClusterScope{
