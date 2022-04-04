@@ -21,7 +21,6 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 
 const mainPageSelector = createStructuredSelector({
-    featureFlags: selectors.getFeatureFlags,
     isGlobalSearchView: selectors.getGlobalSearchView,
     metadata: selectors.getMetadata,
     publicConfig: selectors.getPublicConfig,
