@@ -107,11 +107,11 @@ The following tools are necessary to test code and build image(s):
 # Whatever you decide, create the directory, set GOPATH, and update PATH:
 export GOPATH=$HOME/go # Change this if you choose to use a different workspace.
 export PATH=$PATH:$GOPATH/bin
-You probably want to permanently set these by adding the following commands to your shell
+# You probably want to permanently set these by adding the following commands to your shell
 # configuration (e.g. ~/.bash_profile)
 
 cd $GOPATH
-mkdir -p bin pkg src
+mkdir -p bin pkg
 mkdir -p src/github.com/stackrox
 cd src/github.com/stackrox
 git clone git@github.com:stackrox/stackrox.git
