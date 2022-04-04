@@ -5,7 +5,11 @@ TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 
 ifeq ($(TAG),)
+ifeq (,$(wildcard CI_TAG))
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
+else
+TAG=$(cat CI_TAG)
+endif
 endif
 
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scaner, and collector images.
