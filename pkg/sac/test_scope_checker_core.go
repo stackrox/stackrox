@@ -23,6 +23,7 @@ type TestResourceScope struct {
 	Included bool
 }
 
+// TestScopeMap is an abstraction for the scope element hierarchy to build test scope chekers.
 type TestScopeMap map[storage.Access]map[permissions.Resource]*TestResourceScope
 
 type testScopeCheckerCore struct {
