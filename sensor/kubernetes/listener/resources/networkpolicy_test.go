@@ -253,7 +253,7 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 	dispatcher := newNetworkPolicyDispatcher(nps, ds, det)
 
 	deployments := []*deploymentWrap{
-		&deploymentWrap{
+		{
 			Deployment: &storage.Deployment{
 				Name:      "deploy-1",
 				Id:        "1",
@@ -264,7 +264,7 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 				},
 			},
 		},
-		&deploymentWrap{
+		{
 			Deployment: &storage.Deployment{
 				Name:      "deploy-2",
 				Id:        "2",
@@ -272,7 +272,7 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 				PodLabels: map[string]string{},
 			},
 		},
-		&deploymentWrap{
+		{
 			Deployment: &storage.Deployment{
 				Name:      "deploy-3",
 				Id:        "3",
@@ -283,7 +283,7 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 				},
 			},
 		},
-		&deploymentWrap{
+		{
 			Deployment: &storage.Deployment{
 				Name:      "deploy-4",
 				Id:        "4",
@@ -318,7 +318,7 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 				},
 			},
 			expectedDeployments: []*deploymentWrap{
-				&deploymentWrap{
+				{
 					Deployment: &storage.Deployment{
 						Id:        "1",
 						Namespace: "default",
@@ -334,19 +334,19 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 			},
 			sel: []map[string]string{},
 			expectedDeployments: []*deploymentWrap{
-				&deploymentWrap{
+				{
 					Deployment: &storage.Deployment{
 						Id:        "1",
 						Namespace: "default",
 					},
 				},
-				&deploymentWrap{
+				{
 					Deployment: &storage.Deployment{
 						Id:        "2",
 						Namespace: "default",
 					},
 				},
-				&deploymentWrap{
+				{
 					Deployment: &storage.Deployment{
 						Id:        "4",
 						Namespace: "default",
@@ -405,13 +405,13 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 				},
 			},
 			expectedDeployments: []*deploymentWrap{
-				&deploymentWrap{
+				{
 					Deployment: &storage.Deployment{
 						Id:        "1",
 						Namespace: "default",
 					},
 				},
-				&deploymentWrap{
+				{
 					Deployment: &storage.Deployment{
 						Id:        "4",
 						Namespace: "default",
