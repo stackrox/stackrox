@@ -104,10 +104,10 @@ The following tools are necessary to test code and build image(s):
 # Create a GOPATH: this is the location of your Go "workspace".
 # (Note that it is not – and must not – be the same as the path Go is installed to.)
 # The default is to have it in ~/go/, or ~/development, but anything you prefer goes.
-# Whatever you decide, create the directory, and set GOPATH and update PATH:
+# Whatever you decide, create the directory, set GOPATH, and update PATH:
 export GOPATH=$HOME/go # Change this if you choose to use a different workspace.
 export PATH=$PATH:$GOPATH/bin
-# You will probably want to permanently set these by adding those commands to your shell 
+You probably want to permanently set these by adding the following commands to your shell
 # configuration (e.g. ~/.bash_profile)
 
 cd $GOPATH
