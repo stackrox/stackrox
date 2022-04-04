@@ -68,7 +68,7 @@ func NewDispatcherRegistry(
 	podStore := PodStoreSingleton()
 	nodeStore := newNodeStore()
 	nsStore := newNamespaceStore()
-	netPolicyStore := newNetworkPoliciesStore()
+	netPolicyStore := NetworkPolicySingleton()
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, podStore, nodeStore, entityStore)
 	rbacUpdater := rbac.NewStore()
 	portExposureReconciler := newPortExposureReconciler(deploymentStore, serviceStore)

@@ -15,3 +15,13 @@ type PodStore interface {
 	GetAll() []*storage.Pod
 	GetByName(podName, namespace string) *storage.Pod
 }
+
+//go:generate mockgen-wrapper
+type NetworkPolicyStore interface {
+	Size() int
+	All() map[string]*storage.NetworkPolicy
+	Get(id string) *storage.NetworkPolicy
+	Upsert(ns *storage.NetworkPolicy)
+	Find(namespace string, labels map[string]string) map[string]*storage.NetworkPolicy
+	Delete(ID, ns string)
+}
