@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	gcrRemote "github.com/google/go-containerregistry/pkg/v1/remote"
@@ -19,14 +20,21 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
+	"golang.org/x/time/rate"
 )
 
-type cosignPublicKeySignatureFetcher struct{}
+type cosignPublicKeySignatureFetcher struct {
+	// registryRateLimiter is a rate limiter for parallel calls to the registry. This will avoid reaching out to the
+	// registry too many times leading to 429 errors.
+	registryRateLimiter *rate.Limiter
+}
 
 var _ SignatureFetcher = (*cosignPublicKeySignatureFetcher)(nil)
 
 func newCosignPublicKeySignatureFetcher() *cosignPublicKeySignatureFetcher {
-	return &cosignPublicKeySignatureFetcher{}
+	return &cosignPublicKeySignatureFetcher{
+		registryRateLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
+	}
 }
 
 var (
@@ -50,6 +58,12 @@ func (c *cosignPublicKeySignatureFetcher) FetchSignatures(ctx context.Context, i
 	imgRef, err := name.ParseReference(imgFullName)
 	if err != nil {
 		return nil, err
+	}
+
+	// Wait until the registry rate limiter allows entrance.
+	err = c.registryRateLimiter.Wait(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "waiting for rate limiter entrance for registry %q", registry.Name())
 	}
 
 	// Fetch the signatures by injecting the registry specific authentication options to the google/go-containerregistry
