@@ -142,8 +142,6 @@ var vulnReportingDefaultRoles = map[string]roleAttributes{
 			permissions.View(resources.Role),                   // required for scopes
 			permissions.View(resources.Image),                  // required to gather CVE data for the report
 			permissions.View(resources.Notifier),               // required for vuln report configurations
-			permissions.Modify(resources.Notifier),             // required for vuln report configurations
-
 		},
 	},
 }
