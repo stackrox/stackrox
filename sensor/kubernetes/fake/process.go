@@ -61,7 +61,6 @@ var (
 		"dnsmasq-nanny",
 		"docker-entrypoi",
 		"docker-php-entr",
-		"dpkg",
 		"egrep",
 		"entrypoint.sh",
 		"env",
