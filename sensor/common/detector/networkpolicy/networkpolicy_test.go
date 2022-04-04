@@ -64,6 +64,10 @@ func (suite *NetworkPolicySuite) Test_ReturnNilIfFeatureFlagDisabled() {
 }
 
 func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
+	if !features.NetworkPolicySystemPolicy.Enabled() {
+		suite.T().Skip()
+	}
+
 	cases := map[string]struct {
 		policiesInStore         map[string]*storage.NetworkPolicy
 		expectedAugmentedObject *augmentedobjs.NetworkPoliciesApplied
