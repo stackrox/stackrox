@@ -26,13 +26,18 @@ func newNetworkPolicyDispatcher(networkPolicyStore store.NetworkPolicyStore, dep
 }
 
 // Process processes a network policy resource event, and returns the sensor events to generate.
-func (h *networkPolicyDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action central.ResourceAction) []*central.SensorEvent {
 	np := obj.(*networkingV1.NetworkPolicy)
 
 	roxNetpol := networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()
 
 	if features.NetworkPolicySystemPolicy.Enabled() {
-		sel, isEmpty := h.getSelector(roxNetpol, action)
+		var roxOldNetpol *storage.NetworkPolicy
+		if old != nil {
+			oldNp := old.(*networkingV1.NetworkPolicy)
+			roxOldNetpol = networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: oldNp}.ToRoxNetworkPolicy()
+		}
+		sel, isEmpty := h.getSelector(roxNetpol, roxOldNetpol, action)
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			h.netpolStore.Delete(roxNetpol.GetId(), roxNetpol.GetNamespace())
 		} else {
@@ -53,26 +58,28 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, _ interface{}, action centra
 	}
 }
 
-func (h *networkPolicyDispatcher) getSelector(np *storage.NetworkPolicy, action central.ResourceAction) (selector, bool) {
+func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy, action central.ResourceAction) (selector, bool) {
 	var sel selector
 	isEmpty := true
-	oldWrap := h.netpolStore.Get(np.GetId())
-	if oldWrap != nil {
-		sel = SelectorFromMap(oldWrap.GetSpec().GetPodSelector().GetMatchLabels())
-		isEmpty = len(oldWrap.GetSpec().GetPodSelector().GetMatchLabels()) == 0
+
+	if oldNp != nil {
+		matchLabels := oldNp.GetSpec().GetPodSelector().GetMatchLabels()
+		sel = SelectorFromMap(matchLabels)
+		isEmpty = len(matchLabels) == 0
 	}
 
+	matchLabels := np.GetSpec().GetPodSelector().GetMatchLabels()
 	if action == central.ResourceAction_UPDATE_RESOURCE {
 		if sel != nil {
-			sel = or(sel, SelectorFromMap(np.GetSpec().GetPodSelector().GetMatchLabels()))
-			isEmpty = isEmpty && len(np.GetSpec().GetPodSelector().GetMatchLabels()) == 0
+			sel = or(sel, SelectorFromMap(matchLabels))
+			isEmpty = isEmpty || len(matchLabels) == 0
 		} else {
-			sel = SelectorFromMap(np.GetSpec().GetPodSelector().GetMatchLabels())
-			isEmpty = len(np.GetSpec().GetPodSelector().GetMatchLabels()) == 0
+			sel = SelectorFromMap(matchLabels)
+			isEmpty = len(matchLabels) == 0
 		}
 	} else if action == central.ResourceAction_CREATE_RESOURCE {
-		sel = SelectorFromMap(np.GetSpec().GetPodSelector().GetMatchLabels())
-		isEmpty = len(np.GetSpec().GetPodSelector().GetMatchLabels()) == 0
+		sel = SelectorFromMap(matchLabels)
+		isEmpty = len(matchLabels) == 0
 	}
 	return sel, isEmpty
 }

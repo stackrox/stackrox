@@ -14,7 +14,7 @@ import (
 
 func TestGetSelector(t *testing.T) {
 	if !features.NetworkPolicySystemPolicy.Enabled() {
-		return
+		t.Skipf("Skipping test since the %s variable is not set", features.NetworkPolicySystemPolicy.EnvVar())
 	}
 
 	mockCtrl := gomock.NewController(t)
@@ -145,7 +145,7 @@ func TestGetSelector(t *testing.T) {
 					"role": "backend",
 				},
 			},
-			expectedEmpty: false,
+			expectedEmpty: true,
 		},
 		{
 			name: "Update NetworkPolicy, delete selector",
@@ -172,7 +172,7 @@ func TestGetSelector(t *testing.T) {
 					"role": "backend",
 				},
 			},
-			expectedEmpty: false,
+			expectedEmpty: true,
 		},
 		{
 			name: "Delete NetworkPolicy",
@@ -225,24 +225,17 @@ func TestGetSelector(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		if c.oldNetpol != nil {
-			nps.Upsert(c.oldNetpol)
-		}
-		sel, isEmpty := dispatcher.getSelector(c.netpol, c.action)
+		sel, isEmpty := dispatcher.getSelector(c.netpol, c.oldNetpol, c.action)
 		assert.Equal(t, isEmpty, c.expectedEmpty)
 		for _, s := range c.expectedSelector {
 			assert.True(t, sel.Matches(labels.Set(s)))
-		}
-
-		if c.oldNetpol != nil {
-			nps.Delete(c.oldNetpol.GetId(), c.oldNetpol.GetNamespace())
 		}
 	}
 }
 
 func TestUpdateDeploymentsFromStore(t *testing.T) {
 	if !features.NetworkPolicySystemPolicy.Enabled() {
-		return
+		t.Skipf("Skipping test since the %s variable is not set", features.NetworkPolicySystemPolicy.EnvVar())
 	}
 
 	mockCtrl := gomock.NewController(t)
@@ -303,6 +296,7 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 		name                string
 		netpol              *storage.NetworkPolicy
 		sel                 []map[string]string
+		isEmpty             bool
 		expectedDeployments []*deploymentWrap
 	}{
 		{
@@ -317,6 +311,7 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 					"role": "backend",
 				},
 			},
+			isEmpty: false,
 			expectedDeployments: []*deploymentWrap{
 				{
 					Deployment: &storage.Deployment{
@@ -332,7 +327,8 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 				Id:        "1",
 				Namespace: "default",
 			},
-			sel: []map[string]string{},
+			sel:     []map[string]string{},
+			isEmpty: true,
 			expectedDeployments: []*deploymentWrap{
 				{
 					Deployment: &storage.Deployment{
@@ -365,6 +361,7 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 					"app": "central",
 				},
 			},
+			isEmpty:             false,
 			expectedDeployments: []*deploymentWrap{},
 		},
 		{
@@ -378,6 +375,7 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 					"app": "sensor",
 				},
 			},
+			isEmpty:             false,
 			expectedDeployments: []*deploymentWrap{},
 		},
 		{
@@ -387,6 +385,7 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 				Namespace: "random_namespace",
 			},
 			sel:                 []map[string]string{},
+			isEmpty:             true,
 			expectedDeployments: []*deploymentWrap{},
 		},
 		{
@@ -404,10 +403,45 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 					"app": "sensor-2",
 				},
 			},
+			isEmpty: false,
 			expectedDeployments: []*deploymentWrap{
 				{
 					Deployment: &storage.Deployment{
 						Id:        "1",
+						Namespace: "default",
+					},
+				},
+				{
+					Deployment: &storage.Deployment{
+						Id:        "4",
+						Namespace: "default",
+					},
+				},
+			},
+		},
+		{
+			name: "Disjunction selector, with empty member",
+			netpol: &storage.NetworkPolicy{
+				Id:        "1",
+				Namespace: "default",
+			},
+			sel: []map[string]string{
+				{},
+				{
+					"app": "sensor-2",
+				},
+			},
+			isEmpty: true, // If one of the members of the selector is empty the selector is considered empty
+			expectedDeployments: []*deploymentWrap{
+				{
+					Deployment: &storage.Deployment{
+						Id:        "1",
+						Namespace: "default",
+					},
+				},
+				{
+					Deployment: &storage.Deployment{
+						Id:        "2",
 						Namespace: "default",
 					},
 				},
@@ -436,7 +470,7 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 				sel = SelectorFromMap(s)
 			}
 		}
-		dispatcher.updateDeploymentsFromStore(c.netpol, sel, len(c.sel) == 0)
+		dispatcher.updateDeploymentsFromStore(c.netpol, sel, c.isEmpty)
 		for _, d := range c.expectedDeployments {
 			_, ok := deps[d.GetId()]
 			assert.True(t, ok)
