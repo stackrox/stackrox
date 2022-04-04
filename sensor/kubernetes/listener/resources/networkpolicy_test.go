@@ -30,6 +30,7 @@ func TestGetSelector(t *testing.T) {
 		oldNetpol        *storage.NetworkPolicy
 		action           central.ResourceAction
 		expectedSelector []map[string]string
+		expectedEmpty    bool
 	}{
 		{
 			name: "New NetworkPolicy",
@@ -53,6 +54,18 @@ func TestGetSelector(t *testing.T) {
 					"role": "backend",
 				},
 			},
+			expectedEmpty: false,
+		},
+		{
+			name: "New NetworkPolicy, no selector",
+			netpol: &storage.NetworkPolicy{
+				Id:        "1",
+				Namespace: "default",
+			},
+			oldNetpol:        nil,
+			action:           central.ResourceAction_CREATE_RESOURCE,
+			expectedSelector: []map[string]string{},
+			expectedEmpty:    true,
 		},
 		{
 			name: "Update NetworkPolicy",
@@ -91,6 +104,75 @@ func TestGetSelector(t *testing.T) {
 					"role": "backend",
 				},
 			},
+			expectedEmpty: false,
+		},
+		{
+			name: "Update NetworkPolicy, no selector",
+			netpol: &storage.NetworkPolicy{
+				Id:        "1",
+				Namespace: "default",
+			},
+			oldNetpol: &storage.NetworkPolicy{
+				Id:        "1",
+				Namespace: "default",
+			},
+			action:           central.ResourceAction_UPDATE_RESOURCE,
+			expectedSelector: []map[string]string{},
+			expectedEmpty:    true,
+		},
+		{
+			name: "Update NetworkPolicy, new selector",
+			netpol: &storage.NetworkPolicy{
+				Id:        "1",
+				Namespace: "default",
+				Spec: &storage.NetworkPolicySpec{
+					PodSelector: &storage.LabelSelector{
+						MatchLabels: map[string]string{
+							"app":  "sensor",
+							"role": "backend",
+						},
+					},
+				},
+			},
+			oldNetpol: &storage.NetworkPolicy{
+				Id:        "1",
+				Namespace: "default",
+			},
+			action: central.ResourceAction_UPDATE_RESOURCE,
+			expectedSelector: []map[string]string{
+				{
+					"app":  "sensor",
+					"role": "backend",
+				},
+			},
+			expectedEmpty: false,
+		},
+		{
+			name: "Update NetworkPolicy, delete selector",
+			netpol: &storage.NetworkPolicy{
+				Id:        "1",
+				Namespace: "default",
+			},
+			oldNetpol: &storage.NetworkPolicy{
+				Id:        "1",
+				Namespace: "default",
+				Spec: &storage.NetworkPolicySpec{
+					PodSelector: &storage.LabelSelector{
+						MatchLabels: map[string]string{
+							"app":  "sensor",
+							"role": "backend",
+						},
+					},
+				},
+			},
+			action: central.ResourceAction_UPDATE_RESOURCE,
+			expectedSelector: []map[string]string{
+				{
+					"app":  "sensor",
+					"role": "backend",
+				},
+			},
+			expectedEmpty: false,
 		},
 		{
 			name: "Delete NetworkPolicy",
@@ -125,18 +207,35 @@ func TestGetSelector(t *testing.T) {
 					"role": "backend",
 				},
 			},
+			expectedEmpty: false,
+		},
+		{
+			name: "Delete NetworkPolicy, no selector",
+			netpol: &storage.NetworkPolicy{
+				Id:        "1",
+				Namespace: "default",
+			},
+			oldNetpol: &storage.NetworkPolicy{
+				Id:        "1",
+				Namespace: "default",
+			},
+			action:           central.ResourceAction_REMOVE_RESOURCE,
+			expectedSelector: []map[string]string{},
+			expectedEmpty:    true,
 		},
 	}
 	for _, c := range cases {
 		if c.oldNetpol != nil {
 			nps.Upsert(c.oldNetpol)
 		}
-		sel, _ := dispatcher.getSelector(c.netpol, c.action)
-		if c.oldNetpol != nil {
-			nps.Delete(c.oldNetpol.GetId(), c.oldNetpol.GetNamespace())
-		}
+		sel, isEmpty := dispatcher.getSelector(c.netpol, c.action)
+		assert.Equal(t, isEmpty, c.expectedEmpty)
 		for _, s := range c.expectedSelector {
 			assert.True(t, sel.Matches(labels.Set(s)))
+		}
+
+		if c.oldNetpol != nil {
+			nps.Delete(c.oldNetpol.GetId(), c.oldNetpol.GetNamespace())
 		}
 	}
 }
@@ -270,6 +369,19 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 		},
 		{
 			name: "Namespace with no deployments",
+			netpol: &storage.NetworkPolicy{
+				Id:        "1",
+				Namespace: "random_namespace",
+			},
+			sel: []map[string]string{
+				{
+					"app": "sensor",
+				},
+			},
+			expectedDeployments: []*deploymentWrap{},
+		},
+		{
+			name: "Namespace with no deployments, no selector",
 			netpol: &storage.NetworkPolicy{
 				Id:        "1",
 				Namespace: "random_namespace",

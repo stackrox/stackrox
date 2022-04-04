@@ -53,19 +53,14 @@ func getK8sComponentID(clusterID string, component string) string {
 	return uuid.NewV5(u, component).String()
 }
 
-type networkPolicyInformation struct {
-	MissingIngress bool
-	MissingEgress  bool
-}
-
 type deploymentWrap struct {
 	*storage.Deployment
 	registryOverride string
 	original         interface{}
 	portConfigs      map[portRef]*storage.PortConfig
 	pods             []*v1.Pod
-	// TODO: we could have the networkPoliciesApplied store here. This would require changes in the ProcessDeployment functions of the detector.
-	//networkPoliciesApplied augmentedobjs.NetworkPoliciesApplied
+	// TODO: we could have the networkPoliciesApplied stored here. This would require changes in the ProcessDeployment functions of the detector.
+	// networkPoliciesApplied augmentedobjs.NetworkPoliciesApplied
 
 	mutex sync.RWMutex
 }

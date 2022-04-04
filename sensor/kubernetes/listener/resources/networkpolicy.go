@@ -40,16 +40,6 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, _ interface{}, action centra
 		}
 
 		h.updateDeploymentsFromStore(roxNetpol, sel, isEmpty)
-
-		return []*central.SensorEvent{
-			{
-				Id:     string(np.UID),
-				Action: action,
-				Resource: &central.SensorEvent_NetworkPolicy{
-					NetworkPolicy: roxNetpol,
-				},
-			},
-		}
 	}
 
 	return []*central.SensorEvent{
@@ -75,6 +65,7 @@ func (h *networkPolicyDispatcher) getSelector(np *storage.NetworkPolicy, action 
 	if action == central.ResourceAction_UPDATE_RESOURCE {
 		if sel != nil {
 			sel = or(sel, SelectorFromMap(np.GetSpec().GetPodSelector().GetMatchLabels()))
+			isEmpty = isEmpty && len(np.GetSpec().GetPodSelector().GetMatchLabels()) == 0
 		} else {
 			sel = SelectorFromMap(np.GetSpec().GetPodSelector().GetMatchLabels())
 			isEmpty = len(np.GetSpec().GetPodSelector().GetMatchLabels()) == 0
