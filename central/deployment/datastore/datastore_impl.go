@@ -257,7 +257,6 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 
 // RemoveDeployment removes an alert from the deploymentStore and the deploymentIndexer
 func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id string) error {
-	log.Infof("RemoveDeployment => %s", id)
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "RemoveDeployment")
 
 	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
