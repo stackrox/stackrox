@@ -818,9 +818,8 @@ func TestEnrichWithSignature_Success(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			e := enricherImpl{
-				integrations:            integrationsSetMock,
-				signatureFetcher:        c.sigFetcher,
-				signatureFetcherLimiter: rate.NewLimiter(rate.Every(10*time.Millisecond), 1),
+				integrations:     integrationsSetMock,
+				signatureFetcher: c.sigFetcher,
 			}
 			updated, err := e.enrichWithSignature(emptyCtx, c.ctx, c.img)
 			assert.NoError(t, err)
