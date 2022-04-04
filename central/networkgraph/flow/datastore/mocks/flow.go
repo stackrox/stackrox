@@ -84,17 +84,17 @@ func (mr *MockFlowDataStoreMockRecorder) RemoveFlowsForDeployment(ctx, id interf
 }
 
 // RemoveMatchingFlows mocks base method.
-func (m *MockFlowDataStore) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(*storage.NetworkFlowProperties) bool, valueMatchFn func(*storage.NetworkFlow) bool) error {
+func (m *MockFlowDataStore) RemoveMatchingFlows(ctx context.Context, valueMatchFn func(*storage.NetworkFlow) bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveMatchingFlows", ctx, keyMatchFn, valueMatchFn)
+	ret := m.ctrl.Call(m, "RemoveMatchingFlows", ctx, valueMatchFn)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveMatchingFlows indicates an expected call of RemoveMatchingFlows.
-func (mr *MockFlowDataStoreMockRecorder) RemoveMatchingFlows(ctx, keyMatchFn, valueMatchFn interface{}) *gomock.Call {
+func (mr *MockFlowDataStoreMockRecorder) RemoveMatchingFlows(ctx, valueMatchFn interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMatchingFlows", reflect.TypeOf((*MockFlowDataStore)(nil).RemoveMatchingFlows), ctx, keyMatchFn, valueMatchFn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMatchingFlows", reflect.TypeOf((*MockFlowDataStore)(nil).RemoveMatchingFlows), ctx, valueMatchFn)
 }
 
 // UpsertFlows mocks base method.

@@ -94,7 +94,7 @@ type FlowStore interface {
 	// valueMatchFn checks to see if time difference vs now is greater than orphanWindow i.e. 30 minutes
 	// keyMatchFn checks to see if either the source or destination are orphaned.  Orphaned means it is type deployment and the id does not exist in deployments.
 	// Though that appears to be dackbox so that is gross.  May have to keep the keyMatchFn for now and replace with a join when deployments are moved to a table?
-	RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error
+	RemoveMatchingFlows(ctx context.Context, valueMatchFn func(flow *storage.NetworkFlow) bool) error
 }
 
 type flowStoreImpl struct {
@@ -493,7 +493,6 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 	}
 
 	if _, err := tx.Exec(ctx, deleteDeploymentStmt, s.clusterID, id); err != nil {
-		log.Info(err)
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -601,7 +600,7 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 
 // RemoveMatchingFlows removes the specified flows from the store
 // Todo: Figure out what to do with the functions.
-func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
+func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
@@ -629,36 +628,10 @@ func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func
 		}
 	}
 
-	// This operation matches if the either the dest or src deployment no longer exists.
-	// We should be able to do that easily in SQL if we have access to the table with the active deployments.
-	// Then we just have to make sure the functions that do this for Rocks don't change.
-	// For now continue to pull EVERYTHING and compare it to the function which just checks to see if a deployment exists.
-	// If the deployment does not exist, delete the row.
-	if keyMatchFn != nil {
-		// Run the query in the transaction to make sure I don't get stuff that may have been deleted by date.
-		rows, err := tx.Query(ctx, walkStmt)
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
-
-		deleteFlows, err := s.readRows(rows, keyMatchFn)
-
-		if err != nil {
-			return nil
-		}
-
-		for _, flow := range deleteFlows {
-			_, err := tx.Exec(ctx, deleteStmt, flow.GetProps().GetSrcEntity().GetType(), flow.GetProps().GetSrcEntity().GetId(), flow.GetProps().GetDstEntity().GetType(), flow.GetProps().GetDstEntity().GetId(), flow.GetProps().GetDstPort(), flow.GetProps().GetL4Protocol(), s.clusterID)
-
-			if err != nil {
-				if err := tx.Rollback(ctx); err != nil {
-					return err
-				}
-				return err
-			}
-		}
-	}
+	// keyMatchFn Checks to see if the deployment was deleted and then removes orphaned flows caused by that.
+	// That should not occur because the datastore_impl of deployments calls RemoveForDeployment when a deployment is
+	// deleted.  So for postgres we are going to ignore keyMatchFn currently and update the existing
+	// software to eliminate its use in this function.
 
 	if err := tx.Commit(ctx); err != nil {
 		return err

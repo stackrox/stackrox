@@ -417,10 +417,6 @@ func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved(deployments set.Froz
 	}
 }
 
-func isOrphanedDeployment(deployments set.FrozenStringSet, info *storage.NetworkEntityInfo) bool {
-	return info.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && !deployments.Contains(info.GetId())
-}
-
 func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(deployments, clusters set.FrozenStringSet) {
 	for _, c := range clusters.AsSlice() {
 		store, err := g.networkflows.GetFlowStore(pruningCtx, c)
@@ -435,10 +431,10 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(deployments, clusters 
 		valueMatchFn := func(flow *storage.NetworkFlow) bool {
 			return flow.LastSeenTimestamp != nil && protoutils.Sub(now, flow.LastSeenTimestamp) > orphanWindow
 		}
-		// keyMatchFn should not be necessary.  When a deployment is deleted the deployment store calls
+		// keyMatchFn was not necessary so it was removed.  When a deployment is deleted the deployment store calls
 		// flowStore.RemoveFlowsForDeployment as such checking for deleted deployments
 		// as part of removing orphaned flows is unnecessary.
-		err = store.RemoveMatchingFlows(pruningCtx, nil, valueMatchFn)
+		err = store.RemoveMatchingFlows(pruningCtx, valueMatchFn)
 		if err != nil {
 			log.Errorf("error removing orphaned flows for cluster %q: %v", c, err)
 		}
