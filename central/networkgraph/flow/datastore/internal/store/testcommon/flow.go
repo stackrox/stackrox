@@ -208,7 +208,9 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 	suite.NoError(err)
 
 	// Match none delete none
-	err = suite.tested.RemoveMatchingFlows(context.Background(), nil)
+	err = suite.tested.RemoveMatchingFlows(context.Background(), func(props *storage.NetworkFlowProperties) bool {
+		return false
+	}, nil)
 	suite.NoError(err)
 
 	currFlows, _, err := suite.tested.GetAllFlows(context.Background(), nil)
@@ -216,7 +218,9 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 	suite.ElementsMatch(flows, currFlows)
 
 	// Match dst port 1
-	err = suite.tested.RemoveMatchingFlows(context.Background(), nil)
+	err = suite.tested.RemoveMatchingFlows(context.Background(), func(props *storage.NetworkFlowProperties) bool {
+		return props.DstPort == 1
+	}, nil)
 	suite.NoError(err)
 
 	currFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
@@ -227,7 +231,7 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 	// outside the orphan time window.  That is much easier more efficient to deal with in SQL than
 	// looping through all the flows and applying that function.
 	if !features.PostgresDatastore.Enabled() {
-		err = suite.tested.RemoveMatchingFlows(context.Background(), func(flow *storage.NetworkFlow) bool {
+		err = suite.tested.RemoveMatchingFlows(context.Background(), nil, func(flow *storage.NetworkFlow) bool {
 			return flow.LastSeenTimestamp.Compare(protoconv.ConvertTimeToTimestamp(t2)) == 0
 		})
 		suite.NoError(err)

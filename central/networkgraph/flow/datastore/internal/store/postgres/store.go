@@ -33,8 +33,9 @@ const (
 
 	getStmt = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM networkflow nf " + joinStmt +
 		" WHERE nf.Props_SrcEntity_Type = $1 AND nf.Props_SrcEntity_Id = $2 AND nf.Props_DstEntity_Type = $3 AND nf.Props_DstEntity_Id = $4 AND nf.Props_DstPort = $5 AND nf.Props_L4Protocol = $6 AND nf.ClusterId = $7"
-	deleteStmt = "DELETE FROM networkflow WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7"
-	walkStmt   = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM networkflow nf " + joinStmt
+	deleteStmt         = "DELETE FROM networkflow WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7"
+	deleteStmtWithTime = "DELETE FROM networkflow WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7 AND LastSeenTimestamp = $8"
+	walkStmt           = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM networkflow nf " + joinStmt
 
 	// These mimic how the RocksDB version of the flow store work
 	getSinceStmt         = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM networkflow nf " + joinStmt + " WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2"
@@ -94,7 +95,7 @@ type FlowStore interface {
 	// valueMatchFn checks to see if time difference vs now is greater than orphanWindow i.e. 30 minutes
 	// keyMatchFn checks to see if either the source or destination are orphaned.  Orphaned means it is type deployment and the id does not exist in deployments.
 	// Though that appears to be dackbox so that is gross.  May have to keep the keyMatchFn for now and replace with a join when deployments are moved to a table?
-	RemoveMatchingFlows(ctx context.Context, valueMatchFn func(flow *storage.NetworkFlow) bool) error
+	RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error
 }
 
 type flowStoreImpl struct {
@@ -427,7 +428,7 @@ func (s *flowStoreImpl) Delete(ctx context.Context, propsSrcEntityType storage.N
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-// Todo: investigate this method to see if it is doing what it should
+// Todo: ROX-9921 Investigate this method to see if it is doing what it should
 func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFlow) error) error {
 	rows, err := s.db.Query(ctx, walkStmt)
 	if err != nil {
@@ -599,8 +600,8 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 }
 
 // RemoveMatchingFlows removes the specified flows from the store
-// Todo: Figure out what to do with the functions.
-func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
+// Todo: ROX-9921 Figure out what to do with the functions.
+func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
@@ -609,32 +610,49 @@ func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, valueMatchFn fu
 	}
 	defer release()
 
-	// want to do all this as a single transaction
-	tx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	// That operation is easy to do in SQL.  If the valueMatchFn is not null then based on the only place
-	// it is set, we are deleting flows orphaned based on elapsed time.
-	if valueMatchFn != nil {
-		// Delete based on orphan time
-		// Do this first because I can do this delete easily via SQL, but until there is a deployment table in PG,
-		// I need to loop over all the IDs in the cluster if keyMatchFn is not null.
-		deleteBefore := time.Now().Add(orphanWindow)
-
-		if _, err := tx.Exec(ctx, deleteOrphanByTimeStmt, s.clusterID, deleteBefore); err != nil {
+	// Todo: ROX-9921 Improve this
+	// This operation matches if the either the dest or src deployment no longer exists AND then
+	// if the last seen time is outside a time window.  Since we do not yet know what deployments exist
+	// in Postgres we cannot fully do this work in SQL.  Additionally, there may be issues with the synchronization
+	// of when flow is created vs a deployment deleted that may also make that problematic.
+	if keyMatchFn != nil {
+		// Run the query in the transaction to make sure I don't get stuff that may have been deleted by date.
+		rows, err := conn.Query(ctx, walkStmt)
+		if err != nil {
 			return err
 		}
-	}
+		defer rows.Close()
 
-	// keyMatchFn Checks to see if the deployment was deleted and then removes orphaned flows caused by that.
-	// That should not occur because the datastore_impl of deployments calls RemoveForDeployment when a deployment is
-	// deleted.  So for postgres we are going to ignore keyMatchFn currently and update the existing
-	// software to eliminate its use in this function.
+		deleteFlows, err := s.readRows(rows, keyMatchFn)
 
-	if err := tx.Commit(ctx); err != nil {
-		return err
+		if err != nil {
+			return nil
+		}
+
+		for _, flow := range deleteFlows {
+			if valueMatchFn != nil {
+				if !valueMatchFn(flow) {
+					continue
+				}
+			}
+			// This is a cleanup operation so we can make it slow for now
+			tx, err := conn.Begin(ctx)
+			if err != nil {
+				return err
+			}
+			_, err = tx.Exec(ctx, deleteStmtWithTime, flow.GetProps().GetSrcEntity().GetType(), flow.GetProps().GetSrcEntity().GetId(), flow.GetProps().GetDstEntity().GetType(), flow.GetProps().GetDstEntity().GetId(), flow.GetProps().GetDstPort(), flow.GetProps().GetL4Protocol(), s.clusterID, pgutils.NilOrTime(flow.GetLastSeenTimestamp()))
+
+			if err != nil {
+				if err := tx.Rollback(ctx); err != nil {
+					return err
+				}
+				return err
+			}
+
+			if err := tx.Commit(ctx); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil

@@ -948,11 +948,11 @@ func TestRemoveOrphanedNetworkFlows(t *testing.T) {
 
 			clusterFlows.EXPECT().GetFlowStore(pruningCtx, "cluster").Return(flows, nil)
 
-			flows.EXPECT().RemoveMatchingFlows(pruningCtx, gomock.Any()).DoAndReturn(
-				func(ctx context.Context, valueFn func(flow *storage.NetworkFlow) bool) error {
+			flows.EXPECT().RemoveMatchingFlows(pruningCtx, gomock.Any(), gomock.Any()).DoAndReturn(
+				func(ctx context.Context, keyFn func(props *storage.NetworkFlowProperties) bool, valueFn func(flow *storage.NetworkFlow) bool) error {
 					var deleted bool
 					for _, f := range c.flows {
-						if !valueFn(f) {
+						if !keyFn(f.Props) || !valueFn(f) {
 							continue
 						}
 						deleted = true

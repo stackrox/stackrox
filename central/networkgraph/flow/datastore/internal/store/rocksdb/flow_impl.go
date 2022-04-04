@@ -123,7 +123,7 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 	return s.db.Write(writeOptions, batch)
 }
 
-func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
+func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkFlow")
 
 	if err := s.db.IncRocksDBInProgressOps(); err != nil {
@@ -136,6 +136,13 @@ func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, valueMatchFn fu
 
 	err := generic.DefaultForEachOverKeySet(s.db, s.keyPrefix, true, func(k []byte) error {
 		if bytes.Equal(k, updatedTSKey) {
+			return nil
+		}
+		props, err := common.ParseID(k)
+		if err != nil {
+			return err
+		}
+		if keyMatchFn != nil && !keyMatchFn(props) {
 			return nil
 		}
 		// No need to read the flow if valueMatchFn is nil

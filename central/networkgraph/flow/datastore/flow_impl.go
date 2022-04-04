@@ -108,11 +108,11 @@ func (fds *flowDataStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id s
 	return fds.storage.RemoveFlowsForDeployment(ctx, id)
 }
 
-func (fds *flowDataStoreImpl) RemoveMatchingFlows(ctx context.Context, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
+func (fds *flowDataStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
 	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	return fds.storage.RemoveMatchingFlows(ctx, valueMatchFn)
+	return fds.storage.RemoveMatchingFlows(ctx, keyMatchFn, valueMatchFn)
 }
