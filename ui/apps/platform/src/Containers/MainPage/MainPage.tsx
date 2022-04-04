@@ -23,8 +23,6 @@ import usePermissions from 'hooks/usePermissions';
 const mainPageSelector = createStructuredSelector({
     featureFlags: selectors.getFeatureFlags,
     isGlobalSearchView: selectors.getGlobalSearchView,
-    isLoadingFeatureFlags: selectors.getIsLoadingFeatureFlags,
-    isLoadingPermissions: selectors.getIsLoadingUserRolePermissions,
     metadata: selectors.getMetadata,
     publicConfig: selectors.getPublicConfig,
     serverState: selectors.getServerState,
@@ -33,8 +31,6 @@ const mainPageSelector = createStructuredSelector({
 function MainPage(): ReactElement {
     const {
         isGlobalSearchView,
-        isLoadingFeatureFlags,
-        isLoadingPermissions,
         metadata = {
             stale: false,
         },
@@ -52,8 +48,8 @@ function MainPage(): ReactElement {
         }
     }
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const { hasReadAccess } = usePermissions();
+    const { isFeatureFlagEnabled, isLoadingFeatureFlags } = useFeatureFlags();
+    const { hasReadAccess, isLoadingPermissions } = usePermissions();
 
     // Render Body and NavigationSideBar only when feature flags and permissions are available.
     if (isLoadingFeatureFlags || isLoadingPermissions) {

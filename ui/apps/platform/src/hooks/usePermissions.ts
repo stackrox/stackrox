@@ -9,15 +9,19 @@ type UsePermissionsResponse = {
     hasNoAccess: (resourceName: ResourceName) => boolean;
     hasReadAccess: (resourceName: ResourceName) => boolean;
     hasReadWriteAccess: (resourceName: ResourceName) => boolean;
+    isLoadingPermissions: boolean;
 };
-type UserRolePermissions = (state) => { resourceToAccess: Record<ResourceName, Access> };
 
-const stateSelector = createStructuredSelector({
-    userRolePermissions: selectors.getUserRolePermissions as UserRolePermissions,
+const stateSelector = createStructuredSelector<{
+    userRolePermissions: { resourceToAccess: Record<ResourceName, Access> };
+    isLoadingPermissions: boolean;
+}>({
+    userRolePermissions: selectors.getUserRolePermissions,
+    isLoadingPermissions: selectors.getIsLoadingUserRolePermissions,
 });
 
 const usePermissions = (): UsePermissionsResponse => {
-    const { userRolePermissions } = useSelector(stateSelector);
+    const { userRolePermissions, isLoadingPermissions } = useSelector(stateSelector);
 
     function hasNoAccess(resourceName: ResourceName) {
         const access = userRolePermissions?.resourceToAccess[resourceName];
@@ -34,7 +38,7 @@ const usePermissions = (): UsePermissionsResponse => {
         return access === 'READ_WRITE_ACCESS';
     }
 
-    return { hasNoAccess, hasReadAccess, hasReadWriteAccess };
+    return { hasNoAccess, hasReadAccess, hasReadWriteAccess, isLoadingPermissions };
 };
 
 export default usePermissions;
