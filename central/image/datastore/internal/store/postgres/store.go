@@ -111,7 +111,6 @@ create table if not exists images (
 	}
 
 	createTableImagesLayers(ctx, db)
-	createTableImagesResults(ctx, db)
 }
 
 func createTableImagesLayers(ctx context.Context, db *pgxpool.Pool) {
@@ -134,35 +133,6 @@ create table if not exists images_Layers (
 	indexes := []string{
 
 		"create index if not exists imagesLayers_idx on images_Layers using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableImagesResults(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists images_Results (
-    images_Id varchar,
-    idx integer,
-    VerifierId varchar,
-    Status integer,
-    PRIMARY KEY(images_Id, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists imagesResults_idx on images_Results using btree(idx)",
 	}
 	for _, index := range indexes {
 		if _, err := db.Exec(ctx, index); err != nil {
@@ -223,17 +193,6 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image) error 
 	if err != nil {
 		return err
 	}
-	for childIdx, child := range obj.GetSignatureVerificationData().GetResults() {
-		if err := insertIntoImagesResults(ctx, tx, child, obj.GetId(), childIdx); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from images_Results where images_Id = $1 AND idx >= $2"
-	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetSignatureVerificationData().GetResults()))
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -248,25 +207,6 @@ func insertIntoImagesLayers(ctx context.Context, tx pgx.Tx, obj *storage.ImageLa
 	}
 
 	finalStr := "INSERT INTO images_Layers (images_Id, idx, Instruction, Value) VALUES($1, $2, $3, $4) ON CONFLICT(images_Id, idx) DO UPDATE SET images_Id = EXCLUDED.images_Id, idx = EXCLUDED.idx, Instruction = EXCLUDED.Instruction, Value = EXCLUDED.Value"
-	_, err := tx.Exec(ctx, finalStr, values...)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func insertIntoImagesResults(ctx context.Context, tx pgx.Tx, obj *storage.ImageSignatureVerificationResult, images_Id string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		images_Id,
-		idx,
-		obj.GetVerifierId(),
-		obj.GetStatus(),
-	}
-
-	finalStr := "INSERT INTO images_Results (images_Id, idx, VerifierId, Status) VALUES($1, $2, $3, $4) ON CONFLICT(images_Id, idx) DO UPDATE SET images_Id = EXCLUDED.images_Id, idx = EXCLUDED.idx, VerifierId = EXCLUDED.VerifierId, Status = EXCLUDED.Status"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -415,9 +355,6 @@ func (s *storeImpl) copyFromImages(ctx context.Context, tx pgx.Tx, objs ...*stor
 		if err = s.copyFromImagesLayers(ctx, tx, obj.GetId(), obj.GetMetadata().GetV1().GetLayers()...); err != nil {
 			return err
 		}
-		if err = s.copyFromImagesResults(ctx, tx, obj.GetId(), obj.GetSignatureVerificationData().GetResults()...); err != nil {
-			return err
-		}
 	}
 
 	return err
@@ -461,57 +398,6 @@ func (s *storeImpl) copyFromImagesLayers(ctx context.Context, tx pgx.Tx, images_
 			// delete for the top level parent
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"images_layers"}, copyCols, pgx.CopyFromRows(inputRows))
-
-			if err != nil {
-				return err
-			}
-
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return err
-}
-
-func (s *storeImpl) copyFromImagesResults(ctx context.Context, tx pgx.Tx, images_Id string, objs ...*storage.ImageSignatureVerificationResult) error {
-
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	copyCols := []string{
-
-		"images_id",
-
-		"idx",
-
-		"verifierid",
-
-		"status",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-
-			images_Id,
-
-			idx,
-
-			obj.GetVerifierId(),
-
-			obj.GetStatus(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"images_results"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -783,17 +669,11 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Image) error)
 func dropTableImages(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images CASCADE")
 	dropTableImagesLayers(ctx, db)
-	dropTableImagesResults(ctx, db)
 
 }
 
 func dropTableImagesLayers(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images_Layers CASCADE")
-
-}
-
-func dropTableImagesResults(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images_Results CASCADE")
 
 }
 

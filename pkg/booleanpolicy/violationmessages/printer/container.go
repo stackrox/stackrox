@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -170,10 +169,8 @@ func imageSignatureVerifiedPrinter(fieldMap map[string][]string) ([]string, erro
 		ContainerName: maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap),
 		Status:        "unverified",
 	}
-	if verifiedBy := maybeGetSingleValueFromFieldMap(search.ImageSignatureVerified.String(), fieldMap); verifiedBy != "" {
-		if status := maybeGetSingleValueFromFieldMap(search.ImageSignatureStatus.String(), fieldMap); status == storage.ImageSignatureVerificationResult_VERIFIED.String() {
-			r.Status = "verified by " + verifiedBy
-		}
+	if verifiedBy := maybeGetSingleValueFromFieldMap(search.ImageSignatureVerified.String(), fieldMap); verifiedBy != "" && verifiedBy != "0" {
+		r.Status = "verified by " + verifiedBy
 	}
 	return executeTemplate(imageSignatureVerifiedTemplate, r)
 }

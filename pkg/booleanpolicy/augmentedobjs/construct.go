@@ -236,11 +236,26 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 	}
 
 	if features.ImageSignatureVerification.Enabled() {
+		var addedAtLeastOnSignatureVerificationResult bool
+		for i, result := range image.GetSignatureVerificationData().GetResults() {
+			if result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
+				err := obj.AddPlainObjAt(
+					&imageSignatureVerification{
+						VerifiedBy: result.GetVerifierId(),
+					},
+					pathutil.FieldStep(imageSignatureVerifiedKey),
+					pathutil.IndexStep(i))
+				if err != nil {
+					return nil, utils.Should(err)
+				}
+				addedAtLeastOnSignatureVerificationResult = true
+			}
+		}
 		// When the object is not created, the policy will not match, but it should match.
 		// Any image that DOESN'T have any signature should also be visible here (I guess?).
 		// This means, we will have to create a dummy entry within the object that will make it
 		// possible for us to match the policy and create alerts.
-		if len(image.GetSignatureVerificationData().GetResults()) == 0 {
+		if !addedAtLeastOnSignatureVerificationResult {
 			if err := addPlaceHolderSignatureVerificationResult(obj); err != nil {
 				return nil, utils.Should(err)
 			}
@@ -254,11 +269,11 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 // EmptySignatureIntegrationID.
 func addPlaceHolderSignatureVerificationResult(obj *pathutil.AugmentedObj) error {
 	err := obj.AddPlainObjAt(
-		"",
-		pathutil.FieldStep("SignatureVerificationData"),
-		pathutil.FieldStep("Results"),
-		pathutil.IndexStep(0),
-		pathutil.FieldStep("VerifierId"))
+		&imageSignatureVerification{
+			VerifiedBy: "0",
+		},
+		pathutil.FieldStep(imageSignatureVerifiedKey),
+		pathutil.IndexStep(0))
 	if err != nil {
 		return err
 	}

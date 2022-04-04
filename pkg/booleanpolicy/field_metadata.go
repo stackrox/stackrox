@@ -402,7 +402,7 @@ func initializeFieldMetadata() FieldMetadata {
 			return signatureIntegrationIDValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{})
+		[]RuntimeFieldType{}, negationForbidden)
 
 	f.registerFieldMetadata(fieldnames.ImageTag,
 		querybuilders.ForFieldLabelRegex(search.ImageTag),
