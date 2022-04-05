@@ -3,7 +3,6 @@ package sac
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
@@ -76,18 +75,7 @@ func (c allowFixedScopesCheckerCore) getAccessModeEffectiveAccessScope(resource 
 	if len(c) == 0 {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
-	accessAllowed := false
-	for coreAccessKey := range c[0] {
-		coreAccessScopeKey, ok := coreAccessKey.(AccessModeScopeKey)
-		if !ok {
-			continue
-		}
-		coreAccess := storage.Access(coreAccessScopeKey)
-		if coreAccess >= resource.Access {
-			accessAllowed = true
-			break
-		}
-	}
+	_, accessAllowed := c[0][AccessModeScopeKey(resource.Access)]
 	if !accessAllowed {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
@@ -98,13 +86,7 @@ func (c allowFixedScopesCheckerCore) getResourceEffectiveAccessScope(resource pe
 	if len(c) == 0 {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
-	resourceAllowed := false
-	for coreResource := range c[0] {
-		if coreResource.String() == resource.Resource.String() {
-			resourceAllowed = true
-			break
-		}
-	}
+	_, resourceAllowed := c[0][ResourceScopeKey(resource.Resource.GetResource())]
 	if !resourceAllowed {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
