@@ -65,12 +65,12 @@ const AsyncSystemHealthPagePF = asyncComponent(
     () => import('Containers/SystemHealth/PatternFly/SystemHealthDashboard')
 );
 
-type Props = {
+type BodyProps = {
     hasReadAccess: (resourceName: ResourceName) => boolean;
     isFeatureFlagEnabled: (envVar: string) => boolean;
 };
 
-function Body({ hasReadAccess, isFeatureFlagEnabled }: Props): ReactElement {
+function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement {
     const { isDarkMode } = useTheme();
 
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled(

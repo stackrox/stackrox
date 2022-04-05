@@ -35,12 +35,15 @@ const platformConfigurationPaths = [
     systemHealthPath,
 ];
 
-type Props = {
+type NavigationSideBarProps = {
     hasReadAccess: (resourceName: ResourceName) => boolean;
     isFeatureFlagEnabled: (envVar: string) => boolean;
 };
 
-function NavigationSideBar({ hasReadAccess, isFeatureFlagEnabled }: Props): ReactElement {
+function NavigationSideBar({
+    hasReadAccess,
+    isFeatureFlagEnabled,
+}: NavigationSideBarProps): ReactElement {
     const location: Location = useLocation();
     const isVulnReportingEnabled = isFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
 
