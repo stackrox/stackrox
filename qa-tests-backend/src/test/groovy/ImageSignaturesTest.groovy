@@ -1,3 +1,5 @@
+import static Services.waitForViolation
+
 import groups.Integration
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
@@ -12,8 +14,6 @@ import services.SignatureIntegrationService
 import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
-
-import static Services.waitForViolation
 
 class ImageSignaturesTest extends BaseSpecification {
     // https://stack-rox.atlassian.net/browse/ROX-6891
@@ -40,21 +40,21 @@ class ImageSignaturesTest extends BaseSpecification {
     ]
 
     // Public keys used within signature integrations.
-    static final private Map<String,String> DISTROLESS_PUBLIC_KEY = [
-            // Source: https://github.com/GoogleContainerTools/distroless/blob/98caaa0389fffd98ca3446403c9eaa1ff08f3131/cosign.pub
+    static final private Map<String, String> DISTROLESS_PUBLIC_KEY = [
+            // Source: https://raw.githubusercontent.com/GoogleContainerTools/distroless/main/cosign.pub
             "Distroless": "-----BEGIN PUBLIC KEY-----\n" +
                     "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWZzVzkb8A+DbgDpaJId/bOmV8n7Q\n" +
                     "OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==\n" +
                     "-----END PUBLIC KEY-----",
     ]
-    static final private Map<String,String> TEKTON_COSIGN_PUBLIC_KEY = [
+    static final private Map<String, String> TEKTON_COSIGN_PUBLIC_KEY = [
             // Source: https://raw.githubusercontent.com/tektoncd/chains/main/tekton.pub
             "Tekton": "-----BEGIN PUBLIC KEY-----\n" +
                     "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEnLNw3RYx9xQjXbUEw8vonX3U4+tB\n" +
                     "kPnJq+zt386SCoG0ewIH5MB8+GjIDGArUULSDfjfM31Eae/71kavAUI0OA==\n" +
                     "-----END PUBLIC KEY-----",
     ]
-    static final private Map<String,String> UNVERIFIABLE_COSIGN_PUBLIC_KEY = [
+    static final private Map<String, String> UNVERIFIABLE_COSIGN_PUBLIC_KEY = [
             // Manually created cosing public key via `cosign generate-key-pair`.
             "Unverifiable": "-----BEGIN PUBLIC KEY-----\n" +
                     "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEUpphKrUYSHvrR+r82Jn7Evg/d3L9\n" +
@@ -73,7 +73,8 @@ class ImageSignaturesTest extends BaseSpecification {
     // Deployment holding an image which has a cosign signature that is verifiable with the TEKTON_PUBLIC_KEY.
     static final private Deployment TEKTON_DEPLOYMENT = new Deployment()
             .setName("with-signature-verified-by-tekton")
-            .setImage("gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init@sha256:79f768d28ff9af9fcbf186f9fc1b8e9f88835dfb07be91610a1f17cf862db89e")
+            .setImage("gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init@" +
+                    "sha256:79f768d28ff9af9fcbf186f9fc1b8e9f88835dfb07be91610a1f17cf862db89e")
             .addLabel("app", "image-with-signature-tekton-test")
             .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -100,25 +101,23 @@ class ImageSignaturesTest extends BaseSpecification {
             DISTROLESS_DEPLOYMENT,
             TEKTON_DEPLOYMENT,
             UNVERIFIABLE_DEPLOYMENT,
-            WITHOUT_SIGNATURE_DEPLOYMENT
+            WITHOUT_SIGNATURE_DEPLOYMENT,
     ]
 
     // Base policy which will be used for creating subsequent policies that have signature integration IDs as values.
-    static final private  Policy.Builder BASE_POLICY = Policy.newBuilder()
-        .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
-        .addCategories("Test")
-        .setDisabled(false)
-        .setSeverityValue(2)
-        .addAllScope([SIGNATURE_TESTING_NAMESPACE].collect{
-            ScopeOuterClass.Scope.newBuilder().setNamespace(it).build()
-        })
-
+    static final private Policy.Builder BASE_POLICY = Policy.newBuilder()
+            .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
+            .addCategories("Test")
+            .setDisabled(false)
+            .setSeverityValue(2)
+            .addAllScope([SIGNATURE_TESTING_NAMESPACE].collect
+                    { ScopeOuterClass.Scope.newBuilder().setNamespace(it).build() })
 
     @Shared
-    private List<String> createdPolicyIds = []
+    final private List<String> createdPolicyIds = []
 
     @Shared
-    private Map<String, String> createdSignatureIntegrations = [:]
+    final private Map<String, String> createdSignatureIntegrations = [:]
 
     def setupSpec() {
         orchestrator.createNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -198,10 +197,10 @@ class ImageSignaturesTest extends BaseSpecification {
         orchestrator.deleteNamespace(SIGNATURE_TESTING_NAMESPACE)
     }
 
-
     @Unroll
+    @SuppressWarnings('LineLength')
     @Category(Integration)
-    def "Check violations of policy '#policyName' for deployment '#deployment.name'" () {
+    def "Check violations of policy '#policyName' for deployment '#deployment.name'"() {
         expect:
         "Verify deployment has expected violations"
         assert waitForViolation(deployment.name, policyName, WAIT_FOR_VIOLATION_TIMEOUT) == expectViolations
@@ -233,14 +232,15 @@ class ImageSignaturesTest extends BaseSpecification {
     }
 
     // Helper which creates a policy builder for a policy which uses the image signature policy criteria.
-    private static Policy.Builder createPolicyBuilderWithSignatureCriteria(String policyName, List <String> signatureIntegrationIDs) {
+    private static Policy.Builder createPolicyBuilderWithSignatureCriteria(
+            String policyName, List<String> signatureIntegrationIDs) {
         def builder = BASE_POLICY.clone().setName(policyName)
         def policyGroup = PolicyOuterClass.PolicyGroup.newBuilder()
                 .setFieldName("Image Signature Verified By")
                 .setBooleanOperator(PolicyOuterClass.BooleanOperator.OR)
         policyGroup.addAllValues(
-                signatureIntegrationIDs.collect{
-                    PolicyOuterClass.PolicyValue.newBuilder().setValue(it).build()})
+                signatureIntegrationIDs.collect
+                        { PolicyOuterClass.PolicyValue.newBuilder().setValue(it).build() })
                 .setNegate(false)
                 .build()
         def policyBuilder = builder.clone().addPolicySections(
@@ -251,17 +251,19 @@ class ImageSignaturesTest extends BaseSpecification {
 
     // Helper to create a signature integration with given name and public keys.
     private static String createSignatureIntegration(String integrationName, Map<String, String> namedPublicKeys) {
-        String signatureIntegrationID = SignatureIntegrationService.createSignatureIntegration(SignatureIntegration.newBuilder()
-                .setName(integrationName)
-                .setCosign(CosignPublicKeyVerification.newBuilder()
-                        .addAllPublicKeys(namedPublicKeys.collect{
-                            CosignPublicKeyVerification.PublicKey.newBuilder()
-                                .setName(it.key).setPublicKeyPemEnc(it.value)
+        String signatureIntegrationID = SignatureIntegrationService.createSignatureIntegration(
+                SignatureIntegration.newBuilder()
+                        .setName(integrationName)
+                        .setCosign(CosignPublicKeyVerification.newBuilder()
+                                .addAllPublicKeys(namedPublicKeys.collect
+                                        {
+                                            CosignPublicKeyVerification.PublicKey.newBuilder()
+                                                    .setName(it.key).setPublicKeyPemEnc(it.value)
+                                                    .build()
+                                        })
                                 .build()
-                        })
+                        )
                         .build()
-                )
-                .build()
         )
         return signatureIntegrationID
     }
