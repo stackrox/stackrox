@@ -1,20 +1,19 @@
 package services
 
+import groovy.transform.CompileStatic
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
-import io.stackrox.proto.api.v1.EmptyOuterClass
 import io.stackrox.proto.api.v1.SignatureIntegrationServiceGrpc
-import io.stackrox.proto.api.v1.SignatureIntegrationServiceOuterClass
-import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass
 import util.Timer
 
+@CompileStatic
 class SignatureIntegrationService extends BaseService {
     static getSignatureIntegrationClient() {
         return SignatureIntegrationServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static createSignatureIntegration(SignatureIntegrationOuterClass.SignatureIntegration integration) {
+    static String createSignatureIntegration(SignatureIntegrationOuterClass.SignatureIntegration integration) {
         SignatureIntegrationOuterClass.SignatureIntegration createdIntegration
         Timer t = new Timer(15, 3)
         while (t.IsValid()) {
@@ -52,18 +51,18 @@ class SignatureIntegrationService extends BaseService {
         return ""
     }
 
-    static deleteSignatureIntegration(String integrationId) {
+    static Boolean deleteSignatureIntegration(String integrationId) {
         try {
             getSignatureIntegrationClient().deleteSignatureIntegration(getResourceByID(integrationId))
         } catch (Exception e) {
             println "Failed to delete signature integration with id ${integrationId}: ${e.message}"
+            return false
         }
 
         Timer t = new Timer(15, 3)
-        while(t.IsValid()) {
+        while (t.IsValid()) {
             try {
-                ImageIntegrationOuterClass integration =
-                        getSignatureIntegrationClient().getSignatureIntegration(getResourceByID(integrationId))
+                getSignatureIntegrationClient().getSignatureIntegration(getResourceByID(integrationId))
             } catch (StatusRuntimeException e) {
                 if (e.status.code == Status.Code.NOT_FOUND) {
                     println "Signature integration deleted: ${integrationId}"
