@@ -4468,7 +4468,7 @@ jobs:
     steps:
       - checkout
 
-      *configureGit
+      - *configureGit
 
       - add_ssh_keys:
           fingerprints:
