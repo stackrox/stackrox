@@ -32,13 +32,15 @@ func (np *Finder) GetNetworkPoliciesApplied(deployment *storage.Deployment) *aug
 
 	var hasIngress, hasEgress bool
 
-lookingForPolicies:
 	for _, policy := range np.store.Find(deployment.Namespace, deployment.Labels) {
 		for _, policyType := range policy.GetSpec().GetPolicyTypes() {
 			hasIngress = hasIngress || policyType == storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE
 			hasEgress = hasEgress || policyType == storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE
 			if hasIngress && hasEgress {
-				break lookingForPolicies
+				return &augmentedobjs.NetworkPoliciesApplied{
+					MissingIngressNetworkPolicy: false,
+					MissingEgressNetworkPolicy:  false,
+				}
 			}
 		}
 	}
