@@ -703,6 +703,7 @@ reinstall-dev-tools: clean-dev-tools
 .PHONY: install-dev-tools
 install-dev-tools:
 	@echo "+ $@"
+	@test -n "$(GOPATH)" || { echo "Set GOPATH before installing dev tools"; exit 1; }
 	@$(GET_DEVTOOLS_CMD) | xargs $(MAKE)
 ifeq ($(UNAME_S),Darwin)
 	@echo "Please manually install RocksDB if you haven't already. See README for details"
