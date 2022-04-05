@@ -70,5 +70,6 @@ class SignatureIntegrationService extends BaseService {
                 }
             }
         }
+        return false
     }
 }
