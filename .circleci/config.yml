@@ -1542,6 +1542,7 @@ commands:
           command: |
             if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
               export CLUSTER=OPENSHIFT
+              oc apply -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
             else
               export CLUSTER=K8S
             fi
@@ -4701,7 +4702,6 @@ jobs:
                   oc_login_command=$(grep "oc login https.*username.*password" "$PWD/artifacts/log/rosa-create-admin.log")
                   eval "$oc_login_command --insecure-skip-tls-verify=true"
                   oc get nodes
-                  oc apply -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
           destroy-cluster:
             - nop-steps-stanza
       - destroy-rosa-cluster
@@ -4741,7 +4741,6 @@ jobs:
                   source "$PWD/artifacts/dotenv"
                   oc login "$API_ENDPOINT" --username "$CONSOLE_USER" --password "$CONSOLE_PASSWORD" --insecure-skip-tls-verify=true
                   oc get nodes
-                  oc apply -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
           destroy-cluster:
             - nop-steps-stanza
       - destroy-aro-cluster
@@ -4787,7 +4786,6 @@ jobs:
                     --password "$CLUSTER_PASSWORD" \
                     --insecure-skip-tls-verify=true
                   oc get nodes
-                  oc apply -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
           destroy-cluster:
             - nop-steps-stanza
       - destroy-osd-aws-cluster
@@ -4833,7 +4831,6 @@ jobs:
                     --password "$CLUSTER_PASSWORD" \
                     --insecure-skip-tls-verify=true
                   oc get nodes
-                  oc apply -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
           destroy-cluster:
             - nop-steps-stanza
       - destroy-osd-gcp-cluster
