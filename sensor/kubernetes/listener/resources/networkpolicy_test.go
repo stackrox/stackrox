@@ -9,6 +9,8 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
+	"github.com/stackrox/rox/sensor/common/store"
+	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"k8s.io/apimachinery/pkg/labels"
@@ -22,7 +24,7 @@ type NetworkPolicyDispatcherSuite struct {
 	suite.Suite
 
 	mockCtrl        *gomock.Controller
-	netpolStore     networkPolicyStore
+	netpolStore     store.NetworkPolicyStore
 	deploymentStore *DeploymentStore
 	detector        *mocks.MockDetector
 	dispatcher      *networkPolicyDispatcher
@@ -35,7 +37,7 @@ var _ suite.TearDownTestSuite = (*NetworkPolicyDispatcherSuite)(nil)
 
 func (suite *NetworkPolicyDispatcherSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.netpolStore = newNetworkPoliciesStore()
+	suite.netpolStore = mocksStore.NewMockNetworkPolicyStore(suite.mockCtrl)
 	suite.deploymentStore = newDeploymentStore()
 	suite.detector = mocks.NewMockDetector(suite.mockCtrl)
 
