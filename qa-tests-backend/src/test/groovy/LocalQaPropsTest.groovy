@@ -29,6 +29,6 @@ class LocalQaPropsTest extends Specification {
         def canonicalJson = JsonOutput.toJson(rawData)
         def canonicalJsonSha256 = DigestUtils.sha256Hex(canonicalJson)
         then:
-        canonicalJsonSha256 == 'ea83b1d47846bcdf427e14ef6a274e402b11f8c449d7ca99cf2fd017bdf37804'
+        canonicalJsonSha256 == '0b7e83cefd9a8462f1c413dc04da7ab4d2a9712ae2dd4cc01ec8a745103c4429'
     }
 }
