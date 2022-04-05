@@ -4255,7 +4255,7 @@ jobs:
 
     - run:
         name: Run Operator Bundle Scorecard tests
-        command: ./operator/scripts/retry.sh 4 make -C operator bundle-test-image
+        command: ./operator/scripts/retry.sh 4 2 make -C operator bundle-test-image
 
     - collect-k8s-logs:
         orchestrator-flavor: openshift
