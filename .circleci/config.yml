@@ -50,6 +50,13 @@ loginToGCR: &loginToGCR
     command: docker login -u _json_key --password-stdin \<<<"$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" https://gcr.io
     when: always
 
+configureGit: &configureGit
+  run:
+    name: Configure git
+    command: |
+      git config user.email "roxbot@stackrox.com"
+      git config user.name "RoxBot"
+
 restoreGoBuildCache: &restoreGoBuildCache
   restore_cache:
     name: Restoring Go build cache
@@ -511,6 +518,9 @@ parameters:
     type: string
     # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
     default: '^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
+  collector_version:
+    type: string
+    default: ""
 
 orbs:
   win: circleci/windows@2.2.0
@@ -2698,11 +2708,24 @@ jobs:
   # Build jobs
   ###
 
-  pre-create-tag:
+  pre-create-parameters:
     executor: custom
     resource_class: small
     steps:
       - checkout
+      - *configureGit
+      - run:
+          name: Allow a custom Collector version
+          command: |
+            if [[ -n "<< pipeline.parameters.collector_version >>" ]]; then
+              echo "Using a custom collector version: << pipeline.parameters.collector_version >>"
+              echo "<< pipeline.parameters.collector_version >>" > COLLECTOR_VERSION
+              # Ensure that this CI pipeline has a unique tag and that it does
+              # not overwrite images built from the original git ref.
+              git commit -m 'avoid overwrite of existing image' COLLECTOR_VERSION
+            else
+              echo "A custom collector version was not set"
+            fi
       - run:
           name: Creating a consistent tag for CI workflow
           command: |
@@ -2712,6 +2735,7 @@ jobs:
           root: /go/src/github.com/stackrox/rox
           paths:
             - CI_TAG
+            - COLLECTOR_VERSION
 
   pre-build-ui-stackrox:
     executor: custom
@@ -4514,11 +4538,7 @@ jobs:
     steps:
       - checkout
 
-      - run:
-          name: Configure git
-          command: |
-            git config user.email "roxbot@stackrox.com"
-            git config user.name "RoxBot"
+      - *configureGit
 
       - add_ssh_keys:
           fingerprints:
@@ -4879,7 +4899,7 @@ workflows:
   build_all:
     when:
       not: << pipeline.parameters.trigger_on_demand >>
-    jobs:
+    jobs: &buildAllJobs
       - slack-notify:
           filters:
             tags:
@@ -4907,24 +4927,24 @@ workflows:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - integration-unit-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-      - pre-create-tag:
+      - pre-create-parameters:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - pre-build-ui-stackrox:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - pre-create-tag
+            - pre-create-parameters
       - pre-build-ui-rhacs:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - pre-create-tag
+            - pre-create-parameters
       - pre-build-cli:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
-            - pre-create-tag
+            - pre-create-parameters
       - pre-build-go-binaries:
           <<: *runOnAllTagsWithPushCtx
           requires:
-            - pre-create-tag
+            - pre-create-parameters
       - build-stackrox:
           <<: *runOnAllTagsWithPushCtx
           requires:
@@ -5264,20 +5284,20 @@ workflows:
     when:
       equal: [ "build-rhacs", << pipeline.parameters.workflow_name >> ]
     jobs:
-      - pre-create-tag:
+      - pre-create-parameters:
           context: custom-executor-pull
       - pre-build-ui-rhacs:
           context: custom-executor-pull
           requires:
-            - pre-create-tag
+            - pre-create-parameters
       - pre-build-cli:
           context: custom-executor-pull
           requires:
-            - pre-create-tag
+            - pre-create-parameters
       - pre-build-go-binaries:
           context: docker-io-push
           requires:
-            - pre-create-tag
+            - pre-create-parameters
       - build-rhacs:
           context: docker-io-push
           requires:
@@ -5291,3 +5311,21 @@ workflows:
     jobs:
       - designated-image-tests:
           context: quay-rhacs-eng-readonly
+
+  # To trigger build_all with custom parameters.
+  #
+  #   curl -X POST --header 'Content-Type: application/json' \
+  #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/stackrox/pipeline -d '{
+  #     "branch": "<your branch>",
+  #     "parameters": {
+  #         "trigger_on_demand": true,
+  #         "workflow_name": "build_all",
+  #         "collector_version": "1.2.3"
+  #     }
+  # }'
+
+  build_all_on_demand:
+    when:
+      equal: [ "build_all", << pipeline.parameters.workflow_name >> ]
+    jobs:
+      *buildAllJobs
