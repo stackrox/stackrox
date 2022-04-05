@@ -103,7 +103,7 @@ func createNetworkPolicy(id, namespace string, podSelector map[string]string) *s
 		Id:        id,
 		Namespace: namespace,
 	}
-	if netpol == nil || len(podSelector) > 0 {
+	if podSelector == nil || len(podSelector) > 0 {
 		netpol.Spec = &storage.NetworkPolicySpec{
 			PodSelector: &storage.LabelSelector{
 				MatchLabels: podSelector,
