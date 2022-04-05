@@ -5,18 +5,14 @@ set -eu -o pipefail
 # shellcheck source=./hack/common.sh
 source "$(dirname "$0")/../hack/common.sh"
 
-eecho() {
-  echo "$@" >&2
-}
-
 die() {
-  eecho "$@"
+  log "$@"
   exit 1
 }
 
 function main() {
     if [ $# -lt 2 ]; then
-        die "Usage: $0 <number of attempts> <command> [ <command arg> ... ]"
+        die "Usage: $0 <number of attempts> <delay between attempts in seconds> <command> [ <command arg> ... ]"
     fi
 
     local -r n_attempts="${1:-}"; shift
@@ -29,8 +25,8 @@ function main() {
         die "Error: '$delay' is not a number of seconds."
     fi
 
-    eecho "** Executing '$*' with $n_attempts attempts **"
-    eecho
+    log "** Executing '$*' with $n_attempts attempts **"
+    log
     retry "$n_attempts" "$delay" "$@"
 }
 
