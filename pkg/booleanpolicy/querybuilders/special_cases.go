@@ -136,10 +136,12 @@ func mapFixedByValue(s string) string {
 // Signature Verification Status.
 func ForImageSignatureVerificationStatus() QueryBuilder {
 	qbf := func(group *storage.PolicyGroup) []*query.FieldQuery {
-		group.Negate = !group.Negate
-		return []*query.FieldQuery{
-			fieldQueryFromGroup(group, search.ImageSignatureVerifiedBy, nil),
-		}
+		return []*query.FieldQuery{{
+			Field:    search.ImageSignatureVerifiedBy.String(),
+			Values:   mapValues(group, nil),
+			Operator: operatorProtoMap[group.GetBooleanOperator()],
+			Negate:   !group.Negate,
+		}}
 	}
 	return queryBuilderFunc(qbf)
 }
