@@ -7,7 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -85,7 +84,7 @@ func (suite *PolicyTestSuite) TestThrowsErrorForNotCompilable() {
 	suite.False(hasMatch, "policy set should not contain a matching policy")
 }
 
-var goodPolicy = policyversion.MustEnsureConverted(&storage.Policy{
+var goodPolicy = &storage.Policy{
 	Id:         "1",
 	Name:       "latest",
 	Severity:   storage.Severity_LOW_SEVERITY,
@@ -115,9 +114,9 @@ var goodPolicy = policyversion.MustEnsureConverted(&storage.Policy{
 	},
 	PolicyVersion:   "1.1",
 	LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
-})
+}
 
-var badPolicy = policyversion.MustEnsureConverted(&storage.Policy{
+var badPolicy = &storage.Policy{
 	Id:         "2",
 	Name:       "latest",
 	Severity:   storage.Severity_LOW_SEVERITY,
@@ -147,4 +146,4 @@ var badPolicy = policyversion.MustEnsureConverted(&storage.Policy{
 	},
 	PolicyVersion:   "1.1",
 	LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
-})
+}
