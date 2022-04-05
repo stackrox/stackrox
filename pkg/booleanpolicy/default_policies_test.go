@@ -2238,7 +2238,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_0", "verified_by_2_and_3")),
 		},
 		{
-			values:          []string{verifier3},
+			values:          []string{verifier2, verifier3},
 			negate:          false,
 			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3")),
 		},*/
