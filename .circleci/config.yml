@@ -2637,19 +2637,22 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Creating a consistent tag for CI workflow
-          command: |
-            make --quiet tag | tee CI_TAG_TMP
-            mv CI_TAG_TMP CI_TAG
-      - run:
           name: Allow a custom Collector version
           command: |
             if [[ -n "<< pipeline.parameters.collector_version >>" ]]; then
               echo "Using a custom collector version: << pipeline.parameters.collector_version >>"
               echo "<< pipeline.parameters.collector_version >>" > COLLECTOR_VERSION
+              # Ensure that this CI pipeline has a unique tag and that it does
+              # not overwrite images built from the same git ref.
+              git commit -m 'avoid overwrite of existing image' COLLECTOR_VERSION
             else
               echo "A custom collector version was not set"
             fi
+      - run:
+          name: Creating a consistent tag for CI workflow
+          command: |
+            make --quiet tag | tee CI_TAG_TMP
+            mv CI_TAG_TMP CI_TAG
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
           paths:
