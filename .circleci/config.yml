@@ -5057,7 +5057,7 @@ workflows:
   #     "branch": "<your branch>",
   #     "parameters": {
   #         "trigger_on_demand": true,
-  #         "workflow_name": "build_all"
+  #         "workflow_name": "build_all",
   #         "collector_version": "1.2.3"
   #     }
   # }'
