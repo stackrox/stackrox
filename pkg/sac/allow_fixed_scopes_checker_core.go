@@ -56,6 +56,8 @@ func (c allowFixedScopesCheckerCore) EffectiveAccessScope(resource permissions.R
 	if len(c) == 0 {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
+	// Build the effective access scope tree based on the top level ScopeKey type
+	// TODO (ROX-9981): Change the structure of allowFixedScopesCheckerCore to not rely on magic index values
 	for key := range c[0] {
 		switch key.(type) {
 		case AccessModeScopeKey:
@@ -89,7 +91,7 @@ func (c allowFixedScopesCheckerCore) getAccessModeEffectiveAccessScope(resource 
 	if !accessAllowed {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
-	return c[1:].getResourceEffectiveAccessScope(resource)
+	return c.next().getResourceEffectiveAccessScope(resource)
 }
 
 func (c allowFixedScopesCheckerCore) getResourceEffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
@@ -106,7 +108,7 @@ func (c allowFixedScopesCheckerCore) getResourceEffectiveAccessScope(resource pe
 	if !resourceAllowed {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
-	return c[1:].getClusterEffectiveAccessScope()
+	return c.next().getClusterEffectiveAccessScope()
 }
 
 func (c allowFixedScopesCheckerCore) getClusterEffectiveAccessScope() (*effectiveaccessscope.ScopeTree, error) {
@@ -130,4 +132,8 @@ func (c allowFixedScopesCheckerCore) getClusterEffectiveAccessScope() (*effectiv
 		clusterNamespaceMap[clusterID] = namespaces
 	}
 	return effectiveaccessscope.FromClustersAndNamespacesMap(nil, clusterNamespaceMap), nil
+}
+
+func (c allowFixedScopesCheckerCore) next() allowFixedScopesCheckerCore {
+	return c[1:]
 }
