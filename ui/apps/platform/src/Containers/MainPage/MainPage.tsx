@@ -75,7 +75,6 @@ function MainPage({
 const mapStateToProps = createStructuredSelector({
     isGlobalSearchView: selectors.getGlobalSearchView,
     metadata: selectors.getMetadata,
-    featureFlags: selectors.getFeatureFlags,
     publicConfig: selectors.getPublicConfig,
     serverState: selectors.getServerState,
 });
