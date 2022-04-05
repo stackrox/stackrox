@@ -7,243 +7,41 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-func TestGetSelector(t *testing.T) {
-	if !features.NetworkPolicySystemPolicy.Enabled() {
-		t.Skipf("Skipping test since the %s variable is not set", features.NetworkPolicySystemPolicy.EnvVar())
-	}
-
-	mockCtrl := gomock.NewController(t)
-	nps := newNetworkPoliciesStore()
-	ds := newDeploymentStore()
-	det := mocks.NewMockDetector(mockCtrl)
-
-	dispatcher := newNetworkPolicyDispatcher(nps, ds, det)
-
-	cases := []struct {
-		name             string
-		netpol           *storage.NetworkPolicy
-		oldNetpol        *storage.NetworkPolicy
-		action           central.ResourceAction
-		expectedSelector []map[string]string
-		expectedEmpty    bool
-	}{
-		{
-			name: "New NetworkPolicy",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
-						MatchLabels: map[string]string{
-							"app":  "sensor",
-							"role": "backend",
-						},
-					},
-				},
-			},
-			oldNetpol: nil,
-			action:    central.ResourceAction_CREATE_RESOURCE,
-			expectedSelector: []map[string]string{
-				{
-					"app":  "sensor",
-					"role": "backend",
-				},
-			},
-			expectedEmpty: false,
-		},
-		{
-			name: "New NetworkPolicy, no selector",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-			},
-			oldNetpol:        nil,
-			action:           central.ResourceAction_CREATE_RESOURCE,
-			expectedSelector: []map[string]string{},
-			expectedEmpty:    true,
-		},
-		{
-			name: "Update NetworkPolicy",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
-						MatchLabels: map[string]string{
-							"app":  "sensor",
-							"role": "backend",
-						},
-					},
-				},
-			},
-			oldNetpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
-						MatchLabels: map[string]string{
-							"app":  "sensor-2",
-							"role": "backend",
-						},
-					},
-				},
-			},
-			action: central.ResourceAction_UPDATE_RESOURCE,
-			expectedSelector: []map[string]string{
-				{
-					"app":  "sensor",
-					"role": "backend",
-				},
-				{
-					"app":  "sensor-2",
-					"role": "backend",
-				},
-			},
-			expectedEmpty: false,
-		},
-		{
-			name: "Update NetworkPolicy, no selector",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-			},
-			oldNetpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-			},
-			action:           central.ResourceAction_UPDATE_RESOURCE,
-			expectedSelector: []map[string]string{},
-			expectedEmpty:    true,
-		},
-		{
-			name: "Update NetworkPolicy, new selector",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
-						MatchLabels: map[string]string{
-							"app":  "sensor",
-							"role": "backend",
-						},
-					},
-				},
-			},
-			oldNetpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-			},
-			action: central.ResourceAction_UPDATE_RESOURCE,
-			expectedSelector: []map[string]string{
-				{
-					"app":  "sensor",
-					"role": "backend",
-				},
-			},
-			expectedEmpty: true,
-		},
-		{
-			name: "Update NetworkPolicy, delete selector",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-			},
-			oldNetpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
-						MatchLabels: map[string]string{
-							"app":  "sensor",
-							"role": "backend",
-						},
-					},
-				},
-			},
-			action: central.ResourceAction_UPDATE_RESOURCE,
-			expectedSelector: []map[string]string{
-				{
-					"app":  "sensor",
-					"role": "backend",
-				},
-			},
-			expectedEmpty: true,
-		},
-		{
-			name: "Delete NetworkPolicy",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
-						MatchLabels: map[string]string{
-							"app":  "sensor",
-							"role": "backend",
-						},
-					},
-				},
-			},
-			oldNetpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
-						MatchLabels: map[string]string{
-							"app":  "sensor",
-							"role": "backend",
-						},
-					},
-				},
-			},
-			action: central.ResourceAction_REMOVE_RESOURCE,
-			expectedSelector: []map[string]string{
-				{
-					"app":  "sensor",
-					"role": "backend",
-				},
-			},
-			expectedEmpty: false,
-		},
-		{
-			name: "Delete NetworkPolicy, no selector",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-			},
-			oldNetpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-			},
-			action:           central.ResourceAction_REMOVE_RESOURCE,
-			expectedSelector: []map[string]string{},
-			expectedEmpty:    true,
-		},
-	}
-	for _, c := range cases {
-		sel, isEmpty := dispatcher.getSelector(c.netpol, c.oldNetpol, c.action)
-		assert.Equal(t, isEmpty, c.expectedEmpty)
-		for _, s := range c.expectedSelector {
-			assert.True(t, sel.Matches(labels.Set(s)))
-		}
-	}
+func TestNetworkPolicyDispatcher(t *testing.T) {
+	suite.Run(t, new(NetworkPolicyDispatcherSuite))
 }
 
-func TestUpdateDeploymentsFromStore(t *testing.T) {
-	if !features.NetworkPolicySystemPolicy.Enabled() {
-		t.Skipf("Skipping test since the %s variable is not set", features.NetworkPolicySystemPolicy.EnvVar())
-	}
+type NetworkPolicyDispatcherSuite struct {
+	suite.Suite
 
-	mockCtrl := gomock.NewController(t)
-	nps := newNetworkPoliciesStore()
-	ds := newDeploymentStore()
-	det := mocks.NewMockDetector(mockCtrl)
+	mockCtrl        *gomock.Controller
+	netpolStore     networkPolicyStore
+	deploymentStore *DeploymentStore
+	detector        *mocks.MockDetector
+	dispatcher      *networkPolicyDispatcher
 
-	dispatcher := newNetworkPolicyDispatcher(nps, ds, det)
+	envIsolator *envisolator.EnvIsolator
+}
+
+var _ suite.SetupTestSuite = (*NetworkPolicyDispatcherSuite)(nil)
+var _ suite.TearDownTestSuite = (*NetworkPolicyDispatcherSuite)(nil)
+
+func (suite *NetworkPolicyDispatcherSuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.netpolStore = newNetworkPoliciesStore()
+	suite.deploymentStore = newDeploymentStore()
+	suite.detector = mocks.NewMockDetector(suite.mockCtrl)
+
+	suite.dispatcher = newNetworkPolicyDispatcher(suite.netpolStore, suite.deploymentStore, suite.detector)
+
+	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
 
 	deployments := []*deploymentWrap{
 		{
@@ -289,22 +87,175 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 	}
 
 	for _, d := range deployments {
-		ds.addOrUpdateDeployment(d)
+		suite.deploymentStore.addOrUpdateDeployment(d)
 	}
 
-	cases := []struct {
-		name                string
+	suite.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
+}
+
+func (suite *NetworkPolicyDispatcherSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
+	suite.envIsolator.RestoreAll()
+}
+
+func createNetworkPolicy(id, namespace string, podSelector map[string]string) *storage.NetworkPolicy {
+	netpol := &storage.NetworkPolicy{
+		Id:        id,
+		Namespace: namespace,
+	}
+	if netpol == nil || len(podSelector) > 0 {
+		netpol.Spec = &storage.NetworkPolicySpec{
+			PodSelector: &storage.LabelSelector{
+				MatchLabels: podSelector,
+			},
+		}
+	}
+	return netpol
+}
+
+func (suite *NetworkPolicyDispatcherSuite) Test_GetSelector() {
+	if !features.NetworkPolicySystemPolicy.Enabled() {
+		suite.T().Skipf("Skipping test since the %s variable is not set", features.NetworkPolicySystemPolicy.EnvVar())
+	}
+
+	cases := map[string]struct {
+		netpol           *storage.NetworkPolicy
+		oldNetpol        *storage.NetworkPolicy
+		action           central.ResourceAction
+		expectedSelector []map[string]string
+		expectedEmpty    bool
+	}{
+		"New NetworkPolicy": {
+			netpol: createNetworkPolicy("1", "default",
+				map[string]string{
+					"app":  "sensor",
+					"role": "backend"}),
+			oldNetpol: nil,
+			action:    central.ResourceAction_CREATE_RESOURCE,
+			expectedSelector: []map[string]string{
+				{
+					"app":  "sensor",
+					"role": "backend",
+				},
+			},
+			expectedEmpty: false,
+		},
+		"New NetworkPolicy, no selector": {
+			netpol:           createNetworkPolicy("1", "default", nil),
+			oldNetpol:        nil,
+			action:           central.ResourceAction_CREATE_RESOURCE,
+			expectedSelector: []map[string]string{},
+			expectedEmpty:    true,
+		},
+		"Update NetworkPolicy": {
+			netpol: createNetworkPolicy("1", "default",
+				map[string]string{
+					"app":  "sensor",
+					"role": "backend"}),
+			oldNetpol: createNetworkPolicy("1", "default",
+				map[string]string{
+					"app":  "sensor-2",
+					"role": "backend"}),
+			action: central.ResourceAction_UPDATE_RESOURCE,
+			expectedSelector: []map[string]string{
+				{
+					"app":  "sensor",
+					"role": "backend",
+				},
+				{
+					"app":  "sensor-2",
+					"role": "backend",
+				},
+			},
+			expectedEmpty: false,
+		},
+		"Update NetworkPolicy, no selector": {
+			netpol:           createNetworkPolicy("1", "default", nil),
+			oldNetpol:        createNetworkPolicy("1", "default", nil),
+			action:           central.ResourceAction_UPDATE_RESOURCE,
+			expectedSelector: []map[string]string{},
+			expectedEmpty:    true,
+		},
+		"Update NetworkPolicy, new selector": {
+			netpol: createNetworkPolicy("1", "default",
+				map[string]string{
+					"app":  "sensor",
+					"role": "backend"}),
+			oldNetpol: createNetworkPolicy("1", "default", nil),
+			action:    central.ResourceAction_UPDATE_RESOURCE,
+			expectedSelector: []map[string]string{
+				{
+					"app":  "sensor",
+					"role": "backend",
+				},
+			},
+			expectedEmpty: true,
+		},
+		"Update NetworkPolicy, delete selector": {
+			netpol: createNetworkPolicy("1", "default", nil),
+			oldNetpol: createNetworkPolicy("1", "default",
+				map[string]string{
+					"app":  "sensor",
+					"role": "backend"}),
+			action: central.ResourceAction_UPDATE_RESOURCE,
+			expectedSelector: []map[string]string{
+				{
+					"app":  "sensor",
+					"role": "backend",
+				},
+			},
+			expectedEmpty: true,
+		},
+		"Delete NetworkPolicy": {
+			netpol: createNetworkPolicy("1", "default",
+				map[string]string{
+					"app":  "sensor",
+					"role": "backend"}),
+			oldNetpol: createNetworkPolicy("1", "default",
+				map[string]string{
+					"app":  "sensor",
+					"role": "backend"}),
+			action: central.ResourceAction_REMOVE_RESOURCE,
+			expectedSelector: []map[string]string{
+				{
+					"app":  "sensor",
+					"role": "backend",
+				},
+			},
+			expectedEmpty: false,
+		},
+		"Delete NetworkPolicy, no selector": {
+			netpol:           createNetworkPolicy("1", "default", nil),
+			oldNetpol:        createNetworkPolicy("1", "default", nil),
+			action:           central.ResourceAction_REMOVE_RESOURCE,
+			expectedSelector: []map[string]string{},
+			expectedEmpty:    true,
+		},
+	}
+	for name, c := range cases {
+		suite.T().Run(name, func(t *testing.T) {
+			sel, isEmpty := suite.dispatcher.getSelector(c.netpol, c.oldNetpol, c.action)
+			assert.Equal(t, isEmpty, c.expectedEmpty)
+			for _, s := range c.expectedSelector {
+				assert.True(t, sel.Matches(labels.Set(s)))
+			}
+		})
+	}
+}
+
+func (suite *NetworkPolicyDispatcherSuite) Test_UpdateDeploymentsFromStore() {
+	if !features.NetworkPolicySystemPolicy.Enabled() {
+		suite.T().Skipf("Skipping test since the %s variable is not set", features.NetworkPolicySystemPolicy.EnvVar())
+	}
+
+	cases := map[string]struct {
 		netpol              *storage.NetworkPolicy
 		sel                 []map[string]string
 		isEmpty             bool
 		expectedDeployments []*deploymentWrap
 	}{
-		{
-			name: "New NetworkPolicy",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-			},
+		"New NetworkPolicy": {
+			netpol: createNetworkPolicy("1", "default", nil),
 			sel: []map[string]string{
 				{
 					"app":  "sensor",
@@ -321,12 +272,8 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "Empty selector",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-			},
+		"Empty selector": {
+			netpol:  createNetworkPolicy("1", "default", nil),
 			sel:     []map[string]string{},
 			isEmpty: true,
 			expectedDeployments: []*deploymentWrap{
@@ -350,12 +297,8 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "Selector with no deployments",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-			},
+		"Selector with no deployments": {
+			netpol: createNetworkPolicy("1", "default", nil),
 			sel: []map[string]string{
 				{
 					"app": "central",
@@ -364,12 +307,8 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 			isEmpty:             false,
 			expectedDeployments: []*deploymentWrap{},
 		},
-		{
-			name: "Namespace with no deployments",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "random_namespace",
-			},
+		"Namespace with no deployments": {
+			netpol: createNetworkPolicy("1", "random-namespace", nil),
 			sel: []map[string]string{
 				{
 					"app": "sensor",
@@ -378,22 +317,14 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 			isEmpty:             false,
 			expectedDeployments: []*deploymentWrap{},
 		},
-		{
-			name: "Namespace with no deployments, no selector",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "random_namespace",
-			},
+		"Namespace with no deployments, no selector": {
+			netpol:              createNetworkPolicy("1", "random-namespace", nil),
 			sel:                 []map[string]string{},
 			isEmpty:             true,
 			expectedDeployments: []*deploymentWrap{},
 		},
-		{
-			name: "Disjunction selector",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-			},
+		"Disjunction selector": {
+			netpol: createNetworkPolicy("1", "default", nil),
 			sel: []map[string]string{
 				{
 					"app":  "sensor",
@@ -419,12 +350,8 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "Disjunction selector, with empty member",
-			netpol: &storage.NetworkPolicy{
-				Id:        "1",
-				Namespace: "default",
-			},
+		"Disjunction selector, with empty member": {
+			netpol: createNetworkPolicy("1", "default", nil),
 			sel: []map[string]string{
 				{},
 				{
@@ -454,26 +381,29 @@ func TestUpdateDeploymentsFromStore(t *testing.T) {
 			},
 		},
 	}
-	for _, c := range cases {
-		deps := map[string]*deploymentWrap{}
-		processDeploymentMock := det.EXPECT().ProcessDeployment(gomock.Any(), central.ResourceAction_UPDATE_RESOURCE).DoAndReturn(func(d *storage.Deployment, _ central.ResourceAction) {
-			deps[d.GetId()] = &deploymentWrap{
-				Deployment: d,
+	for name, c := range cases {
+		suite.T().Run(name, func(t *testing.T) {
+
+			deps := map[string]*deploymentWrap{}
+			processDeploymentMock := suite.detector.EXPECT().ProcessDeployment(gomock.Any(), gomock.Eq(central.ResourceAction_UPDATE_RESOURCE)).DoAndReturn(func(d *storage.Deployment, _ central.ResourceAction) {
+				deps[d.GetId()] = &deploymentWrap{
+					Deployment: d,
+				}
+			})
+			processDeploymentMock.Times(len(c.expectedDeployments))
+			var sel selector
+			for _, s := range c.sel {
+				if sel != nil {
+					sel = or(sel, SelectorFromMap(s))
+				} else {
+					sel = SelectorFromMap(s)
+				}
+			}
+			suite.dispatcher.updateDeploymentsFromStore(c.netpol, sel, c.isEmpty)
+			for _, d := range c.expectedDeployments {
+				_, ok := deps[d.GetId()]
+				assert.True(t, ok)
 			}
 		})
-		processDeploymentMock.Times(len(c.expectedDeployments))
-		var sel selector
-		for _, s := range c.sel {
-			if sel != nil {
-				sel = or(sel, SelectorFromMap(s))
-			} else {
-				sel = SelectorFromMap(s)
-			}
-		}
-		dispatcher.updateDeploymentsFromStore(c.netpol, sel, c.isEmpty)
-		for _, d := range c.expectedDeployments {
-			_, ok := deps[d.GetId()]
-			assert.True(t, ok)
-		}
 	}
 }
