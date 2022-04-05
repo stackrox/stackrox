@@ -4679,7 +4679,6 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_VERIFY_IMAGE_SIGNATURE: true
 
-
     steps:
       - run-qa-tests:
           cluster-id: openshift-rosa-api-e2e-tests
@@ -4702,6 +4701,7 @@ jobs:
                   oc_login_command=$(grep "oc login https.*username.*password" "$PWD/artifacts/log/rosa-create-admin.log")
                   eval "$oc_login_command --insecure-skip-tls-verify=true"
                   oc get nodes
+                  oc apply -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
           destroy-cluster:
             - nop-steps-stanza
       - destroy-rosa-cluster
@@ -4741,6 +4741,7 @@ jobs:
                   source "$PWD/artifacts/dotenv"
                   oc login "$API_ENDPOINT" --username "$CONSOLE_USER" --password "$CONSOLE_PASSWORD" --insecure-skip-tls-verify=true
                   oc get nodes
+                  oc apply -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
           destroy-cluster:
             - nop-steps-stanza
       - destroy-aro-cluster
