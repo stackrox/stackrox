@@ -27,7 +27,8 @@ import { useTheme } from 'Containers/ThemeProvider';
 
 import asyncComponent from 'Components/AsyncComponent';
 import ErrorBoundary from 'Containers/ErrorBoundary';
-import { ResourceName } from 'types/roleResources';
+import { HasReadAccess } from 'hooks/usePermissions';
+import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { knownBackendFlags } from 'utils/featureFlags';
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
@@ -66,8 +67,8 @@ const AsyncSystemHealthPagePF = asyncComponent(
 );
 
 type BodyProps = {
-    hasReadAccess: (resourceName: ResourceName) => boolean;
-    isFeatureFlagEnabled: (envVar: string) => boolean;
+    hasReadAccess: HasReadAccess;
+    isFeatureFlagEnabled: IsFeatureFlagEnabled;
 };
 
 function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement {

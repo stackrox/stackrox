@@ -12,8 +12,10 @@ const featureFlagsSelector = createStructuredSelector<{
     isLoadingFeatureFlags: selectors.getIsLoadingFeatureFlags,
 });
 
+export type IsFeatureFlagEnabled = (envVar: string) => boolean;
+
 type UseFeatureFlags = {
-    isFeatureFlagEnabled: (envVar: string) => boolean;
+    isFeatureFlagEnabled: IsFeatureFlagEnabled;
     isLoadingFeatureFlags: boolean;
 };
 

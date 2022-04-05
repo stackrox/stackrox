@@ -5,10 +5,14 @@ import { selectors } from 'reducers';
 import { Access } from 'types/role.proto';
 import { ResourceName } from 'types/roleResources';
 
+export type HasNoAccess = (resourceName: ResourceName) => boolean;
+export type HasReadAccess = (resourceName: ResourceName) => boolean;
+export type HasReadWriteAccess = (resourceName: ResourceName) => boolean;
+
 type UsePermissionsResponse = {
-    hasNoAccess: (resourceName: ResourceName) => boolean;
-    hasReadAccess: (resourceName: ResourceName) => boolean;
-    hasReadWriteAccess: (resourceName: ResourceName) => boolean;
+    hasNoAccess: HasNoAccess;
+    hasReadAccess: HasReadAccess;
+    hasReadWriteAccess: HasReadWriteAccess;
     isLoadingPermissions: boolean;
 };
 

@@ -2,7 +2,8 @@ import React, { ReactElement } from 'react';
 import { useLocation, Location } from 'react-router-dom';
 import { Nav, NavList, NavExpandable, PageSidebar } from '@patternfly/react-core';
 
-import { ResourceName } from 'types/roleResources';
+import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import { HasReadAccess } from 'hooks/usePermissions';
 import { knownBackendFlags } from 'utils/featureFlags';
 
 import {
@@ -36,8 +37,8 @@ const platformConfigurationPaths = [
 ];
 
 type NavigationSideBarProps = {
-    hasReadAccess: (resourceName: ResourceName) => boolean;
-    isFeatureFlagEnabled: (envVar: string) => boolean;
+    hasReadAccess: HasReadAccess;
+    isFeatureFlagEnabled: IsFeatureFlagEnabled;
 };
 
 function NavigationSideBar({
