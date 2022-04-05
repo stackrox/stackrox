@@ -3,6 +3,7 @@ package resources
 import (
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/store"
 
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -72,7 +73,7 @@ The operations on the store may allocate additional memory temporarily.
 - Delete: O(1)
 */
 
-var _ networkPolicyStore = (*networkPolicyStoreImpl)(nil)
+var _ store.NetworkPolicyStore = (*networkPolicyStoreImpl)(nil)
 
 type networkPolicyStoreImpl struct {
 	lock sync.RWMutex

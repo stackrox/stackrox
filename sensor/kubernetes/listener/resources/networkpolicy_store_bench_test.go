@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/store"
 )
 
 /*
@@ -46,7 +47,7 @@ func generateSetOfAllValues(num int) []string {
 	return arr
 }
 
-func populateStore(s networkPolicyStore, num, numLabels int64, allLabels, allValues []string) {
+func populateStore(s store.NetworkPolicyStore, num, numLabels int64, allLabels, allValues []string) {
 	for i := int64(0); i < num; i++ {
 		np := newNPDummy(uuid.NewV4().String(), getRandom(namespaces), randomLabels(numLabels, allLabels, allValues))
 		s.Upsert(np)

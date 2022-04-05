@@ -8,6 +8,9 @@ var (
 
 	psInit   sync.Once
 	podStore *PodStore
+
+	netpolInit  sync.Once
+	netpolStore *networkPolicyStoreImpl
 )
 
 // DeploymentStoreSingleton returns a singleton of the DeploymentStore
@@ -24,4 +27,12 @@ func PodStoreSingleton() *PodStore {
 		podStore = newPodStore()
 	})
 	return podStore
+}
+
+// NetworkPolicySingleton returns a singleton of NetworkPolicyStore
+func NetworkPolicySingleton() *networkPolicyStoreImpl {
+	netpolInit.Do(func() {
+		netpolStore = newNetworkPoliciesStore()
+	})
+	return netpolStore
 }
