@@ -1,7 +1,7 @@
 package authz
 
 import (
-	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/pkg/auth/role/resources"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 )

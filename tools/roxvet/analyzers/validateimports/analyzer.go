@@ -182,7 +182,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	// will need to be protected by strict compatibility guarantees.
 	if validImportRoot == "migrator" {
 		allowedPackages = append(allowedPackages,
-			"pkg/env", "pkg/rocksdb", "pkg/process/id", "pkg/migrations", "pkg/testutils", "pkg/batcher",
+			"pkg/auth", "pkg/env", "pkg/rocksdb", "pkg/process/id", "pkg/migrations", "pkg/testutils", "pkg/batcher",
 			"pkg/config", "pkg/features", "pkg/grpc/routes", "pkg/logging", "pkg/set", "pkg/version", "pkg/uuid",
 			"pkg/utils", "pkg/fileutils", "pkg/buildinfo", "pkg/fsutils", "pkg/sliceutils")
 	}

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/license/internal/store"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/role/resources"
 	"github.com/stackrox/rox/pkg/sac"
 )
 

@@ -9,8 +9,8 @@ import (
 	nsIndexMocks "github.com/stackrox/rox/central/namespace/index/mocks"
 	nsMocks "github.com/stackrox/rox/central/namespace/store/mocks"
 	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/role/resources"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
