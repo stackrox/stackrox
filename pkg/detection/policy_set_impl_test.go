@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stretchr/testify/suite"
 )
@@ -89,14 +90,30 @@ var goodPolicy = policyversion.MustEnsureConverted(&storage.Policy{
 	Name:       "latest",
 	Severity:   storage.Severity_LOW_SEVERITY,
 	Categories: []string{"Image Assurance", "Privileges Capabilities"},
-	Fields: &storage.PolicyFields{
-		ImageName: &storage.ImageNamePolicy{
-			Tag: "latest",
-		},
-		SetPrivileged: &storage.PolicyFields_Privileged{
-			Privileged: true,
+	PolicySections: []*storage.PolicySection{
+		{
+			SectionName: "section-1",
+			PolicyGroups: []*storage.PolicyGroup{
+				{
+					FieldName: fieldnames.ImageTag,
+					Values: []*storage.PolicyValue{
+						{
+							Value: "latest",
+						},
+					},
+				},
+				{
+					FieldName: fieldnames.PrivilegedContainer,
+					Values: []*storage.PolicyValue{
+						{
+							Value: "true",
+						},
+					},
+				},
+			},
 		},
 	},
+	PolicyVersion:   "1.1",
 	LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 })
 
@@ -105,13 +122,29 @@ var badPolicy = policyversion.MustEnsureConverted(&storage.Policy{
 	Name:       "latest",
 	Severity:   storage.Severity_LOW_SEVERITY,
 	Categories: []string{"Image Assurance", "Privileges Capabilities"},
-	Fields: &storage.PolicyFields{
-		ImageName: &storage.ImageNamePolicy{
-			Tag: "^^[/",
-		},
-		SetPrivileged: &storage.PolicyFields_Privileged{
-			Privileged: true,
+	PolicySections: []*storage.PolicySection{
+		{
+			SectionName: "section-1",
+			PolicyGroups: []*storage.PolicyGroup{
+				{
+					FieldName: fieldnames.ImageTag,
+					Values: []*storage.PolicyValue{
+						{
+							Value: "^^[/",
+						},
+					},
+				},
+				{
+					FieldName: fieldnames.PrivilegedContainer,
+					Values: []*storage.PolicyValue{
+						{
+							Value: "true",
+						},
+					},
+				},
+			},
 		},
 	},
+	PolicyVersion:   "1.1",
 	LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 })

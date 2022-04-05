@@ -73,12 +73,15 @@ class Enforcement extends BaseSpecification {
                                         .setLabel(ScopeOuterClass.Scope.Label.newBuilder()
                                         .setKey("app").setValue(SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE))
                         )
-                        .setFields(PolicyOuterClass.PolicyFields.newBuilder()
-                                .setImageName(PolicyOuterClass.ImageNamePolicy.newBuilder()
-                                        .setTag("enforcement")
-                                        .build())
-                                .build())
-                        .build()
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Image Tag")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("enforcement")
+                                                        .build()).build()
+                                ).build()
+                        ).build()
                 PolicyService.createNewPolicy(policy)
             },
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY) : {
@@ -154,52 +157,61 @@ class Enforcement extends BaseSpecification {
     private final static Map<String, Deployment> DEPLOYMENTS = [
             (KILL_ENFORCEMENT):
                     new Deployment()
+                            .setName("dep1")
                             .setImage("quay.io/rhacs-eng/qa:nginx")
                             .setCommand(["sh", "-c", "while true; do sleep 5; apt-get -y update; done"])
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT):
                     new Deployment()
+                            .setName("dep2")
                             .setImage("busybox")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE):
                     new Deployment()
+                            .setName("dep3")
                             .setImage("quay.io/rhacs-eng/qa:enforcement")
                             .addPort(22)
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY):
                     new Deployment()
+                            .setName("dep4")
                             .setImage("us.gcr.io/stackrox-ci/nginx:1.9.1")
                             .addPort(22)
                             .setSkipReplicaWait(true)
                             .setCommand(["sleep", "600"]),
             (NODE_CONSTRAINT_ENFORCEMENT):
                     new Deployment()
+                            .setName("dep5")
                             .setImage("busybox")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_AND_NODE_CONSTRAINT):
                     new Deployment()
+                            .setName("dep6")
                             .setImage("busybox")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true),
             (ALERT_AND_KILL_ENFORCEMENT_BASELINE_PROCESS):
                     new Deployment()
+                            .setName("dep7")
                             .setImage(TEST_IMAGE)
                             .addPort(22, "TCP")
                             .addAnnotation("test", "annotation")
                             .setEnv(["CLUSTER_NAME": "main"]),
             (NO_ENFORCEMENT_ON_UPDATE):
                     new Deployment()
+                            .setName("dep8")
                             .setImage("busybox")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true),
             (NO_ENFORCEMENT_WITH_BYPASS_ANNOTATION):
                     new Deployment()
+                            .setName("dep9")
                             .setImage("busybox")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
@@ -210,6 +222,7 @@ class Enforcement extends BaseSpecification {
     private final static Map<String, DaemonSet> DAEMON_SETS = [
             (SCALE_DOWN_AND_NODE_CONSTRAINT_FOR_DS):
                     new DaemonSet()
+                            .setName("dset1")
                             .setImage("busybox")
                             .addPort(22)
                             .setCommand(["sleep", "600"])

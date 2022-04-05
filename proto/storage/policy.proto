@@ -20,12 +20,12 @@ message Policy {
     string                      remediation             = 5;
     bool                        disabled                = 6 [(gogoproto.moretags) = "search:\"Disabled\""];
     repeated string             categories              = 7 [(gogoproto.moretags) = "search:\"Category,store\""];
-    PolicyFields                fields                  = 8 [(gogoproto.moretags) = 'sql:"-"'];
+    reserved                    8; // was PolicyFields fields
 
     repeated LifecycleStage     lifecycle_stages        = 9  [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
     EventSource                 event_source            = 22;
 
-    repeated Exclusion          whitelists              = 10 [deprecated = true];
+    reserved                                            10; //was repeated Exclusion whitelists
     repeated Exclusion          exclusions              = 21;
     repeated Scope              scope                   = 11;
 
@@ -135,6 +135,7 @@ enum LifecycleStage {
     BUILD     = 1;
     RUNTIME   = 2;
 }
+
 
 // Next Available Tag: 29
 message PolicyFields {

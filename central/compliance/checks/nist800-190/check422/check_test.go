@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	complianceMocks "github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -42,11 +43,22 @@ var (
 	latestTagEnabledAndEnforced = &storage.Policy{
 		Id:   uuid.NewV4().String(),
 		Name: "Foo",
-		Fields: &storage.PolicyFields{
-			ImageName: &storage.ImageNamePolicy{
-				Tag: "latest",
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ImageTag,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "latest",
+							},
+						},
+					},
+				},
 			},
 		},
+		PolicyVersion:      "1.1",
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
@@ -54,11 +66,22 @@ var (
 	imageAgePolicyEnabledAndEnforced = &storage.Policy{
 		Id:   uuid.NewV4().String(),
 		Name: "Bar",
-		Fields: &storage.PolicyFields{
-			SetImageAgeDays: &storage.PolicyFields_ImageAgeDays{
-				ImageAgeDays: 30,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ImageAge,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "30",
+							},
+						},
+					},
+				},
 			},
 		},
+		PolicyVersion:      "1.1",
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
@@ -67,11 +90,22 @@ var (
 		Id:       uuid.NewV4().String(),
 		Name:     "Random",
 		Disabled: false,
-		Fields: &storage.PolicyFields{
-			ProcessPolicy: &storage.ProcessPolicy{
-				Name: "sshd",
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ProcessName,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "sshd",
+							},
+						},
+					},
+				},
 			},
 		},
+		PolicyVersion:      "1.1",
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
 )

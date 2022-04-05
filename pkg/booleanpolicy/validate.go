@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -48,9 +47,6 @@ func Validate(p *storage.Policy, options ...ValidateOption) error {
 	}
 
 	errorList := errorhelpers.NewErrorList("policy validation")
-	if !policyversion.IsBooleanPolicy(p) {
-		errorList.AddStringf("invalid version for boolean policy (got %q)", p.GetPolicyVersion())
-	}
 	if p.GetName() == "" {
 		errorList.AddString("no name specified")
 	}
