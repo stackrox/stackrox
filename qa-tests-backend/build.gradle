@@ -107,7 +107,7 @@ dependencies {
     implementation group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'
 
     //Slack API
-    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.9.0'
+    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.20.2'
 
     // JAX-B dependencies for JDK 9+
     implementation "javax.xml.bind:jaxb-api:2.3.1"
@@ -116,7 +116,7 @@ dependencies {
     // Required to make codenarc work with JDK 14.
     // See https://github.com/gradle/gradle/issues/12646.
     constraints {
-        "codenarc"("org.codehaus.groovy:groovy:2.5.10")
+        "codenarc"("org.codehaus.groovy:groovy:3.0.10")
         "codenarc"("org.codehaus.groovy:groovy-xml:2.5.10")
     }
 
