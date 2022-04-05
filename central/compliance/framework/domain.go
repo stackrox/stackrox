@@ -87,9 +87,7 @@ func (d *complianceDomain) MachineConfigs() map[string][]ComplianceTarget {
 
 func (d *complianceDomain) Pods() []*storage.Pod {
 	result := make([]*storage.Pod, len(d.pods))
-	for i, pod := range d.pods {
-		result[i] = pod
-	}
+	copy(result, d.pods)
 	return result
 }
 
