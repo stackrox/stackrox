@@ -235,11 +235,11 @@ func TestNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 }
 
 func clusterMatch(clusterID string) *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).MarkHighlighted(search.ClusterID).ProtoQuery()
 }
 
 func namespaceMatch(namespace string) *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.Namespace, namespace).ProtoQuery()
+	return search.NewQueryBuilder().AddExactMatches(search.Namespace, namespace).MarkHighlighted(search.Namespace).ProtoQuery()
 }
 
 func queryIdentical(expected, actual *v1.Query) bool {

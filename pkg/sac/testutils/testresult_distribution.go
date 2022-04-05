@@ -16,11 +16,11 @@ func ValidateSACSearchResultDistribution(s *suite.Suite, expected, obtained map[
 	s.Equal(len(expected), len(obtained), "unexpected cluster count in result")
 	for clusterID, clusterMap := range expected {
 		_, clusterFound := obtained[clusterID]
-		s.True(clusterFound)
+		s.Truef(clusterFound, "Actual result misses data for cluster %s", clusterID)
 		if clusterFound {
 			for namespace, count := range clusterMap {
 				_, namespaceFound := obtained[clusterID][namespace]
-				s.True(namespaceFound)
+				s.Truef(namespaceFound, "Actual result misses data for namespace %s in cluster %s", namespace, clusterID)
 				s.Equalf(count, obtained[clusterID][namespace], "unexpected count for cluster %s and namespace %s", clusterID, namespace)
 			}
 		}
@@ -36,12 +36,12 @@ func CountResultsPerClusterAndNamespace(_ *testing.T, searchResults []searchPkg.
 	for _, result := range searchResults {
 		var clusterID string
 		var namespace string
-		for k, v := range result.Fields {
+		for k, v := range result.Matches {
 			if k == clusterIDField.GetFieldPath() {
-				clusterID = fmt.Sprintf("%v", v)
+				clusterID = fmt.Sprintf("%v", v[0])
 			}
 			if k == namespaceField.GetFieldPath() {
-				namespace = fmt.Sprintf("%v", v)
+				namespace = fmt.Sprintf("%v", v[0])
 			}
 		}
 		if _, clusterIDExists := resultDistribution[clusterID]; !clusterIDExists {

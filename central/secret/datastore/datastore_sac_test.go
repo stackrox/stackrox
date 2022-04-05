@@ -81,7 +81,7 @@ func (s *secretDatastoreSACTestSuite) SetupSuite() {
 	s.datastore, err = New(s.storage, s.indexer, s.search)
 	s.NoError(err)
 
-	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), resources.Secret.GetResource())
+	s.testContexts = testutils.GetNamespaceScopedTestContexts(s.T(), context.Background(), resources.Secret.GetResource())
 }
 
 func (s *secretDatastoreSACTestSuite) TearDownSuite() {
@@ -549,9 +549,6 @@ func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedCountSecrets() {
 }
 
 func (s *secretDatastoreSACTestSuite) runSearchTest(testParams secretSACSearchResult) {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Skipping search tests in postgres mode")
-	}
 	ctx := s.testContexts[testParams.scopeKey]
 	searchResults, err := s.datastore.Search(ctx, nil)
 	s.NoError(err)
@@ -576,9 +573,6 @@ func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedSearch() {
 }
 
 func (s *secretDatastoreSACTestSuite) runSearchSecretsTest(testParams secretSACSearchResult) {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Skipping search tests in postgres mode")
-	}
 	ctx := s.testContexts[testParams.scopeKey]
 	searchResults, err := s.datastore.SearchSecrets(ctx, nil)
 	s.NoError(err)
