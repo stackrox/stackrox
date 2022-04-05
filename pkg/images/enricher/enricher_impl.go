@@ -120,7 +120,7 @@ func (e *enricherImpl) EnrichWithSignatureVerificationData(ctx context.Context, 
 		return EnrichmentResult{}, errors.New("the image signature verification feature is not enabled")
 	}
 
-	updated, err := e.enrichWithSignatureVerificationData(ctx, EnrichmentContext{}, image)
+	updated, err := e.enrichWithSignatureVerificationData(ctx, EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly}, image)
 
 	return EnrichmentResult{
 		ImageUpdated: updated,
@@ -521,10 +521,9 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 		return false, nil
 	}
 
-	// We can neglect updated signatures here, since refetching is tied to the same FetchOption for both signature and
-	// verification results. If we decide to introduce a new fetch option for signature verification only, we need to
-	// account for updated signatures to not have stale verification results after the enrichment process.
-	if img.GetSignatureVerificationData() != nil {
+	// The image will use cached or existing values. If we are enriching during i.e. change of signature integration,
+	// we have to make sure we force a re-verification to not return stale data.
+	if img.GetSignatureVerificationData() != nil && enrichmentContext.FetchOpt != ForceRefetchSignaturesOnly {
 		return false, nil
 	}
 
