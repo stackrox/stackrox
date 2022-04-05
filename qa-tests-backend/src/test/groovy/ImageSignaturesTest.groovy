@@ -16,7 +16,6 @@ import util.Env
 import static Services.waitForViolation
 
 class ImageSignaturesTest extends BaseSpecification {
-    // TODO: Not sure this is still up-to-date?
     // https://stack-rox.atlassian.net/browse/ROX-6891
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
             isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 30)
@@ -27,7 +26,7 @@ class ImageSignaturesTest extends BaseSpecification {
     static final private String DISTROLESS = "Distroless"
     static final private String TEKTON = "Tekton"
     static final private String UNVERIFIABLE = "Unverifiable"
-    // TODO(ROX-9996: Uncomment after we can handle multiple verification results.
+    // TODO(ROX-9996): Uncomment after we can handle multiple verification results.
     //static final private String DISTROLESS_AND_TEKTON = "Distroless+Tekton"
 
     // List of integration names used within tests.
@@ -36,7 +35,7 @@ class ImageSignaturesTest extends BaseSpecification {
             DISTROLESS,
             TEKTON,
             UNVERIFIABLE,
-            // TODO(ROX-9996: Uncomment after we can handle multiple verification results.
+            // TODO(ROX-9996): Uncomment after we can handle multiple verification results.
             //DISTROLESS_AND_TEKTON
     ]
 
@@ -145,7 +144,7 @@ class ImageSignaturesTest extends BaseSpecification {
         assert unverifiableSignatureIntegrationID
         createdSignatureIntegrations.put(UNVERIFIABLE, unverifiableSignatureIntegrationID)
 
-        // TODO(ROX-9996: Uncomment after we can handle multiple verification results.
+        // TODO(ROX-9996): Uncomment after we can handle multiple verification results.
         /* Signature integration "Distroless+Tekton" which holds both distroless and tekton cosign public keys.
         Map<String,String> mergedKeys = DISTROLESS_PUBLIC_KEY.clone() as Map<String, String>
         mergedKeys.putAll(TEKTON_COSIGN_PUBLIC_KEY.entrySet())
@@ -165,7 +164,7 @@ class ImageSignaturesTest extends BaseSpecification {
         // Create the policy builders using the signature integration IDs.
         List<Policy.Builder> policyBuilders = []
         for (integrationName in INTEGRATION_NAMES) {
-            Policy.Builder builder = createPolicyBuilderWithSignatureCriteria(integrationName, false,
+            Policy.Builder builder = createPolicyBuilderWithSignatureCriteria(integrationName,
                     [createdSignatureIntegrations.get(integrationName, "")])
             assert builder
             policyBuilders.add(builder)
@@ -224,7 +223,7 @@ class ImageSignaturesTest extends BaseSpecification {
         UNVERIFIABLE | TEKTON_DEPLOYMENT            | true
         UNVERIFIABLE | WITHOUT_SIGNATURE_DEPLOYMENT | true
         UNVERIFIABLE | UNVERIFIABLE_DEPLOYMENT      | true
-        // TODO(ROX-9996: Uncomment after we can handle multiple verification results.
+        // TODO(ROX-9996): Uncomment after we can handle multiple verification results.
         /* Distroless and tekton should create alerts for all deployments except thos using distroless / tekton images.
         DISTROLESS_AND_TEKTON | UNVERIFIABLE_DEPLOYMENT | true
         DISTROLESS_AND_TEKTON | WITHOUT_SIGNATURE_DEPLOYMENT | true
@@ -234,7 +233,7 @@ class ImageSignaturesTest extends BaseSpecification {
     }
 
     // Helper which creates a policy builder for a policy which uses the image signature policy criteria.
-    private static Policy.Builder createPolicyBuilderWithSignatureCriteria(String policyName, Boolean negated, List <String> signatureIntegrationIDs) {
+    private static Policy.Builder createPolicyBuilderWithSignatureCriteria(String policyName, List <String> signatureIntegrationIDs) {
         def builder = BASE_POLICY.clone().setName(policyName)
         def policyGroup = PolicyOuterClass.PolicyGroup.newBuilder()
                 .setFieldName("Image Signature Verified By")
@@ -242,7 +241,7 @@ class ImageSignaturesTest extends BaseSpecification {
         policyGroup.addAllValues(
                 signatureIntegrationIDs.collect{
                     PolicyOuterClass.PolicyValue.newBuilder().setValue(it).build()})
-                .setNegate(negated)
+                .setNegate(false)
                 .build()
         def policyBuilder = builder.clone().addPolicySections(
                 PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build()
