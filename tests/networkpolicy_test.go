@@ -8,6 +8,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
@@ -111,6 +112,10 @@ func applyNetworkPolicy(t *testing.T) func() {
 }
 
 func Test_GetViolationForIngressPolicy(t *testing.T) {
+
+	if !features.NetworkPolicySystemPolicy.Enabled() {
+		t.Skip("Feature flag disabled")
+	}
 
 	testCases := map[string]struct {
 		policyName        string
