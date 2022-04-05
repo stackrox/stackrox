@@ -50,6 +50,13 @@ loginToGCR: &loginToGCR
     command: docker login -u _json_key --password-stdin \<<<"$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" https://gcr.io
     when: always
 
+configureGit: &configureGit
+  run:
+    name: Configure git
+    command: |
+      git config user.email "roxbot@stackrox.com"
+      git config user.name "RoxBot"
+
 restoreGoBuildCache: &restoreGoBuildCache
   restore_cache:
     name: Restoring Go build cache
@@ -2636,6 +2643,7 @@ jobs:
     resource_class: small
     steps:
       - checkout
+      - *configureGit
       - run:
           name: Allow a custom Collector version
           command: |
@@ -2643,7 +2651,7 @@ jobs:
               echo "Using a custom collector version: << pipeline.parameters.collector_version >>"
               echo "<< pipeline.parameters.collector_version >>" > COLLECTOR_VERSION
               # Ensure that this CI pipeline has a unique tag and that it does
-              # not overwrite images built from the same git ref.
+              # not overwrite images built from the original git ref.
               git commit -m 'avoid overwrite of existing image' COLLECTOR_VERSION
             else
               echo "A custom collector version was not set"
@@ -4460,11 +4468,7 @@ jobs:
     steps:
       - checkout
 
-      - run:
-          name: Configure git
-          command: |
-            git config user.email "roxbot@stackrox.com"
-            git config user.name "RoxBot"
+      *configureGit
 
       - add_ssh_keys:
           fingerprints:
