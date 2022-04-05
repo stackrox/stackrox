@@ -2,26 +2,17 @@ package resources
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
+	"github.com/stackrox/rox/sensor/common/store"
 	networkingV1 "k8s.io/api/networking/v1"
 )
 
-type networkPolicyStore interface {
-	Size() int
-	All() map[string]*storage.NetworkPolicy
-	Get(id string) *storage.NetworkPolicy
-	Upsert(ns *storage.NetworkPolicy)
-	Find(namespace string, labels map[string]string) map[string]*storage.NetworkPolicy
-	Delete(ID, ns string)
-}
-
 // networkPolicyDispatcher handles network policy resource events.
 type networkPolicyDispatcher struct {
-	store networkPolicyStore
+	store store.NetworkPolicyStore
 }
 
-func newNetworkPolicyDispatcher(nps networkPolicyStore) *networkPolicyDispatcher {
+func newNetworkPolicyDispatcher(nps store.NetworkPolicyStore) *networkPolicyDispatcher {
 	return &networkPolicyDispatcher{
 		store: nps,
 	}
