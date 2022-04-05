@@ -349,10 +349,11 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 		depUnmet := false
 		for _, dep := range fw.Annotations[flags.DependenciesKey] {
 			flag := flagsByName[dep]
+			//nolint:staticcheck // SA5011 flag is definitely not nil because utils.Must panics.
 			if flag == nil {
 				utils.CrashOnError(errors.Errorf("invalid flag dependency %q", dep))
 			}
-			//lint:ignore SA5011 flag is definitely not nil because utils.Must panics.
+			//nolint:staticcheck // SA5011 flag is definitely not nil because utils.Must panics.
 			if !argSlice.flagNameIsSetExplicitly(flag.Name) {
 				depUnmet = true
 				break

@@ -96,11 +96,6 @@ $(EASYJSON_BIN): deps
 	@echo "+ $@"
 	go install github.com/mailru/easyjson/easyjson
 
-STATICCHECK_BIN := $(GOBIN)/staticcheck
-$(STATICCHECK_BIN): deps
-	@echo "+ $@"
-	@cd tools/linters/ && go install honnef.co/go/tools/cmd/staticcheck
-
 GOVERALLS_BIN := $(GOBIN)/goveralls
 $(GOVERALLS_BIN): deps
 	@echo "+ $@"
@@ -143,20 +138,6 @@ $(PROTOLOCK_BIN): deps
 .PHONY: style
 style: golangci-lint roxvet blanks newlines check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style
 
-# staticcheck is useful, but extremely computationally intensive on some people's machines.
-# Therefore, to allow people to continue running `make style`, staticcheck is not run along with
-# the other style targets by default, when running locally.
-# It is always run in CI.
-# To run it locally along with the other style targets, you can `export RUN_STATIC_CHECK=true`.
-# If you want to run just staticcheck, you can, of course, just `make staticcheck`.
-ifdef CI
-style: staticcheck
-endif
-
-ifdef RUN_STATIC_CHECK
-style: staticcheck
-endif
-
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCILINT_BIN)
 ifdef CI
@@ -189,11 +170,6 @@ ci-config-validate:
 	@echo "+ $@"
 	@circleci diagnostic > /dev/null 2>&1 || (echo "Must first set CIRCLECI_CLI_TOKEN or run circleci setup"; exit 1)
 	circleci config validate --org-slug gh/stackrox
-
-.PHONY: staticcheck
-staticcheck: $(STATICCHECK_BIN)
-	@echo "+ $@"
-	@$(BASE_DIR)/tools/staticcheck-wrap.sh ./...
 
 .PHONY: fast-central-build
 fast-central-build:

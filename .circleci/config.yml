@@ -90,7 +90,6 @@ saveGoLintCache: &saveGoLintCache
     key: go-lint-cache-v1-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-{{ .Revision }}
     paths:
     - /home/circleci/.cache/golangci-lint
-    - /home/circleci/.cache/staticcheck
     - /go/pkg/mod
 
 goModCacheKey: &goModCacheKey 'rox-go-pkg-mod-v3-{{ checksum "go.sum" }}'
