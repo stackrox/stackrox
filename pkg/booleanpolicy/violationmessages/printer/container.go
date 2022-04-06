@@ -169,8 +169,7 @@ func imageSignatureVerifiedPrinter(fieldMap map[string][]string) ([]string, erro
 		ContainerName: maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap),
 		Status:        "unverified",
 	}
-	if verifiedBy := maybeGetSingleValueFromFieldMap(augmentedobjs.ImageSignatureVerifiedCustomTag, fieldMap); verifiedBy != "" &&
-		verifiedBy != augmentedobjs.EmptySignatureIntegrationID {
+	if verifiedBy := maybeGetSingleValueFromFieldMap(augmentedobjs.ImageSignatureVerifiedCustomTag, fieldMap); verifiedBy != "" {
 		r.Status = "verified by " + verifiedBy
 	}
 	return executeTemplate(imageSignatureVerifiedTemplate, r)

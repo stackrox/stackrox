@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -14,10 +13,6 @@ import (
 const (
 	// CompositeFieldCharSep is the separating character used when we create a composite field.
 	CompositeFieldCharSep = "\t"
-
-	// EmptySignatureIntegrationID is used as placeholder for images that do not have any signatures associated with
-	// them.
-	EmptySignatureIntegrationID = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000000"
 )
 
 func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process *storage.ProcessIndicator) (int, error) {
@@ -241,36 +236,22 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 	}
 
 	if features.ImageSignatureVerification.Enabled() {
-		var addedAtLeastOnSignatureVerificationResult bool
+		i := 0
 		// Since policies query for image verification status as a single boolean field, we add it to the image here.
-		for i, result := range image.GetSignatureVerificationData().GetResults() {
+		for _, result := range image.GetSignatureVerificationData().GetResults() {
 			if result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-				if result.GetVerifierId() == "" {
-					return nil, utils.Should(errox.InvariantViolation.New(
-						"missing verifier ID in signature verification results"))
-				}
-				err := obj.AddPlainObjAt(
-					&imageSignatureVerification{
-						VerifiedBy: result.GetVerifierId(),
-					},
-					pathutil.FieldStep("SignatureVerificationData"),
-					pathutil.FieldStep("Results"),
-					pathutil.IndexStep(i),
-					pathutil.FieldStep(imageSignatureVerifiedKey),
-				)
-				if err != nil {
+				if err := addSignatureVerificationResult(obj, i, result.GetVerifierId()); err != nil {
 					return nil, utils.Should(err)
 				}
-
-				addedAtLeastOnSignatureVerificationResult = true
+				i++
 			}
 		}
 		// When the object is not created, the policy will not match, but it should match.
 		// Any image that DOESN'T have any signature should also be visible here (I guess?).
 		// This means, we will have to create a dummy entry within the object that will make it
 		// possible for us to match the policy and create alerts.
-		if !addedAtLeastOnSignatureVerificationResult {
-			if err := addPlaceHolderSignatureVerificationResult(obj); err != nil {
+		if i == 0 {
+			if err := addSignatureVerificationResult(obj, i, ""); err != nil {
 				return nil, utils.Should(err)
 			}
 		}
@@ -279,16 +260,16 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 	return obj, nil
 }
 
-// addPlaceHolderSignatureVerificationResult will add a placeholder signature verification result holding
-// EmptySignatureIntegrationID.
-func addPlaceHolderSignatureVerificationResult(obj *pathutil.AugmentedObj) error {
+// addSignatureVerificationResult will add a signature verification result to
+// the augmented object.
+func addSignatureVerificationResult(obj *pathutil.AugmentedObj, i int, id string) error {
 	err := obj.AddPlainObjAt(
 		&imageSignatureVerification{
-			VerifiedBy: EmptySignatureIntegrationID,
+			VerifierID: id,
 		},
 		pathutil.FieldStep("SignatureVerificationData"),
 		pathutil.FieldStep("Results"),
-		pathutil.IndexStep(0),
+		pathutil.IndexStep(i),
 		pathutil.FieldStep(imageSignatureVerifiedKey))
 	if err != nil {
 		return err
