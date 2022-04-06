@@ -117,10 +117,10 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
                     { ScopeOuterClass.Scope.newBuilder().setNamespace(it).build() })
 
     @Shared
-    static final private List<String> createdPolicyIds = []
+    static final private List<String> CREATED_POLICY_IDS = []
 
     @Shared
-    static final private Map<String, String> createdSignatureIntegrations = [:]
+    static final private Map<String, String> CREATED_SIGNATURE_INTEGRATIONS = [:]
 
     def setupSpec() {
         orchestrator.createNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -130,21 +130,21 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
                 DISTROLESS, DISTROLESS_PUBLIC_KEY
         )
         assert distrolessSignatureIntegrationID
-        createdSignatureIntegrations.put(DISTROLESS, distrolessSignatureIntegrationID)
+        CREATED_SIGNATURE_INTEGRATIONS.put(DISTROLESS, distrolessSignatureIntegrationID)
 
         // Signature integration "Tekton" which holds only the tekton cosign public key.
         String tektonSignatureIntegrationID = createSignatureIntegration(
                 TEKTON, TEKTON_COSIGN_PUBLIC_KEY
         )
         assert tektonSignatureIntegrationID
-        createdSignatureIntegrations.put(TEKTON, tektonSignatureIntegrationID)
+        CREATED_SIGNATURE_INTEGRATIONS.put(TEKTON, tektonSignatureIntegrationID)
 
         // Signature integration "Unverifiable" which holds only the unverifiable cosign public key.
         String unverifiableSignatureIntegrationID = createSignatureIntegration(
                 UNVERIFIABLE, UNVERIFIABLE_COSIGN_PUBLIC_KEY
         )
         assert unverifiableSignatureIntegrationID
-        createdSignatureIntegrations.put(UNVERIFIABLE, unverifiableSignatureIntegrationID)
+        CREATED_SIGNATURE_INTEGRATIONS.put(UNVERIFIABLE, unverifiableSignatureIntegrationID)
 
         // TODO(ROX-9996): Uncomment after we can handle multiple verification results.
         /* Signature integration "Distroless+Tekton" which holds both distroless and tekton cosign public keys.
@@ -165,7 +165,7 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
         List<Policy.Builder> policyBuilders = []
         for (integrationName in INTEGRATION_NAMES) {
             Policy.Builder builder = createPolicyBuilderWithSignatureCriteria(integrationName,
-                    [createdSignatureIntegrations.get(integrationName, "")])
+                    [CREATED_SIGNATURE_INTEGRATIONS.get(integrationName, "")])
             assert builder
             policyBuilders.add(builder)
         }
@@ -175,7 +175,7 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
             Policy policy = policyBuilder.build()
             String policyID = PolicyService.createNewPolicy(policy)
             assert policyID
-            createdPolicyIds.add(policyID)
+            CREATED_POLICY_IDS.add(policyID)
         }
     }
 
@@ -184,10 +184,10 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
         DEPLOYMENTS.each { orchestrator.deleteDeployment(it) }
 
         // Delete all created policies.
-        createdPolicyIds.each { PolicyService.deletePolicy(it) }
+        CREATED_POLICY_IDS.each { PolicyService.deletePolicy(it) }
 
         // Delete all created signature integrations.
-        createdSignatureIntegrations.each
+        CREATED_SIGNATURE_INTEGRATIONS.each
                 { SignatureIntegrationService.deleteSignatureIntegration(it.value) }
 
         orchestrator.deleteNamespace(SIGNATURE_TESTING_NAMESPACE)
