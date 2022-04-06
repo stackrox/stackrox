@@ -62,7 +62,7 @@ func (s *PolicyStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundPolicy)
 
-	withNoAccess := sac.WithNoAccess(ctx)
+	withNoAccessCtx := sac.WithNoAccess(ctx)
 
 	s.NoError(store.Upsert(ctx, policy))
 	foundPolicy, exists, err = store.Get(ctx, policy.GetId())
@@ -73,7 +73,7 @@ func (s *PolicyStoreSuite) TestStore() {
 	policyCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(policyCount, 1)
-	policyCount, err = store.Count(withNoAccess)
+	policyCount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
 	s.Zero(policyCount)
 
@@ -81,7 +81,7 @@ func (s *PolicyStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(policyExists)
 	s.NoError(store.Upsert(ctx, policy))
-	s.ErrorIs(store.Upsert(withNoAccess, policy), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withNoAccessCtx, policy), sac.ErrResourceAccessDenied)
 
 	foundPolicy, exists, err = store.Get(ctx, policy.GetId())
 	s.NoError(err)
@@ -93,7 +93,7 @@ func (s *PolicyStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundPolicy)
-	s.ErrorIs(store.Delete(withNoAccess, policy.GetId()), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Delete(withNoAccessCtx, policy.GetId()), sac.ErrResourceAccessDenied)
 
 	var policys []*storage.Policy
 	for i := 0; i < 200; i++ {

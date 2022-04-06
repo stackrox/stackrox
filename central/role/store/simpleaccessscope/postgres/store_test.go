@@ -62,7 +62,7 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundSimpleAccessScope)
 
-	withNoAccess := sac.WithNoAccess(ctx)
+	withNoAccessCtx := sac.WithNoAccess(ctx)
 
 	s.NoError(store.Upsert(ctx, simpleAccessScope))
 	foundSimpleAccessScope, exists, err = store.Get(ctx, simpleAccessScope.GetId())
@@ -73,7 +73,7 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 	simpleAccessScopeCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(simpleAccessScopeCount, 1)
-	simpleAccessScopeCount, err = store.Count(withNoAccess)
+	simpleAccessScopeCount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
 	s.Zero(simpleAccessScopeCount)
 
@@ -81,7 +81,7 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(simpleAccessScopeExists)
 	s.NoError(store.Upsert(ctx, simpleAccessScope))
-	s.ErrorIs(store.Upsert(withNoAccess, simpleAccessScope), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withNoAccessCtx, simpleAccessScope), sac.ErrResourceAccessDenied)
 
 	foundSimpleAccessScope, exists, err = store.Get(ctx, simpleAccessScope.GetId())
 	s.NoError(err)
@@ -93,7 +93,7 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundSimpleAccessScope)
-	s.ErrorIs(store.Delete(withNoAccess, simpleAccessScope.GetId()), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Delete(withNoAccessCtx, simpleAccessScope.GetId()), sac.ErrResourceAccessDenied)
 
 	var simpleAccessScopes []*storage.SimpleAccessScope
 	for i := 0; i < 200; i++ {

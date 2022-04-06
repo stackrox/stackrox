@@ -62,7 +62,7 @@ func (s *ApitokensStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundTokenMetadata)
 
-	withNoAccess := sac.WithNoAccess(ctx)
+	withNoAccessCtx := sac.WithNoAccess(ctx)
 
 	s.NoError(store.Upsert(ctx, tokenMetadata))
 	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
@@ -73,7 +73,7 @@ func (s *ApitokensStoreSuite) TestStore() {
 	tokenMetadataCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(tokenMetadataCount, 1)
-	tokenMetadataCount, err = store.Count(withNoAccess)
+	tokenMetadataCount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
 	s.Zero(tokenMetadataCount)
 
@@ -81,7 +81,7 @@ func (s *ApitokensStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(tokenMetadataExists)
 	s.NoError(store.Upsert(ctx, tokenMetadata))
-	s.ErrorIs(store.Upsert(withNoAccess, tokenMetadata), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withNoAccessCtx, tokenMetadata), sac.ErrResourceAccessDenied)
 
 	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)
@@ -93,7 +93,7 @@ func (s *ApitokensStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTokenMetadata)
-	s.ErrorIs(store.Delete(withNoAccess, tokenMetadata.GetId()), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Delete(withNoAccessCtx, tokenMetadata.GetId()), sac.ErrResourceAccessDenied)
 
 	var tokenMetadatas []*storage.TokenMetadata
 	for i := 0; i < 200; i++ {

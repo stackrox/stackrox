@@ -451,10 +451,8 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "{{.TrimmedType}}")
 
     {{ if .PermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.ExistsAllowed(ctx); err != nil {
+    if ok, err := {{ .PermissionChecker }}.ExistsAllowed(ctx); err != nil || !ok {
         return false, err
-    } else if !ok {
-        return false, nil
     }
     {{- else if .Type | isGloballyScoped }}
     scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
@@ -478,10 +476,8 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
 
     {{ if .PermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.GetAllowed(ctx); err != nil {
+    if ok, err := {{ .PermissionChecker }}.GetAllowed(ctx); err != nil || !ok {
         return nil, false, err
-    } else if !ok {
-        return nil, false, nil
     }
     {{- else if .Type | isGloballyScoped }}
     scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
@@ -560,10 +556,8 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.Type}}IDs")
 
     {{ if .PermissionChecker -}}
-    if ok, err := {{ .PermissionChecker }}.GetIDsAllowed(ctx); err != nil {
+    if ok, err := {{ .PermissionChecker }}.GetIDsAllowed(ctx); err != nil || !ok {
         return nil, err
-    } else if !ok {
-        return nil, nil
     }
     {{- else if .Type | isGloballyScoped }}
     scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})

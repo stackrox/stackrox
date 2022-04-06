@@ -62,7 +62,7 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundReportConfiguration)
 
-	withNoAccess := sac.WithNoAccess(ctx)
+	withNoAccessCtx := sac.WithNoAccess(ctx)
 
 	s.NoError(store.Upsert(ctx, reportConfiguration))
 	foundReportConfiguration, exists, err = store.Get(ctx, reportConfiguration.GetId())
@@ -73,7 +73,7 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 	reportConfigurationCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(reportConfigurationCount, 1)
-	reportConfigurationCount, err = store.Count(withNoAccess)
+	reportConfigurationCount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
 	s.Zero(reportConfigurationCount)
 
@@ -81,7 +81,7 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(reportConfigurationExists)
 	s.NoError(store.Upsert(ctx, reportConfiguration))
-	s.ErrorIs(store.Upsert(withNoAccess, reportConfiguration), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withNoAccessCtx, reportConfiguration), sac.ErrResourceAccessDenied)
 
 	foundReportConfiguration, exists, err = store.Get(ctx, reportConfiguration.GetId())
 	s.NoError(err)
@@ -93,7 +93,7 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundReportConfiguration)
-	s.ErrorIs(store.Delete(withNoAccess, reportConfiguration.GetId()), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Delete(withNoAccessCtx, reportConfiguration.GetId()), sac.ErrResourceAccessDenied)
 
 	var reportConfigurations []*storage.ReportConfiguration
 	for i := 0; i < 200; i++ {

@@ -62,7 +62,7 @@ func (s *PermissionsetsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundPermissionSet)
 
-	withNoAccess := sac.WithNoAccess(ctx)
+	withNoAccessCtx := sac.WithNoAccess(ctx)
 
 	s.NoError(store.Upsert(ctx, permissionSet))
 	foundPermissionSet, exists, err = store.Get(ctx, permissionSet.GetId())
@@ -73,7 +73,7 @@ func (s *PermissionsetsStoreSuite) TestStore() {
 	permissionSetCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(permissionSetCount, 1)
-	permissionSetCount, err = store.Count(withNoAccess)
+	permissionSetCount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
 	s.Zero(permissionSetCount)
 
@@ -81,7 +81,7 @@ func (s *PermissionsetsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(permissionSetExists)
 	s.NoError(store.Upsert(ctx, permissionSet))
-	s.ErrorIs(store.Upsert(withNoAccess, permissionSet), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withNoAccessCtx, permissionSet), sac.ErrResourceAccessDenied)
 
 	foundPermissionSet, exists, err = store.Get(ctx, permissionSet.GetId())
 	s.NoError(err)
@@ -93,7 +93,7 @@ func (s *PermissionsetsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundPermissionSet)
-	s.ErrorIs(store.Delete(withNoAccess, permissionSet.GetId()), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Delete(withNoAccessCtx, permissionSet.GetId()), sac.ErrResourceAccessDenied)
 
 	var permissionSets []*storage.PermissionSet
 	for i := 0; i < 200; i++ {

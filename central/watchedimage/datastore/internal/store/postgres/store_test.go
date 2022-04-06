@@ -62,7 +62,7 @@ func (s *WatchedimagesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundWatchedImage)
 
-	withNoAccess := sac.WithNoAccess(ctx)
+	withNoAccessCtx := sac.WithNoAccess(ctx)
 
 	s.NoError(store.Upsert(ctx, watchedImage))
 	foundWatchedImage, exists, err = store.Get(ctx, watchedImage.GetName())
@@ -73,7 +73,7 @@ func (s *WatchedimagesStoreSuite) TestStore() {
 	watchedImageCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(watchedImageCount, 1)
-	watchedImageCount, err = store.Count(withNoAccess)
+	watchedImageCount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
 	s.Zero(watchedImageCount)
 
@@ -81,7 +81,7 @@ func (s *WatchedimagesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(watchedImageExists)
 	s.NoError(store.Upsert(ctx, watchedImage))
-	s.ErrorIs(store.Upsert(withNoAccess, watchedImage), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withNoAccessCtx, watchedImage), sac.ErrResourceAccessDenied)
 
 	foundWatchedImage, exists, err = store.Get(ctx, watchedImage.GetName())
 	s.NoError(err)
@@ -93,7 +93,7 @@ func (s *WatchedimagesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundWatchedImage)
-	s.ErrorIs(store.Delete(withNoAccess, watchedImage.GetName()), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Delete(withNoAccessCtx, watchedImage.GetName()), sac.ErrResourceAccessDenied)
 
 	var watchedImages []*storage.WatchedImage
 	for i := 0; i < 200; i++ {

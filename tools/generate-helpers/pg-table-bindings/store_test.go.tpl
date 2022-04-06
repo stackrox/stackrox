@@ -75,7 +75,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 
     {{if not .JoinTable -}}
     {{- if or (.PermissionChecker) (.Type | isGloballyScoped) }}
-    withNoAccess := sac.WithNoAccess(ctx)
+    withNoAccessCtx := sac.WithNoAccess(ctx)
     {{- end }}
 
 	s.NoError(store.Upsert(ctx, {{$name}}))
@@ -89,7 +89,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.Equal({{$name}}Count, 1)
 
     {{- if or (.PermissionChecker) (.Type | isGloballyScoped) }}
-    {{$name}}Count, err = store.Count(withNoAccess)
+    {{$name}}Count, err = store.Count(withNoAccessCtx)
     s.NoError(err)
     s.Zero({{$name}}Count)
     {{- end }}
@@ -99,7 +99,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.True({{$name}}Exists)
 	s.NoError(store.Upsert(ctx, {{$name}}))
     {{- if or (.PermissionChecker) (.Type | isGloballyScoped) }}
-	s.ErrorIs(store.Upsert(withNoAccess, {{$name}}), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withNoAccessCtx, {{$name}}), sac.ErrResourceAccessDenied)
     {{- end }}
 
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
@@ -114,7 +114,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
     {{- if or (.PermissionChecker) (.Type | isGloballyScoped) }}
-    s.ErrorIs(store.Delete(withNoAccess, {{template "paramList" $}}), sac.ErrResourceAccessDenied)
+    s.ErrorIs(store.Delete(withNoAccessCtx, {{template "paramList" $}}), sac.ErrResourceAccessDenied)
     {{- end }}
 
 	var {{$name}}s []*{{.Type}}
