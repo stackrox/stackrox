@@ -25,12 +25,12 @@ func TestScannerGenerateValidation(t *testing.T) {
 	t.Run("supported Istio version", func(t *testing.T) {
 		cmd := scannerGenerateCommand{apiParams: apiparams.Scanner{IstioVersion: istioutils.ListKnownIstioVersions()[0]}}
 
-		require.Nil(t, cmd.validate())
+		require.NoError(t, cmd.validate())
 	})
 
 	t.Run("not provided Istio version", func(t *testing.T) {
 		cmd := scannerGenerateCommand{}
 
-		require.Nil(t, cmd.validate())
+		require.NoError(t, cmd.validate())
 	})
 }
