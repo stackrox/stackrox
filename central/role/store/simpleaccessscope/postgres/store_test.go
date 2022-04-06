@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -41,7 +42,7 @@ func (s *SimpleaccessscopesStoreSuite) TearDownTest() {
 }
 
 func (s *SimpleaccessscopesStoreSuite) TestStore() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -61,6 +62,8 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundSimpleAccessScope)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, simpleAccessScope))
 	foundSimpleAccessScope, exists, err = store.Get(ctx, simpleAccessScope.GetId())
 	s.NoError(err)
@@ -70,11 +73,15 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 	simpleAccessScopeCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(simpleAccessScopeCount, 1)
+	simpleAccessScopeCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(simpleAccessScopeCount)
 
 	simpleAccessScopeExists, err := store.Exists(ctx, simpleAccessScope.GetId())
 	s.NoError(err)
 	s.True(simpleAccessScopeExists)
 	s.NoError(store.Upsert(ctx, simpleAccessScope))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, simpleAccessScope), sac.ErrResourceAccessDenied)
 
 	foundSimpleAccessScope, exists, err = store.Get(ctx, simpleAccessScope.GetId())
 	s.NoError(err)
@@ -86,6 +93,7 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundSimpleAccessScope)
+	s.ErrorIs(store.Delete(withNoAccessCtx, simpleAccessScope.GetId()), sac.ErrResourceAccessDenied)
 
 	var simpleAccessScopes []*storage.SimpleAccessScope
 	for i := 0; i < 200; i++ {
