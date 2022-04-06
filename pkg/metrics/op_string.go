@@ -23,16 +23,17 @@ func _() {
 	_ = x[Rename-12]
 	_ = x[Remove-13]
 	_ = x[RemoveMany-14]
-	_ = x[Search-15]
-	_ = x[Update-16]
-	_ = x[UpdateMany-17]
-	_ = x[Upsert-18]
-	_ = x[UpsertAll-19]
+	_ = x[RemoveFlowsByDeployment-15]
+	_ = x[Search-16]
+	_ = x[Update-17]
+	_ = x[UpdateMany-18]
+	_ = x[Upsert-19]
+	_ = x[UpsertAll-20]
 }
 
-const _Op_name = "AddAddManyCountDedupeExistsGetGetAllGetManyGetGroupedListPruneResetRenameRemoveRemoveManySearchUpdateUpdateManyUpsertUpsertAll"
+const _Op_name = "AddAddManyCountDedupeExistsGetGetAllGetManyGetGroupedListPruneResetRenameRemoveRemoveManyRemoveFlowsByDeploymentSearchUpdateUpdateManyUpsertUpsertAll"
 
-var _Op_index = [...]uint8{0, 3, 10, 15, 21, 27, 30, 36, 43, 53, 57, 62, 67, 73, 79, 89, 95, 101, 111, 117, 126}
+var _Op_index = [...]uint8{0, 3, 10, 15, 21, 27, 30, 36, 43, 53, 57, 62, 67, 73, 79, 89, 112, 118, 124, 134, 140, 149}
 
 func (i Op) String() string {
 	if i < 0 || i >= Op(len(_Op_index)-1) {
