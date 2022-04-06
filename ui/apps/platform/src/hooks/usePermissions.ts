@@ -5,19 +5,27 @@ import { selectors } from 'reducers';
 import { Access } from 'types/role.proto';
 import { ResourceName } from 'types/roleResources';
 
-type UsePermissionsResponse = {
-    hasNoAccess: (resourceName: ResourceName) => boolean;
-    hasReadAccess: (resourceName: ResourceName) => boolean;
-    hasReadWriteAccess: (resourceName: ResourceName) => boolean;
-};
-type UserRolePermissions = (state) => { resourceToAccess: Record<ResourceName, Access> };
+export type HasNoAccess = (resourceName: ResourceName) => boolean;
+export type HasReadAccess = (resourceName: ResourceName) => boolean;
+export type HasReadWriteAccess = (resourceName: ResourceName) => boolean;
 
-const stateSelector = createStructuredSelector({
-    userRolePermissions: selectors.getUserRolePermissions as UserRolePermissions,
+type UsePermissionsResponse = {
+    hasNoAccess: HasNoAccess;
+    hasReadAccess: HasReadAccess;
+    hasReadWriteAccess: HasReadWriteAccess;
+    isLoadingPermissions: boolean;
+};
+
+const stateSelector = createStructuredSelector<{
+    userRolePermissions: { resourceToAccess: Record<ResourceName, Access> };
+    isLoadingPermissions: boolean;
+}>({
+    userRolePermissions: selectors.getUserRolePermissions,
+    isLoadingPermissions: selectors.getIsLoadingUserRolePermissions,
 });
 
 const usePermissions = (): UsePermissionsResponse => {
-    const { userRolePermissions } = useSelector(stateSelector);
+    const { userRolePermissions, isLoadingPermissions } = useSelector(stateSelector);
 
     function hasNoAccess(resourceName: ResourceName) {
         const access = userRolePermissions?.resourceToAccess[resourceName];
@@ -34,7 +42,7 @@ const usePermissions = (): UsePermissionsResponse => {
         return access === 'READ_WRITE_ACCESS';
     }
 
-    return { hasNoAccess, hasReadAccess, hasReadWriteAccess };
+    return { hasNoAccess, hasReadAccess, hasReadWriteAccess, isLoadingPermissions };
 };
 
 export default usePermissions;

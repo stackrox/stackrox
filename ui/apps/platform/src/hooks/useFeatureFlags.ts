@@ -4,16 +4,23 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { FeatureFlag } from 'types/featureFlagService.proto';
 
-const featureFlagsSelector = createStructuredSelector<{ featureFlags: FeatureFlag[] }>({
+const featureFlagsSelector = createStructuredSelector<{
+    featureFlags: FeatureFlag[];
+    isLoadingFeatureFlags: boolean;
+}>({
     featureFlags: selectors.getFeatureFlags,
+    isLoadingFeatureFlags: selectors.getIsLoadingFeatureFlags,
 });
 
+export type IsFeatureFlagEnabled = (envVar: string) => boolean;
+
 type UseFeatureFlags = {
-    isFeatureFlagEnabled: (envVar: string) => boolean;
+    isFeatureFlagEnabled: IsFeatureFlagEnabled;
+    isLoadingFeatureFlags: boolean;
 };
 
 function useFeatureFlags(): UseFeatureFlags {
-    const { featureFlags } = useSelector(featureFlagsSelector);
+    const { featureFlags, isLoadingFeatureFlags } = useSelector(featureFlagsSelector);
 
     function isFeatureFlagEnabled(envVar: string): boolean {
         const featureFlag = featureFlags.find((flag) => flag.envVar === envVar);
@@ -27,7 +34,7 @@ function useFeatureFlags(): UseFeatureFlags {
         return featureFlag.enabled;
     }
 
-    return { isFeatureFlagEnabled };
+    return { isFeatureFlagEnabled, isLoadingFeatureFlags };
 }
 
 export default useFeatureFlags;
