@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	osconfigv1 "github.com/openshift/api/config/v1"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/images"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
@@ -30,6 +31,16 @@ import (
 type TranslationTestSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+}
+
+var validClusterVersion = &osconfigv1.ClusterVersion{
+	ObjectMeta: metav1.ObjectMeta{
+		Namespace: "stackrox",
+		Name:      "version",
+	},
+	Spec: osconfigv1.ClusterVersionSpec{
+		ClusterID: "test-cluster-id",
+	},
 }
 
 func TestTranslation(t *testing.T) {
@@ -558,7 +569,8 @@ func newFakeClientWithInitBundle(t *testing.T) ctrlClient.Client {
 	return testutils.NewFakeClientBuilder(t,
 		createSecret(sensorTLSSecretName),
 		createSecret(collectorTLSSecretName),
-		createSecret(admissionControlTLSSecretName)).Build()
+		createSecret(admissionControlTLSSecretName),
+		validClusterVersion).Build()
 }
 
 func newFakeClientWithInitBundleAndCentral(t *testing.T) ctrlClient.Client {
@@ -566,6 +578,7 @@ func newFakeClientWithInitBundleAndCentral(t *testing.T) ctrlClient.Client {
 		createSecret(sensorTLSSecretName),
 		createSecret(collectorTLSSecretName),
 		createSecret(admissionControlTLSSecretName),
+		validClusterVersion,
 		&platform.Central{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "a-central",
