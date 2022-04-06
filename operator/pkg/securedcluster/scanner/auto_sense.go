@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	// ClusterVersionDefaultName is a default name for the auto created ClusterVersion k8s custom resource on OpenShift
 	ClusterVersionDefaultName = "version"
 )
 
