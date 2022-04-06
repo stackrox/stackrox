@@ -65,7 +65,7 @@ function ViolationsTablePage(): ReactElement {
     // Update the isViewFiltered and the value of the selectedAlertId based on changes in search options.
     const hasExecutableFilter =
         Object.keys(searchFilter).length &&
-        Object.values(searchFilter).every((filter) => filter !== '');
+        Object.values(searchFilter).some((filter) => filter !== '');
 
     // Track the first render to prevent page resets when a user is visiting a URL with
     // a page parameter set
