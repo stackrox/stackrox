@@ -49,7 +49,7 @@ func (cmd *scannerUploadDbCommand) uploadDd() error {
 		return errors.Wrap(err, "failed to read body")
 	}
 
-	cmd.env.Logger().InfofLn("%s", string(body))
+	cmd.env.Logger().PrintfLn("%s", string(body))
 
 	return nil
 }
