@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
+	osconfigv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
@@ -56,6 +57,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(platform.AddToScheme(scheme))
+	utilruntime.Must(osconfigv1.Install(scheme))
 }
 
 func main() {
