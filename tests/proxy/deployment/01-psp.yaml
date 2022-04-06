@@ -13,7 +13,7 @@ spec:
   fsGroup:
     rule: RunAsAny
   volumes:
-    - '*'
+    - "*"
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -55,7 +55,6 @@ readOnlyRootFilesystem: false
 requiredDropCapabilities:
   - MKNOD
 allowedCapabilities: []
-defaultAddCapabilities: []
 runAsUser:
   type: RunAsAny
 seLinuxContext:

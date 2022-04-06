@@ -97,7 +97,6 @@ allowHostPID: false
 allowHostPorts: false
 allowPrivilegeEscalation: false
 allowPrivilegedContainer: false
-defaultAddCapabilities: []
 fsGroup:
   type: MustRunAs
   ranges:

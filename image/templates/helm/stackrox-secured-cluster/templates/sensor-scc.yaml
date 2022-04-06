@@ -36,7 +36,6 @@ allowHostPorts: false
 allowPrivilegeEscalation: true
 allowPrivilegedContainer: false
 allowedCapabilities: []
-defaultAddCapabilities: []
 requiredDropCapabilities: []
 volumes:
   - configMap
