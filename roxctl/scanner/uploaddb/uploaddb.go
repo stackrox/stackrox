@@ -68,7 +68,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	c.Flags().StringVar(&scannerUploadDbCmd.filename, "scanner-db-file", "", "file containing the dumped Scanner definitions DB")
+	c.Flags().StringVar(&scannerUploadDbCmd.filename, "scanner-db-file", "", "File containing the dumped Scanner definitions DB")
 	utils.Must(c.MarkFlagRequired("scanner-db-file"))
 
 	return c
