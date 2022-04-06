@@ -34,6 +34,15 @@ import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { knownBackendFlags } from 'utils/featureFlags';
 
+function NotFoundPage(): ReactElement {
+    return (
+        <>
+            <PageTitle title="Not Found" />
+            <PageNotFound />
+        </>
+    );
+}
+
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
@@ -69,15 +78,6 @@ const AsyncSystemHealthPagePF = asyncComponent(
     () => import('Containers/SystemHealth/PatternFly/SystemHealthDashboard')
 );
 
-function NotFoundPage(): ReactElement {
-    return (
-        <>
-            <PageTitle title="Not Found" />
-            <PageNotFound />
-        </>
-    );
-}
-
 type BodyProps = {
     hasReadAccess: HasReadAccess;
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
@@ -101,8 +101,8 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
         >
             <ErrorBoundary>
                 <Switch>
-                    <Route path={dashboardPath} component={AsyncDashboardPage} />
                     <Route path={notFoundPath} component={NotFoundPage} />
+                    <Route path={dashboardPath} component={AsyncDashboardPage} />
                     <Route path={networkPath} component={AsyncNetworkPage} />
                     <Route path={violationsPath} component={AsyncViolationsPage} />
                     <Route path={compliancePath} component={AsyncCompliancePage} />
