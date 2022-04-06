@@ -1268,7 +1268,7 @@ commands:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
               -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.23-1-g48d3fa5667-snapshot \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.24 \
               aws destroy
 
   destroy-osd-gcp-cluster:
@@ -1292,7 +1292,7 @@ commands:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e GCP_SA_CREDS_JSON_BASE64="$GCP_SA_CREDS_JSON_BASE64" \
               -e GCP_PROJECT="srox-temp-dev-test" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.23-1-g48d3fa5667-snapshot \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.24 \
               gcp destroy
 
 
@@ -4665,7 +4665,7 @@ jobs:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
               -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.23-1-g48d3fa5667-snapshot \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.24 \
               aws create
             mkdir -p /home/circleci/artifacts
             docker cp artifacts:/data/. /home/circleci/artifacts
@@ -4698,7 +4698,7 @@ jobs:
               -e REDHAT_PULL_SECRET_BASE64="$REDHAT_PULL_SECRET_BASE64" \
               -e GCP_SA_CREDS_JSON_BASE64="$GCP_SA_CREDS_JSON_BASE64" \
               -e GCP_PROJECT="srox-temp-dev-test" \
-              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.23-1-g48d3fa5667-snapshot \
+              gcr.io/stackrox-infra/automation-flavors/openshift-osd:0.2.24 \
               gcp create
             mkdir -p /home/circleci/artifacts
             docker cp artifacts:/data/. /home/circleci/artifacts
