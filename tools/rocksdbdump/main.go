@@ -85,6 +85,7 @@ var bucketToProtoInterface = map[string]proto.Message{
 	"risk":                                 (*storage.Risk)(nil),
 	"rolebindings":                         (*storage.K8SRoleBinding)(nil),
 	"roles":                                (*storage.Role)(nil),
+	"signature_integrations":               (*storage.SignatureIntegration)(nil),
 	"secrets":                              (*storage.Secret)(nil),
 	"service_accounts":                     (*storage.ServiceAccount)(nil),
 	"simple_access_scopes":                 (*storage.SimpleAccessScope)(nil),

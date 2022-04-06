@@ -133,76 +133,117 @@ get_central_diagnostics() {
     ls -l "${output_dir}"
 }
 
-push_main_and_roxctl_images() {
+push_main_image_set() {
     info "Pushing main and roxctl images"
 
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: push_main_and_roxctl_images <branch>"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: push_main_image_set <branch> <brand>"
     fi
-
-    require_environment "DOCKER_IO_PUSH_USERNAME"
-    require_environment "DOCKER_IO_PUSH_PASSWORD"
-    require_environment "QUAY_RHACS_ENG_RW_USERNAME"
-    require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
 
     local branch="$1"
+    local brand="$2"
 
-    docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "docker.io/stackrox/main:$(make --quiet tag)" | cat
-    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "docker.io/stackrox/roxctl:$(make --quiet tag)" | cat
-    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "docker.io/stackrox/central-db:$(make --quiet tag)" | cat
-    if [[ "$branch" == "master" ]]; then
-        docker tag "docker.io/stackrox/main:$(make --quiet tag)" docker.io/stackrox/main:latest
-        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" docker.io/stackrox/main:latest
+    local main_image_set=("main" "roxctl" "central-db")
 
-        docker tag "docker.io/stackrox/roxctl:$(make --quiet tag)" docker.io/stackrox/roxctl:latest
-        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" docker.io/stackrox/roxctl:latest
+    _push_main_image_set() {
+        local registry="$1"
+        local tag="$2"
 
-        docker tag "docker.io/stackrox/central-db:$(make --quiet tag)" docker.io/stackrox/central-db:latest
-        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" docker.io/stackrox/central-db:latest
+        for image in "${main_image_set[@]}"; do
+            "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "${registry}/${image}:${tag}" | cat
+        done
+    }
+
+    _tag_main_image_set() {
+        local local_tag="$1"
+        local registry="$2"
+        local remote_tag="$3"
+
+        for image in "${main_image_set[@]}"; do
+            docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${remote_tag}"
+        done
+    }
+
+    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
+        require_environment "QUAY_STACKROX_IO_RW_USERNAME"
+        require_environment "QUAY_STACKROX_IO_RW_PASSWORD"
+
+        docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
+
+        local destination_registries=("quay.io/stackrox-io")
+    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
+        require_environment "DOCKER_IO_PUSH_USERNAME"
+        require_environment "DOCKER_IO_PUSH_PASSWORD"
+        require_environment "QUAY_RHACS_ENG_RW_USERNAME"
+        require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
+
+        docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+        docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+
+        local destination_registries=("docker.io/stackrox" "quay.io/rhacs-eng")
+    else
+        die "$brand is not a supported brand"
     fi
 
-    QUAY_REPO="rhacs-eng"
-    docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
-    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/main:$(make --quiet tag)" | cat
-    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" | cat
-    "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/central-db:$(make --quiet tag)" | cat
-    if [[ "$branch" == "master" ]]; then
-        docker tag "quay.io/$QUAY_REPO/main:$(make --quiet tag)" "quay.io/$QUAY_REPO/main:latest"
-        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/main:latest"
-
-        docker tag "quay.io/$QUAY_REPO/roxctl:$(make --quiet tag)" "quay.io/$QUAY_REPO/roxctl:latest"
-        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/roxctl:latest"
-
-        docker tag "quay.io/$QUAY_REPO/central-db:$(make --quiet tag)" "quay.io/$QUAY_REPO/central-db:latest"
-        "$SCRIPTS_ROOT/scripts/ci/push-as-manifest-list.sh" "quay.io/$QUAY_REPO/central-db:latest"
-    fi
+    local tag
+    tag="$(make --quiet tag)"
+    for registry in "${destination_registries[@]}"; do
+        _tag_main_image_set "$tag" "$registry" "$tag"
+        _push_main_image_set "$registry" "$tag"
+        if [[ "$branch" == "master" ]]; then
+            _tag_main_image_set "$tag" "$registry" "latest"
+            _push_main_image_set "$registry" "latest"
+        fi
+    done
 }
 
 push_matching_collector_scanner_images() {
     info "Pushing collector & scanner images tagged with main-version to docker.io/stackrox and quay.io/rhacs-eng"
 
-    require_environment "DOCKER_IO_PUSH_USERNAME"
-    require_environment "DOCKER_IO_PUSH_PASSWORD"
-    require_environment "QUAY_RHACS_ENG_RW_USERNAME"
-    require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: push_matching_collector_scanner_images <brand>"
+    fi
 
-    docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-    docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+    local brand="$1"
 
-    MAIN_TAG="$(make --quiet tag)"
-    SCANNER_VERSION="$(make --quiet scanner-tag)"
-    COLLECTOR_VERSION="$(make --quiet collector-tag)"
+    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
+        require_environment "QUAY_STACKROX_IO_RW_USERNAME"
+        require_environment "QUAY_STACKROX_IO_RW_PASSWORD"
 
-    REGISTRIES=( "docker.io/stackrox" "quay.io/rhacs-eng" )
-    for TARGET_REGISTRY in "${REGISTRIES[@]}"; do
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/scanner:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner:${MAIN_TAG}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db:${MAIN_TAG}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/scanner-slim:${SCANNER_VERSION}"    "${TARGET_REGISTRY}/scanner-slim:${MAIN_TAG}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/scanner-db-slim:${SCANNER_VERSION}" "${TARGET_REGISTRY}/scanner-db-slim:${MAIN_TAG}"
+        docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
 
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "${TARGET_REGISTRY}/collector:${MAIN_TAG}"
-        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "${TARGET_REGISTRY}/collector-slim:${MAIN_TAG}"
+        local source_registry="quay.io/stackrox-io"
+        local target_registries=( "quay.io/stackrox-io" )
+    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
+        require_environment "DOCKER_IO_PUSH_USERNAME"
+        require_environment "DOCKER_IO_PUSH_PASSWORD"
+        require_environment "QUAY_RHACS_ENG_RW_USERNAME"
+        require_environment "QUAY_RHACS_ENG_RW_PASSWORD"
+
+        docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin <<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
+        docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+
+        local source_registry="quay.io/rhacs-eng"
+        local target_registries=( "docker.io/stackrox" "quay.io/rhacs-eng" )
+    else
+        die "$brand is not a supported brand"
+    fi
+
+    local main_tag
+    main_tag="$(make --quiet tag)"
+    local scanner_version
+    scanner_version="$(make --quiet scanner-tag)"
+    local collector_version
+    collector_version="$(make --quiet collector-tag)"
+
+    for target_registry in "${target_registries[@]}"; do
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}"
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}"
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}"
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}"
+
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}"
+        "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}"
     done
 }
 

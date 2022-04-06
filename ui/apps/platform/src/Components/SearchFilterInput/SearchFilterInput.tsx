@@ -3,12 +3,13 @@ import React, { useEffect, useState } from 'react';
 import SearchInput, { createSearchModifiers } from 'Components/SearchInput';
 import { fetchAutoCompleteResults } from 'services/SearchService';
 import { SearchEntry, SearchFilter } from 'types/search';
+import { SearchCategory } from 'constants/searchOptions';
 
 type SearchFilterInputProps = {
     className: string;
     handleChangeSearchFilter: (searchFilter: SearchFilter) => void;
     placeholder: string;
-    searchCategory: string;
+    searchCategory: SearchCategory;
     searchFilter: SearchFilter;
     searchOptions: string[]; // differs from searchOptions prop of SearchInput
 };

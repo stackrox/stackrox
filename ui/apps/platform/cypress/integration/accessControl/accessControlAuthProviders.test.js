@@ -55,6 +55,9 @@ describe('Access Control Auth providers', () => {
     });
 
     it('list has headings, link, button, and table head cells, and no breadcrumbs', () => {
+        cy.intercept('GET', authProvidersApi.list, {
+            fixture: 'auth/authProviders-id1-id2-id3.json',
+        }).as('GetAuthProviders');
         visitAuthProviders();
 
         cy.get(selectors.breadcrumbNav).should('not.exist');

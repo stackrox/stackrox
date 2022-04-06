@@ -398,7 +398,10 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestMultiKeyStruct) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "TestMultiKeyStruct")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "TestMultiKeyStruct")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -419,7 +422,10 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestMultiKeyS
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestMultiKeyStruct) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "TestMultiKeyStruct")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "TestMultiKeyStruct")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
@@ -485,7 +491,10 @@ func (s *storeImpl) Exists(ctx context.Context, key1 string, key2 string) (bool,
 func (s *storeImpl) Get(ctx context.Context, key1 string, key2 string) (*storage.TestMultiKeyStruct, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "TestMultiKeyStruct")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "TestMultiKeyStruct")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "TestMultiKeyStruct")
+	if err != nil {
+		return nil, false, err
+	}
 	defer release()
 
 	row := conn.QueryRow(ctx, getStmt, key1, key2)
@@ -501,20 +510,23 @@ func (s *storeImpl) Get(ctx context.Context, key1 string, key2 string) (*storage
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, key1 string, key2 string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TestMultiKeyStruct")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "TestMultiKeyStruct")
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "TestMultiKeyStruct")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, key1, key2); err != nil {

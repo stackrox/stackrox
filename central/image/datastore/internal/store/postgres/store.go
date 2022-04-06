@@ -86,6 +86,7 @@ create table if not exists images (
     Metadata_V1_Labels jsonb,
     Scan_ScanTime timestamp,
     Scan_OperatingSystem varchar,
+    Signature_Fetched timestamp,
     Components integer,
     Cves integer,
     FixableCves integer,
@@ -163,6 +164,7 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image) error 
 		obj.GetMetadata().GetV1().GetLabels(),
 		pgutils.NilOrTime(obj.GetScan().GetScanTime()),
 		obj.GetScan().GetOperatingSystem(),
+		pgutils.NilOrTime(obj.GetSignature().GetFetched()),
 		obj.GetComponents(),
 		obj.GetCves(),
 		obj.GetFixableCves(),
@@ -172,7 +174,7 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image) error 
 		serialized,
 	}
 
-	finalStr := "INSERT INTO images (Id, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Components, Cves, FixableCves, LastUpdated, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, LastUpdated = EXCLUDED.LastUpdated, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO images (Id, Name_Registry, Name_Remote, Name_Tag, Name_FullName, Metadata_V1_Created, Metadata_V1_User, Metadata_V1_Command, Metadata_V1_Entrypoint, Metadata_V1_Volumes, Metadata_V1_Labels, Scan_ScanTime, Scan_OperatingSystem, Signature_Fetched, Components, Cves, FixableCves, LastUpdated, RiskScore, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name_Registry = EXCLUDED.Name_Registry, Name_Remote = EXCLUDED.Name_Remote, Name_Tag = EXCLUDED.Name_Tag, Name_FullName = EXCLUDED.Name_FullName, Metadata_V1_Created = EXCLUDED.Metadata_V1_Created, Metadata_V1_User = EXCLUDED.Metadata_V1_User, Metadata_V1_Command = EXCLUDED.Metadata_V1_Command, Metadata_V1_Entrypoint = EXCLUDED.Metadata_V1_Entrypoint, Metadata_V1_Volumes = EXCLUDED.Metadata_V1_Volumes, Metadata_V1_Labels = EXCLUDED.Metadata_V1_Labels, Scan_ScanTime = EXCLUDED.Scan_ScanTime, Scan_OperatingSystem = EXCLUDED.Scan_OperatingSystem, Signature_Fetched = EXCLUDED.Signature_Fetched, Components = EXCLUDED.Components, Cves = EXCLUDED.Cves, FixableCves = EXCLUDED.FixableCves, LastUpdated = EXCLUDED.LastUpdated, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -251,6 +253,8 @@ func (s *storeImpl) copyFromImages(ctx context.Context, tx pgx.Tx, objs ...*stor
 
 		"scan_operatingsystem",
 
+		"signature_fetched",
+
 		"components",
 
 		"cves",
@@ -302,6 +306,8 @@ func (s *storeImpl) copyFromImages(ctx context.Context, tx pgx.Tx, objs ...*stor
 			pgutils.NilOrTime(obj.GetScan().GetScanTime()),
 
 			obj.GetScan().GetOperatingSystem(),
+
+			pgutils.NilOrTime(obj.GetSignature().GetFetched()),
 
 			obj.GetComponents(),
 
@@ -415,7 +421,10 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Image) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "Image")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	tx, err := conn.Begin(ctx)
@@ -436,7 +445,10 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Image) error 
 }
 
 func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Image) error {
-	conn, release := s.acquireConn(ctx, ops.Get, "Image")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	for _, obj := range objs {
@@ -502,7 +514,10 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Image, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Image")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "Image")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "Image")
+	if err != nil {
+		return nil, false, err
+	}
 	defer release()
 
 	row := conn.QueryRow(ctx, getStmt, id)
@@ -518,20 +533,23 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Image, bool, e
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Image")
 
-	conn, release := s.acquireConn(ctx, ops.Remove, "Image")
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "Image")
+	if err != nil {
+		return err
+	}
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
@@ -564,7 +582,10 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
-	conn, release := s.acquireConn(ctx, ops.GetMany, "Image")
+	conn, release, err := s.acquireConn(ctx, ops.GetMany, "Image")
+	if err != nil {
+		return nil, nil, err
+	}
 	defer release()
 
 	rows, err := conn.Query(ctx, getManyStmt, ids)
@@ -609,7 +630,10 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Image")
 
-	conn, release := s.acquireConn(ctx, ops.RemoveMany, "Image")
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "Image")
+	if err != nil {
+		return err
+	}
 	defer release()
 	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err

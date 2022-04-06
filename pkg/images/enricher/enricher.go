@@ -136,7 +136,6 @@ func New(cvesSuppressor CVESuppressor, cvesSuppressorV2 CVESuppressor, is integr
 
 		signatureIntegrationGetter: signatureIntegrationGetter,
 		signatureVerifier:          signatures.VerifyAgainstSignatureIntegrations,
-		signatureFetcherLimiter:    rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		signatureFetcher:           signatures.NewSignatureFetcher(),
 
 		imageGetter: imageGetter,

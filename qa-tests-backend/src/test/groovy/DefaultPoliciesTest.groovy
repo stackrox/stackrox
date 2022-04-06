@@ -390,13 +390,13 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Number of Components in Image"   | 1.5f     | null |
                 "Image \"quay.io/rhacs-eng/qa:struts-app\"" +
-                " contains 16[67] components" | []
+                " contains 169 components" | []
 
         "Image Freshness"                 | 1.5f     | null | null | []
-
-        "RBAC Configuration"              | 1.0f     |
-                "Deployment is configured to automatically mount a token for service account \"default\"" | null |
-                []
+        // TODO(ROX-9637)
+//         "RBAC Configuration"              | 1.0f     |
+//                 "Deployment is configured to automatically mount a token for service account \"default\"" | null |
+//                 []
     }
 
     @Category(BAT)

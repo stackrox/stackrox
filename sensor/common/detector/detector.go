@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/detector/baseline"
 	networkBaselineEval "github.com/stackrox/rox/sensor/common/detector/networkbaseline"
+	"github.com/stackrox/rox/sensor/common/detector/networkpolicy"
 	"github.com/stackrox/rox/sensor/common/detector/unified"
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
@@ -53,7 +54,7 @@ type Detector interface {
 // New returns a new detector
 func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
 	deploymentStore store.DeploymentStore, cache expiringcache.Cache, auditLogEvents chan *sensor.AuditEvents,
-	auditLogUpdater updater.Component) Detector {
+	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore) Detector {
 	return &detectorImpl{
 		unifiedDetector: unified.NewDetector(),
 
@@ -77,6 +78,8 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		auditStopper:      concurrency.NewStopper(),
 		serializerStopper: concurrency.NewStopper(),
 		alertStopSig:      concurrency.NewSignal(),
+
+		networkpolicyFinder: networkpolicy.NewFinder(networkPolicyStore),
 	}
 }
 
@@ -111,6 +114,8 @@ type detectorImpl struct {
 	alertStopSig      concurrency.Signal
 
 	admissionCacheNeedsFlush bool
+
+	networkpolicyFinder *networkpolicy.Finder
 }
 
 func (d *detectorImpl) Start() error {
@@ -303,8 +308,9 @@ func (d *detectorImpl) runDetector() {
 			return
 		case scanOutput := <-d.enricher.outputChan():
 			alerts := d.unifiedDetector.DetectDeployment(deploytime.DetectionContext{}, booleanpolicy.EnhancedDeployment{
-				Deployment: scanOutput.deployment,
-				Images:     scanOutput.images,
+				Deployment:             scanOutput.deployment,
+				Images:                 scanOutput.images,
+				NetworkPoliciesApplied: scanOutput.networkPoliciesApplied,
 			})
 
 			sort.Slice(alerts, func(i, j int) bool {
@@ -422,7 +428,7 @@ func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, a
 	case central.ResourceAction_CREATE_RESOURCE:
 		d.deduper.addDeployment(deployment)
 		d.markDeploymentForProcessing(deployment.GetId())
-		go d.enricher.blockingScan(deployment, action)
+		go d.enricher.blockingScan(deployment, d.networkpolicyFinder.GetNetworkPoliciesApplied(deployment), action)
 	case central.ResourceAction_UPDATE_RESOURCE:
 		// Check if the deployment has changes that require detection, which is more expensive than hashing
 		// If not, then just return
@@ -430,7 +436,7 @@ func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, a
 			return
 		}
 		d.markDeploymentForProcessing(deployment.GetId())
-		go d.enricher.blockingScan(deployment, action)
+		go d.enricher.blockingScan(deployment, d.networkpolicyFinder.GetNetworkPoliciesApplied(deployment), action)
 	}
 }
 

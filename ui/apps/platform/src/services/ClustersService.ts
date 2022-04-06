@@ -3,11 +3,12 @@ import qs from 'qs';
 
 import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
 import { saveFile } from 'services/DownloadService';
+import { ClusterDefaultsResponse } from 'types/clusterService.proto';
 import axios from './instance';
 import { cluster as clusterSchema } from './schemas';
 
 const clustersUrl = '/v1/clusters';
-const clustersEnvUrl = '/v1/clusters-env';
+const clusterDefaultsUrl = '/v1/cluster-defaults';
 const clusterInitUrl = '/v1/cluster-init';
 const upgradesUrl = '/v1/sensorupgrades';
 const autoUpgradeConfigUrl = `${upgradesUrl}/config`;
@@ -169,12 +170,13 @@ export function downloadClusterHelmValuesYaml(id: string): Promise<void> {
     });
 }
 
-/**
- * Fetches the KernelSupportAvailable property.
+/*
+ * Get default images for new clusters that depend on the Central configuration.
+ * Also get kernelSupportAvailable for slimCollector property.
  */
-export function fetchKernelSupportAvailable(): Promise<boolean> {
-    return axios.get(`${clustersEnvUrl}/kernel-support-available`).then((response) => {
-        return Boolean(response?.data?.kernelSupportAvailable);
+export function getClusterDefaults(): Promise<ClusterDefaultsResponse> {
+    return axios.get<ClusterDefaultsResponse>(clusterDefaultsUrl).then((response) => {
+        return response.data;
     });
 }
 

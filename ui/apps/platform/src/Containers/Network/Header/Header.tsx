@@ -6,10 +6,11 @@ import FilterToolbar from './FilterToolbar';
 import SimulatorButton from './SimulatorButton';
 
 type HeaderProps = {
+    isGraphDisabled: boolean;
     isSimulationOn: boolean;
 };
 
-function Header({ isSimulationOn }: HeaderProps): ReactElement {
+function Header({ isGraphDisabled, isSimulationOn }: HeaderProps): ReactElement {
     return (
         <>
             <PageSection variant="light">
@@ -17,8 +18,8 @@ function Header({ isSimulationOn }: HeaderProps): ReactElement {
                     <Title className="pf-u-flex-grow-1" headingLevel="h1">
                         Network Graph
                     </Title>
-                    <CIDRFormButton isDisabled={isSimulationOn} />
-                    <SimulatorButton isDisabled={isSimulationOn} />
+                    <CIDRFormButton isDisabled={isGraphDisabled || isSimulationOn} />
+                    <SimulatorButton isDisabled={isGraphDisabled || isSimulationOn} />
                 </Flex>
             </PageSection>
             <Divider component="div" />

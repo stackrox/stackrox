@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/booleanpolicy/querybuilders"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -394,14 +395,16 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
 
-	f.registerFieldMetadata(fieldnames.ImageSignatureVerifiedBy,
-		querybuilders.ForFieldLabel(augmentedobjs.ImageSignatureVerifiedCustomTag),
-		violationmessages.ImageContextFields,
-		func(*validateConfiguration) *regexp.Regexp {
-			return signatureIntegrationIDValueRegex
-		},
-		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{})
+	if features.ImageSignatureVerification.Enabled() {
+		f.registerFieldMetadata(fieldnames.ImageSignatureVerifiedBy,
+			querybuilders.ForImageSignatureVerificationStatus(),
+			violationmessages.ImageContextFields,
+			func(*validateConfiguration) *regexp.Regexp {
+				return signatureIntegrationIDValueRegex
+			},
+			[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+			[]RuntimeFieldType{})
+	}
 
 	f.registerFieldMetadata(fieldnames.ImageTag,
 		querybuilders.ForFieldLabelRegex(search.ImageTag),
@@ -798,6 +801,26 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, operatorsForbidden,
 	)
+
+	if features.NetworkPolicySystemPolicy.Enabled() {
+		f.registerFieldMetadata(fieldnames.MissingIngressNetworkPolicy,
+			querybuilders.ForFieldLabel(augmentedobjs.MissingIngressPolicyCustomTag), nil,
+			func(*validateConfiguration) *regexp.Regexp {
+				return booleanValueRegex
+			},
+			[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+			[]RuntimeFieldType{}, operatorsForbidden,
+		)
+
+		f.registerFieldMetadata(fieldnames.MissingEgressNetworkPolicy,
+			querybuilders.ForFieldLabel(augmentedobjs.MissingEgressPolicyCustomTag), nil,
+			func(*validateConfiguration) *regexp.Regexp {
+				return booleanValueRegex
+			},
+			[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+			[]RuntimeFieldType{}, operatorsForbidden,
+		)
+	}
 
 	return f
 }

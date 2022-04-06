@@ -77,6 +77,7 @@ create table if not exists images (
     Metadata_V1_Labels jsonb,
     Scan_ScanTime timestamp,
     Scan_OperatingSystem varchar,
+    Signature_Fetched timestamp,
     Components integer,
     Cves integer,
     FixableCves integer,
@@ -230,7 +231,10 @@ func (s *storeImpl) Exists(ctx context.Context, imageId string, imageComponentId
 func (s *storeImpl) Get(ctx context.Context, imageId string, imageComponentId string) (*storage.ImageComponentEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageComponentEdge")
 
-	conn, release := s.acquireConn(ctx, ops.Get, "ImageComponentEdge")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageComponentEdge")
+	if err != nil {
+		return nil, false, err
+	}
 	defer release()
 
 	row := conn.QueryRow(ctx, getStmt, imageId, imageComponentId)
@@ -246,13 +250,13 @@ func (s *storeImpl) Get(ctx context.Context, imageId string, imageComponentId st
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func()) {
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	return conn, conn.Release
+	return conn, conn.Release, nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure

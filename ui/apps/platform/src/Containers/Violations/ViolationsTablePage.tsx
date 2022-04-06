@@ -5,7 +5,7 @@ import Raven from 'raven-js';
 import { PageSection, Bullseye, Alert, Divider, Title } from '@patternfly/react-core';
 
 import { actions as alertActions } from 'reducers/alerts';
-import { SearchEntry, SearchState } from 'reducers/pageSearch';
+import { SearchState } from 'reducers/pageSearch';
 import { selectors } from 'reducers';
 import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
 
@@ -13,6 +13,7 @@ import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import VIOLATION_STATES from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
+import { SearchEntry } from 'types/search';
 
 import ReduxSearchInput from 'Containers/Search/ReduxSearchInput';
 import useTableSort from 'hooks/useTableSort';

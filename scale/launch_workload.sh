@@ -3,9 +3,11 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 if [[ -z "$1" ]]; then
-  >&2 echo "usage: $0 <workload name>"
+  >&2 echo "usage: $0 <workload name> <namespace optional>"
   exit 1
 fi
+
+namespace=${2:-stackrox}
 
 workload_dir="${DIR}/workloads"
 file="${workload_dir}/$1.yaml"
@@ -16,18 +18,28 @@ if [ ! -f "$file" ]; then
     exit 1
 fi
 
+# This is purposefully kept as stackrox because this is where central should be run
 if ! kubectl -n stackrox get pvc/stackrox-db > /dev/null; then
   >&2 echo "Running the scale workload requires a PVC"
   exit 1
 fi
 
-kubectl -n stackrox delete daemonset collector
+if [[ "$ROX_VERIFY_IMAGE_SIGNATURE" == "true" ]]; then
+  # Set environment variables.
+  kubectl -n stackrox set env deploy/central ROX_VERIFY_IMAGE_SIGNATURE=true
+  kubectl -n stackrox set env deploy/sensor ROX_VERIFY_IMAGE_SIGNATURE=true
+  # Create signature integrations to verify image signatures.
+  "${DIR}"/signatures/create-signature-integrations.sh
+fi
 
-kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
-kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0
-kubectl -n stackrox delete configmap scale-workload-config || true
-kubectl -n stackrox create configmap scale-workload-config --from-file=workload.yaml="$file"
-kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","volumeMounts":[{"name":"scale-workload-config","mountPath":"/var/scale/stackrox"}]}],"volumes":[{"name":"scale-workload-config","configMap":{"name": "scale-workload-config"}}]}}}}'
+kubectl -n "${namespace}" delete deploy/admission-control
+kubectl -n "${namespace}" delete daemonset collector
+
+kubectl -n "${namespace}" set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
+kubectl -n "${namespace}" set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0
+kubectl -n "${namespace}" delete configmap scale-workload-config || true
+kubectl -n "${namespace}" create configmap scale-workload-config --from-file=workload.yaml="$file"
+kubectl -n "${namespace}" patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","volumeMounts":[{"name":"scale-workload-config","mountPath":"/var/scale/stackrox"}]}],"volumes":[{"name":"scale-workload-config","configMap":{"name": "scale-workload-config"}}]}}}}'
 
 if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
   exit 0

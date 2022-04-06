@@ -156,7 +156,7 @@ func TestPublicKey_FetchSignature_Success(t *testing.T) {
 		},
 	}
 
-	f := &cosignPublicKeySignatureFetcher{}
+	f := newCosignPublicKeySignatureFetcher()
 	mockConfig := &registryTypes.Config{
 		Username: "",
 		Password: "",
@@ -174,7 +174,7 @@ func TestPublicKey_FetchSignature_Failure(t *testing.T) {
 	require.NoError(t, err, "setting up registry")
 	defer registryServer.Close()
 
-	f := &cosignPublicKeySignatureFetcher{}
+	f := newCosignPublicKeySignatureFetcher()
 
 	cimg, err := imgUtils.GenerateImageFromString("nginx")
 	require.NoError(t, err, "creating test image")
@@ -197,7 +197,7 @@ func TestPublicKey_FetchSignature_NoSignature(t *testing.T) {
 	require.NoError(t, err, "creating test image")
 	img := types.ToImage(cimg)
 
-	f := &cosignPublicKeySignatureFetcher{}
+	f := newCosignPublicKeySignatureFetcher()
 	reg := &mockRegistry{cfg: &registryTypes.Config{}}
 
 	require.NoError(t, err)

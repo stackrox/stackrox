@@ -107,7 +107,7 @@ dependencies {
     implementation group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'
 
     //Slack API
-    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.9.0'
+    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.20.2'
 
     // JAX-B dependencies for JDK 9+
     implementation "javax.xml.bind:jaxb-api:2.3.1"
@@ -122,6 +122,8 @@ dependencies {
 
     implementation 'org.javers:javers-core:6.5.2'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
+
+    implementation 'commons-codec:commons-codec:1.15'
 }
 
 

@@ -870,6 +870,18 @@
         "lifecycleStage": {
           "$ref": "#/definitions/storageLifecycleStage"
         },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "namespaceId": {
+          "type": "string"
+        },
         "deployment": {
           "$ref": "#/definitions/storageAlertDeployment",
           "title": "Represents an alert on a deployment\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"

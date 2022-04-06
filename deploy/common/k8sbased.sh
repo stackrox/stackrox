@@ -164,8 +164,8 @@ function launch_central {
 
     pkill -f kubectl'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
     pkill -9 -f kubectl'.*port-forward.*' || true
-    command -v oc && pkill -f oc'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
-    command -v oc && pkill -9 -f oc'.*port-forward.*' || true
+    command -v oc >/dev/null && pkill -f oc'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
+    command -v oc >/dev/null && pkill -9 -f oc'.*port-forward.*' || true
 
     if [[ "${STORAGE_CLASS}" == "faster" ]]; then
         kubectl apply -f "${common_dir}/ssd-storageclass.yaml"
@@ -234,15 +234,20 @@ function launch_central {
         echo
     fi
 
-	if [[ -f "${unzip_dir}/password" ]]; then
-		export ROX_ADMIN_USER=admin
-		export ROX_ADMIN_PASSWORD="$(< "${unzip_dir}/password")"
-	fi
+    if [[ -f "${unzip_dir}/password" ]]; then
+      export ROX_ADMIN_USER=admin
+      export ROX_ADMIN_PASSWORD="$(< "${unzip_dir}/password")"
+    fi
 
     echo "Deploying Central..."
 
+    ${KUBE_COMMAND} get namespace "${STACKROX_NAMESPACE}" &>/dev/null || \
+      ${KUBE_COMMAND} create namespace "${STACKROX_NAMESPACE}"
+
     if [[ -f "$unzip_dir/values-public.yaml" ]]; then
-      $unzip_dir/scripts/setup.sh
+      if [[ -n "${REGISTRY_USERNAME}" ]]; then
+        $unzip_dir/scripts/setup.sh
+      fi
       central_scripts_dir="$unzip_dir/scripts"
 
       # New helm setup flavor
@@ -291,7 +296,9 @@ function launch_central {
       helm install -n stackrox stackrox-central-services "$unzip_dir/chart" \
           "${helm_args[@]}"
     else
-      $unzip_dir/central/scripts/setup.sh
+      if [[ -n "${REGISTRY_USERNAME}" ]]; then
+        $unzip_dir/central/scripts/setup.sh
+      fi
       central_scripts_dir="$unzip_dir/central/scripts"
       launch_service $unzip_dir central
       echo
@@ -316,7 +323,9 @@ function launch_central {
 
       if [[ "$SCANNER_SUPPORT" == "true" ]]; then
           echo "Deploying Scanner..."
-          $unzip_dir/scanner/scripts/setup.sh
+          if [[ -n "${REGISTRY_USERNAME}" ]]; then
+            $unzip_dir/scanner/scripts/setup.sh
+          fi
           launch_service $unzip_dir scanner
 
           if [[ -n "$CI" ]]; then
@@ -503,14 +512,20 @@ function launch_sensor {
         rm "$k8s_dir/sensor-deploy.zip"
       fi
 
+      namespace=stackrox
+      if [[ -n "$NAMESPACE_OVERRIDE" ]]; then
+        namespace="$NAMESPACE_OVERRIDE"
+        echo "Changing namespace to $NAMESPACE_OVERRIDE"
+        ls $k8s_dir/sensor-deploy/*.yaml | while read file; do sed -i'.original' -e 's/namespace: stackrox/namespace: '"$NAMESPACE_OVERRIDE"'/g' $file; done
+      fi
+
       echo "Deploying Sensor..."
-      $k8s_dir/sensor-deploy/sensor.sh
+      NAMESPACE="$namespace" $k8s_dir/sensor-deploy/sensor.sh
     fi
 
     if [[ -n "${ROX_AFTERGLOW_PERIOD}" ]]; then
        kubectl -n stackrox set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
     fi
-
 
     if [[ -n "${CI}" || $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
        if [[ "${ROX_HOTRELOAD}" == "true" ]]; then

@@ -43,12 +43,16 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"timeoutSeconds: Int!",
 	}))
 	utils.Must(builder.AddType("Alert", []string{
+		"clusterId: String!",
+		"clusterName: String!",
 		"deployment: Alert_Deployment",
 		"enforcement: Alert_Enforcement",
 		"firstOccurred: Time",
 		"id: ID!",
 		"image: ContainerImage",
 		"lifecycleStage: LifecycleStage!",
+		"namespace: String!",
+		"namespaceId: String!",
 		"policy: Policy",
 		"processViolation: Alert_ProcessViolation",
 		"resolvedAt: Time",
@@ -690,6 +694,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageScan_Note(0)))
 	utils.Must(builder.AddType("ImageSignature", []string{
+		"fetched: Time",
 		"signatures: [Signature]!",
 	}))
 	utils.Must(builder.AddType("ImageSignatureVerificationData", []string{
@@ -1718,6 +1723,18 @@ func (resolver *alertResolver) ensureData(ctx context.Context) {
 	}
 }
 
+func (resolver *alertResolver) ClusterId(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *alertResolver) ClusterName(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetClusterName()
+	return value
+}
+
 func (resolver *alertResolver) Deployment(ctx context.Context) (*alert_DeploymentResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetDeployment()
@@ -1756,6 +1773,18 @@ func (resolver *alertResolver) LifecycleStage(ctx context.Context) string {
 		value = resolver.list.GetLifecycleStage()
 	}
 	return value.String()
+}
+
+func (resolver *alertResolver) Namespace(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *alertResolver) NamespaceId(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNamespaceId()
+	return value
 }
 
 func (resolver *alertResolver) Policy(ctx context.Context) (*policyResolver, error) {
@@ -6728,6 +6757,11 @@ func (resolver *Resolver) wrapImageSignatures(values []*storage.ImageSignature, 
 	return output, nil
 }
 
+func (resolver *imageSignatureResolver) Fetched(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetFetched()
+	return timestamp(value)
+}
+
 func (resolver *imageSignatureResolver) Signatures(ctx context.Context) ([]*signatureResolver, error) {
 	value := resolver.data.GetSignatures()
 	return resolver.root.wrapSignatures(value, nil)
@@ -10289,8 +10323,10 @@ func (resolver *secretResolver) Annotations(ctx context.Context) labels {
 }
 
 func (resolver *secretResolver) ClusterId(ctx context.Context) string {
-	resolver.ensureData(ctx)
 	value := resolver.data.GetClusterId()
+	if resolver.data == nil {
+		value = resolver.list.GetClusterId()
+	}
 	return value
 }
 

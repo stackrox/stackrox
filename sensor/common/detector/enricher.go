@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
@@ -23,9 +24,10 @@ const (
 )
 
 type scanResult struct {
-	action     central.ResourceAction
-	deployment *storage.Deployment
-	images     []*storage.Image
+	action                 central.ResourceAction
+	deployment             *storage.Deployment
+	images                 []*storage.Image
+	networkPoliciesApplied *augmentedobjs.NetworkPoliciesApplied
 }
 
 type imageChanResult struct {
@@ -64,7 +66,7 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, ci *storage.
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
-	img, err := scan.ScanImage(ctx, svc, ci)
+	img, err := scan.EnrichLocalImage(ctx, svc, ci)
 	return &v1.ScanImageInternalResponse{
 		Image: img,
 	}, err
@@ -204,14 +206,15 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	return images
 }
 
-func (e *enricher) blockingScan(deployment *storage.Deployment, action central.ResourceAction) {
+func (e *enricher) blockingScan(deployment *storage.Deployment, netpolApplied *augmentedobjs.NetworkPoliciesApplied, action central.ResourceAction) {
 	select {
 	case <-e.stopSig.Done():
 		return
 	case e.scanResultChan <- scanResult{
-		action:     action,
-		deployment: deployment,
-		images:     e.getImages(deployment),
+		action:                 action,
+		deployment:             deployment,
+		images:                 e.getImages(deployment),
+		networkPoliciesApplied: netpolApplied,
 	}:
 	}
 }

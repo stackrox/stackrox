@@ -7,6 +7,7 @@ import io.fabric8.openshift.api.model.Route
 import io.fabric8.openshift.api.model.RouteBuilder
 import io.fabric8.openshift.api.model.SecurityContextConstraints
 import io.fabric8.openshift.client.OpenShiftClient
+import util.Env
 import util.Timer
 
 class OpenShift extends Kubernetes {
@@ -41,7 +42,11 @@ class OpenShift extends Kubernetes {
         }
 
         try {
-            SecurityContextConstraints anyuid = oClient.securityContextConstraints().withName("anyuid").get()
+            String sccName = "anyuid"
+            if (Env.CI_JOBNAME =~ /-(osd|rosa|aro)-/) {
+                sccName = "qatest-anyuid"
+            }
+            SecurityContextConstraints anyuid = oClient.securityContextConstraints().withName(sccName).get()
             if (anyuid != null &&
                     (!anyuid.users.contains("system:serviceaccount:" + ns + ":default") ||
                             !anyuid.allowHostNetwork ||

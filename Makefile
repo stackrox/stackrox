@@ -5,7 +5,11 @@ TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 
 ifeq ($(TAG),)
+ifeq (,$(wildcard CI_TAG))
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
+else
+TAG=$(shell cat CI_TAG)
+endif
 endif
 
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scaner, and collector images.
@@ -16,15 +20,16 @@ endif
 # 3. Otherwise set it to "development_build" by default, e.g. for developers running the Makefile locally.
 ROX_IMAGE_FLAVOR ?= $(shell if [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then echo "stackrox.io"; else echo "development_build"; fi)
 
+DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
 BUILD_IMAGE_VERSION=$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
-BUILD_IMAGE := quay.io/rhacs-eng/apollo-ci:$(BUILD_IMAGE_VERSION)
-MONITORING_IMAGE := stackrox/monitoring:$(shell cat MONITORING_VERSION)
-DOCS_IMAGE_BASE := stackrox/docs
+BUILD_IMAGE := $(DEFAULT_IMAGE_REGISTRY)/apollo-ci:$(BUILD_IMAGE_VERSION)
+MONITORING_IMAGE := $(DEFAULT_IMAGE_REGISTRY)/monitoring:$(shell cat MONITORING_VERSION)
+DOCS_IMAGE_BASE := $(DEFAULT_IMAGE_REGISTRY)/docs
 
 ifdef CI
-    QUAY_REPO := rhacs-eng
-    MONITORING_IMAGE := quay.io/$(QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
-    DOCS_IMAGE_BASE := quay.io/$(QUAY_REPO)/docs
+    CI_QUAY_REPO := rhacs-eng
+    MONITORING_IMAGE := quay.io/$(CI_QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
+    DOCS_IMAGE_BASE := quay.io/$(CI_QUAY_REPO)/docs
 endif
 
 DOCS_IMAGE = $(DOCS_IMAGE_BASE):$(shell make --quiet --no-print-directory docs-tag)
@@ -439,7 +444,7 @@ webhookserver-build: build-prep
 .PHONY: mock-grpc-server-build
 mock-grpc-server-build: build-prep
 	@echo "+ $@"
-	$(GOBUILD) integration-tests/mock-grpc-server
+	CGO_ENABLED=0 $(GOBUILD) integration-tests/mock-grpc-server
 
 .PHONY: gendocs
 gendocs: $(GENERATED_API_DOCS)
@@ -539,6 +544,7 @@ $(CURDIR)/image/rhel/bundle.tar.gz:
 docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image $(CURDIR)/image/rhel/bundle.tar.gz central-db-image
 	docker build \
 		-t stackrox/main:$(TAG) \
+		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		--file image/rhel/Dockerfile \
 		--label version=$(TAG) \
@@ -546,9 +552,6 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image $(CU
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
-ifdef CI
-	docker tag stackrox/main:$(TAG) quay.io/$(QUAY_REPO)/main:$(TAG)
-endif
 
 .PHONY: docs-image
 docs-image:
@@ -564,10 +567,11 @@ docker-build-data-image: docs-image
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:
 	cp -f bin/linux/roxctl image/bin/roxctl-linux
-	docker build -t stackrox/roxctl:$(TAG) -f image/roxctl.Dockerfile image/
-ifdef CI
-	docker tag stackrox/roxctl:$(TAG) quay.io/$(QUAY_REPO)/roxctl:$(TAG)
-endif
+	docker build \
+		-t stackrox/roxctl:$(TAG) \
+		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
+		-f image/roxctl.Dockerfile \
+		image/
 
 .PHONY: copy-go-binaries-to-image-dir
 copy-go-binaries-to-image-dir:
@@ -607,20 +611,20 @@ scale-image: scale-build clean-image
 	cp bin/linux/chaos scale/image/bin/chaos
 	chmod +w scale/image/bin/*
 	docker build -t stackrox/scale:$(TAG) -f scale/image/Dockerfile scale
-	docker tag stackrox/scale:$(TAG) quay.io/$(QUAY_REPO)/scale:$(TAG)
+	docker tag stackrox/scale:$(TAG) quay.io/$(CI_QUAY_REPO)/scale:$(TAG)
 
 webhookserver-image: webhookserver-build
 	-mkdir webhookserver/bin
 	cp bin/linux/webhookserver webhookserver/bin/webhookserver
 	chmod +w webhookserver/bin/webhookserver
 	docker build -t stackrox/webhookserver:1.2 -f webhookserver/Dockerfile webhookserver
-	docker tag stackrox/webhookserver:1.2 quay.io/$(QUAY_REPO)/webhookserver:1.2
+	docker tag stackrox/webhookserver:1.2 quay.io/$(CI_QUAY_REPO)/webhookserver:1.2
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image
 	cp bin/linux/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
-	docker tag stackrox/grpc-server:$(TAG) quay.io/$(QUAY_REPO)/grpc-server:$(TAG)
+	docker tag stackrox/grpc-server:$(TAG) quay.io/$(CI_QUAY_REPO)/grpc-server:$(TAG)
 
 $(CURDIR)/image/postgres/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
@@ -629,12 +633,10 @@ $(CURDIR)/image/postgres/bundle.tar.gz:
 central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz
 	docker build \
 		-t stackrox/central-db:$(TAG) \
+		-t $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG) \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		--file image/postgres/Dockerfile \
 		image/postgres
-ifdef CI
-	docker tag stackrox/central-db:$(TAG) quay.io/$(QUAY_REPO)/central-db:$(TAG)
-endif
 	@echo "Built central-db image with tag $(TAG)"
 
 ###########
@@ -705,6 +707,7 @@ reinstall-dev-tools: clean-dev-tools
 .PHONY: install-dev-tools
 install-dev-tools:
 	@echo "+ $@"
+	@test -n "$(GOPATH)" || { echo "Set GOPATH before installing dev tools"; exit 1; }
 	@$(GET_DEVTOOLS_CMD) | xargs $(MAKE)
 ifeq ($(UNAME_S),Darwin)
 	@echo "Please manually install RocksDB if you haven't already. See README for details"

@@ -454,7 +454,7 @@ describe('System Health Clusters subset 1 Healthy', () => {
     });
 });
 
-describe('System Health, PatternFly version', () => {
+describe.skip('System Health, PatternFly version', () => {
     withAuth();
 
     before(function beforeHook() {

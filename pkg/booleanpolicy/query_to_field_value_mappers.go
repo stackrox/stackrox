@@ -23,6 +23,7 @@ var (
 		search.VolumeReadonly:                newMapper(fieldnames.WritableMountedVolume, invertBooleanMap),
 		search.ImageCreatedTime:              newMapper(fieldnames.ImageAge, numberOfDaysSinceMap),
 		search.ImageScanTime:                 newMapper(fieldnames.ImageScanAge, numberOfDaysSinceMap),
+		search.ImageSignatureVerifiedBy:      newMapper(fieldnames.ImageSignatureVerifiedBy, directMap),
 		search.ServiceAccountPermissionLevel: newMapper(fieldnames.MinimumRBACPermissions, serviceAccountPermissionLevelMap),
 		search.ExposureLevel:                 newMapper(fieldnames.PortExposure, directMap),
 		search.AddCapabilities:               newMapper(fieldnames.AddCaps, directMap),

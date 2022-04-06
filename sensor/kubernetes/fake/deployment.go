@@ -250,8 +250,8 @@ func getContainer(workload ContainerWorkload) corev1.Container {
 		},
 		Env: []corev1.EnvVar{
 			{
-				Name:  "DB_PASSWORD",
-				Value: "thisismypassword",
+				Name:  "ROX_FEATURE_FLAG",
+				Value: "true",
 			},
 			{
 				Name:  "ROX_TOKEN",
