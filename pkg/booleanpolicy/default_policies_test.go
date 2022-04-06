@@ -2192,52 +2192,59 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 	}{
 		{
 			values:          []string{verifier0},
-			negate:          false,
+			negate:          true,
 			expectedMatches: set.NewFrozenStringSet("verified_by_0"),
 		},
 		{
 			values:          []string{verifier0},
-			negate:          true,
+			negate:          false,
 			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_0")),
 		},
 		{
 			values:          []string{verifier1},
-			negate:          false,
+			negate:          true,
 			expectedMatches: set.NewFrozenStringSet(),
 		},
 		{
 			values:          []string{verifier1},
-			negate:          true,
+			negate:          false,
 			expectedMatches: allImages,
 		},
 		{
 			values:          []string{verifier2},
-			negate:          false,
+			negate:          true,
 			expectedMatches: set.NewFrozenStringSet("verified_by_2_and_3"),
 		},
 		{
 			values:          []string{verifier2},
-			negate:          true,
+			negate:          false,
 			expectedMatches: allImages,
 		},
 		{
 			values:          []string{verifier0, verifier2},
-			negate:          false,
+			negate:          true,
 			expectedMatches: set.NewFrozenStringSet("verified_by_0", "verified_by_2_and_3"),
 		},
 		{
+			values:          []string{verifier2, verifier3},
+			negate:          false,
+			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3")),
+		},
+		// TODO(ROX-9996): Fix construction of the augmented object to allow for matching
+		// several verifier IDs.
+		/*{
 			values:          []string{verifier0, verifier2},
-			negate:          true,
-			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_0")),
+			negate:          false,
+			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_0", "verified_by_2_and_3")),
 		},
 		{
 			values:          []string{verifier3},
-			negate:          true,
-			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_3")),
-		},
+			negate:          false,
+			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3")),
+		},*/
 		{
 			values:          []string{unverifier},
-			negate:          true,
+			negate:          false,
 			expectedMatches: allImages,
 		},
 	} {
