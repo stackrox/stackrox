@@ -239,6 +239,43 @@ export const imageSigningCriteriaDescriptor: SignatureDescriptor = {
     canBooleanLogic: true,
 };
 
+export const networkPolicyFieldDescriptors: Descriptor[] = [
+    {
+        label: 'Missing Ingress Network Policy',
+        name: 'Missing Ingress Network Policy',
+        shortName: 'Missing Ingress Network Policy',
+        longName: 'Missing Ingress Network Policy',
+        category: policyCriteriaCategories.NETWORKING,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'Missing Ingress Network Policy',
+                value: true,
+            },
+        ],
+        defaultValue: true,
+        disabled: true,
+        canBooleanLogic: false,
+    },
+    {
+        label: 'Missing Egress Network Policy',
+        name: 'Missing Egress Network Policy',
+        shortName: 'Missing Egress Network Policy',
+        longName: 'Missing Egress Network Policy',
+        category: policyCriteriaCategories.NETWORKING,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'Missing Egress Network Policy',
+                value: true,
+            },
+        ],
+        defaultValue: true,
+        disabled: true,
+        canBooleanLogic: false,
+    },
+]
+
 export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Image registry',
@@ -881,40 +918,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
                 value: key,
             })),
         canBooleanLogic: true,
-    },
-    {
-        label: 'Missing Ingress Network Policy',
-        name: 'Missing Ingress Network Policy',
-        shortName: 'Missing Ingress Network Policy',
-        longName: 'Missing Ingress Network Policy',
-        category: policyCriteriaCategories.NETWORKING,
-        type: 'radioGroup',
-        radioButtons: [
-            {
-                text: 'Missing Ingress Network Policy',
-                value: true,
-            },
-        ],
-        defaultValue: true,
-        disabled: true,
-        canBooleanLogic: false,
-    },
-    {
-        label: 'Missing Egress Network Policy',
-        name: 'Missing Egress Network Policy',
-        shortName: 'Missing Egress Network Policy',
-        longName: 'Missing Egress Network Policy',
-        category: policyCriteriaCategories.NETWORKING,
-        type: 'radioGroup',
-        radioButtons: [
-            {
-                text: 'Missing Egress Network Policy',
-                value: true,
-            },
-        ],
-        defaultValue: true,
-        disabled: true,
-        canBooleanLogic: false,
     },
     {
         name: 'Writable Host Mount',
