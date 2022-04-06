@@ -39,6 +39,7 @@ body {
     border-right-color: var(--pf-global--BorderColor--300);
     border-bottom-color: var(--pf-global--BorderColor--200);
     border-left-color: var(--pf-global--BorderColor--300);
+    padding: var(--pf-c-form-control--PaddingTop) var(--pf-c-form-control--PaddingRight) var(--pf-c-form-control--PaddingBottom) var(--pf-c-form-control--PaddingLeft);
 }
 
 .pf-c-form-control:disabled {
