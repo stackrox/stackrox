@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/istioutils"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
 	"github.com/stackrox/rox/roxctl/scanner/clustertype"
@@ -26,6 +27,9 @@ type scannerGenerateCommand struct {
 	outputDir string
 	apiParams apiparams.Scanner
 	timeout   time.Duration
+
+	// Properties that are injected or constructed.
+	env environment.Environment
 }
 
 func (cmd *scannerGenerateCommand) construct(c *cobra.Command) {
@@ -68,8 +72,8 @@ func (cmd *scannerGenerateCommand) generate() error {
 }
 
 // Command represents the generate command.
-func Command() *cobra.Command {
-	scannerGenerateCmd := &scannerGenerateCommand{}
+func Command(cliEnvironment environment.Environment) *cobra.Command {
+	scannerGenerateCmd := &scannerGenerateCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
 		Use:  "generate",

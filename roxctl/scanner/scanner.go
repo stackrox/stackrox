@@ -17,7 +17,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 	flags.AddTimeoutWithDefault(c, time.Minute)
 	c.AddCommand(
-		generate.Command(),
+		generate.Command(cliEnvironment),
 		uploaddb.Command(cliEnvironment),
 	)
 	return c
