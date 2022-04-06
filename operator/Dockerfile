@@ -1,13 +1,9 @@
 # We have to emulate directory layout as in the repo so that imports in go files work fine.
 ARG roxpath=/workspace/src/github.com/stackrox/rox
 
-# Use CentOS Stream 8 image as the base builder because it has recent Go and git packages needed for the build.
-# https://wiki.centos.org/FAQ/CentOSStream#Where_do_I_get_CentOS_Stream_container_images.3F
-FROM quay.io/centos/centos:stream8 as builder-base
-RUN yum update --security -y && yum install -y golang git
+FROM golang:1.17 as builder
 
 # Build the manager binary
-FROM builder-base as builder
 ARG roxpath
 
 WORKDIR ${roxpath}/
@@ -19,10 +15,6 @@ COPY go.sum go.sum
 
 # Add GitHub hosts as known ones so that git does not complain.
 RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-# Make sure that private and source-only packages on github.com can be downloaded successfully as go modules.
-RUN echo '[url "git@github.com:"]' >> ~/.gitconfig && echo -e '\tinsteadOf = https://github.com/' >> ~/.gitconfig
-ENV GOPRIVATE="github.com/stackrox/*"
 
 # Cache deps before building and copying source so that we don't need to re-download as much and so that source changes
 # don't invalidate our downloaded layer.
