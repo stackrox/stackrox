@@ -30,7 +30,7 @@ const (
 	Rename
 	Remove
 	RemoveMany
-	RemoveFlowByDeployment
+	RemoveFlowsByDeployment
 
 	Search
 

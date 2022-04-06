@@ -26,8 +26,15 @@ import (
 // can be handled via query and become much more efficient.  In order to really see the benefits of Postgres for
 // this store, we will need to refactor how it is used.
 const (
-	baseTable  = "networkflow"
-	joinStmt   = " INNER JOIN (SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId, MAX(Flow_Id) AS MaxFlow FROM networkflow GROUP BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) tmpflow on nf.Props_SrcEntity_Type = tmpflow.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = tmpflow.Props_SrcEntity_Id AND nf.Props_DstEntity_Type = tmpflow.Props_DstEntity_Type AND nf.Props_DstEntity_Id = tmpflow.Props_DstEntity_Id AND nf.Props_DstPort = tmpflow.Props_DstPort AND nf.Props_L4Protocol = tmpflow.Props_L4Protocol AND nf.ClusterId = tmpflow.ClusterId and nf.Flow_id = tmpflow.MaxFlow "
+	baseTable = "networkflow"
+
+	// The store now uses a serial primary key id so that the store can quickly insert rows.  As such, in order
+	// to get the most recent row or a count of distinct rows we need to do a self join to match the fields AND
+	// the largest Flow_id.  The Flow_id is not included in the object and is purely handled by postgres.  Since flows
+	// have been flattened, the entire record except for the time is what makes it distinct, so we have to hit all
+	// the fields in the join.
+	joinStmt = " INNER JOIN (SELECT Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId, MAX(Flow_Id) AS MaxFlow FROM networkflow GROUP BY Props_SrcEntity_Type, Props_SrcEntity_Id, Props_DstEntity_Type, Props_DstEntity_Id, Props_DstPort, Props_L4Protocol, ClusterId) tmpflow on nf.Props_SrcEntity_Type = tmpflow.Props_SrcEntity_Type AND nf.Props_SrcEntity_Id = tmpflow.Props_SrcEntity_Id AND nf.Props_DstEntity_Type = tmpflow.Props_DstEntity_Type AND nf.Props_DstEntity_Id = tmpflow.Props_DstEntity_Id AND nf.Props_DstPort = tmpflow.Props_DstPort AND nf.Props_L4Protocol = tmpflow.Props_L4Protocol AND nf.ClusterId = tmpflow.ClusterId and nf.Flow_id = tmpflow.MaxFlow "
+
 	countStmt  = "SELECT COUNT(*) FROM networkflow nf " + joinStmt
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkflow WHERE Props_SrcEntity_Type = $1 AND Props_SrcEntity_Id = $2 AND Props_DstEntity_Type = $3 AND Props_DstEntity_Id = $4 AND Props_DstPort = $5 AND Props_L4Protocol = $6 AND ClusterId = $7)"
 
@@ -422,7 +429,7 @@ func (s *flowStoreImpl) Delete(ctx context.Context, propsSrcEntityType storage.N
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-// Todo: ROX-9921 Investigate this method to see if it is doing what it should
+// TODO(ROX-9921) Investigate this method to see if it is doing what it should
 func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFlow) error) error {
 	rows, err := s.db.Query(ctx, walkStmt)
 	if err != nil {
@@ -474,9 +481,9 @@ func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFl
 
 // RemoveFlowsForDeployment removes all flows where the source OR destination match the deployment id
 func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveFlowsByDeployment, "NetworkFlow")
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
 	if err != nil {
 		return err
 	}
@@ -593,8 +600,10 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 	return nil
 }
 
-// RemoveMatchingFlows removes the specified flows from the store
-// Todo: ROX-9921 Figure out what to do with the functions.
+// RemoveMatchingFlows removes flows from the store that fit the criteria specified in both keyMatchFn AND valueMatchFN
+// keyMatchFn will return true if a flow references a source OR destination deployment that has been deleted
+// valueMatchFn will return true if the lastSeenTimestamp of a flow is more than 30 minutes ago.
+// TODO(ROX-9921) Figure out what to do with the functions.
 func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
@@ -604,19 +613,20 @@ func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func
 	}
 	defer release()
 
-	// Todo: ROX-9921 Improve this
+	// TODO(ROX-9921) Look at refactoring how these predicates work as an overall refactor of flows.
 	// This operation matches if the either the dest or src deployment no longer exists AND then
 	// if the last seen time is outside a time window.  Since we do not yet know what deployments exist
 	// in Postgres we cannot fully do this work in SQL.  Additionally, there may be issues with the synchronization
 	// of when flow is created vs a deployment deleted that may also make that problematic.
 	if keyMatchFn != nil {
-		// Run the query in the transaction to make sure I don't get stuff that may have been deleted by date.
 		rows, err := conn.Query(ctx, walkStmt)
 		if err != nil {
 			return err
 		}
 		defer rows.Close()
 
+		// keyMatchFn is passed in to the readRows method in order to filter down to rows referencing
+		// deleted deployments.
 		deleteFlows, err := s.readRows(rows, keyMatchFn)
 
 		if err != nil {
@@ -624,10 +634,8 @@ func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func
 		}
 
 		for _, flow := range deleteFlows {
-			if valueMatchFn != nil {
-				if !valueMatchFn(flow) {
-					continue
-				}
+			if valueMatchFn != nil && !valueMatchFn(flow) {
+				continue
 			}
 			// This is a cleanup operation so we can make it slow for now
 			tx, err := conn.Begin(ctx)
