@@ -2150,23 +2150,29 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 	)
 
 	var images = []*storage.Image{
+		/**/
 		imageWithSignatureVerificationResults("image_no_results", []*storage.ImageSignatureVerificationResult{{}}),
+		/** /
+		imageWithSignatureVerificationResults("image_empty_results", []*storage.ImageSignatureVerificationResult{{
+			VerifierId: "",
+			Status:     storage.ImageSignatureVerificationResult_UNSET,
+		}}),
 		imageWithSignatureVerificationResults("image_nil_results", nil),
 		imageWithSignatureVerificationResults("verified_by_0", []*storage.ImageSignatureVerificationResult{{
 			VerifierId: verifier0,
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
-		}}),
+		}}), /** /
 		imageWithSignatureVerificationResults("unverified_image", []*storage.ImageSignatureVerificationResult{{
 			VerifierId: unverifier,
 			Status:     storage.ImageSignatureVerificationResult_UNSET,
-		}}),
+		}}),/**/
 		imageWithSignatureVerificationResults("verified_by_3", []*storage.ImageSignatureVerificationResult{{
 			VerifierId: verifier2,
 			Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 		}, {
 			VerifierId: verifier3,
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
-		}}),
+		}}), /**/
 		imageWithSignatureVerificationResults("verified_by_2_and_3", []*storage.ImageSignatureVerificationResult{{
 			VerifierId: verifier2,
 			Status:     storage.ImageSignatureVerificationResult_VERIFIED,
@@ -2190,7 +2196,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		negate          bool
 		expectedMatches set.FrozenStringSet
 	}{
-		{
+		/*{
 			values:          []string{verifier0},
 			negate:          true,
 			expectedMatches: set.NewFrozenStringSet("verified_by_0"),
@@ -2229,24 +2235,25 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 			values:          []string{verifier2, verifier3},
 			negate:          false,
 			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3")),
-		},
+		},/**/
 		// TODO(ROX-9996): Fix construction of the augmented object to allow for matching
 		// several verifier IDs.
-		/*{
+		/** /
+		{
 			values:          []string{verifier0, verifier2},
 			negate:          false,
 			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_0", "verified_by_2_and_3")),
-		},
+		},/**/
 		{
 			values:          []string{verifier2, verifier3},
 			negate:          false,
 			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3")),
-		},*/
-		{
+		},
+		/** /{
 			values:          []string{unverifier},
 			negate:          false,
 			expectedMatches: allImages,
-		},
+		},/**/
 	} {
 		c := testCase
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 const (
@@ -156,8 +157,8 @@ func imageUserPrinter(fieldMap map[string][]string) ([]string, error) {
 }
 
 const (
-	imageSignatureVerifiedTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with ` +
-		`{{.Status}} signature{{else}}Image signature is {{.Status}}{{end}}`
+	imageSignatureVerifiedTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' image` +
+		`{{else}}Image{{end}} signature is {{.Status}}`
 )
 
 func imageSignatureVerifiedPrinter(fieldMap map[string][]string) ([]string, error) {
@@ -169,10 +170,31 @@ func imageSignatureVerifiedPrinter(fieldMap map[string][]string) ([]string, erro
 		ContainerName: maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap),
 		Status:        "unverified",
 	}
-	if verifiedBy := maybeGetSingleValueFromFieldMap(augmentedobjs.ImageSignatureVerifiedCustomTag, fieldMap); verifiedBy != "" {
-		r.Status = "verified by " + verifiedBy
+	tmpl, err := getTemplate(imageSignatureVerifiedTemplate)
+	if err != nil {
+		return nil, err
 	}
-	return executeTemplate(imageSignatureVerifiedTemplate, r)
+
+	var result []string
+	if verifiedBy, ok := fieldMap[augmentedobjs.ImageSignatureVerifiedCustomTag]; ok && stringutils.FirstNonEmpty(verifiedBy...) != "" {
+		for _, id := range verifiedBy {
+			if id != "" {
+				r.Status = "verified by " + id
+				s, err := executeTemplateT(tmpl, r)
+				if err != nil {
+					return nil, err
+				}
+				result = append(result, s)
+			}
+		}
+	} else {
+		s, err := executeTemplateT(tmpl, r)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, s)
+	}
+	return result, nil
 }
 
 const (

@@ -80,7 +80,7 @@ func getSingleValueFromFieldMap(f string, fieldMap map[string][]string) (string,
 	return values[0], nil
 }
 
-func executeTemplate(tpl string, values interface{}) ([]string, error) {
+func getTemplate(tpl string) (*template.Template, error) {
 	tmpl := lazyTemplateCache.Get(tpl)
 	if tmpl == nil {
 		var err error
@@ -90,11 +90,26 @@ func executeTemplate(tpl string, values interface{}) ([]string, error) {
 		}
 		lazyTemplateCache.Set(tpl, tmpl)
 	}
+	return tmpl, nil
+}
 
+func executeTemplateT(tmpl *template.Template, values interface{}) (string, error) {
 	var sb strings.Builder
-	err := tmpl.Execute(&sb, values)
+	if err := tmpl.Execute(&sb, values); err != nil {
+		return "", err
+	}
+	return sb.String(), nil
+}
+
+func executeTemplate(tpl string, values interface{}) ([]string, error) {
+	tmpl, err := getTemplate(tpl)
 	if err != nil {
 		return nil, err
 	}
-	return []string{sb.String()}, nil
+
+	result, err := executeTemplateT(tmpl, values)
+	if err != nil {
+		return nil, err
+	}
+	return []string{result}, nil
 }
