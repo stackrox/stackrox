@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,12 +16,15 @@ func TestScannerGenerateValidation(t *testing.T) {
 	t.Run("not supported Istio version", func(t *testing.T) {
 		cmdBadIstio := scannerGenerateCommand{apiParams: apiparams.Scanner{IstioVersion: "0.1.0"}}
 
-		expectedErrorStr := fmt.Sprintf(
-			"invalid arguments: unsupported Istio version %q used for argument %q. Use one of the following: [%s]",
+		expectedErr := errox.NewErrInvalidArgs(fmt.Sprintf(
+			"unsupported Istio version %q used for argument %q. Use one of the following: [%s]",
 			"0.1.0", "--"+istioSupportArg, strings.Join(istioutils.ListKnownIstioVersions(), "|"),
-		)
+		))
+		actualErr := cmdBadIstio.validate()
 
-		require.EqualError(t, cmdBadIstio.validate(), expectedErrorStr)
+		require.Error(t, actualErr)
+		assert.ErrorIs(t, actualErr, errox.InvalidArgs)
+		assert.EqualError(t, actualErr, expectedErr.Error())
 	})
 
 	t.Run("supported Istio version", func(t *testing.T) {
