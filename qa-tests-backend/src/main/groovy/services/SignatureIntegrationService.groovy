@@ -9,7 +9,7 @@ import util.Timer
 
 @CompileStatic
 class SignatureIntegrationService extends BaseService {
-    static getSignatureIntegrationClient() {
+    static SignatureIntegrationServiceGrpc.SignatureIntegrationServiceBlockingStub getSignatureIntegrationClient() {
         return SignatureIntegrationServiceGrpc.newBlockingStub(getChannel())
     }
 
