@@ -50,7 +50,7 @@ function PolicyCriteriaForm() {
                 ...(isImageSigningEnabled ? [imageSigningCriteriaDescriptor] : []),
                 ...(isNetworkPolicyFieldsEnabled ? networkPolicyFieldDescriptors : []),])
         }
-    }, [values.eventSource, isImageSigningEnabled]);
+    }, [values.eventSource, isImageSigningEnabled, isNetworkPolicyFieldsEnabled]);
 
     const headingElements = (
         <>
