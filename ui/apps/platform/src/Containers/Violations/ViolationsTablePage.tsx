@@ -12,6 +12,7 @@ import { SEARCH_CATEGORIES } from 'constants/searchOptions';
 
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { getSearchOptionsForCategory } from 'services/SearchService';
+import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import useTableSort from 'hooks/useTableSort';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
@@ -66,7 +67,9 @@ function ViolationsTablePage(): ReactElement {
         Object.keys(searchFilter).length &&
         Object.values(searchFilter).every((filter) => filter !== '');
 
-    useEffect(() => {
+    // Track the first render to prevent page resets when a user is visiting a URL with
+    // a page parameter set
+    useEffectAfterFirstRender(() => {
         if (hasExecutableFilter && !isViewFiltered) {
             setIsViewFiltered(true);
             setPage(1);
@@ -75,6 +78,12 @@ function ViolationsTablePage(): ReactElement {
             setPage(1);
         }
     }, [hasExecutableFilter, isViewFiltered, setIsViewFiltered, setPage]);
+
+    useEffectAfterFirstRender(() => {
+        if (alertCount < perPage) {
+            setPage(1);
+        }
+    }, [alertCount, perPage, setPage]);
 
     // When any of the deps to this effect change, we want to reload the alerts and count.
     useEffect(() => {
