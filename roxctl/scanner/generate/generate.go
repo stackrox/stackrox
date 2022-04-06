@@ -74,7 +74,7 @@ func (cmd *scannerGenerateCommand) generate() error {
 		OutputDir:  cmd.outputDir,
 	})
 
-	return errors.Wrap(err, "could not get scanner zip")
+	return errors.Wrap(err, "could not get scanner bundle")
 }
 
 // Command represents the generate command.
