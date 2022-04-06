@@ -5,8 +5,8 @@ import { mainPath } from 'routePaths';
 import NotFoundMessage from 'Components/NotFoundMessage';
 
 export type PageNotFoundProps = {
-    resourceType: string;
-    useCase: string;
+    resourceType?: string;
+    useCase?: string;
 };
 
 const PageNotFound = ({ resourceType = '', useCase = '' }: PageNotFoundProps): ReactElement => {
