@@ -133,7 +133,7 @@ func createNetworkPolicy(id, namespace string, podSelector map[string]string) *n
 
 func createSensorEvent(np *networkingV1.NetworkPolicy, action central.ResourceAction) map[string]*central.SensorEvent {
 	return map[string]*central.SensorEvent{
-		string(np.UID): &central.SensorEvent{
+		string(np.UID): {
 			Id:     string(np.UID),
 			Action: action,
 			Resource: &central.SensorEvent_NetworkPolicy{
