@@ -33,7 +33,7 @@ func (cmd *scannerGenerateCommand) construct(c *cobra.Command) {
 }
 
 func (cmd *scannerGenerateCommand) validate() error {
-	// validate supported Istio versions
+	// Validate supported Istio versions.
 	if cmd.apiParams.IstioVersion != "" {
 		for _, istioVersion := range istioutils.ListKnownIstioVersions() {
 			if cmd.apiParams.IstioVersion == istioVersion {
