@@ -2352,6 +2352,72 @@ func (suite *DefaultPoliciesTestSuite) TestContainerName() {
 	}
 }
 
+func (suite *DefaultPoliciesTestSuite) TestAllowPrivilegeEscalationPolicyCriteria() {
+	const containerAllowPrivEsc = "Container with Privilege Escalation allowed"
+	const containerNotAllowPrivEsc = "Container with Privilege Escalation not allowed"
+
+	var deps []*storage.Deployment
+	for _, d := range []struct {
+		ContainerName            string
+		AllowPrivilegeEscalation bool
+	}{
+		{
+			ContainerName:            containerAllowPrivEsc,
+			AllowPrivilegeEscalation: true,
+		},
+		{
+			ContainerName:            containerNotAllowPrivEsc,
+			AllowPrivilegeEscalation: false,
+		},
+	} {
+		dep := fixtures.GetDeployment().Clone()
+		dep.Containers[0].Name = d.ContainerName
+		if d.AllowPrivilegeEscalation {
+			dep.Containers[0].SecurityContext.AllowPrivilegeEscalation = d.AllowPrivilegeEscalation
+		}
+		deps = append(deps, dep)
+	}
+
+	for _, testCase := range []struct {
+		CaseName        string
+		value           string
+		expectedMatches []string
+	}{
+		{
+			CaseName:        "Policy for containers with privilege escalation allowed",
+			value:           "true",
+			expectedMatches: []string{containerAllowPrivEsc},
+		},
+		{
+			CaseName:        "Policy for containers with privilege escalation not allowed",
+			value:           "false",
+			expectedMatches: []string{containerNotAllowPrivEsc},
+		},
+	} {
+		c := testCase
+
+		suite.T().Run(c.CaseName, func(t *testing.T) {
+			depMatcher, err := BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.AllowPrivilegeEscalation, c.value, false))
+			require.NoError(t, err)
+			containerNameMatched := set.NewStringSet()
+			for _, dep := range deps {
+				violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+				require.NoError(t, err)
+				if len(violations.AlertViolations) > 0 {
+					containerNameMatched.Add(dep.Containers[0].GetName())
+					require.Len(t, violations.AlertViolations, 1)
+					if c.value == "true" {
+						assert.Equal(t, fmt.Sprintf("Container '%s' allows privilege escalation", dep.Containers[0].GetName()), violations.AlertViolations[0].GetMessage())
+					} else {
+						assert.Equal(t, fmt.Sprintf("Container '%s' does not allow privilege escalation", dep.Containers[0].GetName()), violations.AlertViolations[0].GetMessage())
+					}
+				}
+			}
+			assert.ElementsMatch(t, containerNameMatched.AsSlice(), c.expectedMatches, "Matched containers %v for policy %v; expected: %v", containerNameMatched.AsSlice(), c.value, c.expectedMatches)
+		})
+	}
+}
+
 func (suite *DefaultPoliciesTestSuite) TestAutomountServiceAccountToken() {
 	deployments := make(map[string]*storage.Deployment)
 	for _, d := range []struct {

@@ -742,11 +742,11 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'radioGroup',
         radioButtons: [
             {
-                text: 'Privilege Escalation Allowed',
+                text: 'Allowed',
                 value: true,
             },
             {
-                text: 'Privilege Escalation not Allowed',
+                text: 'Not Allowed',
                 value: false,
             },
         ],

@@ -212,7 +212,7 @@ func appArmorProfilePrinter(fieldMap map[string][]string) ([]string, error) {
 }
 
 const (
-	allowPrivilegeEscalationTemplate = `Container{{if .ContainerName}} '{{ContainerName}}'{{end}} 
+	allowPrivilegeEscalationTemplate = `Container{{if .ContainerName}} '{{.ContainerName}}'{{end}} 
 	{{- if .AllowPrivilegeEscalation}} allows{{else}} does not allow{{end}} privilege escalation`
 )
 
