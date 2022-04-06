@@ -236,22 +236,18 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 	}
 
 	if features.ImageSignatureVerification.Enabled() {
-		verifierIds := []string{}
+		ids := []string{}
 		for _, result := range image.GetSignatureVerificationData().GetResults() {
 			if result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-				verifierIds = append(verifierIds, result.GetVerifierId())
+				ids = append(ids, result.GetVerifierId())
 			}
 		}
 		// When the object is not created, the policy will not match, but it should match.
-		// Any image that DOESN'T have any signature should also be visible here (I guess?).
-		// This means, we will have to create a dummy entry within the object that will make it
-		// possible for us to match the policy and create alerts.
 		if err := obj.AddPlainObjAt(
 			&imageSignatureVerification{
-				VerifierIDs: verifierIds,
+				VerifierIDs: ids,
 			},
 			pathutil.FieldStep("SignatureVerificationData"),
-			pathutil.FieldStep("Results"),
 			pathutil.FieldStep(imageSignatureVerifiedKey)); err != nil {
 			return nil, utils.Should(err)
 		}

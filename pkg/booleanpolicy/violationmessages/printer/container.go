@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 const (
@@ -170,29 +169,31 @@ func imageSignatureVerifiedPrinter(fieldMap map[string][]string) ([]string, erro
 		ContainerName: maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap),
 		Status:        "unverified",
 	}
+
 	tmpl, err := getTemplate(imageSignatureVerifiedTemplate)
 	if err != nil {
 		return nil, err
 	}
 
 	var result []string
-	if verifiedBy, ok := fieldMap[augmentedobjs.ImageSignatureVerifiedCustomTag]; ok && stringutils.FirstNonEmpty(verifiedBy...) != "" {
-		for _, id := range verifiedBy {
-			if id != "" {
+	if ids, ok := fieldMap[augmentedobjs.ImageSignatureVerifiedCustomTag]; ok {
+		for _, id := range ids {
+			if id != "" && id != "<empty>" {
 				r.Status = "verified by " + id
-				s, err := executeTemplateT(tmpl, r)
+				message, err := executeTemplateT(tmpl, r)
 				if err != nil {
 					return nil, err
 				}
-				result = append(result, s)
+				result = append(result, message)
 			}
 		}
-	} else {
-		s, err := executeTemplateT(tmpl, r)
+	}
+	if len(result) == 0 {
+		message, err := executeTemplateT(tmpl, r)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, s)
+		result = append(result, message)
 	}
 	return result, nil
 }

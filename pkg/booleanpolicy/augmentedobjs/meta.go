@@ -34,7 +34,7 @@ var (
 	ImageMeta = pathutil.NewAugmentedObjMeta((*storage.Image)(nil)).
 			AddPlainObjectAt([]string{"Metadata", "V1", "Layers", dockerfileLineAugmentKey}, (*dockerfileLine)(nil)).
 			AddPlainObjectAt([]string{"Scan", "Components", componentAndVersionAugmentKey}, (*componentAndVersion)(nil)).
-			AddPlainObjectAt([]string{"SignatureVerificationData", "Results", imageSignatureVerifiedKey}, (*imageSignatureVerification)(nil))
+			AddPlainObjectAt([]string{"SignatureVerificationData", imageSignatureVerifiedKey}, (*imageSignatureVerification)(nil))
 
 	ProcessMeta = pathutil.NewAugmentedObjMeta((*storage.ProcessIndicator)(nil)).
 			AddPlainObjectAt([]string{baselineResultAugmentKey}, (*baselineResult)(nil))
