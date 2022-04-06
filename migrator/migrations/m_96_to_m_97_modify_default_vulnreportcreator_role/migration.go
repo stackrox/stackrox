@@ -1,20 +1,21 @@
 package m96tom97
 
 import (
+	"fmt"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/role"
-	"github.com/stackrox/rox/pkg/auth/role/resources"
 	"github.com/tecbot/gorocksdb"
 )
 
 var (
+	notifierResource = "Notifier"
+
 	migration = types.Migration{
 		StartingSeqNum: 96,
 		VersionAfter:   storage.Version{SeqNum: 97},
@@ -28,14 +29,6 @@ var (
 	}
 	rolesBucket       = []byte("roles")
 	permissionsBucket = []byte("permission_sets")
-
-	newPermissions = []permissions.ResourceWithAccess{
-		permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations
-		permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations
-		permissions.View(resources.Role),                   // required for scopes
-		permissions.View(resources.Image),                  // required to gather CVE data for the report
-		permissions.View(resources.Notifier),               // required for vuln report configurations
-	}
 )
 
 func getPermissionSet(db *gorocksdb.DB) (*storage.PermissionSet, error) {
@@ -72,7 +65,14 @@ func updateDefaultPermissionsForVulnCreatorRole(db *gorocksdb.DB) error {
 		return errors.Wrap(err, "failed to update permissions")
 	}
 
-	ps.ResourceToAccess = permissionsUtils.FromResourcesWithAccess(newPermissions...)
+	accessMap := ps.GetResourceToAccess()
+	if accessMap == nil {
+		return fmt.Errorf("resource access map for permission set %s not found", ps.Name)
+	}
+	if access, imagePermFound := accessMap[notifierResource]; !imagePermFound || access != storage.Access_READ_WRITE_ACCESS {
+		return nil
+	}
+	ps.ResourceToAccess[notifierResource] = storage.Access_READ_ACCESS
 
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()

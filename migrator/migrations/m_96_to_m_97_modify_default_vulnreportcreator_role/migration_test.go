@@ -43,7 +43,7 @@ func (suite *vulnReporterRoleUpdateTestSuite) TearDownTest() {
 	rocksdbtest.TearDownRocksDB(suite.rocksDB)
 }
 
-func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdate() {
+func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdateForVulnReporterRole() {
 	oldPermissions := []permissions.ResourceWithAccess{
 		permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations
 		permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations
@@ -68,24 +68,52 @@ func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdate() {
 
 		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(oldPermissions...),
 	}
-	role := &storage.Role{
+
+	vulnReporterRole := &storage.Role{
 		Name:            rolePkg.VulnReporter,
 		Description:     permissionSet.Description,
 		AccessScopeId:   rolePkg.AccessScopeIncludeAll.GetId(),
 		PermissionSetId: permissionSet.Id,
 	}
 
+	randomPermissionSet := &storage.PermissionSet{
+		Id:          rolePkg.EnsureValidPermissionSetID("random-ps"),
+		Name:        rolePkg.VulnReporter,
+		Description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
+
+		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(oldPermissions...),
+	}
+
+	randomRole := &storage.Role{
+		Name:            "random-role",
+		Description:     permissionSet.Description,
+		AccessScopeId:   rolePkg.AccessScopeIncludeAll.GetId(),
+		PermissionSetId: randomPermissionSet.Id,
+	}
+
 	writeOpts := gorocksdb.NewDefaultWriteOptions()
-	value, err := proto.Marshal(permissionSet)
+	value, err := proto.Marshal(randomPermissionSet)
+	suite.NoError(err)
+	suite.NoError(suite.db.Put(writeOpts,
+		rocksdbmigration.GetPrefixedKey(permissionsBucket, []byte(randomPermissionSet.Id)),
+		value))
+
+	value, err = proto.Marshal(randomRole)
+	suite.NoError(err)
+	suite.NoError(suite.db.Put(writeOpts,
+		rocksdbmigration.GetPrefixedKey(rolesBucket, []byte(randomRole.Name)),
+		value))
+
+	value, err = proto.Marshal(permissionSet)
 	suite.NoError(err)
 	suite.NoError(suite.db.Put(writeOpts,
 		rocksdbmigration.GetPrefixedKey(permissionsBucket, []byte(permissionSet.Id)),
 		value))
 
-	value, err = proto.Marshal(role)
+	value, err = proto.Marshal(vulnReporterRole)
 	suite.NoError(err)
 	suite.NoError(suite.db.Put(writeOpts,
-		rocksdbmigration.GetPrefixedKey(rolesBucket, []byte(role.Name)),
+		rocksdbmigration.GetPrefixedKey(rolesBucket, []byte(vulnReporterRole.Name)),
 		value))
 
 	err = updateDefaultPermissionsForVulnCreatorRole(suite.db)
@@ -99,4 +127,18 @@ func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdate() {
 	newRolePermissions := msg.(*storage.PermissionSet)
 	suite.Assert().Equal(4, len(newRolePermissions.ResourceToAccess))
 	suite.Assert().True(reflect.DeepEqual(newRolePermissions.ResourceToAccess, permissionsUtils.FromResourcesWithAccess(expectedNewPermissions...)))
+
+	//random role
+	msg, exists, err = rockshelper.ReadFromRocksDB(suite.db, readOpts,
+		&storage.PermissionSet{}, permissionsBucket, []byte(randomPermissionSet.Id))
+	suite.NoError(err)
+	suite.True(exists)
+	newRolePermissions = msg.(*storage.PermissionSet)
+	suite.Assert().Equal(4, len(newRolePermissions.ResourceToAccess))
+	suite.Assert().True(reflect.DeepEqual(newRolePermissions.ResourceToAccess, permissionsUtils.FromResourcesWithAccess(oldPermissions...)))
+
+}
+
+func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdateForBooRole() {
+
 }
