@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -20,6 +21,8 @@ import (
 
 const (
 	scannerGenerateAPIPath = "/api/extensions/scanner/zip"
+
+	istioSupportArg = "istio-support"
 )
 
 type scannerGenerateCommand struct {
@@ -45,7 +48,10 @@ func (cmd *scannerGenerateCommand) validate() error {
 			}
 		}
 
-		return errors.New("unsupported Istio version")
+		return errox.NewErrInvalidArgs(fmt.Sprintf(
+			"unsupported Istio version %q used for argument %q. Use one of the following: [%s]",
+			cmd.apiParams.IstioVersion, "--"+istioSupportArg, strings.Join(istioutils.ListKnownIstioVersions(), "|"),
+		))
 	}
 
 	return nil
@@ -95,7 +101,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().BoolVar(&scannerGenerateCmd.apiParams.OfflineMode, "offline-mode", false, "whether to run the scanner in offline mode (so "+
 		"it doesn't reach out to the internet for updates)")
 	c.Flags().StringVar(&scannerGenerateCmd.apiParams.ScannerImage, flags.FlagNameScannerImage, "", "Scanner image to use (leave blank to use server default)")
-	c.Flags().StringVar(&scannerGenerateCmd.apiParams.IstioVersion, "istio-support", "",
+	c.Flags().StringVar(&scannerGenerateCmd.apiParams.IstioVersion, istioSupportArg, "",
 		fmt.Sprintf(
 			"Generate deployment files supporting the given Istio version. Valid versions: %s",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
