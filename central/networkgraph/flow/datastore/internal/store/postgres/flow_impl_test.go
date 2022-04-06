@@ -21,14 +21,14 @@ func TestFlowStore(t *testing.T) {
 		t.SkipNow()
 	} else {
 		envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+
+		source := pgtest.GetConnectionString(t)
+		config, _ := pgxpool.ParseConfig(source)
+		pool, _ := pgxpool.ConnectConfig(ctx, config)
+		defer pool.Close()
+
+		store := NewClusterStore(pool)
+		flowSuite := testcommon.NewFlowStoreTest(store)
+		suite.Run(t, flowSuite)
 	}
-
-	source := pgtest.GetConnectionString(t)
-	config, _ := pgxpool.ParseConfig(source)
-	pool, _ := pgxpool.ConnectConfig(ctx, config)
-	defer pool.Close()
-
-	store := NewClusterStore(pool)
-	flowSuite := testcommon.NewFlowStoreTest(store)
-	suite.Run(t, flowSuite)
 }
