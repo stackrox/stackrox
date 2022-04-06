@@ -26,7 +26,7 @@ func newNetworkPolicyDispatcher(networkPolicyStore store.NetworkPolicyStore, dep
 	}
 }
 
-// Process processes a network policy resource event, and returns the sensor events to generate.
+// ProcessEvent processes a network policy resource event and returns the sensor events to generate.
 func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action central.ResourceAction) []*central.SensorEvent {
 	np := obj.(*networkingV1.NetworkPolicy)
 
