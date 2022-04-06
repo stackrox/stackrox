@@ -265,7 +265,7 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 func addSignatureVerificationResult(obj *pathutil.AugmentedObj, i int, id string) error {
 	err := obj.AddPlainObjAt(
 		&imageSignatureVerification{
-			VerifierId: id,
+			VerifierID: id,
 		},
 		pathutil.FieldStep("SignatureVerificationData"),
 		pathutil.FieldStep("Results"),
