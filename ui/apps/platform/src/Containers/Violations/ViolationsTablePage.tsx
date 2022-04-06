@@ -3,6 +3,7 @@ import Raven from 'raven-js';
 import { PageSection, Bullseye, Alert, Divider, Title } from '@patternfly/react-core';
 
 import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
+import { getSearchOptionsForCategory } from 'services/SearchService';
 
 import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
@@ -10,13 +11,12 @@ import VIOLATION_STATES from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import { SEARCH_CATEGORIES } from 'constants/searchOptions';
 
-import SearchFilterInput from 'Components/SearchFilterInput';
-import { getSearchOptionsForCategory } from 'services/SearchService';
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import useTableSort from 'hooks/useTableSort';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
+import SearchFilterInput from 'Components/SearchFilterInput';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import tableColumnDescriptor from './violationTableColumnDescriptors';
 
@@ -134,7 +134,8 @@ function ViolationsTablePage(): ReactElement {
         getSearchOptionsForCategory(searchCategory)
             .then(setSearchOptions)
             .catch(() => {
-                // TODO
+                // Is there a reasonable way to recover from a possible error here?
+                // Right now, ignoring this error simply disables the search filter.
             });
     }, [setSearchOptions]);
 
