@@ -15,8 +15,8 @@ import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
 
-class ImageSignaturesTest extends BaseSpecification {
-    // https://stack-rox.atlassian.net/browse/ROX-6891
+class ImageSignatureVerificationTest extends BaseSpecification {
+    // https://issues.redhat.com/browse/ROX-6891
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
             isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 30)
 
@@ -42,24 +42,24 @@ class ImageSignaturesTest extends BaseSpecification {
     // Public keys used within signature integrations.
     static final private Map<String, String> DISTROLESS_PUBLIC_KEY = [
             // Source: https://raw.githubusercontent.com/GoogleContainerTools/distroless/main/cosign.pub
-            "Distroless": "-----BEGIN PUBLIC KEY-----\n" +
-                    "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWZzVzkb8A+DbgDpaJId/bOmV8n7Q\n" +
-                    "OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==\n" +
-                    "-----END PUBLIC KEY-----",
+            "Distroless": """-----BEGIN PUBLIC KEY-----
+                    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWZzVzkb8A+DbgDpaJId/bOmV8n7Q
+                    OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
+                    -----END PUBLIC KEY-----""".stripIndent(),
     ]
     static final private Map<String, String> TEKTON_COSIGN_PUBLIC_KEY = [
             // Source: https://raw.githubusercontent.com/tektoncd/chains/main/tekton.pub
-            "Tekton": "-----BEGIN PUBLIC KEY-----\n" +
-                    "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEnLNw3RYx9xQjXbUEw8vonX3U4+tB\n" +
-                    "kPnJq+zt386SCoG0ewIH5MB8+GjIDGArUULSDfjfM31Eae/71kavAUI0OA==\n" +
-                    "-----END PUBLIC KEY-----",
+            "Tekton": """-----BEGIN PUBLIC KEY-----
+                    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEnLNw3RYx9xQjXbUEw8vonX3U4+tB
+                    kPnJq+zt386SCoG0ewIH5MB8+GjIDGArUULSDfjfM31Eae/71kavAUI0OA==
+                    -----END PUBLIC KEY-----""".stripIndent(),
     ]
     static final private Map<String, String> UNVERIFIABLE_COSIGN_PUBLIC_KEY = [
             // Manually created cosing public key via `cosign generate-key-pair`.
-            "Unverifiable": "-----BEGIN PUBLIC KEY-----\n" +
-                    "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEUpphKrUYSHvrR+r82Jn7Evg/d3L9\n" +
-                    "w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==\n" +
-                    "-----END PUBLIC KEY-----",
+            "Unverifiable": """-----BEGIN PUBLIC KEY-----
+                    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEUpphKrUYSHvrR+r82Jn7Evg/d3L9
+                    w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
+                    -----END PUBLIC KEY-----""".stripIndent(),
     ]
 
     // Deployment holding an image which has a cosign signature that is verifiable with the DISTROLESS_PUBLIC_KEY.
@@ -114,10 +114,10 @@ class ImageSignaturesTest extends BaseSpecification {
                     { ScopeOuterClass.Scope.newBuilder().setNamespace(it).build() })
 
     @Shared
-    final private List<String> createdPolicyIds = []
+    static final private List<String> createdPolicyIds = []
 
     @Shared
-    final private Map<String, String> createdSignatureIntegrations = [:]
+    static final private Map<String, String> createdSignatureIntegrations = [:]
 
     def setupSpec() {
         orchestrator.createNamespace(SIGNATURE_TESTING_NAMESPACE)
@@ -156,9 +156,7 @@ class ImageSignaturesTest extends BaseSpecification {
 
         // Create all required deployments.
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
-        for (Deployment deploymentID : DEPLOYMENTS) {
-            assert Services.waitForDeployment(deploymentID)
-        }
+        DEPLOYMENTS.each { assert Services.waitForDeployment(it) }
 
         // Create the policy builders using the signature integration IDs.
         List<Policy.Builder> policyBuilders = []
@@ -180,19 +178,14 @@ class ImageSignaturesTest extends BaseSpecification {
 
     def cleanupSpec() {
         // Delete all deployments.
-        for (Deployment deployment : DEPLOYMENTS) {
-            orchestrator.deleteDeployment(deployment)
-        }
+        DEPLOYMENTS.each { orchestrator.deleteDeployment(it) }
 
         // Delete all created policies.
-        for (policyID in createdPolicyIds) {
-            PolicyService.deletePolicy(policyID)
-        }
+        createdPolicyIds.each { PolicyService.deletePolicy(it) }
 
         // Delete all created signature integrations.
-        for (signatureIntegration in createdSignatureIntegrations) {
-            SignatureIntegrationService.deleteSignatureIntegration(signatureIntegration.value)
-        }
+        createdSignatureIntegrations.each
+                { SignatureIntegrationService.deleteSignatureIntegration(it.value) }
 
         orchestrator.deleteNamespace(SIGNATURE_TESTING_NAMESPACE)
     }
@@ -243,7 +236,7 @@ class ImageSignaturesTest extends BaseSpecification {
                         { PolicyOuterClass.PolicyValue.newBuilder().setValue(it).build() })
                 .setNegate(false)
                 .build()
-        def policyBuilder = builder.clone().addPolicySections(
+        def policyBuilder = builder.addPolicySections(
                 PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build()
         )
         return policyBuilder
