@@ -39,8 +39,6 @@ class SignatureIntegrationService extends BaseService {
                         getSignatureIntegrationClient().getSignatureIntegration(
                                 getResourceByID(createdIntegration.getId()))
                 if (foundIntegration) {
-                    println "Integration found after creation: " +
-                            "${foundIntegration.getName()}: ${foundIntegration.getId()}"
                     return foundIntegration.getId()
                 }
             } catch (Exception e) {
