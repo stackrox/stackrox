@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/auth/role"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -42,7 +41,7 @@ func getPermissionSet(db *gorocksdb.DB) (*storage.PermissionSet, error) {
 			return nil, errors.Wrapf(err, "Failed to unmarshal role data for key %v", it.Key().Data())
 		}
 
-		if r.Name == role.VulnReporter {
+		if r.Name == "Vulnerability Report Creator" {
 			pit := db.NewIterator(gorocksdb.NewDefaultReadOptions())
 			for pit.Seek(permissionsBucket); pit.ValidForPrefix(permissionsBucket); pit.Next() {
 				p := &storage.PermissionSet{}
