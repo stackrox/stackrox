@@ -12,6 +12,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -41,7 +42,7 @@ func (s *PolicyStoreSuite) TearDownTest() {
 }
 
 func (s *PolicyStoreSuite) TestStore() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -61,6 +62,8 @@ func (s *PolicyStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundPolicy)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, policy))
 	foundPolicy, exists, err = store.Get(ctx, policy.GetId())
 	s.NoError(err)
@@ -70,11 +73,15 @@ func (s *PolicyStoreSuite) TestStore() {
 	policyCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(policyCount, 1)
+	policyCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(policyCount)
 
 	policyExists, err := store.Exists(ctx, policy.GetId())
 	s.NoError(err)
 	s.True(policyExists)
 	s.NoError(store.Upsert(ctx, policy))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, policy), sac.ErrResourceAccessDenied)
 
 	foundPolicy, exists, err = store.Get(ctx, policy.GetId())
 	s.NoError(err)
@@ -86,6 +93,7 @@ func (s *PolicyStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundPolicy)
+	s.ErrorIs(store.Delete(withNoAccessCtx, policy.GetId()), sac.ErrResourceAccessDenied)
 
 	var policys []*storage.Policy
 	for i := 0; i < 200; i++ {
