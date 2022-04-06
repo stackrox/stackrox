@@ -42,24 +42,27 @@ class ImageSignatureVerificationTest extends BaseSpecification {
     // Public keys used within signature integrations.
     static final private Map<String, String> DISTROLESS_PUBLIC_KEY = [
             // Source: https://raw.githubusercontent.com/GoogleContainerTools/distroless/main/cosign.pub
-            "Distroless": """-----BEGIN PUBLIC KEY-----
-                    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWZzVzkb8A+DbgDpaJId/bOmV8n7Q
-                    OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
-                    -----END PUBLIC KEY-----""".stripIndent(),
+            "Distroless": """\
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWZzVzkb8A+DbgDpaJId/bOmV8n7Q
+OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
+-----END PUBLIC KEY-----""",
     ]
     static final private Map<String, String> TEKTON_COSIGN_PUBLIC_KEY = [
             // Source: https://raw.githubusercontent.com/tektoncd/chains/main/tekton.pub
-            "Tekton": """-----BEGIN PUBLIC KEY-----
-                    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEnLNw3RYx9xQjXbUEw8vonX3U4+tB
-                    kPnJq+zt386SCoG0ewIH5MB8+GjIDGArUULSDfjfM31Eae/71kavAUI0OA==
-                    -----END PUBLIC KEY-----""".stripIndent(),
+            "Tekton": """\
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEnLNw3RYx9xQjXbUEw8vonX3U4+tB
+kPnJq+zt386SCoG0ewIH5MB8+GjIDGArUULSDfjfM31Eae/71kavAUI0OA==
+-----END PUBLIC KEY-----""",
     ]
     static final private Map<String, String> UNVERIFIABLE_COSIGN_PUBLIC_KEY = [
             // Manually created cosing public key via `cosign generate-key-pair`.
-            "Unverifiable": """-----BEGIN PUBLIC KEY-----
-                    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEUpphKrUYSHvrR+r82Jn7Evg/d3L9
-                    w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
-                    -----END PUBLIC KEY-----""".stripIndent(),
+            "Unverifiable": """\
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEUpphKrUYSHvrR+r82Jn7Evg/d3L9
+w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
+-----END PUBLIC KEY-----""",
     ]
 
     // Deployment holding an image which has a cosign signature that is verifiable with the DISTROLESS_PUBLIC_KEY.
