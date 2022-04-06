@@ -3,6 +3,7 @@ package testutils
 import (
 	"testing"
 
+	osconfigv1 "github.com/openshift/api/config/v1"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
@@ -18,6 +19,7 @@ func NewFakeClientBuilder(t *testing.T, objects ...ctrlClient.Object) *fake.Clie
 	scheme := runtime.NewScheme()
 	require.NoError(t, platform.AddToScheme(scheme))
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	require.NoError(t, osconfigv1.Install(scheme))
 
 	return fake.NewClientBuilder().WithScheme(scheme).WithObjects(objects...)
 }
