@@ -128,7 +128,7 @@ func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdateForVulnReporterRole
 	suite.Assert().Equal(4, len(newRolePermissions.ResourceToAccess))
 	suite.Assert().True(reflect.DeepEqual(newRolePermissions.ResourceToAccess, permissionsUtils.FromResourcesWithAccess(expectedNewPermissions...)))
 
-	//random role
+	// random role
 	msg, exists, err = rockshelper.ReadFromRocksDB(suite.db, readOpts,
 		&storage.PermissionSet{}, permissionsBucket, []byte(randomPermissionSet.Id))
 	suite.NoError(err)
