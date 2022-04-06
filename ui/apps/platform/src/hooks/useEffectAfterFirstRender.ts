@@ -1,6 +1,8 @@
 import { DependencyList, EffectCallback, useEffect, useRef } from 'react';
 
-function useEffectAfterFirstRender(eff: EffectCallback, dependencies: DependencyList): void {
+// Hook that composes `useEffect` to create a variant the behaves identically after
+// the first time the component renders.
+function useEffectAfterFirstRender(eff: EffectCallback, dependencies?: DependencyList): void {
     const isFirstRenderRef = useRef(true);
 
     useEffect(() => {
