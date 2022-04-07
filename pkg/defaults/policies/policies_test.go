@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/mitre"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -13,6 +14,10 @@ import (
 )
 
 func Test_DefaultPolicies_FilterByFeatureFlag(t *testing.T) {
+	// Don't run test on release mode since all feature flags will be force-disabled
+	if buildinfo.ReleaseBuild {
+		t.Skip("Skipping this test for release build because it relies on feature flags")
+	}
 
 	// This is required here to be able to check if the policy is present in the final list of default policies
 	// since the feature flag filtering is done by filename other than policy name.
