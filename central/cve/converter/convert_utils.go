@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/cve"
 	pkgCVSSV2 "github.com/stackrox/rox/pkg/cvss/cvssv2"
 	pkgCVSSV3 "github.com/stackrox/rox/pkg/cvss/cvssv3"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scans"
 )
@@ -262,6 +263,11 @@ func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability
 		SuppressActivation:    protoCVE.GetSuppressActivation(),
 		SuppressExpiry:        protoCVE.GetSuppressExpiry(),
 	}
+	if features.PostgresDatastore.Enabled() {
+		embeddedCVE.Cve = protoCVE.GetCve()
+	} else {
+		embeddedCVE.Cve = protoCVE.GetId()
+	}
 	if protoCVE.CvssV3 != nil {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
 	} else {
@@ -296,6 +302,7 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 	ret := &storage.CVE{
 		Type:               embeddedVulnTypeToProtoType(from.GetVulnerabilityType()),
 		Id:                 cve.ID(from.GetCve(), os),
+		Cve:                from.GetCve(),
 		Cvss:               from.GetCvss(),
 		Summary:            from.GetSummary(),
 		Link:               from.GetLink(),

@@ -1,6 +1,8 @@
 package common
 
 import (
+	"sort"
+
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
@@ -34,6 +36,15 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 
 		// Generate an embedded component for the edge and non-embedded version.
 		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponent(image.GetScan().GetOperatingSystem(), cp, parts.ImageCVEEdges))
+	}
+
+	sort.SliceStable(parts.Children, func(i, j int) bool {
+		return parts.Children[i].Component.GetId() < parts.Children[j].Component.GetId()
+	})
+	for _, comp := range parts.Children {
+		sort.SliceStable(comp.Children, func(i, j int) bool {
+			return comp.Children[i].Cve.GetId() < comp.Children[j].Cve.GetId()
+		})
 	}
 }
 

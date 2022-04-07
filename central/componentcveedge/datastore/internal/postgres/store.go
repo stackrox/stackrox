@@ -19,13 +19,13 @@ import (
 )
 
 const (
-	baseTable  = "image_component_cve_relation"
-	countStmt  = "SELECT COUNT(*) FROM image_component_cve_relation"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2)"
+	baseTable  = "image_component_cve_relations"
+	countStmt  = "SELECT COUNT(*) FROM image_component_cve_relations"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_cve_relations WHERE ImageComponentId = $1 AND CveId = $2)"
 
-	getStmt    = "SELECT serialized FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2"
-	deleteStmt = "DELETE FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2"
-	walkStmt   = "SELECT serialized FROM image_component_cve_relation"
+	getStmt    = "SELECT serialized FROM image_component_cve_relations WHERE ImageComponentId = $1 AND CveId = $2"
+	deleteStmt = "DELETE FROM image_component_cve_relations WHERE ImageComponentId = $1 AND CveId = $2"
+	walkStmt   = "SELECT serialized FROM image_component_cve_relations"
 
 	batchAfter = 100
 
@@ -38,7 +38,7 @@ const (
 var (
 	schema = walker.Walk(reflect.TypeOf((*storage.ComponentCVEEdge)(nil)), baseTable).
 		WithReference(walker.Walk(reflect.TypeOf((*storage.ImageComponent)(nil)), "image_components")).
-		WithReference(walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), "image_cve"))
+		WithReference(walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), "image_cves"))
 	log = logging.LoggerForModule()
 )
 
@@ -70,9 +70,8 @@ create table if not exists image_components (
     Source integer,
     RiskScore numeric,
     TopCvss numeric,
-    OperatingSystem varchar,
     serialized bytea,
-    PRIMARY KEY(Id, Name, Version, OperatingSystem)
+    PRIMARY KEY(Id)
 )
 `
 
@@ -90,9 +89,9 @@ create table if not exists image_components (
 
 }
 
-func createTableImageCve(ctx context.Context, db *pgxpool.Pool) {
+func createTableImageCves(ctx context.Context, db *pgxpool.Pool) {
 	table := `
-create table if not exists image_cve (
+create table if not exists image_cves (
     Id varchar,
     Cve varchar,
     Cvss numeric,
@@ -121,20 +120,17 @@ create table if not exists image_cve (
 
 }
 
-func createTableImageComponentCveRelation(ctx context.Context, db *pgxpool.Pool) {
+func createTableImageComponentCveRelations(ctx context.Context, db *pgxpool.Pool) {
 	table := `
-create table if not exists image_component_cve_relation (
-    image_components_Name varchar,
-    image_components_Version varchar,
-    image_components_OperatingSystem varchar,
+create table if not exists image_component_cve_relations (
     IsFixable bool,
     FixedBy varchar,
     ImageComponentId varchar,
     CveId varchar,
     serialized bytea,
-    PRIMARY KEY(image_components_Name, image_components_Version, image_components_OperatingSystem, ImageComponentId, CveId),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageComponentId, image_components_Name, image_components_Version, image_components_OperatingSystem) REFERENCES image_components(Id, Name, Version, OperatingSystem) ,
-    CONSTRAINT fk_parent_table_1 FOREIGN KEY (CveId) REFERENCES image_cve(Id) 
+    PRIMARY KEY(ImageComponentId, CveId),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageComponentId) REFERENCES image_components(Id) ,
+    CONSTRAINT fk_parent_table_1 FOREIGN KEY (CveId) REFERENCES image_cves(Id) 
 )
 `
 
@@ -155,8 +151,8 @@ create table if not exists image_component_cve_relation (
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	createTableImageComponents(ctx, db)
-	createTableImageCve(ctx, db)
-	createTableImageComponentCveRelation(ctx, db)
+	createTableImageCves(ctx, db)
+	createTableImageComponentCveRelations(ctx, db)
 
 	return &storeImpl{
 		db: db,
@@ -244,13 +240,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ComponentCVEE
 
 //// Used for testing
 
-func dropTableImageComponentCveRelation(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_cve_relation CASCADE")
+func dropTableImageComponentCveRelations(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_cve_relations CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableImageComponentCveRelation(ctx, db)
+	dropTableImageComponentCveRelations(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

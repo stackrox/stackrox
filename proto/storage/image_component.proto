@@ -10,8 +10,8 @@ package storage;
 
 message ImageComponent {
     string                         id               = 1 [(gogoproto.moretags) = 'search:"Component ID,store,hidden" sql:"pk"'];
-    string                         name             = 2 [(gogoproto.moretags) = 'search:"Component,store" sql:"pk"'];
-    string                         version          = 3 [(gogoproto.moretags) = 'search:"Component Version,store" sql:"pk"'];
+    string                         name             = 2 [(gogoproto.moretags) = 'search:"Component,store"'];
+    string                         version          = 3 [(gogoproto.moretags) = 'search:"Component Version,store"'];
     License                        license          = 4;
     int64                          priority         = 5;
     SourceType                     source           = 6 [(gogoproto.moretags) = 'search:"Component Source,store"'];
@@ -21,5 +21,5 @@ message ImageComponent {
     }
     // Component version that fixes all the fixable vulnerabilities in this component.
     string                         fixed_by         = 9;
-    string                         operating_system = 10 [(gogoproto.moretags) = 'sql:"pk"'];
+    string                         operating_system = 10;
 }

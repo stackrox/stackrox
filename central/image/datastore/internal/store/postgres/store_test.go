@@ -4,12 +4,14 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -63,6 +65,7 @@ func (s *ImagesStoreSuite) TestStore() {
 	foundImage, exists, err = store.Get(ctx, image.GetId())
 	s.NoError(err)
 	s.True(exists)
+	fmt.Println(protoutils.NewWrapper(foundImage))
 	s.Equal(image, foundImage)
 
 	imageCount, err := store.Count(ctx)
