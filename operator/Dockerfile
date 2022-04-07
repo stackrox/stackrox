@@ -46,19 +46,16 @@ COPY operator/build/status.sh status.sh
 RUN git init && git add .
 
 # Build the operator binary.
-RUN GOOS=$(go env GOOS) scripts/go-build.sh operator
+RUN GOOS=$(go env GOOS) CGO_ENABLED=0 scripts/go-build.sh operator
 # Copy the operator binary to a location from where it will be taken into the final image.
 RUN cp -a bin/$(go env GOOS)/operator stackrox-operator
 
-# https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
-FROM registry.access.redhat.com/ubi8-minimal:8.5
+FROM scratch
 
 ARG roxpath
 
 ARG ROX_IMAGE_FLAVOR
 ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
-
-RUN microdnf update && microdnf clean all && rm -rf /var/cache/yum/*
 
 COPY --from=builder ${roxpath}/stackrox-operator /usr/local/bin/
 
