@@ -54,12 +54,9 @@ func initialize() {
 
 	ctx := sac.WithGlobalAccessScopeChecker(
 		context.Background(),
-		sac.OneStepSCC{
-			sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.AllowFixedScopes(
-				sac.ResourceScopeKeys(resources.Config)),
-			sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS): sac.AllowFixedScopes(
-				sac.ResourceScopeKeys(resources.Config)),
-		})
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Config)))
 	config, err := d.GetConfig(ctx)
 	if err != nil {
 		panic(err)
