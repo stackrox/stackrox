@@ -10,13 +10,11 @@ import (
 )
 
 func TestScannerUploadDbCommandFail(t *testing.T) {
-	t.Run("non existing filename", func(t *testing.T) {
-		cmdNoFile := scannerUploadDbCommand{filename: "non-existing-filename"}
+	cmdNoFile := scannerUploadDbCommand{filename: "non-existing-filename"}
 
-		actualErr := cmdNoFile.uploadDd()
+	actualErr := cmdNoFile.uploadDd()
 
-		require.Error(t, actualErr)
-		assert.ErrorIs(t, errors.Cause(actualErr), fs.ErrNotExist)
-		assert.EqualError(t, cmdNoFile.uploadDd(), "could not open file: open non-existing-filename: no such file or directory")
-	})
+	require.Error(t, actualErr)
+	assert.ErrorIs(t, errors.Cause(actualErr), fs.ErrNotExist)
+	assert.EqualError(t, cmdNoFile.uploadDd(), "could not open file: open non-existing-filename: no such file or directory")
 }
