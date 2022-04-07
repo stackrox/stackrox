@@ -32,5 +32,4 @@ message ComponentCVEEdge {
   }
   string    image_component_id    = 4 [(gogoproto.moretags) = 'sql:"pk,fk(ImageComponent:id)"'];
   string    cve_id                = 5 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:id)"'];
-  string    cve_operating_system  = 6 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:operating_system)"'];
 }

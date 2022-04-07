@@ -84,17 +84,4 @@ func (s *ImagesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundImage)
-
-	var images []*storage.Image
-	for i := 0; i < 200; i++ {
-		image := &storage.Image{}
-		s.NoError(testutils.FullInit(image, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		images = append(images, image)
-	}
-
-	s.NoError(store.UpsertMany(ctx, images))
-
-	imageCount, err = store.Count(ctx)
-	s.NoError(err)
-	s.Equal(imageCount, 200)
 }

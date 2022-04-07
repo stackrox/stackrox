@@ -21,10 +21,10 @@ import (
 const (
 	baseTable  = "image_component_cve_relation"
 	countStmt  = "SELECT COUNT(*) FROM image_component_cve_relation"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2 AND CveOperatingSystem = $3)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2)"
 
-	getStmt    = "SELECT serialized FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2 AND CveOperatingSystem = $3"
-	deleteStmt = "DELETE FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2 AND CveOperatingSystem = $3"
+	getStmt    = "SELECT serialized FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2"
+	deleteStmt = "DELETE FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2"
 	walkStmt   = "SELECT serialized FROM image_component_cve_relation"
 
 	batchAfter = 100
@@ -48,8 +48,8 @@ func init() {
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, imageComponentId string, cveId string, cveOperatingSystem string) (bool, error)
-	Get(ctx context.Context, imageComponentId string, cveId string, cveOperatingSystem string) (*storage.ComponentCVEEdge, bool, error)
+	Exists(ctx context.Context, imageComponentId string, cveId string) (bool, error)
+	Get(ctx context.Context, imageComponentId string, cveId string) (*storage.ComponentCVEEdge, bool, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.ComponentCVEEdge) error) error
 
@@ -94,7 +94,7 @@ func createTableImageCve(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists image_cve (
     Id varchar,
-    OperatingSystem varchar,
+    Cve varchar,
     Cvss numeric,
     ImpactScore numeric,
     PublishedOn timestamp,
@@ -103,7 +103,7 @@ create table if not exists image_cve (
     SuppressExpiry timestamp,
     Severity integer,
     serialized bytea,
-    PRIMARY KEY(Id, OperatingSystem)
+    PRIMARY KEY(Id)
 )
 `
 
@@ -131,11 +131,10 @@ create table if not exists image_component_cve_relation (
     FixedBy varchar,
     ImageComponentId varchar,
     CveId varchar,
-    CveOperatingSystem varchar,
     serialized bytea,
-    PRIMARY KEY(image_components_Name, image_components_Version, image_components_OperatingSystem, ImageComponentId, CveId, CveOperatingSystem),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageComponentId, image_components_Name, image_components_Version, image_components_OperatingSystem) REFERENCES image_components(Id, Name, Version, OperatingSystem) ON DELETE CASCADE,
-    CONSTRAINT fk_parent_table_1 FOREIGN KEY (CveId, CveOperatingSystem) REFERENCES image_cve(Id, OperatingSystem) ON DELETE CASCADE
+    PRIMARY KEY(image_components_Name, image_components_Version, image_components_OperatingSystem, ImageComponentId, CveId),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageComponentId, image_components_Name, image_components_Version, image_components_OperatingSystem) REFERENCES image_components(Id, Name, Version, OperatingSystem) ,
+    CONSTRAINT fk_parent_table_1 FOREIGN KEY (CveId) REFERENCES image_cve(Id) 
 )
 `
 
@@ -177,10 +176,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, imageComponentId string, cveId string, cveOperatingSystem string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, imageComponentId string, cveId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ComponentCVEEdge")
 
-	row := s.db.QueryRow(ctx, existsStmt, imageComponentId, cveId, cveOperatingSystem)
+	row := s.db.QueryRow(ctx, existsStmt, imageComponentId, cveId)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -189,7 +188,7 @@ func (s *storeImpl) Exists(ctx context.Context, imageComponentId string, cveId s
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, imageComponentId string, cveId string, cveOperatingSystem string) (*storage.ComponentCVEEdge, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, imageComponentId string, cveId string) (*storage.ComponentCVEEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ComponentCVEEdge")
 
 	conn, release, err := s.acquireConn(ctx, ops.Get, "ComponentCVEEdge")
@@ -198,7 +197,7 @@ func (s *storeImpl) Get(ctx context.Context, imageComponentId string, cveId stri
 	}
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, imageComponentId, cveId, cveOperatingSystem)
+	row := conn.QueryRow(ctx, getStmt, imageComponentId, cveId)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)

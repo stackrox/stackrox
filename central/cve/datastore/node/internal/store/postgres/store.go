@@ -22,11 +22,15 @@ import (
 const (
 	baseTable  = "node_cves"
 	countStmt  = "SELECT COUNT(*) FROM node_cves"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_cves WHERE Id = $1 AND OperatingSystem = $2)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_cves WHERE Id = $1)"
 
-	getStmt    = "SELECT serialized FROM node_cves WHERE Id = $1 AND OperatingSystem = $2"
-	deleteStmt = "DELETE FROM node_cves WHERE Id = $1 AND OperatingSystem = $2"
-	walkStmt   = "SELECT serialized FROM node_cves"
+	getStmt     = "SELECT serialized FROM node_cves WHERE Id = $1"
+	deleteStmt  = "DELETE FROM node_cves WHERE Id = $1"
+	walkStmt    = "SELECT serialized FROM node_cves"
+	getIDsStmt  = "SELECT Id FROM node_cves"
+	getManyStmt = "SELECT serialized FROM node_cves WHERE Id = ANY($1::text[])"
+
+	deleteManyStmt = "DELETE FROM node_cves WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -47,11 +51,14 @@ func init() {
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string, operatingSystem string) (bool, error)
-	Get(ctx context.Context, id string, operatingSystem string) (*storage.CVE, bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	Get(ctx context.Context, id string) (*storage.CVE, bool, error)
 	Upsert(ctx context.Context, obj *storage.CVE) error
 	UpsertMany(ctx context.Context, objs []*storage.CVE) error
-	Delete(ctx context.Context, id string, operatingSystem string) error
+	Delete(ctx context.Context, id string) error
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error)
+	DeleteMany(ctx context.Context, ids []string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.CVE) error) error
 
@@ -67,7 +74,7 @@ func createTableNodeCves(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists node_cves (
     Id varchar,
-    OperatingSystem varchar,
+    Cve varchar,
     Cvss numeric,
     ImpactScore numeric,
     PublishedOn timestamp,
@@ -76,7 +83,7 @@ create table if not exists node_cves (
     SuppressExpiry timestamp,
     Severity integer,
     serialized bytea,
-    PRIMARY KEY(Id, OperatingSystem)
+    PRIMARY KEY(Id)
 )
 `
 
@@ -104,7 +111,7 @@ func insertIntoNodeCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error 
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetOperatingSystem(),
+		obj.GetCve(),
 		obj.GetCvss(),
 		obj.GetImpactScore(),
 		pgutils.NilOrTime(obj.GetPublishedOn()),
@@ -115,7 +122,7 @@ func insertIntoNodeCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error 
 		serialized,
 	}
 
-	finalStr := "INSERT INTO node_cves (Id, OperatingSystem, Cvss, ImpactScore, PublishedOn, CreatedAt, Suppressed, SuppressExpiry, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id, OperatingSystem) DO UPDATE SET Id = EXCLUDED.Id, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, ImpactScore = EXCLUDED.ImpactScore, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, Suppressed = EXCLUDED.Suppressed, SuppressExpiry = EXCLUDED.SuppressExpiry, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO node_cves (Id, Cve, Cvss, ImpactScore, PublishedOn, CreatedAt, Suppressed, SuppressExpiry, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Cve = EXCLUDED.Cve, Cvss = EXCLUDED.Cvss, ImpactScore = EXCLUDED.ImpactScore, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, Suppressed = EXCLUDED.Suppressed, SuppressExpiry = EXCLUDED.SuppressExpiry, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -130,11 +137,15 @@ func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*st
 
 	var err error
 
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
 	copyCols := []string{
 
 		"id",
 
-		"operatingsystem",
+		"cve",
 
 		"cvss",
 
@@ -166,7 +177,7 @@ func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*st
 
 			obj.GetId(),
 
-			obj.GetOperatingSystem(),
+			obj.GetCve(),
 
 			obj.GetCvss(),
 
@@ -185,14 +196,20 @@ func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*st
 			serialized,
 		})
 
-		if _, err := tx.Exec(ctx, deleteStmt, obj.GetId(), obj.GetOperatingSystem()); err != nil {
-			return err
-		}
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"node_cves"}, copyCols, pgx.CopyFromRows(inputRows))
 
@@ -296,10 +313,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string, operatingSystem string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "CVE")
 
-	row := s.db.QueryRow(ctx, existsStmt, id, operatingSystem)
+	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -308,7 +325,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string, operatingSystem strin
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string, operatingSystem string) (*storage.CVE, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.CVE, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "CVE")
 
 	conn, release, err := s.acquireConn(ctx, ops.Get, "CVE")
@@ -317,7 +334,7 @@ func (s *storeImpl) Get(ctx context.Context, id string, operatingSystem string) 
 	}
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, id, operatingSystem)
+	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -340,7 +357,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, id string, operatingSystem string) error {
+func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "CVE")
 
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "CVE")
@@ -349,7 +366,90 @@ func (s *storeImpl) Delete(ctx context.Context, id string, operatingSystem strin
 	}
 	defer release()
 
-	if _, err := conn.Exec(ctx, deleteStmt, id, operatingSystem); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.CVEIDs")
+
+	rows, err := s.db.Query(ctx, getIDsStmt)
+	if err != nil {
+		return nil, pgutils.ErrNilIfNoRows(err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "CVE")
+
+	conn, release, err := s.acquireConn(ctx, ops.GetMany, "CVE")
+	if err != nil {
+		return nil, nil, err
+	}
+	defer release()
+
+	rows, err := conn.Query(ctx, getManyStmt, ids)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			missingIndices := make([]int, 0, len(ids))
+			for i := range ids {
+				missingIndices = append(missingIndices, i)
+			}
+			return nil, missingIndices, nil
+		}
+		return nil, nil, err
+	}
+	defer rows.Close()
+	resultsByID := make(map[string]*storage.CVE)
+	for rows.Next() {
+		var data []byte
+		if err := rows.Scan(&data); err != nil {
+			return nil, nil, err
+		}
+		msg := &storage.CVE{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, nil, err
+		}
+		resultsByID[msg.GetId()] = msg
+	}
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.CVE, 0, len(resultsByID))
+	for i, id := range ids {
+		if result, ok := resultsByID[id]; !ok {
+			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
+		}
+	}
+	return elems, missingIndices, nil
+}
+
+// Delete removes the specified IDs from the store
+func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "CVE")
+
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "CVE")
+	if err != nil {
+		return err
+	}
+	defer release()
+	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil

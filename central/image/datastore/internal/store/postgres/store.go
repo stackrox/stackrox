@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/image/datastore/internal/store/common"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,20 +33,10 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM images"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM images WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM images WHERE Id = $1"
-	deleteStmt  = "DELETE FROM images WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM images"
-	getIDsStmt  = "SELECT Id FROM images"
-	getManyStmt = "SELECT serialized FROM images WHERE Id = ANY($1::text[])"
+	getImageMetaStmt = "SELECT serialized FROM images WHERE Id = $1"
+	getImageIDsStmt  = "SELECT Id FROM images"
 
 	deleteManyStmt = "DELETE FROM images WHERE Id = ANY($1::text[])"
-
-	getImageComponentEdgesStmt = "SELECT serialized FROM image_component_relations WHERE imageid = $1 order by imagecomponentid asc"
-	getImageComponentStmt      = "SELECT serialized FROM image_components, image_component_relations WHERE image_component_relations.imageid = $1 AND image_component_relations.imagecomponentid = image_components.id order by image_components.id asc"
-	getComponentCVEEdgesStmt   = "SELECT serialized FROM component_cve_relations, image_component_relations WHERE image_component_relations.imageid = $1 AND image_component_relations.imagecomponentid = component_cve_relations.imagecomponentid order by component_cve_relations.imagecomponentid asc"
-	getImageCVEStmt            = "SELECT serialized FROM image_cves, component_cve_relations, image_component_relations WHERE image_component_relations.imageid = $1 AND image_component_relations.imagecomponentid = component_cve_relations.imagecomponentid AND component_cve_relations.cveid = image_cves.id group by component_cve_relations.imagecomponentid order by component_cve_relations.imagecomponentid asc"
-
-	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
@@ -62,25 +53,8 @@ func init() {
 	globaldb.RegisterTable(schema)
 }
 
-type Store interface {
-	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string) (bool, error)
-	Get(ctx context.Context, id string) (*storage.Image, bool, error)
-	Upsert(ctx context.Context, obj *storage.Image) error
-	UpsertMany(ctx context.Context, objs []*storage.Image) error
-	Delete(ctx context.Context, id string) error
-	GetIDs(ctx context.Context) ([]string, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error)
-	DeleteMany(ctx context.Context, ids []string) error
-
-	AckKeysIndexed(ctx context.Context, keys ...string) error
-	GetKeysToIndex(ctx context.Context) ([]string, error)
-
-	GetImageMetadata(_ context.Context, id string) (*storage.Image, bool, error)
-}
-
 // New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
+func New(ctx context.Context, db *pgxpool.Pool) store.Store {
 	createTableImages(ctx, db)
 
 	return &storeImpl{
@@ -257,11 +231,11 @@ func postProcessSplit(parts common.ImageParts) ([]*storage.ImageComponent, []*st
 	return components, vulns, imageComponentRelations, componentCVERelations
 }
 
-func insertIntoImagesLayers(ctx context.Context, tx pgx.Tx, obj *storage.ImageLayer, images_Id string, idx int) error {
+func insertIntoImagesLayers(ctx context.Context, tx pgx.Tx, obj *storage.ImageLayer, imageId string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		images_Id,
+		imageId,
 		idx,
 		obj.GetInstruction(),
 		obj.GetValue(),
@@ -428,7 +402,7 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, objs ...*storage.CVE) err
 
 		"id",
 
-		"operatingsystem",
+		"cve",
 
 		"cvss",
 
@@ -457,7 +431,7 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, objs ...*storage.CVE) err
 
 			obj.GetId(),
 
-			obj.GetOperatingSystem(),
+			obj.GetCve(),
 
 			obj.GetCvss(),
 
@@ -516,7 +490,6 @@ func copyFromImageComponentCVERelations(ctx context.Context, tx pgx.Tx, objs ...
 		"hasfixedby",
 		"imagecomponentid",
 		"cveid",
-		"cveoperatingsystem",
 	}
 
 	for idx, obj := range objs {
@@ -532,7 +505,6 @@ func copyFromImageComponentCVERelations(ctx context.Context, tx pgx.Tx, objs ...
 			obj.GetFixedBy(),
 			obj.GetImageComponentId(),
 			obj.GetCveId(),
-			obj.GetCveOperatingSystem(),
 			serialized,
 		})
 
@@ -704,7 +676,7 @@ func (s *storeImpl) copyFromImages(ctx context.Context, tx pgx.Tx, objs ...*stor
 	return err
 }
 
-func (s *storeImpl) copyFromImagesLayers(ctx context.Context, tx pgx.Tx, images_Id string, objs ...*storage.ImageLayer) error {
+func (s *storeImpl) copyFromImagesLayers(ctx context.Context, tx pgx.Tx, imageId string, objs ...*storage.ImageLayer) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -723,7 +695,7 @@ func (s *storeImpl) copyFromImagesLayers(ctx context.Context, tx pgx.Tx, images_
 	for idx, obj := range objs {
 		inputRows = append(inputRows, []interface{}{
 
-			images_Id,
+			imageId,
 
 			idx,
 
@@ -838,20 +810,11 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Image) error {
 	return nil
 }
 
+// Upsert upserts image into the store.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Image) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Image")
 
 	return s.upsert(ctx, obj)
-}
-
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Image) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Image")
-
-	if len(objs) < batchAfter {
-		return s.upsert(ctx, objs...)
-	} else {
-		return s.copyFrom(ctx, objs...)
-	}
 }
 
 // Count returns the number of objects in the store
@@ -888,7 +851,11 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Image, bool, e
 	}
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, id)
+	return s.getFullImage(ctx, conn, id)
+}
+
+func (s *storeImpl) getFullImage(ctx context.Context, conn *pgxpool.Conn, id string) (*storage.Image, bool, error) {
+	row := conn.QueryRow(ctx, getImageMetaStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -907,11 +874,15 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Image, bool, e
 	if err != nil {
 		return nil, false, err
 	}
-	componentCVEEdgeMap, err := s.getComponentCVEEdges(ctx, conn, id)
+	componentIDs := make([]string, 0, len(componentMap))
+	for key := range componentMap {
+		componentIDs = append(componentIDs, key)
+	}
+	componentCVEEdgeMap, err := s.getComponentCVEEdges(ctx, conn, componentIDs...)
 	if err != nil {
 		return nil, false, err
 	}
-	cveMap, err := s.getCVEs(ctx, conn, id)
+	cveMap, err := s.getCVEs(ctx, conn, componentIDs...)
 	if err != nil {
 		return nil, false, err
 	}
@@ -962,7 +933,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) getImageComponentEdges(ctx context.Context, conn *pgxpool.Conn, imageID string) (map[string]*storage.ImageComponentEdge, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageComponentRelations")
 
-	rows, err := conn.Query(ctx, getImageComponentEdgesStmt, imageID)
+	rows, err := conn.Query(ctx, "SELECT serialized FROM image_component_relations WHERE imageid = $1 order by imagecomponentid asc", imageID)
 	if err != nil {
 		return nil, err
 	}
@@ -985,7 +956,7 @@ func (s *storeImpl) getImageComponentEdges(ctx context.Context, conn *pgxpool.Co
 func (s *storeImpl) getImageComponents(ctx context.Context, conn *pgxpool.Conn, componentIDs ...string) (map[string]*storage.ImageComponent, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageComponents")
 
-	rows, err := conn.Query(ctx, getImageComponentStmt, componentIDs)
+	rows, err := conn.Query(ctx, "SELECT serialized FROM image_components, image_component_relations WHERE image_component_relations.imageid = $1 AND image_component_relations.imagecomponentid = image_components.id", componentIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -1005,10 +976,10 @@ func (s *storeImpl) getImageComponents(ctx context.Context, conn *pgxpool.Conn, 
 	return idToComponentMap, nil
 }
 
-func (s *storeImpl) getComponentCVEEdges(ctx context.Context, conn *pgxpool.Conn, imageID string) (map[string][]*storage.ComponentCVEEdge, error) {
+func (s *storeImpl) getComponentCVEEdges(ctx context.Context, conn *pgxpool.Conn, componentIDs ...string) (map[string][]*storage.ComponentCVEEdge, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageComponentCVERelations")
 
-	rows, err := conn.Query(ctx, getComponentCVEEdgesStmt, imageID)
+	rows, err := conn.Query(ctx, "SELECT serialized FROM component_cve_relations WHERE imagecomponentid = ANY($1::text[])", componentIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -1028,10 +999,10 @@ func (s *storeImpl) getComponentCVEEdges(ctx context.Context, conn *pgxpool.Conn
 	return componentIDToEdgeMap, nil
 }
 
-func (s *storeImpl) getCVEs(ctx context.Context, conn *pgxpool.Conn, imageID string) (map[string]*storage.CVE, error) {
+func (s *storeImpl) getCVEs(ctx context.Context, conn *pgxpool.Conn, componentIDs ...string) (map[string]*storage.CVE, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageCVEs")
 
-	rows, err := conn.Query(ctx, getImageCVEStmt, imageID)
+	rows, err := conn.Query(ctx, "SELECT serialized FROM image_cves, component_cve_relations WHERE component_cve_relations.imagecomponentid = ANY($1::text[]) AND component_cve_relations.cveid = image_cves.id", componentIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -1051,7 +1022,7 @@ func (s *storeImpl) getCVEs(ctx context.Context, conn *pgxpool.Conn, imageID str
 	return idToCVEMap, nil
 }
 
-// Delete removes the specified ID from the store
+// Delete removes the specified ID from the store.
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Image")
 
@@ -1061,7 +1032,44 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	}
 	defer release()
 
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
+	return s.deleteImageTree(ctx, conn, id)
+}
+
+func (s *storeImpl) deleteImageTree(ctx context.Context, conn *pgxpool.Conn, imageIDs ...string) error {
+	// Delete from image table.
+	if _, err := conn.Exec(ctx, "delete from images where Id = ANY($1::text[])", imageIDs); err != nil {
+		return err
+	}
+	// Delete image-component relations.
+	if _, err := conn.Exec(ctx, "delete from image_component_relations where imageid = ANY($1::text[])", imageIDs); err != nil {
+		return err
+	}
+
+	// Get orphaned image components.
+	rows, err := s.db.Query(ctx, "select id from image_components where not exists (select image_components.id FROM image_components, image_component_relations WHERE image_components.id = image_component_relations.imagecomponentid)")
+	if err != nil {
+		return pgutils.ErrNilIfNoRows(err)
+	}
+	defer rows.Close()
+	var componentIDs []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return err
+		}
+		componentIDs = append(componentIDs, id)
+	}
+
+	// Delete orphaned image components.
+	if _, err := conn.Exec(ctx, "delete from image_components where id = ANY($1::text[])", componentIDs); err != nil {
+		return err
+	}
+	// Delete orphaned component-cve relations.
+	if _, err := conn.Exec(ctx, "delete from component_cve_relations where imagecomponentid = ANY($1::text[])", componentIDs); err != nil {
+		return err
+	}
+	// Delete orphaned cves.
+	if _, err := conn.Exec(ctx, "delete from image_cves where not exists (select id FROM image_cves, component_cve_relations WHERE image_cves.id = component_cve_relations.cveid))"); err != nil {
 		return err
 	}
 	return nil
@@ -1069,9 +1077,9 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ImageIDs")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "ImageIDs")
 
-	rows, err := s.db.Query(ctx, getIDsStmt)
+	rows, err := s.db.Query(ctx, getImageIDsStmt)
 	if err != nil {
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
@@ -1097,30 +1105,18 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image
 	}
 	defer release()
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			missingIndices := make([]int, 0, len(ids))
-			for i := range ids {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
-		return nil, nil, err
-	}
-	defer rows.Close()
 	resultsByID := make(map[string]*storage.Image)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
+	for _, id := range ids {
+		msg, found, err := s.getFullImage(ctx, conn, id)
+		if err != nil {
 			return nil, nil, err
 		}
-		msg := &storage.Image{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
+		if !found {
+			continue
 		}
 		resultsByID[msg.GetId()] = msg
 	}
+
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
 	// It is important that the elems are populated in the same order as the input ids
 	// slice, since some calling code relies on that to maintain order.
@@ -1135,7 +1131,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image
 	return elems, missingIndices, nil
 }
 
-// Delete removes the specified IDs from the store
+// DeleteMany removes the specified IDs from the store.
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Image")
 
@@ -1144,10 +1140,8 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 		return err
 	}
 	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
-		return err
-	}
-	return nil
+
+	return s.deleteImageTree(ctx, conn, ids...)
 }
 
 //// Used for testing
@@ -1155,14 +1149,13 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 func dropTableImages(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images CASCADE")
 	dropTableImagesLayers(ctx, db)
-
 }
 
 func dropTableImagesLayers(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS images_Layers CASCADE")
-
 }
 
+// Destroy drops image table.
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableImages(ctx, db)
 }
@@ -1179,6 +1172,7 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }
 
+// GetImageMetadata gets the image without scan/component data.
 func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageMetadata")
 
@@ -1188,7 +1182,7 @@ func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.I
 	}
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, id)
+	row := conn.QueryRow(ctx, getImageMetaStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)

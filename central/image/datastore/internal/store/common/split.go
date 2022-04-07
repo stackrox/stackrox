@@ -63,11 +63,10 @@ func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.Emb
 
 func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, convertedCVE *storage.CVE, embedded *storage.EmbeddedVulnerability) *storage.ComponentCVEEdge {
 	ret := &storage.ComponentCVEEdge{
-		Id:                 edges.EdgeID{ParentID: convertedComponent.GetId(), ChildID: convertedCVE.GetId()}.ToString(),
-		IsFixable:          embedded.GetFixedBy() != "",
-		CveId:              convertedCVE.GetId(),
-		ImageComponentId:   convertedComponent.GetId(),
-		CveOperatingSystem: convertedComponent.GetOperatingSystem(),
+		Id:               edges.EdgeID{ParentID: convertedComponent.GetId(), ChildID: convertedCVE.GetId()}.ToString(),
+		IsFixable:        embedded.GetFixedBy() != "",
+		CveId:            convertedCVE.GetId(),
+		ImageComponentId: convertedComponent.GetId(),
 	}
 
 	if ret.IsFixable {

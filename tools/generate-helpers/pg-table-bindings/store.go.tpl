@@ -104,6 +104,7 @@ type storeImpl struct {
 
 {{- define "createTable"}}
 {{- $schema := .schema }}
+{{- $joinTable := .joinTable}}
 func {{template "createFunctionName" $schema}}(ctx context.Context, db *pgxpool.Pool) {
     table := `
 create table if not exists {{$schema.Table}} (
@@ -112,7 +113,7 @@ create table if not exists {{$schema.Table}} (
 {{- end}}
     PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys }}){{ if gt (len $schema.Parents) 0 }},{{end}}
 {{- range $idx, $pksGrps := $schema.ParentKeysGroupedByTable }}
-    CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrps.Fields}}) REFERENCES {{$pksGrps.Table}}({{template "commandSeparatedRefs" $pksGrps.Fields}}) ON DELETE CASCADE{{if lt (add $idx 1) (len $schema.ParentKeysGroupedByTable)}},{{end}}
+    CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrps.Fields}}) REFERENCES {{$pksGrps.Table}}({{template "commandSeparatedRefs" $pksGrps.Fields}}) {{if not $joinTable}}ON DELETE CASCADE{{end}}{{if lt (add $idx 1) (len $schema.ParentKeysGroupedByTable)}},{{end}}
 {{- end}}
 )
 `

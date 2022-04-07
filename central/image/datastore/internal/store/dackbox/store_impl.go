@@ -437,12 +437,10 @@ func (b *storeImpl) deleteImageKeys(keys *imageKeySet) error {
 	}
 	defer deleteTxn.Discard()
 
-	err = imageDackBox.Deleter.DeleteIn(keys.imageKey, deleteTxn)
-	if err != nil {
+	if err := imageDackBox.Deleter.DeleteIn(keys.imageKey, deleteTxn); err != nil {
 		return err
 	}
-	err = imageDackBox.ListDeleter.DeleteIn(keys.listImageKey, deleteTxn)
-	if err != nil {
+	if err := imageDackBox.ListDeleter.DeleteIn(keys.listImageKey, deleteTxn); err != nil {
 		return err
 	}
 	for _, component := range keys.componentKeys {
