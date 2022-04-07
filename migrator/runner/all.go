@@ -54,4 +54,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_93_to_m_94_role_accessscopeid"
 	_ "github.com/stackrox/rox/migrator/migrations/m_94_to_m_95_cluster_health_status_id"
 	_ "github.com/stackrox/rox/migrator/migrations/m_95_to_m_96_alert_scoping_information_at_root"
+	_ "github.com/stackrox/rox/migrator/migrations/m_96_to_m_97_modify_default_vulnreportcreator_role"
 )
