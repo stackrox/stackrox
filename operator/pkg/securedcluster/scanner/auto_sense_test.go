@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	osconfigv1 "github.com/openshift/api/config/v1"
+	openshiftConfigv1 "github.com/openshift/api/config/v1"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stretchr/testify/assert"
@@ -19,11 +19,11 @@ var securedCluster = platform.SecuredCluster{
 	},
 }
 
-var validClusterVersion = &osconfigv1.ClusterVersion{
+var validClusterVersion = &openshiftConfigv1.ClusterVersion{
 	ObjectMeta: metav1.ObjectMeta{
 		Name: "version",
 	},
-	Spec: osconfigv1.ClusterVersionSpec{
+	Spec: openshiftConfigv1.ClusterVersionSpec{
 		ClusterID: "test-cluster-id",
 	},
 }
@@ -65,11 +65,11 @@ func TestAutoSenseIsEnabledWithCentralInADifferentNamespace(t *testing.T) {
 }
 
 func TestAutoSenseIsDisabledIfClusterVersionNotFound(t *testing.T) {
-	client := testutils.NewFakeClientBuilder(t, &osconfigv1.ClusterVersion{
+	client := testutils.NewFakeClientBuilder(t, &openshiftConfigv1.ClusterVersion{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "not-version-name",
 		},
-		Spec: osconfigv1.ClusterVersionSpec{
+		Spec: openshiftConfigv1.ClusterVersionSpec{
 			ClusterID: "test-cluster-id",
 		},
 	}).Build()
@@ -79,28 +79,13 @@ func TestAutoSenseIsDisabledIfClusterVersionNotFound(t *testing.T) {
 	require.False(t, enabled, `Expected an error if clusterversions.config.openshift.io %q not found`, clusterVersionDefaultName)
 }
 
-func TestAutoSenseIsDisabledIfClusterIdIsEmpty(t *testing.T) {
-	client := testutils.NewFakeClientBuilder(t, &osconfigv1.ClusterVersion{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "version",
-		},
-		Spec: osconfigv1.ClusterVersionSpec{
-			ClusterID: "",
-		},
-	}).Build()
-
-	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
-	require.NoError(t, err)
-	require.False(t, enabled, "Expected Scanner to be disabled if clusterversions.ClusterID is empty")
-}
-
 func TestAutoSenseIsDisabledIfClusterVersionHasNamespace(t *testing.T) {
-	client := testutils.NewFakeClientBuilder(t, &osconfigv1.ClusterVersion{
+	client := testutils.NewFakeClientBuilder(t, &openshiftConfigv1.ClusterVersion{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "some-namespace",
 			Name:      "version",
 		},
-		Spec: osconfigv1.ClusterVersionSpec{
+		Spec: openshiftConfigv1.ClusterVersionSpec{
 			ClusterID: "some-cluster-id",
 		},
 	}).Build()

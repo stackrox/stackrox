@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	osconfigv1 "github.com/openshift/api/config/v1"
+	openshiftConfigv1 "github.com/openshift/api/config/v1"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/images"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
@@ -33,11 +33,11 @@ type TranslationTestSuite struct {
 	envIsolator *envisolator.EnvIsolator
 }
 
-var validClusterVersion = &osconfigv1.ClusterVersion{
+var validClusterVersion = &openshiftConfigv1.ClusterVersion{
 	ObjectMeta: metav1.ObjectMeta{
 		Name: "version",
 	},
-	Spec: osconfigv1.ClusterVersionSpec{
+	Spec: openshiftConfigv1.ClusterVersionSpec{
 		ClusterID: "test-cluster-id",
 	},
 }
