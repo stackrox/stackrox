@@ -33,7 +33,7 @@ func Test_DefaultPolicies_FilterByFeatureFlag(t *testing.T) {
 func checkPoliciesContain(t *testing.T, policyNameToCheck string) bool {
 	policies, err := DefaultPolicies()
 	require.NoError(t, err)
-	for _, p := range  policies {
+	for _, p := range policies {
 		if p.Name == policyNameToCheck {
 			return true
 		}
