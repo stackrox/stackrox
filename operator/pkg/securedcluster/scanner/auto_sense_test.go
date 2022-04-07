@@ -78,7 +78,7 @@ func TestAutoSenseIsDisabledIfClusterVersionNotFound(t *testing.T) {
 
 	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
 	require.Error(t, err)
-	require.False(t, enabled, `Expected an error if clusterversions.config.openshift.io "version" not found`)
+	require.False(t, enabled, `Expected an error if clusterversions.config.openshift.io %q not found`, ClusterVersionDefaultName)
 }
 
 func TestAutoSenseIsDisabledIfClusterIdIsEmpty(t *testing.T) {
