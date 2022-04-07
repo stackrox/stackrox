@@ -13,9 +13,6 @@ ENV GOPATH=/workspace
 COPY go.mod go.mod
 COPY go.sum go.sum
 
-# Add GitHub hosts as known ones so that git does not complain.
-RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-
 # Cache deps before building and copying source so that we don't need to re-download as much and so that source changes
 # don't invalidate our downloaded layer.
 # We're not using `go mod tidy` here becuase go mod tidy needs to examine _source code_ in order to find unused modules.
@@ -28,7 +25,7 @@ RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 # However it does _not_ seem to resolve packages _incorrectly_ and so should be safe especially given that downloaded
 # packages are only used during build and later this docker layer is discarded (only resulting binary goes in the final
 # image).
-RUN --mount=type=ssh,required=true go mod download
+RUN go mod download
 
 # Copy operator source
 COPY operator/ operator/
