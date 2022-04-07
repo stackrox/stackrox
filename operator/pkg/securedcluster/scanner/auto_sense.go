@@ -50,7 +50,7 @@ func isRunningOnOpenShift(ctx context.Context, client ctrlClient.Client, namespa
 	key := ctrlClient.ObjectKey{Namespace: namespace, Name: ClusterVersionDefaultName}
 	err := client.Get(ctx, key, clusterVersion)
 	if err != nil && errorsK8s.IsNotFound(err) {
-		log.Error(err, "OpenShift ClusterVersion not found")
+		log.Info(err, "Running on Kubernetes, OpenShift ClusterVersion was not found")
 		return false, err
 	} else if err != nil && strings.Contains(err.Error(), "no matches for kind") {
 		log.Info("OpenShift ClusterVersion does not exist")
