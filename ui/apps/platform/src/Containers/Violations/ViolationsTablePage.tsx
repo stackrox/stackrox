@@ -67,12 +67,12 @@ function ViolationsTablePage(): ReactElement {
         Object.values(searchFilter).some((filter) => filter !== '');
 
     useEffectAfterFirstRender(() => {
-        // If the user applies a filter to a previously unfiltered table, return to page 1
         if (hasExecutableFilter && !isViewFiltered) {
+            // If the user applies a filter to a previously unfiltered table, return to page 1
             setIsViewFiltered(true);
             setPage(1);
-            // If the user clears all filters after having previously applied filters, return to page 1
         } else if (!hasExecutableFilter && isViewFiltered) {
+            // If the user clears all filters after having previously applied filters, return to page 1
             setIsViewFiltered(false);
             setPage(1);
         }

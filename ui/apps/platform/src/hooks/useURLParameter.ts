@@ -55,8 +55,7 @@ function useURLParameter<ParsedValueType extends QueryValue>(
     );
 
     const nextValue =
-        getQueryObject<{ [s: string]: ParsedValueType }>(location.search)[keyPrefix] ||
-        defaultValue;
+        getQueryObject<Record<string, ParsedValueType>>(location.search)[keyPrefix] || defaultValue;
 
     // If the search filter has changed, replace the object reference.
     if (!isEqual(internalValue.current, nextValue)) {
