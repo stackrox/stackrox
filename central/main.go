@@ -216,6 +216,8 @@ func runSafeMode() {
 }
 
 func main() {
+	log.Info("Dummy")
+
 	premain.StartMain()
 
 	conf := config.GetConfig()
