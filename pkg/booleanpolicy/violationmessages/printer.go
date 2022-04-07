@@ -189,13 +189,20 @@ func Render(
 		errorList.AddError(errors.New("missing messages"))
 	}
 
+	alertType := storage.Alert_Violation_GENERIC
+	if isNetworkPolicyViolation {
+		alertType = storage.Alert_Violation_NETWORK_POLICY
+	}
 	alertViolations := make([]*storage.Alert_Violation, 0, len(messages))
 	// Sort messages for consistency in output. This is important because we
 	// depend on these messages being equal when deduping updates to alerts.
 	for _, message := range messages.AsSortedSlice(func(i, j string) bool {
 		return i < j
 	}) {
-		alertViolations = append(alertViolations, &storage.Alert_Violation{Message: message})
+		alertViolations = append(alertViolations, &storage.Alert_Violation{
+			Message: message,
+			Type:    alertType,
+		})
 	}
 	return alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, isNetworkPolicyViolation, errorList.ToError()
 }
