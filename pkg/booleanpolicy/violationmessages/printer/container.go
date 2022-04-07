@@ -170,30 +170,25 @@ func imageSignatureVerifiedPrinter(fieldMap map[string][]string) ([]string, erro
 		Status:        "unverified",
 	}
 
-	tmpl, err := getTemplate(imageSignatureVerifiedTemplate)
-	if err != nil {
-		return nil, err
-	}
-
 	var result []string
 	if ids, ok := fieldMap[augmentedobjs.ImageSignatureVerifiedCustomTag]; ok {
 		for _, id := range ids {
 			if id != "" && id != "<empty>" {
 				r.Status = "verified by " + id
-				message, err := executeTemplateT(tmpl, r)
+				message, err := executeTemplate(imageSignatureVerifiedTemplate, r)
 				if err != nil {
 					return nil, err
 				}
-				result = append(result, message)
+				result = append(result, message...)
 			}
 		}
 	}
 	if len(result) == 0 {
-		message, err := executeTemplateT(tmpl, r)
+		message, err := executeTemplate(imageSignatureVerifiedTemplate, r)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, message)
+		result = append(result, message...)
 	}
 	return result, nil
 }

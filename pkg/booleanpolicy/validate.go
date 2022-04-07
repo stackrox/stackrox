@@ -59,6 +59,8 @@ func Validate(p *storage.Policy, options ...ValidateOption) error {
 		errorList.AddError(validatePolicySection(section, configuration, p.GetEventSource()))
 	}
 
+	// Special case for ImageSignatureVerifiedBy policy for which we don't allow
+	// AND operator due to the UI limitations.
 	for _, ps := range p.PolicySections {
 		for _, pg := range ps.PolicyGroups {
 			if pg.FieldName == fieldnames.ImageSignatureVerifiedBy && pg.BooleanOperator == storage.BooleanOperator_AND {
