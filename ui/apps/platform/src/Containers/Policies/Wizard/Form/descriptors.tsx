@@ -734,7 +734,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: false,
     },
     {
-        label: 'Allow Privilege Escalation',
+        label: 'Allow privilege escalation',
         name: 'Allow Privilege Escalation',
         shortName: 'Allow Privilege Escalation',
         longName: 'Privilege Escalation allowed on Container',
