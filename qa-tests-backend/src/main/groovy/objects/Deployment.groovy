@@ -63,19 +63,19 @@ class Deployment {
         return this
     }
 
-    Deployment setImage(String i) {
-        if (!(i =~ /^[a-z]+\./)) {
+    Deployment setImage(String imageName) {
+        if (!(imageName =~ /^[a-z]+\./)) {
+            String nameAsTag = imageName.replaceAll(~"[./:]", "-")
             System.err.println """\
-                WARNING: ${i} may be subject to rate limiting.
-                Consider making a duplicate at quay.io/rhacs-eng/qa:{i}-<version>
-                e.g.
-                # needs write access - ask @eng-staff
-                docker pull splunk/splunk:8.1.2
-                docker tag splunk/splunk:8.1.2 quay.io/rhacs-eng/qa:splunk-test-repo-8-1-2
-                docker push quay.io/rhacs-eng/qa:splunk-test-repo-8-1-2
+                WARNING: ${imageName} may be subject to rate limiting.
+                Consider making a duplicate at quay.io/rhacs-eng/qa:${imageName}-<version>
+                e.g. (needs write access - ask @eng-staff)
+                docker pull ${imageName}
+                docker tag ${imageName} quay.io/rhacs-eng/qa:${nameAsTag}
+                docker push quay.io/rhacs-eng/qa:${nameAsTag}
                 """.stripIndent()
         }
-        this.image = i
+        this.image = imageName
         return this
     }
 
