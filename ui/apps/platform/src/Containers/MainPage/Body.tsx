@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
+import { PageSection } from '@patternfly/react-core';
 
 import {
     mainPath,
@@ -36,10 +37,10 @@ import { knownBackendFlags } from 'utils/featureFlags';
 
 function NotFoundPage(): ReactElement {
     return (
-        <>
+        <PageSection variant="light">
             <PageTitle title="Not Found" />
             <PageNotFound />
-        </>
+        </PageSection>
     );
 }
 
