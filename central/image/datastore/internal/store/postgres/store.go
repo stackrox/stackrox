@@ -231,11 +231,11 @@ func postProcessSplit(parts common.ImageParts) ([]*storage.ImageComponent, []*st
 	return components, vulns, imageComponentRelations, componentCVERelations
 }
 
-func insertIntoImagesLayers(ctx context.Context, tx pgx.Tx, obj *storage.ImageLayer, imageId string, idx int) error {
+func insertIntoImagesLayers(ctx context.Context, tx pgx.Tx, obj *storage.ImageLayer, imageID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		imageId,
+		imageID,
 		idx,
 		obj.GetInstruction(),
 		obj.GetValue(),
@@ -676,7 +676,7 @@ func (s *storeImpl) copyFromImages(ctx context.Context, tx pgx.Tx, objs ...*stor
 	return err
 }
 
-func (s *storeImpl) copyFromImagesLayers(ctx context.Context, tx pgx.Tx, imageId string, objs ...*storage.ImageLayer) error {
+func (s *storeImpl) copyFromImagesLayers(ctx context.Context, tx pgx.Tx, imageID string, objs ...*storage.ImageLayer) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -695,7 +695,7 @@ func (s *storeImpl) copyFromImagesLayers(ctx context.Context, tx pgx.Tx, imageId
 	for idx, obj := range objs {
 		inputRows = append(inputRows, []interface{}{
 
-			imageId,
+			imageID,
 
 			idx,
 
