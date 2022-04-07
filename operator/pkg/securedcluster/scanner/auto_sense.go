@@ -2,7 +2,6 @@ package scanner
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
@@ -57,10 +56,10 @@ func isRunningOnOpenShift(ctx context.Context, client ctrlClient.Client) (bool, 
 
 	err := client.Get(ctx, key, clusterVersion)
 	if err != nil && k8sErrors.IsNotFound(err) {
-		log.Info("Running on Kubernetes, OpenShift ClusterVersion was not found")
+		log.Info("Running on Kubernetes, OpenShift ClusterVersion resource was not found")
 		return false, err
 	} else if err != nil && meta.IsNoMatchError(err) {
-		log.Info(fmt.Sprintf("Running on Kubernetes, resource OpenShift ClusterVersion %q does not exist", clusterVersionDefaultName))
+		log.Info("Running on Kubernetes, OpenShift ClusterVersion schema does not exist")
 		return false, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get ClusterVersion")
