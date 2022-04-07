@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -111,9 +112,24 @@ func applyNetworkPolicy(t *testing.T) func() {
 	}
 }
 
-func Test_GetViolationForIngressPolicy(t *testing.T) {
+func CheckIfCentralHasFeatureFlag(t *testing.T, conn *grpc.ClientConn) bool {
+	ffClient := v1.NewFeatureFlagServiceClient(conn)
 
-	if !features.NetworkPolicySystemPolicy.Enabled() {
+	flags, err := ffClient.GetFeatureFlags(context.Background(), &v1.Empty{})
+	assert.NoError(t, err)
+
+	for _, flag := range flags.FeatureFlags {
+		if flag.Name == features.NetworkPolicySystemPolicy.Name() {
+			return flag.Enabled
+		}
+	}
+
+	return false
+}
+
+func Test_GetViolationForIngressPolicy(t *testing.T) {
+	conn := testutils.GRPCConnectionToCentral(t)
+	if !CheckIfCentralHasFeatureFlag(t, conn) {
 		t.Skip("Feature flag disabled")
 	}
 
@@ -136,7 +152,6 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
-			conn := testutils.GRPCConnectionToCentral(t)
 			policyService := v1.NewPolicyServiceClient(conn)
 			alertService := v1.NewAlertServiceClient(conn)
 
