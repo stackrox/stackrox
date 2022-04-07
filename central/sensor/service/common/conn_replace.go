@@ -3,6 +3,11 @@ package common
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+)
+
+var (
+	isScaleTest = env.ScaleTesting.BooleanSetting()
 )
 
 func equalAndNonempty(a, b string) bool {
@@ -16,7 +21,7 @@ func distinctAndNonempty(a, b string) bool {
 // with a  deployment identification of oldId.
 // We only allow a replacement if we're confident it's coming from the same deployment.
 func CheckConnReplace(newID, oldID *storage.SensorDeploymentIdentification) error {
-	if newID == nil || oldID == nil {
+	if newID == nil || oldID == nil || isScaleTest {
 		// Without cluster identification, default to the previous behavior, which is to always allow replacements.
 		return nil
 	}
