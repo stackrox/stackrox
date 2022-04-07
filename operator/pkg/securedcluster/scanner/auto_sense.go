@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	osconfigv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlLog "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -49,8 +49,12 @@ func AutoSenseLocalScannerSupport(ctx context.Context, client ctrlClient.Client,
 func isRunningOnOpenShift(ctx context.Context, client ctrlClient.Client) (bool, error) {
 	log := ctrlLog.FromContext(ctx)
 
-	clusterVersion := &osconfigv1.ClusterVersion{}
+	clusterVersion := &unstructured.Unstructured{}
+	clusterVersion.SetKind("ClusterVersion")
+	clusterVersion.SetAPIVersion("config.openshift.io/v1")
+	clusterVersion.SetName("name")
 	key := ctrlClient.ObjectKey{Name: clusterVersionDefaultName}
+
 	err := client.Get(ctx, key, clusterVersion)
 	if err != nil && k8sErrors.IsNotFound(err) {
 		log.Info("Running on Kubernetes, OpenShift ClusterVersion was not found")
@@ -63,7 +67,7 @@ func isRunningOnOpenShift(ctx context.Context, client ctrlClient.Client) (bool, 
 		return false, err
 	}
 
-	return clusterVersion.Spec.ClusterID != "", nil
+	return true, nil
 }
 
 func isSiblingCentralPresent(ctx context.Context, client ctrlClient.Client, namespace string) (bool, error) {
