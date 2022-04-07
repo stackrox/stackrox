@@ -1,7 +1,6 @@
 package generate
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -16,15 +15,12 @@ func TestScannerGenerateValidation(t *testing.T) {
 	t.Run("not supported Istio version", func(t *testing.T) {
 		cmdBadIstio := scannerGenerateCommand{apiParams: apiparams.Scanner{IstioVersion: "0.1.0"}}
 
-		expectedErr := errox.NewErrInvalidArgs(fmt.Sprintf(
-			"unsupported Istio version %q used for argument %q. Use one of the following: [%s]",
-			"0.1.0", "--"+istioSupportArg, strings.Join(istioutils.ListKnownIstioVersions(), "|"),
-		))
 		actualErr := cmdBadIstio.validate()
-
 		require.Error(t, actualErr)
 		assert.ErrorIs(t, actualErr, errox.InvalidArgs)
-		assert.EqualError(t, actualErr, expectedErr.Error())
+
+		expectedListOfIstioVersions := strings.Join(istioutils.ListKnownIstioVersions(), "|")
+		assert.Contains(t, actualErr.Error(), expectedListOfIstioVersions)
 	})
 
 	t.Run("supported Istio version", func(t *testing.T) {
