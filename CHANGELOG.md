@@ -17,7 +17,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Fixed permissioms checks in the UI that prevented users with certain limited permissions from creating report configurations.
 - Registry integrations for ECR are now auto-generated if the cluster's cloud provider is AWS, and the nodes' Instance IAM Role has policies granting access to ECR.  Customers can turn this feature off by disabling the EC2 instance metadata service in their nodes.
 - A new default policy added to detect Spring Cloud Function RCE vulnerability (CVE-2022-22963) and Spring Framework Spring4Shell RCE vulnerability (CVE-2022-22965).
-- Added AllowPrivilegeEscalation as one of the policy criteria.
+- Added AllowPrivilegeEscalation as a new policy criteria.
 
 ## [69.1]
 
