@@ -2,12 +2,13 @@ package scanner
 
 import (
 	"context"
-	"strings"
+	"fmt"
 
 	osconfigv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlLog "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -30,12 +31,14 @@ func AutoSenseLocalScannerSupport(ctx context.Context, client ctrlClient.Client,
 		if err != nil {
 			return false, errors.Wrap(err, "detecting presence of a Central CR in the same namespace")
 		}
-		isOpenShift, err := isRunningOnOpenShift(ctx, client, s.GetNamespace())
+		isOpenShift, err := isRunningOnOpenShift(ctx, client)
 		if err != nil {
 			return false, errors.Wrap(err, "cannot fetch OpenShift ClusterVersion resource")
 		}
-		enableScanner := isOpenShift && !siblingCentralPresent
-		return enableScanner, nil
+		if !isOpenShift {
+			return false, nil
+		}
+		return !siblingCentralPresent, nil
 	case platform.LocalScannerComponentDisabled:
 		return false, nil
 	}
@@ -43,17 +46,17 @@ func AutoSenseLocalScannerSupport(ctx context.Context, client ctrlClient.Client,
 	return false, errors.Errorf("invalid spec.scanner.scannerComponent %q", scannerComponent)
 }
 
-func isRunningOnOpenShift(ctx context.Context, client ctrlClient.Client, namespace string) (bool, error) {
+func isRunningOnOpenShift(ctx context.Context, client ctrlClient.Client) (bool, error) {
 	log := ctrlLog.FromContext(ctx)
 
 	clusterVersion := &osconfigv1.ClusterVersion{}
-	key := ctrlClient.ObjectKey{Namespace: namespace, Name: ClusterVersionDefaultName}
+	key := ctrlClient.ObjectKey{Name: clusterVersionDefaultName}
 	err := client.Get(ctx, key, clusterVersion)
-	if err != nil && errorsK8s.IsNotFound(err) {
-		log.Info(err, "Running on Kubernetes, OpenShift ClusterVersion was not found")
+	if err != nil && k8sErrors.IsNotFound(err) {
+		log.Info("Running on Kubernetes, OpenShift ClusterVersion was not found")
 		return false, err
-	} else if err != nil && strings.Contains(err.Error(), "no matches for kind") {
-    log.Infof(err, "Running on Kubernetes, resource OpenShift ClusterVersion %q does not exist", ClusterVersionDefaultName)
+	} else if err != nil && meta.IsNoMatchError(err) {
+		log.Info(fmt.Sprintf("Running on Kubernetes, resource OpenShift ClusterVersion %q does not exist", clusterVersionDefaultName))
 		return false, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get ClusterVersion")
