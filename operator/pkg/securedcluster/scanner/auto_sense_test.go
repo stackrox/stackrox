@@ -21,8 +21,7 @@ var securedCluster = platform.SecuredCluster{
 
 var validClusterVersion = &osconfigv1.ClusterVersion{
 	ObjectMeta: metav1.ObjectMeta{
-		Namespace: testutils.TestNamespace,
-		Name:      "version",
+		Name: "version",
 	},
 	Spec: osconfigv1.ClusterVersionSpec{
 		ClusterID: "test-cluster-id",
@@ -68,8 +67,7 @@ func TestAutoSenseIsEnabledWithCentralInADifferentNamespace(t *testing.T) {
 func TestAutoSenseIsDisabledIfClusterVersionNotFound(t *testing.T) {
 	client := testutils.NewFakeClientBuilder(t, &osconfigv1.ClusterVersion{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testutils.TestNamespace,
-			Name:      "not-version-name",
+			Name: "not-version-name",
 		},
 		Spec: osconfigv1.ClusterVersionSpec{
 			ClusterID: "test-cluster-id",
@@ -78,14 +76,13 @@ func TestAutoSenseIsDisabledIfClusterVersionNotFound(t *testing.T) {
 
 	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
 	require.Error(t, err)
-	require.False(t, enabled, `Expected an error if clusterversions.config.openshift.io %q not found`, ClusterVersionDefaultName)
+	require.False(t, enabled, `Expected an error if clusterversions.config.openshift.io %q not found`, clusterVersionDefaultName)
 }
 
 func TestAutoSenseIsDisabledIfClusterIdIsEmpty(t *testing.T) {
 	client := testutils.NewFakeClientBuilder(t, &osconfigv1.ClusterVersion{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testutils.TestNamespace,
-			Name:      "version",
+			Name: "version",
 		},
 		Spec: osconfigv1.ClusterVersionSpec{
 			ClusterID: "",
@@ -95,4 +92,20 @@ func TestAutoSenseIsDisabledIfClusterIdIsEmpty(t *testing.T) {
 	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
 	require.NoError(t, err)
 	require.False(t, enabled, "Expected Scanner to be disabled if clusterversions.ClusterID is empty")
+}
+
+func TestAutoSenseIsDisabledIfClusterVersionHasNamespace(t *testing.T) {
+	client := testutils.NewFakeClientBuilder(t, &osconfigv1.ClusterVersion{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "some-namespace",
+			Name:      "version",
+		},
+		Spec: osconfigv1.ClusterVersionSpec{
+			ClusterID: "some-cluster-id",
+		},
+	}).Build()
+
+	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
+	require.Error(t, err)
+	require.False(t, enabled, "Expected Scanner to be disabled if ClusterVersion resource has a namespace")
 }
