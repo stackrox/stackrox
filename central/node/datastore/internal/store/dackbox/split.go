@@ -70,7 +70,7 @@ func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, conver
 
 func generateNodeComponent(from *storage.EmbeddedNodeScanComponent) *storage.ImageComponent {
 	ret := &storage.ImageComponent{
-		Id:        scancomponent.ComponentID(from.GetName(), from.GetVersion()),
+		Id:        scancomponent.ComponentID(from.GetName(), from.GetVersion(), ""),
 		Name:      from.GetName(),
 		Version:   from.GetVersion(),
 		Source:    storage.SourceType_INFRASTRUCTURE,

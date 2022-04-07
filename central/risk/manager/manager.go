@@ -244,7 +244,7 @@ func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.Embedd
 	}
 
 	oldScore := e.componentRanker.GetScoreForID(
-		scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion()))
+		scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion(), ""))
 	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
 		log.Errorf("Error reprocessing risk for image component %s v%s: %v", imageComponent.GetName(), imageComponent.GetVersion(), err)
 	}

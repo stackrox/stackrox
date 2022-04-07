@@ -7,6 +7,7 @@ import (
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cve"
 	pkgCVSSV2 "github.com/stackrox/rox/pkg/cvss/cvssv2"
 	pkgCVSSV3 "github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -294,7 +295,7 @@ func protoToEmbeddedVulnType(protoCVEType storage.CVE_CVEType) storage.EmbeddedV
 func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *storage.CVE {
 	ret := &storage.CVE{
 		Type:               embeddedVulnTypeToProtoType(from.GetVulnerabilityType()),
-		Id:                 from.GetCve(),
+		Id:                 cve.ID(from.GetCve(), os),
 		Cvss:               from.GetCvss(),
 		Summary:            from.GetSummary(),
 		Link:               from.GetLink(),
@@ -305,6 +306,7 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 		Suppressed:         from.GetSuppressed(),
 		SuppressActivation: from.GetSuppressActivation(),
 		SuppressExpiry:     from.GetSuppressExpiry(),
+		OperatingSystem:    os,
 	}
 	if ret.CvssV3 != nil {
 		ret.ScoreVersion = storage.CVE_V3

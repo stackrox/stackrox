@@ -1,4 +1,4 @@
-package dackbox
+package common
 
 import (
 	"github.com/stackrox/rox/central/cve/converter"
@@ -8,7 +8,7 @@ import (
 
 // Merge merges the images parts into an image.
 func Merge(parts ImageParts) *storage.Image {
-	ret := parts.image.Clone()
+	ret := parts.Image.Clone()
 	mergeComponents(parts, ret)
 	return ret
 }
@@ -20,9 +20,9 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 	}
 
 	// Use the edges to combine into the parent image.
-	for _, cp := range parts.children {
+	for _, cp := range parts.Children {
 		// Parse the IDs of the edge.
-		imageComponentEdgeIDs, err := edges.FromString(cp.edge.GetId())
+		imageComponentEdgeIDs, err := edges.FromString(cp.Edge.GetId())
 		if err != nil {
 			log.Error(err)
 			continue
@@ -33,37 +33,37 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 		}
 
 		// Generate an embedded component for the edge and non-embedded version.
-		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponent(image.GetScan().GetOperatingSystem(), cp, parts.imageCVEEdges))
+		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponent(image.GetScan().GetOperatingSystem(), cp, parts.ImageCVEEdges))
 	}
 }
 
 func generateEmbeddedComponent(os string, cp ComponentParts, imageCVEEdges map[string]*storage.ImageCVEEdge) *storage.EmbeddedImageScanComponent {
-	if cp.component == nil || cp.edge == nil {
+	if cp.Component == nil || cp.Edge == nil {
 		return nil
 	}
 	ret := &storage.EmbeddedImageScanComponent{
-		Name:      cp.component.GetName(),
-		Version:   cp.component.GetVersion(),
-		License:   cp.component.GetLicense().Clone(),
-		Source:    cp.component.GetSource(),
-		Location:  cp.edge.GetLocation(),
-		FixedBy:   cp.component.GetFixedBy(),
-		RiskScore: cp.component.GetRiskScore(),
+		Name:      cp.Component.GetName(),
+		Version:   cp.Component.GetVersion(),
+		License:   cp.Component.GetLicense().Clone(),
+		Source:    cp.Component.GetSource(),
+		Location:  cp.Edge.GetLocation(),
+		FixedBy:   cp.Component.GetFixedBy(),
+		RiskScore: cp.Component.GetRiskScore(),
 	}
 
-	if cp.edge.HasLayerIndex != nil {
+	if cp.Edge.HasLayerIndex != nil {
 		ret.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{
-			LayerIndex: cp.edge.GetLayerIndex(),
+			LayerIndex: cp.Edge.GetLayerIndex(),
 		}
 	}
 
-	if cp.component.GetSetTopCvss() != nil {
-		ret.SetTopCvss = &storage.EmbeddedImageScanComponent_TopCvss{TopCvss: cp.component.GetTopCvss()}
+	if cp.Component.GetSetTopCvss() != nil {
+		ret.SetTopCvss = &storage.EmbeddedImageScanComponent_TopCvss{TopCvss: cp.Component.GetTopCvss()}
 	}
 
-	ret.Vulns = make([]*storage.EmbeddedVulnerability, 0, len(cp.children))
-	for _, cve := range cp.children {
-		cveEdge := imageCVEEdges[cve.cve.GetId()]
+	ret.Vulns = make([]*storage.EmbeddedVulnerability, 0, len(cp.Children))
+	for _, cve := range cp.Children {
+		cveEdge := imageCVEEdges[cve.Cve.GetId()]
 		// This is due to the scenario when the CVE was never found in the image, but instead
 		// the <component, version> tuple was found in another image that may have had these specific vulns.
 		// When getting the image, we should filter these vulns out for correctness. Note, this does not
@@ -71,7 +71,7 @@ func generateEmbeddedComponent(os string, cp ComponentParts, imageCVEEdges map[s
 		if cveEdge.GetFirstImageOccurrence() == nil {
 			continue
 		}
-		ret.Vulns = append(ret.Vulns, generateEmbeddedCVE(os, cve, imageCVEEdges[cve.cve.GetId()]))
+		ret.Vulns = append(ret.Vulns, generateEmbeddedCVE(os, cve, imageCVEEdges[cve.Cve.GetId()]))
 	}
 	return ret
 }
@@ -88,14 +88,14 @@ func cveScoreVersionToEmbeddedScoreVersion(v storage.CVE_ScoreVersion) storage.E
 }
 
 func generateEmbeddedCVE(os string, cp CVEParts, imageCVEEdge *storage.ImageCVEEdge) *storage.EmbeddedVulnerability {
-	if cp.cve == nil || cp.edge == nil {
+	if cp.Cve == nil || cp.Edge == nil {
 		return nil
 	}
 
-	ret := converter.ProtoCVEToEmbeddedCVE(cp.cve)
-	if cp.edge.IsFixable {
+	ret := converter.ProtoCVEToEmbeddedCVE(cp.Cve)
+	if cp.Edge.IsFixable {
 		ret.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
-			FixedBy: cp.edge.GetFixedBy(),
+			FixedBy: cp.Edge.GetFixedBy(),
 		}
 	}
 	ret.FirstImageOccurrence = imageCVEEdge.GetFirstImageOccurrence()
@@ -106,7 +106,7 @@ func generateEmbeddedCVE(os string, cp CVEParts, imageCVEEdge *storage.ImageCVEE
 		ret.State = state
 	}
 
-	if distroSpecifics, ok := cp.cve.GetDistroSpecifics()[os]; ok {
+	if distroSpecifics, ok := cp.Cve.GetDistroSpecifics()[os]; ok {
 		ret.Severity = distroSpecifics.GetSeverity()
 		ret.Cvss = distroSpecifics.GetCvss()
 		ret.CvssV2 = distroSpecifics.GetCvssV2()
