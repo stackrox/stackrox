@@ -14,7 +14,7 @@ import (
 
 const (
 	// ClusterVersionDefaultName is a default name for the auto created ClusterVersion k8s custom resource on OpenShift
-	ClusterVersionDefaultName = "version"
+	clusterVersionDefaultName = "version"
 )
 
 // AutoSenseLocalScannerSupport detects whether the local scanner should be enabled or not.
