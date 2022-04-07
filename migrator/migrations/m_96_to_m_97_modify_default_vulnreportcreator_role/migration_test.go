@@ -5,13 +5,9 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/stackrox/rox/central/role"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/rockshelper"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
@@ -44,50 +40,44 @@ func (suite *vulnReporterRoleUpdateTestSuite) TearDownTest() {
 }
 
 func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdateForVulnReporterRole() {
-	oldPermissions := []permissions.ResourceWithAccess{
-		permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations
-		permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations
-		permissions.View(resources.Role),                   // required for scopes
-		permissions.View(resources.Image),                  // required to gather CVE data for the report
-		permissions.View(resources.Notifier),               // required for vuln report configurations
-		permissions.Modify(resources.Notifier),             // required for vuln report configurations
+	oldPermissions := map[string]storage.Access{
+		"Image": storage.Access_READ_ACCESS,
+		"Notifier": storage.Access_READ_WRITE_ACCESS,
+		"Role": storage.Access_READ_ACCESS,
+		"VulnerabilityReports": storage.Access_READ_WRITE_ACCESS,
 	}
-
-	expectedNewPermissions := []permissions.ResourceWithAccess{
-		permissions.View(resources.VulnerabilityReports),   // required for vuln report configurations
-		permissions.Modify(resources.VulnerabilityReports), // required for vuln report configurations
-		permissions.View(resources.Role),                   // required for scopes
-		permissions.View(resources.Image),                  // required to gather CVE data for the report
-		permissions.View(resources.Notifier),               // required for vuln report configurations
+	expectedNewPermissions := map[string]storage.Access{
+		"Image": storage.Access_READ_ACCESS,
+		"Notifier": storage.Access_READ_ACCESS,
+		"Role": storage.Access_READ_ACCESS,
+		"VulnerabilityReports": storage.Access_READ_WRITE_ACCESS,
 	}
 
 	permissionSet := &storage.PermissionSet{
-		Id:          role.EnsureValidPermissionSetID("vulnreporter"),
-		Name:        role.VulnReporter,
-		Description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
-
-		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(oldPermissions...),
+		Id:               "vulnreporter",
+		Name:             vulnReporterRoleName,
+		Description:      "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
+		ResourceToAccess: oldPermissions,
 	}
 
 	vulnReporterRole := &storage.Role{
 		Name:            vulnReporterRoleName,
 		Description:     permissionSet.Description,
-		AccessScopeId:   role.AccessScopeIncludeAll.GetId(),
+		AccessScopeId:   "some-id",
 		PermissionSetId: permissionSet.Id,
 	}
 
 	randomPermissionSet := &storage.PermissionSet{
-		Id:          role.EnsureValidPermissionSetID("random-ps"),
-		Name:        vulnReporterRoleName,
-		Description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
-
-		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(oldPermissions...),
+		Id:               "random-id",
+		Name:             vulnReporterRoleName,
+		Description:      "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
+		ResourceToAccess: oldPermissions,
 	}
 
 	randomRole := &storage.Role{
 		Name:            "random-role",
-		Description:     permissionSet.Description,
-		AccessScopeId:   role.AccessScopeIncludeAll.GetId(),
+		Description:     randomPermissionSet.Description,
+		AccessScopeId:   "some-id",
 		PermissionSetId: randomPermissionSet.Id,
 	}
 
@@ -126,7 +116,7 @@ func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdateForVulnReporterRole
 	suite.True(exists)
 	newRolePermissions := msg.(*storage.PermissionSet)
 	suite.Assert().Equal(4, len(newRolePermissions.ResourceToAccess))
-	suite.Assert().True(reflect.DeepEqual(newRolePermissions.ResourceToAccess, permissionsUtils.FromResourcesWithAccess(expectedNewPermissions...)))
+	suite.Assert().True(reflect.DeepEqual(newRolePermissions.ResourceToAccess, expectedNewPermissions))
 
 	// random role
 	msg, exists, err = rockshelper.ReadFromRocksDB(suite.db, readOpts,
@@ -135,5 +125,5 @@ func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdateForVulnReporterRole
 	suite.True(exists)
 	newRolePermissions = msg.(*storage.PermissionSet)
 	suite.Assert().Equal(4, len(newRolePermissions.ResourceToAccess))
-	suite.Assert().True(reflect.DeepEqual(newRolePermissions.ResourceToAccess, permissionsUtils.FromResourcesWithAccess(oldPermissions...)))
+	suite.Assert().True(reflect.DeepEqual(newRolePermissions.ResourceToAccess, oldPermissions))
 }
