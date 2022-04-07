@@ -2,34 +2,13 @@
   "id": "38bf79e7-48bf-4ab1-b72f-38e8ad8b4ec3",
   "name": "Deployments should have at least one ingress Network Policy",
   "description": "Alerts if deployments are missing an ingress Network Policy",
-  "severity": "MEDIUM_SEVERITY",
   "disabled": true,
-  "lifecycleStages": [
-    "DEPLOY"
-  ],
-  "eventSource": "NOT_APPLICABLE",
-  "isDefault": true,
   "categories": [
     "Security Best Practices"
   ],
-  "criteriaLocked": true,
-  "mitreVectorsLocked": true,
-  "policySections": [
-    {
-      "sectionName": "Alert on missing ingres Network Policy",
-      "policyGroups": [
-        {
-          "fieldName": "Missing Ingress Network Policy",
-          "values": [
-            {
-              "value": "true"
-            }
-          ]
-        }
-      ]
-    }
+  "lifecycleStages": [
+    "DEPLOY"
   ],
-  "policyVersion": "1.1",
   "exclusions": [
     {
       "name": "Don't alert on kube-system namespace",
@@ -144,5 +123,25 @@
         }
       }
     }
-  ]
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "Alert on missing ingres Network Policy",
+      "policyGroups": [
+        {
+          "fieldName": "Missing Ingress Network Policy",
+          "values": [
+            {
+              "value": "true"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
 }
