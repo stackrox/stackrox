@@ -41,15 +41,15 @@ func (suite *vulnReporterRoleUpdateTestSuite) TearDownTest() {
 
 func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdateForVulnReporterRole() {
 	oldPermissions := map[string]storage.Access{
-		"Image": storage.Access_READ_ACCESS,
-		"Notifier": storage.Access_READ_WRITE_ACCESS,
-		"Role": storage.Access_READ_ACCESS,
+		"Image":                storage.Access_READ_ACCESS,
+		"Notifier":             storage.Access_READ_WRITE_ACCESS,
+		"Role":                 storage.Access_READ_ACCESS,
 		"VulnerabilityReports": storage.Access_READ_WRITE_ACCESS,
 	}
 	expectedNewPermissions := map[string]storage.Access{
-		"Image": storage.Access_READ_ACCESS,
-		"Notifier": storage.Access_READ_ACCESS,
-		"Role": storage.Access_READ_ACCESS,
+		"Image":                storage.Access_READ_ACCESS,
+		"Notifier":             storage.Access_READ_ACCESS,
+		"Role":                 storage.Access_READ_ACCESS,
 		"VulnerabilityReports": storage.Access_READ_WRITE_ACCESS,
 	}
 
