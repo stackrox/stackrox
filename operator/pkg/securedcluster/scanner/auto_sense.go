@@ -7,7 +7,7 @@ import (
 	osconfigv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	errorsK8s "k8s.io/apimachinery/pkg/api/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlLog "sigs.k8s.io/controller-runtime/pkg/log"
 )
