@@ -35,8 +35,7 @@ type TranslationTestSuite struct {
 
 var validClusterVersion = &osconfigv1.ClusterVersion{
 	ObjectMeta: metav1.ObjectMeta{
-		Namespace: "stackrox",
-		Name:      "version",
+		Name: "version",
 	},
 	Spec: osconfigv1.ClusterVersionSpec{
 		ClusterID: "test-cluster-id",
