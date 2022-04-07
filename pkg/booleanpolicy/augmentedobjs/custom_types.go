@@ -49,6 +49,7 @@ type impersonatedEventResult struct {
 type NetworkPoliciesApplied struct {
 	MissingIngressNetworkPolicy bool `policy:"Missing Ingress Network Policy"`
 	MissingEgressNetworkPolicy  bool `policy:"Missing Egress Network Policy"`
+	AppliedNetworkPolicies      map[string]*storage.NetworkPolicy
 }
 
 // NetworkFlowDetails captures information about a particular network flow.

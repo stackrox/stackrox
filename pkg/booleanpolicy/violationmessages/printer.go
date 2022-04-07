@@ -80,8 +80,9 @@ var (
 	// runtime policy fields
 	requiredProcessFields = set.NewFrozenStringSet(search.ProcessName.String(), search.ProcessAncestor.String(),
 		search.ProcessUID.String(), search.ProcessArguments.String(), augmentedobjs.NotInProcessBaselineCustomTag)
-	requiredKubeEventFields   = set.NewFrozenStringSet(augmentedobjs.KubernetesAPIVerbCustomTag, augmentedobjs.KubernetesResourceCustomTag)
-	requiredNetworkFlowFields = set.NewFrozenStringSet(augmentedobjs.NotInNetworkBaselineCustomTag)
+	requiredKubeEventFields     = set.NewFrozenStringSet(augmentedobjs.KubernetesAPIVerbCustomTag, augmentedobjs.KubernetesResourceCustomTag)
+	requiredNetworkFlowFields   = set.NewFrozenStringSet(augmentedobjs.NotInNetworkBaselineCustomTag)
+	requiredNetworkPolicyFields = set.NewFrozenStringSet(augmentedobjs.MissingEgressPolicyCustomTag, augmentedobjs.MissingIngressPolicyCustomTag)
 )
 
 func containsAllRequiredFields(fieldMap map[string][]string, required set.StringSet) bool {
@@ -143,6 +144,17 @@ func checkForNetworkFlowViolation(result *evaluator.Result) bool {
 	return false
 }
 
+func checkForNetworkPolicyViolation(result *evaluator.Result) bool {
+	for _, fieldMap := range result.Matches {
+		for k := range fieldMap {
+			if requiredNetworkPolicyFields.Contains(k) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Render creates violation messages based on evaluation results
 func Render(
 	section *storage.PolicySection,
@@ -150,7 +162,8 @@ func Render(
 	indicator *storage.ProcessIndicator,
 	kubeEvent *storage.KubernetesEvent,
 	networkFlow *augmentedobjs.NetworkFlowDetails,
-) ([]*storage.Alert_Violation, bool, bool, bool, error) {
+	networkPolicy *augmentedobjs.NetworkPoliciesApplied,
+) ([]*storage.Alert_Violation, bool, bool, bool, bool, error) {
 	errorList := errorhelpers.NewErrorList("violation printer")
 	messages := set.NewStringSet()
 	for _, fieldMap := range result.Matches {
@@ -171,6 +184,7 @@ func Render(
 	isProcessViolation := indicator != nil && checkForProcessViolation(result)
 	isKubeOrAuditEventViolation := kubeEvent != nil && checkForKubeEventViolation(result)
 	isNetworkFlowViolation := networkFlow != nil && checkForNetworkFlowViolation(result)
+	isNetworkPolicyViolation := networkPolicy != nil && checkForNetworkPolicyViolation(result)
 	if len(messages) == 0 && !isProcessViolation && !isKubeOrAuditEventViolation && !isNetworkFlowViolation {
 		errorList.AddError(errors.New("missing messages"))
 	}
@@ -183,5 +197,5 @@ func Render(
 	}) {
 		alertViolations = append(alertViolations, &storage.Alert_Violation{Message: message})
 	}
-	return alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, errorList.ToError()
+	return alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, isNetworkPolicyViolation, errorList.ToError()
 }
