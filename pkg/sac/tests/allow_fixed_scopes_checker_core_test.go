@@ -135,15 +135,6 @@ func TestAllowFixedScopes(t *testing.T) {
 	}
 }
 
-func resourceWithAccess(access storage.Access, resource permissions.Resource) permissions.ResourceWithAccess {
-	return permissions.ResourceWithAccess{
-		Access: access,
-		Resource: permissions.ResourceMetadata{
-			Resource: resource,
-		},
-	}
-}
-
 func TestAllowFixedScopesEffectiveAccessScope(t *testing.T) {
 	resA := permissions.Resource("resourceA")
 	resB := permissions.Resource("resourceB")
