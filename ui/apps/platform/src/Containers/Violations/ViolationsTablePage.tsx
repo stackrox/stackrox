@@ -34,7 +34,12 @@ function ViolationsTablePage(): ReactElement {
     // Handle changes to applied search options.
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
     const { searchFilter, setSearchFilter } = useURLSearch();
-    const [isViewFiltered, setIsViewFiltered] = useState(false);
+
+    const hasExecutableFilter =
+        Object.keys(searchFilter).length &&
+        Object.values(searchFilter).some((filter) => filter !== '');
+
+    const [isViewFiltered, setIsViewFiltered] = useState(hasExecutableFilter);
 
     // Handle changes in the current table page.
     const { page, perPage, setPage, setPerPage } = useURLPagination(50);
@@ -61,10 +66,6 @@ function ViolationsTablePage(): ReactElement {
         setActiveSortDirection,
         sortOption,
     } = useTableSort(columns, defaultSort);
-
-    const hasExecutableFilter =
-        Object.keys(searchFilter).length &&
-        Object.values(searchFilter).some((filter) => filter !== '');
 
     useEffectAfterFirstRender(() => {
         if (hasExecutableFilter && !isViewFiltered) {
