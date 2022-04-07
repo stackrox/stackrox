@@ -1,5 +1,6 @@
 import * as api from '../constants/apiEndpoints';
 import { selectors as networkGraphSelectors, url as networkUrl } from '../constants/NetworkPage';
+import { visitFromLeftNav } from './nav';
 import selectSelectors from '../selectors/select';
 
 const getNodeErrorMessage = (node) => `Could not find node "${node.name}" of type "${node.type}"`;
@@ -138,10 +139,20 @@ export function selectNamespaceFilters(...namespaces) {
 
 // visit helpers
 
-export function visitNetworkGraphWithNamespaceFilters(...namespaces) {
+export function visitNetworkGraphFromLeftNav() {
+    cy.intercept('GET', api.clusters.list).as('clusters');
+    visitFromLeftNav('Network');
+    cy.wait('@clusters');
+}
+
+export function visitNetworkGraph() {
     cy.intercept('GET', api.clusters.list).as('clusters');
     cy.visit(networkUrl);
     cy.wait('@clusters');
+}
+
+export function visitNetworkGraphWithNamespaceFilters(...namespaces) {
+    visitNetworkGraph();
 
     cy.intercept('GET', api.network.networkGraph).as('networkGraph');
     cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
@@ -150,7 +161,6 @@ export function visitNetworkGraphWithNamespaceFilters(...namespaces) {
 }
 
 export function visitNetworkGraphWithMockedData() {
-    cy.intercept('GET', api.clusters.list).as('clusters');
     cy.intercept('GET', api.network.networkGraph, { fixture: 'network/networkGraph.json' }).as(
         'networkGraph'
     );
@@ -158,8 +168,8 @@ export function visitNetworkGraphWithMockedData() {
         fixture: 'network/networkPolicies.json',
     }).as('networkPolicies');
 
-    cy.visit(networkUrl);
-    cy.wait('@clusters');
+    visitNetworkGraph();
     selectNamespaceFilters('stackrox');
+
     cy.wait(['@networkGraph', '@networkPolicies']);
 }
