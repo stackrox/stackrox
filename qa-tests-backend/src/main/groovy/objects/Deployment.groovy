@@ -64,7 +64,7 @@ class Deployment {
     }
 
     Deployment setImage(String i) {
-        if (i !~ /^[a-z]\./) {
+        if (!(i =~ /^[a-z]\./)) {
             println "WARNING: ${i} may be subject to rate limiting."
             println "Consider making a duplicate at quay.io/rhacs-eng/qa:{i}-<version>"
             // e.g.
