@@ -62,17 +62,16 @@ function ViolationsTablePage(): ReactElement {
         sortOption,
     } = useTableSort(columns, defaultSort);
 
-    // Update the isViewFiltered and the value of the selectedAlertId based on changes in search options.
     const hasExecutableFilter =
         Object.keys(searchFilter).length &&
         Object.values(searchFilter).some((filter) => filter !== '');
 
-    // Track the first render to prevent page resets when a user is visiting a URL with
-    // a page parameter set
     useEffectAfterFirstRender(() => {
+        // If the user applies a filter to a previously unfiltered table, return to page 1
         if (hasExecutableFilter && !isViewFiltered) {
             setIsViewFiltered(true);
             setPage(1);
+            // If the user clears all filters after having previously applied filters, return to page 1
         } else if (!hasExecutableFilter && isViewFiltered) {
             setIsViewFiltered(false);
             setPage(1);
@@ -80,7 +79,8 @@ function ViolationsTablePage(): ReactElement {
     }, [hasExecutableFilter, isViewFiltered, setIsViewFiltered, setPage]);
 
     useEffectAfterFirstRender(() => {
-        if (alertCount < perPage) {
+        // Prevent viewing a page beyond the maximum page count
+        if (page > Math.ceil(alertCount / perPage)) {
             setPage(1);
         }
     }, [alertCount, perPage, setPage]);
@@ -120,7 +120,6 @@ function ViolationsTablePage(): ReactElement {
         }).catch((error) => Raven.captureException(error));
     }, [
         searchFilter,
-        searchOptions,
         page,
         sortOption,
         pollEpoch,

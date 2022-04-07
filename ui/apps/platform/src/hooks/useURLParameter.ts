@@ -29,7 +29,7 @@ function useURLParameter<ParsedValueType extends QueryValue>(
     const history = useHistory();
     const location = useLocation();
     // We use an internal Ref here so that calling code that depends on the
-    // value of returned by this hook can detect updates. e.g. When used in the
+    // value returned by this hook can detect updates. e.g. When used in the
     // dependency array of a `useEffect`.
     const internalValue = useRef<ParsedValueType>(defaultValue);
     // memoize the setter function to retain referential equality as long
@@ -37,7 +37,6 @@ function useURLParameter<ParsedValueType extends QueryValue>(
     const setValue = useCallback(
         (newValue: ParsedValueType) => {
             const previousQuery = getQueryObject(location.search) || {};
-            // Merge the parameter managed by this hook with the rest of the URL parameters
             const newQueryString = getQueryString({
                 ...previousQuery,
                 [keyPrefix]: newValue,
