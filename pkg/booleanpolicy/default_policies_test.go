@@ -2188,72 +2188,54 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		}
 		allImages = ai.Freeze()
 	}
+	getViolationMessages := func(img *storage.Image) set.StringSet {
+		messages := set.NewStringSet()
+		for _, r := range img.GetSignatureVerificationData().GetResults() {
+			if r.GetVerifierId() != "" && r.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
+				messages.Add(fmt.Sprintf("Image signature is verified by %s", r.GetVerifierId()))
+			}
+		}
+		return messages
+	}
 
 	for i, testCase := range []struct {
 		values          []string
-		negate          bool
 		expectedMatches set.FrozenStringSet
 	}{
 		{
-			values:          []string{verifier0},
-			negate:          true,
-			expectedMatches: set.NewFrozenStringSet("verified_by_0"),
+			values:          []string{unverifier},
+			expectedMatches: allImages,
 		},
 		{
 			values:          []string{verifier0},
-			negate:          false,
 			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_0")),
 		},
 		{
 			values:          []string{verifier1},
-			negate:          true,
-			expectedMatches: set.NewFrozenStringSet(),
-		},
-		{
-			values:          []string{verifier1},
-			negate:          false,
 			expectedMatches: allImages,
 		},
 		{
 			values:          []string{verifier2},
-			negate:          true,
-			expectedMatches: set.NewFrozenStringSet("verified_by_2_and_3"),
-		},
-		{
-			values:          []string{verifier2},
-			negate:          false,
 			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_2_and_3")),
 		},
 		{
-			values:          []string{verifier0, verifier2},
-			negate:          true,
-			expectedMatches: set.NewFrozenStringSet("verified_by_0", "verified_by_2_and_3"),
-		},
-		{
-			values:          []string{verifier2, verifier3},
-			negate:          false,
+			values:          []string{verifier3},
 			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3")),
 		},
 		{
 			values:          []string{verifier0, verifier2},
-			negate:          false,
 			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_0", "verified_by_2_and_3")),
 		},
 		{
 			values:          []string{verifier2, verifier3},
-			negate:          false,
 			expectedMatches: allImages.Difference(set.NewFrozenStringSet("verified_by_3", "verified_by_2_and_3")),
-		},
-		{
-			values:          []string{unverifier},
-			negate:          false,
-			expectedMatches: allImages,
 		},
 	} {
 		c := testCase
 
 		suite.Run(fmt.Sprintf("ImageMatcher %d: %+v", i, c), func() {
-			imgMatcher, err := BuildImageMatcher(policyWithSingleFieldAndValues(fieldnames.ImageSignatureVerifiedBy, c.values, c.negate, storage.BooleanOperator_OR))
+			imgMatcher, err := BuildImageMatcher(policyWithSingleFieldAndValues(fieldnames.ImageSignatureVerifiedBy,
+				c.values, false, storage.BooleanOperator_OR))
 			suite.NoError(err)
 			matchedImages := set.NewStringSet()
 			for _, img := range images {
@@ -2263,14 +2245,10 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 					continue
 				}
 				matchedImages.Add(img.GetName().GetFullName())
-				suite.Truef(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image %q should not match", img.GetName().GetFullName())
+				suite.Truef(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image %q should not match",
+					img.GetName().GetFullName())
 
-				messages := set.NewStringSet()
-				for _, r := range img.GetSignatureVerificationData().GetResults() {
-					if r.GetVerifierId() != "" && r.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-						messages.Add(fmt.Sprintf("Image signature is verified by %s", r.GetVerifierId()))
-					}
-				}
+				messages := getViolationMessages(img)
 				for _, violation := range violations.AlertViolations {
 					if messages.Cardinality() > 0 {
 						suite.Truef(messages.Contains(violation.GetMessage()), "Message not found %q", violation.GetMessage())
