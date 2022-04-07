@@ -58,6 +58,15 @@ func Validate(p *storage.Policy, options ...ValidateOption) error {
 	for _, section := range p.GetPolicySections() {
 		errorList.AddError(validatePolicySection(section, configuration, p.GetEventSource()))
 	}
+
+	for _, ps := range p.PolicySections {
+		for _, pg := range ps.PolicyGroups {
+			if pg.FieldName == fieldnames.ImageSignatureVerifiedBy && pg.BooleanOperator == storage.BooleanOperator_AND {
+				errorList.AddStringf("operator AND is not allowed for field %q", fieldnames.ImageSignatureVerifiedBy)
+			}
+		}
+	}
+
 	return errorList.ToError()
 }
 

@@ -2198,6 +2198,13 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		return messages
 	}
 
+	suite.Run("Test disallowed AND operator", func() {
+		_, err := BuildImageMatcher(policyWithSingleFieldAndValues(fieldnames.ImageSignatureVerifiedBy,
+			[]string{verifier0}, false, storage.BooleanOperator_AND))
+		suite.EqualError(err,
+			"policy validation error: operator AND is not allowed for field \"Image Signature Verified By\"")
+	})
+
 	for i, testCase := range []struct {
 		values          []string
 		expectedMatches set.FrozenStringSet
