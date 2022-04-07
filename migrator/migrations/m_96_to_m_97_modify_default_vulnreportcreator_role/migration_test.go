@@ -70,7 +70,7 @@ func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdateForVulnReporterRole
 	}
 
 	vulnReporterRole := &storage.Role{
-		Name:            "Vulnerability Report Creator",
+		Name:            vulnReporterRoleName,
 		Description:     permissionSet.Description,
 		AccessScopeId:   rolePkg.AccessScopeIncludeAll.GetId(),
 		PermissionSetId: permissionSet.Id,
@@ -78,7 +78,7 @@ func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdateForVulnReporterRole
 
 	randomPermissionSet := &storage.PermissionSet{
 		Id:          rolePkg.EnsureValidPermissionSetID("random-ps"),
-		Name:        "Vulnerability Report Creator",
+		Name:        vulnReporterRoleName,
 		Description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 
 		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(oldPermissions...),

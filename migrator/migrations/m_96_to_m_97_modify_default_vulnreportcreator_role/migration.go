@@ -13,7 +13,8 @@ import (
 )
 
 var (
-	notifierResource = "Notifier"
+	notifierResource     = "Notifier"
+	vulnReporterRoleName = "Vulnerability Report Creator"
 
 	migration = types.Migration{
 		StartingSeqNum: 96,
@@ -41,7 +42,7 @@ func getPermissionSet(db *gorocksdb.DB) (*storage.PermissionSet, error) {
 			return nil, errors.Wrapf(err, "Failed to unmarshal role data for key %v", it.Key().Data())
 		}
 
-		if r.Name == "Vulnerability Report Creator" {
+		if r.Name == vulnReporterRoleName {
 			pit := db.NewIterator(gorocksdb.NewDefaultReadOptions())
 			for pit.Seek(permissionsBucket); pit.ValidForPrefix(permissionsBucket); pit.Next() {
 				p := &storage.PermissionSet{}
