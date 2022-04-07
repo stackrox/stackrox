@@ -23,7 +23,7 @@ func missingEgressNetworkPolicyPrinter(fieldMap map[string][]string) ([]string, 
 	return executeTemplate(missingEgressNetworkPolicy, nil)
 }
 
-//EnhanceNetworkPolicyViolations enriches each violation object with Alert_Violation_KeyValueAttrs containing policy-id and policy-name
+// EnhanceNetworkPolicyViolations enriches each violation object with Alert_Violation_KeyValueAttrs containing policy-id and policy-name
 func EnhanceNetworkPolicyViolations(violations []*storage.Alert_Violation, np *augmentedobjs.NetworkPoliciesApplied) []*storage.Alert_Violation {
 	kvAttrs := make([]*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, 0, len(np.AppliedNetworkPolicies))
 	for id, p := range np.AppliedNetworkPolicies {
