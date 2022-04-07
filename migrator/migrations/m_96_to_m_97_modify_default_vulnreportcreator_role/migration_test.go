@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/rockshelper"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
-	rolePkg "github.com/stackrox/rox/pkg/auth/role"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
@@ -62,8 +62,8 @@ func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdateForVulnReporterRole
 	}
 
 	permissionSet := &storage.PermissionSet{
-		Id:          rolePkg.EnsureValidPermissionSetID("vulnreporter"),
-		Name:        rolePkg.VulnReporter,
+		Id:          role.EnsureValidPermissionSetID("vulnreporter"),
+		Name:        role.VulnReporter,
 		Description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 
 		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(oldPermissions...),
@@ -72,12 +72,12 @@ func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdateForVulnReporterRole
 	vulnReporterRole := &storage.Role{
 		Name:            vulnReporterRoleName,
 		Description:     permissionSet.Description,
-		AccessScopeId:   rolePkg.AccessScopeIncludeAll.GetId(),
+		AccessScopeId:   role.AccessScopeIncludeAll.GetId(),
 		PermissionSetId: permissionSet.Id,
 	}
 
 	randomPermissionSet := &storage.PermissionSet{
-		Id:          rolePkg.EnsureValidPermissionSetID("random-ps"),
+		Id:          role.EnsureValidPermissionSetID("random-ps"),
 		Name:        vulnReporterRoleName,
 		Description: "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
 
@@ -87,7 +87,7 @@ func (suite *vulnReporterRoleUpdateTestSuite) TestRolesUpdateForVulnReporterRole
 	randomRole := &storage.Role{
 		Name:            "random-role",
 		Description:     permissionSet.Description,
-		AccessScopeId:   rolePkg.AccessScopeIncludeAll.GetId(),
+		AccessScopeId:   role.AccessScopeIncludeAll.GetId(),
 		PermissionSetId: randomPermissionSet.Id,
 	}
 
