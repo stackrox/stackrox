@@ -735,18 +735,18 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     },
     {
         label: 'Allow privilege escalation',
-        name: 'Allow Privilege Escalation',
-        shortName: 'Allow Privilege Escalation',
-        longName: 'Privilege Escalation allowed on Container',
+        name: 'Allow privilege escalation',
+        shortName: 'Allow privilege escalation',
+        longName: 'Privilege escalation allowed on container',
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
         type: 'radioGroup',
         radioButtons: [
             {
-                text: 'Allowed',
+                text: 'Privilege escalation allowed',
                 value: true,
             },
             {
-                text: 'Not Allowed',
+                text: 'Privilege escalation not allowed',
                 value: false,
             },
         ],
