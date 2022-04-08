@@ -155,7 +155,7 @@ func (suite *ImageStoreTestSuite) TestImages() {
 		listGot, exists, err := suite.store.GetImageMetadata(allAccessCtx, d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
-		suite.Equal(d.GetName().GetFullName(), listGot.GetName())
+		suite.Equal(d.GetName().GetFullName(), listGot.GetName().GetFullName())
 	}
 
 	// Check that the CVEs were written with the correct timestamp.
@@ -192,7 +192,7 @@ func (suite *ImageStoreTestSuite) TestImages() {
 		listGot, exists, err := suite.store.GetImageMetadata(allAccessCtx, d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
-		suite.Equal(d.GetName().GetFullName(), listGot.GetName())
+		suite.Equal(d.GetName().GetFullName(), listGot.GetName().GetFullName())
 	}
 
 	// Test Count
