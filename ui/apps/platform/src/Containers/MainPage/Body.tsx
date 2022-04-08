@@ -1,8 +1,10 @@
 import React, { ReactElement } from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
+import { PageSection } from '@patternfly/react-core';
 
 import {
     mainPath,
+    notFoundPath,
     dashboardPath,
     networkPath,
     violationsPath,
@@ -26,10 +28,21 @@ import {
 import { useTheme } from 'Containers/ThemeProvider';
 
 import asyncComponent from 'Components/AsyncComponent';
+import PageNotFound from 'Components/PageNotFound';
+import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { knownBackendFlags } from 'utils/featureFlags';
+
+function NotFoundPage(): ReactElement {
+    return (
+        <PageSection variant="light">
+            <PageTitle title="Not Found" />
+            <PageNotFound />
+        </PageSection>
+    );
+}
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
@@ -89,6 +102,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
         >
             <ErrorBoundary>
                 <Switch>
+                    <Route path={notFoundPath} component={NotFoundPage} />
                     <Route path={dashboardPath} component={AsyncDashboardPage} />
                     <Route path={networkPath} component={AsyncNetworkPage} />
                     <Route path={violationsPath} component={AsyncViolationsPage} />
@@ -117,7 +131,8 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     {isSystemHealthPatternFlyEnabled && (
                         <Route path={systemHealthPathPF} component={AsyncSystemHealthPagePF} />
                     )}
-                    <Redirect from={mainPath} to={dashboardPath} />
+                    <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
+                    <Route path={mainPath} render={() => <Redirect to={notFoundPath} />} />
                 </Switch>
             </ErrorBoundary>
         </div>
