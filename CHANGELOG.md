@@ -18,6 +18,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - A new default policy added to detect Spring Cloud Function RCE vulnerability (CVE-2022-22963) and Spring Framework Spring4Shell RCE vulnerability (CVE-2022-22965).
 - Fixed permissions checks in the UI that prevented users with certain limited permissions from creating report configurations.
 - ROX-9946: Fixed default permissions for the default Vuln Reporter role to exclude the modify permission on notifiers, since it is not needed for report creation.
+- Added AllowPrivilegeEscalation as a new policy criteria.
 - RHCOS node support is dropped until major improvements are made.
   - Windows nodes and Google COS nodes were already not supported for linux kernel vulnerabilities, but now they are completely unsupported.
 

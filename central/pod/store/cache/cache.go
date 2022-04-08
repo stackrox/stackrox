@@ -13,7 +13,7 @@ import (
 
 const (
 	maxCachedPodSize = 5 * size.KB // if it's larger than 5KB, then we aren't going to cache it
-	maxCacheSize     = 20 * size.MB
+	maxCacheSize     = 200 * size.MB
 )
 
 var (

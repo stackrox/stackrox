@@ -95,14 +95,15 @@ var (
 
 	// Deployment related fields
 	AddCapabilities              = newFieldLabel("Add Capabilities")
+	AllowPrivilegeEscalation     = newFieldLabel("Allow Privilege Escalation")
 	AppArmorProfile              = newFieldLabel("AppArmor Profile")
 	AutomountServiceAccountToken = newFieldLabel("Automount Service Account Token")
 	Annotation                   = newFieldLabel("Annotation")
 	CPUCoresLimit                = newFieldLabel("CPU Cores Limit")
 	CPUCoresRequest              = newFieldLabel("CPU Cores Request")
 	ContainerID                  = newFieldLabel("Container ID")
-	ContainerName                = newFieldLabel("Container Name")
 	ContainerImageDigest         = newFieldLabel("Container Image Digest")
+	ContainerName                = newFieldLabel("Container Name")
 	DeploymentID                 = newFieldLabel("Deployment ID")
 	DeploymentName               = newFieldLabel("Deployment")
 	DeploymentType               = newFieldLabel("Deployment Type")
