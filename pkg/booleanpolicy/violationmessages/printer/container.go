@@ -228,3 +228,25 @@ func appArmorProfilePrinter(fieldMap map[string][]string) ([]string, error) {
 	}
 	return executeTemplate(appArmorProfileTemplate, r)
 }
+
+const (
+	allowPrivilegeEscalationTemplate = `Container{{if .ContainerName}} '{{.ContainerName}}'{{end}} 
+	{{- if .AllowPrivilegeEscalation}} allows{{else}} does not allow{{end}} privilege escalation`
+)
+
+func allowPrivilegeEscalationPrinter(fieldMap map[string][]string) ([]string, error) {
+	type resultFields struct {
+		ContainerName            string
+		AllowPrivilegeEscalation bool
+	}
+	r := resultFields{}
+	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
+	allowPrivilegeEscalation, err := getSingleValueFromFieldMap(search.AllowPrivilegeEscalation.String(), fieldMap)
+	if err != nil {
+		return nil, err
+	}
+	if r.AllowPrivilegeEscalation, err = strconv.ParseBool(allowPrivilegeEscalation); err != nil {
+		return nil, err
+	}
+	return executeTemplate(allowPrivilegeEscalationTemplate, r)
+}
