@@ -95,13 +95,13 @@ export function fetchSummaryAlertCounts(
  * Fetch a page of list alert objects.
  */
 export function fetchAlerts(
-    searchOptions: SearchFilter,
+    searchFilter: SearchFilter,
     sortOption: RestSortOption,
     page: number,
     pageSize: number
 ): Promise<ListAlert[]> {
     const offset = page > 0 ? page * pageSize : 0;
-    const query = getRequestQueryStringForSearchFilter(searchOptions);
+    const query = getRequestQueryStringForSearchFilter(searchFilter);
     const params = queryString.stringify(
         {
             query,
@@ -121,9 +121,9 @@ export function fetchAlerts(
 /*
  * Fetch count of alerts.
  */
-export function fetchAlertCount(options: SearchFilter): Promise<number> {
+export function fetchAlertCount(searchFilter: SearchFilter): Promise<number> {
     const params = queryString.stringify(
-        { query: getRequestQueryStringForSearchFilter(options) },
+        { query: getRequestQueryStringForSearchFilter(searchFilter) },
         { arrayFormat: 'repeat' }
     );
     return axios
