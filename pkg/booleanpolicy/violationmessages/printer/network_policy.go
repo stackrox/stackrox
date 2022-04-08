@@ -34,8 +34,8 @@ func EnhanceNetworkPolicyViolations(violations []*storage.Alert_Violation, np *a
 		kvAttrs = append(kvAttrs, attrs...)
 	}
 	for _, violation := range violations {
+		violation.Time = types.TimestampNow()
 		if len(kvAttrs) > 0 {
-			violation.Time = types.TimestampNow()
 			violation.MessageAttributes = &storage.Alert_Violation_KeyValueAttrs_{
 				KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
 					Attrs: kvAttrs,
