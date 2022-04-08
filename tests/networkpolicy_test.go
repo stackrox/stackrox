@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -79,20 +80,12 @@ func deletePolicy(t *testing.T, client v1.PolicyServiceClient, id string) {
 	assert.NoError(t, err)
 }
 
-func applyDeployment(t *testing.T) func() {
-	// Create deployment that doesn't have any network policies
-	setupDeploymentFromFile(t, netpolDeploymentName, "yamls/nginx.yaml")
-	return func() {
-		teardownDeploymentFromFile(t, netpolDeploymentName, "yamls/nginx.yaml")
-	}
-}
-
-func getAlertsForPolicy(t *testing.T, client v1.AlertServiceClient) []*storage.ListAlert {
+func getAlertsForPolicy(t testutils.T, client v1.AlertServiceClient, policyName string) []*storage.ListAlert {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	var alerts []*storage.ListAlert
 	resp, err := client.ListAlerts(ctx, &v1.ListAlertsRequest{
-		Query: "Policy:Automated Missing Ingress Policy+Namespace:default",
+		Query: fmt.Sprintf("Policy:%s+Namespace:default", policyName),
 	})
 
 	if err != nil {
@@ -102,14 +95,6 @@ func getAlertsForPolicy(t *testing.T, client v1.AlertServiceClient) []*storage.L
 
 	alerts = resp.GetAlerts()
 	return alerts
-}
-
-func applyNetworkPolicy(t *testing.T) func() {
-	// Create deployment that doesn't have any network policies
-	applyFile(t, "yamls/allow-ingress-netpol.yaml")
-	return func() {
-		teardownFile(t, "yamls/allow-ingress-netpol.yaml")
-	}
 }
 
 func CheckIfCentralHasFeatureFlag(t *testing.T, conn *grpc.ClientConn) bool {
@@ -141,17 +126,25 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 		"Should have ingress": {
 			policyName:        "[Automated] Should have ingress policy",
 			policyField:       "Missing Ingress Network Policy",
-			networkPolicyFile: "allow-ingress-netpol.yaml",
+			networkPolicyFile: "yamls/allow-ingress-netpol.yaml",
 		},
 		"Should have egress": {
 			policyName:        "[Automated] Should have egress policy",
 			policyField:       "Missing Egress Network Policy",
-			networkPolicyFile: "allow-egress-netpol.yaml",
+			networkPolicyFile: "yamls/allow-egress-netpol.yaml",
 		},
 	}
 
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
+
+			// This is to avoid flakyness in the tests.
+			// I've observed that the `apply*` functions could fail during the waiting part and the
+			// defer function is never registered. In case the code panics and litters the cluster
+			// with stale test data, it's easier to simply delete them before running the test.
+			teardownDeployment(t, netpolDeploymentName)
+			teardownFile(t, testCase.networkPolicyFile)
+
 			policyService := v1.NewPolicyServiceClient(conn)
 			alertService := v1.NewAlertServiceClient(conn)
 
@@ -161,23 +154,27 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 			assert.NoError(t, err)
 
 			// Deployment creation
-			deleteDeploymentF := applyDeployment(t)
-			defer deleteDeploymentF()
+			setupDeploymentFromFile(t, netpolDeploymentName, "yamls/nginx.yaml")
+			defer teardownDeploymentFromFile(t, netpolDeploymentName, "yamls/nginx.yaml")
 
-			// Assert alerts
-			alerts := getAlertsForPolicy(t, alertService)
-			assert.Len(t, alerts, 1)
+			testutils.Retry(t, 3, 3 * time.Second, func(retryT testutils.T) {
+				// Assert alerts
+				alerts := getAlertsForPolicy(retryT, alertService, testCase.policyName)
+				assert.Len(retryT, alerts, 1)
+			})
 
 			// NetworkPolicy creation
-			deleteNetworkPolicyF := applyNetworkPolicy(t)
-			defer deleteNetworkPolicyF()
+			applyFile(t, testCase.networkPolicyFile)
+			defer teardownFile(t, testCase.networkPolicyFile)
 
 			// TODO(ROX-9824): This can be removed once policies are evaluated on NetworkPolicy updates.
 			scaleDeployment(t, netpolDeploymentName, "4")
 
-			// Assert alerts
-			alerts = getAlertsForPolicy(t, alertService)
-			assert.Len(t, alerts, 0)
+			testutils.Retry(t, 3, 3 * time.Second, func(retryT testutils.T) {
+				// Assert alerts
+				alerts := getAlertsForPolicy(retryT, alertService, testCase.policyName)
+				assert.Len(retryT, alerts, 0)
+			})
 		})
 	}
 

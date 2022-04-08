@@ -165,7 +165,7 @@ func setupDeploymentFromFile(t testutils.T, deploymentName, path string) {
 }
 
 func scaleDeployment(t testutils.T, deploymentName, replicas string) {
-	cmd := exec.Command(`kubectl`, `scale`, `deploy/nginx-deployment`, `--replicas`, replicas)
+	cmd := exec.Command(`kubectl`, `scale`, `deployment`, deploymentName, `--replicas`, replicas)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 
