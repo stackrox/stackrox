@@ -124,16 +124,6 @@ export function filterBySourceTarget(sourceNode, targetNode) {
     };
 }
 
-// network flows
-
-export function clickConfirmationButton() {
-    cy.intercept('GET', api.network.networkGraph).as('networkGraph');
-    cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPoliciesGraph');
-    cy.intercept('POST', api.network.networkBaselineStatus).as('networkBaselineStatus');
-    cy.get(networkGraphSelectors.buttons.confirmationButton).click();
-    cy.wait(['@networkGraph', '@networkPoliciesGraph', '@networkBaselineStatus']);
-}
-
 // search filters
 
 export function selectDeploymentFilter(deploymentName) {

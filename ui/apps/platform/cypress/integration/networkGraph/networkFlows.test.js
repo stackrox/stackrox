@@ -3,7 +3,6 @@ import selectors from '../../selectors';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import {
-    clickConfirmationButton,
     clickOnDeploymentNodeByName,
     visitNetworkGraphWithNamespaceFilters,
 } from '../../helpers/networkGraph';
@@ -13,6 +12,14 @@ const tableStatusHeaders = 'table tr[data-testid="subhead-row"]';
 const sensorTableRow = `${tableDataRows}:contains("sensor")`;
 const markAsAnomalousButton = `${sensorTableRow} button:contains("Mark as anomalous")`;
 const baselineSettingsTab = `${selectors.tab.tabs}:contains('Baseline Settings')`;
+
+function clickFlowsConfirmationButton() {
+    cy.intercept('GET', api.network.networkGraph).as('networkGraph');
+    cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPoliciesGraph');
+    cy.intercept('POST', api.network.networkBaselineStatus).as('networkBaselineStatus');
+    cy.get(networkPageSelectors.buttons.confirmationButton).click();
+    cy.wait(['@networkGraph', '@networkPoliciesGraph', '@networkBaselineStatus']);
+}
 
 describe('Network Baseline Flows', () => {
     withAuth();
@@ -91,12 +98,12 @@ describe('Network Baseline Flows', () => {
 
                 // marking all baseline flows as anomalous should show up as anomalous
                 cy.get(markAllAsAnomalousButton).click();
-                clickConfirmationButton();
+                clickFlowsConfirmationButton();
                 cy.get(noBaselineFlows);
 
                 // marking all anomalous flows as baseline should show up as baseline
                 cy.get(addAllToBaselineButton).click();
-                clickConfirmationButton();
+                clickFlowsConfirmationButton();
                 cy.get(noAnomalousFlows);
             });
         });
@@ -125,13 +132,13 @@ describe('Network Baseline Flows', () => {
                         // marking selected baseline flows as anomalous should show up as anomalous
                         cy.get(sensorTableRowCheckbox).check();
                         cy.get(markSelectedAsAnomalousButton).click();
-                        clickConfirmationButton();
+                        clickFlowsConfirmationButton();
                         cy.get(postAnomalousFlowsText);
 
                         // marking selected anomalous flows as baseline should show up as baseline
                         cy.get(sensorTableRowCheckbox).check();
                         cy.get(addSelectedToBaselineButton).click();
-                        clickConfirmationButton();
+                        clickFlowsConfirmationButton();
                         cy.get(prevAnomalousFlowsText);
                     });
             });
