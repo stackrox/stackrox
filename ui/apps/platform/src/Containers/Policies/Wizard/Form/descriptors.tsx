@@ -230,10 +230,10 @@ export type TextDescriptor = {
 
 // TODO: merge with policyConfigurationDescriptor after ROX_VERIFY_IMAGE_SIGNATURE enabled by default
 export const imageSigningCriteriaDescriptor: SignatureDescriptor = {
-    label: 'Trusted image signers',
+    label: 'Not verified by trusted image signers',
     name: imageSigningCriteriaName,
-    shortName: 'Trusted image signers',
-    longName: 'Trusted image signers',
+    shortName: 'Not verified by trusted image signers',
+    longName: 'Not verified by trusted image signers',
     category: policyCriteriaCategories.IMAGE_REGISTRY,
     type: 'signaturePolicyCriteria',
     canBooleanLogic: true,
