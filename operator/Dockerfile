@@ -1,7 +1,8 @@
 # We have to emulate directory layout as in the repo so that imports in go files work fine.
 ARG roxpath=/workspace/src/github.com/stackrox/rox
+ARG GO_VERSION=latest
 
-FROM golang:1.17 as builder
+FROM golang:${GO_VERSION} as builder
 
 # Build the manager binary
 ARG roxpath
