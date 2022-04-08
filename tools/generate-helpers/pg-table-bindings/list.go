@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var typeRegistry = make(map[string]string)
@@ -49,10 +51,32 @@ func storageToResource(t string) string {
 
 func isGloballyScoped(storageType string) bool {
 	resource := storageToResource(storageType)
-	for _, resourceMetadata := range resources.ListAllMetadata() {
-		if string(resourceMetadata.Resource) == resource {
-			return resourceMetadata.Scope == permissions.GlobalScope
+	metadata := resourceMetadataFromString(resource)
+	return metadata.GetScope() == permissions.GlobalScope
+}
+
+func isDirectlyScoped(schema *walker.Schema) bool {
+	resource := storageToResource(schema.Type)
+	scope := resourceMetadataFromString(resource).Scope
+	clusterIDExist := false
+	namespaceExist := false
+	for _, f := range schema.Fields {
+		if strings.Contains(f.Search.FieldName, "Cluster ID") {
+			clusterIDExist = true
+		}
+		if strings.Contains(f.Search.FieldName, "Namespace") {
+			namespaceExist = true
 		}
 	}
-	return false
+	return clusterIDExist && (scope == permissions.ClusterScope || (scope == permissions.NamespaceScope && namespaceExist))
+}
+
+func resourceMetadataFromString(resource string) permissions.ResourceMetadata {
+	for _, resourceMetadata := range resources.ListAllMetadata() {
+		if string(resourceMetadata.Resource) == resource {
+			return resourceMetadata
+		}
+	}
+	log.Println("warn: unknown resource: " + resource)
+	return permissions.ResourceMetadata{}
 }
