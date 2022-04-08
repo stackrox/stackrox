@@ -6629,38 +6629,6 @@
             ]
           },
           {
-            "name": "ImageCVEEdge",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "first_image_occurrence",
-                "type": "google.protobuf.Timestamp",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"First Image Occurrence Timestamp,hidden\\\""
-                  }
-                ]
-              },
-              {
-                "id": 3,
-                "name": "state",
-                "type": "VulnerabilityState",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Vulnerability State\\\""
-                  }
-                ]
-              }
-            ]
-          },
-          {
             "name": "WatchedImage",
             "fields": [
               {
@@ -6721,7 +6689,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Component,store\"sql:\"pk\""
+                    "value": "search:\"Component,store\""
                   }
                 ]
               },
@@ -6732,7 +6700,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Component Version,store\"sql:\"pk\""
+                    "value": "search:\"Component Version,store\""
                   }
                 ]
               },
@@ -6787,13 +6755,7 @@
               {
                 "id": 10,
                 "name": "operating_system",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
-                  }
-                ]
+                "type": "string"
               }
             ]
           }
@@ -11949,6 +11911,60 @@
               {
                 "id": 5,
                 "name": "cve_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,fk(CVE:id)\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ImageCVEEdge",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "first_image_occurrence",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"First Image Occurrence Timestamp,hidden\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "state",
+                "type": "VulnerabilityState",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Vulnerability State\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "image_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,fk(Image:id)\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "image_cve_id",
                 "type": "string",
                 "options": [
                   {

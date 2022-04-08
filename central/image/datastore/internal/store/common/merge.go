@@ -60,6 +60,7 @@ func generateEmbeddedComponent(os string, cp ComponentParts, imageCVEEdges map[s
 		Location:  cp.Edge.GetLocation(),
 		FixedBy:   cp.Component.GetFixedBy(),
 		RiskScore: cp.Component.GetRiskScore(),
+		Priority:  cp.Component.GetPriority(),
 	}
 
 	if cp.Edge.HasLayerIndex != nil {
@@ -79,7 +80,7 @@ func generateEmbeddedComponent(os string, cp ComponentParts, imageCVEEdges map[s
 		// the <component, version> tuple was found in another image that may have had these specific vulns.
 		// When getting the image, we should filter these vulns out for correctness. Note, this does not
 		// fix what will happen in the UI
-		if cveEdge.GetFirstImageOccurrence() == nil {
+		if cveEdge == nil {
 			continue
 		}
 		ret.Vulns = append(ret.Vulns, generateEmbeddedCVE(os, cve, imageCVEEdges[cve.Cve.GetId()]))

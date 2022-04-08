@@ -86,6 +86,7 @@ func generateImageComponent(os string, from *storage.EmbeddedImageScanComponent)
 		Source:          from.GetSource(),
 		FixedBy:         from.GetFixedBy(),
 		RiskScore:       from.GetRiskScore(),
+		Priority:        from.GetPriority(),
 		OperatingSystem: os,
 	}
 
@@ -113,8 +114,10 @@ func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.
 
 func generateImageCVEEdge(imageID string, convertedCVE *storage.CVE, embedded *storage.EmbeddedVulnerability) *storage.ImageCVEEdge {
 	ret := &storage.ImageCVEEdge{
-		Id:    edges.EdgeID{ParentID: imageID, ChildID: convertedCVE.GetId()}.ToString(),
-		State: embedded.GetState(),
+		Id:         edges.EdgeID{ParentID: imageID, ChildID: convertedCVE.GetId()}.ToString(),
+		State:      embedded.GetState(),
+		ImageId:    imageID,
+		ImageCveId: convertedCVE.GetId(),
 	}
 	if ret.GetState() != storage.VulnerabilityState_OBSERVED {
 		return ret

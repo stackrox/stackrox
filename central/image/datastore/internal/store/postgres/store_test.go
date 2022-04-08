@@ -4,14 +4,12 @@ package postgres
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -51,9 +49,9 @@ func (s *ImagesStoreSuite) TestStore() {
 	defer pool.Close()
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+	store := New(ctx, pool, false)
 
-	image := &storage.Image{}
+	image := fixtures.GetImage()
 	s.NoError(testutils.FullInit(image, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	foundImage, exists, err := store.Get(ctx, image.GetId())
@@ -65,8 +63,21 @@ func (s *ImagesStoreSuite) TestStore() {
 	foundImage, exists, err = store.Get(ctx, image.GetId())
 	s.NoError(err)
 	s.True(exists)
-	fmt.Println(protoutils.NewWrapper(foundImage))
-	s.Equal(image, foundImage)
+	cloned := image.Clone()
+	// Reconcile the timestamps that are set during upsert.
+	for _, component := range foundImage.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			vuln.FirstNodeOccurrence = foundImage.GetLastUpdated()
+		}
+	}
+	for _, component := range cloned.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			vuln.FirstSystemOccurrence = foundImage.GetLastUpdated()
+			vuln.FirstImageOccurrence = foundImage.GetLastUpdated()
+			vuln.FirstNodeOccurrence = foundImage.GetLastUpdated()
+		}
+	}
+	s.Equal(cloned, foundImage)
 
 	imageCount, err := store.Count(ctx)
 	s.NoError(err)
@@ -80,7 +91,20 @@ func (s *ImagesStoreSuite) TestStore() {
 	foundImage, exists, err = store.Get(ctx, image.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(image, foundImage)
+
+	// Reconcile the timestamps that are set during upsert.
+	cloned.LastUpdated = foundImage.LastUpdated
+	for _, component := range foundImage.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			vuln.FirstNodeOccurrence = foundImage.GetLastUpdated()
+		}
+	}
+	for _, component := range cloned.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			vuln.FirstNodeOccurrence = foundImage.GetLastUpdated()
+		}
+	}
+	s.Equal(cloned, foundImage)
 
 	s.NoError(store.Delete(ctx, image.GetId()))
 	foundImage, exists, err = store.Get(ctx, image.GetId())
