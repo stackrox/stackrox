@@ -149,8 +149,8 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 	}
 
 	cases := map[string]struct {
-		netpol              *networkingV1.NetworkPolicy
-		oldNetpol           *networkingV1.NetworkPolicy
+		netpol              interface{}
+		oldNetpol           interface{}
 		action              central.ResourceAction
 		expectedEvents      map[string]*central.SensorEvent
 		expectedDeployments []*deploymentWrap
@@ -390,7 +390,7 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 	}
 	for name, c := range cases {
 		suite.T().Run(name, func(t *testing.T) {
-			c.expectedEvents = createSensorEvent(c.netpol, c.action)
+			c.expectedEvents = createSensorEvent(c.netpol.(*networkingV1.NetworkPolicy), c.action)
 			deps := map[string]*deploymentWrap{}
 			processDeploymentMock := suite.detector.EXPECT().ProcessDeployment(gomock.Any(), gomock.Eq(central.ResourceAction_UPDATE_RESOURCE)).DoAndReturn(func(d *storage.Deployment, _ central.ResourceAction) {
 				deps[d.GetId()] = &deploymentWrap{
