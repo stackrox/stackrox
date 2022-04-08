@@ -3157,7 +3157,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 				MissingEgressNetworkPolicy:  false,
 			},
 			alerts: []*storage.Alert_Violation{
-				{Message: "Missing Ingress Network Policy violation message placeholder"},
+				{Message: "The deployment is missing Ingress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
 			},
 		},
 		"Missing Egress Network Policy": {
@@ -3166,7 +3166,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 				MissingEgressNetworkPolicy:  true,
 			},
 			alerts: []*storage.Alert_Violation{
-				{Message: "Missing Egress Network Policy violation message placeholder"},
+				{Message: "The deployment is missing Egress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
 			},
 		},
 		"Missing both policies": {
@@ -3175,8 +3175,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 				MissingEgressNetworkPolicy:  true,
 			},
 			alerts: []*storage.Alert_Violation{
-				{Message: "Missing Ingress Network Policy violation message placeholder"},
-				{Message: "Missing Egress Network Policy violation message placeholder"},
+				{Message: "The deployment is missing Ingress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
+				{Message: "The deployment is missing Egress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
 			},
 		},
 		"No alerts": {
