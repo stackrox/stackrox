@@ -1,18 +1,101 @@
 package uploaddb
 
 import (
+	"bytes"
+	"fmt"
 	"io/fs"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestScannerUploadDbCommandFail(t *testing.T) {
-	cmdNoFile := scannerUploadDbCommand{filename: "non-existing-filename"}
+func executeUpdateDbCommand(serverURL string) (*bytes.Buffer, *bytes.Buffer, error) {
+	tmpFile, errTempFile := os.CreateTemp("", "*.zip")
+	if errTempFile != nil {
+		return nil, nil, errTempFile
+	}
+	defer utils.IgnoreError(func() error {
+		return os.Remove(tmpFile.Name())
+	})
 
-	actualErr := cmdNoFile.uploadDd()
+	testIO, _, stdOut, stdErr := environment.TestIO()
+	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 
-	require.Error(t, actualErr)
-	assert.ErrorIs(t, actualErr, fs.ErrNotExist)
+	cmd := Command(env)
+	flags.AddTimeout(cmd)
+	flags.AddConnectionFlags(cmd)
+	flags.AddPassword(cmd)
+
+	cmdArgs := []string{"--insecure-skip-tls-verify", "--insecure", "--endpoint", serverURL, "--password", "test"}
+	cmdArgs = append(cmdArgs, "--scanner-db-file", tmpFile.Name())
+	cmd.SetArgs(cmdArgs)
+
+	cmdExecutionErr := cmd.Execute()
+	if cmdExecutionErr != nil {
+		return stdOut, stdErr, cmdExecutionErr
+	}
+
+	return stdOut, stdErr, nil
+}
+
+func TestScannerUploadDbCommand(t *testing.T) {
+	t.Run("file does not exist", func(t *testing.T) {
+		cmdNoFile := scannerUploadDbCommand{filename: "non-existing-filename"}
+
+		actualErr := cmdNoFile.uploadDd()
+
+		require.Error(t, actualErr)
+		assert.ErrorIs(t, actualErr, fs.ErrNotExist)
+	})
+
+	t.Run("server error", func(t *testing.T) {
+		expectedErrorStr := "test-server-error"
+		server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+			rw.WriteHeader(http.StatusInternalServerError)
+			_, _ = rw.Write([]byte(expectedErrorStr))
+		}))
+		defer server.Close()
+
+		_, _, err := executeUpdateDbCommand(server.URL)
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), expectedErrorStr)
+	})
+
+	t.Run("body read error", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+			rw.Header().Set("Content-Length", "1")
+		}))
+		defer server.Close()
+
+		stdOut, _, err := executeUpdateDbCommand(server.URL)
+
+		require.Error(t, err)
+		assert.NotNil(t, stdOut)
+	})
+
+	t.Run("scanner update-db", func(t *testing.T) {
+		expectedResult := "test-roxctl-scanner-update-db"
+		server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+			_, _ = rw.Write([]byte(expectedResult))
+		}))
+		defer server.Close()
+
+		stdOut, stdErr, err := executeUpdateDbCommand(server.URL)
+
+		require.NoError(t, err)
+		require.NotNil(t, stdErr)
+		require.NotNil(t, stdOut)
+
+		assert.Empty(t, stdErr.String())
+		assert.Equal(t, fmt.Sprintln(expectedResult), stdOut.String())
+	})
 }
