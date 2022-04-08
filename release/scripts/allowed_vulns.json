@@ -1,17 +1,5 @@
 [
     {
-        "vuln": "CVE-2020-28928",
-        "image": "^scanner.*$",
-        "tag": ".*",
-        "reason": "This is a Quay false positive on musl:1.2.2_pre2-r0, scanner has musl:1.2.2-r0"
-    },
-    {
-        "vuln": "CVE-2020-28928",
-        "image": "^main.*$",
-        "tag": ".*",
-        "reason": "This is a Quay false positive on musl:1.2.2_pre2-r0, main starting from at least 3.64.0 has musl:1.2.2-r3"
-    },
-    {
         "vuln": "CVE-XXXX-YYYY",
         "image": ".*",
         "tag": ".*",
@@ -22,35 +10,5 @@
         "image": "^docs.*",
         "tag": ".*",
         "reason": "The docs image is not deployed in production"
-    },
-    {
-        "vuln": "SNYK-PYTHON-URLLIB3-174323",
-        "image": ".*",
-        "tag": ".*",
-        "reason": "This is a Quay false fixable on ubi8:8.5"
-    },
-    {
-        "vuln": "SNYK-PYTHON-URLLIB3-1014645",
-        "image": ".*",
-        "tag": ".*",
-        "reason": "This is a Quay false fixable on ubi8:8.5"
-    },
-    {
-        "vuln": "SNYK-PYTHON-URLLIB3-1533435",
-        "image": ".*",
-        "tag": ".*",
-        "reason": "This is a Quay false fixable on ubi8:8.5"
-    },
-    {
-        "vuln": "pyup.io-38834 (CVE-2020-26137)",
-        "image": ".*",
-        "tag": ".*",
-        "reason": "This is a Quay false fixable on ubi8:8.5"
-    },
-    {
-        "vuln": "pyup.io-43975 (CVE-2021-33503)",
-        "image": ".*",
-        "tag": ".*",
-        "reason": "This is a Quay false fixable on ubi8:8.5"
     }
 ]
