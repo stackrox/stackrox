@@ -713,6 +713,10 @@ func (s *PolicyValidatorTestSuite) TestValidateAuditEventSource() {
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
+	if !features.NetworkPolicySystemPolicy.Enabled() {
+		s.T().Skipf("Skipping test since the %s variable is not set", features.NetworkPolicySystemPolicy.EnvVar())
+	}
+
 	cases := map[string]struct {
 		policy        *storage.Policy
 		expectedError string
