@@ -22,10 +22,6 @@ func TestIsGloballyScoped(t *testing.T) {
 	assert.False(t, isGloballyScoped("*storage.NamespaceMetadata"))
 	assert.True(t, isGloballyScoped("*storage.Policy"))
 	assert.True(t, isGloballyScoped("storage.Policy"))
+	assert.True(t, isGloballyScoped("storage.SignatureIntegration"))
 	assert.Panics(t, func() { isGloballyScoped("fake") })
-	assert.Panics(t, func() { isGloballyScoped("storage.SignatureIntegration") },
-		`This resource is behind the feature flag.
-We need to enable this flag to properly generate code.
-If this test fail it means that flag default was turned on.
-Fix this test case and remember to remove flag from Makefile.`)
 }

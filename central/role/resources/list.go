@@ -77,7 +77,8 @@ var (
 	// Internal Resources
 	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
 
-	resourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
+	resourceToMetadata         = make(map[permissions.Resource]permissions.ResourceMetadata)
+	disabledResourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
 )
 
 func newResourceMetadata(name permissions.Resource, scope permissions.ResourceScope) permissions.ResourceMetadata {
@@ -96,6 +97,8 @@ func newResourceMetadataWithFeatureFlag(name permissions.Resource, scope permiss
 	}
 	if flag.Enabled() {
 		resourceToMetadata[name] = md
+	} else {
+		disabledResourceToMetadata[name] = md
 	}
 	return md
 }
@@ -120,6 +123,18 @@ func ListAll() []permissions.Resource {
 func ListAllMetadata() []permissions.ResourceMetadata {
 	metadatas := make([]permissions.ResourceMetadata, 0, len(resourceToMetadata))
 	for _, metadata := range resourceToMetadata {
+		metadatas = append(metadatas, metadata)
+	}
+	sort.SliceStable(metadatas, func(i, j int) bool {
+		return string(metadatas[i].Resource) < string(metadatas[j].Resource)
+	})
+	return metadatas
+}
+
+// ListAllDisabledMetadata returns a list of all resource metadata that are currently disable by feature flag.
+func ListAllDisabledMetadata() []permissions.ResourceMetadata {
+	metadatas := make([]permissions.ResourceMetadata, 0, len(disabledResourceToMetadata))
+	for _, metadata := range disabledResourceToMetadata {
 		metadatas = append(metadatas, metadata)
 	}
 	sort.SliceStable(metadatas, func(i, j int) bool {
