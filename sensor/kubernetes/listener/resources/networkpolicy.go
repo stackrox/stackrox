@@ -34,8 +34,7 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 
 	if features.NetworkPolicySystemPolicy.Enabled() {
 		var roxOldNetpol *storage.NetworkPolicy
-		oldNp := old.(*networkingV1.NetworkPolicy)
-		if oldNp != nil {
+		if oldNp, ok := old.(*networkingV1.NetworkPolicy); ok && oldNp != nil {
 			roxOldNetpol = networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: oldNp}.ToRoxNetworkPolicy()
 		}
 		sel := h.getSelector(roxNetpol, roxOldNetpol)
