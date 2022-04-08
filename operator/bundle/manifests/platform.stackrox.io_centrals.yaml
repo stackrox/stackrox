@@ -171,26 +171,15 @@ spec:
                         type: object
                     type: object
                   resources:
-                    default:
-                      limits:
-                        cpu: 500m
-                        memory: 1Gi
-                      requests:
-                        cpu: 100m
-                        memory: 256Mi
                     description: Allows overriding the default resource settings for
                       this component. Please consult the documentation for an overview
                       of default resource requirements and a sizing guide.
                     properties:
                       limits:
                         additionalProperties:
-                          allOf:
-                          - anyOf:
-                            - type: integer
-                            - type: string
-                          - anyOf:
-                            - type: integer
-                            - type: string
+                          anyOf:
+                          - type: integer
+                          - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
                         description: 'Limits describes the maximum amount of compute
@@ -198,13 +187,43 @@ spec:
                         type: object
                       requests:
                         additionalProperties:
-                          allOf:
-                          - anyOf:
-                            - type: integer
-                            - type: string
-                          - anyOf:
-                            - type: integer
-                            - type: string
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                    type: object
+                  resources2:
+                    default:
+                      limits:
+                        cpu: 500m
+                        memory: 1Gi
+                      requests:
+                        cpu: 100m
+                        memory: 256Mi
+                    description: ResourceRequirements describes the compute resource
+                      requirements.
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
                         description: 'Requests describes the minimum amount of compute

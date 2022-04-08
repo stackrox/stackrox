@@ -110,14 +110,13 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	Persistence *Persistence `json:"persistence,omitempty"`
 
-	// +optional
-	// +kubebuilder:default:={resources: {limits: {cpu: "100m", memory: "128Mi"}, requests: {cpu: "10m", memory: "32Mi"}}}
+	// +kubebuilder:default={resources: {limits: {cpu: "100m", memory: "128Mi"}, requests: {cpu: "10m", memory: "32Mi"}}}
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
 
 	// +optional
-	// +kubebuilder:default:={limits: {cpu: "500m", memory: "1Gi"}, requests: {cpu: "100m", memory: "256Mi"}}
-	Resources2 corev1.ResourceRequirements `json:"resources,omitempty"`
+	// +kubebuilder:default={limits: {cpu: "500m", memory: "1Gi"}, requests: {cpu: "100m", memory: "256Mi"}}
+	Resources2 corev1.ResourceRequirements `json:"resources2,omitempty"`
 }
 
 // GetHostPath returns Central's configured host path
