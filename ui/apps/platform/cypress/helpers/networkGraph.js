@@ -28,6 +28,12 @@ export function clickOnNodeByName(cytoscape, node) {
     filteredNodes.emit('click');
 }
 
+export function clickOnDeploymentNodeByName(cytoscape, name) {
+    cy.intercept('GET', api.network.deployment).as('getDeployment');
+    clickOnNodeByName(cytoscape, { type: 'DEPLOYMENT', name });
+    cy.wait('@getDeployment');
+}
+
 export function mouseOverNodeById(cytoscape, node) {
     const element = cytoscape.getElementById(node.id);
     if (!element) {
@@ -116,6 +122,16 @@ export function filterBySourceTarget(sourceNode, targetNode) {
             `An edge type between a (${sourceNode.type}) and (${targetNode.type}) does not exist`
         );
     };
+}
+
+// network flows
+
+export function clickConfirmationButton() {
+    cy.intercept('GET', api.network.networkGraph).as('networkGraph');
+    cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPoliciesGraph');
+    cy.intercept('POST', api.network.networkBaselineStatus).as('networkBaselineStatus');
+    cy.get(networkGraphSelectors.buttons.confirmationButton).click();
+    cy.wait(['@networkGraph', '@networkPoliciesGraph', '@networkBaselineStatus']);
 }
 
 // search filters
