@@ -3208,7 +3208,13 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 			v2 := suite.getViolations(missingEgressPolicy, enhanced)
 
 			allAlerts := append(v1.AlertViolations, v2.AlertViolations...)
-			suite.Equal(testCase.alerts, allAlerts)
+			for i, expected := range testCase.alerts {
+				suite.Equal(expected.GetType(), allAlerts[i].Type)
+				suite.Equal(expected.GetMessage(), allAlerts[i].Message)
+				suite.Equal(expected.GetKeyValueAttrs(), allAlerts[i].GetKeyValueAttrs())
+				// We do not want to compare time, as the violation timestamp uses now()
+				suite.NotNil(allAlerts[i].GetTime())
+			}
 		})
 	}
 }
