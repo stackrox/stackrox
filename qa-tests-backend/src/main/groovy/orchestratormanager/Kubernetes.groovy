@@ -2255,7 +2255,7 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
-    private static Namespace newNamespace(String ns) {
+    static Namespace newNamespace(String ns) {
         Namespace namespace = new Namespace()
         ObjectMeta meta = new ObjectMeta()
         meta.setNamespace(ns)
