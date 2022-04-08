@@ -164,14 +164,6 @@ func setupDeploymentFromFile(t testutils.T, deploymentName, path string) {
 	waitForDeployment(t, deploymentName)
 }
 
-func scaleDeployment(t testutils.T, deploymentName, replicas string) {
-	cmd := exec.Command(`kubectl`, `scale`, `deployment`, deploymentName, `--replicas`, replicas)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
-
-	waitForDeployment(t, deploymentName)
-}
-
 func setupNginxLatestTagDeployment(t *testing.T) {
 	setupDeployment(t, "nginx", nginxDeploymentName)
 }

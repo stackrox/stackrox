@@ -157,7 +157,7 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 			setupDeploymentFromFile(t, netpolDeploymentName, "yamls/nginx.yaml")
 			defer teardownDeploymentFromFile(t, netpolDeploymentName, "yamls/nginx.yaml")
 
-			testutils.Retry(t, 3, 3 * time.Second, func(retryT testutils.T) {
+			testutils.Retry(t, 3, 3*time.Second, func(retryT testutils.T) {
 				// Assert alerts
 				alerts := getAlertsForPolicy(retryT, alertService, testCase.policyName)
 				assert.Len(retryT, alerts, 1)
@@ -167,10 +167,7 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 			applyFile(t, testCase.networkPolicyFile)
 			defer teardownFile(t, testCase.networkPolicyFile)
 
-			// TODO(ROX-9824): This can be removed once policies are evaluated on NetworkPolicy updates.
-			scaleDeployment(t, netpolDeploymentName, "4")
-
-			testutils.Retry(t, 3, 3 * time.Second, func(retryT testutils.T) {
+			testutils.Retry(t, 3, 3*time.Second, func(retryT testutils.T) {
 				// Assert alerts
 				alerts := getAlertsForPolicy(retryT, alertService, testCase.policyName)
 				assert.Len(retryT, alerts, 0)
