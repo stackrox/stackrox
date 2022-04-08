@@ -26,8 +26,7 @@ class ImageSignatureVerificationTest extends BaseSpecification {
     static final private String DISTROLESS = "Distroless"
     static final private String TEKTON = "Tekton"
     static final private String UNVERIFIABLE = "Unverifiable"
-    // TODO(ROX-9996): Uncomment after we can handle multiple verification results.
-    //static final private String DISTROLESS_AND_TEKTON = "Distroless+Tekton"
+    static final private String DISTROLESS_AND_TEKTON = "Distroless+Tekton"
 
     // List of integration names used within tests.
     // NOTE: If you add a new name, make sure to add it here.
@@ -35,8 +34,7 @@ class ImageSignatureVerificationTest extends BaseSpecification {
             DISTROLESS,
             TEKTON,
             UNVERIFIABLE,
-            // TODO(ROX-9996): Uncomment after we can handle multiple verification results.
-            //DISTROLESS_AND_TEKTON
+            DISTROLESS_AND_TEKTON
     ]
 
     // Public keys used within signature integrations.
@@ -146,8 +144,7 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
         assert unverifiableSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(UNVERIFIABLE, unverifiableSignatureIntegrationID)
 
-        // TODO(ROX-9996): Uncomment after we can handle multiple verification results.
-        /* Signature integration "Distroless+Tekton" which holds both distroless and tekton cosign public keys.
+        Signature integration "Distroless+Tekton" which holds both distroless and tekton cosign public keys.
         Map<String,String> mergedKeys = DISTROLESS_PUBLIC_KEY.clone() as Map<String, String>
         mergedKeys.putAll(TEKTON_COSIGN_PUBLIC_KEY.entrySet())
         String distrolessAndTektonSignatureIntegrationID = createSignatureIntegration(
@@ -155,7 +152,6 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
         )
         assert distrolessAndTektonSignatureIntegrationID
         createdSignatureIntegrations.put(DISTROLESS_AND_TEKTON, distrolessAndTektonSignatureIntegrationID)
-        */
 
         // Create all required deployments.
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
@@ -218,13 +214,11 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
         UNVERIFIABLE | TEKTON_DEPLOYMENT            | true
         UNVERIFIABLE | WITHOUT_SIGNATURE_DEPLOYMENT | true
         UNVERIFIABLE | UNVERIFIABLE_DEPLOYMENT      | true
-        // TODO(ROX-9996): Uncomment after we can handle multiple verification results.
-        /* Distroless and tekton should create alerts for all deployments except thos using distroless / tekton images.
+        // Distroless and tekton should create alerts for all deployments except thos using distroless / tekton images.
         DISTROLESS_AND_TEKTON | UNVERIFIABLE_DEPLOYMENT | true
         DISTROLESS_AND_TEKTON | WITHOUT_SIGNATURE_DEPLOYMENT | true
         DISTROLESS_AND_TEKTON | TEKTON_DEPLOYMENT | false
         DISTROLESS_AND_TEKTON | DISTROLESS_DEPLOYMENT | false
-        */
     }
 
     // Helper which creates a policy builder for a policy which uses the image signature policy criteria.
