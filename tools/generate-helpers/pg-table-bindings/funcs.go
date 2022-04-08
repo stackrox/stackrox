@@ -91,5 +91,4 @@ var funcMap = template.FuncMap{
 	"lowerCase":         strings.ToLower,
 	"storageToResource": storageToResource,
 	"isGloballyScoped":  isGloballyScoped,
-	"isDirectlyScoped":  isDirectlyScoped,
 }
