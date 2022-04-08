@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	openshiftConfigv1 "github.com/openshift/api/config/v1"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 var securedCluster = platform.SecuredCluster{
@@ -19,12 +19,13 @@ var securedCluster = platform.SecuredCluster{
 	},
 }
 
-var validClusterVersion = &openshiftConfigv1.ClusterVersion{
-	ObjectMeta: metav1.ObjectMeta{
-		Name: "version",
-	},
-	Spec: openshiftConfigv1.ClusterVersionSpec{
-		ClusterID: "test-cluster-id",
+var validClusterVersion = &unstructured.Unstructured{
+	Object: map[string]interface{}{
+		"kind":       "ClusterVersion",
+		"apiVersion": "config.openshift.io/v1",
+		"metadata": map[string]interface{}{
+			"name": "version",
+		},
 	},
 }
 
@@ -65,32 +66,25 @@ func TestAutoSenseIsEnabledWithCentralInADifferentNamespace(t *testing.T) {
 }
 
 func TestAutoSenseIsDisabledIfClusterVersionNotFound(t *testing.T) {
-	client := testutils.NewFakeClientBuilder(t, &openshiftConfigv1.ClusterVersion{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "not-version-name",
-		},
-		Spec: openshiftConfigv1.ClusterVersionSpec{
-			ClusterID: "test-cluster-id",
+	client := testutils.NewFakeClientBuilder(t, &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"kind":       "ClusterVersion",
+			"apiVersion": "config.openshift.io/v1",
+			"metadata": map[string]interface{}{
+				"name": "not-default-name",
+			},
 		},
 	}).Build()
 
 	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
 	require.Error(t, err)
-	require.False(t, enabled, `Expected an error if clusterversions.config.openshift.io %q not found`, clusterVersionDefaultName)
+	require.False(t, enabled, "Expected an error if clusterversions.config.openshift.io %q not found", clusterVersionDefaultName)
 }
 
-func TestAutoSenseIsDisabledIfClusterVersionHasNamespace(t *testing.T) {
-	client := testutils.NewFakeClientBuilder(t, &openshiftConfigv1.ClusterVersion{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "some-namespace",
-			Name:      "version",
-		},
-		Spec: openshiftConfigv1.ClusterVersionSpec{
-			ClusterID: "some-cluster-id",
-		},
-	}).Build()
+func TestAutoSenseIsDisabledIfClusterVersionKindNotFound(t *testing.T) {
+	client := testutils.NewFakeClientBuilder(t).Build()
 
 	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
 	require.Error(t, err)
-	require.False(t, enabled, "Expected Scanner to be disabled if ClusterVersion resource has a namespace")
+	require.False(t, enabled, "Expected an error if clusterversions.config.openshift.io kind not found")
 }
