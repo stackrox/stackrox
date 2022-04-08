@@ -47,11 +47,11 @@ COPY operator/build/status.sh status.sh
 RUN git init && git add .
 
 # Build the operator binary.
-RUN GOOS=$(go env GOOS) CGO_ENABLED=0 scripts/go-build.sh operator
+RUN GOOS=$(go env GOOS) scripts/go-build.sh operator
 # Copy the operator binary to a location from where it will be taken into the final image.
 RUN cp -a bin/$(go env GOOS)/operator stackrox-operator
 
-FROM scratch
+FROM registry.access.redhat.com/ubi8-micro:8.5
 
 ARG roxpath
 
@@ -59,5 +59,10 @@ ARG ROX_IMAGE_FLAVOR
 ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
 
 COPY --from=builder ${roxpath}/stackrox-operator /usr/local/bin/
+
+# The following are numeric uid and gid of `nobody` user in UBI.
+# We can't use symbolic names because otherwise k8s will fail to start the pod with an error like this:
+# Error: container has runAsNonRoot and image has non-numeric user (nobody), cannot verify user is non-root (pod: "stackrox-operator-controller-manager-75bc744454-bkbjr_stackrox-operator-system(49874aae-2695-4d3a-afd3-8723914d2af5)", container: manager)
+USER 65534:65534
 
 ENTRYPOINT ["/usr/local/bin/stackrox-operator"]
