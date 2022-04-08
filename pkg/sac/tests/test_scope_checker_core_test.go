@@ -10,14 +10,14 @@ import (
 )
 
 const (
-	resourceAlert        = "Alert"
-	resourceCluster      = "Cluster"
-	resourceConfig       = "Config"
-	resourceDeployment   = "Deployment"
-	resourceImage        = "Image"
-	resourceNetworkGraph = "NetworkGraph"
-	resourceNode         = "Node"
-	resourceRisk         = "Risk"
+	resourceAlert        = permissions.Resource("Alert")
+	resourceCluster      = permissions.Resource("Cluster")
+	resourceConfig       = permissions.Resource("Config")
+	resourceDeployment   = permissions.Resource("Deployment")
+	resourceImage        = permissions.Resource("Image")
+	resourceNetworkGraph = permissions.Resource("NetworkGraph")
+	resourceNode         = permissions.Resource("Node")
+	resourceRisk         = permissions.Resource("Risk")
 
 	clusterClusterID = "clusterID"
 	clusterCluster1  = "cluster1"
@@ -29,7 +29,6 @@ const (
 	nsBar        = "bar"
 	nsBaz        = "baz"
 	nsFar        = "far"
-	nsQux        = "qux"
 )
 
 type testScopeCheckerCoreTestSuite struct {
@@ -236,13 +235,4 @@ func createTestResourceLevelReadAndReadWriteMixScope(t *testing.T) sac.ScopeChec
 		resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resourceRisk),
 	}
 	return sac.TestScopeCheckerCoreFromAccessResourceMap(t, resourcesWithAccess)
-}
-
-func resourceWithAccess(access storage.Access, resource string) permissions.ResourceWithAccess {
-	return permissions.ResourceWithAccess{
-		Access: access,
-		Resource: permissions.ResourceMetadata{
-			Resource: permissions.Resource(resource),
-		},
-	}
 }
