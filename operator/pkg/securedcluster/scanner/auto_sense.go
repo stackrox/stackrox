@@ -59,7 +59,7 @@ func isRunningOnOpenShift(ctx context.Context, client ctrlClient.Client) (bool, 
 		log.Info("Running on Kubernetes, OpenShift ClusterVersion resource was not found")
 		return false, err
 	} else if err != nil && meta.IsNoMatchError(err) {
-		log.Info("Running on Kubernetes, OpenShift ClusterVersion schema does not exist")
+		log.Info("Running on Kubernetes, OpenShift ClusterVersion kind does not exist")
 		return false, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get ClusterVersion")
