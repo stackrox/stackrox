@@ -126,7 +126,6 @@ export function selectDeploymentFilter(deploymentName) {
     cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
     cy.get(networkGraphSelectors.toolbar.filterSelect).type('Deployment{enter}');
     cy.get(networkGraphSelectors.toolbar.filterSelect).type(`${deploymentName}{enter}{esc}`);
-    cy.wait(['@networkGraph', '@networkPolicies']);
 }
 
 export function selectNamespaceFilters(...namespaces) {
@@ -153,11 +152,7 @@ export function visitNetworkGraph() {
 
 export function visitNetworkGraphWithNamespaceFilters(...namespaces) {
     visitNetworkGraph();
-
-    cy.intercept('GET', api.network.networkGraph).as('networkGraph');
-    cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
     selectNamespaceFilters(...namespaces);
-    cy.wait(['@networkGraph', '@networkPolicies']);
 }
 
 export function visitNetworkGraphWithMockedData() {
@@ -170,6 +165,28 @@ export function visitNetworkGraphWithMockedData() {
 
     visitNetworkGraph();
     selectNamespaceFilters('stackrox');
+}
 
-    cy.wait(['@networkGraph', '@networkPolicies']);
+/**
+ * Waits for a rerender of the Cytoscape network graph so that we can run assertions on the
+ * data and be sure that the display is up to date. This hooks into the current overlay
+ * with a `Last Updated` time in order to detect updates to the graph.
+ *
+ * This is needed because Cytoscape renders its elements to a canvas, which Cypress is unable
+ * to automatically retry queries against.
+ *
+ * @param { string? } lastUpdate Optional time updated string that represents the last change
+ * to the graph. If this value is provided, the Cypress query will wait for it to change in the DOM
+ * before returning. If not provided, Cypress will wait for the "Last Updated" element to appear.
+ *
+ * @returns { Object } A Cypress chainable for use cases where we need to read the current update timestamp.
+ */
+export function waitForGraphUpdate(lastUpdate) {
+    const selector = lastUpdate
+        ? `${networkGraphSelectors.nodesUpdateSection}:not(div[data-test-updated="${lastUpdate}"])`
+        : `${networkGraphSelectors.nodesUpdateSection}:contains("Last Updated")`;
+
+    return cy.get(selector).then(([elem]) => {
+        return elem.dataset.testUpdated;
+    });
 }

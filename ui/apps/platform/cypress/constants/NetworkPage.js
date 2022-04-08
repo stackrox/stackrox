@@ -16,6 +16,7 @@ export const selectors = {
     cytoscapeContainer: '#cytoscapeContainer',
     simulatorSuccessMessage: 'div[data-testid="message-body"]:contains("Policies processed")',
     panels: networkPanels,
+    nodesUpdateSection: 'div[data-testid="nodes-update-section"]',
     legend: {
         deployments: '[data-testid="deployment-legend"] div',
         namespaces: '[data-testid="namespace-legend"] div',

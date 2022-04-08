@@ -42,7 +42,11 @@ const NodesUpdateSection = ({
     lastUpdatedTimestamp,
 }: NodeUpdateSectionProps) => {
     return (
-        <div className="absolute top-0 pin-network-update-label-left mt-2 mr-2 p-2 bg-base-100 rounded-sm border-2 border-base-400 text-base-500 text-xs font-700">
+        <div
+            data-testid="nodes-update-section"
+            data-test-updated={dateFns.format(lastUpdatedTimestamp, 'hhmmssSSSS')}
+            className="absolute top-0 pin-network-update-label-left mt-2 mr-2 p-2 bg-base-100 rounded-sm border-2 border-base-400 text-base-500 text-xs font-700"
+        >
             <div className="uppercase">{`Last Updated: ${dateFns.format(
                 lastUpdatedTimestamp,
                 'hh:mm:ssA'
