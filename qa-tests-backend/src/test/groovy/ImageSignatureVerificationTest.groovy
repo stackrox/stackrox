@@ -16,7 +16,6 @@ import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
 
-@IgnoreIf({ Env.get("ROX_VERIFY_IMAGE_SIGNATURE", "false") == "false" })
 class ImageSignatureVerificationTest extends BaseSpecification {
     // https://issues.redhat.com/browse/ROX-6891
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
