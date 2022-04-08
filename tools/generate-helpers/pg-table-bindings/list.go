@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
@@ -60,6 +59,5 @@ func resourceMetadataFromString(resource string) permissions.ResourceMetadata {
 			return resourceMetadata
 		}
 	}
-	log.Println("warn: unknown resource: " + resource)
-	return permissions.ResourceMetadata{}
+	panic("unknown resource: " + resource)
 }

@@ -17,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-    {{- if or (.PermissionChecker) (.Type | isGloballyScoped) }}
+    {{- if and (not .JoinTable) (or (.PermissionChecker) (.Type | isGloballyScoped)) }}
     "github.com/stackrox/rox/pkg/sac"{{- end }}
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -49,7 +49,7 @@ func (s *{{$namePrefix}}StoreSuite) TearDownTest() {
 }
 
 func (s *{{$namePrefix}}StoreSuite) TestStore() {
-    {{- if or (.PermissionChecker) (.Type | isGloballyScoped) }}
+    {{- if and (not .JoinTable) (or (.PermissionChecker) (.Type | isGloballyScoped)) }}
     ctx := sac.WithAllAccess(context.Background())
     {{- else -}}
     ctx := context.Background()
