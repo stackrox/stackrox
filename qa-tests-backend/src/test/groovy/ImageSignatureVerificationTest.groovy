@@ -34,7 +34,7 @@ class ImageSignatureVerificationTest extends BaseSpecification {
             DISTROLESS,
             TEKTON,
             UNVERIFIABLE,
-            DISTROLESS_AND_TEKTON
+            DISTROLESS_AND_TEKTON,
     ]
 
     // Public keys used within signature integrations.
