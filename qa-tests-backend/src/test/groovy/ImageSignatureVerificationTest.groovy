@@ -144,7 +144,7 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
         assert unverifiableSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(UNVERIFIABLE, unverifiableSignatureIntegrationID)
 
-        Signature integration "Distroless+Tekton" which holds both distroless and tekton cosign public keys.
+        // Signature integration "Distroless+Tekton" which holds both distroless and tekton cosign public keys.
         Map<String,String> mergedKeys = DISTROLESS_PUBLIC_KEY.clone() as Map<String, String>
         mergedKeys.putAll(TEKTON_COSIGN_PUBLIC_KEY.entrySet())
         String distrolessAndTektonSignatureIntegrationID = createSignatureIntegration(
