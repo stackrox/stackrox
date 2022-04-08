@@ -6,7 +6,6 @@ export default function getNodeScanMessages(
 ): ScanMessages {
     const hasMissingScanData = nodeNotes?.includes('MISSING_SCAN_DATA');
 
-
     const hasOSUnsupported = scanNotes?.includes('OS_UNSUPPORTED');
 
     if (hasMissingScanData) {
