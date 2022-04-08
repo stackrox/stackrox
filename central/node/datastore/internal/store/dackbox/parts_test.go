@@ -122,6 +122,7 @@ func TestSplitAndMergeNode(t *testing.T) {
 					{
 						cve: &storage.CVE{
 							Id:   "cve1",
+							Cve:  "cve1",
 							Type: storage.CVE_NODE_CVE,
 						},
 						edge: &storage.ComponentCVEEdge{
@@ -131,6 +132,7 @@ func TestSplitAndMergeNode(t *testing.T) {
 					{
 						cve: &storage.CVE{
 							Id:   "cve2",
+							Cve:  "cve2",
 							Type: storage.CVE_NODE_CVE,
 						},
 						edge: &storage.ComponentCVEEdge{
@@ -157,6 +159,7 @@ func TestSplitAndMergeNode(t *testing.T) {
 					{
 						cve: &storage.CVE{
 							Id:   "cve1",
+							Cve:  "cve1",
 							Type: storage.CVE_NODE_CVE,
 						},
 						edge: &storage.ComponentCVEEdge{
@@ -170,6 +173,7 @@ func TestSplitAndMergeNode(t *testing.T) {
 					{
 						cve: &storage.CVE{
 							Id:   "cve2",
+							Cve:  "cve2",
 							Type: storage.CVE_NODE_CVE,
 						},
 						edge: &storage.ComponentCVEEdge{
