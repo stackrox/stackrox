@@ -736,19 +736,6 @@ func copyFromImageCVERelations(ctx context.Context, tx pgx.Tx, iTime *protoTypes
 }
 
 func removeOrphanedImageCVEEdges(ctx context.Context, tx pgx.Tx, imageID string, ids []string) error {
-	//rows, err := tx.Query(ctx, "select id from image_cve_relations where imageid = $1 and not id = ANY($2::text[])", imageID, ids)
-	//if err != nil {
-	//	return pgutils.ErrNilIfNoRows(err)
-	//}
-	//defer rows.Close()
-	//var edgesToDelete []string
-	//for rows.Next() {
-	//	var id string
-	//	if err := rows.Scan(&id); err != nil {
-	//		return err
-	//	}
-	//	edgesToDelete = append(edgesToDelete, id)
-	//}
 	_, err := tx.Exec(ctx, "DELETE FROM "+imageCVERelationsTable+" WHERE id in (select id from image_cve_relations where imageid = $1 and id != ANY($2::text[]))", imageID, ids)
 	if err != nil {
 		return err
