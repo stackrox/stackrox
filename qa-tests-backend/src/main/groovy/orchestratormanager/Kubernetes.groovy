@@ -148,7 +148,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def ensureNamespaceExists(String ns) {
-        Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns), null, null)
+        Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns, namespace: ns), null, null)
         try {
             client.namespaces().create(namespace)
             defaultPspForNamespace(ns)
@@ -2248,7 +2248,7 @@ class Kubernetes implements OrchestratorMain {
 
     String createNamespace(String ns) {
         return evaluateWithRetry(2, 3) {
-            Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns), null, null)
+            Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns, namespace: ns), null, null)
             def namespaceId = client.namespaces().createOrReplace(namespace).metadata.getUid()
             defaultPspForNamespace(ns)
             return namespaceId
