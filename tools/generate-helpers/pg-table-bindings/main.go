@@ -128,6 +128,7 @@ func main() {
 			"JoinTable":         props.JoinTable,
 			"PermissionChecker": props.PermissionChecker,
 			"IsGloballyScoped":  isGloballyScoped(props.Type, props.PermissionChecker != "", props.JoinTable),
+			"IsDirectlyScoped":  isDirectlyScoped(schema),
 		}
 
 		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {

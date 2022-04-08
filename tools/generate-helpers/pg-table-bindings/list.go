@@ -64,17 +64,24 @@ func isGloballyScoped(storageType string, permissionChecker bool, joinTable bool
 func isDirectlyScoped(schema *walker.Schema) bool {
 	resource := storageToResource(schema.Type)
 	scope := resourceMetadataFromString(resource).Scope
-	clusterIDExist := false
-	namespaceExist := false
+	clusterIDExists := false
+	namespaceExists := false
 	for _, f := range schema.Fields {
 		if strings.Contains(f.Search.FieldName, "Cluster ID") {
-			clusterIDExist = true
+			clusterIDExists = true
 		}
 		if strings.Contains(f.Search.FieldName, "Namespace") {
-			namespaceExist = true
+			namespaceExists = true
 		}
 	}
-	return clusterIDExist && (scope == permissions.ClusterScope || (scope == permissions.NamespaceScope && namespaceExist))
+	switch scope {
+	case permissions.NamespaceScope:
+		return clusterIDExists && namespaceExists
+	case permissions.ClusterScope:
+		return clusterIDExists
+	default:
+		return true
+	}
 }
 
 func resourceMetadataFromString(resource string) permissions.ResourceMetadata {

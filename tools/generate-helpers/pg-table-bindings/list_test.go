@@ -58,9 +58,14 @@ func TestIsDirectlyScoped(t *testing.T) {
 		&storage.Deployment{}:        true,
 		&storage.Image{}:             false,
 		&storage.CVE{}:               false,
+		&storage.Policy{}:            true,
 	} {
 		t.Run(fmt.Sprintf("%T directly scoped: %t", typ, directlyScoped), func(t *testing.T) {
 			assert.Equal(t, directlyScoped, isDirectlyScoped(walker.Walk(reflect.TypeOf(typ), "")))
 		})
 	}
+
+	t.Run("panics on unknown resource", func(t *testing.T) {
+		assert.Panics(t, func() { isDirectlyScoped(walker.Walk(reflect.TypeOf(&storage.Email{}), "")) })
+	})
 }
