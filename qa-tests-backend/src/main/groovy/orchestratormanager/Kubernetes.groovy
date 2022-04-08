@@ -1741,10 +1741,6 @@ class Kubernetes implements OrchestratorMain {
             ExecWatch watch = client.pods().inNamespace(namespace).withName(name)
                     .redirectingOutput().usingListener(new ExecListener() {
                 @Override
-                void onOpen(Response response) {
-                }
-
-                @Override
                 void onFailure(Throwable t, Response response) {
                     latch.countDown()
                 }
