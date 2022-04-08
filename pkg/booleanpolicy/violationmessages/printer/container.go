@@ -156,8 +156,8 @@ func imageUserPrinter(fieldMap map[string][]string) ([]string, error) {
 }
 
 const (
-	imageSignatureVerifiedTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with ` +
-		`{{.Status}} signature{{else}}Image signature is {{.Status}}{{end}}`
+	imageSignatureVerifiedTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' image` +
+		`{{else}}Image{{end}} signature is {{.Status}}`
 )
 
 func imageSignatureVerifiedPrinter(fieldMap map[string][]string) ([]string, error) {
@@ -169,10 +169,28 @@ func imageSignatureVerifiedPrinter(fieldMap map[string][]string) ([]string, erro
 		ContainerName: maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap),
 		Status:        "unverified",
 	}
-	if verifiedBy := maybeGetSingleValueFromFieldMap(augmentedobjs.ImageSignatureVerifiedCustomTag, fieldMap); verifiedBy != "" {
-		r.Status = "verified by " + verifiedBy
+
+	var result []string
+	if ids, ok := fieldMap[augmentedobjs.ImageSignatureVerifiedCustomTag]; ok {
+		for _, id := range ids {
+			if id != "" && id != "<empty>" {
+				r.Status = "verified by " + id
+				message, err := executeTemplate(imageSignatureVerifiedTemplate, r)
+				if err != nil {
+					return nil, err
+				}
+				result = append(result, message...)
+			}
+		}
 	}
-	return executeTemplate(imageSignatureVerifiedTemplate, r)
+	if len(result) == 0 {
+		message, err := executeTemplate(imageSignatureVerifiedTemplate, r)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, message...)
+	}
+	return result, nil
 }
 
 const (
