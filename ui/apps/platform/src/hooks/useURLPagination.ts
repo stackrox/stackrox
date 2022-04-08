@@ -8,7 +8,7 @@ type UseURLPaginationResult = {
     setPerPage: (perPage: number) => void;
 };
 
-function useURLPagination(defaultPerPage = 20): UseURLPaginationResult {
+function useURLPagination(defaultPerPage: number): UseURLPaginationResult {
     const [page, setPageString] = useURLParameter<string | undefined>('page', '1');
     const [perPage, setPerPageString] = useURLParameter<string | undefined>(
         'perPage',
