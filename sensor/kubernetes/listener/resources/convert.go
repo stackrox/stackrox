@@ -59,6 +59,8 @@ type deploymentWrap struct {
 	original         interface{}
 	portConfigs      map[portRef]*storage.PortConfig
 	pods             []*v1.Pod
+	// TODO(ROX-9984): we could have the networkPoliciesApplied stored here. This would require changes in the ProcessDeployment functions of the detector.
+	// networkPoliciesApplied augmentedobjs.NetworkPoliciesApplied
 
 	mutex sync.RWMutex
 }
