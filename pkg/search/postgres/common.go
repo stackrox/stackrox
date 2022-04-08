@@ -158,7 +158,7 @@ func standardizeQueryAndPopulatePath(q *v1.Query, optionsMap searchPkg.OptionsMa
 
 	fromClause := stringutils.JoinNonEmpty(", ", froms...)
 	selQuery := generateSelectFields(queryEntry, schema.LocalPrimaryKeys(), selectType)
-	pagination, err := getPaginationQuery(q.Pagination, schema, dbFields)
+	pagination, err := getPaginationQuery(q.GetPagination(), schema, dbFields)
 	if err != nil {
 		return nil, err
 	}

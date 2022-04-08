@@ -90,7 +90,6 @@ saveGoLintCache: &saveGoLintCache
     key: go-lint-cache-v1-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-{{ .Revision }}
     paths:
     - /home/circleci/.cache/golangci-lint
-    - /home/circleci/.cache/staticcheck
     - /go/pkg/mod
 
 goModCacheKey: &goModCacheKey 'rox-go-pkg-mod-v3-{{ checksum "go.sum" }}'
@@ -4370,7 +4369,6 @@ jobs:
       ADMISSION_CONTROLLER_UPDATES: "true"
       ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       IS_RACE_BUILD: "true"
-      ROX_VERIFY_IMAGE_SIGNATURE: "true"
 
 
     steps:

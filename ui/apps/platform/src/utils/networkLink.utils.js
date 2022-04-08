@@ -148,7 +148,12 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => 
         });
     });
 
-    return filteredLinks;
+    // Remove links that do not have a corresponding node. A link with a `source` or `target` that
+    // does not match an entity id of a node in the filtered node set will cause Cytoscape to
+    // crash during rendering. This crash may be immediate, or when a user hovers over an offending
+    // node in the visualization.
+    const nodeIds = new Set(nodes.map((n) => n.entity.id));
+    return filteredLinks.filter(({ source, target }) => nodeIds.has(source) && nodeIds.has(target));
 };
 
 /**
