@@ -140,16 +140,16 @@ export const dashboard = {
 export const metadata = 'v1/metadata';
 
 export const network = {
-    networkBaselineLock: '/v1/networkbaseline/**/lock',
-    networkBaselineUnlock: '/v1/networkbaseline/**/unlock',
-    networkBaseline: '/v1/networkbaseline/**',
-    networkBaselineStatus: '/v1/networkbaseline/**/status',
+    networkBaselineLock: '/v1/networkbaseline/*/lock',
+    networkBaselineUnlock: '/v1/networkbaseline/*/unlock',
+    networkBaselinePeers: '/v1/networkbaseline/*/peers',
+    networkBaselineStatus: '/v1/networkbaseline/*/status',
     networkPoliciesGraph: '/v1/networkpolicies/cluster/*',
     networkGraph: '/v1/networkgraph/cluster/*',
     epoch: '/v1/networkpolicies/graph/epoch',
     generate: '/v1/networkpolicies/generate/*',
     simulate: '/v1/networkpolicies/simulate/*',
-    deployment: 'v1/deployments/*',
+    deployment: '/v1/deployments/*',
 };
 
 export const policies = {
