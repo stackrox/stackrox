@@ -43,16 +43,23 @@ func (r *regexpAndDesc) Validate(s string) error {
 }
 
 func newPolicyValidator(notifierStorage notifierDataStore.DataStore) *policyValidator {
-	return &policyValidator{
-		notifierStorage: notifierStorage,
+	pv := &policyValidator{
+		notifierStorage:            notifierStorage,
+		nonEnforceablePolicyFields: make(map[string]struct{}),
 	}
+	if features.NetworkPolicySystemPolicy.Enabled() {
+		pv.nonEnforceablePolicyFields[augmentedobjs.MissingIngressPolicyCustomTag] = struct{}{}
+		pv.nonEnforceablePolicyFields[augmentedobjs.MissingEgressPolicyCustomTag] = struct{}{}
+	}
+	return pv
 }
 
 type validationFunc func(*storage.Policy) error
 
 // policyValidator validates the incoming policy.
 type policyValidator struct {
-	notifierStorage notifierDataStore.DataStore
+	notifierStorage            notifierDataStore.DataStore
+	nonEnforceablePolicyFields map[string]struct{}
 }
 
 func (s *policyValidator) validate(ctx context.Context, policy *storage.Policy, options ...booleanpolicy.ValidateOption) error {
@@ -89,9 +96,7 @@ func (s *policyValidator) internalValidate(policy *storage.Policy, additionalVal
 	errorList.AddError(s.validateExclusions(policy))
 	errorList.AddError(s.validateCapabilities(policy))
 	errorList.AddError(s.validateEventSource(policy))
-	if features.NetworkPolicySystemPolicy.Enabled() {
-		errorList.AddError(s.validateNetworkPolicyEnforcement(policy))
-	}
+	errorList.AddError(s.validateEnforcement(policy))
 
 	for _, validator := range additionalValidators {
 		errorList.AddError(validator(policy))
@@ -383,12 +388,14 @@ func (s *policyValidator) isAuditEventPolicy(policy *storage.Policy) bool {
 	return policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT
 }
 
-func (s *policyValidator) validateNetworkPolicyEnforcement(policy *storage.Policy) error {
+func (s *policyValidator) validateEnforcement(policy *storage.Policy) error {
 	if len(policy.GetEnforcementActions()) > 0 {
-		for _, s := range policy.GetPolicySections() {
-			for _, g := range s.GetPolicyGroups() {
-				if g.GetFieldName() == augmentedobjs.MissingEgressPolicyCustomTag || g.GetFieldName() == augmentedobjs.MissingIngressPolicyCustomTag {
-					return errors.New("enforcement of Network Policies is not allowed yet")
+		for _, section := range policy.GetPolicySections() {
+			for _, g := range section.GetPolicyGroups() {
+				if len(s.nonEnforceablePolicyFields) > 0 {
+					if _, ok := s.nonEnforceablePolicyFields[g.GetFieldName()]; ok {
+						return errors.Errorf("enforcement of %s is not allowed", g.GetFieldName())
+					}
 				}
 			}
 		}
