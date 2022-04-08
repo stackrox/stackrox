@@ -39,14 +39,6 @@ spec:
             description: CentralSpec defines the desired state of Central
             properties:
               central:
-                default:
-                  resources:
-                    limits:
-                      cpu: 100m
-                      memory: 128Mi
-                    requests:
-                      cpu: 10m
-                      memory: 32Mi
                 description: Settings for the Central component, which is responsible
                   for all user interaction.
                 properties:
