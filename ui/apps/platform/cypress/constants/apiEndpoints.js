@@ -147,6 +147,7 @@ export const network = {
     networkPoliciesGraph: '/v1/networkpolicies/cluster/*',
     networkGraph: '/v1/networkgraph/cluster/*',
     epoch: '/v1/networkpolicies/graph/epoch',
+    generate: '/v1/networkpolicies/generate/*',
     simulate: '/v1/networkpolicies/simulate/*',
     deployment: 'v1/deployments/*',
 };
