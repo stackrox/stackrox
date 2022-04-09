@@ -72,7 +72,7 @@ class Deployment {
     Deployment setImage(String imageName) {
         if (!IMAGES_TO_IGNORE_FOR_RATE_LIMIT_CHECK.contains(imageName) &&
                 (imageName.matches(~'^docker.io') ||
-                 !imageName.matches(~'^[a-z]+.'))) {
+                 !imageName.matches(~'^[a-z]+\\.'))) {
             String nameAsTag = imageName.replaceAll(~"[./:]", "-")
             System.err.println """\
                 WARNING: ${imageName} may be subject to rate limiting.
