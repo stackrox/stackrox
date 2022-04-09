@@ -21,13 +21,13 @@ class PaginationTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName("pagination1")
-                    .setImage("busybox:1.26")
+                    .setImage("quay.io/rhacs-eng/qa:busybox-1-26")
                     .addLabel("app", "pagination1")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p1", SECRETS[0]),
             new Deployment()
                     .setName("pagination2")
-                    .setImage("busybox:1.25")
+                    .setImage("quay.io/rhacs-eng/qa:busybox-1-25")
                     .addLabel("app", "pagination2")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p2", SECRETS[1]),
@@ -39,7 +39,7 @@ class PaginationTest extends BaseSpecification {
                     .addSecretName("p3", SECRETS[2]),
             new Deployment()
                     .setName("pagination4")
-                    .setImage("busybox:1.29")
+                    .setImage("quay.io/rhacs-eng/qa:busybox-1-29")
                     .addLabel("app", "pagination4")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p4", SECRETS[3]),
@@ -51,7 +51,7 @@ class PaginationTest extends BaseSpecification {
                     .addSecretName("p5", SECRETS[4]),
             new Deployment()
                     .setName("pagination6")
-                    .setImage("busybox:1.27")
+                    .setImage("quay.io/rhacs-eng/qa:busybox-1-27")
                     .addLabel("app", "pagination6")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p6", SECRETS[5]),
