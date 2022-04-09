@@ -63,12 +63,20 @@ class Deployment {
         return this
     }
 
+    static final List<String> IMAGES_TO_IGNORE_FOR_RATE_LIMIT_CHECK = [
+            "busybox:latest",
+            "nginx:latest",
+            "non-existent:image",
+    ]
+
     Deployment setImage(String imageName) {
-        if (!(imageName =~ /^[a-z]+\./)) {
+        if (!IMAGES_TO_IGNORE_FOR_RATE_LIMIT_CHECK.contains(imageName) &&
+                (imageName.matches(~'^docker.io') ||
+                 !imageName.matches(~'^[a-z]+.'))) {
             String nameAsTag = imageName.replaceAll(~"[./:]", "-")
             System.err.println """\
                 WARNING: ${imageName} may be subject to rate limiting.
-                Consider making a duplicate at quay.io/rhacs-eng/qa:${imageName}-<version>
+                Consider making a duplicate at quay.io/rhacs-eng/qa:${nameAsTag}
                 e.g. (needs write access - ask @eng-staff)
                 docker pull ${imageName}
                 docker tag ${imageName} quay.io/rhacs-eng/qa:${nameAsTag}
