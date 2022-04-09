@@ -274,7 +274,7 @@ class AdmissionControllerTest extends BaseSpecification {
         and:
         "Create the deployment with a harmless image"
         def modDeployment = deployment.clone()
-        modDeployment.image = "busybox:1.28"
+        modDeployment.image = "quay.io/rhacs-eng/qa:busybox-1-28"
         def created = orchestrator.createDeploymentNoWait(modDeployment)
         assert created
 
