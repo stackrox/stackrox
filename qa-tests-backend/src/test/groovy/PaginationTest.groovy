@@ -33,7 +33,7 @@ class PaginationTest extends BaseSpecification {
                     .addSecretName("p2", SECRETS[1]),
             new Deployment()
                     .setName("pagination3")
-                    .setImage("busybox:1.30")
+                    .setImage("quay.io/rhacs-eng/qa:busybox-1-30")
                     .addLabel("app", "pagination3")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p3", SECRETS[2]),

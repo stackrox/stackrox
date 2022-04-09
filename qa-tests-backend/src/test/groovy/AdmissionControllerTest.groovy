@@ -58,7 +58,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     static final private Deployment MISC_DEPLOYMENT = new Deployment()
         .setName("random-busybox")
-        .setImage("busybox:1.30")
+        .setImage("quay.io/rhacs-eng/qa:busybox-1-30")
         .addLabel("app", "random-busybox")
 
     def setupSpec() {
