@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -42,7 +41,7 @@ func (s *RolesStoreSuite) TearDownTest() {
 }
 
 func (s *RolesStoreSuite) TestStore() {
-	ctx := sac.WithAllAccess(context.Background())
+	ctx := context.Background()
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -62,8 +61,6 @@ func (s *RolesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundRole)
 
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
 	s.NoError(store.Upsert(ctx, role))
 	foundRole, exists, err = store.Get(ctx, role.GetName())
 	s.NoError(err)
@@ -73,15 +70,11 @@ func (s *RolesStoreSuite) TestStore() {
 	roleCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(roleCount, 1)
-	roleCount, err = store.Count(withNoAccessCtx)
-	s.NoError(err)
-	s.Zero(roleCount)
 
 	roleExists, err := store.Exists(ctx, role.GetName())
 	s.NoError(err)
 	s.True(roleExists)
 	s.NoError(store.Upsert(ctx, role))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, role), sac.ErrResourceAccessDenied)
 
 	foundRole, exists, err = store.Get(ctx, role.GetName())
 	s.NoError(err)
@@ -93,7 +86,6 @@ func (s *RolesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundRole)
-	s.ErrorIs(store.Delete(withNoAccessCtx, role.GetName()), sac.ErrResourceAccessDenied)
 
 	var roles []*storage.Role
 	for i := 0; i < 200; i++ {
