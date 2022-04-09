@@ -63,15 +63,20 @@ class Deployment {
         return this
     }
 
-    static final List<String> IMAGES_TO_IGNORE_FOR_RATE_LIMIT_CHECK = [
+    static final List<String> TEST_IMAGES_TO_IGNORE_FOR_RATE_LIMIT_CHECK = [
             "busybox:latest",
             "nginx:latest",
             "non-existent:image",
     ]
 
     Deployment setImage(String imageName) {
-        if (!IMAGES_TO_IGNORE_FOR_RATE_LIMIT_CHECK.contains(imageName) &&
-                (imageName.matches(~'^docker.io') ||
+        // This is an imperfect check that images used in test are not
+        // potentially subject to docker.io rate limiting and thus the cause of
+        // test flakes. Imperfect because some tests rely on latest images in
+        // particular to trigger the 'latest tag' policy and undoing that
+        // reliance is a longer term project (ROX-XXXX).
+        if (!TEST_IMAGES_TO_IGNORE_FOR_RATE_LIMIT_CHECK.contains(imageName) &&
+                (imageName.matches(~'^docker.io.*') ||
                  !imageName.matches(~'^[a-z]+\\.'))) {
             String nameAsTag = imageName.replaceAll(~"[./:]", "-")
             System.err.println """\
