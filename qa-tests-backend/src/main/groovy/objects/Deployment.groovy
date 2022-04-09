@@ -76,8 +76,8 @@ class Deployment {
         // particular to trigger the 'latest tag' policy and undoing that
         // reliance is a longer term project (ROX-XXXX).
         if (!TEST_IMAGES_TO_IGNORE_FOR_RATE_LIMIT_CHECK.contains(imageName) &&
-                (imageName.matches(~'^docker.io.*') ||
-                 !imageName.matches(~'^[a-z]+\\.'))) {
+                (imageName =~ /^docker.io.*/ ||
+                 !(imageName =~ /^[a-z]+\./))) {
             String nameAsTag = imageName.replaceAll(~"[./:]", "-")
             System.err.println """\
                 WARNING: ${imageName} may be subject to rate limiting.
