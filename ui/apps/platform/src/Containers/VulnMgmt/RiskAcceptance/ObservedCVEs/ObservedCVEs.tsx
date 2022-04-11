@@ -60,10 +60,10 @@ function ObservedCVEs({ imageId }: ObservedCVEsProps): ReactElement {
             perPage={perPage}
             onSetPage={(_e, num) => setPage(num)}
             onPerPageSelect={(_e, num) => setPerPage(num)}
-            getSortParams={getSortParams}
             updateTable={refetchQuery}
             searchFilter={searchFilter}
             setSearchFilter={setSearchFilter}
+            getSortParams={getSortParams}
         />
     );
 }

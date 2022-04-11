@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ThProps } from '@patternfly/react-table';
 import useURLParameter from 'hooks/useURLParameter';
 
@@ -14,13 +14,22 @@ type UseTableSortProps = {
     defaultSortOption: SortOption;
 };
 
+type TableSortOption = {
+    field: string;
+    reversed: boolean;
+};
+
 type UseTableSortResult = {
-    sortOption: {
-        field: string;
-        reversed: boolean;
-    };
+    sortOption: TableSortOption;
     getSortParams: GetSortParams;
 };
+
+function tableSortOption(field: string, direction: 'asc' | 'desc') {
+    return {
+        field,
+        reversed: direction === 'desc',
+    };
+}
 
 function useURLSort({ sortFields, defaultSortOption }: UseTableSortProps): UseTableSortResult {
     const [sortOption, setSortOption] = useURLParameter<SortOption>(
@@ -32,6 +41,10 @@ function useURLSort({ sortFields, defaultSortOption }: UseTableSortProps): UseTa
     // otherwise, use the default sort option values
     const activeSortField = sortOption?.field || defaultSortOption.field;
     const activeSortDirection = sortOption?.direction || defaultSortOption.direction;
+
+    const internalSortResultOption = useRef<TableSortOption>(
+        tableSortOption(activeSortField, activeSortDirection)
+    );
 
     // we'll use this to map the sort fields to an index PatternFly can use internally
     const [fieldToIndexMap, setFieldToIndexMap] = useState<Record<string, number>>({});
@@ -68,11 +81,15 @@ function useURLSort({ sortFields, defaultSortOption }: UseTableSortProps): UseTa
         };
     }
 
+    if (
+        internalSortResultOption.current.field !== activeSortField ||
+        internalSortResultOption.current.reversed !== (activeSortDirection === 'desc')
+    ) {
+        internalSortResultOption.current = tableSortOption(activeSortField, activeSortDirection);
+    }
+
     return {
-        sortOption: {
-            field: activeSortField,
-            reversed: activeSortDirection === 'desc',
-        },
+        sortOption: internalSortResultOption.current,
         getSortParams,
     };
 }
