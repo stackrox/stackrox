@@ -3,6 +3,7 @@ package uploaddb
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -33,6 +34,10 @@ func executeUpdateDbCommand(serverURL string) (*bytes.Buffer, *bytes.Buffer, err
 	flags.AddTimeout(cmd)
 	flags.AddConnectionFlags(cmd)
 	flags.AddPassword(cmd)
+
+	cmd.SilenceUsage = true
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
 
 	cmdArgs := []string{"--insecure-skip-tls-verify", "--insecure", "--endpoint", serverURL, "--password", "test"}
 	cmdArgs = append(cmdArgs, "--scanner-db-file", tmpFile.Name())
