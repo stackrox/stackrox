@@ -4,6 +4,7 @@
 Common test run patterns
 """
 
+from datetime import datetime
 from clusters import NullCluster
 from ci_tests import NullTest
 from posts import NullPost
@@ -18,25 +19,45 @@ class ClusterTestRunner:
     def run(self):
         hold = None
         try:
+            self.log_significant_event("About to provision")
             self.cluster.provision()
+            self.log_significant_event("provisioned")
         except Exception as err:
+            self.log_significant_event("provision failed")
             hold = err
         if hold is None:
             try:
+                self.log_significant_event("About to run test")
                 self.test.run()
+                self.log_significant_event("test completed")
             except Exception as err:
+                self.log_significant_event("test failed")
                 hold = err
             try:
+                self.log_significant_event("About to post")
                 self.post.run(test_output_dirs=self.test.test_output_dirs)
+                self.log_significant_event("post completed")
             except Exception as err:
+                self.log_significant_event("post failed")
                 if hold is None:
                     hold = err
 
         try:
+            self.log_significant_event("About to teardown")
             self.cluster.teardown()
+            self.log_significant_event("teardown completed")
         except Exception as err:
+            self.log_significant_event("teardown failed")
             if hold is None:
                 hold = err
 
         if hold is not None:
             raise hold
+
+    def log_significant_event(self, msg):
+        now = datetime.now()
+        time = now.strftime("%H:%M:%S")
+        marker = "****"
+        print(marker)
+        print(f"{marker} {time}: {msg}")
+        print(marker)

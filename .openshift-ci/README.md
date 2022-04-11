@@ -1,0 +1,1 @@
+This folder contains hooks to run OpenShift CI jobs. 

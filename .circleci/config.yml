@@ -4860,21 +4860,6 @@ jobs:
             - nop-steps-stanza
       - destroy-osd-gcp-cluster
 
-  openshift-ci-upgrade-test:
-    executor: custom
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-      - openshift-ci-mimic-env
-      - run:
-          name: Run the OpenShift CI upgrade test hook
-          command: |
-            .openshift-ci/gke_upgrade_test.py
-      - store_artifacts:
-          path: /tmp/artifact_dir/howto-locate-artifacts.html
-          destination: howto-locate-artifacts.html
-
 workflows:
   version: 2
 
@@ -5209,16 +5194,6 @@ workflows:
               only: /.*/
             branches:
               ignore: /.*/
-          requires:
-            - build-stackrox
-            - build-rhacs
-
-      - openshift-ci-upgrade-test:
-          context:
-          - quay-rhacs-eng-readonly
-          filters:
-            branches:
-              only: /.*(osci).*/
           requires:
             - build-stackrox
             - build-rhacs

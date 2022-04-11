@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S python3 -u
 
 """
 A hook for OpenShift CI to execute an upgrade test in a GKE cluster
