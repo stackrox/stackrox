@@ -67,7 +67,7 @@ export const search = {
 };
 
 export const alerts = {
-    countsByCluster: 'v1/alerts/summary/counts?*group_by=CLUSTER*',
+    countsByCluster: '/v1/alerts/summary/counts?*group_by=CLUSTER*',
     countsByCategory: '/v1/alerts/summary/counts?*group_by=CATEGORY*',
     alerts: '/v1/alerts?(\\?*)',
     alertById: '/v1/alerts/*',
