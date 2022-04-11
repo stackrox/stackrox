@@ -19,7 +19,7 @@ function AppPage(): ReactElement {
                 <Route path={loginPath} component={LoginPage} />
                 <Route path={testLoginResultsPath} component={TestLoginResultsPage} />
                 <Route path={authResponsePrefix} component={LoadingSection} />
-                <Redirect from="/" to={mainPath} />
+                <Route path="/" render={() => <Redirect to={mainPath} />} />
             </Switch>
         </>
     );

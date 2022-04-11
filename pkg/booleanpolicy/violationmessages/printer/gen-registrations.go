@@ -4,6 +4,7 @@ package printer
 
 const (
 	AddCapabilityKey                = "addCapability"
+	AllowPrivilegeEscalationKey     = "allowPrivilegeEscalation"
 	AppArmorProfileKey              = "appArmorProfile"
 	AutomountServiceAccountTokenKey = "automountServiceAccountToken"
 	ComponentKey                    = "component"
@@ -49,6 +50,7 @@ const (
 
 func init() {
 	registerFunc(AddCapabilityKey, addCapabilityPrinter)
+	registerFunc(AllowPrivilegeEscalationKey, allowPrivilegeEscalationPrinter)
 	registerFunc(AppArmorProfileKey, appArmorProfilePrinter)
 	registerFunc(AutomountServiceAccountTokenKey, automountServiceAccountTokenPrinter)
 	registerFunc(ComponentKey, componentPrinter)

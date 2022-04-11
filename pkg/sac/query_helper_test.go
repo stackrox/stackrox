@@ -139,12 +139,12 @@ func TestNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 		{
 			description:    "Generated query filter for fully included cluster subtree is simple cluster match",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterTreeFullyIncluded,
-			expected:       clusterMatch(planetArrakis),
+			expected:       search.ConjunctionQuery(clusterMatch(planetArrakis), getAnyNamespaceMatchQuery()),
 		},
 		{
 			description:    "Generated query filter for included cluster node is simple cluster match",
 			scopeGenerator: effectiveaccessscope.TestTreeOneClusterRootFullyIncluded,
-			expected:       clusterMatch(planetArrakis),
+			expected:       search.ConjunctionQuery(clusterMatch(planetArrakis), getAnyNamespaceMatchQuery()),
 		},
 		{
 			description:    "Generated query filter for single included namespace is the conjunction of the cluster and namespace matches",
@@ -193,7 +193,7 @@ func TestNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 			description:    "Generated query filter for a full and a partial cluster is the disjunction of the full cluster match and the partial cluster tree",
 			scopeGenerator: effectiveaccessscope.TestTreeClusterNamespaceFullClusterMixIncluded,
 			expected: search.DisjunctionQuery(
-				clusterMatch(planetArrakis),
+				search.ConjunctionQuery(clusterMatch(planetArrakis), getAnyNamespaceMatchQuery()),
 				search.ConjunctionQuery(
 					clusterMatch(planetEarth),
 					search.DisjunctionQuery(
@@ -215,7 +215,10 @@ func TestNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 		{
 			description:    "Generated query filter for two fully included cluster tree is the disjunction of the cluster ID matches",
 			scopeGenerator: effectiveaccessscope.TestTreeTwoClustersFullyIncluded,
-			expected:       search.DisjunctionQuery(clusterMatch(planetArrakis), clusterMatch(planetEarth)),
+			expected: search.DisjunctionQuery(
+				search.ConjunctionQuery(clusterMatch(planetArrakis), getAnyNamespaceMatchQuery()),
+				search.ConjunctionQuery(clusterMatch(planetEarth), getAnyNamespaceMatchQuery()),
+			),
 		},
 	}
 
@@ -235,11 +238,11 @@ func TestNamespaceScopeFilterGeneration(topLevelTest *testing.T) {
 }
 
 func clusterMatch(clusterID string) *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).MarkHighlighted(search.ClusterID).ProtoQuery()
 }
 
 func namespaceMatch(namespace string) *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.Namespace, namespace).ProtoQuery()
+	return search.NewQueryBuilder().AddExactMatches(search.Namespace, namespace).MarkHighlighted(search.Namespace).ProtoQuery()
 }
 
 func queryIdentical(expected, actual *v1.Query) bool {
