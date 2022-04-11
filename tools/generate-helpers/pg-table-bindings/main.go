@@ -118,6 +118,7 @@ func main() {
 
 		compileFKArgAndAttachToSchema(schema, props.Refs)
 
+		permissionCheckerEnabled := props.PermissionChecker != ""
 		templateMap := map[string]interface{}{
 			"Type":              props.Type,
 			"TrimmedType":       stringutils.GetAfter(props.Type, "."),
@@ -127,8 +128,7 @@ func main() {
 			"OptionsPath":       path.Join(packagenames.Rox, props.OptionsPath),
 			"JoinTable":         props.JoinTable,
 			"PermissionChecker": props.PermissionChecker,
-			"IsGloballyScoped":  isGloballyScoped(props.Type, props.PermissionChecker != "", props.JoinTable),
-			"IsDirectlyScoped":  isDirectlyScoped(schema),
+			"ResourceType":      getResourceType(props.Type, schema, permissionCheckerEnabled, props.JoinTable).String(),
 		}
 
 		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
@@ -143,7 +143,7 @@ func main() {
 				return err
 			}
 		}
-		if props.PermissionChecker != "" {
+		if permissionCheckerEnabled {
 			if err := renderFile(templateMap, permissionCheckerTemplate, "permission_checker.go"); err != nil {
 				return err
 			}

@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var typeRegistry = make(map[string]string)
@@ -46,42 +45,6 @@ func storageToResource(t string) string {
 		return s
 	}
 	return strings.TrimPrefix(t, "*storage.")
-}
-
-// isGloballyScoped returns true if storage type is global resource.
-func isGloballyScoped(storageType string, permissionChecker bool, joinTable bool) bool {
-	if joinTable {
-		return false
-	}
-	if permissionChecker {
-		return true
-	}
-	resource := storageToResource(storageType)
-	metadata := resourceMetadataFromString(resource)
-	return metadata.GetScope() == permissions.GlobalScope
-}
-
-func isDirectlyScoped(schema *walker.Schema) bool {
-	resource := storageToResource(schema.Type)
-	scope := resourceMetadataFromString(resource).Scope
-	clusterIDExists := false
-	namespaceExists := false
-	for _, f := range schema.Fields {
-		if strings.Contains(f.Search.FieldName, "Cluster ID") {
-			clusterIDExists = true
-		}
-		if strings.Contains(f.Search.FieldName, "Namespace") {
-			namespaceExists = true
-		}
-	}
-	switch scope {
-	case permissions.NamespaceScope:
-		return clusterIDExists && namespaceExists
-	case permissions.ClusterScope:
-		return clusterIDExists
-	default:
-		return true
-	}
 }
 
 func resourceMetadataFromString(resource string) permissions.ResourceMetadata {
