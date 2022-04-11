@@ -12,20 +12,20 @@ import (
 type ResourceType int
 
 const (
-	Unknown ResourceType = iota
-	JoinTable
-	PermissionChecker
-	GloballyScoped
-	DirectlyScoped
-	IndirectlyScoped
+	unknown ResourceType = iota
+	joinTable
+	permissionChecker
+	globallyScoped
+	directlyScoped
+	indirectlyScoped
 )
 
-func getResourceType(storageType string, schema *walker.Schema, permissionChecker bool, joinTable bool) ResourceType {
-	if joinTable {
-		return JoinTable
+func getResourceType(storageType string, schema *walker.Schema, permissionCheckerEnabled bool, isJoinTable bool) ResourceType {
+	if isJoinTable {
+		return joinTable
 	}
-	if permissionChecker {
-		return PermissionChecker
+	if permissionCheckerEnabled {
+		return permissionChecker
 	}
 	resource := storageToResource(storageType)
 	metadata := resourceMetadataFromString(resource)
@@ -43,20 +43,18 @@ func getResourceType(storageType string, schema *walker.Schema, permissionChecke
 
 	switch metadata.GetScope() {
 	case permissions.GlobalScope:
-		return GloballyScoped
+		return globallyScoped
 	case permissions.NamespaceScope:
 		if clusterIDExists && namespaceExists {
-			return DirectlyScoped
-		} else {
-			return IndirectlyScoped
+			return directlyScoped
 		}
+		return indirectlyScoped
 	case permissions.ClusterScope:
 		if clusterIDExists {
-			return DirectlyScoped
-		} else {
-			return IndirectlyScoped
+			return directlyScoped
 		}
-	default:
-		return Unknown
+		return indirectlyScoped
 	}
+
+	return unknown
 }

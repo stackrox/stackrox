@@ -18,17 +18,17 @@ func TestGetResourceType(t *testing.T) {
 		permissionChecker bool
 		joinTable         bool
 	}{
-		{typ: &storage.NamespaceMetadata{}, resourceType: DirectlyScoped},
-		{typ: &storage.NamespaceMetadata{}, resourceType: JoinTable, joinTable: true},
-		{typ: &storage.NamespaceMetadata{}, resourceType: JoinTable, joinTable: true, permissionChecker: true},
-		{typ: &storage.NamespaceMetadata{}, resourceType: PermissionChecker, joinTable: false, permissionChecker: true},
-		{typ: &storage.Cluster{}, resourceType: DirectlyScoped},
-		{typ: &storage.Deployment{}, resourceType: DirectlyScoped},
-		{typ: &storage.Image{}, resourceType: IndirectlyScoped},
-		{typ: &storage.CVE{}, resourceType: IndirectlyScoped},
-		{typ: &storage.Policy{}, resourceType: GloballyScoped},
-		{typ: &storage.Email{}, resourceType: JoinTable, joinTable: true},
-		{typ: &storage.Email{}, resourceType: PermissionChecker, permissionChecker: true},
+		{typ: &storage.NamespaceMetadata{}, resourceType: directlyScoped},
+		{typ: &storage.NamespaceMetadata{}, resourceType: joinTable, joinTable: true},
+		{typ: &storage.NamespaceMetadata{}, resourceType: joinTable, joinTable: true, permissionChecker: true},
+		{typ: &storage.NamespaceMetadata{}, resourceType: permissionChecker, joinTable: false, permissionChecker: true},
+		{typ: &storage.Cluster{}, resourceType: directlyScoped},
+		{typ: &storage.Deployment{}, resourceType: directlyScoped},
+		{typ: &storage.Image{}, resourceType: indirectlyScoped},
+		{typ: &storage.CVE{}, resourceType: indirectlyScoped},
+		{typ: &storage.Policy{}, resourceType: globallyScoped},
+		{typ: &storage.Email{}, resourceType: joinTable, joinTable: true},
+		{typ: &storage.Email{}, resourceType: permissionChecker, permissionChecker: true},
 	} {
 		tc := tc
 		t.Run(fmt.Sprintf("%T (join: %t, perm: %t) -> %s", tc.typ, tc.joinTable, tc.permissionChecker, tc.resourceType), func(t *testing.T) {

@@ -8,15 +8,15 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[Unknown-0]
-	_ = x[JoinTable-1]
-	_ = x[PermissionChecker-2]
-	_ = x[GloballyScoped-3]
-	_ = x[DirectlyScoped-4]
-	_ = x[IndirectlyScoped-5]
+	_ = x[unknown-0]
+	_ = x[joinTable-1]
+	_ = x[permissionChecker-2]
+	_ = x[globallyScoped-3]
+	_ = x[directlyScoped-4]
+	_ = x[indirectlyScoped-5]
 }
 
-const _ResourceType_name = "UnknownJoinTablePermissionCheckerGloballyScopedDirectlyScopedIndirectlyScoped"
+const _ResourceType_name = "unknownjoinTablepermissionCheckergloballyScopeddirectlyScopedindirectlyScoped"
 
 var _ResourceType_index = [...]uint8{0, 7, 16, 33, 47, 61, 77}
 
