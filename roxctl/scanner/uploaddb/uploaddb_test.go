@@ -96,9 +96,6 @@ func TestScannerUploadDbCommand(t *testing.T) {
 		stdOut, stdErr, err := executeUpdateDbCommand(server.URL)
 
 		require.NoError(t, err)
-		require.NotNil(t, stdErr)
-		require.NotNil(t, stdOut)
-
 		assert.Empty(t, stdErr.String())
 		assert.Equal(t, fmt.Sprintln(expectedResult), stdOut.String())
 	})
