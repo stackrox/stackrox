@@ -76,7 +76,7 @@ class Deployment {
         // potentially subject to docker.io rate limiting and thus the cause of
         // test flakes. Imperfect because some tests rely on latest images in
         // particular to trigger the 'latest tag' policy and undoing that
-        // reliance is a longer term project (ROX-XXXX).
+        // reliance is a longer term project (ROX-10041).
         if (!TEST_IMAGES_TO_IGNORE_FOR_RATE_LIMIT_CHECK.contains(imageName) &&
                 (imageName =~ /^docker.io.*/ ||
                  !(imageName =~ /^[a-z]+\./))) {
