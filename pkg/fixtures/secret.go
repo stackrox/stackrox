@@ -30,24 +30,29 @@ func GetScopedSecret(ID string, clusterID string, namespace string) *storage.Sec
 
 // GetSACTestSecretSet returns a set of mock secrets that can be used for scoped access control tests
 func GetSACTestSecretSet() []*storage.Secret {
-	secrets := make([]*storage.Secret, 0, 18)
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC))
-	secrets = append(secrets, GetScopedSecret(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC))
+	secrets := []*storage.Secret{
+		scopedSecret(testconsts.Cluster1, testconsts.NamespaceA),
+		scopedSecret(testconsts.Cluster1, testconsts.NamespaceA),
+		scopedSecret(testconsts.Cluster1, testconsts.NamespaceA),
+		scopedSecret(testconsts.Cluster1, testconsts.NamespaceA),
+		scopedSecret(testconsts.Cluster1, testconsts.NamespaceA),
+		scopedSecret(testconsts.Cluster1, testconsts.NamespaceA),
+		scopedSecret(testconsts.Cluster1, testconsts.NamespaceA),
+		scopedSecret(testconsts.Cluster1, testconsts.NamespaceA),
+		scopedSecret(testconsts.Cluster1, testconsts.NamespaceB),
+		scopedSecret(testconsts.Cluster1, testconsts.NamespaceB),
+		scopedSecret(testconsts.Cluster1, testconsts.NamespaceB),
+		scopedSecret(testconsts.Cluster1, testconsts.NamespaceB),
+		scopedSecret(testconsts.Cluster1, testconsts.NamespaceB),
+		scopedSecret(testconsts.Cluster2, testconsts.NamespaceB),
+		scopedSecret(testconsts.Cluster2, testconsts.NamespaceB),
+		scopedSecret(testconsts.Cluster2, testconsts.NamespaceB),
+		scopedSecret(testconsts.Cluster2, testconsts.NamespaceC),
+		scopedSecret(testconsts.Cluster2, testconsts.NamespaceC),
+	}
 	return secrets
+}
+
+func scopedSecret(clusterID string, namespace string) *storage.Secret {
+	return GetScopedSecret(uuid.NewV4().String(), clusterID, namespace)
 }
