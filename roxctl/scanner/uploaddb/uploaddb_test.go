@@ -39,6 +39,9 @@ func executeUpdateDbCommand(serverURL string) (*bytes.Buffer, *bytes.Buffer, err
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
+	// We are using common.DoHTTPRequestAndCheck200 inside uploadDd(). This
+	// function uses  global variables that are set by command execution.
+	// TODO: Change uploadDd function to use HTTPClient from Environment.
 	cmdArgs := []string{"--insecure-skip-tls-verify", "--insecure", "--endpoint", serverURL, "--password", "test"}
 	cmdArgs = append(cmdArgs, "--scanner-db-file", tmpFile.Name())
 	cmd.SetArgs(cmdArgs)
