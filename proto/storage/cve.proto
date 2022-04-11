@@ -52,7 +52,7 @@ message CVE {
 
     string                    id                    = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string                    cve                   = 22 [(gogoproto.moretags) = 'search:"CVE,store"'];
-    string                    operating_system      = 21;
+    string                    operating_system      = 21 [(gogoproto.moretags) = 'sql:"pk"'];
     float                     cvss                  = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
     float                     impact_score          = 14 [(gogoproto.moretags) = "search:\"Impact Score\""];
 

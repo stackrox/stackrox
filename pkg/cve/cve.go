@@ -51,7 +51,7 @@ func ContainsClusterCVE(types []storage.CVE_CVEType) bool {
 // ID creates a CVE ID from the given cve id (and os if postgres is enabled).
 func ID(cve, os string) string {
 	if features.PostgresDatastore.Enabled() {
-		return fmt.Sprintf("%s:%s", cve, os)
+		return fmt.Sprintf("%s#%s", cve, os)
 	}
 	return cve
 }

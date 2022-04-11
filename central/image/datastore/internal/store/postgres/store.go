@@ -87,8 +87,9 @@ create table if not exists image_components (
     Source integer,
     RiskScore numeric,
     TopCvss numeric,
+    OperatingSystem varchar,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(Id, OperatingSystem)
 )
 `
 
@@ -111,6 +112,7 @@ func createTableImageCves(ctx context.Context, db *pgxpool.Pool) {
 create table if not exists image_cves (
     Id varchar,
     Cve varchar,
+    OperatingSystem varchar,
     Cvss numeric,
     ImpactScore numeric,
     PublishedOn timestamp,
@@ -119,7 +121,7 @@ create table if not exists image_cves (
     SuppressExpiry timestamp,
     Severity integer,
     serialized bytea,
-    PRIMARY KEY(Id)
+    PRIMARY KEY(Id, OperatingSystem)
 )
 `
 
@@ -167,14 +169,15 @@ create table if not exists image_component_relations (
 func createTableImageComponentCveRelations(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists image_component_cve_relations (
+    image_components_OperatingSystem varchar,
     Id varchar,
     IsFixable bool,
     FixedBy varchar,
     ImageComponentId varchar,
     CveId varchar,
     serialized bytea,
-    PRIMARY KEY(Id, ImageComponentId, CveId),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageComponentId) REFERENCES image_components(Id) ON DELETE CASCADE
+    PRIMARY KEY(image_components_OperatingSystem, Id, ImageComponentId, CveId),
+    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageComponentId, image_components_OperatingSystem) REFERENCES image_components(Id, OperatingSystem) ON DELETE CASCADE
 )
 `
 
