@@ -575,6 +575,10 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 
 	matchingRegistries, err := getMatchingRegistries(registrySet.GetAll(), img)
 	if err != nil {
+		// Do not return an error for internal images when no integration is found.
+		if enrichmentContext.Internal {
+			return false, nil
+		}
 		return false, errors.Wrapf(err, "getting matching registries for image %q", imgName)
 	}
 

@@ -54,7 +54,7 @@ describe('Violations page', () => {
 
     const mockGetAlertsWithExclusions = () => {
         // Rename the fixture file alerts/alertsWithWhitelistedDeployments.json
-        // and add exclustions property as prerequisites to fix the test:
+        // and add exclusions property as prerequisites to fix the test:
         // xit('should exclude the deployment'
         cy.intercept('GET', `${api.alerts.alerts}?query=*`, {
             fixture: 'alerts/alertsWithExclusionDeployment.json', // TODO rename
