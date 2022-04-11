@@ -1,26 +1,25 @@
 package store
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// Store provides storage functionality for alerts.
+// Store provides storage functionality for images.
 //go:generate mockgen-wrapper
 type Store interface {
-	ListImage(sha string) (*storage.ListImage, bool, error)
+	Count(ctx context.Context) (int, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
-	GetImages() ([]*storage.Image, error)
-	CountImages() (int, error)
-	GetImage(sha string) (*storage.Image, bool, error)
+	Get(ctx context.Context, id string) (*storage.Image, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error)
 	// GetImageMetadata gets the image without scan/component data.
-	GetImageMetadata(sha string) (*storage.Image, bool, error)
-	GetImagesBatch(shas []string) ([]*storage.Image, []int, error)
+	GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error)
 
-	Exists(id string) (bool, error)
+	Upsert(ctx context.Context, image *storage.Image) error
+	Delete(ctx context.Context, id string) error
 
-	Upsert(image *storage.Image) error
-	Delete(id string) error
-
-	AckKeysIndexed(keys ...string) error
-	GetKeysToIndex() ([]string, error)
+	AckKeysIndexed(ctx context.Context, keys ...string) error
+	GetKeysToIndex(ctx context.Context) ([]string, error)
 }

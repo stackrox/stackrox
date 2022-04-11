@@ -392,7 +392,10 @@ func (resolver *cVEResolver) ID(ctx context.Context) graphql.ID {
 	return graphql.ID(value)
 }
 
-func (resolver *cVEResolver) Cve(ctx context.Context) string {
+func (resolver *cVEResolver) CVE(ctx context.Context) string {
+	if features.PostgresDatastore.Enabled() {
+		return resolver.data.GetCve()
+	}
 	return resolver.data.GetId()
 }
 

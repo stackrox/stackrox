@@ -23,7 +23,7 @@ enum VulnerabilitySeverity {
     CRITICAL_VULNERABILITY_SEVERITY  = 4;
 }
 
-// Next Tag: 22
+// Next Tag: 23
 message CVE {
     enum CVEType {
         UNKNOWN_CVE   = 0;
@@ -50,7 +50,8 @@ message CVE {
         repeated string tags = 2;
     }
 
-    string                    id                    = 1 [(gogoproto.moretags) = 'search:"CVE,store" sql:"pk"'];
+    string                    id                    = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string                    cve                   = 22 [(gogoproto.moretags) = 'search:"CVE,store"'];
     string                    operating_system      = 21 [(gogoproto.moretags) = 'sql:"pk"'];
     float                     cvss                  = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
     float                     impact_score          = 14 [(gogoproto.moretags) = "search:\"Impact Score\""];

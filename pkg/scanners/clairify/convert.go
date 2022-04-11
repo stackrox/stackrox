@@ -195,7 +195,7 @@ func convertFeature(feature *v1.Feature) *storage.EmbeddedImageScanComponent {
 	for _, executable := range feature.GetProvidedExecutables() {
 		imageComponentIds := make([]string, 0, len(executable.GetRequiredFeatures()))
 		for _, f := range executable.GetRequiredFeatures() {
-			imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion()))
+			imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion(), ""))
 		}
 		exec := &storage.EmbeddedImageScanComponent_Executable{Path: executable.GetPath(), Dependencies: imageComponentIds}
 		executables = append(executables, exec)

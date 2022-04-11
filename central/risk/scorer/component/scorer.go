@@ -52,7 +52,7 @@ func (s *componentScorerImpl) Score(ctx context.Context, scanComponent scancompo
 		Score:   overallScore,
 		Results: riskResults,
 		Subject: &storage.RiskSubject{
-			Id:   scancomponent.ComponentID(scanComponent.GetName(), scanComponent.GetVersion()),
+			Id:   scancomponent.ComponentID(scanComponent.GetName(), scanComponent.GetVersion(), ""),
 			Type: s.riskSubjectType,
 		},
 	}

@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
@@ -9,6 +10,7 @@ import (
 	cveUtil "github.com/stackrox/rox/central/cve/utils"
 	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
+	"github.com/stackrox/rox/central/image/datastore/internal/store/common"
 	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
 	imageComponentEdgeDackBox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
 	imageCVEEdgeDackBox "github.com/stackrox/rox/central/imagecveedge/dackbox"
@@ -39,7 +41,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, noUpdateTimestam
 }
 
 // ListImage returns ListImage with given id.
-func (b *storeImpl) ListImage(id string) (image *storage.ListImage, exists bool, err error) {
+func (b *storeImpl) ListImage(_ context.Context, id string) (image *storage.ListImage, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ListImage")
 
 	branch, err := b.dacky.NewReadOnlyTransaction()
@@ -60,7 +62,7 @@ func (b *storeImpl) ListImage(id string) (image *storage.ListImage, exists bool,
 }
 
 // Exists returns if and image exists in the DB with the given id.
-func (b *storeImpl) Exists(id string) (bool, error) {
+func (b *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 	branch, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
 		return false, err
@@ -76,7 +78,7 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 }
 
 // GetImages returns all images regardless of request
-func (b *storeImpl) GetImages() ([]*storage.Image, error) {
+func (b *storeImpl) GetImages(_ context.Context) ([]*storage.Image, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Image")
 
 	branch, err := b.dacky.NewReadOnlyTransaction()
@@ -104,8 +106,8 @@ func (b *storeImpl) GetImages() ([]*storage.Image, error) {
 	return images, nil
 }
 
-// CountImages returns the number of images currently stored in the DB.
-func (b *storeImpl) CountImages() (int, error) {
+// Count returns the number of images currently stored in the DB.
+func (b *storeImpl) Count(_ context.Context) (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "Image")
 
 	branch, err := b.dacky.NewReadOnlyTransaction()
@@ -123,7 +125,7 @@ func (b *storeImpl) CountImages() (int, error) {
 }
 
 // GetImage returns image with given id.
-func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err error) {
+func (b *storeImpl) Get(_ context.Context, id string) (image *storage.Image, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "Image")
 
 	branch, err := b.dacky.NewReadOnlyTransaction()
@@ -140,7 +142,7 @@ func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err 
 }
 
 // GetImageMetadata returns an image with given id without component/CVE data.
-func (b *storeImpl) GetImageMetadata(id string) (image *storage.Image, exists bool, err error) {
+func (b *storeImpl) GetImageMetadata(_ context.Context, id string) (image *storage.Image, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ImageMetadata")
 
 	txn, err := b.dacky.NewReadOnlyTransaction()
@@ -157,7 +159,7 @@ func (b *storeImpl) GetImageMetadata(id string) (image *storage.Image, exists bo
 }
 
 // GetImagesBatch returns images with given ids.
-func (b *storeImpl) GetImagesBatch(digests []string) ([]*storage.Image, []int, error) {
+func (b *storeImpl) GetMany(_ context.Context, ids []string) ([]*storage.Image, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
 	branch, err := b.dacky.NewReadOnlyTransaction()
@@ -168,7 +170,7 @@ func (b *storeImpl) GetImagesBatch(digests []string) ([]*storage.Image, []int, e
 
 	var images []*storage.Image
 	var missingIndices []int
-	for idx, id := range digests {
+	for idx, id := range ids {
 		image, err := b.readImage(branch, id)
 		if err != nil {
 			return nil, nil, err
@@ -183,7 +185,7 @@ func (b *storeImpl) GetImagesBatch(digests []string) ([]*storage.Image, []int, e
 }
 
 // Upsert writes and image to the DB, overwriting previous data.
-func (b *storeImpl) Upsert(image *storage.Image) error {
+func (b *storeImpl) Upsert(_ context.Context, image *storage.Image) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "Image")
 
 	iTime := protoTypes.TimestampNow()
@@ -200,7 +202,7 @@ func (b *storeImpl) Upsert(image *storage.Image) error {
 	}
 
 	// If the image scan is not updated, skip updating that part in DB, i.e. rewriting components and cves.
-	parts := Split(image, scanUpdated)
+	parts := common.Split(image, scanUpdated)
 
 	keysToUpdate := gatherKeysForImageParts(&parts)
 	return b.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keysToUpdate...), func() error {
@@ -257,7 +259,7 @@ func (b *storeImpl) isUpdated(image *storage.Image) (bool, bool, error) {
 }
 
 // Delete deletes an image and all its data.
-func (b *storeImpl) Delete(id string) error {
+func (b *storeImpl) Delete(_ context.Context, id string) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Remove, "Image")
 
 	keyTxn, err := b.dacky.NewReadOnlyTransaction()
@@ -287,19 +289,19 @@ func (b *storeImpl) IncTxnCount() error {
 // Writing an image to the DB and graph.
 ////////////////////////////////////////
 
-func gatherKeysForImageParts(parts *ImageParts) [][]byte {
+func gatherKeysForImageParts(parts *common.ImageParts) [][]byte {
 	var allKeys [][]byte
-	allKeys = append(allKeys, imageDackBox.BucketHandler.GetKey(parts.image.GetId()))
-	for _, componentParts := range parts.children {
-		allKeys = append(allKeys, componentDackBox.BucketHandler.GetKey(componentParts.component.GetId()))
-		for _, cveParts := range componentParts.children {
-			allKeys = append(allKeys, cveDackBox.BucketHandler.GetKey(cveParts.cve.GetId()))
+	allKeys = append(allKeys, imageDackBox.BucketHandler.GetKey(parts.Image.GetId()))
+	for _, componentParts := range parts.Children {
+		allKeys = append(allKeys, componentDackBox.BucketHandler.GetKey(componentParts.Component.GetId()))
+		for _, cveParts := range componentParts.Children {
+			allKeys = append(allKeys, cveDackBox.BucketHandler.GetKey(cveParts.Cve.GetId()))
 		}
 	}
 	return allKeys
 }
 
-func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timestamp, scanUpdated bool) error {
+func (b *storeImpl) writeImageParts(parts *common.ImageParts, iTime *protoTypes.Timestamp, scanUpdated bool) error {
 	dackTxn, err := b.dacky.NewTransaction()
 	if err != nil {
 		return err
@@ -308,11 +310,11 @@ func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timesta
 
 	var componentKeys [][]byte
 	// Update the image components and cves iff the image upsert has updated scan.
-	// Note: In such cases, the loops in following block will not be entered anyways since len(parts.children) and len(parts.imageCVEEdges) is 0.
+	// Note: In such cases, the loops in following block will not be entered anyways since len(parts.Children) and len(parts.ImageCVEEdges) is 0.
 	// This is more for good readability amidst the complex code.
 	if scanUpdated {
-		for i := range parts.children {
-			componentData := parts.children[i]
+		for i := range parts.Children {
+			componentData := parts.Children[i]
 			componentKey, err := b.writeComponentParts(dackTxn, &componentData, iTime)
 			if err != nil {
 				return err
@@ -320,26 +322,26 @@ func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timesta
 			componentKeys = append(componentKeys, componentKey)
 		}
 
-		if err := b.writeImageCVEEdges(dackTxn, parts.imageCVEEdges, iTime); err != nil {
+		if err := b.writeImageCVEEdges(dackTxn, parts.ImageCVEEdges, iTime); err != nil {
 			return err
 		}
 	}
 
-	if err := imageDackBox.Upserter.UpsertIn(nil, parts.image, dackTxn); err != nil {
+	if err := imageDackBox.Upserter.UpsertIn(nil, parts.Image, dackTxn); err != nil {
 		return err
 	}
-	if err := imageDackBox.ListUpserter.UpsertIn(nil, parts.listImage, dackTxn); err != nil {
+	if err := imageDackBox.ListUpserter.UpsertIn(nil, parts.ListImage, dackTxn); err != nil {
 		return err
 	}
 
 	// Update the image links in the graph iff the image upsert has updated scan.
 	if scanUpdated {
-		childKeys := make([][]byte, 0, len(parts.imageCVEEdges))
-		for cve := range parts.imageCVEEdges {
+		childKeys := make([][]byte, 0, len(parts.ImageCVEEdges))
+		for cve := range parts.ImageCVEEdges {
 			childKeys = append(childKeys, cveDackBox.BucketHandler.GetKey(cve))
 		}
 		childKeys = append(childKeys, componentKeys...)
-		dackTxn.Graph().SetRefs(imageDackBox.KeyFunc(parts.image), childKeys)
+		dackTxn.Graph().SetRefs(imageDackBox.KeyFunc(parts.Image), childKeys)
 	}
 	return dackTxn.Commit()
 }
@@ -363,10 +365,10 @@ func (b *storeImpl) writeImageCVEEdges(txn *dackbox.Transaction, edges map[strin
 	return nil
 }
 
-func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *ComponentParts, iTime *protoTypes.Timestamp) ([]byte, error) {
+func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *common.ComponentParts, iTime *protoTypes.Timestamp) ([]byte, error) {
 	var cveKeys [][]byte
-	for i := range parts.children {
-		cveData := parts.children[i]
+	for i := range parts.Children {
+		cveData := parts.Children[i]
 		cveKey, err := b.writeCVEParts(txn, &cveData, iTime)
 		if err != nil {
 			return nil, err
@@ -374,11 +376,11 @@ func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *Compone
 		cveKeys = append(cveKeys, cveKey)
 	}
 
-	componentKey := componentDackBox.KeyFunc(parts.component)
-	if err := imageComponentEdgeDackBox.Upserter.UpsertIn(nil, parts.edge, txn); err != nil {
+	componentKey := componentDackBox.KeyFunc(parts.Component)
+	if err := imageComponentEdgeDackBox.Upserter.UpsertIn(nil, parts.Edge, txn); err != nil {
 		return nil, err
 	}
-	if err := componentDackBox.Upserter.UpsertIn(nil, parts.component, txn); err != nil {
+	if err := componentDackBox.Upserter.UpsertIn(nil, parts.Component, txn); err != nil {
 		return nil, err
 	}
 
@@ -386,42 +388,42 @@ func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *Compone
 	return componentKey, nil
 }
 
-func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *CVEParts, iTime *protoTypes.Timestamp) ([]byte, error) {
-	if err := componentCVEEdgeDackBox.Upserter.UpsertIn(nil, parts.edge, txn); err != nil {
+func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *common.CVEParts, iTime *protoTypes.Timestamp) ([]byte, error) {
+	if err := componentCVEEdgeDackBox.Upserter.UpsertIn(nil, parts.Edge, txn); err != nil {
 		return nil, err
 	}
 
-	currCVEMsg, err := cveDackBox.Reader.ReadIn(cveDackBox.BucketHandler.GetKey(parts.cve.GetId()), txn)
+	currCVEMsg, err := cveDackBox.Reader.ReadIn(cveDackBox.BucketHandler.GetKey(parts.Cve.GetId()), txn)
 	if err != nil {
 		return nil, err
 	}
 	if currCVEMsg != nil {
 		currCVE := currCVEMsg.(*storage.CVE)
-		parts.cve.Suppressed = currCVE.GetSuppressed()
-		parts.cve.CreatedAt = currCVE.GetCreatedAt()
-		parts.cve.SuppressActivation = currCVE.GetSuppressActivation()
-		parts.cve.SuppressExpiry = currCVE.GetSuppressExpiry()
+		parts.Cve.Suppressed = currCVE.GetSuppressed()
+		parts.Cve.CreatedAt = currCVE.GetCreatedAt()
+		parts.Cve.SuppressActivation = currCVE.GetSuppressActivation()
+		parts.Cve.SuppressExpiry = currCVE.GetSuppressExpiry()
 
-		parts.cve.Types = cveUtil.AddCVETypeIfAbsent(currCVE.GetTypes(), storage.CVE_IMAGE_CVE)
-		if parts.cve.DistroSpecifics == nil {
-			parts.cve.DistroSpecifics = make(map[string]*storage.CVE_DistroSpecific)
+		parts.Cve.Types = cveUtil.AddCVETypeIfAbsent(currCVE.GetTypes(), storage.CVE_IMAGE_CVE)
+		if parts.Cve.DistroSpecifics == nil {
+			parts.Cve.DistroSpecifics = make(map[string]*storage.CVE_DistroSpecific)
 		}
 		for k, v := range currCVE.GetDistroSpecifics() {
-			parts.cve.DistroSpecifics[k] = v
+			parts.Cve.DistroSpecifics[k] = v
 		}
 	} else {
-		parts.cve.CreatedAt = iTime
+		parts.Cve.CreatedAt = iTime
 
 		// Populate the types slice for the new CVE.
-		parts.cve.Types = []storage.CVE_CVEType{storage.CVE_IMAGE_CVE}
+		parts.Cve.Types = []storage.CVE_CVEType{storage.CVE_IMAGE_CVE}
 	}
 
-	parts.cve.Type = storage.CVE_UNKNOWN_CVE
+	parts.Cve.Type = storage.CVE_UNKNOWN_CVE
 
-	if err := cveDackBox.Upserter.UpsertIn(nil, parts.cve, txn); err != nil {
+	if err := cveDackBox.Upserter.UpsertIn(nil, parts.Cve, txn); err != nil {
 		return nil, err
 	}
-	return cveDackBox.KeyFunc(parts.cve), nil
+	return cveDackBox.KeyFunc(parts.Cve), nil
 }
 
 // Deleting an image and it's keys from the graph.
@@ -435,12 +437,10 @@ func (b *storeImpl) deleteImageKeys(keys *imageKeySet) error {
 	}
 	defer deleteTxn.Discard()
 
-	err = imageDackBox.Deleter.DeleteIn(keys.imageKey, deleteTxn)
-	if err != nil {
+	if err := imageDackBox.Deleter.DeleteIn(keys.imageKey, deleteTxn); err != nil {
 		return err
 	}
-	err = imageDackBox.ListDeleter.DeleteIn(keys.listImageKey, deleteTxn)
-	if err != nil {
+	if err := imageDackBox.ListDeleter.DeleteIn(keys.listImageKey, deleteTxn); err != nil {
 		return err
 	}
 	for _, component := range keys.componentKeys {
@@ -499,7 +499,7 @@ func (b *storeImpl) readImage(txn *dackbox.Transaction, id string) (*storage.Ima
 		return nil, err
 	}
 
-	return Merge(*parts), nil
+	return common.Merge(*parts), nil
 }
 
 type imageKeySet struct {
@@ -522,9 +522,9 @@ type cveKeySet struct {
 	cveKey              []byte
 }
 
-func (b *storeImpl) readImageParts(txn *dackbox.Transaction, keys *imageKeySet) (*ImageParts, error) {
+func (b *storeImpl) readImageParts(txn *dackbox.Transaction, keys *imageKeySet) (*common.ImageParts, error) {
 	// Read the objects for the keys.
-	parts := ImageParts{imageCVEEdges: make(map[string]*storage.ImageCVEEdge)}
+	parts := common.ImageParts{ImageCVEEdges: make(map[string]*storage.ImageCVEEdge)}
 	msg, err := imageDackBox.Reader.ReadIn(keys.imageKey, txn)
 	if err != nil {
 		return nil, err
@@ -532,9 +532,9 @@ func (b *storeImpl) readImageParts(txn *dackbox.Transaction, keys *imageKeySet) 
 	if msg == nil {
 		return nil, nil
 	}
-	parts.image = msg.(*storage.Image)
+	parts.Image = msg.(*storage.Image)
 	for _, component := range keys.componentKeys {
-		componentPart := ComponentParts{}
+		componentPart := common.ComponentParts{}
 		compEdgeMsg, err := imageComponentEdgeDackBox.Reader.ReadIn(component.imageComponentEdgeKey, txn)
 		if err != nil {
 			return nil, err
@@ -549,8 +549,8 @@ func (b *storeImpl) readImageParts(txn *dackbox.Transaction, keys *imageKeySet) 
 		if compMsg == nil {
 			continue
 		}
-		componentPart.edge = compEdgeMsg.(*storage.ImageComponentEdge)
-		componentPart.component = compMsg.(*storage.ImageComponent)
+		componentPart.Edge = compEdgeMsg.(*storage.ImageComponentEdge)
+		componentPart.Component = compMsg.(*storage.ImageComponent)
 		for _, cve := range component.cveKeys {
 			cveEdgeMsg, err := componentCVEEdgeDackBox.Reader.ReadIn(cve.componentCVEEdgeKey, txn)
 			if err != nil {
@@ -567,12 +567,12 @@ func (b *storeImpl) readImageParts(txn *dackbox.Transaction, keys *imageKeySet) 
 				continue
 			}
 			cve := cveMsg.(*storage.CVE)
-			componentPart.children = append(componentPart.children, CVEParts{
-				edge: cveEdgeMsg.(*storage.ComponentCVEEdge),
-				cve:  cve,
+			componentPart.Children = append(componentPart.Children, common.CVEParts{
+				Edge: cveEdgeMsg.(*storage.ComponentCVEEdge),
+				Cve:  cve,
 			})
 		}
-		parts.children = append(parts.children, componentPart)
+		parts.Children = append(parts.Children, componentPart)
 	}
 
 	// Gather all the edges from image to cves and store it as a map from CVE IDs to *storage.ImageCVEEdge object.
@@ -591,7 +591,7 @@ func (b *storeImpl) readImageParts(txn *dackbox.Transaction, keys *imageKeySet) 
 		if err != nil {
 			return nil, err
 		}
-		parts.imageCVEEdges[edgeID.ChildID] = imageCVEEdge
+		parts.ImageCVEEdges[edgeID.ChildID] = imageCVEEdge
 	}
 	return &parts, nil
 }
@@ -653,11 +653,11 @@ func gatherKeysForImage(txn *dackbox.Transaction, imageID string) (*imageKeySet,
 	return ret, nil
 }
 
-func (b *storeImpl) AckKeysIndexed(keys ...string) error {
+func (b *storeImpl) AckKeysIndexed(_ context.Context, keys ...string) error {
 	return nil
 }
 
-func (b *storeImpl) GetKeysToIndex() ([]string, error) {
+func (b *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 	// DackBox handles indexing
 	return nil, nil
 }
