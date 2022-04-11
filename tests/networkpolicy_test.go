@@ -127,12 +127,12 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 		"Should have ingress": {
 			policyName:        "[Automated] Should have ingress policy",
 			policyField:       "Missing Ingress Network Policy",
-			networkPolicyFile: "yamls/allow-ingress-netpol.yaml",
+			networkPolicyFile: "testdata/allow-ingress-netpol.yaml",
 		},
 		"Should have egress": {
 			policyName:        "[Automated] Should have egress policy",
 			policyField:       "Missing Egress Network Policy",
-			networkPolicyFile: "yamls/allow-egress-netpol.yaml",
+			networkPolicyFile: "testdata/allow-egress-netpol.yaml",
 		},
 	}
 
@@ -155,8 +155,8 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 			assert.NoError(t, err)
 
 			// Deployment creation
-			setupDeploymentFromFile(t, netpolDeploymentName, "yamls/nginx.yaml")
-			defer teardownDeploymentFromFile(t, netpolDeploymentName, "yamls/nginx.yaml")
+			setupDeploymentFromFile(t, netpolDeploymentName, "testdata/nginx.yaml")
+			defer teardownDeploymentFromFile(t, netpolDeploymentName, "testdata/nginx.yaml")
 
 			testutils.Retry(t, 3, 3*time.Second, func(retryT testutils.T) {
 				// Assert alerts
