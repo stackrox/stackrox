@@ -88,7 +88,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
         orchestrator.deleteNamespace(TEST_NAMESPACE)
-        orchestrator.createNamespace(TEST_NAMESPACE)
+        orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
+        addStackroxImagePullSecret(TEST_NAMESPACE)
         String centralHost = orchestrator.getServiceIP("central", "stackrox")
         def splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE, false)
         configureSplunkTA(splunkDeployment, centralHost)

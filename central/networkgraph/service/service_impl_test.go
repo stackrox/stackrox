@@ -170,18 +170,22 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 	//   - flows between deployments in namespace foo and bar and masked deployments depX, depZ, and depW
 	//   - flows es1 - depA, es2 - depA
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.OneStepSCC{
-		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.OneStepSCC{
-			sac.ResourceScopeKey(resources.Deployment.Resource): sac.AllowFixedScopes(
-				sac.ClusterScopeKeys("mycluster"),
-				sac.NamespaceScopeKeys("foo", "bar", "baz"),
-			),
-			sac.ResourceScopeKey(resources.NetworkGraph.Resource): sac.AllowFixedScopes(
-				sac.ClusterScopeKeys("mycluster"),
-				sac.NamespaceScopeKeys("foo", "baz", "far"),
-			),
-		},
-	})
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
+			sac.TestScopeMap{
+				storage.Access_READ_ACCESS: {
+					resources.Deployment.Resource: &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							"mycluster": {Namespaces: []string{"foo", "bar", "baz"}},
+						},
+					},
+					resources.NetworkGraph.Resource: &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							"mycluster": {Namespaces: []string{"foo", "baz", "far"}},
+						},
+					},
+				},
+			}))
 
 	ts := types.TimestampNow()
 	req := &v1.NetworkGraphRequest{

@@ -58,7 +58,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     static final private Deployment MISC_DEPLOYMENT = new Deployment()
         .setName("random-busybox")
-        .setImage("busybox:1.30")
+        .setImage("quay.io/rhacs-eng/qa:busybox-1-30")
         .addLabel("app", "random-busybox")
 
     def setupSpec() {
@@ -274,7 +274,7 @@ class AdmissionControllerTest extends BaseSpecification {
         and:
         "Create the deployment with a harmless image"
         def modDeployment = deployment.clone()
-        modDeployment.image = "busybox:1.28"
+        modDeployment.image = "quay.io/rhacs-eng/qa:busybox-1-28"
         def created = orchestrator.createDeploymentNoWait(modDeployment)
         assert created
 

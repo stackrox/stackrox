@@ -236,43 +236,22 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 	}
 
 	if features.ImageSignatureVerification.Enabled() {
-		i := 0
-		// Since policies query for image verification status as a single boolean field, we add it to the image here.
+		ids := []string{}
 		for _, result := range image.GetSignatureVerificationData().GetResults() {
 			if result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-				if err := addSignatureVerificationResult(obj, i, result.GetVerifierId()); err != nil {
-					return nil, utils.Should(err)
-				}
-				i++
+				ids = append(ids, result.GetVerifierId())
 			}
 		}
 		// When the object is not created, the policy will not match, but it should match.
-		// Any image that DOESN'T have any signature should also be visible here (I guess?).
-		// This means, we will have to create a dummy entry within the object that will make it
-		// possible for us to match the policy and create alerts.
-		if i == 0 {
-			if err := addSignatureVerificationResult(obj, i, ""); err != nil {
-				return nil, utils.Should(err)
-			}
+		if err := obj.AddPlainObjAt(
+			&imageSignatureVerification{
+				VerifierIDs: ids,
+			},
+			pathutil.FieldStep("SignatureVerificationData"),
+			pathutil.FieldStep(imageSignatureVerifiedKey)); err != nil {
+			return nil, utils.Should(err)
 		}
 	}
 
 	return obj, nil
-}
-
-// addSignatureVerificationResult will add a signature verification result to
-// the augmented object.
-func addSignatureVerificationResult(obj *pathutil.AugmentedObj, i int, id string) error {
-	err := obj.AddPlainObjAt(
-		&imageSignatureVerification{
-			VerifierID: id,
-		},
-		pathutil.FieldStep("SignatureVerificationData"),
-		pathutil.FieldStep("Results"),
-		pathutil.IndexStep(i),
-		pathutil.FieldStep(imageSignatureVerifiedKey))
-	if err != nil {
-		return err
-	}
-	return nil
 }

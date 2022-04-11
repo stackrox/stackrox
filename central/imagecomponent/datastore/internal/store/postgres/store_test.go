@@ -56,13 +56,13 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	imageComponent := &storage.ImageComponent{}
 	s.NoError(testutils.FullInit(imageComponent, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundImageComponent, exists, err := store.Get(ctx, imageComponent.GetId(), imageComponent.GetName(), imageComponent.GetVersion(), imageComponent.GetOperatingSystem())
+	foundImageComponent, exists, err := store.Get(ctx, imageComponent.GetId(), imageComponent.GetOperatingSystem())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundImageComponent)
 
 	s.NoError(store.Upsert(ctx, imageComponent))
-	foundImageComponent, exists, err = store.Get(ctx, imageComponent.GetId(), imageComponent.GetName(), imageComponent.GetVersion(), imageComponent.GetOperatingSystem())
+	foundImageComponent, exists, err = store.Get(ctx, imageComponent.GetId(), imageComponent.GetOperatingSystem())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(imageComponent, foundImageComponent)
@@ -71,18 +71,18 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(imageComponentCount, 1)
 
-	imageComponentExists, err := store.Exists(ctx, imageComponent.GetId(), imageComponent.GetName(), imageComponent.GetVersion(), imageComponent.GetOperatingSystem())
+	imageComponentExists, err := store.Exists(ctx, imageComponent.GetId(), imageComponent.GetOperatingSystem())
 	s.NoError(err)
 	s.True(imageComponentExists)
 	s.NoError(store.Upsert(ctx, imageComponent))
 
-	foundImageComponent, exists, err = store.Get(ctx, imageComponent.GetId(), imageComponent.GetName(), imageComponent.GetVersion(), imageComponent.GetOperatingSystem())
+	foundImageComponent, exists, err = store.Get(ctx, imageComponent.GetId(), imageComponent.GetOperatingSystem())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(imageComponent, foundImageComponent)
 
-	s.NoError(store.Delete(ctx, imageComponent.GetId(), imageComponent.GetName(), imageComponent.GetVersion(), imageComponent.GetOperatingSystem()))
-	foundImageComponent, exists, err = store.Get(ctx, imageComponent.GetId(), imageComponent.GetName(), imageComponent.GetVersion(), imageComponent.GetOperatingSystem())
+	s.NoError(store.Delete(ctx, imageComponent.GetId(), imageComponent.GetOperatingSystem()))
+	foundImageComponent, exists, err = store.Get(ctx, imageComponent.GetId(), imageComponent.GetOperatingSystem())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundImageComponent)

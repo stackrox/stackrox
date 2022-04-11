@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -22,6 +23,10 @@ var (
 
 	//go:embed files/*.json
 	policiesFS embed.FS
+
+	featureFlagFileGuard = map[string]features.FeatureFlag{
+		"deployment_has_ingress_network_policy.json": features.NetworkPolicySystemPolicy,
+	}
 )
 
 // DefaultPolicies returns a slice of the default policies.
@@ -34,6 +39,10 @@ func DefaultPolicies() ([]*storage.Policy, error) {
 
 	errList := errorhelpers.NewErrorList("Default policy validation")
 	for _, f := range files {
+		if flag, ok := featureFlagFileGuard[f.Name()]; ok && !flag.Enabled() {
+			continue
+		}
+
 		p, err := readPolicyFile(filepath.Join(policiesDir, f.Name()))
 		if err != nil {
 			errList.AddError(err)

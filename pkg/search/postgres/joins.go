@@ -53,7 +53,7 @@ func (j *joins) toSQLJoinClauseParts() *sqlJoinClauseParts {
 	}
 }
 
-// getJoins returns join clauses to join src to destinations, as a map keyed by destination table name.
+// getJoins returns join clauses to join src to destinations as a map keyed on destination table name.
 func getJoins(src *walker.Schema, destinations ...*walker.Schema) ([]string, map[string]string) {
 	joinMap := make(map[string]*sqlJoinClauseParts)
 	for _, dst := range destinations {

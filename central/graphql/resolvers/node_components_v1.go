@@ -87,7 +87,7 @@ func (encr *EmbeddedNodeScanComponentResolver) UnusedVarSink(ctx context.Context
 
 // ID returns a unique identifier for the component.
 func (encr *EmbeddedNodeScanComponentResolver) ID(ctx context.Context) graphql.ID {
-	return graphql.ID(scancomponent.ComponentID(encr.data.GetName(), encr.data.GetVersion()))
+	return graphql.ID(scancomponent.ComponentID(encr.data.GetName(), encr.data.GetVersion(), ""))
 }
 
 // Name returns the name of the component.
@@ -198,7 +198,7 @@ func mapNodesToComponentResolvers(root *Resolver, nodes []*storage.Node, query *
 			if !componentPred.Matches(component) {
 				continue
 			}
-			thisComponentID := scancomponent.ComponentID(component.GetName(), component.GetVersion())
+			thisComponentID := scancomponent.ComponentID(component.GetName(), component.GetVersion(), "")
 			if _, exists := idToComponent[thisComponentID]; !exists {
 				idToComponent[thisComponentID] = &EmbeddedNodeScanComponentResolver{
 					root: root,

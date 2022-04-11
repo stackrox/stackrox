@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -41,7 +42,7 @@ func (s *ApitokensStoreSuite) TearDownTest() {
 }
 
 func (s *ApitokensStoreSuite) TestStore() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -61,6 +62,8 @@ func (s *ApitokensStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundTokenMetadata)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, tokenMetadata))
 	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)
@@ -70,11 +73,15 @@ func (s *ApitokensStoreSuite) TestStore() {
 	tokenMetadataCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(tokenMetadataCount, 1)
+	tokenMetadataCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(tokenMetadataCount)
 
 	tokenMetadataExists, err := store.Exists(ctx, tokenMetadata.GetId())
 	s.NoError(err)
 	s.True(tokenMetadataExists)
 	s.NoError(store.Upsert(ctx, tokenMetadata))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, tokenMetadata), sac.ErrResourceAccessDenied)
 
 	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)
@@ -86,6 +93,7 @@ func (s *ApitokensStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTokenMetadata)
+	s.ErrorIs(store.Delete(withNoAccessCtx, tokenMetadata.GetId()), sac.ErrResourceAccessDenied)
 
 	var tokenMetadatas []*storage.TokenMetadata
 	for i := 0; i < 200; i++ {

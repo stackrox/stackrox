@@ -558,7 +558,8 @@ func newFakeClientWithInitBundle(t *testing.T) ctrlClient.Client {
 	return testutils.NewFakeClientBuilder(t,
 		createSecret(sensorTLSSecretName),
 		createSecret(collectorTLSSecretName),
-		createSecret(admissionControlTLSSecretName)).Build()
+		createSecret(admissionControlTLSSecretName),
+		testutils.ValidClusterVersion).Build()
 }
 
 func newFakeClientWithInitBundleAndCentral(t *testing.T) ctrlClient.Client {
@@ -566,6 +567,7 @@ func newFakeClientWithInitBundleAndCentral(t *testing.T) ctrlClient.Client {
 		createSecret(sensorTLSSecretName),
 		createSecret(collectorTLSSecretName),
 		createSecret(admissionControlTLSSecretName),
+		testutils.ValidClusterVersion,
 		&platform.Central{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "a-central",

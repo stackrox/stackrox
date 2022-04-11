@@ -4,7 +4,6 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
-import "storage/cve.proto";
 import "storage/vulnerability.proto";
 import "gogoproto/gogo.proto";
 
@@ -233,13 +232,6 @@ message ListImage {
 
     reserved 9;  // was map<string, string> clusterns_scopes
     int64 priority                         = 10;
-}
-
-message ImageCVEEdge {
-    // base 64 encoded Image:CVE ids.
-    string                    id                     = 1;
-    google.protobuf.Timestamp first_image_occurrence = 2 [(gogoproto.moretags) = "search:\"First Image Occurrence Timestamp,hidden\""];
-    VulnerabilityState        state                  = 3 [(gogoproto.moretags) = "search:\"Vulnerability State\""];
 }
 
 message WatchedImage {

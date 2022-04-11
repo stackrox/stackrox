@@ -3,13 +3,15 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "google/protobuf/timestamp.proto";
+import "storage/cve.proto";
 import "gogoproto/gogo.proto";
 
 package storage;
 
 message ImageComponentEdge {
   // id is base 64 encoded Image:Component ids.
-  string    id                 = 1;
+  string    id                 = 1 [(gogoproto.moretags) = 'sql:"pk"'];
   /// Layer that contains this component
   oneof has_layer_index {
     int32   layer_index        = 2;
@@ -17,12 +19,12 @@ message ImageComponentEdge {
 
   string    location           = 3 [(gogoproto.moretags) = 'search:"Component Location,store,hidden"'];
   string    image_id           = 4 [(gogoproto.moretags) = 'sql:"pk,fk(Image:id)"'];
-  string    image_component_id = 5 [(gogoproto.moretags) = 'sql:"pk,fk(ImageComponent:id)"'];
+  string    image_component_id = 5 [(gogoproto.moretags) = 'sql:"pk"'];
 }
 
 message ComponentCVEEdge {
   // base 64 encoded Component:CVE ids.
-  string     id                   = 1;
+  string     id                   = 1 [(gogoproto.moretags) = 'sql:"pk"'];
 
   bool       is_fixable           = 2 [(gogoproto.moretags) = 'search:"Fixable,store"'];
 
@@ -31,6 +33,15 @@ message ComponentCVEEdge {
     string  fixed_by              = 3 [(gogoproto.moretags) = 'search:"Fixed By,store,hidden"'];
   }
   string    image_component_id    = 4 [(gogoproto.moretags) = 'sql:"pk,fk(ImageComponent:id)"'];
-  string    cve_id                = 5 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:id)"'];
-  string    cve_operating_system  = 6 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:operating_system)"'];
+  string    cve_id                = 5 [(gogoproto.moretags) = 'sql:"pk"'];
 }
+
+message ImageCVEEdge {
+  // base 64 encoded Image:CVE ids.
+  string                    id                     = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  google.protobuf.Timestamp first_image_occurrence = 2 [(gogoproto.moretags) = 'search:"First Image Occurrence Timestamp,hidden"'];
+  VulnerabilityState        state                  = 3 [(gogoproto.moretags) = 'search:"Vulnerability State"'];
+  string                    image_id               = 4 [(gogoproto.moretags) = 'sql:"pk,fk(Image:id)"'];
+  string                    image_cve_id           = 5 [(gogoproto.moretags) = 'sql:"pk"'];
+}
+

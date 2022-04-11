@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 
 import usePagination from 'hooks/patternfly/usePagination';
 import queryService from 'utils/queryService';
-import useSearch from 'hooks/useSearch';
+import useURLSearch from 'hooks/useURLSearch';
 import { SearchFilter } from 'types/search';
 import { PageSection, PageSectionVariants } from '@patternfly/react-core';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -19,7 +19,7 @@ function setDefaultSearchFields(searchFilter: SearchFilter): SearchFilter {
 }
 
 function PendingApprovals(): ReactElement {
-    const { searchFilter, setSearchFilter } = useSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
 
     const modifiedSearchObject = setDefaultSearchFields(searchFilter);
     /*
