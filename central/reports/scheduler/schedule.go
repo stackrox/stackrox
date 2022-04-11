@@ -128,6 +128,28 @@ type reportEmailFormat struct {
 	DateStr    string
 }
 
+// Adds RHACS or Stackrox branding to email vulnerability report based on image flavor
+func getBrandedNoVulnsFoundEmailTemplate() string {
+	var brandedNoVulnsFoundEmailTemplate string
+	if defaults.ImageFlavorEnv() == defaults.ImageFlavorNameStackRoxIORelease {
+		brandedNoVulnsFoundEmailTemplate = fmt.Sprintf(noVulnsFoundEmailTemplate, stackroxBranding)
+	} else {
+		brandedNoVulnsFoundEmailTemplate = fmt.Sprintf(noVulnsFoundEmailTemplate, rhacsBranding)
+	}
+	return brandedNoVulnsFoundEmailTemplate
+}
+
+// Adds RHACS or Stackrox branding to email vulnerability report based on image flavor
+func getBrandedVulnReportEmailTemplate() string {
+	var brandedVulnReportEmailTemplate string
+	if defaults.ImageFlavorEnv() == defaults.ImageFlavorNameStackRoxIORelease {
+		brandedVulnReportEmailTemplate = fmt.Sprintf(vulnReportEmailTemplate, stackroxBranding)
+	} else {
+		brandedVulnReportEmailTemplate = fmt.Sprintf(vulnReportEmailTemplate, rhacsBranding)
+	}
+	return brandedVulnReportEmailTemplate
+}
+
 // New instantiates a new cron scheduler and supports adding and removing report configurations
 func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.DataStore,
 	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDatastore.DataStore, roleDS roleDataStore.DataStore,
