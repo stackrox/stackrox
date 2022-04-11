@@ -127,6 +127,7 @@ func main() {
 			"OptionsPath":       path.Join(packagenames.Rox, props.OptionsPath),
 			"JoinTable":         props.JoinTable,
 			"PermissionChecker": props.PermissionChecker,
+			"IsGloballyScoped":  isGloballyScoped(props.Type, props.PermissionChecker != "", props.JoinTable),
 		}
 
 		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
@@ -135,6 +136,7 @@ func main() {
 		if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
 			return err
 		}
+
 		if props.SearchCategory != "" {
 			if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
 				return err
