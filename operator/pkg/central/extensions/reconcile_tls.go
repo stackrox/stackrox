@@ -69,12 +69,11 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	if err := r.ReconcileSecret(ctx, "scanner-db-tls", scannerEnabled && !shouldDelete, r.validateScannerDBTLSData, r.generateScannerDBTLSData, true); err != nil {
 		return errors.Wrap(err, "reconciling scanner-db secret")
 	}
-	return nil // ReconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
+	return nil // reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
 }
 
-// ReconcileInitBundleSecrets is only exported temporarily to silence the static checker while it's unused.
-// TODO(ROX-9969): make private after the init-bundle cert rotation stabilization.
-func (r createCentralTLSExtensionRun) ReconcileInitBundleSecrets(ctx context.Context, shouldDelete bool) error {
+//lint:ignore U1000 ignore unused method. TODO(ROX-9969): remove lint ignore after the init-bundle cert rotation stabilization.
+func (r createCentralTLSExtensionRun) reconcileInitBundleSecrets(ctx context.Context, shouldDelete bool) error {
 	bundleSecretShouldExist, err := r.shouldBundleSecretsExist(ctx, shouldDelete)
 	if err != nil {
 		return err
