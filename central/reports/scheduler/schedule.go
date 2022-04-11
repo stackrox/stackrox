@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
@@ -72,12 +73,16 @@ var (
     }`
 
 	vulnReportEmailTemplate = `
-	Red Hat Advanced Cluster Security for Kubernetes has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
+	%s has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
 
 	To address these findings, please review the impacted software packages in the container images running within deployments you are responsible for and update them to a version containing the fix, if one is available.`
 
 	noVulnsFoundEmailTemplate = `
-	Red Hat Advanced Cluster Security for Kubernetes has found zero vulnerabilities associated with the running container images owned by your organization.`
+	%s has found zero vulnerabilities associated with the running container images owned by your organization.`
+
+	rhacsBranding = `Red Hat Advanced Cluster Security for Kubernetes`
+
+	stackroxBranding = `StackRox`
 
 	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 )
@@ -285,7 +290,12 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	}
 	// If it is an empty report, do not send an attachment in the final notification email and the email body
 	// will indicate that no vulns were found
-	messageText := noVulnsFoundEmailTemplate
+	var messageText string
+	if defaults.ImageFlavorEnv() == defaults.ImageFlavorNameStackRoxIORelease {
+		messageText = fmt.Sprintf(noVulnsFoundEmailTemplate, stackroxBranding)
+	} else {
+		messageText = fmt.Sprintf(noVulnsFoundEmailTemplate, rhacsBranding)
+	}
 	if zippedCSVData != nil {
 		messageText, err = formatMessage(rc)
 		if err != nil {
@@ -319,7 +329,15 @@ func formatMessage(rc *storage.ReportConfiguration) (string, error) {
 		data.WhichVulns = fmt.Sprintf("for new vulnerabilities since %s",
 			timestamp.FromProtobuf(rc.LastSuccessfulRunTime).GoTime().Format("January 02, 2006"))
 	}
-	tmpl, err := template.New("emailBody").Parse(vulnReportEmailTemplate)
+
+	var brandedVulnReportEmailTemplate string
+	if defaults.ImageFlavorEnv() == defaults.ImageFlavorNameStackRoxIORelease {
+		brandedVulnReportEmailTemplate = fmt.Sprintf(vulnReportEmailTemplate, stackroxBranding)
+	} else {
+		brandedVulnReportEmailTemplate = fmt.Sprintf(vulnReportEmailTemplate, rhacsBranding)
+	}
+
+	tmpl, err := template.New("emailBody").Parse(brandedVulnReportEmailTemplate)
 	if err != nil {
 		return "", err
 	}
