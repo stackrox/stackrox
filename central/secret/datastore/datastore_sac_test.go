@@ -81,7 +81,7 @@ func (s *secretDatastoreSACTestSuite) SetupSuite() {
 	s.datastore, err = New(s.storage, s.indexer, s.search)
 	s.NoError(err)
 
-	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), resources.Secret.GetResource())
+	s.testContexts = testutils.GetNamespaceScopedTestContexts(s.T(), context.Background(), resources.Secret.GetResource())
 }
 
 func (s *secretDatastoreSACTestSuite) TearDownSuite() {

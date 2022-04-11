@@ -1,7 +1,6 @@
 package testutils
 
 import (
-	"fmt"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -36,12 +35,12 @@ func CountResultsPerClusterAndNamespace(_ *testing.T, searchResults []searchPkg.
 	for _, result := range searchResults {
 		var clusterID string
 		var namespace string
-		for k, v := range result.Fields {
+		for k, v := range result.Matches {
 			if k == clusterIDField.GetFieldPath() {
-				clusterID = fmt.Sprintf("%v", v)
+				clusterID = v[0]
 			}
 			if k == namespaceField.GetFieldPath() {
-				namespace = fmt.Sprintf("%v", v)
+				namespace = v[0]
 			}
 		}
 		if _, clusterIDExists := resultDistribution[clusterID]; !clusterIDExists {
