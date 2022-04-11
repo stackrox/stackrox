@@ -59,7 +59,7 @@ export function getNodeTableColumns(workflowState) {
                         url={url}
                         fixableUrl={fixableUrl}
                         hideLink={pdf}
-                        imageNotes={notes}
+                        nodeNotes={notes}
                         scan={scan}
                     />
                 );
