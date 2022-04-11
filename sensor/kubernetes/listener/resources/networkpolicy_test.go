@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
@@ -391,11 +392,9 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 	for name, c := range cases {
 		suite.T().Run(name, func(t *testing.T) {
 			c.expectedEvents = createSensorEvent(c.netpol.(*networkingV1.NetworkPolicy), c.action)
-			deps := map[string]*deploymentWrap{}
-			processDeploymentMock := suite.detector.EXPECT().ProcessDeployment(gomock.Any(), gomock.Eq(central.ResourceAction_UPDATE_RESOURCE)).DoAndReturn(func(d *storage.Deployment, _ central.ResourceAction) {
-				deps[d.GetId()] = &deploymentWrap{
-					Deployment: d,
-				}
+			deps := set.StringSet{}
+			reprocessDeploymentMock := suite.detector.EXPECT().ReprocessDeployments(gomock.Any()).DoAndReturn(func(ids ...string) {
+				deps.AddAll(ids...)
 			})
 			upsertMock := suite.netpolStore.EXPECT().Upsert(gomock.Any()).Return()
 			deleteMock := suite.netpolStore.EXPECT().Delete(gomock.Any(), gomock.Any()).Return()
@@ -406,9 +405,8 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 				upsertMock.Times(1)
 				deleteMock.Times(0)
 			}
-			processDeploymentMock.Times(len(c.expectedDeployments))
 			events := suite.dispatcher.ProcessEvent(c.netpol, c.oldNetpol, c.action)
-
+			reprocessDeploymentMock.Times(1)
 			for _, d := range c.expectedDeployments {
 				_, ok := deps[d.GetId()]
 				assert.Truef(t, ok, "Expected call to ProcessDeployment with Deployment Id %s not found", d.GetId())
