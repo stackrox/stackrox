@@ -350,7 +350,7 @@ build-prep: deps
 
 .PHONY: cli-build
 cli-build: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
 ifdef CI
 	RACE=0 CGO_ENABLED=0 GOOS=windows $(GOBUILD) ./roxctl
@@ -366,7 +366,7 @@ cli-linux: build-prep
 	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
 
 cli-darwin: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
 
 upgrader: bin/$(HOST_OS)/upgrader
 
