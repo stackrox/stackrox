@@ -31,6 +31,8 @@ type scannerGenerateCommand struct {
 	apiParams apiparams.Scanner
 	timeout   time.Duration
 
+	enablePodSecurityPolicies bool
+
 	// Properties that are injected or constructed.
 	env common.Environment
 }
@@ -59,6 +61,8 @@ func (cmd *scannerGenerateCommand) validate() error {
 
 func (cmd *scannerGenerateCommand) generate() error {
 	cmd.apiParams.ClusterType = clustertype.Get().String()
+	cmd.apiParams.DisablePodSecurityPolicies = !cmd.enablePodSecurityPolicies
+
 	body, err := json.Marshal(cmd.apiParams)
 	if err != nil {
 		return errors.Wrap(err, "could not marshal scanner params")
@@ -105,6 +109,7 @@ func Command(cliEnvironment common.Environment) *cobra.Command {
 		fmt.Sprintf(
 			"Generate deployment files supporting the given Istio version. Valid versions: %s",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
+	c.PersistentFlags().BoolVar(&scannerGenerateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", true, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
 
 	return c
 }

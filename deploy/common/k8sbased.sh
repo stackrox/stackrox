@@ -188,6 +188,10 @@ function launch_central {
     	add_args "--with-config-file=${ROXDEPLOY_CONFIG_FILE_MAP}"
     fi
 
+    if [[ "$POD_SECURITY_POLICIES" == "false" ]]; then
+      add_args "--enable-pod-security-policies=false"
+    fi
+
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"
     if ! (( use_docker )); then
@@ -283,6 +287,12 @@ function launch_central {
       if [[ -n $MODULE_LOGLEVELS ]]; then
         helm_args+=(
           --set customize.central.envVars.MODULE_LOGLEVELS="${MODULE_LOGLEVELS}"
+        )
+      fi
+
+      if [[ "$POD_SECURITY_POLICIES" == "false" ]]; then
+        helm_args+=(
+          --set system.enablePodSecurityPolicies=false
         )
       fi
 

@@ -92,6 +92,7 @@ func renderNewBasicFiles(c Config, mode mode, imageFlavor defaults.ImageFlavor) 
 	metaVals.RenderMode = mode.String()
 	// Modify metaVals depending on deployment format:
 	metaVals.KubectlOutput = c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL
+	metaVals.EnablePodSecurityPolicies = c.EnablePodSecurityPolicies
 
 	chartFiles, err := chTpl.InstantiateRaw(metaVals)
 	if err != nil {

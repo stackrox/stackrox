@@ -15,3 +15,5 @@ _namespace: {{ default .Release.Namespace ._rox.meta.namespaceOverride }}
 meta:
   useLookup: true
   fileOverrides: {}
+system:
+  enablePodSecurityPolicies: [< .EnablePodSecurityPolicies >]

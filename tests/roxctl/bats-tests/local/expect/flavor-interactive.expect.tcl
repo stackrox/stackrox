@@ -37,6 +37,7 @@ expect "Enter path to the backup bundle from which to restore keys and certifica
 expect "Enter read templates from local filesystem*" { send "\n" }
 expect "Enter path to helm templates on your local filesystem*" { send "\n" }
 expect "Enter PEM cert bundle file*" { send "\n" }
+expect "Enter Create PodSecurityPolicy resources*" { send "\n" }
 expect "Enter administrator password*" { send "\n" }
 expect "Enter orchestrator (k8s, openshift)*" { send "k8s\n" }
 expect "Enter the directory to output the deployment bundle to*" { send "$out_dir\n" }
