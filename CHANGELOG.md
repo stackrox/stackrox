@@ -19,9 +19,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Fixed permissions checks in the UI that prevented users with certain limited permissions from creating report configurations.
 - ROX-9946: Fixed default permissions for the default Vuln Reporter role to exclude the modify permission on notifiers, since it is not needed for report creation.
 - Added AllowPrivilegeEscalation as a new policy criteria.
-- Image signatures are now supported throughout the system, specifically cosign signatures. A new integration type for
-  signature verification has been added as well as a new policy criteria to alert on images whose signature cannot be
-  verified.
 
 ## [69.1]
 
