@@ -16,22 +16,3 @@ include 'services:webservice'
 */
 
 rootProject.name = 'qa-tests-backend'
-
-if (System.getenv("OPENSHIFT_CI")) {
-
-    println "Env HOME: " + System.getenv("HOME")
-    println "Property user.home: " + System.getProperty("user.home")
-    println "Property java.util.prefs.userRoot: " + System.getProperty("java.util.prefs.userRoot")
-
-    if (System.getProperty("user.home") == "/") {
-        System.setProperty("user.home", "/tmp")
-        println "Set user.home: " + System.getProperty("user.home")
-    }
-
-    // Mimic JDK prefs
-    gradle.ext.userRootDir =
-            new File(System.getProperty("java.util.prefs.userRoot",
-                    System.getProperty("user.home")), ".java/.userPrefs")
-
-    println("userRootDir: " + gradle.ext.userRootDir.path)
-}
