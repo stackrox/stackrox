@@ -259,8 +259,7 @@ kubectl -n index-test create secret docker-registry operator-pull-secret \
   --docker-username="${DOCKER_USER}" --docker-password="${DOCKER_PASS}"
 
 # Use some version in https://hub.docker.com/repository/docker/stackrox/stackrox-operator-index
-VERSION='3.69.0-rc.11'
-./hack/olm-operator-install.sh index-test ${VERSION}
+make kuttl deploy-via-olm VERSION='3.69.0-rc.11'
 ```
 
 
