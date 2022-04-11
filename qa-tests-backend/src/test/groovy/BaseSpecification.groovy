@@ -143,7 +143,9 @@ class BaseSpecification extends Specification {
             BaseService.setUseClientCert(false)
             withRetry(30, 1) {
                 services.ApiTokenService.revokeToken(tokenResp.metadata.id)
-                RoleService.deleteRole(testRole.name)
+                if (testRole) {
+                    RoleService.deleteRole(testRole.name)
+                }
             }
         }
 
