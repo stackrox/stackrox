@@ -274,7 +274,7 @@ export const networkPolicyFieldDescriptors: Descriptor[] = [
         disabled: true,
         canBooleanLogic: false,
     },
-]
+];
 
 export const policyConfigurationDescriptor: Descriptor[] = [
     {

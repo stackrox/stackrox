@@ -34,7 +34,8 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                 ...policyConfigurationDescriptor,
                 ...networkDetectionDescriptor,
                 ...(isImageSigningEnabled ? [imageSigningCriteriaDescriptor] : []),
-                ...(isNetworkPolicyFieldsEnabled ? networkPolicyFieldDescriptors : []),])
+                ...(isNetworkPolicyFieldsEnabled ? networkPolicyFieldDescriptors : []),
+            ]);
         }
     }, [values.eventSource, isImageSigningEnabled, isNetworkPolicyFieldsEnabled]);
 
