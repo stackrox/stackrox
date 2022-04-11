@@ -32,16 +32,6 @@ type TranslationTestSuite struct {
 	envIsolator *envisolator.EnvIsolator
 }
 
-var validClusterVersion = &unstructured.Unstructured{
-	Object: map[string]interface{}{
-		"kind":       "ClusterVersion",
-		"apiVersion": "config.openshift.io/v1",
-		"metadata": map[string]interface{}{
-			"name": "version",
-		},
-	},
-}
-
 func TestTranslation(t *testing.T) {
 	suite.Run(t, new(TranslationTestSuite))
 }
@@ -569,7 +559,7 @@ func newFakeClientWithInitBundle(t *testing.T) ctrlClient.Client {
 		createSecret(sensorTLSSecretName),
 		createSecret(collectorTLSSecretName),
 		createSecret(admissionControlTLSSecretName),
-		validClusterVersion).Build()
+		testutils.ValidClusterVersion).Build()
 }
 
 func newFakeClientWithInitBundleAndCentral(t *testing.T) ctrlClient.Client {
@@ -577,7 +567,7 @@ func newFakeClientWithInitBundleAndCentral(t *testing.T) ctrlClient.Client {
 		createSecret(sensorTLSSecretName),
 		createSecret(collectorTLSSecretName),
 		createSecret(admissionControlTLSSecretName),
-		validClusterVersion,
+		testutils.ValidClusterVersion,
 		&platform.Central{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "a-central",

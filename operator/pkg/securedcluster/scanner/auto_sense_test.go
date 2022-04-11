@@ -19,18 +19,8 @@ var securedCluster = platform.SecuredCluster{
 	},
 }
 
-var validClusterVersion = &unstructured.Unstructured{
-	Object: map[string]interface{}{
-		"kind":       "ClusterVersion",
-		"apiVersion": "config.openshift.io/v1",
-		"metadata": map[string]interface{}{
-			"name": "version",
-		},
-	},
-}
-
 func TestAutoSenseLocalScannerSupportShouldBeEnabled(t *testing.T) {
-	client := testutils.NewFakeClientBuilder(t, validClusterVersion).Build()
+	client := testutils.NewFakeClientBuilder(t, testutils.ValidClusterVersion).Build()
 
 	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
 	require.NoError(t, err)
@@ -38,7 +28,7 @@ func TestAutoSenseLocalScannerSupportShouldBeEnabled(t *testing.T) {
 }
 
 func TestAutoSenseIsDisabledWithCentralPresentShouldBeDisabled(t *testing.T) {
-	client := testutils.NewFakeClientBuilder(t, validClusterVersion, &platform.Central{
+	client := testutils.NewFakeClientBuilder(t, testutils.ValidClusterVersion, &platform.Central{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testutils.TestNamespace,
 			Name:      "central",
@@ -52,7 +42,7 @@ func TestAutoSenseIsDisabledWithCentralPresentShouldBeDisabled(t *testing.T) {
 }
 
 func TestAutoSenseIsEnabledWithCentralInADifferentNamespace(t *testing.T) {
-	client := testutils.NewFakeClientBuilder(t, validClusterVersion, &platform.Central{
+	client := testutils.NewFakeClientBuilder(t, testutils.ValidClusterVersion, &platform.Central{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "another-namespace",
 			Name:      "central",
