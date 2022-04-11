@@ -76,10 +76,14 @@ func TestScannerUploadDbCommand(t *testing.T) {
 		}))
 		defer server.Close()
 
-		stdOut, _, err := executeUpdateDbCommand(server.URL)
+		stdOut, stdErr, err := executeUpdateDbCommand(server.URL)
 
 		require.Error(t, err)
-		assert.NotNil(t, stdOut)
+		require.NotNil(t, stdOut)
+		require.NotNil(t, stdErr)
+
+		assert.Empty(t, stdOut.String())
+		assert.Empty(t, stdErr.String())
 	})
 
 	t.Run("scanner update-db", func(t *testing.T) {
