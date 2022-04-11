@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -41,7 +42,7 @@ func (s *IntegrationhealthStoreSuite) TearDownTest() {
 }
 
 func (s *IntegrationhealthStoreSuite) TestStore() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -61,6 +62,8 @@ func (s *IntegrationhealthStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundIntegrationHealth)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, integrationHealth))
 	foundIntegrationHealth, exists, err = store.Get(ctx, integrationHealth.GetId())
 	s.NoError(err)
@@ -70,11 +73,15 @@ func (s *IntegrationhealthStoreSuite) TestStore() {
 	integrationHealthCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(integrationHealthCount, 1)
+	integrationHealthCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(integrationHealthCount)
 
 	integrationHealthExists, err := store.Exists(ctx, integrationHealth.GetId())
 	s.NoError(err)
 	s.True(integrationHealthExists)
 	s.NoError(store.Upsert(ctx, integrationHealth))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, integrationHealth), sac.ErrResourceAccessDenied)
 
 	foundIntegrationHealth, exists, err = store.Get(ctx, integrationHealth.GetId())
 	s.NoError(err)
@@ -86,6 +93,7 @@ func (s *IntegrationhealthStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundIntegrationHealth)
+	s.ErrorIs(store.Delete(withNoAccessCtx, integrationHealth.GetId()), sac.ErrResourceAccessDenied)
 
 	var integrationHealths []*storage.IntegrationHealth
 	for i := 0; i < 200; i++ {

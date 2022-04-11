@@ -90,5 +90,4 @@ var funcMap = template.FuncMap{
 	"valueExpansion":    valueExpansion,
 	"lowerCase":         strings.ToLower,
 	"storageToResource": storageToResource,
-	"isGloballyScoped":  isGloballyScoped,
 }
