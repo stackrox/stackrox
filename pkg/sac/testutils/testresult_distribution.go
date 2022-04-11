@@ -102,13 +102,11 @@ func CountSearchResultsPerClusterAndNamespace(_ *testing.T, results []*v1.Search
 func CountSearchResultObjectsPerClusterAndNamespace(_ *testing.T, results []sac.NamespaceScopedObject) map[string]map[string]int {
 	resultDistribution := make(map[string]map[string]int, 0)
 	for _, result := range results {
-		var clusterID string
-		var namespace string
 		if result == nil {
 			continue
 		}
-		clusterID = result.GetClusterId()
-		namespace = result.GetNamespace()
+		clusterID := result.GetClusterId()
+		namespace := result.GetNamespace()
 		if _, clusterIDExists := resultDistribution[clusterID]; !clusterIDExists {
 			resultDistribution[clusterID] = make(map[string]int, 0)
 		}
