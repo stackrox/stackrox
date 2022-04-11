@@ -364,7 +364,7 @@ func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image, scanUp
 	if err := copyFromImageCves(ctx, tx, iTime, vulns...); err != nil {
 		return err
 	}
-	if err := copyFromImageComponentCVERelations(ctx, tx, componentCVERelations...); err != nil {
+	if err := copyFromImageComponentCVERelations(ctx, tx, obj.GetScan().GetOperatingSystem(), componentCVERelations...); err != nil {
 		return err
 	}
 	return copyFromImageCVERelations(ctx, tx, iTime, imageCVERelations...)
@@ -422,6 +422,7 @@ func copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Im
 
 	copyCols := []string{
 		"id",
+		"operatingsystem",
 		"name",
 		"version",
 		"source",
@@ -439,6 +440,7 @@ func copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Im
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
+			obj.GetOperatingSystem(),
 			obj.GetName(),
 			obj.GetVersion(),
 			obj.GetSource(),
@@ -538,6 +540,7 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 
 	copyCols := []string{
 		"id",
+		"operatingsystem",
 		"cve",
 		"cvss",
 		"impactscore",
@@ -574,6 +577,7 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
+			obj.GetOperatingSystem(),
 			obj.GetCve(),
 			obj.GetCvss(),
 			obj.GetImpactScore(),
@@ -612,7 +616,7 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 	return err
 }
 
-func copyFromImageComponentCVERelations(ctx context.Context, tx pgx.Tx, objs ...*storage.ComponentCVEEdge) error {
+func copyFromImageComponentCVERelations(ctx context.Context, tx pgx.Tx, os string, objs ...*storage.ComponentCVEEdge) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -621,6 +625,7 @@ func copyFromImageComponentCVERelations(ctx context.Context, tx pgx.Tx, objs ...
 
 	copyCols := []string{
 		"id",
+		"image_components_operatingsystem",
 		"isfixable",
 		"fixedby",
 		"imagecomponentid",
@@ -636,6 +641,7 @@ func copyFromImageComponentCVERelations(ctx context.Context, tx pgx.Tx, objs ...
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
+			os,
 			obj.GetIsFixable(),
 			obj.GetFixedBy(),
 			obj.GetImageComponentId(),
