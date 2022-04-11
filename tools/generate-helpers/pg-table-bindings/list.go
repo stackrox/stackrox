@@ -47,12 +47,29 @@ func storageToResource(t string) string {
 	return strings.TrimPrefix(t, "*storage.")
 }
 
-func isGloballyScoped(storageType string) bool {
+// isGloballyScoped returns true if storage type is global resource.
+func isGloballyScoped(storageType string, permissionChecker bool, joinTable bool) bool {
+	if joinTable {
+		return false
+	}
+	if permissionChecker {
+		return true
+	}
 	resource := storageToResource(storageType)
+	metadata := resourceMetadataFromString(resource)
+	return metadata.GetScope() == permissions.GlobalScope
+}
+
+func resourceMetadataFromString(resource string) permissions.ResourceMetadata {
 	for _, resourceMetadata := range resources.ListAllMetadata() {
 		if string(resourceMetadata.Resource) == resource {
-			return resourceMetadata.Scope == permissions.GlobalScope
+			return resourceMetadata
 		}
 	}
-	return false
+	for _, resourceMetadata := range resources.ListAllDisabledMetadata() {
+		if string(resourceMetadata.Resource) == resource {
+			return resourceMetadata
+		}
+	}
+	panic("unknown resource: " + resource)
 }
