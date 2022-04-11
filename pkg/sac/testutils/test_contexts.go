@@ -33,7 +33,7 @@ const (
 )
 
 // GetNamespaceScopedTestContexts provides a set of pre-defined scoped contexts for use in scoped access control tests
-func GetNamespaceScopedTestContexts(t *testing.T, ctx context.Context, resource permissions.Resource) map[string]context.Context {
+func GetNamespaceScopedTestContexts(ctx context.Context, t *testing.T, resource permissions.Resource) map[string]context.Context {
 	contextMap := make(map[string]context.Context, 0)
 
 	contextMap[UnrestrictedReadCtx] =
