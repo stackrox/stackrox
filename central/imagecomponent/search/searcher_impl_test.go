@@ -141,7 +141,7 @@ func (suite *ImageComponentSearchTestSuite) TestBasicSearchImage() {
 	suite.Len(results, 3)
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp1", "ver1"),
+		ID:    scancomponent.ComponentID("comp1", "ver1", ""),
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 
@@ -151,7 +151,7 @@ func (suite *ImageComponentSearchTestSuite) TestBasicSearchImage() {
 	suite.Len(results, 1)
 
 	expectedComponent := &storage.ImageComponent{
-		Id:      scancomponent.ComponentID("comp1", "ver1"),
+		Id:      scancomponent.ComponentID("comp1", "ver1", ""),
 		Name:    "comp1",
 		Version: "ver1",
 		Source:  storage.SourceType_OS,
@@ -200,7 +200,7 @@ func (suite *ImageComponentSearchTestSuite) TestBasicSearchNode() {
 	suite.Len(results, 3)
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp1", "ver1"),
+		ID:    scancomponent.ComponentID("comp1", "ver1", ""),
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 
@@ -210,7 +210,7 @@ func (suite *ImageComponentSearchTestSuite) TestBasicSearchNode() {
 	suite.Len(results, 1)
 
 	expectedComponent := &storage.ImageComponent{
-		Id:      scancomponent.ComponentID("comp1", "ver1"),
+		Id:      scancomponent.ComponentID("comp1", "ver1", ""),
 		Name:    "comp1",
 		Version: "ver1",
 		Source:  storage.SourceType_INFRASTRUCTURE,

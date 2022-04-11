@@ -76,8 +76,8 @@ func (evr *EmbeddedVulnerabilityResolver) ID(ctx context.Context) graphql.ID {
 	return graphql.ID(evr.data.GetCve())
 }
 
-// Cve returns the CVE string (which is effectively an id)
-func (evr *EmbeddedVulnerabilityResolver) Cve(ctx context.Context) string {
+// CVE returns the CVE string (which is effectively an id)
+func (evr *EmbeddedVulnerabilityResolver) CVE(ctx context.Context) string {
 	return evr.data.GetCve()
 }
 

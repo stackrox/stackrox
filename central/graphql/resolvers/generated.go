@@ -145,6 +145,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("CVE", []string{
 		"createdAt: Time",
+		"cve: String!",
 		"id: ID!",
 		"impactScore: Float!",
 		"lastModified: Time",
@@ -2492,6 +2493,11 @@ func (resolver *Resolver) wrapCVEs(values []*storage.CVE, err error) ([]*cVEReso
 func (resolver *cVEResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
 	return timestamp(value)
+}
+
+func (resolver *cVEResolver) Cve(ctx context.Context) string {
+	value := resolver.data.GetCve()
+	return value
 }
 
 func (resolver *cVEResolver) Id(ctx context.Context) graphql.ID {

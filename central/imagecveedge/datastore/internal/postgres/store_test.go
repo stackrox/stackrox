@@ -17,16 +17,16 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ImageComponentRelationsStoreSuite struct {
+type ImageCveRelationsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 }
 
-func TestImageComponentRelationsStore(t *testing.T) {
-	suite.Run(t, new(ImageComponentRelationsStoreSuite))
+func TestImageCveRelationsStore(t *testing.T) {
+	suite.Run(t, new(ImageCveRelationsStoreSuite))
 }
 
-func (s *ImageComponentRelationsStoreSuite) SetupTest() {
+func (s *ImageCveRelationsStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -36,11 +36,11 @@ func (s *ImageComponentRelationsStoreSuite) SetupTest() {
 	}
 }
 
-func (s *ImageComponentRelationsStoreSuite) TearDownTest() {
+func (s *ImageCveRelationsStoreSuite) TearDownTest() {
 	s.envIsolator.RestoreAll()
 }
 
-func (s *ImageComponentRelationsStoreSuite) TestStore() {
+func (s *ImageCveRelationsStoreSuite) TestStore() {
 	ctx := context.Background()
 
 	source := pgtest.GetConnectionString(s.T())
@@ -53,12 +53,12 @@ func (s *ImageComponentRelationsStoreSuite) TestStore() {
 	Destroy(ctx, pool)
 	store := New(ctx, pool)
 
-	imageComponentEdge := &storage.ImageComponentEdge{}
-	s.NoError(testutils.FullInit(imageComponentEdge, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	imageCVEEdge := &storage.ImageCVEEdge{}
+	s.NoError(testutils.FullInit(imageCVEEdge, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundImageComponentEdge, exists, err := store.Get(ctx, imageComponentEdge.GetId(), imageComponentEdge.GetImageId(), imageComponentEdge.GetImageComponentId())
+	foundImageCVEEdge, exists, err := store.Get(ctx, imageCVEEdge.GetId(), imageCVEEdge.GetImageId(), imageCVEEdge.GetImageCveId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundImageComponentEdge)
+	s.Nil(foundImageCVEEdge)
 
 }
