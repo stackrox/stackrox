@@ -20,6 +20,7 @@ func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_SEARCH_UNSET, schema)
 }
 
+// NewIndexer returns new indexer for `storage.TestMultiKeyStruct`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl{
 		db: db,

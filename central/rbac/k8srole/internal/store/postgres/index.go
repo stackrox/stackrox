@@ -20,6 +20,7 @@ func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_ROLES, schema)
 }
 
+// NewIndexer returns new indexer for `storage.K8SRole`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl{
 		db: db,
