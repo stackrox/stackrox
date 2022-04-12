@@ -3,23 +3,19 @@ package postgres
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/role/resources"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/clusterinit/backend"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// TODO(ROX-9887): Implement SAC logic from datastore
 type permissionChecker struct{}
 
 var (
 	once     sync.Once
 	instance PermissionChecker
-
-	multiResourceSAC = sac.ForResources(
-		sac.ForResource(resources.ImageIntegration),
-		sac.ForResource(resources.Notifier),
-		sac.ForResource(resources.BackupPlugins),
-	)
 )
 
 func permissionCheckerSingleton() PermissionChecker {
@@ -29,38 +25,46 @@ func permissionCheckerSingleton() PermissionChecker {
 	return instance
 }
 
+func checkAccess(ctx context.Context, access storage.Access) (bool, error) {
+	err := backend.CheckAccess(ctx, access)
+	if errors.Is(err, errox.NotAuthorized) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
 func (permissionChecker) CountAllowed(ctx context.Context) (bool, error) {
-	return multiResourceSAC.ReadAllowedToAny(ctx)
+	return checkAccess(ctx, storage.Access_READ_ACCESS)
 }
 
 func (permissionChecker) ExistsAllowed(ctx context.Context) (bool, error) {
-	return multiResourceSAC.ReadAllowedToAny(ctx)
+	return checkAccess(ctx, storage.Access_READ_ACCESS)
 }
 
 func (permissionChecker) GetAllowed(ctx context.Context) (bool, error) {
-	return multiResourceSAC.ReadAllowedToAny(ctx)
+	return checkAccess(ctx, storage.Access_READ_ACCESS)
 }
 
 func (permissionChecker) UpsertAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
-	return multiResourceSAC.WriteAllowedToAny(ctx)
+	return checkAccess(ctx, storage.Access_READ_WRITE_ACCESS)
 }
 
 func (permissionChecker) UpsertManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
-	return multiResourceSAC.WriteAllowedToAny(ctx)
+	return checkAccess(ctx, storage.Access_READ_WRITE_ACCESS)
 }
 
 func (permissionChecker) DeleteAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
-	return multiResourceSAC.WriteAllowedToAny(ctx)
+	return checkAccess(ctx, storage.Access_READ_WRITE_ACCESS)
 }
 
 func (permissionChecker) GetIDsAllowed(ctx context.Context) (bool, error) {
-	return multiResourceSAC.ReadAllowedToAny(ctx)
+	return checkAccess(ctx, storage.Access_READ_ACCESS)
 }
 
 func (permissionChecker) GetManyAllowed(ctx context.Context) (bool, error) {
-	return multiResourceSAC.ReadAllowedToAny(ctx)
+	return checkAccess(ctx, storage.Access_READ_ACCESS)
 }
 
 func (permissionChecker) DeleteManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
-	return multiResourceSAC.WriteAllowedToAny(ctx)
+	return checkAccess(ctx, storage.Access_READ_WRITE_ACCESS)
 }
