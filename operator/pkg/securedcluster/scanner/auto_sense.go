@@ -18,10 +18,10 @@ const (
 	clusterVersionDefaultName = "version"
 )
 
-// AutoSenseResult represents the configurations which can be auto-sensed
+// AutoSenseResult represents the configurations which can be auto-sensed.
 type AutoSenseResult struct {
 	// DeployScannerResources indicates that Scanner resources should be deployed by the SecuredCluster controller.
-	// inside the same namespace the existing Scanner instance should be used.
+	// Inside the same namespace the existing Scanner instance should be used.
 	DeployScannerResources bool
 	// EnableLocalImageScanning enables the local image scanning feature in Sensor. If this setting is disabled Sensor
 	// will not scan images locally.
