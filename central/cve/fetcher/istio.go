@@ -55,6 +55,7 @@ func (m *istioCVEManager) setCVEs(cves []*storage.EmbeddedVulnerability, nvdCVEs
 	defer m.mutex.Unlock()
 
 	for _, nvdCVE := range nvdCVEs {
+		log.Infof("setCVEs: %s: %+v", nvdCVE.CVE.CVEDataMeta.ID, nvdCVE)
 		m.nvdCVEs[nvdCVE.CVE.CVEDataMeta.ID] = nvdCVE
 	}
 	m.embeddedCVEs = cves
@@ -66,14 +67,27 @@ func (m *istioCVEManager) updateCVEs(newCVEs []*schema.NVDCVEFeedJSON10DefCVEIte
 		return err
 	}
 
+	log.Infof("In update CVEs")
+	for _, cve := range cves {
+		log.Infof("%+v", cve)
+	}
+	log.Infof("Out update CVEs")
+
 	m.setCVEs([]*storage.EmbeddedVulnerability{}, newCVEs)
 	return m.updateCVEsInDB(cves)
 }
 
 func (m *istioCVEManager) updateCVEsInDB(embeddedCVEs []*storage.EmbeddedVulnerability) error {
 	cves := converter.EmbeddedCVEsToProtoCVEs("", embeddedCVEs...)
+	for _, cve := range cves {
+		log.Infof("updateCVEsInDB converted: %+v", cve)
+	}
+
 	newCVEs := make([]converter.ClusterCVEParts, 0, len(cves))
 	for _, cve := range cves {
+		nvdCVE := m.getNVDCVE(cve.GetId())
+		log.Infof("Found CVE for %s: %+v", cve.GetId(), nvdCVE)
+
 		clusters, err := m.cveMatcher.GetAffectedClusters(cveElevatedCtx, m.getNVDCVE(cve.GetId()))
 		if err != nil {
 			return err
