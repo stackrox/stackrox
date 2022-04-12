@@ -18,6 +18,8 @@ class UpgradesTest extends BaseSpecification {
     private final static String CLUSTERID = Env.mustGet("UPGRADE_CLUSTER_ID")
     private final static String POLICIES_JSON_PATH =
             Env.get("POLICIES_JSON_RELATIVE_PATH", "../pkg/defaults/policies/files")
+    // As policies are added they will be missing from the original version used in the upgrade test
+    private final static List<String> POLICIES_MISSING_FROM_ORIGINAL = ["38bf79e7-48bf-4ab1-b72f-38e8ad8b4ec3"]
 
     private static final COMPLIANCE_QUERY = """query getAggregatedResults(
         \$groupBy: [ComplianceAggregation_Scope!],
@@ -197,7 +199,9 @@ class UpgradesTest extends BaseSpecification {
                 JsonFormat.parser().merge(file.text, builder)
                 def policy = builder.build()
 
-                defaultPolicies[policy.id] = policy
+                if (!POLICIES_MISSING_FROM_ORIGINAL.contains(policy.id)) {
+                    defaultPolicies[policy.id] = policy
+                }
             }
         }
 

@@ -3774,7 +3774,6 @@ jobs:
     executor: custom
     environment:
       LOAD_BALANCER: "lb"
-      ROX_NETPOL_FIELDS: "true"
     steps:
       - checkout
       - check-backend-changes
