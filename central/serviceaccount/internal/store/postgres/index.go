@@ -20,6 +20,7 @@ func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_SERVICE_ACCOUNTS, schema)
 }
 
+// NewIndexer returns new indexer for `storage.ServiceAccount`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl{
 		db: db,

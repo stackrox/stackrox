@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -37,13 +38,17 @@ const (
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.TestMultiKeyStruct)(nil)), baseTable)
 	log    = logging.LoggerForModule()
+	schema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable(baseTable)
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.TestMultiKeyStruct)(nil)), baseTable)
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -63,75 +68,13 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableMultikey(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists multikey (
-    Key1 varchar,
-    Key2 varchar,
-    StringSlice text[],
-    Bool bool,
-    Uint64 integer,
-    Int64 integer,
-    Float numeric,
-    Labels jsonb,
-    Timestamp timestamp,
-    Enum integer,
-    Enums int[],
-    String_ varchar,
-    IntSlice int[],
-    Oneofnested_Nested varchar,
-    serialized bytea,
-    PRIMARY KEY(Key1, Key2)
-)
-`
+// New returns a new Store instance using the provided sql instance.
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableMultikeyStmt)
 
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableMultikeyNested(ctx, db)
-}
-
-func createTableMultikeyNested(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists multikey_Nested (
-    multikey_Key1 varchar,
-    multikey_Key2 varchar,
-    idx integer,
-    Nested varchar,
-    IsNested bool,
-    Int64 integer,
-    Nested2_Nested2 varchar,
-    Nested2_IsNested bool,
-    Nested2_Int64 integer,
-    PRIMARY KEY(multikey_Key1, multikey_Key2, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (multikey_Key1, multikey_Key2) REFERENCES multikey(Key1, Key2) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists multikeyNested_idx on multikey_Nested using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoMultikey(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKeyStruct) error {
@@ -386,15 +329,6 @@ func (s *storeImpl) copyFromMultikeyNested(ctx context.Context, tx pgx.Tx, multi
 	}
 
 	return err
-}
-
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableMultikey(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestMultiKeyStruct) error {

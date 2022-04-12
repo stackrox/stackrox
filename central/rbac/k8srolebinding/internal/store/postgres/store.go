@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -41,13 +42,17 @@ const (
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.K8SRoleBinding)(nil)), baseTable)
 	log    = logging.LoggerForModule()
+	schema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable(baseTable)
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.K8SRoleBinding)(nil)), baseTable)
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -70,65 +75,13 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableRolebindings(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists rolebindings (
-    Id varchar,
-    Name varchar,
-    Namespace varchar,
-    ClusterId varchar,
-    ClusterName varchar,
-    ClusterRole bool,
-    Labels jsonb,
-    Annotations jsonb,
-    RoleId varchar,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
+// New returns a new Store instance using the provided sql instance.
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableRolebindingsStmt)
 
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableRolebindingsSubjects(ctx, db)
-}
-
-func createTableRolebindingsSubjects(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists rolebindings_Subjects (
-    rolebindings_Id varchar,
-    idx integer,
-    Kind integer,
-    Name varchar,
-    PRIMARY KEY(rolebindings_Id, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (rolebindings_Id) REFERENCES rolebindings(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists rolebindingsSubjects_idx on rolebindings_Subjects using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoRolebindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SRoleBinding) error {
@@ -343,15 +296,6 @@ func (s *storeImpl) copyFromRolebindingsSubjects(ctx context.Context, tx pgx.Tx,
 	}
 
 	return err
-}
-
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableRolebindings(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.K8SRoleBinding) error {
