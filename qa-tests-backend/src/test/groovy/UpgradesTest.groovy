@@ -212,9 +212,8 @@ class UpgradesTest extends BaseSpecification {
                             build()
             ).getPoliciesList()
         } catch (StatusRuntimeException e) {
-            println "Exception in exportPolicies(): ${e}"
-            println "Status: ${e.getStatus()}"
-            println "Trailers: ${e.getTrailers()}"
+            println "Exception in exportPolicies(): ${e.getStatus()}"
+            println "See central log for more details."
             throw(e)
         }
 
