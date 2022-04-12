@@ -40,7 +40,7 @@ func (np *Finder) GetNetworkPoliciesApplied(deployment *storage.Deployment) *aug
 				return &augmentedobjs.NetworkPoliciesApplied{
 					MissingIngressNetworkPolicy: false,
 					MissingEgressNetworkPolicy:  false,
-					AppliedNetworkPolicies:      policies,
+					Policies:                    policies,
 				}
 			}
 		}
@@ -49,6 +49,6 @@ func (np *Finder) GetNetworkPoliciesApplied(deployment *storage.Deployment) *aug
 	return &augmentedobjs.NetworkPoliciesApplied{
 		MissingIngressNetworkPolicy: !hasIngress,
 		MissingEgressNetworkPolicy:  !hasEgress,
-		AppliedNetworkPolicies:      policies,
+		Policies:                    policies,
 	}
 }

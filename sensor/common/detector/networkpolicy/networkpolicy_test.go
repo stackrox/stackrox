@@ -151,7 +151,7 @@ func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 				Return(testCase.policiesInStore)
 			aug := suite.networkPolicy.GetNetworkPoliciesApplied(dep)
 			// Assume, that all policies from store would match the given deployment
-			testCase.expectedAugmentedObject.AppliedNetworkPolicies = testCase.policiesInStore
+			testCase.expectedAugmentedObject.Policies = testCase.policiesInStore
 			suite.Equal(testCase.expectedAugmentedObject, aug)
 		})
 	}
