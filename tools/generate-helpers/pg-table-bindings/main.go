@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"strings"
 	"text/template"
 
 	// Embed is used to import the template files
@@ -15,6 +14,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/central/postgres/schema"
 	_ "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/set"
@@ -166,12 +166,8 @@ func main() {
 	}
 }
 
-func generateSchema(schema *walker.Schema) error {
-	pkgPath, err := getSchemaPkgBaseDir()
-	if err != nil {
-		return err
-	}
-	return generateSchemaRecursive(schema, set.NewStringSet(), pkgPath)
+func generateSchema(s *walker.Schema) error {
+	return generateSchemaRecursive(s, set.NewStringSet(), schema.SchemaGenFS)
 }
 
 func generateSchemaRecursive(schema *walker.Schema, visited set.StringSet, pkgPath string) error {
@@ -205,14 +201,6 @@ func generateSchemaRecursive(schema *walker.Schema, visited set.StringSet, pkgPa
 	return nil
 }
 
-func getSchemaPkgBaseDir() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%s/stackrox/stackrox/central/postgres/schema", dir[:strings.Index(dir, "stackrox")]), nil
-}
-
-func getSchemaFileName(root, table string) string {
-	return fmt.Sprintf("%s/%s.go", root, table)
+func getSchemaFileName(dir, table string) string {
+	return fmt.Sprintf("%s/%s.go", dir, table)
 }
