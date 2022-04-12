@@ -37,7 +37,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private Deployment DEP_A =
             createAndRegisterDeployment()
                     .setName("deployment-a")
-                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/more:0.39.io/stackrox-ci/qa/trigger-policy-violations/more:0.39.io/stackrox-ci/qa/trigger-policy-violations/more:0.39.io/stackrox-ci/qa/trigger-policy-violations/more:0.39.io/stackrox-ci/qa/trigger-policy-violations/more:0.39")
+                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/more:0.3")
                     .setCapabilities(["NET_ADMIN", "SYSLOG"], ["IPC_LOCK", "WAKE_ALARM"])
                     .addLimits("cpu", "0.5")
                     .addRequest("cpu", "0.25")
