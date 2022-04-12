@@ -1,39 +1,26 @@
-import orchestratormanager.OrchestratorTypes
-
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
-
-import io.grpc.StatusRuntimeException
-
-import io.stackrox.proto.api.v1.SearchServiceOuterClass
-import io.stackrox.proto.storage.ImageIntegrationOuterClass
-import io.stackrox.proto.storage.ImageOuterClass
-import io.stackrox.proto.storage.Vulnerability
 
 import common.Constants
 import groups.BAT
 import groups.Integration
-import objects.AnchoreScannerIntegration
-import objects.ClairScannerIntegration
-import objects.Deployment
-import objects.AzureRegistryIntegration
-import objects.ECRRegistryIntegration
-import objects.GCRImageIntegration
-import objects.GoogleArtifactRegistry
-import objects.QuayImageIntegration
-import objects.Secret
-import objects.StackroxScannerIntegration
-import services.ClusterService
-import services.ImageIntegrationService
-import services.ImageService
-import util.Env
-import util.Helpers
-import util.Timer
-
+import io.grpc.StatusRuntimeException
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
+import io.stackrox.proto.storage.ImageIntegrationOuterClass
+import io.stackrox.proto.storage.ImageOuterClass
+import io.stackrox.proto.storage.Vulnerability
+import objects.*
+import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.AssumptionViolatedException
 import org.junit.experimental.categories.Category
+import services.ClusterService
+import services.ImageIntegrationService
+import services.ImageService
 import spock.lang.Shared
 import spock.lang.Unroll
+import util.Env
+import util.Helpers
+import util.Timer
 
 class ImageScanningTest extends BaseSpecification {
 
