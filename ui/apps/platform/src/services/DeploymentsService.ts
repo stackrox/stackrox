@@ -132,22 +132,3 @@ export function fetchDeploymentsLegacy(options: RestSearchOption[]): Promise<{
             response: normalize(response?.data?.deployments ?? [], [deploymentSchema]),
         }));
 }
-
-/**
- * Fetches a deployment by its ID.
- *
- * TODO: Delete after (its only call in) deploymentSagas has been deleted.
- */
-export function fetchDeploymentLegacy(id: string): Promise<{
-    response: {
-        entities: { deployment: Record<string, Deployment> };
-        result: string;
-    };
-}> {
-    if (!id) {
-        throw new Error('Deployment ID must be specified');
-    }
-    return axios.get<Deployment>(`${deploymentByIdUrl}/${id}`).then((response) => ({
-        response: normalize({ deployment: response.data }, deploymentDetail),
-    }));
-}

@@ -23,13 +23,11 @@ import { actions as clusterActions } from 'reducers/clusters';
 import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
-import { types as deploymentTypes } from 'reducers/deployments';
 import { types as locationActionTypes } from 'reducers/routes';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import timeWindowToDate from 'utils/timeWindows';
 import queryService from 'utils/queryService';
 import { filterModes } from 'constants/networkFilterModes';
-import { getDeployment } from './deploymentSagas';
 
 // get generators
 function* getNetworkGraphs(clusterId, namespaces, query) {
@@ -76,10 +74,6 @@ function* getNetworkGraphs(clusterId, namespaces, query) {
             yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
         }
     }
-}
-
-function* getSelectedDeployment({ params }) {
-    yield call(getDeployment, params);
 }
 
 export function* getNetworkPolicies({ params }) {
@@ -291,10 +285,6 @@ function* watchNetworkSearchOptions() {
     yield takeLatest(searchNetworkTypes.SET_SEARCH_OPTIONS, filterNetworkPageBySearch);
 }
 
-function* watchFetchDeploymentRequest() {
-    yield takeLatest(deploymentTypes.FETCH_DEPLOYMENT.REQUEST, getSelectedDeployment);
-}
-
 function* watchNetworkPoliciesRequest() {
     yield takeLatest(backendNetworkTypes.FETCH_NETWORK_POLICIES.REQUEST, getNetworkPolicies);
 }
@@ -372,7 +362,6 @@ export default function* network() {
         takeEveryNewlyMatchedLocation(networkPath, loadNetworkPage),
         fork(watchNetworkSearchOptions),
         fork(watchNetworkPoliciesRequest),
-        fork(watchFetchDeploymentRequest),
         fork(watchActiveNetworkModification),
         fork(watchUndoNetworkModification),
         fork(watchGenerateNetworkModification),
