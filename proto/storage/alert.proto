@@ -52,6 +52,7 @@ message Alert {
             GENERIC   = 0;
             K8S_EVENT = 1;
             NETWORK_FLOW = 2;
+            NETWORK_POLICY = 3;
         }
         message KeyValueAttrs {
             message KeyValueAttr {
