@@ -8,7 +8,16 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.Vulnerability
-import objects.*
+import objects.AnchoreScannerIntegration
+import objects.ClairScannerIntegration
+import objects.Deployment
+import objects.AzureRegistryIntegration
+import objects.ECRRegistryIntegration
+import objects.GCRImageIntegration
+import objects.GoogleArtifactRegistry
+import objects.QuayImageIntegration
+import objects.Secret
+import objects.StackroxScannerIntegration
 import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.AssumptionViolatedException
