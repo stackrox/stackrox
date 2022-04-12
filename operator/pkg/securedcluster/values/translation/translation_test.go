@@ -143,6 +143,11 @@ func (s TranslationTestSuite) TestTranslate() {
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
 			},
 		},
 		"local scanner autosense suppression": {
@@ -152,6 +157,9 @@ func (s TranslationTestSuite) TestTranslate() {
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
 						ClusterName: "test-cluster",
+						Scanner: &platform.LocalScannerComponentSpec{
+							ScannerComponent: platform.LocalScannerComponentDisabled.Pointer(),
+						},
 					},
 				},
 			},
@@ -196,6 +204,11 @@ func (s TranslationTestSuite) TestTranslate() {
 				},
 				"scanner": map[string]interface{}{
 					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
 				},
 			},
 		},
@@ -387,6 +400,9 @@ func (s TranslationTestSuite) TestTranslate() {
 							"operator": "Exists",
 						},
 					},
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
 				},
 				"admissionControl": map[string]interface{}{
 					"dynamic": map[string]interface{}{
@@ -539,6 +555,10 @@ func (s TranslationTestSuite) TestTranslate() {
 			delete(got["meta"].(map[string]interface{}), "configFingerprintOverride")
 			if len(got["meta"].(map[string]interface{})) == 0 {
 				delete(got, "meta")
+			}
+
+			if !features.LocalImageScanning.Enabled() {
+				delete(wantAsValues, "scanner")
 			}
 
 			assert.Equal(t, wantAsValues, got)

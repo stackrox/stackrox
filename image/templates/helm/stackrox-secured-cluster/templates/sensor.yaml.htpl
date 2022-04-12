@@ -120,12 +120,14 @@ spec:
         - name: ROX_OPENSHIFT_API
           value: "true"
         [<- if and (not .KubectlOutput) .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING >]
-        - name: ROX_USE_LOCAL_SCANNER
-          value: "{{ not ._rox.scanner.disable | not | not }}"
+        {{- if ._rox.sensor.localImageScanning.enabled }}
         - name: ROX_SCANNER_GRPC_ENDPOINT
           value: {{ printf "scanner.%s.svc:8443" .Release.Namespace }}
+        - name: ROX_LOCAL_IMAGE_SCANNING_ENABLED
+          value: "true"
+        {{- end }}
         [<- end >]
-        {{- end}}
+        {{- end }}
         [<- if not .KubectlOutput >]
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
