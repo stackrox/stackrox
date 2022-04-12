@@ -49,3 +49,11 @@ func (h ForResourceHelper) MustCreateSearchHelper(options search.OptionsMap) Sea
 	utils.CrashOnError(err)
 	return searchHelper
 }
+
+// MustCreatePgSearchHelper creates and returns a search helper with the given options, or panics if the
+// search helper could not be created.
+func (h ForResourceHelper) MustCreatePgSearchHelper(options search.OptionsMap) SearchHelper {
+	searchHelper, err := NewPgSearchHelper(h.resourceMD, options)
+	utils.CrashOnError(err)
+	return searchHelper
+}
