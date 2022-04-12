@@ -65,7 +65,7 @@ func init() {
 // Values may come from either an embedded vulnerability context, or a top level vulnerability context.
 type VulnerabilityResolver interface {
 	ID(ctx context.Context) graphql.ID
-	Cve(ctx context.Context) string
+	CVE(ctx context.Context) string
 	Cvss(ctx context.Context) float64
 	Link(ctx context.Context) string
 	Summary(ctx context.Context) string

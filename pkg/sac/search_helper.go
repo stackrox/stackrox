@@ -195,6 +195,116 @@ func (h *searchHelper) filterResults(ctx context.Context, resourceScopeChecker S
 	return allowed, nil
 }
 
+// Postgres implementation
+
+type pgSearchHelper struct {
+	resourceMD permissions.ResourceMetadata
+	optionsMap search.OptionsMap
+}
+
+// NewPgSearchHelper returns a new search helper for the given resource.
+func NewPgSearchHelper(resourceMD permissions.ResourceMetadata, optionsMap search.OptionsMap) (SearchHelper, error) {
+	return &pgSearchHelper{
+		resourceMD: resourceMD,
+		optionsMap: optionsMap,
+	}, nil
+}
+
+func (h *pgSearchHelper) Apply(rawSearchFunc func(*v1.Query, ...blevesearch.SearchOption) ([]search.Result, error)) func(context.Context, *v1.Query) ([]search.Result, error) {
+	return func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+		searcher := blevesearch.UnsafeSearcherImpl{
+			SearchFunc: rawSearchFunc,
+			CountFunc:  nil,
+		}
+		return h.executeSearch(ctx, q, searcher)
+	}
+}
+
+func (h *pgSearchHelper) ApplyCount(rawCountFunc func(*v1.Query, ...blevesearch.SearchOption) (int, error)) func(context.Context, *v1.Query) (int, error) {
+	return func(ctx context.Context, q *v1.Query) (int, error) {
+		searcher := blevesearch.UnsafeSearcherImpl{
+			SearchFunc: nil,
+			CountFunc:  rawCountFunc,
+		}
+		return h.executeCount(ctx, q, searcher)
+	}
+}
+
+func (h *pgSearchHelper) FilteredSearcher(searcher blevesearch.UnsafeSearcher) search.Searcher {
+	return search.FuncSearcher{
+		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+			return h.executeSearch(ctx, q, searcher)
+		},
+		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
+			return h.executeCount(ctx, q, searcher)
+		},
+	}
+}
+
+func (h *pgSearchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) ([]search.Result, error) {
+	scopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(h.resourceMD.GetResource())
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return nil, err
+	} else if ok {
+		return searcher.Search(q)
+	}
+
+	// Generate query filter
+	resourceWithAccess := permissions.ResourceWithAccess{
+		Resource: h.resourceMD,
+		Access:   storage.Access_READ_ACCESS,
+	}
+	effectiveaccessscope, err := scopeChecker.EffectiveAccessScope(resourceWithAccess)
+	if err != nil {
+		return nil, err
+	}
+	var sacQueryFilter *v1.Query
+	switch h.resourceMD.GetScope() {
+	case permissions.NamespaceScope:
+		sacQueryFilter, err = BuildClusterNamespaceLevelSACQueryFilter(effectiveaccessscope)
+		if err != nil {
+			return nil, err
+		}
+	case permissions.ClusterScope:
+		sacQueryFilter, err = BuildClusterLevelSACQueryFilter(effectiveaccessscope)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		sacQueryFilter = nil
+	}
+	scopedQuery := search.ConjunctionQuery(q, sacQueryFilter)
+	if q == nil {
+		scopedQuery.Pagination = &v1.QueryPagination{
+			Limit: math.MaxInt32,
+		}
+	} else {
+		scopedQuery.Pagination = &v1.QueryPagination{
+			Limit:       math.MaxInt32,
+			SortOptions: q.GetPagination().GetSortOptions(),
+		}
+	}
+
+	var opts []blevesearch.SearchOption
+	results, err := searcher.Search(scopedQuery, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+func (h *pgSearchHelper) executeCount(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) (int, error) {
+	scopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(h.resourceMD.GetResource())
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return 0, err
+	} else if ok {
+		return searcher.Count(q)
+	}
+
+	results, err := h.executeSearch(ctx, q, searcher)
+	return len(results), err
+}
+
 // searchHelper implementations
 
 type linkedFieldResultsChecker struct {

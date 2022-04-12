@@ -126,8 +126,6 @@ dependencies {
     implementation 'commons-codec:commons-codec:1.15'
 }
 
-
-
 tasks.withType(Test) {
     def testGroups = new TestGroups(System.getProperty("groups"))
 

@@ -67,6 +67,7 @@ func createTableClusterCves(ctx context.Context, db *pgxpool.Pool) {
 	table := `
 create table if not exists cluster_cves (
     Id varchar,
+    Cve varchar,
     OperatingSystem varchar,
     Cvss numeric,
     ImpactScore numeric,
@@ -104,6 +105,7 @@ func insertIntoClusterCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) err
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
+		obj.GetCve(),
 		obj.GetOperatingSystem(),
 		obj.GetCvss(),
 		obj.GetImpactScore(),
@@ -115,7 +117,7 @@ func insertIntoClusterCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) err
 		serialized,
 	}
 
-	finalStr := "INSERT INTO cluster_cves (Id, OperatingSystem, Cvss, ImpactScore, PublishedOn, CreatedAt, Suppressed, SuppressExpiry, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id, OperatingSystem) DO UPDATE SET Id = EXCLUDED.Id, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, ImpactScore = EXCLUDED.ImpactScore, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, Suppressed = EXCLUDED.Suppressed, SuppressExpiry = EXCLUDED.SuppressExpiry, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO cluster_cves (Id, Cve, OperatingSystem, Cvss, ImpactScore, PublishedOn, CreatedAt, Suppressed, SuppressExpiry, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id, OperatingSystem) DO UPDATE SET Id = EXCLUDED.Id, Cve = EXCLUDED.Cve, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, ImpactScore = EXCLUDED.ImpactScore, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, Suppressed = EXCLUDED.Suppressed, SuppressExpiry = EXCLUDED.SuppressExpiry, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -133,6 +135,8 @@ func (s *storeImpl) copyFromClusterCves(ctx context.Context, tx pgx.Tx, objs ...
 	copyCols := []string{
 
 		"id",
+
+		"cve",
 
 		"operatingsystem",
 
@@ -165,6 +169,8 @@ func (s *storeImpl) copyFromClusterCves(ctx context.Context, tx pgx.Tx, objs ...
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetId(),
+
+			obj.GetCve(),
 
 			obj.GetOperatingSystem(),
 

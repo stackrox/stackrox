@@ -29,6 +29,8 @@ imagePullSecrets:
 
 sensor:
   endpoint: "sensor.{{ required "unknown namespace" ._rox._namespace }}.svc:443"
+  localImageScanning:
+    enabled: false
 
 admissionControl:
   listenOnCreates: false

@@ -190,7 +190,7 @@ func CVECSVHandler() http.HandlerFunc {
 		for _, d := range vulnResolvers {
 			var errorList errorhelpers.ErrorList
 			dataRow := cveRow{}
-			dataRow.cveID = d.Cve(ctx)
+			dataRow.cveID = d.CVE(ctx)
 			dataRow.cveTypes = strings.Join(d.VulnerabilityTypes(), " ")
 			isFixable, err := d.IsFixable(ctx, rawQuery)
 			if err != nil {

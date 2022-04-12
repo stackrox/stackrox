@@ -260,7 +260,9 @@
   {{ $centralDeployment := dict }}
   {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
   {{ if $centralDeployment.result }}
-    {{ include "srox.fail" "Scanner is not supported to be deployed using this chart within a namespace running Central, must instead be deployed using the Central chart. To fix this error set scanner.disable=true and re-deploy." }}
+    {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner from this chart and configuring sensor to use existing scanner instance, if any.") }}
+    {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
+    {{ $_ := set $._rox.scanner "disable" true }}
   {{ end }}
 {{ end }}
 
@@ -269,8 +271,9 @@
     {{ include "srox.fail" (print "Only scanner slim mode is allowed in Secured Cluster. To solve this, set to slim mode: scanner.mode=slim.") }}
   {{ end }}
 
-  {{ $_ = set $._rox.scanner "slimImage" ._rox.image.scanner }}
-  {{ $_ = set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
+  {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
+  {{ $_ := set $._rox.scanner "slimImage" ._rox.image.scanner }}
+  {{ $_ := set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
   {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
   {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
 {{ end }}
