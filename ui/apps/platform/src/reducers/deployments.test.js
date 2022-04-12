@@ -51,19 +51,6 @@ describe('Deployments Reducer', () => {
         expect(nextState.filteredIds).toEqual(Object.keys(deploymentsById));
     });
 
-    it('should enrich existing deployment', () => {
-        const prevState = {
-            ...initialState,
-            byId: deploymentsById,
-        };
-        const nextState = reducer(prevState, actions.fetchDeployment.success(deploymentResponse));
-
-        expect(nextState.byId).toEqual({
-            ...deploymentsById,
-            [singleDeployment.id]: singleDeployment,
-        });
-    });
-
     it('should cleanup non-existing deployments when received new list of deployments', () => {
         const prevState = {
             ...initialState,
