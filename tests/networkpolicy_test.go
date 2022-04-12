@@ -158,7 +158,7 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 			setupDeploymentFromFile(t, netpolDeploymentName, "testdata/nginx.yaml")
 			defer teardownDeploymentFromFile(t, netpolDeploymentName, "testdata/nginx.yaml")
 
-			testutils.Retry(t, 3, 3*time.Second, func(retryT testutils.T) {
+			testutils.Retry(t, 3, 6*time.Second, func(retryT testutils.T) {
 				// Assert alerts
 				alerts := getAlertsForPolicy(retryT, alertService, testCase.policyName)
 				assert.Len(retryT, alerts, 1)
@@ -168,7 +168,12 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 			applyFile(t, testCase.networkPolicyFile)
 			defer teardownFile(t, testCase.networkPolicyFile)
 
-			testutils.Retry(t, 3, 3*time.Second, func(retryT testutils.T) {
+			// NetworkPolicy events do not trigger the immediate evaluation of deployments. The deployments are marked
+			// for reprocessing and will be resynced every minute. To avoid having the tests wait for a minute to check
+			// if the violation is present, we update the deployment to force a re-evaluation.
+			scaleDeployment(t, netpolDeploymentName, "1")
+
+			testutils.Retry(t, 3, 6*time.Second, func(retryT testutils.T) {
 				// Assert alerts
 				alerts := getAlertsForPolicy(retryT, alertService, testCase.policyName)
 				assert.Len(retryT, alerts, 0)
