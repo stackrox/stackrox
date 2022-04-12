@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -18,6 +19,8 @@ import (
 
 var (
 	signatureSAC = sac.ForResource(resources.SignatureIntegration)
+
+	policySAC = sac.ForResource(resources.Policy)
 )
 
 type datastoreImpl struct {
@@ -114,6 +117,8 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 		return err
 	}
 
+	// We want to avoid deleting a signature integration which is referenced by any policy. If that is the case,
+	// stop the deletion of the policy and return an appropriate error message to the user.
 	if err := d.verifyIntegrationIDIsNotInPolicy(ctx, id); err != nil {
 		return err
 	}
@@ -159,11 +164,20 @@ func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(ctx context.Context, id 
 }
 
 func (d *datastoreImpl) verifyIntegrationIDIsNotInPolicy(ctx context.Context, id string) error {
-	// We want to avoid deleting a signature integration which is referenced by any policy. If that is the case,
-	// stop the deletion of the policy and return an appropriate error message to the user.
-	policies, err := d.policyStore.GetAllPolicies(ctx)
+	var useAllAccessCtx bool
+	if err := sac.VerifyAuthzOK(policySAC.ReadAllowed(ctx)); err != nil {
+		useAllAccessCtx = true
+	}
+
+	// Only create a context with all access if we are not allowed to read policies.
+	policyCtx := ctx
+	if useAllAccessCtx {
+		policyCtx = sac.WithAllAccess(ctx)
+	}
+
+	policies, err := d.policyStore.GetAllPolicies(policyCtx)
 	if err != nil {
-		return errox.InvariantViolation.CausedBy(err.Error())
+		return errors.Wrap(err, "retrieving all policies")
 	}
 
 	var policiesContainingID []string
@@ -174,8 +188,21 @@ func (d *datastoreImpl) verifyIntegrationIDIsNotInPolicy(ctx context.Context, id
 	}
 
 	if len(policiesContainingID) != 0 {
-		return errox.ReferencedByAnotherObject.Newf("cannot delete signature integration %q since the "+
-			"following policies are referencing it: [%s]", id, strings.Join(policiesContainingID, ","))
+		integration, err := d.getSignatureIntegrationByID(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		errMsg := fmt.Sprintf("cannot delete signature integration %q since there are existing policies that"+
+			"reference it", integration.GetName())
+
+		// Only return list of policies with references to signature integration if the context had read access to
+		// policies. Otherwise, we would potentially leak names.
+		if !useAllAccessCtx {
+			errMsg = fmt.Sprintf("%s: [%s]", errMsg, strings.Join(policiesContainingID, ","))
+		}
+
+		return errox.ReferencedByAnotherObject.New(errMsg)
 	}
 
 	return nil
