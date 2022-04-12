@@ -33,9 +33,6 @@ func RegisterTable(schema *walker.Schema) {
 		return
 	}
 	registeredTables[schema.Table] = schema
-
-	// TODO: Reconcile additional referencing tables (children) in referenced tables (parents) for cases when
-	//  children are registered before parents. For example, image-component edge may be registered before image.
 }
 
 // GetPostgres returns a global database instance

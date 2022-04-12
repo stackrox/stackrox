@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/image/datastore/internal/store/common"
 	"github.com/stackrox/rox/central/metrics"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
@@ -58,12 +59,12 @@ func init() {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool, noUpdateTimestamps bool) store.Store {
-	createTableImages(ctx, db)
-	createTableImageComponents(ctx, db)
-	createTableImageComponentRelations(ctx, db)
-	createTableImageCves(ctx, db)
-	createTableImageComponentCveRelations(ctx, db)
-	createTableImageCveRelations(ctx, db)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImagesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCvesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentRelationsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentCveRelationsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCveRelationsStmt)
 
 	return &storeImpl{
 		db:                 db,
@@ -74,227 +75,6 @@ func New(ctx context.Context, db *pgxpool.Pool, noUpdateTimestamps bool) store.S
 type storeImpl struct {
 	db                 *pgxpool.Pool
 	noUpdateTimestamps bool
-}
-
-//// This is copied from respective postgres store directories. Eventually, all creates will also be at a central location.
-
-func createTableImageComponents(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists image_components (
-    Id varchar,
-    Name varchar,
-    Version varchar,
-    Source integer,
-    RiskScore numeric,
-    TopCvss numeric,
-    OperatingSystem varchar,
-    serialized bytea,
-    PRIMARY KEY(Id, OperatingSystem)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableImageCves(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists image_cves (
-    Id varchar,
-    Cve varchar,
-    OperatingSystem varchar,
-    Cvss numeric,
-    ImpactScore numeric,
-    PublishedOn timestamp,
-    CreatedAt timestamp,
-    Suppressed bool,
-    SuppressExpiry timestamp,
-    Severity integer,
-    serialized bytea,
-    PRIMARY KEY(Id, OperatingSystem)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableImageComponentRelations(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists image_component_relations (
-    Id varchar,
-    Location varchar,
-    ImageId varchar,
-    ImageComponentId varchar,
-    serialized bytea,
-    PRIMARY KEY(Id, ImageId, ImageComponentId),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableImageComponentCveRelations(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists image_component_cve_relations (
-    image_components_OperatingSystem varchar,
-    Id varchar,
-    IsFixable bool,
-    FixedBy varchar,
-    ImageComponentId varchar,
-    CveId varchar,
-    serialized bytea,
-    PRIMARY KEY(image_components_OperatingSystem, Id, ImageComponentId, CveId),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageComponentId, image_components_OperatingSystem) REFERENCES image_components(Id, OperatingSystem) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableImageCveRelations(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists image_cve_relations (
-    Id varchar,
-    FirstImageOccurrence timestamp,
-    State integer,
-    ImageId varchar,
-    ImageCveId varchar,
-    serialized bytea,
-    PRIMARY KEY(Id, ImageId, ImageCveId),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-//// End of copied block
-
-func createTableImages(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists images (
-    Id varchar,
-    Name_Registry varchar,
-    Name_Remote varchar,
-    Name_Tag varchar,
-    Name_FullName varchar,
-    Metadata_V1_Created timestamp,
-    Metadata_V1_User varchar,
-    Metadata_V1_Command text[],
-    Metadata_V1_Entrypoint text[],
-    Metadata_V1_Volumes text[],
-    Metadata_V1_Labels jsonb,
-    Scan_ScanTime timestamp,
-    Scan_OperatingSystem varchar,
-    Signature_Fetched timestamp,
-    Components integer,
-    Cves integer,
-    FixableCves integer,
-    LastUpdated timestamp,
-    RiskScore numeric,
-    TopCvss numeric,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableImagesLayers(ctx, db)
-}
-
-func createTableImagesLayers(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists images_Layers (
-    images_Id varchar,
-    idx integer,
-    Instruction varchar,
-    Value varchar,
-    PRIMARY KEY(images_Id, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists imagesLayers_idx on images_Layers using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image, scanUpdated bool, iTime *protoTypes.Timestamp) error {

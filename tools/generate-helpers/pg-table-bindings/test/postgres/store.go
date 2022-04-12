@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -41,13 +42,17 @@ const (
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.TestSingleKeyStruct)(nil)), baseTable)
 	log    = logging.LoggerForModule()
+	schema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable(baseTable)
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.TestSingleKeyStruct)(nil)), baseTable)
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -70,40 +75,13 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableSinglekey(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists singlekey (
-    Key varchar,
-    Name varchar UNIQUE,
-    StringSlice text[],
-    Bool bool,
-    Uint64 integer,
-    Int64 integer,
-    Float numeric,
-    Labels jsonb,
-    Timestamp timestamp,
-    Enum integer,
-    Enums int[],
-    serialized bytea,
-    PRIMARY KEY(Key)
-)
-`
+// New returns a new Store instance using the provided sql instance.
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableSinglekeyStmt)
 
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{
-
-		"create index if not exists singlekey_Key on singlekey using hash(Key)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoSinglekey(ctx context.Context, tx pgx.Tx, obj *storage.TestSingleKeyStruct) error {
@@ -238,15 +216,6 @@ func (s *storeImpl) copyFromSinglekey(ctx context.Context, tx pgx.Tx, objs ...*s
 	}
 
 	return err
-}
-
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableSinglekey(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestSingleKeyStruct) error {
