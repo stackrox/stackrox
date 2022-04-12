@@ -1,6 +1,11 @@
 package cve
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"fmt"
+
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+)
 
 var clusterCVETypes = map[storage.CVE_CVEType]struct{}{
 	storage.CVE_ISTIO_CVE:     {},
@@ -41,4 +46,12 @@ func ContainsClusterCVE(types []storage.CVE_CVEType) bool {
 		}
 	}
 	return false
+}
+
+// ID creates a CVE ID from the given cve id (and os if postgres is enabled).
+func ID(cve, os string) string {
+	if features.PostgresDatastore.Enabled() {
+		return fmt.Sprintf("%s#%s", cve, os)
+	}
+	return cve
 }

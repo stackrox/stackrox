@@ -7,6 +7,7 @@ var (
 // This block enumerates all known field names.
 var (
 	AddCaps                       = newFieldName("Add Capabilities")
+	AllowPrivilegeEscalation      = newFieldName("Allow Privilege Escalation")
 	AppArmorProfile               = newFieldName("AppArmor Profile")
 	AutomountServiceAccountToken  = newFieldName("Automount Service Account Token")
 	CVE                           = newFieldName("CVE")

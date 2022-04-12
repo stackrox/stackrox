@@ -349,7 +349,7 @@ function VulnMgmtReportForm({
                                                 Important
                                             </SelectOption>
                                             <SelectOption value="MODERATE_VULNERABILITY_SEVERITY">
-                                                Medium
+                                                Moderate
                                             </SelectOption>
                                             <SelectOption value="LOW_VULNERABILITY_SEVERITY">
                                                 Low

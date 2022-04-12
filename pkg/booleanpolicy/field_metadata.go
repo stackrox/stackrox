@@ -173,6 +173,15 @@ func initializeFieldMetadata() FieldMetadata {
 		negationForbidden,
 	)
 
+	f.registerFieldMetadata(fieldnames.AllowPrivilegeEscalation,
+		querybuilders.ForFieldLabel(search.AllowPrivilegeEscalation),
+		violationmessages.ContainerContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+
 	f.registerFieldMetadata(fieldnames.AppArmorProfile,
 		querybuilders.ForFieldLabelRegex(search.AppArmorProfile),
 		violationmessages.ContainerContextFields,
@@ -403,7 +412,7 @@ func initializeFieldMetadata() FieldMetadata {
 				return signatureIntegrationIDValueRegex
 			},
 			[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-			[]RuntimeFieldType{})
+			[]RuntimeFieldType{}, negationForbidden)
 	}
 
 	f.registerFieldMetadata(fieldnames.ImageTag,

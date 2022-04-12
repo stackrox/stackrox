@@ -169,6 +169,50 @@
                 ]
               },
               {
+                "id": 18,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster ID,store\\\""
+                  }
+                ]
+              },
+              {
+                "id": 19,
+                "name": "cluster_name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster,store\\\""
+                  }
+                ]
+              },
+              {
+                "id": 20,
+                "name": "namespace",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Namespace,store\\\""
+                  }
+                ]
+              },
+              {
+                "id": 21,
+                "name": "namespace_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Namespace ID\\\""
+                  }
+                ]
+              },
+              {
                 "id": 4,
                 "name": "deployment",
                 "type": "Deployment",
@@ -276,7 +320,13 @@
                 "id": 14,
                 "name": "tags",
                 "type": "string",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Tag,store\\\""
+                  }
+                ]
               }
             ],
             "messages": [
@@ -420,12 +470,24 @@
                   {
                     "id": 1,
                     "name": "resource_type",
-                    "type": "ResourceType"
+                    "type": "ResourceType",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Resource Type,store\\\""
+                      }
+                    ]
                   },
                   {
                     "id": 2,
                     "name": "name",
-                    "type": "string"
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Resource\\\""
+                      }
+                    ]
                   },
                   {
                     "id": 3,
@@ -593,7 +655,13 @@
                   {
                     "id": 1,
                     "name": "action",
-                    "type": "storage.EnforcementAction"
+                    "type": "storage.EnforcementAction",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Enforcement\\\""
+                      }
+                    ]
                   },
                   {
                     "id": 2,
@@ -3690,9 +3758,25 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"CVE,store\"sql:\"pk\""
+                    "value": "sql:\"pk\""
                   }
                 ]
+              },
+              {
+                "id": 22,
+                "name": "cve",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"CVE,store\""
+                  }
+                ]
+              },
+              {
+                "id": 21,
+                "name": "operating_system",
+                "type": "string"
               },
               {
                 "id": 2,
@@ -6258,6 +6342,17 @@
                 "name": "signatures",
                 "type": "Signature",
                 "is_repeated": true
+              },
+              {
+                "id": 2,
+                "name": "fetched",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Image Signature Fetched Time,hidden\\\""
+                  }
+                ]
               }
             ]
           },
@@ -6534,38 +6629,6 @@
             ]
           },
           {
-            "name": "ImageCVEEdge",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "first_image_occurrence",
-                "type": "google.protobuf.Timestamp",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"First Image Occurrence Timestamp,hidden\\\""
-                  }
-                ]
-              },
-              {
-                "id": 3,
-                "name": "state",
-                "type": "VulnerabilityState",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Vulnerability State\\\""
-                  }
-                ]
-              }
-            ]
-          },
-          {
             "name": "WatchedImage",
             "fields": [
               {
@@ -6615,7 +6678,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Component ID,store\"sql:\"pk\""
+                    "value": "search:\"Component ID,store,hidden\"sql:\"pk\""
                   }
                 ]
               },
@@ -6626,7 +6689,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Component,store\"sql:\"pk\""
+                    "value": "search:\"Component,store\""
                   }
                 ]
               },
@@ -6637,7 +6700,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Component Version,store\"sql:\"pk\""
+                    "value": "search:\"Component Version,store\""
                   }
                 ]
               },
@@ -6658,7 +6721,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Component Source,store\\\""
+                    "value": "search:\"Component Source,store\""
                   }
                 ]
               },
@@ -6669,7 +6732,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Component Risk Score,hidden\\\""
+                    "value": "search:\"Component Risk Score,hidden\""
                   }
                 ]
               },
@@ -6680,7 +6743,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Component Top CVSS,store\\\""
+                    "value": "search:\"Component Top CVSS,store\""
                   }
                 ]
               },
@@ -6692,13 +6755,7 @@
               {
                 "id": 10,
                 "name": "operating_system",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
-                  }
-                ]
+                "type": "string"
               }
             ]
           }
@@ -7060,6 +7117,39 @@
                 "id": 9,
                 "name": "assume_role_external_id",
                 "type": "string"
+              },
+              {
+                "id": 10,
+                "name": "authorization_data",
+                "type": "AuthorizationData"
+              }
+            ],
+            "messages": [
+              {
+                "name": "AuthorizationData",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "username",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "password",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "scrub:\\\"always\\\""
+                      }
+                    ]
+                  },
+                  {
+                    "id": 3,
+                    "name": "expires_at",
+                    "type": "google.protobuf.Timestamp"
+                  }
+                ]
               }
             ]
           },
@@ -7212,6 +7302,9 @@
         "imports": [
           {
             "path": "gogoproto/gogo.proto"
+          },
+          {
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -11789,7 +11882,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Fixable,store\\\""
+                    "value": "search:\"Fixable,store\""
                   }
                 ]
               },
@@ -11800,7 +11893,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Fixed By,store,hidden\\\""
+                    "value": "search:\"Fixed By,store,hidden\""
                   }
                 ]
               },
@@ -11811,7 +11904,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,fk(ImageComponent:id)\""
                   }
                 ]
               },
@@ -11822,18 +11915,61 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,fk(CVE:id)\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ImageCVEEdge",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "first_image_occurrence",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"First Image Occurrence Timestamp,hidden\""
                   }
                 ]
               },
               {
-                "id": 6,
-                "name": "cve_operating_system",
+                "id": 3,
+                "name": "state",
+                "type": "VulnerabilityState",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Vulnerability State\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "image_id",
                 "type": "string",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,fk(Image:id)\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "image_cve_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,fk(CVE:id)\""
                   }
                 ]
               }
@@ -12865,6 +13001,11 @@
               {
                 "id": 2,
                 "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "cluster_id",
                 "type": "string"
               },
               {

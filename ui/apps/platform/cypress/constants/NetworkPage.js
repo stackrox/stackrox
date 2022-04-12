@@ -48,6 +48,7 @@ export const selectors = {
         allFilter: 'button[data-testid="network-connections-filter-all"]:contains("all")',
         hideNsEdgesFilter: '[data-testid="namespace-flows-filter"] button:contains("Hide")',
         stopSimulation: '.simulator-mode button:contains("Stop")',
+        confirmationButton: 'button:contains("Yes")',
     },
     detailsPanel: scopeSelectors(networkPanels.detailsPanel, {
         header: '[data-testid="network-details-panel-header"]',

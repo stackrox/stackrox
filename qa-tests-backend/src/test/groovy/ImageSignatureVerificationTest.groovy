@@ -26,8 +26,8 @@ class ImageSignatureVerificationTest extends BaseSpecification {
     static final private String DISTROLESS = "Distroless"
     static final private String TEKTON = "Tekton"
     static final private String UNVERIFIABLE = "Unverifiable"
-    // TODO(ROX-9996): Uncomment after we can handle multiple verification results.
-    //static final private String DISTROLESS_AND_TEKTON = "Distroless+Tekton"
+    static final private String DISTROLESS_AND_TEKTON = "Distroless+Tekton"
+    static final private String POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE = "Distroless+Tekton+Unverifiable"
 
     // List of integration names used within tests.
     // NOTE: If you add a new name, make sure to add it here.
@@ -35,8 +35,7 @@ class ImageSignatureVerificationTest extends BaseSpecification {
             DISTROLESS,
             TEKTON,
             UNVERIFIABLE,
-            // TODO(ROX-9996): Uncomment after we can handle multiple verification results.
-            //DISTROLESS_AND_TEKTON
+            DISTROLESS_AND_TEKTON,
     ]
 
     // Public keys used within signature integrations.
@@ -146,16 +145,14 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
         assert unverifiableSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(UNVERIFIABLE, unverifiableSignatureIntegrationID)
 
-        // TODO(ROX-9996): Uncomment after we can handle multiple verification results.
-        /* Signature integration "Distroless+Tekton" which holds both distroless and tekton cosign public keys.
+        // Signature integration "Distroless+Tekton" which holds both distroless and tekton cosign public keys.
         Map<String,String> mergedKeys = DISTROLESS_PUBLIC_KEY.clone() as Map<String, String>
         mergedKeys.putAll(TEKTON_COSIGN_PUBLIC_KEY.entrySet())
         String distrolessAndTektonSignatureIntegrationID = createSignatureIntegration(
                 DISTROLESS_AND_TEKTON, mergedKeys
         )
         assert distrolessAndTektonSignatureIntegrationID
-        createdSignatureIntegrations.put(DISTROLESS_AND_TEKTON, distrolessAndTektonSignatureIntegrationID)
-        */
+        CREATED_SIGNATURE_INTEGRATIONS.put(DISTROLESS_AND_TEKTON, distrolessAndTektonSignatureIntegrationID)
 
         // Create all required deployments.
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
@@ -169,6 +166,13 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
             assert builder
             policyBuilders.add(builder)
         }
+
+        // Create a policy which holds three signature integrations.
+        Policy.Builder builder = createPolicyBuilderWithSignatureCriteria(POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE,
+        [CREATED_SIGNATURE_INTEGRATIONS.get(DISTROLESS), CREATED_SIGNATURE_INTEGRATIONS.get(TEKTON),
+         CREATED_SIGNATURE_INTEGRATIONS.get(UNVERIFIABLE)])
+        assert builder
+        policyBuilders.add(builder)
 
         // Create policies we use within tests.
         for (policyBuilder in policyBuilders) {
@@ -202,29 +206,33 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
         assert waitForViolation(deployment.name, policyName, WAIT_FOR_VIOLATION_TIMEOUT) == expectViolations
 
         where:
-        policyName   | deployment                   | expectViolations
+        policyName                                 | deployment                   | expectViolations
         // Distroless should create alerts for all deployments except those using distroless images.
-        DISTROLESS   | TEKTON_DEPLOYMENT            | true
-        DISTROLESS   | UNVERIFIABLE_DEPLOYMENT      | true
-        DISTROLESS   | WITHOUT_SIGNATURE_DEPLOYMENT | true
-        DISTROLESS   | DISTROLESS_DEPLOYMENT        | false
+        DISTROLESS                                 | TEKTON_DEPLOYMENT            | true
+        DISTROLESS                                 | UNVERIFIABLE_DEPLOYMENT      | true
+        DISTROLESS                                 | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        DISTROLESS                                 | DISTROLESS_DEPLOYMENT        | false
         // Tekton should create alerts for all deployments except those using tekton images.
-        TEKTON       | DISTROLESS_DEPLOYMENT        | true
-        TEKTON       | UNVERIFIABLE_DEPLOYMENT      | true
-        TEKTON       | WITHOUT_SIGNATURE_DEPLOYMENT | true
-        TEKTON       | TEKTON_DEPLOYMENT            | false
+        TEKTON                                     | DISTROLESS_DEPLOYMENT        | true
+        TEKTON                                     | UNVERIFIABLE_DEPLOYMENT      | true
+        TEKTON                                     | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        TEKTON                                     | TEKTON_DEPLOYMENT            | false
         // Unverifiable should create alerts for all deployments.
-        UNVERIFIABLE | DISTROLESS_DEPLOYMENT        | true
-        UNVERIFIABLE | TEKTON_DEPLOYMENT            | true
-        UNVERIFIABLE | WITHOUT_SIGNATURE_DEPLOYMENT | true
-        UNVERIFIABLE | UNVERIFIABLE_DEPLOYMENT      | true
-        // TODO(ROX-9996): Uncomment after we can handle multiple verification results.
-        /* Distroless and tekton should create alerts for all deployments except thos using distroless / tekton images.
-        DISTROLESS_AND_TEKTON | UNVERIFIABLE_DEPLOYMENT | true
-        DISTROLESS_AND_TEKTON | WITHOUT_SIGNATURE_DEPLOYMENT | true
-        DISTROLESS_AND_TEKTON | TEKTON_DEPLOYMENT | false
-        DISTROLESS_AND_TEKTON | DISTROLESS_DEPLOYMENT | false
-        */
+        UNVERIFIABLE                               | DISTROLESS_DEPLOYMENT        | true
+        UNVERIFIABLE                               | TEKTON_DEPLOYMENT            | true
+        UNVERIFIABLE                               | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        UNVERIFIABLE                               | UNVERIFIABLE_DEPLOYMENT      | true
+        // Distroless and tekton should create alerts for all deployments except those using distroless / tekton images.
+        DISTROLESS_AND_TEKTON                      | UNVERIFIABLE_DEPLOYMENT      | true
+        DISTROLESS_AND_TEKTON                      | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        DISTROLESS_AND_TEKTON                      | TEKTON_DEPLOYMENT            | false
+        DISTROLESS_AND_TEKTON                      | DISTROLESS_DEPLOYMENT        | false
+        // Policy with all three integrations should create alerts for all deployments except those using distroless /
+        // tekton images.
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | UNVERIFIABLE_DEPLOYMENT      | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | TEKTON_DEPLOYMENT            | false
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | DISTROLESS_DEPLOYMENT        | false
     }
 
     // Helper which creates a policy builder for a policy which uses the image signature policy criteria.

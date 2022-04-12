@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"testing"
 
 	"github.com/gogo/protobuf/types"
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
@@ -55,6 +57,7 @@ func (suite *ImageStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *ImageStoreTestSuite) TestImages() {
+	allAccessCtx := sac.WithAllAccess(context.Background())
 	images := []*storage.Image{
 		{
 			Id: "sha256:sha1",
@@ -131,11 +134,11 @@ func (suite *ImageStoreTestSuite) TestImages() {
 
 	// Test Add
 	for _, d := range images {
-		suite.NoError(suite.store.Upsert(d))
+		suite.NoError(suite.store.Upsert(allAccessCtx, d))
 	}
 
 	for _, d := range images {
-		got, exists, err := suite.store.GetImage(d.GetId())
+		got, exists, err := suite.store.Get(allAccessCtx, d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		// Upsert sets `createdAt` for every CVE that doesn't already exist in the store, which should be same as (*storage.Image).LastUpdated.
@@ -149,10 +152,10 @@ func (suite *ImageStoreTestSuite) TestImages() {
 		}
 		suite.Equal(d, got)
 
-		listGot, exists, err := suite.store.ListImage(d.GetId())
+		listGot, exists, err := suite.store.GetImageMetadata(allAccessCtx, d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
-		suite.Equal(d.GetName().GetFullName(), listGot.GetName())
+		suite.Equal(d.GetName().GetFullName(), listGot.GetName().GetFullName())
 	}
 
 	// Check that the CVEs were written with the correct timestamp.
@@ -177,23 +180,23 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	}
 
 	for _, d := range images {
-		suite.NoError(suite.store.Upsert(d))
+		suite.NoError(suite.store.Upsert(allAccessCtx, d))
 	}
 
 	for _, d := range images {
-		got, exists, err := suite.store.GetImage(d.GetId())
+		got, exists, err := suite.store.Get(allAccessCtx, d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(d, got)
 
-		listGot, exists, err := suite.store.ListImage(d.GetId())
+		listGot, exists, err := suite.store.GetImageMetadata(allAccessCtx, d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
-		suite.Equal(d.GetName().GetFullName(), listGot.GetName())
+		suite.Equal(d.GetName().GetFullName(), listGot.GetName().GetFullName())
 	}
 
 	// Test Count
-	count, err := suite.store.CountImages()
+	count, err := suite.store.Count(allAccessCtx)
 	suite.NoError(err)
 	suite.Equal(len(images), count)
 
@@ -202,8 +205,8 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	cloned.Metadata.V1.Created.Seconds = cloned.Metadata.V1.Created.Seconds - 500
 	cloned.Scan.ScanTime.Seconds = cloned.Scan.ScanTime.Seconds - 500
 	cloned.Name.FullName = "newname"
-	suite.NoError(suite.store.Upsert(cloned))
-	got, exists, err := suite.store.GetImage(cloned.GetId())
+	suite.NoError(suite.store.Upsert(allAccessCtx, cloned))
+	got, exists, err := suite.store.Get(allAccessCtx, cloned.GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	suite.Equal(images[0].GetName().GetFullName(), got.GetName().GetFullName())
@@ -214,8 +217,8 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	cloned.Name.FullName = "newname"
 	cloned.Scan.Components = nil
 	cloned.RiskScore = 100
-	suite.NoError(suite.store.Upsert(cloned))
-	got, exists, err = suite.store.GetImage(cloned.GetId())
+	suite.NoError(suite.store.Upsert(allAccessCtx, cloned))
+	got, exists, err = suite.store.Get(allAccessCtx, cloned.GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	// Since the metadata is not outdated, image update goes through.
@@ -249,9 +252,9 @@ func (suite *ImageStoreTestSuite) TestImages() {
 		},
 	}
 
-	suite.NoError(suite.store.Upsert(images[1]))
+	suite.NoError(suite.store.Upsert(allAccessCtx, images[1]))
 
-	got, exists, err = suite.store.GetImage(images[1].GetId())
+	got, exists, err = suite.store.Get(allAccessCtx, images[1].GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	images[1].GetScan().GetComponents()[0].GetVulns()[0].FirstSystemOccurrence = images[0].GetScan().GetComponents()[1].GetVulns()[0].FirstSystemOccurrence
@@ -267,9 +270,9 @@ func (suite *ImageStoreTestSuite) TestImages() {
 			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		})
 
-	suite.NoError(suite.store.Upsert(images[0]))
+	suite.NoError(suite.store.Upsert(allAccessCtx, images[0]))
 
-	got, exists, err = suite.store.GetImage(images[0].GetId())
+	got, exists, err = suite.store.Get(allAccessCtx, images[0].GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	images[0].GetScan().GetComponents()[0].GetVulns()[0].FirstSystemOccurrence = images[0].GetScan().GetComponents()[1].GetVulns()[0].FirstSystemOccurrence
@@ -280,12 +283,12 @@ func (suite *ImageStoreTestSuite) TestImages() {
 
 	// Test Delete
 	for _, d := range images {
-		err := suite.store.Delete(d.GetId())
+		err := suite.store.Delete(allAccessCtx, d.GetId())
 		suite.NoError(err)
 	}
 
 	// Test Count
-	count, err = suite.store.CountImages()
+	count, err = suite.store.Count(allAccessCtx)
 	suite.NoError(err)
 	suite.Equal(0, count)
 

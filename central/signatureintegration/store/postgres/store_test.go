@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -41,7 +42,7 @@ func (s *SignatureintegrationsStoreSuite) TearDownTest() {
 }
 
 func (s *SignatureintegrationsStoreSuite) TestStore() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -61,6 +62,8 @@ func (s *SignatureintegrationsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundSignatureIntegration)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, signatureIntegration))
 	foundSignatureIntegration, exists, err = store.Get(ctx, signatureIntegration.GetId())
 	s.NoError(err)
@@ -70,11 +73,15 @@ func (s *SignatureintegrationsStoreSuite) TestStore() {
 	signatureIntegrationCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(signatureIntegrationCount, 1)
+	signatureIntegrationCount, err = store.Count(withNoAccessCtx)
+	s.NoError(err)
+	s.Zero(signatureIntegrationCount)
 
 	signatureIntegrationExists, err := store.Exists(ctx, signatureIntegration.GetId())
 	s.NoError(err)
 	s.True(signatureIntegrationExists)
 	s.NoError(store.Upsert(ctx, signatureIntegration))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, signatureIntegration), sac.ErrResourceAccessDenied)
 
 	foundSignatureIntegration, exists, err = store.Get(ctx, signatureIntegration.GetId())
 	s.NoError(err)
@@ -86,6 +93,7 @@ func (s *SignatureintegrationsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundSignatureIntegration)
+	s.ErrorIs(store.Delete(withNoAccessCtx, signatureIntegration.GetId()), sac.ErrResourceAccessDenied)
 
 	var signatureIntegrations []*storage.SignatureIntegration
 	for i := 0; i < 200; i++ {

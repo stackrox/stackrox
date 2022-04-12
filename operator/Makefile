@@ -7,6 +7,9 @@
 # dropped (e.g. 3.0.61.1 -> 3.61.1) and development version ".x" is changed to ".0" (e.g. 3.0.61.x-123 -> 3.0.61.0-123).
 VERSION ?= $(shell $(MAKE) --quiet --no-print-directory -C .. tag | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g' | sed -E 's@^3.0.([[:digit:]]+\.[[:digit:]]+)(-)?@3.\1\2@g')
 
+GO_VERSION ?= $(shell cat ../EXPECTED_GO_VERSION | sed 's/go//')
+
+
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "preview,fast,stable")
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
@@ -284,6 +287,7 @@ docker-build: test ## Build docker image with the operator.
 		"$${smuggled_status_sh}" ;\
 	)
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
+		--build-arg "GO_VERSION=${GO_VERSION}" \
 		-t ${IMG} \
 		--ssh default=${SSH_AUTH_SOCK} \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \

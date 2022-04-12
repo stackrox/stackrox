@@ -403,7 +403,7 @@ func (suite *NodeDataStoreTestSuite) TestSearchByComponent() {
 
 	// Search by Component.
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp1", "ver1"),
+		ID:    scancomponent.ComponentID("comp1", "ver1", ""),
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 	results, err := suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -411,7 +411,7 @@ func (suite *NodeDataStoreTestSuite) TestSearchByComponent() {
 	suite.Len(results, 2)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp3", "ver1"),
+		ID:    scancomponent.ComponentID("comp3", "ver1", ""),
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -420,7 +420,7 @@ func (suite *NodeDataStoreTestSuite) TestSearchByComponent() {
 	suite.Equal("id2", results[0].ID)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp4", "ver1"),
+		ID:    scancomponent.ComponentID("comp4", "ver1", ""),
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -431,7 +431,7 @@ func (suite *NodeDataStoreTestSuite) TestSearchByComponent() {
 
 	// Ensure search does not find anything.
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp1", "ver1"),
+		ID:    scancomponent.ComponentID("comp1", "ver1", ""),
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
@@ -439,7 +439,7 @@ func (suite *NodeDataStoreTestSuite) TestSearchByComponent() {
 	suite.Empty(results)
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
-		ID:    scancomponent.ComponentID("comp3", "ver1"),
+		ID:    scancomponent.ComponentID("comp3", "ver1", ""),
 		Level: v1.SearchCategory_IMAGE_COMPONENTS,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())

@@ -2,14 +2,14 @@ import React, { ReactElement } from 'react';
 
 import usePagination from 'hooks/patternfly/usePagination';
 import queryService from 'utils/queryService';
-import useSearch from 'hooks/useSearch';
+import useURLSearch from 'hooks/useURLSearch';
 import { PageSection, PageSectionVariants } from '@patternfly/react-core';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 import ApprovedFalsePositivesTable from './ApprovedFalsePositivesTable';
 
 function ApprovedFalsePositives(): ReactElement {
-    const { searchFilter, setSearchFilter } = useSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
 
     let modifiedSearchObject = { ...searchFilter };
     modifiedSearchObject = {
