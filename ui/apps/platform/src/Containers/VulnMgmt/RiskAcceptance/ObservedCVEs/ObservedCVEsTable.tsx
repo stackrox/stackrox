@@ -27,7 +27,7 @@ import DateTimeFormat from 'Components/PatternFly/DateTimeFormat';
 import usePermissions from 'hooks/usePermissions';
 import { SearchFilter } from 'types/search';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
-import { GetSortParams } from 'hooks/patternfly/useURLSort';
+import { GetSortParams } from 'hooks/patternfly/useTableSort';
 import DeferralFormModal from './DeferralFormModal';
 import FalsePositiveRequestModal from './FalsePositiveFormModal';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
