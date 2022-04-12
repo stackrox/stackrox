@@ -3243,6 +3243,29 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 			netpolsApplied: nil,
 			alerts:         []*storage.Alert_Violation(nil),
 		},
+		"Policies attached to augmentedobj": {
+			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
+				MissingIngressNetworkPolicy: true,
+				MissingEgressNetworkPolicy:  false,
+				Policies: map[string]*storage.NetworkPolicy{
+					"ID1": {Id: "ID1", Name: "policy1"},
+				},
+			},
+			alerts: []*storage.Alert_Violation{
+				{
+					Message: "The deployment is missing Ingress Network Policy.",
+					Type:    storage.Alert_Violation_NETWORK_POLICY,
+					MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+						KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+							Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+								{Key: printer.PolicyID, Value: "ID1"},
+								{Key: printer.PolicyName, Value: "policy1"},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, testCase := range testCases {
