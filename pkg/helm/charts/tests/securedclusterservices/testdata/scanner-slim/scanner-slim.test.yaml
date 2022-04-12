@@ -11,6 +11,7 @@ tests:
     container(.deployments["scanner"]; "scanner").image | contains("slim")
     container(.deployments["scanner-db"]; "db").image | contains("slim")
     .securitycontextconstraints | keys | sort | assertThat(. == ["stackrox-admission-control", "stackrox-collector", "stackrox-scanner", "stackrox-sensor"])
+    envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. == "true")
   tests:
   - name: "on openshift 4"
   - name: "on openshift 3"
@@ -102,14 +103,12 @@ tests:
     set:
       scanner.disable: false
     expect: |
-      .deployments["sensor"].spec.template.spec.containers[0].env[] |
-        select(.name == "ROX_USE_LOCAL_SCANNER") | assertThat(.value)
+      envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. == "true")
   - name: "local scanner disabled"
     set:
       scanner.disable: true
     expect: |
-      .deployments["sensor"].spec.template.spec.containers[0].env[] |
-        select(.name == "ROX_USE_LOCAL_SCANNER") | assertThat(.value == "false")
+      envVars(.deployments.sensor; "sensor")| assertThat(has("ROX_LOCAL_IMAGE_SCANNING_ENABLED") == false)
 
 - name: "sensor connects to local scanner using the correct GRPC endpoint"
   release:
