@@ -444,11 +444,17 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ServiceAccoun
 }
 
 func isInScope(obj *storage.ServiceAccount, eas effectiveaccessscope.ScopeTree) bool {
+	if eas.State == effectiveaccessscope.Included {
+		return true
+	}
 	if eas.State == effectiveaccessscope.Excluded {
 		return false
 	}
 	clusterId := obj.GetClusterId()
 	cluster := eas.Clusters[clusterId]
+	if cluster.State == effectiveaccessscope.Included {
+		return true
+	}
 	if cluster.State == effectiveaccessscope.Excluded {
 		return false
 	}

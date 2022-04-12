@@ -675,7 +675,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 {{ if eq .ResourceType "directlyScoped" }}
 func isInScope(obj *{{.Type}}, eas effectiveaccessscope.ScopeTree) bool {
     if eas.State == effectiveaccessscope.Included {
-        return false
+        return true
     }
     if eas.State == effectiveaccessscope.Excluded {
         return false

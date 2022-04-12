@@ -444,6 +444,9 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Cluster) erro
 }
 
 func isInScope(obj *storage.Cluster, eas effectiveaccessscope.ScopeTree) bool {
+	if eas.State == effectiveaccessscope.Included {
+		return true
+	}
 	if eas.State == effectiveaccessscope.Excluded {
 		return false
 	}
