@@ -77,6 +77,8 @@ spec:
           name: disk
         - name: central-db-tls-volume
           mountPath: /run/secrets/stackrox.io/certs
+        - mountPath: /dev/shm
+          name: shared-memory
       securityContext:
         fsGroup: 70
       volumes:
@@ -101,6 +103,10 @@ spec:
             path: server.key
           - key: ca.pem
             path: root.crt
+      - name: shared-memory
+        emptyDir:
+          medium: Memory
+          sizeLimit: 2Gi
 ---
 apiVersion: v1
 kind: Service
