@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -164,16 +163,9 @@ func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(ctx context.Context, id 
 }
 
 func (d *datastoreImpl) verifyIntegrationIDIsNotInPolicy(ctx context.Context, id string) error {
-	var useAllAccessCtx bool
-	if err := sac.VerifyAuthzOK(policySAC.ReadAllowed(ctx)); err != nil {
-		useAllAccessCtx = true
-	}
-
-	// Only create a context with all access if we are not allowed to read policies.
-	policyCtx := ctx
-	if useAllAccessCtx {
-		policyCtx = sac.WithAllAccess(ctx)
-	}
+	policyCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Policy)))
 
 	policies, err := d.policyStore.GetAllPolicies(policyCtx)
 	if err != nil {
@@ -193,16 +185,20 @@ func (d *datastoreImpl) verifyIntegrationIDIsNotInPolicy(ctx context.Context, id
 			return err
 		}
 
-		errMsg := fmt.Sprintf("cannot delete signature integration %q since there are existing policies that"+
-			"reference it", integration.GetName())
+		// Fetch policies with the user context, we can safely ignore the error since one would be returned in case
+		// the user does not have access to policies.
+		policiesVisibleToUser, _ := d.policyStore.GetAllPolicies(ctx)
 
-		// Only return list of policies with references to signature integration if the context had read access to
-		// policies. Otherwise, we would potentially leak names.
-		if !useAllAccessCtx {
-			errMsg = fmt.Sprintf("%s: [%s]", errMsg, strings.Join(policiesContainingID, ","))
+		listOfPolicies := strings.Join(policiesContainingID, ",")
+		// If the length of fetched policies is less than the policies that reference signature integration IDs, we
+		// assume that the caller does not have read access to policies and will not print policy names in the error
+		// message.
+		if len(policiesVisibleToUser) < len(policiesContainingID) {
+			listOfPolicies = "<hidden>"
 		}
 
-		return errox.ReferencedByAnotherObject.New(errMsg)
+		return errox.ReferencedByAnotherObject.Newf("cannot delete signature integration %q since there are "+
+			"existing policies that reference it: [%s]", integration.GetName(), listOfPolicies)
 	}
 
 	return nil

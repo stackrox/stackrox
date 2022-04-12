@@ -186,21 +186,14 @@ func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegrationReferencedBy
 	// The error should NOT contain the policy name.
 	s.NotContains(err.Error(), "policy-referencing-integration")
 
-	// 3. Removing the integration should fail due to the existing reference and list policy names.
-	err = s.dataStore.RemoveSignatureIntegration(sac.WithAllAccess(s.hasWriteCtx), savedIntegration.GetId())
-	s.Error(err)
-	s.ErrorIs(err, errox.ReferencedByAnotherObject)
-	// The error should contain the policy name as we have access to policies.
-	s.Contains(err.Error(), "policy-referencing-integration")
-
-	// 4. Return an error when retrieving policies.
+	// 3. Return an error when retrieving policies.
 	s.policyStorageMock.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, errors.New("some error"))
 
-	// 5. Removing the integration should fail due to an error when retrieving policies.
+	// 4. Removing the integration should fail due to an error when retrieving policies.
 	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, savedIntegration.GetId())
 	s.Error(err)
 
-	// 6. Return a policy that does not reference the signature integration.
+	// 5. Return a policy that does not reference the signature integration.
 	s.policyStorageMock.EXPECT().GetAllPolicies(gomock.Any()).Return([]*storage.Policy{{
 		Name: "policy-referencing-integration",
 		PolicySections: []*storage.PolicySection{{
@@ -208,9 +201,9 @@ func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegrationReferencedBy
 				FieldName: "some other field",
 				Values: []*storage.PolicyValue{{
 					Value: "some other value",
-				}}}}}}}}, nil)
+				}}}}}}}}, nil).MaxTimes(2)
 
-	// 7. Removing the integration should work now and is not accessible via GetSignatureIntegration.
+	// 6. Removing the integration should work now and is not accessible via GetSignatureIntegration.
 	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, savedIntegration.GetId())
 	s.NoError(err)
 	_, found, _ := s.dataStore.GetSignatureIntegration(s.hasReadCtx, savedIntegration.GetId())
