@@ -74,7 +74,12 @@ func (m *istioCVEManager) updateCVEsInDB(embeddedCVEs []*storage.EmbeddedVulnera
 	cves := converter.EmbeddedCVEsToProtoCVEs("", embeddedCVEs...)
 	newCVEs := make([]converter.ClusterCVEParts, 0, len(cves))
 	for _, cve := range cves {
-		clusters, err := m.cveMatcher.GetAffectedClusters(cveElevatedCtx, m.getNVDCVE(cve.GetId()))
+		nvdCVE := m.getNVDCVE(cve.GetId())
+		if nvdCVE == nil {
+			continue
+		}
+
+		clusters, err := m.cveMatcher.GetAffectedClusters(cveElevatedCtx, nvdCVE)
 		if err != nil {
 			return err
 		}
@@ -83,7 +88,7 @@ func (m *istioCVEManager) updateCVEsInDB(embeddedCVEs []*storage.EmbeddedVulnera
 			continue
 		}
 
-		fixVersions := strings.Join(converter.GetFixedVersions(m.getNVDCVE(cve.GetId())), ",")
+		fixVersions := strings.Join(converter.GetFixedVersions(nvdCVE), ",")
 		newCVEs = append(newCVEs, converter.NewClusterCVEParts(cve, clusters, fixVersions))
 	}
 
