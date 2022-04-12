@@ -8,7 +8,7 @@ describe('Node Overview', () => {
     it('should show a message when node scan data is incomplete', () => {
         // arrange
         cy.intercept('POST', api.graphql(api.vulnMgmt.graphqlOps.getNode), {
-            fixture: 'nodes/vmImageOverview.json',
+            fixture: 'nodes/vmNodeOverview.json',
         }).as('getNode');
 
         // act
