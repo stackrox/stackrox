@@ -20,6 +20,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-9946: Fixed default permissions for the default Vuln Reporter role to exclude the modify permission on notifiers, since it is not needed for report creation.
 - Added AllowPrivilegeEscalation as a new policy criteria.
 - ROX-10021: RHCOS node support is dropped until major improvements are made.
+  - The UI shows the node scanning notes in the same manner as image scanning notes.
 
 ## [69.1]
 
