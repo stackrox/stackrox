@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	policyDataStoreMock "github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	signatureRocksdb "github.com/stackrox/rox/central/signatureintegration/store/rocksdb"
@@ -183,7 +184,15 @@ func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegrationReferencedBy
 	s.Error(err)
 	s.ErrorIs(err, errox.ReferencedByAnotherObject)
 
-	// 3. Return a policy that does not reference the signature integration.
+	// 3. Return an error when retrieving policies.
+	s.policyStorageMock.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, errors.New("some error"))
+
+	// 4. Removing the integration should fail due to an error when retrieving policies.
+	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, savedIntegration.GetId())
+	s.Error(err)
+	s.ErrorIs(err, errox.InvariantViolation)
+
+	// 5. Return a policy that does not reference the signature integration.
 	s.policyStorageMock.EXPECT().GetAllPolicies(gomock.Any()).Return([]*storage.Policy{{
 		Name: "policy-referencing-integration",
 		PolicySections: []*storage.PolicySection{{
@@ -193,7 +202,7 @@ func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegrationReferencedBy
 					Value: "some other value",
 				}}}}}}}}, nil)
 
-	// 4. Removing the integration should work now and is not accessible anymore via GetSignatureIntegration.
+	// 6. Removing the integration should work now and is not accessible via GetSignatureIntegration.
 	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, savedIntegration.GetId())
 	s.NoError(err)
 	_, found, _ := s.dataStore.GetSignatureIntegration(s.hasReadCtx, savedIntegration.GetId())
