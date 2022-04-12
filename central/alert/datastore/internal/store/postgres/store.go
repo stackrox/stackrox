@@ -588,7 +588,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Alert) error)
 	return nil
 }
 
-func isInScope(obj *storage.Alert, eas effectiveaccessscope.ScopeTree) bool {
+func isInScope(obj *storage.Alert, eas *effectiveaccessscope.ScopeTree) bool {
 	if eas.State == effectiveaccessscope.Included {
 		return true
 	}
@@ -596,7 +596,7 @@ func isInScope(obj *storage.Alert, eas effectiveaccessscope.ScopeTree) bool {
 		return false
 	}
 	clusterId := obj.GetClusterId()
-	cluster := eas.Clusters[clusterId]
+	cluster := eas.GetClusterByID(clusterId)
 	if cluster.State == effectiveaccessscope.Included {
 		return true
 	}

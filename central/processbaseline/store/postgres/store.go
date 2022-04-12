@@ -428,7 +428,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessBaseli
 	return nil
 }
 
-func isInScope(obj *storage.ProcessBaseline, eas effectiveaccessscope.ScopeTree) bool {
+func isInScope(obj *storage.ProcessBaseline, eas *effectiveaccessscope.ScopeTree) bool {
 	if eas.State == effectiveaccessscope.Included {
 		return true
 	}
@@ -436,7 +436,7 @@ func isInScope(obj *storage.ProcessBaseline, eas effectiveaccessscope.ScopeTree)
 		return false
 	}
 	clusterId := obj.GetKey().GetClusterId()
-	cluster := eas.Clusters[clusterId]
+	cluster := eas.GetClusterByID(clusterId)
 	if cluster.State == effectiveaccessscope.Included {
 		return true
 	}
