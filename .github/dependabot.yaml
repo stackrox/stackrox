@@ -31,7 +31,6 @@ updates:
       - "ci-aks-tests"
       - "ci-all-qa-tests"
       - "ci-eks-tests"
-      - "ci-kops-tests"
       - "ci-no-api-tests"
       - "ci-no-ui-tests"
       - "ci-openshift-4-tests"
