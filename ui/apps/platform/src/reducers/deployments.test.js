@@ -19,15 +19,6 @@ const deploymentsResponse = {
     result: Object.keys(deploymentsById),
 };
 
-const singleDeployment = { id: 'dep1', data: 'data' };
-const deploymentResponse = {
-    entities: {
-        deployment: {
-            [singleDeployment.id]: singleDeployment,
-        },
-    },
-};
-
 describe('Deployments Reducer', () => {
     it('should return the initial state', () => {
         expect(reducer(undefined, {})).toEqual(initialState);

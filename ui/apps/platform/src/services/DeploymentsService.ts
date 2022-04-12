@@ -10,7 +10,7 @@ import {
     orchestratorComponentOption,
 } from 'Containers/Navigation/OrchestratorComponentsToggle';
 import axios from './instance';
-import { deployment as deploymentSchema, deploymentDetail } from './schemas';
+import { deployment as deploymentSchema } from './schemas';
 
 const deploymentsUrl = '/v1/deploymentswithprocessinfo';
 const deploymentByIdUrl = '/v1/deployments';
