@@ -125,6 +125,7 @@ func main() {
 		compileFKArgAndAttachToSchema(schema, props.Refs)
 
 		permissionCheckerEnabled := props.PermissionChecker != ""
+		resourceType := getResourceType(props.Type, schema, permissionCheckerEnabled, props.JoinTable)
 		templateMap := map[string]interface{}{
 			"Type":              props.Type,
 			"TrimmedType":       stringutils.GetAfter(props.Type, "."),
@@ -134,7 +135,11 @@ func main() {
 			"OptionsPath":       path.Join(packagenames.Rox, props.OptionsPath),
 			"JoinTable":         props.JoinTable,
 			"PermissionChecker": props.PermissionChecker,
-			"ResourceType":      getResourceType(props.Type, schema, permissionCheckerEnabled, props.JoinTable).String(),
+			"ResourceType":      resourceType.String(),
+		}
+		if resourceType == directlyScoped {
+			templateMap["ClusterGetter"] = clusterGetter(schema)
+			templateMap["NamespaceGetter"] = namespaceGetter(schema)
 		}
 
 		if err := generateSchema(schema); err != nil {

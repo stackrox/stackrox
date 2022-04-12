@@ -18,6 +18,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 const (
@@ -540,6 +541,19 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.K8SRoleBindin
 		}
 	}
 	return nil
+}
+
+func isInScope(obj *storage.K8SRoleBinding, eas effectiveaccessscope.ScopeTree) bool {
+	if eas.State == effectiveaccessscope.Excluded {
+		return false
+	}
+	clusterId := obj.GetClusterId()
+	cluster := eas.Clusters[clusterId]
+	if cluster.State == effectiveaccessscope.Excluded {
+		return false
+	}
+	namespaceName := obj.GetNamespace()
+	return cluster.Namespaces[namespaceName].State == effectiveaccessscope.Included
 }
 
 //// Used for testing
