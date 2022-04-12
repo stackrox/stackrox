@@ -392,7 +392,7 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 	for name, c := range cases {
 		suite.T().Run(name, func(t *testing.T) {
 			c.expectedEvents = createSensorEvent(c.netpol.(*networkingV1.NetworkPolicy), c.action)
-			deps := set.StringSet{}
+			deps := set.NewStringSet()
 			reprocessDeploymentMock := suite.detector.EXPECT().ReprocessDeployments(gomock.Any()).DoAndReturn(func(ids ...string) {
 				deps.AddAll(ids...)
 			})
