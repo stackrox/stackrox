@@ -276,6 +276,33 @@ func TestEmptyKey(t *testing.T) {
 	assertBuildError(t, &v, "attempt to set empty key")
 }
 
+func TestSetData(t *testing.T) {
+	v := NewValuesBuilder()
+	v.SetPathValue("root.child.another child", "test value")
+	require.Empty(t, v.errors)
+
+	assert.Equal(t, map[string]interface{}{
+		"root": map[string]interface{}{
+			"child": map[string]interface{}{
+				"another child": "test value",
+			},
+		},
+	}, v.data)
+}
+
+func TestSetDataDontOverwrite(t *testing.T) {
+	v := NewValuesBuilder()
+	v.SetPathValue("root.child", "already existent")
+	require.NoError(t, v.errors.Unwrap())
+	v.SetPathValue("root.child.grandchild", "fails to be written")
+	require.Error(t, v.errors)
+	assert.Equal(t, map[string]interface{}{
+		"root": map[string]interface{}{
+			"child": "already existent",
+		},
+	}, v.data)
+}
+
 func build(t *testing.T, b *ValuesBuilder) map[string]interface{} {
 	val, err := b.Build()
 	require.NoError(t, err)

@@ -18,10 +18,20 @@ const (
 	clusterVersionDefaultName = "version"
 )
 
-// AutoSenseLocalScannerSupport detects whether the local scanner should be enabled or not.
+// AutoSenseResult represents the configurations which can be auto-sensed
+type AutoSenseResult struct {
+	// DeployScannerResources indicates that Scanner resources should be deployed by the SecuredCluster controller.
+	// inside the same namespace the existing Scanner instance should be used.
+	DeployScannerResources bool
+	// EnableLocalImageScanning enables the local image scanning feature in Sensor. If this setting is disabled Sensor
+	// will not scan images locally.
+	EnableLocalImageScanning bool
+}
+
+// AutoSenseLocalScannerConfig detects whether the local scanner should be deployed and/or used by sensor.
 // Takes into account the setting in provided SecuredCluster CR as well as the presence of a Central instance in the same namespace.
 // Modifies the provided SecuredCluster object to set a default Spec.Scanner if missing.
-func AutoSenseLocalScannerSupport(ctx context.Context, client ctrlClient.Client, s platform.SecuredCluster) (bool, error) {
+func AutoSenseLocalScannerConfig(ctx context.Context, client ctrlClient.Client, s platform.SecuredCluster) (AutoSenseResult, error) {
 	SetScannerDefaults(&s.Spec)
 	scannerComponent := *s.Spec.Scanner.ScannerComponent
 
@@ -29,21 +39,25 @@ func AutoSenseLocalScannerSupport(ctx context.Context, client ctrlClient.Client,
 	case platform.LocalScannerComponentAutoSense:
 		siblingCentralPresent, err := isSiblingCentralPresent(ctx, client, s.GetNamespace())
 		if err != nil {
-			return false, errors.Wrap(err, "detecting presence of a Central CR in the same namespace")
+			return AutoSenseResult{}, errors.Wrap(err, "detecting presence of a Central CR in the same namespace")
 		}
 		isOpenShift, err := isRunningOnOpenShift(ctx, client)
 		if err != nil {
-			return false, errors.Wrap(err, "cannot fetch OpenShift ClusterVersion resource")
+			return AutoSenseResult{}, errors.Wrap(err, "cannot fetch OpenShift ClusterVersion resource")
 		}
 		if !isOpenShift {
-			return false, nil
+			return AutoSenseResult{}, nil
 		}
-		return !siblingCentralPresent, nil
+		return AutoSenseResult{
+			// Only deploy scanner resource if Central is not available in the same namespace.
+			DeployScannerResources:   !siblingCentralPresent,
+			EnableLocalImageScanning: true,
+		}, nil
 	case platform.LocalScannerComponentDisabled:
-		return false, nil
+		return AutoSenseResult{}, nil
 	}
 
-	return false, errors.Errorf("invalid spec.scanner.scannerComponent %q", scannerComponent)
+	return AutoSenseResult{}, errors.Errorf("invalid spec.scanner.scannerComponent %q", scannerComponent)
 }
 
 func isRunningOnOpenShift(ctx context.Context, client ctrlClient.Client) (bool, error) {

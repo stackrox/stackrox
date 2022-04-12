@@ -72,6 +72,8 @@ sensor:
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
+  localImageScanning:
+    enabled: null # bool
 admissionControl:
   listenOnCreates: null # bool
   listenOnUpdates: null # bool
