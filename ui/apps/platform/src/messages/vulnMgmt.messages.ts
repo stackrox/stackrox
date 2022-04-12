@@ -34,3 +34,14 @@ export const imageScanMessages = {
         body: 'The scan results are not certified, as the base RHEL image is out of scope for certification. Please consider updating the base image.',
     },
 };
+
+export const nodeScanMessages = {
+    missingScanData: {
+        header: 'Failed to get scan data.',
+        body: 'Failed to get scan data. There may have been an error communicating with the integrated node scanner.',
+    },
+    osUnsupported: {
+        header: 'Node OS unsupported.',
+        body: 'The node’s OS is not supported at this time. Please contact ???',
+    },
+};

@@ -243,6 +243,7 @@ export const vulnMgmt = {
         getPolicies: 'getPolicies',
         getPolicy: 'getPolicy',
         getImage: 'getImage',
+        getNode: 'getNode',
         getDeploymentCOMPONENT: 'getDeploymentCOMPONENT',
         getFixableCvesForEntity: 'getFixableCvesForEntity',
     },
