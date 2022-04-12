@@ -150,6 +150,8 @@ func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 				Find(gomock.Eq(ns), gomock.Eq(labels)).
 				Return(testCase.policiesInStore)
 			aug := suite.networkPolicy.GetNetworkPoliciesApplied(dep)
+			// Assume, that all policies from store would match the given deployment
+			testCase.expectedAugmentedObject.Policies = testCase.policiesInStore
 			suite.Equal(testCase.expectedAugmentedObject, aug)
 		})
 	}
