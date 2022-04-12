@@ -1,3 +1,5 @@
+import orchestratormanager.OrchestratorTypes
+
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
 
 import io.grpc.StatusRuntimeException
@@ -45,7 +47,8 @@ class ImageScanningTest extends BaseSpecification {
     static final private String CENTOS_ECHO_IMAGE = "quay.io/rhacs-eng/qa:centos7-base-echo"
 
     // Amount of seconds to sleep to avoid race condition during on-going processing of images.
-    static final private int SLEEP_DURING_PROCESSING = 20000
+    static final private int SLEEP_DURING_PROCESSING = isRaceBuild() ? 25000 :
+            ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 20000 : 15000)
 
     static final private List<String> POLICIES = [
             "ADD Command used instead of COPY",
