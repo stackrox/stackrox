@@ -2,14 +2,18 @@ package pgutils
 
 import (
 	"context"
-	"log"
 	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // ErrNilIfNoRows returns nil if the error is pgx.ErrNoRows
