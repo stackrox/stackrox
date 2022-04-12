@@ -3490,6 +3490,8 @@ jobs:
       - ROXDEPLOY_CONFIG_FILE_MAP: "scripts/ci/endpoints/endpoints.yaml"
       - SENSOR_HELM_DEPLOY: true
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
+      - ROX_NETPOL_FIELDS: true
 
     steps:
       - checkout
