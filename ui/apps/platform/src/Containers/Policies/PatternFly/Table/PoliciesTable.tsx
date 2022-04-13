@@ -30,7 +30,11 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { ActionItem } from 'Containers/Violations/ViolationsTablePanel';
+import EnableDisableNotificationModal, {
+    EnableDisableType,
+} from 'Containers/Policies/PatternFly/Modal/EnableDisableNotificationModal';
 import useTableSelection from 'hooks/useTableSelection';
+import { AlertVariantType } from 'hooks/patternfly/useToasts';
 import { policiesBasePath } from 'routePaths';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { SearchFilter } from 'types/search';
@@ -82,6 +86,8 @@ const columns = [
 type PoliciesTableProps = {
     notifiers: NotifierIntegration[];
     policies?: ListPolicy[];
+    fetchPoliciesHandler: () => void;
+    addToast: (text: string, variant: AlertVariantType, content?: string) => void;
     hasWriteAccessForPolicy: boolean;
     deletePoliciesHandler: (ids: string[]) => Promise<void>;
     exportPoliciesHandler: (ids, onClearAll?) => void;
@@ -98,6 +104,8 @@ type PoliciesTableProps = {
 function PoliciesTable({
     notifiers,
     policies = [],
+    fetchPoliciesHandler,
+    addToast,
     hasWriteAccessForPolicy,
     deletePoliciesHandler,
     exportPoliciesHandler,
@@ -117,6 +125,8 @@ function PoliciesTable({
 
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    const [enableDisableType, setEnableDisableType] = useState<EnableDisableType>('');
 
     // index of the currently active column
     const [activeSortIndex, setActiveSortIndex] = useState(0);
@@ -310,6 +320,25 @@ function PoliciesTable({
                                         // {`Export policies to JSON (${numSelected})`}
                                         <DropdownSeparator key="Separator" />,
                                         <DropdownItem
+                                            key="Enable notification"
+                                            component="button"
+                                            onClick={() => {
+                                                setEnableDisableType('enable');
+                                            }}
+                                        >
+                                            Enable notification
+                                        </DropdownItem>,
+                                        <DropdownItem
+                                            key="Disable notification"
+                                            component="button"
+                                            onClick={() => {
+                                                setEnableDisableType('disable');
+                                            }}
+                                        >
+                                            Disable notification
+                                        </DropdownItem>,
+                                        <DropdownSeparator key="Separator" />,
+                                        <DropdownItem
                                             key="Delete policy"
                                             component="button"
                                             isDisabled={numDeletable === 0}
@@ -464,7 +493,6 @@ function PoliciesTable({
                                             content={description || '-'}
                                             tooltipPosition="top"
                                         />
-                                        {/* {description || '-'} */}
                                     </Td>
                                     <Td dataLabel="Status">
                                         {disabled ? (
@@ -522,6 +550,14 @@ function PoliciesTable({
                 Are you sure you want to delete {deletingIds.length}&nbsp;
                 {pluralize('policy', deletingIds.length)}?
             </ConfirmationModal>
+            <EnableDisableNotificationModal
+                enableDisableType={enableDisableType}
+                setEnableDisableType={setEnableDisableType}
+                fetchPoliciesHandler={fetchPoliciesHandler}
+                addToast={addToast}
+                selectedPolicyIds={selectedIds}
+                notifiers={notifiers}
+            />
         </>
     );
 }

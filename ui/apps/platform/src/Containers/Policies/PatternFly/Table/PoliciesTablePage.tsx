@@ -18,7 +18,6 @@ import {
     deletePolicies,
     exportPolicies,
     updatePoliciesDisabledState,
-    enableDisableNotificationsForPolicies,
 } from 'services/PoliciesService';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
@@ -140,19 +139,6 @@ function PoliciesTablePage({
             });
     }
 
-    function enableNotificationHandler(ids: string[]) {
-        const selectedNotifiers =
-            notifiers.length === 1 ? notifiers.map((notifier) => notifier.id) : selectedNotifierIds;
-        enableDisableNotificationsForPolicies(ids, selectedNotifiers, false)
-            .then(() => {
-                fetchPolicies(query);
-                addToast(`Successfully enabled notification`, 'success');
-            })
-            .catch(({ response }) => {
-                addToast(`Could not enable notification`, 'danger', response.data.message);
-            });
-    }
-
     useEffect(() => {
         fetchNotifierIntegrations()
             .then((data) => {
@@ -199,6 +185,8 @@ function PoliciesTablePage({
                 <PoliciesTable
                     notifiers={notifiers}
                     policies={policies}
+                    fetchPoliciesHandler={() => fetchPolicies(query)}
+                    addToast={addToast}
                     hasWriteAccessForPolicy={hasWriteAccessForPolicy}
                     deletePoliciesHandler={deletePoliciesHandler}
                     exportPoliciesHandler={exportPoliciesHandler}
