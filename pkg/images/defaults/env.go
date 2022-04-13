@@ -3,6 +3,7 @@ package defaults
 import "github.com/stackrox/rox/pkg/env"
 
 const (
+	// ImageFlavorEnvName is the variable storing the image flavor name for different builds.
 	ImageFlavorEnvName = "ROX_IMAGE_FLAVOR"
 
 	// ImageFlavorNameDevelopmentBuild is a name for image flavor (image defaults) for development builds.
