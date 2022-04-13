@@ -336,6 +336,7 @@ test_upgrade_paths() {
 
     cd "$TEST_ROOT"
 
+    kubectl -n stackrox set env deploy/central ROX_NETPOL_FIELDS="true"
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
     wait_for_api
 

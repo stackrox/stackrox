@@ -28,3 +28,5 @@ area/postgres:
 - pkg/search/postgres/**/*
 - tools/generate-helpers/pg-table-bindings/**/*
 - tools/generate-helpers/pg-table-bindings-wrapper
+ci-upgrade-tests:
+- pkg/defaults/policies/**/*
