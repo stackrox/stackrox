@@ -65,6 +65,15 @@ function retry() {
   return 1
 }
 
+function check_version_tag() {
+  local -r version_tag="$1"
+
+    if [[ $version_tag == *-dirty ]]; then
+      log "Cannot install from *-dirty image tag. Dirty tag images are not supposed to be pushed to the registry"
+      return 1
+    fi
+}
+
 function approve_install_plan() {
   local -r operator_ns="$1"
   local -r version_tag="$2"

@@ -21,6 +21,7 @@ function main() {
     ;;
   esac
 
+  check_version_tag "${operator_version}"
   create_namespace "${operator_ns}"
   create_pull_secret "${operator_ns}"
   apply_operator_manifests "${operator_ns}" "${index_version}" "${operator_version}"

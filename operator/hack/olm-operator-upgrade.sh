@@ -20,6 +20,7 @@ function main() {
   #  --type=json -p '[{"op": "remove", "path": "/spec/startingCSV"}, {"op": "replace", "path": "/spec/installPlanApproval", "value": "Automatic"}]'
 
   # However OLM happens to create an install plan for the latest version anyway, as soon as the old one is done, so we just have to approve it:
+  check_version_tag "${operator_version}"
   approve_install_plan "${operator_ns}" "${operator_version}"
   nurse_deployment_until_available "${operator_ns}" "${operator_version}"
 }
