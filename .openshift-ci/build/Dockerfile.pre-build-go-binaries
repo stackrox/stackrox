@@ -1,5 +1,18 @@
 FROM bin
 
 RUN ls -la
+RUN ls -la ..
 RUN pwd
-RUN make tag
+RUN make tag || true
+
+RUN cd /go/src/github.com/stackrox/rox-openshift-ci-mirror || true
+RUN ls -la
+RUN ls -la ..
+RUN pwd
+RUN make tag || true
+
+RUN cd /go/src/github.com/stackrox/stackrox || true
+RUN ls -la
+RUN ls -la ..
+RUN pwd
+RUN make tag || true
