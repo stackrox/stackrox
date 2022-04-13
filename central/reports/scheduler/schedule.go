@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"gopkg.in/robfig/cron.v2"
 )
@@ -334,16 +335,17 @@ func formatNoVulnsFoundMessage() (string, error) {
 	data := &reportEmailFormat{
 		BrandedProductName: getBrandedProductName(),
 	}
+
 	tmpl, err := template.New("emailBody").Parse(noVulnsFoundEmailTemplate)
 	if err != nil {
 		return "", err
 	}
-	var tpl bytes.Buffer
-	err = tmpl.Execute(&tpl, data)
+	message, err := templates.ExecuteToString(tmpl, data)
 	if err != nil {
 		return "", err
 	}
-	return tpl.String(), nil
+
+	return message, nil
 }
 
 func formatMessage(rc *storage.ReportConfiguration) (string, error) {
