@@ -59,9 +59,9 @@ spec:
       - podSelector:
           matchLabels:
             app: central
-  - ports:
-    - port: 5432
-      protocol: TCP
+    - ports:
+      - port: 5432
+        protocol: TCP
   podSelector:
     matchLabels:
       app: central-db
