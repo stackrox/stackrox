@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 )
@@ -65,7 +64,7 @@ func TestVulnMessageBranding(t *testing.T) {
 	expectedVulnReportEmailTemplateRhacsBranding, expectedVulnReportEmailTemplateStackroxBranding := generateExpectedVulnReportEmailTemplates(t)
 
 	// Setting: RHACS release, expected: RHACS branding
-	envIsolator.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
+	envIsolator.Setenv(productBrandingName, ProductBrandingNameRHACS)
 
 	receivedBrandedVulnFound, err := formatMessage(rc)
 	assert.Nil(t, err)
@@ -77,7 +76,7 @@ func TestVulnMessageBranding(t *testing.T) {
 
 	// Setting: Stackrox release, expected: Stackrox branding
 	envIsolator.RestoreAll()
-	envIsolator.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameStackRoxIORelease)
+	envIsolator.Setenv(productBrandingName, ProductBrandingNameStackrox)
 
 	receivedBrandedVulnFound, err = formatMessage(rc)
 	assert.Nil(t, err)
@@ -86,16 +85,4 @@ func TestVulnMessageBranding(t *testing.T) {
 
 	assert.Equal(t, expectedVulnReportEmailTemplateStackroxBranding, receivedBrandedVulnFound)
 	assert.Equal(t, expectedNoVulnsFoundEmailTemplateStackroxBranding, receivedBrandedNoVulnFound)
-
-	// Setting: Development build, expected: RHACS branding
-	envIsolator.RestoreAll()
-	envIsolator.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameDevelopmentBuild)
-
-	receivedBrandedVulnFound, err = formatMessage(rc)
-	assert.Nil(t, err)
-	receivedBrandedNoVulnFound, err = formatNoVulnsFoundMessage()
-	assert.Nil(t, err)
-
-	assert.Equal(t, expectedVulnReportEmailTemplateRhacsBranding, receivedBrandedVulnFound)
-	assert.Equal(t, expectedNoVulnsFoundEmailTemplateRhacsBranding, receivedBrandedNoVulnFound)
 }

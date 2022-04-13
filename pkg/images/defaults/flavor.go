@@ -237,13 +237,13 @@ func GetImageFlavorFromEnv() ImageFlavor {
 	envValue := strings.TrimSpace(ImageFlavorEnv())
 	if envValue == "" && !buildinfo.ReleaseBuild {
 		envValue = ImageFlavorNameDevelopmentBuild
-		log.Warnf("Environment variable %s not set, this will cause a panic in release build. Assuming this code is executed in unit test session and using '%s' as default.", ImageFlavorEnvName, ImageFlavorNameDevelopmentBuild)
+		log.Warnf("Environment variable %s not set, this will cause a panic in release build. Assuming this code is executed in unit test session and using '%s' as default.", imageFlavorEnvName, ImageFlavorNameDevelopmentBuild)
 	}
 	f, err := GetImageFlavorByName(envValue, buildinfo.ReleaseBuild)
 	if err != nil {
 		// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively
 		// build-time constant.
-		log.Panicf("Incorrect image flavor in environment variable %s: %s", ImageFlavorEnvName, err)
+		log.Panicf("Incorrect image flavor in environment variable %s: %s", imageFlavorEnvName, err)
 	}
 	return f
 }

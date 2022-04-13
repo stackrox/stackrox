@@ -64,7 +64,7 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 
 	for envValue, testCase := range testCases {
 		s.Run(envValue, func() {
-			s.envIsolator.Setenv(ImageFlavorEnvName, envValue)
+			s.envIsolator.Setenv(imageFlavorEnvName, envValue)
 			if testCase.shouldPanicAlways {
 				s.getEnvShouldPanic()
 				return

@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
-	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
@@ -326,10 +325,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 
 func formatNoVulnsFoundMessage() (string, error) {
 	data := &reportnoVulnsFoundEmailFormat{
-		ImageFlavorBranding: rhacsBranding,
-	}
-	if defaults.ImageFlavorEnv() == defaults.ImageFlavorNameStackRoxIORelease {
-		data.ImageFlavorBranding = stackroxBranding
+		ImageFlavorBranding: ProductBranding(),
 	}
 	tmpl, err := template.New("emailBody").Parse(noVulnsFoundEmailTemplate)
 	if err != nil {
@@ -345,16 +341,13 @@ func formatNoVulnsFoundMessage() (string, error) {
 
 func formatMessage(rc *storage.ReportConfiguration) (string, error) {
 	data := &reportEmailFormat{
-		ImageFlavorBranding: rhacsBranding,
+		ImageFlavorBranding: ProductBranding(),
 		WhichVulns:          "for all vulnerabilities",
 		DateStr:             time.Now().Format("January 02, 2006"),
 	}
 	if rc.GetVulnReportFilters().SinceLastReport && rc.GetLastSuccessfulRunTime() != nil {
 		data.WhichVulns = fmt.Sprintf("for new vulnerabilities since %s",
 			timestamp.FromProtobuf(rc.LastSuccessfulRunTime).GoTime().Format("January 02, 2006"))
-	}
-	if defaults.ImageFlavorEnv() == defaults.ImageFlavorNameStackRoxIORelease {
-		data.ImageFlavorBranding = stackroxBranding
 	}
 
 	tmpl, err := template.New("emailBody").Parse(vulnReportEmailTemplate)
