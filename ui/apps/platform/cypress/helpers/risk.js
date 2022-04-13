@@ -18,9 +18,8 @@ export function viewRiskDeploymentByName(deploymentName) {
 
 export function viewRiskDeploymentInNetworkGraph() {
     // Assume location is risk deployment panel.
-    cy.intercept('GET', api.network.deployment).as('getDeployment');
     cy.intercept('GET', api.network.networkGraph).as('getNetworkGraphCluster');
     cy.intercept('GET', api.network.networkPoliciesGraph).as('getNetworkPoliciesCluster');
     cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
-    cy.wait(['@getDeployment', '@getNetworkGraphCluster', '@getNetworkPoliciesCluster']);
+    cy.wait(['@getNetworkGraphCluster', '@getNetworkPoliciesCluster']);
 }
