@@ -1,4 +1,4 @@
-import React, { useEffect, useState, ReactElement } from 'react';
+import React, { useEffect, useMemo, useState, ReactElement } from 'react';
 import Raven from 'raven-js';
 import { PageSection, Bullseye, Alert, Divider, Title } from '@patternfly/react-core';
 
@@ -12,7 +12,7 @@ import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import { SEARCH_CATEGORIES } from 'constants/searchOptions';
 
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
-import useTableSort from 'hooks/useTableSort';
+import useURLSort, { SortOption } from 'hooks/patternfly/useURLSort';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
@@ -55,17 +55,19 @@ function ViolationsTablePage(): ReactElement {
 
     // To handle sort options.
     const columns = tableColumnDescriptor;
-    const defaultSort = {
+    const sortFields = useMemo(
+        () => columns.flatMap(({ sortField }) => (sortField ? [sortField] : [])),
+        [columns]
+    );
+
+    const defaultSortOption: SortOption = {
         field: 'Violation Time',
-        reversed: true,
+        direction: 'desc',
     };
-    const {
-        activeSortIndex,
-        setActiveSortIndex,
-        activeSortDirection,
-        setActiveSortDirection,
-        sortOption,
-    } = useTableSort(columns, defaultSort);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+    });
 
     useEffectAfterFirstRender(() => {
         if (hasExecutableFilter && !isViewFiltered) {
@@ -185,10 +187,7 @@ function ViolationsTablePage(): ReactElement {
                             excludableAlerts={excludableAlerts}
                             perPage={perPage}
                             setPerPage={setPerPage}
-                            activeSortIndex={activeSortIndex}
-                            setActiveSortIndex={setActiveSortIndex}
-                            activeSortDirection={activeSortDirection}
-                            setActiveSortDirection={setActiveSortDirection}
+                            getSortParams={getSortParams}
                             columns={columns}
                         />
                     </PageSection>
