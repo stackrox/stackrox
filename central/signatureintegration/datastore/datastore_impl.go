@@ -13,15 +13,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	signatureSAC = sac.ForResource(resources.SignatureIntegration)
-
-	policySAC = sac.ForResource(resources.Policy)
 )
 
 type datastoreImpl struct {
@@ -187,9 +183,11 @@ func (d *datastoreImpl) verifyIntegrationIDIsNotInPolicy(ctx context.Context, id
 			return err
 		}
 
-		// Fetch policies with the user context, we can safely ignore the error since one would be returned in case
-		// the user does not have access to policies.
-		policiesVisibleToUser, _ := d.policyStore.GetAllPolicies(ctx)
+		// Fetch policies with the user context. Return any error that's not sac.ErrResourceAccessDenied.
+		policiesVisibleToUser, err := d.policyStore.GetAllPolicies(ctx)
+		if err != nil && !errors.Is(err, sac.ErrResourceAccessDenied) {
+			return errors.Wrap(err, "retrieving all policies")
+		}
 
 		listOfPolicies := strings.Join(intersectPolicies(policiesVisibleToUser, policiesContainingID), ",")
 
@@ -224,31 +222,26 @@ func checkIfPolicyContainsID(id string, policy *storage.Policy) bool {
 func intersectPolicies(policiesVisibleToUser []*storage.Policy,
 	policiesWithReferences []string) []string {
 	// Get names of all policies that are accessible to the user.
-	policyNamesAccessibleToUser := make([]string, 0, len(policiesVisibleToUser))
+	policyNamesAccessibleToUser := set.NewStringSet()
 	for _, p := range policiesVisibleToUser {
-		policyNamesAccessibleToUser = append(policyNamesAccessibleToUser, p.GetName())
+		policyNamesAccessibleToUser.Add(p.GetName())
 	}
 
-	// Intersect the policies accessible to the user with the ones the reference signature integrations.
-	notAccessibleToUser := sliceutils.StringDifference(
-		policiesWithReferences, policyNamesAccessibleToUser)
-
-	// If there is no difference found, we can return the policies found referencing signature integrations and
-	// do not need to delete the output.
-	if len(notAccessibleToUser) == 0 {
-		return policiesWithReferences
+	// Ensure we only return policy names that are visible to the user.
+	var policyNames []string
+	for _, p := range policiesWithReferences {
+		if policyNamesAccessibleToUser.Contains(p) {
+			policyNames = append(policyNames, p)
+		}
 	}
 
-	policyNamesToPrint := policiesWithReferences
-	// Remove all policies that are not accessible to the user.
-	for _, s := range notAccessibleToUser {
-		policyNamesToPrint = stringutils.RemoveStringFromSlice(policyNamesToPrint, s)
+	// If we had to skip any amount of policies, add "<hidden>" as a placeholder for non-visible policies referencing
+	// integration to the user.
+	if len(policiesWithReferences) != len(policyNames) {
+		policyNames = append(policyNames, "<hidden>")
 	}
 
-	// Since we had to remove at least one policy, and we do not desire to disclose the number of policies without
-	// access, append <hidden> to the output. This way we also handle the case where all policies are inaccessible.
-	policyNamesToPrint = append(policyNamesToPrint, "<hidden>")
-	return policyNamesToPrint
+	return policyNames
 }
 
 func getPublicKeyPEMSet(integration *storage.SignatureIntegration) set.StringSet {
