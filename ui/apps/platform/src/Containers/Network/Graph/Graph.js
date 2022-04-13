@@ -10,7 +10,6 @@ import { actions as backendActions } from 'reducers/network/backend';
 import { actions as graphActions } from 'reducers/network/graph';
 import { actions as pageActions } from 'reducers/network/page';
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
-import { actions as deploymentActions } from 'reducers/deployments';
 import NetworkGraph from 'Components/NetworkGraph';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { filterModes } from 'constants/networkFilterModes';
@@ -39,7 +38,6 @@ class Graph extends Component {
             id: PropTypes.string,
             deployments: PropTypes.arrayOf(PropTypes.shape({})),
         }),
-        fetchDeployment: PropTypes.func.isRequired,
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         selectedClusterId: PropTypes.string,
         showNamespaceFlows: PropTypes.string.isRequired,
@@ -109,7 +107,6 @@ class Graph extends Component {
             return;
         }
         this.props.setSelectedNode(node);
-        this.props.fetchDeployment(node.deploymentId);
         this.props.fetchNetworkPolicies([...node.policyIds]);
         this.props.setSidePanelStage(sidepanelStages.details);
         this.props.openSidePanel();
@@ -212,7 +209,6 @@ const mapStateToProps = createStructuredSelector({
 const mapDispatchToProps = {
     setSelectedNode: graphActions.setSelectedNode,
     setSelectedNamespace: graphActions.setSelectedNamespace,
-    fetchDeployment: deploymentActions.fetchDeployment.request,
     fetchNetworkPolicies: backendActions.fetchNetworkPolicies.request,
     openSidePanel: pageActions.openSidePanel,
     setSidePanelStage: sidepanelActions.setSidePanelStage,

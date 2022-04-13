@@ -1,7 +1,5 @@
 import { combineReducers } from 'redux';
-import isEqual from 'lodash/isEqual';
 import sidepanelStages from 'Containers/Network/SidePanel/sidepanelStages';
-import { types as deploymentTypes } from 'reducers/deployments';
 
 // Action types
 //-------------
@@ -100,19 +98,6 @@ const networkPolicyExcludePortsProtocolsState = (state = false, action) => {
     return state;
 };
 
-const selectedNodeDeployment = (state = {}, action) => {
-    if (action.response && action.response.entities) {
-        const { entities, result } = action.response;
-        if (entities && entities.deployment && result) {
-            const deploymentsById = { ...entities.deployment[result] };
-            if (action.type === deploymentTypes.FETCH_DEPLOYMENT.SUCCESS) {
-                return isEqual(deploymentsById, state) ? state : deploymentsById;
-            }
-        }
-    }
-    return state;
-};
-
 const reducer = combineReducers({
     networkSidePanelStage,
     networkPolicyModification,
@@ -120,7 +105,6 @@ const reducer = combineReducers({
     networkPolicyModificationSource,
     networkPolicyModificationState,
     networkPolicyExcludePortsProtocolsState,
-    selectedNodeDeployment,
 });
 
 export default reducer;
@@ -136,7 +120,6 @@ const getNetworkPolicyModificationSource = (state) => state.networkPolicyModific
 const getNetworkPolicyModificationState = (state) => state.networkPolicyModificationState;
 const getNetworkPolicyExcludePortsProtocolsState = (state) =>
     state.networkPolicyExcludePortsProtocolsState;
-const getNodeDeployment = (state) => state.selectedNodeDeployment;
 
 export const selectors = {
     getSidePanelStage,
@@ -145,5 +128,4 @@ export const selectors = {
     getNetworkPolicyModificationSource,
     getNetworkPolicyModificationState,
     getNetworkPolicyExcludePortsProtocolsState,
-    getNodeDeployment,
 };
