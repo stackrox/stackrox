@@ -234,7 +234,7 @@ func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, 
 // roxctl should instead rely on different ways to determine which image defaults to use. Such as asking users to
 // provide a command-line argument.
 func GetImageFlavorFromEnv() ImageFlavor {
-	envValue := strings.TrimSpace(ImageFlavorEnv())
+	envValue := strings.TrimSpace(imageFlavorEnv())
 	if envValue == "" && !buildinfo.ReleaseBuild {
 		envValue = ImageFlavorNameDevelopmentBuild
 		log.Warnf("Environment variable %s not set, this will cause a panic in release build. Assuming this code is executed in unit test session and using '%s' as default.", imageFlavorEnvName, ImageFlavorNameDevelopmentBuild)

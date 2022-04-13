@@ -17,7 +17,7 @@ var (
 	imageFlavorSetting = env.RegisterSetting(imageFlavorEnvName)
 )
 
-// ImageFlavorEnv returns the environment variable ROX_IMAGE_FLAVOR value
-func ImageFlavorEnv() string {
+// imageFlavorEnv returns the environment variable ROX_IMAGE_FLAVOR value
+func imageFlavorEnv() string {
 	return imageFlavorSetting.Setting()
 }
