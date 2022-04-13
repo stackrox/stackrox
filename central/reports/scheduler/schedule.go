@@ -312,12 +312,8 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	}
 	// If it is an empty report, do not send an attachment in the final notification email and the email body
 	// will indicate that no vulns were found
-	var messageText string
-	if defaults.ImageFlavorEnv() == defaults.ImageFlavorNameStackRoxIORelease {
-		messageText = fmt.Sprintf(noVulnsFoundEmailTemplate, stackroxBranding)
-	} else {
-		messageText = fmt.Sprintf(noVulnsFoundEmailTemplate, rhacsBranding)
-	}
+	messageText := getBrandedNoVulnsFoundEmailTemplate()
+
 	if zippedCSVData != nil {
 		messageText, err = formatMessage(rc)
 		if err != nil {
@@ -352,12 +348,7 @@ func formatMessage(rc *storage.ReportConfiguration) (string, error) {
 			timestamp.FromProtobuf(rc.LastSuccessfulRunTime).GoTime().Format("January 02, 2006"))
 	}
 
-	var brandedVulnReportEmailTemplate string
-	if defaults.ImageFlavorEnv() == defaults.ImageFlavorNameStackRoxIORelease {
-		brandedVulnReportEmailTemplate = fmt.Sprintf(vulnReportEmailTemplate, stackroxBranding)
-	} else {
-		brandedVulnReportEmailTemplate = fmt.Sprintf(vulnReportEmailTemplate, rhacsBranding)
-	}
+	brandedVulnReportEmailTemplate := getBrandedVulnReportEmailTemplate()
 
 	tmpl, err := template.New("emailBody").Parse(brandedVulnReportEmailTemplate)
 	if err != nil {
