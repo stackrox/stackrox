@@ -3,11 +3,16 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var (
-	// CreateTableImageCvesStmt holds the create statement for table `ImageCves`.
+	// CreateTableImageCvesStmt holds the create statement for table `image_cves`.
 	CreateTableImageCvesStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists image_cves (
@@ -28,4 +33,15 @@ var (
 		Indexes:  []string{},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// ImageCvesSchema is the go schema for table `image_cves`.
+	ImageCvesSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("image_cves")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), "image_cves")
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

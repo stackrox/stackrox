@@ -3,11 +3,18 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	// CreateTableRolesStmt holds the create statement for table `Roles`.
+	// CreateTableRolesStmt holds the create statement for table `roles`.
 	CreateTableRolesStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists roles (
@@ -19,4 +26,16 @@ var (
 		Indexes:  []string{},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// RolesSchema is the go schema for table `roles`.
+	RolesSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("roles")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.Role)(nil)), "roles")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ROLES, "roles", (*storage.Role)(nil)))
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

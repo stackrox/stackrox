@@ -3,11 +3,16 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var (
-	// CreateTableWatchedimagesStmt holds the create statement for table `Watchedimages`.
+	// CreateTableWatchedimagesStmt holds the create statement for table `watchedimages`.
 	CreateTableWatchedimagesStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists watchedimages (
@@ -19,4 +24,15 @@ var (
 		Indexes:  []string{},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// WatchedimagesSchema is the go schema for table `watchedimages`.
+	WatchedimagesSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("watchedimages")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.WatchedImage)(nil)), "watchedimages")
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

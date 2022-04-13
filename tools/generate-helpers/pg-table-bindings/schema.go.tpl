@@ -1,3 +1,4 @@
+{{define "schemaVar"}}{{.Table|upperCamelCase}}Schema{{end}}
 {{define "createTableStmtVar"}}CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 {{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
 {{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
@@ -5,7 +6,12 @@
 package schema
 
 import (
-     "github.com/stackrox/rox/pkg/postgres"
+    "context"
+
+    "github.com/stackrox/rox/central/globaldb"
+    pkgSchema "github.com/stackrox/rox/central/postgres/schema"
+    "github.com/stackrox/rox/generated/storage"
+    "github.com/stackrox/rox/pkg/search"
 )
 
 {{- define "createTableStmt" }}
@@ -38,6 +44,31 @@ import (
 {{- end}}
 
 var (
-   // {{template "createTableStmtVar" .Schema }} holds the create statement for table `{{.Schema.Table|upperCamelCase}}`.
-   {{template "createTableStmtVar" .Schema }} = {{template "createTableStmt" .Schema }}
+    // {{template "createTableStmtVar" .Schema }} holds the create statement for table `{{.Schema.Table|lowerCase}}`.
+    {{template "createTableStmtVar" .Schema }} = {{template "createTableStmt" .Schema }}
+
+    // {{template "schemaVar" .Schema}} is the go schema for table `{{.Schema.Table|lowerCase}}`.
+    {{template "schemaVar" .Schema}} = func() *walker.Schema {
+        schema := globaldb.GetSchemaForTable("{{.Schema.Table}}")
+        if schema != nil {
+            return schema
+        }
+        schema = walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}")
+        {{- /* Attach reference schemas, if provided. */ -}}
+        {{- $schema := .Schema }}
+        {{- range $idx, $ref := $schema.Parents}}
+            {{- if ne $ref.Table $schema.EmbeddedIn -}}.
+                WithReference({{template "schemaVar" $ref}})
+            {{- end }}
+        {{- end }}
+        {{- if .SearchCategory }}
+            {{- $ty := .Schema.Type }}
+            {{- if eq $ty "*storage.Alert"}}
+                {{- $ty = "*storage.ListAlert"}}
+            {{- end}}
+            schema.SetOptionsMap(search.Walk({{.SearchCategory}}, "{{.Schema.Table}}", ({{$ty}})(nil)))
+        {{- end }}
+        globaldb.RegisterTable(schema)
+        return schema
+    }()
 )

@@ -3,11 +3,16 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var (
-	// CreateTableK8srolesStmt holds the create statement for table `K8sroles`.
+	// CreateTableK8srolesStmt holds the create statement for table `k8sroles`.
 	CreateTableK8srolesStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists k8sroles (
@@ -26,4 +31,15 @@ var (
 		Indexes:  []string{},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// K8srolesSchema is the go schema for table `k8sroles`.
+	K8srolesSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("k8sroles")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.K8SRole)(nil)), "k8sroles")
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

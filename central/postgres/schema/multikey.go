@@ -3,11 +3,16 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var (
-	// CreateTableMultikeyStmt holds the create statement for table `Multikey`.
+	// CreateTableMultikeyStmt holds the create statement for table `multikey`.
 	CreateTableMultikeyStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists multikey (
@@ -54,4 +59,15 @@ var (
 			},
 		},
 	}
+
+	// MultikeySchema is the go schema for table `multikey`.
+	MultikeySchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("multikey")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.TestMultiKeyStruct)(nil)), "multikey")
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

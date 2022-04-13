@@ -1,3 +1,4 @@
+{{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
 {{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
 {{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
 {{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
@@ -63,30 +64,7 @@ const (
 
 var (
     log = logging.LoggerForModule()
-    schema = func() *walker.Schema {
-             		schema := globaldb.GetSchemaForTable(baseTable)
-             		if schema != nil {
-             			return schema
-             		}
-             		schema = walker.Walk(reflect.TypeOf((*{{.Type}})(nil)), baseTable)
-             		 {{- /* Attach reference schemas, if provided. */ -}}
-                        {{- $schema := .Schema }}
-                        {{- range $idx, $ref := $schema.Parents}}
-                            {{- if ne $ref.Table $schema.EmbeddedIn -}}.
-                            WithReference(func() *walker.Schema {
-                                parent := globaldb.GetSchemaForTable("{{$ref.Table}}")
-                                if parent != nil {
-                                    return parent
-                                }
-                                parent = walker.Walk(reflect.TypeOf(({{$ref.Type}})(nil)), "{{$ref.Table}}")
-                                globaldb.RegisterTable(parent)
-                                return parent
-                            }())
-                            {{- end }}
-                        {{- end }}
-             		globaldb.RegisterTable(schema)
-             		return schema
-             	}()
+    schema = {{ template "schemaVar" .Schema}}
     {{ if eq .ResourceType "globallyScoped" -}}
     targetResource = resources.{{.Type | storageToResource}}
     {{- end }}

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -39,6 +40,8 @@ type Schema struct {
 	// We use `Parents` and `Children` which mean referenced table and referencing table in SQL world,
 	// but in our context it reflects the nesting of proto messages.
 	EmbeddedIn string
+
+	OptionsMap search.OptionsMap
 }
 
 // TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,
@@ -62,6 +65,11 @@ func (s *Schema) FieldsBySearchLabel() map[string]*Field {
 		}
 	}
 	return m
+}
+
+// SetOptionsMap sets options map for the schema.
+func (s *Schema) SetOptionsMap(optionsMap search.OptionsMap) {
+	s.OptionsMap = optionsMap
 }
 
 // HasSearchableFields returns true or false if the schema has fields that are searchable
