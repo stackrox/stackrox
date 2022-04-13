@@ -254,7 +254,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setImageName(
                                         ImageNamePolicy.newBuilder()
-                                                .setTag("1.7.9")
+                                                .setTag("nginx-1-7-9")
                                                 .build())
                                 .build())
                         .build()                       | DEPLOYMENTNGINX | null
