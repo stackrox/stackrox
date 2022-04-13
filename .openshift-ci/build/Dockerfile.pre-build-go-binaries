@@ -1,3 +1,5 @@
 FROM bin
 
+RUN ls -la
+RUN pwd
 RUN make tag
