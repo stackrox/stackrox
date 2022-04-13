@@ -15,8 +15,3 @@ export type TableColumn = {
     Cell?: ({ original, value }) => ReactElement | string;
     sortField?: string;
 };
-
-export type TableSortOption = {
-    field: string;
-    reversed: boolean;
-};

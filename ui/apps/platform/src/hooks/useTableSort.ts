@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
-import { SortDirection, TableColumn, TableSortOption } from 'types/table';
+import { SortDirection, TableColumn } from 'types/table';
+import { ApiSortOption } from 'types/search';
 
 export type UseTableSort = {
     activeSortIndex: number;
     setActiveSortIndex: (idx) => void;
     activeSortDirection: SortDirection;
     setActiveSortDirection: (dir) => void;
-    sortOption: TableSortOption;
+    sortOption: ApiSortOption;
 };
 
-function useTableSort(columns: TableColumn[], defaultSort: TableSortOption): UseTableSort {
+function useTableSort(columns: TableColumn[], defaultSort: ApiSortOption): UseTableSort {
     const defaultSortIndex = columns.findIndex((column) => column?.sortField === defaultSort.field);
     const defaultSortDirection = defaultSort.reversed ? 'desc' : 'asc';
     // index of the currently active column
@@ -18,12 +19,12 @@ function useTableSort(columns: TableColumn[], defaultSort: TableSortOption): Use
     const [activeSortDirection, setActiveSortDirection] =
         useState<SortDirection>(defaultSortDirection);
 
-    const [sortOption, setSortOption] = useState<TableSortOption>(defaultSort);
+    const [sortOption, setSortOption] = useState<ApiSortOption>(defaultSort);
 
     useEffect(() => {
         const { sortField } = columns[activeSortIndex];
         if (sortField) {
-            const newSortOption: TableSortOption = {
+            const newSortOption: ApiSortOption = {
                 field: sortField,
                 reversed: activeSortDirection === 'desc',
             };
