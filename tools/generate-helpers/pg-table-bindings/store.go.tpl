@@ -32,6 +32,9 @@ import (
     {{if or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker") -}}
     "github.com/stackrox/rox/pkg/sac"
     {{- end }}
+    {{- if eq .ResourceType "directlyScoped" -}}
+    "github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+    {{- end }}
 )
 
 const (
@@ -668,6 +671,31 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 	}
 	return nil
 }
+
+{{ if eq .ResourceType "directlyScoped" }}
+    func isInScope(obj *{{.Type}}, eas *effectiveaccessscope.ScopeTree) bool {
+    if eas.State == effectiveaccessscope.Included {
+        return true
+    }
+    if eas.State == effectiveaccessscope.Excluded {
+        return false
+    }
+    clusterId := {{ .ClusterGetter }}
+    cluster := eas.GetClusterByID(clusterId)
+    {{ if not .NamespaceGetter -}}
+    return cluster.State == effectiveaccessscope.Included
+    {{  else -}}
+    if cluster.State == effectiveaccessscope.Included {
+        return true
+    }
+    if cluster.State == effectiveaccessscope.Excluded {
+        return false
+    }
+    namespaceName := {{ .NamespaceGetter }}
+    return cluster.Namespaces[namespaceName].State == effectiveaccessscope.Included
+    {{- end }}
+}
+{{ end -}}
 
 //// Used for testing
 {{- define "dropTableFunctionName"}}dropTable{{.Table | upperCamelCase}}{{end}}
