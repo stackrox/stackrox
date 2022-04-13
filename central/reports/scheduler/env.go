@@ -9,7 +9,7 @@ const (
 	// ProductBrandingNameRHACS is the name for the product using RHACS branding
 	ProductBrandingNameRHACS = "Red Hat Advanced Cluster Security for Kubernetes"
 	// ProductBrandingNameStackrox is the name for the product using Stackrox branding
-	ProductBrandingNameStackrox = "Stackrox"
+	ProductBrandingNameStackrox = "StackRox"
 )
 
 var (
