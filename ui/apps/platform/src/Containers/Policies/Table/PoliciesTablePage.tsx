@@ -150,13 +150,16 @@ function PoliciesTablePage({
     }, []);
 
     useEffect(() => {
-        getSearchOptionsForCategory('POLICIES')
+        const { request, cancel } = getSearchOptionsForCategory('POLICIES');
+        request
             .then((options) => {
                 setSearchOptions(options);
             })
             .catch(() => {
                 // TODO
             });
+
+        return cancel;
     }, []);
 
     useEffect(() => {

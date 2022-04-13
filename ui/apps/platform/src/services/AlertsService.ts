@@ -5,6 +5,7 @@ import { Alert, ListAlert } from 'Containers/Violations/types/violationTypes';
 import { ApiSortOption, SearchFilter } from 'types/search';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import axios from './instance';
+import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 
 const baseUrl = '/v1/alerts';
 const baseCountUrl = '/v1/alertscount';
@@ -83,7 +84,6 @@ export function fetchSummaryAlertCounts(filters: SummaryAlertCountsFilters): Pro
         .get<{ groups: AlertGroup[] }>(`${baseUrl}/summary/counts?${params}`, { timeout: 59999 })
         .then((response) => response.data.groups);
 }
-
 /*
  * Fetch a page of list alert objects.
  */
@@ -92,7 +92,7 @@ export function fetchAlerts(
     sortOption: ApiSortOption,
     page: number,
     pageSize: number
-): Promise<ListAlert[]> {
+): CancellableRequest<ListAlert[]> {
     const offset = page > 0 ? page * pageSize : 0;
     const query = getRequestQueryStringForSearchFilter(searchFilter);
     const params = queryString.stringify(
@@ -106,22 +106,26 @@ export function fetchAlerts(
         },
         { arrayFormat: 'repeat', allowDots: true }
     );
-    return axios
-        .get<{ alerts: ListAlert[] }>(`${baseUrl}?${params}`)
-        .then((response) => response?.data?.alerts ?? []);
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .get<{ alerts: ListAlert[] }>(`${baseUrl}?${params}`, { signal })
+            .then((response) => response?.data?.alerts ?? [])
+    );
 }
 
 /*
  * Fetch count of alerts.
  */
-export function fetchAlertCount(searchFilter: SearchFilter): Promise<number> {
+export function fetchAlertCount(searchFilter: SearchFilter): CancellableRequest<number> {
     const params = queryString.stringify(
         { query: getRequestQueryStringForSearchFilter(searchFilter) },
         { arrayFormat: 'repeat' }
     );
-    return axios
-        .get<{ count: number }>(`${baseCountUrl}?${params}`)
-        .then((response) => response?.data?.count ?? 0);
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .get<{ count: number }>(`${baseCountUrl}?${params}`, { signal })
+            .then((response) => response?.data?.count ?? 0)
+    );
 }
 
 /*

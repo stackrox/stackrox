@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState, ReactElement } from 'react';
-import Raven from 'raven-js';
 import { PageSection, Bullseye, Alert, Divider, Title } from '@patternfly/react-core';
 
 import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
 import { getSearchOptionsForCategory } from 'services/SearchService';
+import { CancelledPromiseError } from 'services/cancellationUtils';
 
 import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
@@ -23,11 +23,7 @@ import tableColumnDescriptor from './violationTableColumnDescriptors';
 
 import './ViolationsTablePage.css';
 
-function runAfter5Seconds(fn: () => void) {
-    return new Promise(() => {
-        setTimeout(fn, 5000);
-    });
-}
+const runAfter5Seconds = (fn: () => void) => setTimeout(fn, 5000);
 
 const searchCategory = SEARCH_CATEGORIES.ALERTS;
 
@@ -52,7 +48,6 @@ function ViolationsTablePage(): ReactElement {
 
     // To handle page/count refreshing.
     const [pollEpoch, setPollEpoch] = useState(0);
-    const [isFetching, setIsFetching] = useState(false);
 
     // To handle sort options.
     const columns = tableColumnDescriptor;
@@ -91,37 +86,41 @@ function ViolationsTablePage(): ReactElement {
 
     // When any of the deps to this effect change, we want to reload the alerts and count.
     useEffect(() => {
-        if (!isFetching) {
-            // Get the alerts that match the search request for the current page.
-            setCurrentPageAlertsErrorMessage('');
-            setIsFetching(true);
-            fetchAlerts(searchFilter, sortOption, page - 1, perPage)
-                .then((alerts) => {
-                    setCurrentPageAlerts(alerts);
-                })
-                .catch((error) => {
-                    setCurrentPageAlerts([]);
-                    const parsedMessage = checkForPermissionErrorMessage(error);
-                    setCurrentPageAlertsErrorMessage(parsedMessage);
-                })
-                .finally(() => {
-                    setIsFetching(false);
-                });
-            // Get the total count of alerts that match the search request.
-            fetchAlertCount(searchFilter)
-                .then(setAlertCount)
-                .catch((error) => {
-                    setCurrentPageAlerts([]);
-                    const parsedMessage = checkForPermissionErrorMessage(error);
-                    setCurrentPageAlertsErrorMessage(parsedMessage);
-                });
-        }
+        const { request: alertRequest, cancel: cancelAlertRequest } = fetchAlerts(
+            searchFilter,
+            sortOption,
+            page - 1,
+            perPage
+        );
 
-        // TODO It would be nice to cancel this on unmount to avoid the "state update on an unmounted component" error
-        // We will update the poll epoch after 5 seconds to force a refresh.
-        runAfter5Seconds(() => {
+        // Get the total count of alerts that match the search request.
+        const { request: countRequest, cancel: cancelCountRequest } = fetchAlertCount(searchFilter);
+
+        Promise.all([alertRequest, countRequest])
+            .then(([alerts, counts]) => {
+                setCurrentPageAlerts(alerts);
+                setAlertCount(counts);
+                setCurrentPageAlertsErrorMessage('');
+            })
+            .catch((error) => {
+                if (error instanceof CancelledPromiseError) {
+                    return;
+                }
+                setCurrentPageAlerts([]);
+                setAlertCount(0);
+                const parsedMessage = checkForPermissionErrorMessage(error);
+                setCurrentPageAlertsErrorMessage(parsedMessage);
+            });
+
+        const timeoutId = runAfter5Seconds(() => {
             setPollEpoch(pollEpoch + 1);
-        }).catch((error) => Raven.captureException(error));
+        });
+
+        return () => {
+            clearTimeout(timeoutId);
+            cancelAlertRequest();
+            cancelCountRequest();
+        };
     }, [
         searchFilter,
         page,
@@ -134,12 +133,12 @@ function ViolationsTablePage(): ReactElement {
     ]);
 
     useEffect(() => {
-        getSearchOptionsForCategory(searchCategory)
-            .then(setSearchOptions)
-            .catch(() => {
-                // Is there a reasonable way to recover from a possible error here?
-                // Right now, ignoring this error simply disables the search filter.
-            });
+        const { request, cancel } = getSearchOptionsForCategory(searchCategory);
+        request.then(setSearchOptions).catch(() => {
+            // A request error will disable the search filter.
+        });
+
+        return cancel;
     }, [setSearchOptions]);
 
     // We need to be able to identify which alerts are runtime or attempted, and which are not by id.
