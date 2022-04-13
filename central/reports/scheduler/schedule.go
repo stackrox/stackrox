@@ -129,6 +129,10 @@ type reportEmailFormat struct {
 	DateStr             string
 }
 
+type reportnoVulnsFoundEmailFormat struct {
+	ImageFlavorBranding string
+}
+
 // New instantiates a new cron scheduler and supports adding and removing report configurations
 func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.DataStore,
 	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDatastore.DataStore, roleDS roleDataStore.DataStore,
@@ -291,7 +295,10 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	}
 	// If it is an empty report, do not send an attachment in the final notification email and the email body
 	// will indicate that no vulns were found
-	messageText := noVulnsFoundEmailTemplate
+	messageText, err := formatNoVulnsFoundMessage()
+	if err != nil {
+		return err
+	}
 
 	if zippedCSVData != nil {
 		messageText, err = formatMessage(rc)
@@ -315,6 +322,25 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	}
 	log.Infof("Report generation for '%s' completed, email notification sent.", rc.Name)
 	return nil
+}
+
+func formatNoVulnsFoundMessage() (string, error) {
+	data := &reportnoVulnsFoundEmailFormat{
+		ImageFlavorBranding: rhacsBranding,
+	}
+	if defaults.ImageFlavorEnv() == defaults.ImageFlavorNameStackRoxIORelease {
+		data.ImageFlavorBranding = stackroxBranding
+	}
+	tmpl, err := template.New("emailBody").Parse(noVulnsFoundEmailTemplate)
+	if err != nil {
+		return "", err
+	}
+	var tpl bytes.Buffer
+	err = tmpl.Execute(&tpl, data)
+	if err != nil {
+		return "", err
+	}
+	return tpl.String(), nil
 }
 
 func formatMessage(rc *storage.ReportConfiguration) (string, error) {
