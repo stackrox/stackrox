@@ -714,7 +714,7 @@ func (s *PolicyValidatorTestSuite) TestValidateAuditEventSource() {
 
 func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
 	if buildinfo.ReleaseBuild {
-		s.T().Skipf("Skipping this test for release build since the feature flag %s is not enable", features.NetworkPolicySystemPolicy.EnvVar())
+		s.T().Skipf("Skipping this test for release build since the feature flag %s is not enabled", features.NetworkPolicySystemPolicy.EnvVar())
 	}
 	s.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
 	defer s.envIsolator.RestoreAll()
