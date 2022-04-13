@@ -54,6 +54,7 @@ var (
 		globaldb.RegisterTable(schema)
 		return schema
 	}()
+	targetResource = resources.APIToken
 )
 
 type Store interface {
@@ -223,7 +224,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TokenMetadata) 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TokenMetadata) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "TokenMetadata")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.APIToken)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -236,7 +237,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TokenMetadata) erro
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TokenMetadata) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "TokenMetadata")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.APIToken)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -254,7 +255,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TokenMetadat
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "TokenMetadata")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.APIToken)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
 		return 0, err
 	}
@@ -271,7 +272,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TokenMetadata")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.APIToken)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return false, err
 	} else if !ok {
@@ -290,7 +291,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.TokenMetadata, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "TokenMetadata")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.APIToken)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, false, err
 	} else if !ok {
@@ -329,7 +330,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TokenMetadata")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.APIToken)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -352,7 +353,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.TokenMetadataIDs")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.APIToken)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
@@ -379,7 +380,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TokenMetadata, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "TokenMetadata")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.APIToken)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, nil, err
 	} else if !ok {
@@ -434,7 +435,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Token
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "TokenMetadata")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.APIToken)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
