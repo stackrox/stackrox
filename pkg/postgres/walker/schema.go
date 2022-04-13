@@ -70,6 +70,11 @@ func (s *Schema) FieldsBySearchLabel() map[string]*Field {
 // SetOptionsMap sets options map for the schema.
 func (s *Schema) SetOptionsMap(optionsMap search.OptionsMap) {
 	s.OptionsMap = optionsMap
+	for _, c := range s.Children {
+		if c.EmbeddedIn == s.Table {
+			c.OptionsMap = optionsMap
+		}
+	}
 }
 
 // HasSearchableFields returns true or false if the schema has fields that are searchable
