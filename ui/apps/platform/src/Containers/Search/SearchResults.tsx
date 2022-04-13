@@ -18,6 +18,7 @@ import { addSearchModifier, addSearchKeyword } from 'utils/searchUtils';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { GlobalSearchOption } from 'types/search';
+import { SortDirection } from 'types/table';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import RelatedLink from './RelatedLink';
 
@@ -41,8 +42,6 @@ interface StateProps {
     tabs: SearchTab[];
     defaultTab: SearchTab | null;
 }
-
-type SortDirection = 'asc' | 'desc' | undefined;
 
 interface DispatchProps {
     setGlobalSearchCategory: (category: string) => void;
