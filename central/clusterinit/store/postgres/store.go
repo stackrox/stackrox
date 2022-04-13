@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -223,8 +222,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.InitBundleMeta)
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.InitBundleMeta) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "InitBundleMeta")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.InitBundleMeta)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := permissionCheckerSingleton().UpsertAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -236,8 +234,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.InitBundleMeta) err
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.InitBundleMeta) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "InitBundleMeta")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.InitBundleMeta)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := permissionCheckerSingleton().UpsertManyAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -254,8 +251,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.InitBundleMe
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "InitBundleMeta")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.InitBundleMeta)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
+	if ok, err := permissionCheckerSingleton().CountAllowed(ctx); err != nil || !ok {
 		return 0, err
 	}
 
@@ -271,11 +267,8 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "InitBundleMeta")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.InitBundleMeta)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := permissionCheckerSingleton().ExistsAllowed(ctx); err != nil || !ok {
 		return false, err
-	} else if !ok {
-		return false, nil
 	}
 
 	row := s.db.QueryRow(ctx, existsStmt, id)
@@ -290,11 +283,8 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.InitBundleMeta, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "InitBundleMeta")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.InitBundleMeta)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := permissionCheckerSingleton().GetAllowed(ctx); err != nil || !ok {
 		return nil, false, err
-	} else if !ok {
-		return nil, false, nil
 	}
 
 	conn, release, err := s.acquireConn(ctx, ops.Get, "InitBundleMeta")
@@ -329,8 +319,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "InitBundleMeta")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.InitBundleMeta)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := permissionCheckerSingleton().DeleteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -352,11 +341,8 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.InitBundleMetaIDs")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.InitBundleMeta)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := permissionCheckerSingleton().GetIDsAllowed(ctx); err != nil || !ok {
 		return nil, err
-	} else if !ok {
-		return nil, nil
 	}
 
 	rows, err := s.db.Query(ctx, getIDsStmt)
@@ -379,8 +365,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.InitBundleMeta, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "InitBundleMeta")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.InitBundleMeta)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := permissionCheckerSingleton().GetManyAllowed(ctx); err != nil {
 		return nil, nil, err
 	} else if !ok {
 		return nil, nil, nil
@@ -434,8 +419,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.InitB
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "InitBundleMeta")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.InitBundleMeta)
-	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+	if ok, err := permissionCheckerSingleton().DeleteManyAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
