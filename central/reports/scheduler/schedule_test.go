@@ -6,6 +6,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
@@ -84,7 +85,7 @@ func TestVulnMessageBranding1(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			envIsolator.Setenv(productBrandingEnvName, tt.productBranding)
+			envIsolator.Setenv(branding.ProductBrandingEnvName, tt.productBranding)
 
 			receivedBrandedVulnFound, err := formatMessage(rc)
 			assert.Nil(t, err)

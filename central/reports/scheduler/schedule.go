@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -322,7 +323,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 }
 
 func getBrandedProductName() string {
-	if GetProductBrandingEnvName() == "RHACS_BRANDING" {
+	if branding.GetProductBrandingEnvName() == "RHACS_BRANDING" {
 		return productBrandingNameRHACS
 	} else {
 		return productBrandingNameStackrox
