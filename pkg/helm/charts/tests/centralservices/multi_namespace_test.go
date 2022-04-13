@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/set"
 	"github.com/stretchr/testify/suite"
 )
 

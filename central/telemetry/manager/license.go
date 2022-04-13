@@ -3,7 +3,7 @@ package manager
 import (
 	"regexp"
 
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
+	licenseproto "github.com/stackrox/stackrox/generated/shared/license"
 )
 
 var (

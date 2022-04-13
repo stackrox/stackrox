@@ -3,12 +3,12 @@ package service
 import (
 	"context"
 
-	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/mtls"
+	imageIntegrationStore "github.com/stackrox/stackrox/central/imageintegration/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/clientconn"
+	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/mtls"
 )
 
 var (

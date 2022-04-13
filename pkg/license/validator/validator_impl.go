@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
-	"github.com/stackrox/rox/pkg/cryptoutils"
-	licensePkg "github.com/stackrox/rox/pkg/license"
-	"github.com/stackrox/rox/pkg/sync"
+	licenseproto "github.com/stackrox/stackrox/generated/shared/license"
+	"github.com/stackrox/stackrox/pkg/cryptoutils"
+	licensePkg "github.com/stackrox/stackrox/pkg/license"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 type signingKey struct {

@@ -6,11 +6,11 @@ import (
 
 	"github.com/mailru/easyjson"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/docker/types"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/docker/types"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 func getDockerData(ret *compliance.ComplianceReturn) (*types.Data, error) {

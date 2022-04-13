@@ -3,9 +3,9 @@ package pgsearch
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/pkg/postgres/walker"
-	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/postgres/walker"
+	pkgSearch "github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/stringutils"
 )
 
 type queryAndFieldContext struct {

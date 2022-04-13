@@ -4,13 +4,13 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/central/risk/datastore/internal/index"
-	"github.com/stackrox/rox/central/risk/datastore/internal/search"
-	"github.com/stackrox/rox/central/risk/datastore/internal/store"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/central/ranking"
+	"github.com/stackrox/stackrox/central/risk/datastore/internal/index"
+	"github.com/stackrox/stackrox/central/risk/datastore/internal/search"
+	"github.com/stackrox/stackrox/central/risk/datastore/internal/store"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	pkgSearch "github.com/stackrox/stackrox/pkg/search"
 )
 
 // DataStore is an intermediary to RiskStorage.

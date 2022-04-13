@@ -1,10 +1,10 @@
 package admissioncontroller
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/concurrency"
 )
 
 // SettingsManager allows managing admission control settings. It allows updating policies and cluster configuration

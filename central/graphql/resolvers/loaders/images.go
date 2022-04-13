@@ -5,11 +5,11 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/image/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/image/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var imageLoaderType = reflect.TypeOf(storage.Image{})

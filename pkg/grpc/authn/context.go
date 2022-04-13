@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
 )
 
 type identityContextKey struct{}

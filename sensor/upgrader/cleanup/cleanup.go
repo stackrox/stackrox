@@ -1,7 +1,7 @@
 package cleanup
 
 import (
-	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
+	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
 )
 
 func cleanupState(ctx *upgradectx.UpgradeContext, own bool) error {

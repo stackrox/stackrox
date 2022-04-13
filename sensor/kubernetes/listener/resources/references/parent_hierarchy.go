@@ -1,9 +1,9 @@
 package references
 
 import (
-	"github.com/stackrox/rox/pkg/protoconv/resources"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/protoconv/resources"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/sync"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

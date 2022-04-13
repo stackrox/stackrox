@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	pkgScanners "github.com/stackrox/rox/pkg/scanners"
-	"github.com/stackrox/rox/pkg/scanners/types"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	pkgScanners "github.com/stackrox/stackrox/pkg/scanners"
+	"github.com/stackrox/stackrox/pkg/scanners/types"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 type enricherImpl struct {

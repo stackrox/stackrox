@@ -1,17 +1,17 @@
 package manager
 
 import (
-	"github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/compliance/data"
-	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
-	"github.com/stackrox/rox/central/compliance/standards"
-	complianceOperatorCheckDS "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
-	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
-	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
-	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
-	podDatastore "github.com/stackrox/rox/central/pod/datastore"
-	"github.com/stackrox/rox/central/scrape/factory"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/cluster/datastore"
+	"github.com/stackrox/stackrox/central/compliance/data"
+	complianceDS "github.com/stackrox/stackrox/central/compliance/datastore"
+	"github.com/stackrox/stackrox/central/compliance/standards"
+	complianceOperatorCheckDS "github.com/stackrox/stackrox/central/complianceoperator/checkresults/datastore"
+	complianceOperatorManager "github.com/stackrox/stackrox/central/complianceoperator/manager"
+	deploymentDatastore "github.com/stackrox/stackrox/central/deployment/datastore"
+	nodeDatastore "github.com/stackrox/stackrox/central/node/globaldatastore"
+	podDatastore "github.com/stackrox/stackrox/central/pod/datastore"
+	"github.com/stackrox/stackrox/central/scrape/factory"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

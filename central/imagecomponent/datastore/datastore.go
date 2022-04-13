@@ -3,15 +3,15 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/imagecomponent/index"
-	"github.com/stackrox/rox/central/imagecomponent/search"
-	"github.com/stackrox/rox/central/imagecomponent/store"
-	"github.com/stackrox/rox/central/ranking"
-	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/central/imagecomponent/index"
+	"github.com/stackrox/stackrox/central/imagecomponent/search"
+	"github.com/stackrox/stackrox/central/imagecomponent/store"
+	"github.com/stackrox/stackrox/central/ranking"
+	riskDataStore "github.com/stackrox/stackrox/central/risk/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/dackbox/graph"
+	searchPkg "github.com/stackrox/stackrox/pkg/search"
 )
 
 // DataStore is an intermediary to ImageComponent storage.

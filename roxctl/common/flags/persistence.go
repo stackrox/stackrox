@@ -3,7 +3,7 @@ package flags
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/pkg/renderer"
+	"github.com/stackrox/stackrox/pkg/renderer"
 )
 
 // PersistenceTypeWrapper implements the pflags.Value interface for persistence type.

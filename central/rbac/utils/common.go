@@ -3,9 +3,9 @@ package utils
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/rbac/k8srole/datastore"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/central/rbac/k8srole/datastore"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 func getRolesForBindings(ctx context.Context, roleStore datastore.DataStore, bindings []*storage.K8SRoleBinding) []*storage.K8SRole {

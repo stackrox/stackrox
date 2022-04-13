@@ -6,11 +6,11 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/docker/config"
-	"github.com/stackrox/rox/sensor/common/awscredentials"
-	"github.com/stackrox/rox/sensor/common/awscredentials/mocks"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/docker/config"
+	"github.com/stackrox/stackrox/sensor/common/awscredentials"
+	"github.com/stackrox/stackrox/sensor/common/awscredentials/mocks"
 	"github.com/stretchr/testify/assert"
 )
 

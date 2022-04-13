@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stackrox/rox/central/clusterinit/store"
-	"github.com/stackrox/rox/central/clusterinit/store/rocksdb"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/stackrox/central/clusterinit/store"
+	"github.com/stackrox/stackrox/central/clusterinit/store/rocksdb"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search"
 )
 
 func execute(ctx context.Context, tree *searchRequestSpec) ([]search.Result, error) {

@@ -8,14 +8,14 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
-	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/k8srbac"
-	"github.com/stackrox/rox/pkg/pointers"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
+	complianceStandards "github.com/stackrox/stackrox/central/compliance/standards"
+	"github.com/stackrox/stackrox/central/graphql/resolvers/inputtypes"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/k8srbac"
+	"github.com/stackrox/stackrox/pkg/pointers"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 // idField map holds id search field label for corresponding search category

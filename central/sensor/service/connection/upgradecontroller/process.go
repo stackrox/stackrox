@@ -3,10 +3,10 @@ package upgradecontroller
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/images/utils"
+	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/stackrox/pkg/version"
 )
 
 func updateTagToMainVersionAndGetFullName(imageName *storage.ImageName) string {

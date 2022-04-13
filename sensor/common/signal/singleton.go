@@ -1,8 +1,8 @@
 package signal
 
 import (
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
 )
 
 // New creates a new signal service

@@ -3,8 +3,8 @@ package dackbox
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/stackrox/pkg/rocksdb"
+	"github.com/stackrox/stackrox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
 

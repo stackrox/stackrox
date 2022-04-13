@@ -3,9 +3,9 @@ package resources
 import (
 	"strings"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/utils"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"

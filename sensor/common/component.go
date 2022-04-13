@@ -1,8 +1,8 @@
 package common
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/centralsensor"
 	"google.golang.org/grpc"
 )
 

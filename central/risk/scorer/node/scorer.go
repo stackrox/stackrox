@@ -3,10 +3,10 @@ package node
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/central/risk/multipliers/node"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/central/risk/datastore"
+	"github.com/stackrox/stackrox/central/risk/multipliers/node"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

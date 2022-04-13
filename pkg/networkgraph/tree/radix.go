@@ -4,12 +4,12 @@ import (
 	"net"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-	pkgNet "github.com/stackrox/rox/pkg/net"
-	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/logging"
+	pkgNet "github.com/stackrox/stackrox/pkg/net"
+	"github.com/stackrox/stackrox/pkg/networkgraph"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

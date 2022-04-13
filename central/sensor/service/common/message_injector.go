@@ -1,8 +1,8 @@
 package common
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/concurrency"
 )
 
 // MessageInjector is a simplified interface for injecting messages into the central <-> sensor stream.

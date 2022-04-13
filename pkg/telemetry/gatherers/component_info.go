@@ -3,8 +3,8 @@ package gatherers
 import (
 	"runtime"
 
-	"github.com/stackrox/rox/pkg/telemetry/data"
-	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/stackrox/pkg/telemetry/data"
+	"github.com/stackrox/stackrox/pkg/version"
 )
 
 // ComponentInfoGatherer gathers generic information about a StackRox component(Centra, Scanner, etc...)

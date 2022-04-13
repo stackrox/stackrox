@@ -1,8 +1,8 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/notifier/datastore/internal/store"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/stackrox/central/notifier/datastore/internal/store"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
 	bolt "go.etcd.io/bbolt"
 )
 

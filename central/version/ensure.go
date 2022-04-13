@@ -5,11 +5,11 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/version/store"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/stackrox/central/version/store"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/migrations"
+	"github.com/stackrox/stackrox/pkg/rocksdb"
 	bolt "go.etcd.io/bbolt"
 )
 

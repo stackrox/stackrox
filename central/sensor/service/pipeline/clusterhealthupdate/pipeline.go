@@ -3,17 +3,17 @@ package clusterhealthupdate
 import (
 	"context"
 
-	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/sensor/service/common"
-	"github.com/stackrox/rox/central/sensor/service/connection"
-	"github.com/stackrox/rox/central/sensor/service/pipeline"
-	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/clusterhealth"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/timestamp"
+	clusterDataStore "github.com/stackrox/stackrox/central/cluster/datastore"
+	"github.com/stackrox/stackrox/central/sensor/service/common"
+	"github.com/stackrox/stackrox/central/sensor/service/connection"
+	"github.com/stackrox/stackrox/central/sensor/service/pipeline"
+	"github.com/stackrox/stackrox/central/sensor/service/pipeline/reconciliation"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/centralsensor"
+	"github.com/stackrox/stackrox/pkg/clusterhealth"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/timestamp"
 )
 
 var (

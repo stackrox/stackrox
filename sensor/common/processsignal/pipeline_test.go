@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/process/filter"
-	"github.com/stackrox/rox/sensor/common/clusterentities"
-	"github.com/stackrox/rox/sensor/common/detector/mocks"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/process/filter"
+	"github.com/stackrox/stackrox/sensor/common/clusterentities"
+	"github.com/stackrox/stackrox/sensor/common/detector/mocks"
 	"github.com/stretchr/testify/assert"
 )
 

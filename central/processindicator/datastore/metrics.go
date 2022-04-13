@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/stackrox/pkg/metrics"
 )
 
 var (

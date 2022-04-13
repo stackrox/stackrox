@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/magiconair/properties"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/roxctl/help"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/roxctl/help"
 )
 
 var (

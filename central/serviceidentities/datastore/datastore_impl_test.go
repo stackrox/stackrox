@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/role/resources"
-	storeMocks "github.com/stackrox/rox/central/serviceidentities/internal/store/mocks"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/stackrox/central/role/resources"
+	storeMocks "github.com/stackrox/stackrox/central/serviceidentities/internal/store/mocks"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 

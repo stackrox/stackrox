@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/sensorupgrader"
-	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/sensorupgrader"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 )
 

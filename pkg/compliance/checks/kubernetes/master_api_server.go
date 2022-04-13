@@ -1,11 +1,11 @@
 package kubernetes
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/compliance/checks/common"
-	"github.com/stackrox/rox/pkg/compliance/checks/standards"
-	"github.com/stackrox/rox/pkg/compliance/framework"
-	"github.com/stackrox/rox/pkg/compliance/msgfmt"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/compliance/checks/common"
+	"github.com/stackrox/stackrox/pkg/compliance/checks/standards"
+	"github.com/stackrox/stackrox/pkg/compliance/framework"
+	"github.com/stackrox/stackrox/pkg/compliance/msgfmt"
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/apiserver/pkg/apis/config/v1"
 )

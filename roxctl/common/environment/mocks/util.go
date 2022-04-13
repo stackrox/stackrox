@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/printer"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/common/printer"
 	"google.golang.org/grpc"
 )
 

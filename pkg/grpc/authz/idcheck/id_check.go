@@ -1,8 +1,8 @@
 package idcheck
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/grpc/authz"
 )
 
 // SensorsOnly returns a serviceType authorizer that checks for the Sensor type.

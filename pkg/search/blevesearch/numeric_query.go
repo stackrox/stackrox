@@ -9,8 +9,8 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 type prefixAndInversion struct {

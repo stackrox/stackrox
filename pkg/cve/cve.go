@@ -3,8 +3,8 @@ package cve
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/features"
 )
 
 var clusterCVETypes = map[storage.CVE_CVEType]struct{}{

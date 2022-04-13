@@ -3,7 +3,7 @@ package deployment
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // Multiplier is the interface that all deployment risk calculations must implement

@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	helmTest "github.com/stackrox/helmtest/pkg/framework"
-	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/helm/charts"
-	helmChartTestUtils "github.com/stackrox/rox/pkg/helm/charts/testutils"
+	"github.com/stackrox/stackrox/image"
+	"github.com/stackrox/stackrox/pkg/buildinfo"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/helm/charts"
+	helmChartTestUtils "github.com/stackrox/stackrox/pkg/helm/charts/testutils"
 )
 
 func TestWithHelmtest(t *testing.T) {

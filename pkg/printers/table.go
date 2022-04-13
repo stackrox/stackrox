@@ -4,8 +4,8 @@ import (
 	"io"
 
 	"github.com/olekukonko/tablewriter"
-	"github.com/stackrox/rox/pkg/gjson"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/gjson"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 // TablePrinterOptions is a functional option for the TablePrinter.

@@ -3,9 +3,9 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/notifier/datastore/internal/store"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/central/notifier/datastore/internal/store"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // DataStore provides storage functionality for notifiers.

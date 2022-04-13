@@ -3,10 +3,10 @@ package service
 import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/role"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/stackrox/central/role"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/stackrox/pkg/auth/permissions/utils"
 )
 
 var defaultScopeID = role.AccessScopeIncludeAll.Id

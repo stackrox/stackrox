@@ -3,8 +3,8 @@ package handler
 import (
 	"net/http"
 
-	"github.com/stackrox/rox/central/logimbue/store"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/logimbue/store"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

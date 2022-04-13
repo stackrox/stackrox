@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 type individualFieldConverter func(fields *storage.PolicyFields) []*storage.PolicyGroup

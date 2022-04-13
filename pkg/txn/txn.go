@@ -1,6 +1,6 @@
 package txn
 
-import "github.com/stackrox/rox/pkg/logging"
+import "github.com/stackrox/stackrox/pkg/logging"
 
 var log = logging.LoggerForModule()
 

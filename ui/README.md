@@ -18,7 +18,7 @@ directory, never looking into `packages` / `apps` subdirectories.
 
 Packages live in the `packages` directory. It's implied that every package is
 published to the
-[private NPM registry](https://github.com/stackrox/rox/packages) from where it
+[private NPM registry](https://github.com/stackrox/stackrox/packages) from where it
 can be consumed by other StackRox projects.
 
 While working on a particular package, treat it as an independent NPM package,
@@ -62,7 +62,7 @@ Ensure the following fields are correctly set in `package.json`:
 "name": "@stackrox/{package-name}",
 "repository": {
     "type": "git",
-    "url": "https://github.com/stackrox/rox.git",
+    "url": "https://github.com/stackrox/stackrox.git",
     "directory": "ui/packages/{package-dir-name}"
 },
 "license": "UNLICENSED"
@@ -124,7 +124,7 @@ In this case ensure the following fields are correctly set in `package.json`:
 "private": true,
 "repository": {
     "type": "git",
-    "url": "https://github.com/stackrox/rox.git",
+    "url": "https://github.com/stackrox/stackrox.git",
     "directory": "ui/apps/{app-dir-name}"
 },
 "license": "UNLICENSED"

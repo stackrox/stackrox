@@ -106,7 +106,7 @@ spec:
       - name: shared-memory
         emptyDir:
           medium: Memory
-          {{- /* Keep this in sync with shared_buffers in /Users/cong/go/src/github.com/stackrox/rox/image/postgres/postgresql.conf */}}
+          {{- /* Keep this in sync with shared_buffers in /Users/cong/go/src/github.com/stackrox/stackrox/image/postgres/postgresql.conf */}}
           sizeLimit: 2Gi
 ---
 apiVersion: v1

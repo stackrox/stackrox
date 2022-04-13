@@ -2,12 +2,12 @@ package generate
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/generated/storage"
-	clusterValidation "github.com/stackrox/rox/pkg/cluster"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/pointers"
-	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/util"
+	"github.com/stackrox/stackrox/generated/storage"
+	clusterValidation "github.com/stackrox/stackrox/pkg/cluster"
+	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/pointers"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
+	"github.com/stackrox/stackrox/roxctl/common/util"
 )
 
 const (

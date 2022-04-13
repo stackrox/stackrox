@@ -1,6 +1,6 @@
 package graph
 
-import "github.com/stackrox/rox/pkg/labels"
+import "github.com/stackrox/stackrox/pkg/labels"
 
 func matchDeployments(nodes []*node, podSel labels.CompiledSelector) []*node {
 	if podSel.MatchesNone() {

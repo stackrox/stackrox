@@ -6,12 +6,12 @@ import (
 	"net"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/grpc/alpn"
-	"github.com/stackrox/rox/pkg/grpc/authn/basic"
-	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/stackrox/pkg/clientconn"
+	"github.com/stackrox/stackrox/pkg/grpc/alpn"
+	"github.com/stackrox/stackrox/pkg/grpc/authn/basic"
+	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/roxctl/common"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
 	http1DowngradeClient "golang.stackrox.io/grpc-http1/client"
 	"google.golang.org/grpc"
 )

@@ -3,9 +3,9 @@ package analystnotes
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/grpc/authn"
+	"github.com/stackrox/stackrox/pkg/stringutils"
 )
 
 // UserFromContext returns a comment_user from the given context.

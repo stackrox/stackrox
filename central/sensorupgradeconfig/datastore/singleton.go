@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore/internal/store"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/central/sensorupgradeconfig/datastore/internal/store"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

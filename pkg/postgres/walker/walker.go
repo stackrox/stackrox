@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/pkg/protoreflect"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/protoreflect"
+	"github.com/stackrox/stackrox/pkg/stringutils"
 )
 
 var (

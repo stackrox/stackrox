@@ -3,9 +3,9 @@ package singleton
 import (
 	"time"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/license/publickeys"
-	"github.com/stackrox/rox/pkg/license/validator"
+	"github.com/stackrox/stackrox/pkg/buildinfo"
+	"github.com/stackrox/stackrox/pkg/license/publickeys"
+	"github.com/stackrox/stackrox/pkg/license/validator"
 )
 
 func init() {

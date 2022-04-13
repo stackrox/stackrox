@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/roxctl/common/zipdownload"
+	"github.com/stackrox/stackrox/pkg/apiparams"
+	"github.com/stackrox/stackrox/roxctl/common/zipdownload"
 )
 
 const (

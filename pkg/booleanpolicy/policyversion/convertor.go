@@ -2,8 +2,8 @@ package policyversion
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 // EnsureConvertedToLatest converts the given policy into a Boolean policy, if it is not one already.

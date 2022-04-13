@@ -1,7 +1,7 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/node/store"
+	"github.com/stackrox/stackrox/central/node/store"
 )
 
 //go:generate mockgen-wrapper

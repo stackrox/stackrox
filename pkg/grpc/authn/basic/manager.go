@@ -6,10 +6,10 @@ import (
 	"unsafe"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/auth/authproviders"
-	"github.com/stackrox/rox/pkg/auth/htpasswd"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/auth/authproviders"
+	"github.com/stackrox/stackrox/pkg/auth/htpasswd"
+	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/stackrox/pkg/errox"
 )
 
 // Manager manages basic auth user identities.

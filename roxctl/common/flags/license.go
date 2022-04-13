@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/license"
-	"github.com/stackrox/rox/roxctl/common/mode"
+	"github.com/stackrox/stackrox/pkg/license"
+	"github.com/stackrox/stackrox/roxctl/common/mode"
 )
 
 var (

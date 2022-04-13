@@ -4,8 +4,8 @@ import (
 	"net/url"
 	"testing"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/search"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 

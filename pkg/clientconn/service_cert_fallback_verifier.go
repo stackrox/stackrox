@@ -5,8 +5,8 @@ import (
 	"crypto/x509"
 	"fmt"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/mtls"
 )
 
 type serviceCertFallbackVerifier struct {

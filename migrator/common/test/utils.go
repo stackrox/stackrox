@@ -3,7 +3,7 @@ package test
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/stackrox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 )

@@ -9,10 +9,10 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	datastore "github.com/stackrox/rox/central/node/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
-	search "github.com/stackrox/rox/pkg/search"
+	datastore "github.com/stackrox/stackrox/central/node/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	storage "github.com/stackrox/stackrox/generated/storage"
+	search "github.com/stackrox/stackrox/pkg/search"
 )
 
 // MockGlobalDataStore is a mock of GlobalDataStore interface.

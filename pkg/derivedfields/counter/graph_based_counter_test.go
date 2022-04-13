@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/dackbox/graph/mocks"
-	"github.com/stackrox/rox/pkg/dbhelper"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search/filtered"
+	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/stackrox/pkg/dackbox"
+	"github.com/stackrox/stackrox/pkg/dackbox/graph"
+	"github.com/stackrox/stackrox/pkg/dackbox/graph/mocks"
+	"github.com/stackrox/stackrox/pkg/dbhelper"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/search/filtered"
 	"github.com/stretchr/testify/suite"
 )
 

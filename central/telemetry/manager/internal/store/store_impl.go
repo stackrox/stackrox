@@ -5,10 +5,10 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/generated/storage"
+	protoCrud "github.com/stackrox/stackrox/pkg/bolthelper/crud/proto"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/utils"
 	"go.etcd.io/bbolt"
 )
 

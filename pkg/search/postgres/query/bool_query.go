@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/stackrox/rox/pkg/parse"
-	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/parse"
+	pkgSearch "github.com/stackrox/stackrox/pkg/search"
 )
 
 func newBoolQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {

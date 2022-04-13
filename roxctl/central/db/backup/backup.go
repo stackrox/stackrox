@@ -2,8 +2,8 @@ package backup
 
 import (
 	"github.com/spf13/cobra"
-	centralBackup "github.com/stackrox/rox/roxctl/central/backup"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	centralBackup "github.com/stackrox/stackrox/roxctl/central/backup"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
 )
 
 const (

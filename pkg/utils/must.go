@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/buildinfo"
+	"github.com/stackrox/stackrox/pkg/debug"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 const (

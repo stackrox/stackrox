@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/stringutils"
 )
 
 // GetID generates risk ID from risk subject ID (e.g. deployment ID) and type.

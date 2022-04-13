@@ -4,8 +4,8 @@ import (
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 func testImages() []*storage.Image {

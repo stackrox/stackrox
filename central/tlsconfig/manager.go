@@ -3,11 +3,11 @@ package tlsconfig
 import (
 	"crypto/x509"
 
-	"github.com/stackrox/rox/pkg/auth/authproviders"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/mtls/verifier"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/auth/authproviders"
+	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/stackrox/pkg/mtls/verifier"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 // ServerCertSource is an enum type that determines the source for obtaining the TLS server certificate.

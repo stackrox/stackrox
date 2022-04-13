@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/sac"
 )
 
 type contextWithAccessMatcher struct {

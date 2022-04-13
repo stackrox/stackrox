@@ -1,6 +1,6 @@
 package types
 
-import "github.com/stackrox/rox/generated/storage"
+import "github.com/stackrox/stackrox/generated/storage"
 
 // ConvertDeploymentToDeploymentList converts a storage.Deployment to a storage.ListDeployment
 func ConvertDeploymentToDeploymentList(d *storage.Deployment) *storage.ListDeployment {

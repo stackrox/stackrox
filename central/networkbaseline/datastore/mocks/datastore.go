@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	storage "github.com/stackrox/rox/generated/storage"
+	storage "github.com/stackrox/stackrox/generated/storage"
 )
 
 // MockReadOnlyDataStore is a mock of ReadOnlyDataStore interface.

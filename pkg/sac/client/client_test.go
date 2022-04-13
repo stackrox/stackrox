@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
 

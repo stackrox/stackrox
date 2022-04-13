@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/image/sensor"
-	"github.com/stackrox/rox/pkg/helm/charts"
-	helmUtil "github.com/stackrox/rox/pkg/helm/util"
-	"github.com/stackrox/rox/pkg/zip"
+	"github.com/stackrox/stackrox/image"
+	"github.com/stackrox/stackrox/image/sensor"
+	"github.com/stackrox/stackrox/pkg/helm/charts"
+	helmUtil "github.com/stackrox/stackrox/pkg/helm/util"
+	"github.com/stackrox/stackrox/pkg/zip"
 )
 
 func getSensorChartFile(filename string, data []byte) (*zip.File, bool) {

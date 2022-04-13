@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
 )
 
 // Header represents a CSV's header line.

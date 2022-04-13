@@ -6,7 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 	bolt "go.etcd.io/bbolt"
 )
 

@@ -12,11 +12,11 @@ import (
 	"github.com/hako/durafmt"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
-	"github.com/stackrox/rox/pkg/license"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/util"
+	licenseproto "github.com/stackrox/stackrox/generated/shared/license"
+	"github.com/stackrox/stackrox/pkg/license"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
+	"github.com/stackrox/stackrox/roxctl/common/util"
 )
 
 type centralLicenseInfoCommand struct {

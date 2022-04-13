@@ -4,8 +4,8 @@ import (
 	"encoding/base64"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/net"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/net"
+	"github.com/stackrox/stackrox/pkg/sac"
 )
 
 // Zero out the host address from CIDR string since two distinct CIDRs could represent same network.

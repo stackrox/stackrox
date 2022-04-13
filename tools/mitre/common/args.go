@@ -1,6 +1,6 @@
 package common
 
-import "github.com/stackrox/rox/pkg/mitre"
+import "github.com/stackrox/stackrox/pkg/mitre"
 
 const (
 	// MitreEnterpriseAttackSrcURL is the location where the most recent MIRE Enterprise ATT&CK data is available.

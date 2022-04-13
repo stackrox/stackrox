@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/version"
 )
 
 func (u *upgradeController) RegisterConnection(sensorCtx context.Context, conn SensorConn) concurrency.ErrorWaitable {

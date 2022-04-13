@@ -1,9 +1,9 @@
 package runtime
 
 import (
-	"github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/detection"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/central/deployment/datastore"
+	"github.com/stackrox/stackrox/central/detection"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

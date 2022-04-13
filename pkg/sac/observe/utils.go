@@ -3,9 +3,9 @@ package observe
 import (
 	"context"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/grpc/authn"
+	"github.com/stackrox/stackrox/pkg/grpc/requestinfo"
 )
 
 // CountAllowedTraces exists solely for testing purposes.

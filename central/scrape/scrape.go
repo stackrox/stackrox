@@ -3,10 +3,10 @@ package scrape
 import (
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/uuid"
 )
 
 // Scrape represents an instance of scraping info from the hosts in a cluster.

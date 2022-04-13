@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	client "github.com/stackrox/rox/pkg/sac/client"
+	client "github.com/stackrox/stackrox/pkg/sac/client"
 )
 
 // MockAuthPluginClientManger is a mock of AuthPluginClientManger interface.

@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"net/http"
 
-	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/stackrox/pkg/httputil/proxy"
 )
 
 var insecureHTTPClient = &http.Client{

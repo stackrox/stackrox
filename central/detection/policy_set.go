@@ -1,9 +1,9 @@
 package detection
 
 import (
-	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
-	"github.com/stackrox/rox/pkg/detection"
-	"github.com/stackrox/rox/pkg/logging"
+	policyDatastore "github.com/stackrox/stackrox/central/policy/datastore"
+	"github.com/stackrox/stackrox/pkg/detection"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

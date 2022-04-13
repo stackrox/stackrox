@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/license/manager"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/stackrox/central/license/manager"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/grpc"
 )
 
 var (

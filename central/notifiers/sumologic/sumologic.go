@@ -11,14 +11,14 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/urlfmt"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/notifiers"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/httputil/proxy"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/retry"
+	"github.com/stackrox/stackrox/pkg/urlfmt"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

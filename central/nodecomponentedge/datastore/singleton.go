@@ -1,12 +1,12 @@
 package datastore
 
 import (
-	globaldb "github.com/stackrox/rox/central/globaldb/dackbox"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/nodecomponentedge/index"
-	"github.com/stackrox/rox/central/nodecomponentedge/search"
-	"github.com/stackrox/rox/central/nodecomponentedge/store/dackbox"
-	"github.com/stackrox/rox/pkg/sync"
+	globaldb "github.com/stackrox/stackrox/central/globaldb/dackbox"
+	"github.com/stackrox/stackrox/central/globalindex"
+	"github.com/stackrox/stackrox/central/nodecomponentedge/index"
+	"github.com/stackrox/stackrox/central/nodecomponentedge/search"
+	"github.com/stackrox/stackrox/central/nodecomponentedge/store/dackbox"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

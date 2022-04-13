@@ -5,8 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/stackrox/roxctl/common"
 )
 
 var (

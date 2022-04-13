@@ -4,10 +4,10 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/analystnotes"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/binenc"
-	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/stackrox/central/analystnotes"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/binenc"
+	"github.com/stackrox/stackrox/pkg/bolthelper"
 	"go.etcd.io/bbolt"
 )
 

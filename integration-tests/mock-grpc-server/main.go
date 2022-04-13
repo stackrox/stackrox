@@ -8,9 +8,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
-	utils "github.com/stackrox/rox/pkg/net"
+	sensorAPI "github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/generated/storage"
+	utils "github.com/stackrox/stackrox/pkg/net"
 	bolt "go.etcd.io/bbolt"
 	"google.golang.org/grpc"
 )

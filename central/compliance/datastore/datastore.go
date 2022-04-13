@@ -3,11 +3,11 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/compliance"
-	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
-	"github.com/stackrox/rox/central/compliance/datastore/types"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/central/compliance"
+	"github.com/stackrox/stackrox/central/compliance/datastore/internal/store"
+	"github.com/stackrox/stackrox/central/compliance/datastore/types"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // DataStore is the interface for accessing stored compliance data

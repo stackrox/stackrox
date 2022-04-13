@@ -3,7 +3,7 @@ package notifiers
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // AlertNotifier is a notifier for active alerts

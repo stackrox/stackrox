@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/backup"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/odirect"
+	"github.com/stackrox/stackrox/pkg/backup"
+	"github.com/stackrox/stackrox/pkg/bolthelper"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/migrations"
+	"github.com/stackrox/stackrox/pkg/odirect"
 	bolt "go.etcd.io/bbolt"
 )
 

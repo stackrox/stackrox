@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/stackrox/rox/central/globaldb/export"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/osutils"
-	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/globaldb/export"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/osutils"
+	"github.com/stackrox/stackrox/pkg/rocksdb"
+	"github.com/stackrox/stackrox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
 )
 

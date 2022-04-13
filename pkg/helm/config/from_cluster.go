@@ -1,10 +1,10 @@
 package config
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/maputil"
-	"github.com/stackrox/rox/pkg/renderer"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/images/defaults"
+	"github.com/stackrox/stackrox/pkg/maputil"
+	"github.com/stackrox/stackrox/pkg/renderer"
 )
 
 // imageSpecFromOverrides produces an image spec to be used in the Secured Cluster Helm chart configuration,

@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/types"
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/uuid"
+	licenseproto "github.com/stackrox/stackrox/generated/shared/license"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/uuid"
 )
 
 func validateUUID(input string) error {

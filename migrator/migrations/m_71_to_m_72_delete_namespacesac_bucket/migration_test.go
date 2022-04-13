@@ -3,7 +3,7 @@ package m71tom72
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/stackrox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tecbot/gorocksdb"

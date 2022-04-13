@@ -1,19 +1,19 @@
 package service
 
 import (
-	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
-	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
-	nsDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
-	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
-	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
-	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
-	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
-	"github.com/stackrox/rox/central/networkpolicies/graph"
-	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/sensor/service/connection"
-	"github.com/stackrox/rox/pkg/sync"
+	clusterDS "github.com/stackrox/stackrox/central/cluster/datastore"
+	deploymentDS "github.com/stackrox/stackrox/central/deployment/datastore"
+	nsDataStore "github.com/stackrox/stackrox/central/namespace/datastore"
+	networkBaselineDataStore "github.com/stackrox/stackrox/central/networkbaseline/datastore"
+	graphConfigDS "github.com/stackrox/stackrox/central/networkgraph/config/datastore"
+	networkEntityDS "github.com/stackrox/stackrox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/stackrox/central/networkgraph/entity/networktree"
+	nfDS "github.com/stackrox/stackrox/central/networkgraph/flow/datastore"
+	npDS "github.com/stackrox/stackrox/central/networkpolicies/datastore"
+	"github.com/stackrox/stackrox/central/networkpolicies/graph"
+	notifierDS "github.com/stackrox/stackrox/central/notifier/datastore"
+	"github.com/stackrox/stackrox/central/sensor/service/connection"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

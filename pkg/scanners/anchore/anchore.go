@@ -13,14 +13,14 @@ import (
 	"github.com/antihax/optional"
 	"github.com/pkg/errors"
 	anchoreClient "github.com/stackrox/anchore-client/client"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/registries"
-	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
-	"github.com/stackrox/rox/pkg/urlfmt"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/httputil/proxy"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/registries"
+	scannerTypes "github.com/stackrox/stackrox/pkg/scanners/types"
+	"github.com/stackrox/stackrox/pkg/urlfmt"
 )
 
 const (

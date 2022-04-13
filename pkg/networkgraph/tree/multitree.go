@@ -4,11 +4,11 @@ import (
 	"net"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	pkgNet "github.com/stackrox/rox/pkg/net"
-	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/generated/storage"
+	pkgNet "github.com/stackrox/stackrox/pkg/net"
+	"github.com/stackrox/stackrox/pkg/networkgraph"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 // multiReadOnlyNTree is a wrapper around networkTreeWrapper that handles multiples trees.

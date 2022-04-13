@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/evaluator/pathutil"
 )
 
 // An fieldEvaluator evaluates an object for a specific field, and produces a result.

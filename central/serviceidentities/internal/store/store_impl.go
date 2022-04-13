@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/storage"
-	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/stackrox/central/metrics"
+	"github.com/stackrox/stackrox/generated/storage"
+	ops "github.com/stackrox/stackrox/pkg/metrics"
 	bolt "go.etcd.io/bbolt"
 )
 

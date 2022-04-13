@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/scanners/types"
 	"github.com/stretchr/testify/suite"
 )
 

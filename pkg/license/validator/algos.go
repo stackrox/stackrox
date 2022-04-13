@@ -11,7 +11,7 @@ import (
 	_ "crypto/sha512"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/stackrox/pkg/cryptoutils"
 )
 
 type signatureVerifierCreator func(publicKeyData []byte) (cryptoutils.SignatureVerifier, error)

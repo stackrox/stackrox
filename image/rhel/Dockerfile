@@ -36,7 +36,7 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s entrypoint-wrapper.sh /stackrox/compliance && \
     ln -s entrypoint-wrapper.sh /stackrox/kubernetes-sensor && \
     ln -s entrypoint-wrapper.sh /stackrox/sensor-upgrader && \
-    ln -s /assets/downloads/cli/roxctl-linux /stackrox/roxctl && \
+    ln -s /assets/downloads/cli/roxctl-linux /stackrox/stackroxctl && \
     rpm --import RPM-GPG-KEY-CentOS-Official && \
     microdnf upgrade && \
     rpm -i /tmp/snappy.rpm && \

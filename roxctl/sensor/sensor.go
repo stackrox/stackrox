@@ -4,11 +4,11 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/sensor/generate"
-	"github.com/stackrox/rox/roxctl/sensor/generatecerts"
-	"github.com/stackrox/rox/roxctl/sensor/getbundle"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
+	"github.com/stackrox/stackrox/roxctl/sensor/generate"
+	"github.com/stackrox/stackrox/roxctl/sensor/generatecerts"
+	"github.com/stackrox/stackrox/roxctl/sensor/getbundle"
 )
 
 // Command controls all of the functions being applied to a sensor

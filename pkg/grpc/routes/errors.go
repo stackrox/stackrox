@@ -3,7 +3,7 @@ package routes
 import (
 	"net/http"
 
-	"github.com/stackrox/rox/pkg/grpc/errors"
+	"github.com/stackrox/stackrox/pkg/grpc/errors"
 )
 
 func writeHTTPStatus(w http.ResponseWriter, err error) {

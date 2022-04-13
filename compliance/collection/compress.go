@@ -5,9 +5,9 @@ import (
 	"compress/gzip"
 	"encoding/json"
 
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	pkgCompress "github.com/stackrox/rox/pkg/compliance/compress"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	pkgCompress "github.com/stackrox/stackrox/pkg/compliance/compress"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 func compressResults(results map[string]*compliance.ComplianceStandardResult) (*compliance.GZIPDataChunk, error) {

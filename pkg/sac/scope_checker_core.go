@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/stackrox/pkg/sac/effectiveaccessscope"
 )
 
 // TryAllowedResult represents the possible values of a `TryAllowed` call on an access scope checker.

@@ -3,8 +3,8 @@
 package notifier
 
 import (
-	storage "github.com/stackrox/rox/generated/storage"
-	sync "github.com/stackrox/rox/pkg/sync"
+	storage "github.com/stackrox/stackrox/generated/storage"
+	sync "github.com/stackrox/stackrox/pkg/sync"
 )
 
 func newNotifier() *notifier {

@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/postgres/walker"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 type sqlJoinClauseParts struct {

@@ -3,17 +3,17 @@ package dackbox
 import (
 	"time"
 
-	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
-	imgDackBox "github.com/stackrox/rox/central/image/dackbox"
-	edgeDackBox "github.com/stackrox/rox/central/imagecveedge/dackbox"
-	"github.com/stackrox/rox/central/imagecveedge/store"
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/crud"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	ops "github.com/stackrox/rox/pkg/metrics"
+	cveDackBox "github.com/stackrox/stackrox/central/cve/dackbox"
+	imgDackBox "github.com/stackrox/stackrox/central/image/dackbox"
+	edgeDackBox "github.com/stackrox/stackrox/central/imagecveedge/dackbox"
+	"github.com/stackrox/stackrox/central/imagecveedge/store"
+	"github.com/stackrox/stackrox/central/metrics"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/dackbox"
+	"github.com/stackrox/stackrox/pkg/dackbox/crud"
+	"github.com/stackrox/stackrox/pkg/dackbox/edges"
+	ops "github.com/stackrox/stackrox/pkg/metrics"
 )
 
 type storeImpl struct {

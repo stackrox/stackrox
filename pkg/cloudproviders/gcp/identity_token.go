@@ -8,9 +8,9 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/cryptoutils"
-	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/cryptoutils"
+	"github.com/stackrox/stackrox/pkg/httputil"
+	"github.com/stackrox/stackrox/pkg/utils"
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 

@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/joelanford/helm-operator/pkg/extensions"
-	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
+	platform "github.com/stackrox/stackrox/operator/apis/platform/v1alpha1"
+	commonExtensions "github.com/stackrox/stackrox/operator/pkg/common/extensions"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 

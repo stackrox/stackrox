@@ -1,9 +1,9 @@
 package docker
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/docker/types"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/docker/types"
+	"github.com/stackrox/stackrox/pkg/uuid"
 )
 
 func createTestNodes(names ...string) []*storage.Node {

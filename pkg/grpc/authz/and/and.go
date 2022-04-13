@@ -3,8 +3,8 @@ package and
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/grpc/authz"
 )
 
 type and struct {

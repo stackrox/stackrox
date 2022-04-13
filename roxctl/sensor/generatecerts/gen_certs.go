@@ -12,12 +12,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/download"
-	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/sensor/util"
+	"github.com/stackrox/stackrox/pkg/apiparams"
+	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/stackrox/roxctl/common"
+	"github.com/stackrox/stackrox/roxctl/common/download"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
+	"github.com/stackrox/stackrox/roxctl/sensor/util"
 )
 
 func downloadCerts(outputDir, clusterIDOrName string, timeout time.Duration) error {

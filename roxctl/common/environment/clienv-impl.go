@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/printer"
+	"github.com/stackrox/stackrox/roxctl/common"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
+	"github.com/stackrox/stackrox/roxctl/common/printer"
 	"google.golang.org/grpc"
 )
 

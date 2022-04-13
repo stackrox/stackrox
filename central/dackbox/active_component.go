@@ -1,16 +1,16 @@
 package dackbox
 
 import (
-	acDackBox "github.com/stackrox/rox/central/activecomponent/dackbox"
-	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
-	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
-	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
-	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
-	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
-	nsDackBox "github.com/stackrox/rox/central/namespace/dackbox"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
+	acDackBox "github.com/stackrox/stackrox/central/activecomponent/dackbox"
+	clusterDackBox "github.com/stackrox/stackrox/central/cluster/dackbox"
+	cveDackBox "github.com/stackrox/stackrox/central/cve/dackbox"
+	deploymentDackBox "github.com/stackrox/stackrox/central/deployment/dackbox"
+	imageDackBox "github.com/stackrox/stackrox/central/image/dackbox"
+	componentDackBox "github.com/stackrox/stackrox/central/imagecomponent/dackbox"
+	nsDackBox "github.com/stackrox/stackrox/central/namespace/dackbox"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/dackbox"
+	"github.com/stackrox/stackrox/pkg/dackbox/keys/transformation"
 )
 
 var (

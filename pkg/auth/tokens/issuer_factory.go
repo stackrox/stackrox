@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/stackrox/pkg/uuid"
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
 )

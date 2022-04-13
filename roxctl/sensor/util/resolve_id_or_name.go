@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/roxctl/common"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	pkgCommon "github.com/stackrox/stackrox/pkg/roxctl/common"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/stackrox/roxctl/common"
 )
 
 // ResolveClusterID returns the cluster ID corresponding to the given id or name,

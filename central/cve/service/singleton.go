@@ -1,10 +1,10 @@
 package service
 
 import (
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
-	"github.com/stackrox/rox/central/globaldb/dackbox"
-	vulReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
-	"github.com/stackrox/rox/pkg/sync"
+	cveDataStore "github.com/stackrox/stackrox/central/cve/datastore"
+	"github.com/stackrox/stackrox/central/globaldb/dackbox"
+	vulReqMgr "github.com/stackrox/stackrox/central/vulnerabilityrequest/manager/requestmgr"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

@@ -8,8 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/roxctl/common/util"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/roxctl/common/util"
 )
 
 var (

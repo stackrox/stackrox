@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/reportconfigurations/index"
-	"github.com/stackrox/rox/central/reportconfigurations/search"
-	"github.com/stackrox/rox/central/reportconfigurations/store"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/central/reportconfigurations/index"
+	"github.com/stackrox/stackrox/central/reportconfigurations/search"
+	"github.com/stackrox/stackrox/central/reportconfigurations/store"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	searchPkg "github.com/stackrox/stackrox/pkg/search"
 )
 
 // DataStore is the datastore for report configurations.

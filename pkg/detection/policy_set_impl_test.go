@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/policyversion"
 	"github.com/stretchr/testify/suite"
 )
 

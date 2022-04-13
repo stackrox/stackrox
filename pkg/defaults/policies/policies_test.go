@@ -5,10 +5,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/mitre"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/stackrox/pkg/buildinfo"
+	"github.com/stackrox/stackrox/pkg/mitre"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

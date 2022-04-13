@@ -69,7 +69,7 @@ for (( job = 0; job < "${WF_JOBS_LENGTH}"; job++ )); do
 
   if [[ "${status}" == "failed" ]]; then
     # fetch test details
-    JOB_TEST_DETAILS_URL="https://circleci.com/api/v2/project/gh/stackrox/rox/${number}/tests?circle-token=${CIRCLE_TOKEN}"
+    JOB_TEST_DETAILS_URL="https://circleci.com/api/v2/project/gh/stackrox/stackrox/${number}/tests?circle-token=${CIRCLE_TOKEN}"
     JOB_TEST_DETAILS=$(curl -s "${JOB_TEST_DETAILS_URL}")
     FAILED_TESTS=$(echo "${JOB_TEST_DETAILS}" | jq '[ .items[] | select( .result == "failure" ) ]')
     FAILED_TESTS_LENGTH=$(echo "${FAILED_TESTS}" | jq '. | length')
@@ -88,7 +88,7 @@ for (( job = 0; job < "${WF_JOBS_LENGTH}"; job++ )); do
   step_that_failed=""
   if [[ "${status}" == "failed" ]]; then
     # fetch step details
-    JOB_STEP_DETAILS_URL="https://circleci.com/api/v1.1/project/gh/stackrox/rox/${number}?circle-token=${CIRCLE_TOKEN}"
+    JOB_STEP_DETAILS_URL="https://circleci.com/api/v1.1/project/gh/stackrox/stackrox/${number}?circle-token=${CIRCLE_TOKEN}"
     JOB_STEPS=$(curl -s "${JOB_STEP_DETAILS_URL}" | jq '.steps')
     if [[ "${JOB_STEPS}" != "null" ]]; then
       FIRST_FAILURE=$(echo "${JOB_STEPS}" | jq 'map(select( .actions[0].status != "success" and .actions[0].status != "canceled" ))[0]')

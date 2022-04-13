@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/pkg/config"
-	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/config"
+	"github.com/stackrox/stackrox/pkg/postgres/walker"
+	"github.com/stackrox/stackrox/pkg/retry"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 const (

@@ -22,18 +22,18 @@ import (
     "github.com/gogo/protobuf/proto"
     "github.com/jackc/pgx/v4/pgxpool"
     "github.com/jackc/pgx/v4"
-    "github.com/stackrox/rox/central/globaldb"
-    "github.com/stackrox/rox/central/metrics"
-    pkgSchema "github.com/stackrox/rox/central/postgres/schema"
-    "github.com/stackrox/rox/generated/storage"
-    "github.com/stackrox/rox/pkg/logging"
-    ops "github.com/stackrox/rox/pkg/metrics"
-    "github.com/stackrox/rox/pkg/postgres/pgutils"
+    "github.com/stackrox/stackrox/central/globaldb"
+    "github.com/stackrox/stackrox/central/metrics"
+    pkgSchema "github.com/stackrox/stackrox/central/postgres/schema"
+    "github.com/stackrox/stackrox/generated/storage"
+    "github.com/stackrox/stackrox/pkg/logging"
+    ops "github.com/stackrox/stackrox/pkg/metrics"
+    "github.com/stackrox/stackrox/pkg/postgres/pgutils"
     {{if or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker") -}}
-    "github.com/stackrox/rox/pkg/sac"
+    "github.com/stackrox/stackrox/pkg/sac"
     {{- end }}
     {{- if eq .ResourceType "directlyScoped" -}}
-    "github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+    "github.com/stackrox/stackrox/pkg/sac/effectiveaccessscope"
     {{- end }}
 )
 

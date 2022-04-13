@@ -1,6 +1,6 @@
 package scanner
 
-import platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+import platform "github.com/stackrox/stackrox/operator/apis/platform/v1alpha1"
 
 // SetScannerDefaults makes sure that spec.Scanner and spec.Scanner.ScannerComponent are not nil.
 func SetScannerDefaults(spec *platform.SecuredClusterSpec) {

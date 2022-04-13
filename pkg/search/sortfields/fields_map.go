@@ -1,8 +1,8 @@
 package sortfields
 
 import (
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/search"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/search"
 )
 
 // SortFieldMapper represents helper function that returns an array of query sort options to fulfill sorting by incoming sort option.

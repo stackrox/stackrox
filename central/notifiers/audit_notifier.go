@@ -3,7 +3,7 @@ package notifiers
 import (
 	"context"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
 )
 
 // AuditNotifier is the notifier for audit logs

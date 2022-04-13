@@ -7,11 +7,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
 )
 
 // Command removes a Sensor from Central without deleting any orchestrator objects.

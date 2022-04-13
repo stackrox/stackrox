@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	licenseManager "github.com/stackrox/rox/central/license/manager"
-	"github.com/stackrox/rox/central/telemetry/gatherers"
-	"github.com/stackrox/rox/central/telemetry/manager/internal/store"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
+	licenseManager "github.com/stackrox/stackrox/central/license/manager"
+	"github.com/stackrox/stackrox/central/telemetry/gatherers"
+	"github.com/stackrox/stackrox/central/telemetry/manager/internal/store"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
 	"go.etcd.io/bbolt"
 )
 

@@ -394,7 +394,7 @@ ifeq ($(CIRCLE_JOB),build-race-condition-debug-image)
 	docker container create -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --name builder $(BUILD_IMAGE) make main-build-nodeps
 	docker cp $(GOPATH) builder:/
 	docker start -i builder
-	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
+	docker cp builder:/go/src/github.com/stackrox/stackrox/bin/linux bin/
 else
 	docker run -i -e RACE -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 endif
@@ -442,7 +442,7 @@ test-prep:
 go-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
+		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/stackrox/tests$$') \
 		| tee test-output/test.log
 	# Exercise the logging package for all supported logging levels to make sure that initialization works properly
 	for encoding in console json; do \
@@ -456,7 +456,7 @@ go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*postgres/*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
+		$(shell git ls-files -- '*postgres/*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/stackrox/tests$$') \
 		| tee test-output/test.log
 
 .PHONY: shell-unit-tests
@@ -544,7 +544,7 @@ docker-build-data-image: docs-image
 docker-build-roxctl-image:
 	cp -f bin/linux/roxctl image/bin/roxctl-linux
 	docker build \
-		-t stackrox/roxctl:$(TAG) \
+		-t stackrox/stackroxctl:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
 		-f image/roxctl.Dockerfile \
 		image/

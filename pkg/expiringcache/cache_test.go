@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/pkg/expiringcache/mocks"
+	"github.com/stackrox/stackrox/pkg/expiringcache/mocks"
 	"github.com/stretchr/testify/assert"
 )
 

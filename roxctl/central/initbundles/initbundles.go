@@ -2,7 +2,7 @@ package initbundles
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
 )
 
 // Command defines the bootstrap-token command tree

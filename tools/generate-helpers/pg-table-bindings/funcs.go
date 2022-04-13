@@ -8,8 +8,8 @@ import (
 	"unicode"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/postgres/walker"
+	"github.com/stackrox/stackrox/pkg/stringutils"
 )
 
 func compileFKArgAndAttachToSchema(schema *walker.Schema, refs []string) {

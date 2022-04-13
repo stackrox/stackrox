@@ -1,15 +1,15 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store/dackbox"
-	"github.com/stackrox/rox/central/activecomponent/datastore/search"
-	acIndexer "github.com/stackrox/rox/central/activecomponent/index"
-	cveIndexer "github.com/stackrox/rox/central/cve/index"
-	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
-	globaldb "github.com/stackrox/rox/central/globaldb/dackbox"
-	"github.com/stackrox/rox/central/globalindex"
-	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/activecomponent/datastore/internal/store/dackbox"
+	"github.com/stackrox/stackrox/central/activecomponent/datastore/search"
+	acIndexer "github.com/stackrox/stackrox/central/activecomponent/index"
+	cveIndexer "github.com/stackrox/stackrox/central/cve/index"
+	deploymentIndexer "github.com/stackrox/stackrox/central/deployment/index"
+	globaldb "github.com/stackrox/stackrox/central/globaldb/dackbox"
+	"github.com/stackrox/stackrox/central/globalindex"
+	componentIndexer "github.com/stackrox/stackrox/central/imagecomponent/index"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

@@ -1,11 +1,11 @@
 package common
 
 import (
-	"github.com/stackrox/rox/central/cve/converter"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/scancomponent"
+	"github.com/stackrox/stackrox/central/cve/converter"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/dackbox/edges"
+	"github.com/stackrox/stackrox/pkg/images/types"
+	"github.com/stackrox/stackrox/pkg/scancomponent"
 )
 
 // Split splits the input image into a set of parts.

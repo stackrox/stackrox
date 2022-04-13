@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/compliance/checks/testutils"
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/central/compliance/checks/testutils"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 type prefixMatcher struct {

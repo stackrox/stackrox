@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/netutil"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/clientconn"
+	"github.com/stackrox/stackrox/pkg/httputil"
+	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/netutil"
+	"github.com/stackrox/stackrox/pkg/stringutils"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )

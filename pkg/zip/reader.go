@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 // Reader opens a zip archive and reads from it.

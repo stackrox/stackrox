@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/helm/charts"
-	helmUtil "github.com/stackrox/rox/pkg/helm/util"
-	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/zip"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/helm/charts"
+	helmUtil "github.com/stackrox/stackrox/pkg/helm/util"
+	"github.com/stackrox/stackrox/pkg/images/defaults"
+	"github.com/stackrox/stackrox/pkg/zip"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 )

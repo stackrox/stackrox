@@ -1,9 +1,9 @@
 package factory
 
 import (
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	"github.com/stackrox/stackrox/pkg/concurrency"
 )
 
 // ScrapeFactory allows running scrapes, automatically inferring the cluster from the compliance domain.

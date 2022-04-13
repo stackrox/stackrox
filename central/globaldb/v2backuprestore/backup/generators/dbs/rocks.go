@@ -5,12 +5,12 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/option"
-	"github.com/stackrox/rox/pkg/fileutils"
-	"github.com/stackrox/rox/pkg/fsutils"
-	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/rocksdb/metrics"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/central/option"
+	"github.com/stackrox/stackrox/pkg/fileutils"
+	"github.com/stackrox/stackrox/pkg/fsutils"
+	"github.com/stackrox/stackrox/pkg/rocksdb"
+	"github.com/stackrox/stackrox/pkg/rocksdb/metrics"
 	"github.com/tecbot/gorocksdb"
 )
 

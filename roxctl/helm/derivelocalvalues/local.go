@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/stackrox/pkg/k8sutil"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 

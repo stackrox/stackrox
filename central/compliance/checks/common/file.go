@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
 )
 
 // HasPermissions checks the permissions on a file

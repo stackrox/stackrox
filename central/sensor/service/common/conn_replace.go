@@ -2,7 +2,7 @@ package common
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 func equalAndNonempty(a, b string) bool {

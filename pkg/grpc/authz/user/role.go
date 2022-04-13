@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stackrox/rox/pkg/auth/permissions/utils"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/stackrox/pkg/auth/permissions/utils"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/grpc/authn"
+	"github.com/stackrox/stackrox/pkg/grpc/authz"
 )
 
 // WithRole returns an authorizer that only authorizes users/tokens with Admin role

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/stackrox/rox/pkg/protoreflect"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/protoreflect"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

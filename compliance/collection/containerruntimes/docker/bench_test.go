@@ -3,7 +3,7 @@ package docker
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/stackrox/pkg/docker"
 	"github.com/stretchr/testify/require"
 )
 

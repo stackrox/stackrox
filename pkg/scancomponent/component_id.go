@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/features"
 )
 
 // ComponentID creates a component ID from the given name and version (and os if postgres is enabled).

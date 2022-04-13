@@ -1,7 +1,7 @@
 package gatherer
 
 import (
-	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	entityDataStore "github.com/stackrox/stackrox/central/networkgraph/entity/datastore"
 )
 
 // NetworkGraphDefaultExtSrcsGatherer provides functionality to update the storage.NetworkEntity storage with default network graph

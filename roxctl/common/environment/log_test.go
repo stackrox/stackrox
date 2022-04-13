@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/fatih/color"
-	"github.com/stackrox/rox/roxctl/common/printer"
+	"github.com/stackrox/stackrox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 )
 

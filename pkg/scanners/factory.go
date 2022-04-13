@@ -1,16 +1,16 @@
 package scanners
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/registries"
-	anchoreScanner "github.com/stackrox/rox/pkg/scanners/anchore"
-	clairScanner "github.com/stackrox/rox/pkg/scanners/clair"
-	clairifyScanner "github.com/stackrox/rox/pkg/scanners/clairify"
-	dtrScanner "github.com/stackrox/rox/pkg/scanners/dtr"
-	googleScanner "github.com/stackrox/rox/pkg/scanners/google"
-	quayScanner "github.com/stackrox/rox/pkg/scanners/quay"
-	tenableScanner "github.com/stackrox/rox/pkg/scanners/tenable"
-	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/registries"
+	anchoreScanner "github.com/stackrox/stackrox/pkg/scanners/anchore"
+	clairScanner "github.com/stackrox/stackrox/pkg/scanners/clair"
+	clairifyScanner "github.com/stackrox/stackrox/pkg/scanners/clairify"
+	dtrScanner "github.com/stackrox/stackrox/pkg/scanners/dtr"
+	googleScanner "github.com/stackrox/stackrox/pkg/scanners/google"
+	quayScanner "github.com/stackrox/stackrox/pkg/scanners/quay"
+	tenableScanner "github.com/stackrox/stackrox/pkg/scanners/tenable"
+	"github.com/stackrox/stackrox/pkg/scanners/types"
 )
 
 // Factory provides a centralized location for creating Scanner from v1.ImageIntegrations.

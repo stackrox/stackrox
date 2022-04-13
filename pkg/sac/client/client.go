@@ -10,8 +10,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/httputil/proxy"
 )
 
 // Client is a simple interface describing retrieving some per user data from a separate service.

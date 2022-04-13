@@ -3,11 +3,11 @@ package detection
 import (
 	"context"
 
-	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/detection"
-	"github.com/stackrox/rox/pkg/sac"
+	policyDatastore "github.com/stackrox/stackrox/central/policy/datastore"
+	"github.com/stackrox/stackrox/central/role/resources"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/detection"
+	"github.com/stackrox/stackrox/pkg/sac"
 )
 
 var (

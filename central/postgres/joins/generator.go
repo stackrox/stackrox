@@ -1,6 +1,6 @@
 package joins
 
-import v1 "github.com/stackrox/rox/generated/api/v1"
+import v1 "github.com/stackrox/stackrox/generated/api/v1"
 
 // Generator provides functionality to get SQL join clauses.
 type Generator interface {

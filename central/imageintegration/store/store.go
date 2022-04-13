@@ -1,10 +1,10 @@
 package store
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/bolthelper"
+	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/stackrox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
 )
 

@@ -1,6 +1,6 @@
 package simplecache
 
-import "github.com/stackrox/rox/pkg/sync"
+import "github.com/stackrox/stackrox/pkg/sync"
 
 // Cache offers a generic, threadsafe interface for a map based cache
 type Cache interface {

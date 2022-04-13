@@ -6,15 +6,15 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/store/rocksdb"
-	"github.com/stackrox/rox/central/rbac/k8srole/search"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	pkgRocksDB "github.com/stackrox/rox/pkg/rocksdb"
-	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/stackrox/central/rbac/k8srole/internal/index"
+	"github.com/stackrox/stackrox/central/rbac/k8srole/internal/store"
+	"github.com/stackrox/stackrox/central/rbac/k8srole/internal/store/rocksdb"
+	"github.com/stackrox/stackrox/central/rbac/k8srole/search"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	pkgRocksDB "github.com/stackrox/stackrox/pkg/rocksdb"
+	searchPkg "github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/testutils"
 )
 
 // DataStore is an intermediary to RoleStorage.

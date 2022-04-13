@@ -5,10 +5,10 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/fileutils"
-	"github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/fileutils"
+	"github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 func init() {

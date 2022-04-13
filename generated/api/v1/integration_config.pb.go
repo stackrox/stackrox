@@ -6,7 +6,7 @@ package v1
 import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	storage "github.com/stackrox/rox/generated/storage"
+	storage "github.com/stackrox/stackrox/generated/storage"
 	io "io"
 	math "math"
 	math_bits "math/bits"

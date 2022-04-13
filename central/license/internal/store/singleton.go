@@ -1,9 +1,9 @@
 package store
 
 import (
-	globaldb "github.com/stackrox/rox/central/globaldb"
-	sync "github.com/stackrox/rox/pkg/sync"
-	utils "github.com/stackrox/rox/pkg/utils"
+	globaldb "github.com/stackrox/stackrox/central/globaldb"
+	sync "github.com/stackrox/stackrox/pkg/sync"
+	utils "github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

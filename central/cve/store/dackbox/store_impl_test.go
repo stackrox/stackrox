@@ -3,12 +3,12 @@ package dackbox
 import (
 	"testing"
 
-	"github.com/stackrox/rox/central/cve/store"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/stackrox/central/cve/store"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/dackbox"
+	"github.com/stackrox/stackrox/pkg/rocksdb"
+	"github.com/stackrox/stackrox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
 

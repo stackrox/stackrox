@@ -6,8 +6,8 @@ package central
 import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
-	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
-	storage "github.com/stackrox/rox/generated/storage"
+	compliance "github.com/stackrox/stackrox/generated/internalapi/compliance"
+	storage "github.com/stackrox/stackrox/generated/storage"
 	io "io"
 	math "math"
 	math_bits "math/bits"

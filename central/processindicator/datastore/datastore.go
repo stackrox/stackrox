@@ -3,17 +3,17 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/analystnotes"
-	"github.com/stackrox/rox/central/processindicator"
-	"github.com/stackrox/rox/central/processindicator/index"
-	"github.com/stackrox/rox/central/processindicator/internal/commentsstore"
-	"github.com/stackrox/rox/central/processindicator/pruner"
-	"github.com/stackrox/rox/central/processindicator/search"
-	"github.com/stackrox/rox/central/processindicator/store"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/central/analystnotes"
+	"github.com/stackrox/stackrox/central/processindicator"
+	"github.com/stackrox/stackrox/central/processindicator/index"
+	"github.com/stackrox/stackrox/central/processindicator/internal/commentsstore"
+	"github.com/stackrox/stackrox/central/processindicator/pruner"
+	"github.com/stackrox/stackrox/central/processindicator/search"
+	"github.com/stackrox/stackrox/central/processindicator/store"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	pkgSearch "github.com/stackrox/stackrox/pkg/search"
 )
 
 // DataStore represents the interface to access data.

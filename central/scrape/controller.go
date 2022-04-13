@@ -1,11 +1,11 @@
 package scrape
 
 import (
-	"github.com/stackrox/rox/central/sensor/service/common"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/central/sensor/service/common"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 // Controller starts and stops scrapes.

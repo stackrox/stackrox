@@ -1,12 +1,12 @@
 package search
 
 import (
-	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
-	"github.com/stackrox/rox/central/compliance/standards/index"
-	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
-	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/options/deployments"
+	clusterMappings "github.com/stackrox/stackrox/central/cluster/index/mappings"
+	"github.com/stackrox/stackrox/central/compliance/standards/index"
+	namespaceMappings "github.com/stackrox/stackrox/central/namespace/index/mappings"
+	nodeMappings "github.com/stackrox/stackrox/central/node/index/mappings"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search/options/deployments"
 )
 
 // Options is exposed for e2e test

@@ -5,8 +5,8 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/stackrox/rox/pkg/reflectutils"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/reflectutils"
+	"github.com/stackrox/stackrox/pkg/set"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/util/jsonpath"
 )

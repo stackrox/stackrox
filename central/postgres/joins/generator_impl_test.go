@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/stackrox/pkg/postgres/walker"
 	"github.com/stretchr/testify/assert"
 )
 

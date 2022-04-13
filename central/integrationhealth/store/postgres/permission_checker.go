@@ -5,7 +5,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/sac"
 )
 
 type PermissionChecker interface {

@@ -3,12 +3,12 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/enrichment"
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/imageintegration/store"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/enrichment"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/central/imageintegration/store"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

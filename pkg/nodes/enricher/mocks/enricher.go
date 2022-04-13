@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	storage "github.com/stackrox/rox/generated/storage"
-	types "github.com/stackrox/rox/pkg/scanners/types"
+	storage "github.com/stackrox/stackrox/generated/storage"
+	types "github.com/stackrox/stackrox/pkg/scanners/types"
 )
 
 // MockNodeEnricher is a mock of NodeEnricher interface.

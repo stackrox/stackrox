@@ -3,11 +3,11 @@ package detection
 import (
 	"testing"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
-	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/stackrox/pkg/fixtures"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

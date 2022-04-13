@@ -1,9 +1,9 @@
 package clair
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	clairConv "github.com/stackrox/rox/pkg/clair"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/stackrox/generated/storage"
+	clairConv "github.com/stackrox/stackrox/pkg/clair"
+	"github.com/stackrox/stackrox/pkg/stringutils"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 )
 

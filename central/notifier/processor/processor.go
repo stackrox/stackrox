@@ -3,11 +3,11 @@ package processor
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/notifiers"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/integrationhealth"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/central/notifiers"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/integrationhealth"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

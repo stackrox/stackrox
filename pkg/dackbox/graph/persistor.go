@@ -1,10 +1,10 @@
 package graph
 
 import (
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
-	"github.com/stackrox/rox/pkg/dackbox/transactions"
-	"github.com/stackrox/rox/pkg/dbhelper"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/stackrox/pkg/dackbox/transactions"
+	"github.com/stackrox/stackrox/pkg/dbhelper"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
 )
 
 // NewPersistor returns a new instance of a Persistor, which can be used to apply modifications to the persisted graph.

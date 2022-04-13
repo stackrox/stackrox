@@ -1,14 +1,14 @@
 package datastore
 
 import (
-	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/globalindex"
-	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/policy/index"
-	"github.com/stackrox/rox/central/policy/search"
-	"github.com/stackrox/rox/central/policy/store"
-	"github.com/stackrox/rox/pkg/sync"
+	clusterDS "github.com/stackrox/stackrox/central/cluster/datastore"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/central/globalindex"
+	notifierDS "github.com/stackrox/stackrox/central/notifier/datastore"
+	"github.com/stackrox/stackrox/central/policy/index"
+	"github.com/stackrox/stackrox/central/policy/search"
+	"github.com/stackrox/stackrox/central/policy/store"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

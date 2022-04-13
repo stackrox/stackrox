@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/scannerdefinitions/file"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/scannerdefinitions/file"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 const (

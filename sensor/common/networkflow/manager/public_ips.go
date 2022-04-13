@@ -5,12 +5,12 @@ import (
 	"sort"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/net"
-	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/net"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/sensor/common/clusterentities"
 )
 
 const (

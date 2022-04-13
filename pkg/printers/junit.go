@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/gjson"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/gjson"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 const (

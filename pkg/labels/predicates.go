@@ -3,7 +3,7 @@ package labels
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 type setPredicate struct {

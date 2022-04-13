@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 
-	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
-	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
-	"github.com/stackrox/rox/central/role/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/grpc"
+	clusterDS "github.com/stackrox/stackrox/central/cluster/datastore"
+	namespaceDS "github.com/stackrox/stackrox/central/namespace/datastore"
+	"github.com/stackrox/stackrox/central/role/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/grpc"
 )
 
 // Service provides the interface to the gRPC service for roles.

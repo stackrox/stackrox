@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/dackbox/graph/testutils"
-	"github.com/stackrox/rox/pkg/dbhelper"
-	"github.com/stackrox/rox/pkg/uuid"
+	. "github.com/stackrox/stackrox/pkg/dackbox"
+	"github.com/stackrox/stackrox/pkg/dackbox/graph"
+	"github.com/stackrox/stackrox/pkg/dackbox/graph/testutils"
+	"github.com/stackrox/stackrox/pkg/dbhelper"
+	"github.com/stackrox/stackrox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 )
 

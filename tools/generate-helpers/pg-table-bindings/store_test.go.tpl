@@ -15,13 +15,13 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/postgres/pgtest"
     {{- if (or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker")) }}
-    "github.com/stackrox/rox/pkg/sac"{{- end }}
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
-	"github.com/stackrox/rox/pkg/uuid"
+    "github.com/stackrox/stackrox/pkg/sac"{{- end }}
+	"github.com/stackrox/stackrox/pkg/testutils"
+	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
+	"github.com/stackrox/stackrox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 

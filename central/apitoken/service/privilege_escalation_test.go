@@ -3,10 +3,10 @@ package service
 import (
 	"testing"
 
-	"github.com/stackrox/rox/central/role"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/testutils/roletest"
+	"github.com/stackrox/stackrox/central/role"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/stackrox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

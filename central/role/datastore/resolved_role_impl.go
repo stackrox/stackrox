@@ -1,6 +1,6 @@
 package datastore
 
-import "github.com/stackrox/rox/generated/storage"
+import "github.com/stackrox/stackrox/generated/storage"
 
 // ResolvedRole implementation for the new Role + Permission Set format.
 type resolvedRoleImpl struct {

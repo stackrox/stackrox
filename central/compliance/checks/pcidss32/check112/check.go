@@ -1,8 +1,8 @@
 package check112
 
 import (
-	"github.com/stackrox/rox/central/compliance/framework"
-	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	pkgFramework "github.com/stackrox/stackrox/pkg/compliance/framework"
 )
 
 const checkID = "PCI_DSS_3_2:1_1_2"

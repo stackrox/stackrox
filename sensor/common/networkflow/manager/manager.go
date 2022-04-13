@@ -1,11 +1,11 @@
 package manager
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/timestamp"
+	"github.com/stackrox/stackrox/sensor/common"
 )
 
 var (

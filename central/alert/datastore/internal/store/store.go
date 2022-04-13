@@ -3,9 +3,9 @@ package store
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/alert/convert"
+	"github.com/stackrox/stackrox/central/alert/datastore/internal/store/rocksdb"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/alert/convert"
 )
 
 // Store provides storage functionality for alerts.

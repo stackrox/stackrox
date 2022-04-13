@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/sync"
 	"github.com/vbauerster/mpb/v4/decor"
 )
 

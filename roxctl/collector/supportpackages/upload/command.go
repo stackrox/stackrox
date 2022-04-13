@@ -3,7 +3,7 @@ package upload
 import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
 )
 
 type collectorSPUploadCommand struct {

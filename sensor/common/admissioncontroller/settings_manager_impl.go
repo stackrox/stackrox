@@ -2,18 +2,18 @@ package admissioncontroller
 
 import (
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/admissioncontrol"
-	"github.com/stackrox/rox/pkg/booleanpolicy"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
-	pkgPolicies "github.com/stackrox/rox/pkg/policies"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/common/clusterid"
-	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/admissioncontrol"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/env"
+	pkgPolicies "github.com/stackrox/stackrox/pkg/policies"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/stackrox/sensor/common/clusterid"
+	"github.com/stackrox/stackrox/sensor/common/store"
 )
 
 type settingsManager struct {

@@ -3,7 +3,7 @@ package backend
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/stackrox/pkg/auth/authproviders"
 )
 
 // The API Token source is cast as an auth provider so this ensures

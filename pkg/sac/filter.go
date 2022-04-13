@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/reflectutils"
+	"github.com/stackrox/stackrox/pkg/reflectutils"
 )
 
 type objPredPair struct {

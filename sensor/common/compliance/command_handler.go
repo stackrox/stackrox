@@ -1,9 +1,9 @@
 package compliance
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/sensor/common"
 )
 
 // CommandHandler executes the input scrape commands, and reconciles scrapes with input ComplianceReturns,

@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	storage "github.com/stackrox/rox/generated/storage"
+	storage "github.com/stackrox/stackrox/generated/storage"
 	reflect "reflect"
 )
 

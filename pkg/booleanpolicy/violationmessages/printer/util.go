@@ -7,7 +7,7 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

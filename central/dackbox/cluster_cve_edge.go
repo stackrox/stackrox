@@ -1,8 +1,8 @@
 package dackbox
 
 import (
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/dackbox/keys/transformation"
 )
 
 var (

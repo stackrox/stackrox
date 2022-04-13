@@ -9,10 +9,10 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	common "github.com/stackrox/rox/central/sensor/service/common"
-	pipeline "github.com/stackrox/rox/central/sensor/service/pipeline"
-	reconciliation "github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
-	central "github.com/stackrox/rox/generated/internalapi/central"
+	common "github.com/stackrox/stackrox/central/sensor/service/common"
+	pipeline "github.com/stackrox/stackrox/central/sensor/service/pipeline"
+	reconciliation "github.com/stackrox/stackrox/central/sensor/service/pipeline/reconciliation"
+	central "github.com/stackrox/stackrox/generated/internalapi/central"
 )
 
 // MockBasePipeline is a mock of BasePipeline interface.

@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/pod/store/mocks"
-	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/stackrox/central/pod/store/mocks"
+	"github.com/stackrox/stackrox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 )
 

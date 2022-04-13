@@ -2,9 +2,9 @@ package standards
 
 import (
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/generated/storage"
-	internalTypes "github.com/stackrox/rox/pkg/docker/types"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	"github.com/stackrox/stackrox/generated/storage"
+	internalTypes "github.com/stackrox/stackrox/pkg/docker/types"
 	"k8s.io/kubelet/config/v1beta1"
 )
 

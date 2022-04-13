@@ -3,8 +3,8 @@ package manager
 import (
 	"testing"
 
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
-	"github.com/stackrox/rox/pkg/uuid"
+	licenseproto "github.com/stackrox/stackrox/generated/shared/license"
+	"github.com/stackrox/stackrox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -2,7 +2,7 @@ package common
 
 import (
 	. "github.com/dave/jennifer/jen"
-	"github.com/stackrox/rox/tools/generate-helpers/common/packagenames"
+	"github.com/stackrox/stackrox/tools/generate-helpers/common/packagenames"
 )
 
 // RenderFuncSStarStore renders func (s *store)

@@ -10,14 +10,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/scanners/types"
-	"github.com/stackrox/rox/pkg/urlfmt"
-	"github.com/stackrox/rox/pkg/utils"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/httputil/proxy"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/scanners/types"
+	"github.com/stackrox/stackrox/pkg/urlfmt"
+	"github.com/stackrox/stackrox/pkg/utils"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 )
 

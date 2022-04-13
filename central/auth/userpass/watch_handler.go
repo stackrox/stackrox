@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/auth/htpasswd"
-	"github.com/stackrox/rox/pkg/grpc/authn/basic"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/auth/htpasswd"
+	"github.com/stackrox/stackrox/pkg/grpc/authn/basic"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 type watchHandler struct {

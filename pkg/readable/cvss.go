@@ -3,7 +3,7 @@ package readable
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // NumericalPolicy formats type *storage.NumericalPolicy into e.g. MAX(field) > 3

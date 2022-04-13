@@ -2,7 +2,7 @@ package convert
 
 import (
 	mapset "github.com/deckarep/golang-set"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // SecretToSecretList converts a secret to list secret

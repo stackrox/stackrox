@@ -3,10 +3,10 @@ package analystnotes
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/stackrox/central/role/resources"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/stackrox/pkg/grpc/authz/user"
 )
 
 var (

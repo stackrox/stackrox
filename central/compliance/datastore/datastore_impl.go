@@ -5,17 +5,17 @@ import (
 	"sync/atomic"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/compliance"
-	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
-	"github.com/stackrox/rox/central/compliance/datastore/types"
-	"github.com/stackrox/rox/central/compliance/standards"
-	"github.com/stackrox/rox/central/role/resources"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/compliance"
+	"github.com/stackrox/stackrox/central/compliance/datastore/internal/store"
+	"github.com/stackrox/stackrox/central/compliance/datastore/types"
+	"github.com/stackrox/stackrox/central/compliance/standards"
+	"github.com/stackrox/stackrox/central/role/resources"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

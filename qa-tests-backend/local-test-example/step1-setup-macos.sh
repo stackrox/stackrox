@@ -63,8 +63,8 @@ function install_rocksdb {
 
   # Validate use of rocksdb -- BROKEN
   ### cd $GOPATH/src/github.com/stackrox/stackrox
-  ### go get github.com/stackrox/rox/central/vulnerabilityrequest/manager
-  ### go test github.com/stackrox/rox/central/vulnerabilityrequest/manager -count=1
+  ### go get github.com/stackrox/stackrox/central/vulnerabilityrequest/manager
+  ### go test github.com/stackrox/stackrox/central/vulnerabilityrequest/manager -count=1
 }
 
 function test_stackrox_workflow_roxhelp {

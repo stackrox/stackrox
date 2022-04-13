@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/augmentedobjs"
 )
 
 var (

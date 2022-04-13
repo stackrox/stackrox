@@ -10,9 +10,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/csv"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/csv"
+	"github.com/stackrox/stackrox/pkg/stringutils"
 )
 
 // This formatter is tightly coupled to the report query. The end goal is to use the CSVPrinter in roxctl, but

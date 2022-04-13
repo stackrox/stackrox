@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
-	"github.com/stackrox/rox/pkg/protoconv"
+	licenseproto "github.com/stackrox/stackrox/generated/shared/license"
+	"github.com/stackrox/stackrox/pkg/protoconv"
 	"github.com/stretchr/testify/suite"
 )
 

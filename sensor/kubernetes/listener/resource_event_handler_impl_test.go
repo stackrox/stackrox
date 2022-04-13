@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/mocks"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/uuid"
+	"github.com/stackrox/stackrox/sensor/kubernetes/listener/resources/mocks"
 	"github.com/stretchr/testify/suite"
 	"k8s.io/apimachinery/pkg/types"
 )

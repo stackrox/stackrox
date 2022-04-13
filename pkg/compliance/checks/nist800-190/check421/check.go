@@ -1,9 +1,9 @@
 package check421
 
 import (
-	"github.com/stackrox/rox/pkg/compliance/checks/common"
-	"github.com/stackrox/rox/pkg/compliance/checks/standards"
-	"github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/stackrox/pkg/compliance/checks/common"
+	"github.com/stackrox/stackrox/pkg/compliance/checks/standards"
+	"github.com/stackrox/stackrox/pkg/compliance/framework"
 )
 
 const (

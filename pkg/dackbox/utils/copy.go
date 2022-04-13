@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
 )
 
 // CopyKeys returns a copy of a list of keys.

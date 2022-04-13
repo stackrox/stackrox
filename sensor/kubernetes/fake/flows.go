@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/net"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/sensor/common/networkflow/manager"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/net"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/timestamp"
+	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/stackrox/sensor/common/networkflow/manager"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

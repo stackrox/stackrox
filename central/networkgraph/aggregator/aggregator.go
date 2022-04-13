@@ -3,8 +3,8 @@ package aggregator
 import (
 	"errors"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/networkgraph/tree"
 )
 
 // NetworkConnsAggregator provides functionality to aggregate supplied network connections into a new slice.

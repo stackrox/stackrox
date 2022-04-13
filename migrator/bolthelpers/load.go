@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/migrator/option"
+	"github.com/stackrox/stackrox/migrator/option"
 	bolt "go.etcd.io/bbolt"
 )
 

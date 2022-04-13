@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/compliance/checks/testutils"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/defaults/policies"
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/central/compliance/checks/testutils"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/defaults/policies"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

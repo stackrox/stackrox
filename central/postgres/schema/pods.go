@@ -3,7 +3,7 @@
 package schema
 
 import (
-	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/stackrox/pkg/postgres"
 )
 
 var (

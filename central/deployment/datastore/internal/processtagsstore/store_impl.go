@@ -5,10 +5,10 @@ import (
 	"sort"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/analystnotes"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/central/analystnotes"
+	"github.com/stackrox/stackrox/pkg/bolthelper"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
 	"go.etcd.io/bbolt"
 )
 

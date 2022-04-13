@@ -9,12 +9,12 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	common "github.com/stackrox/rox/central/sensor/service/common"
-	connection "github.com/stackrox/rox/central/sensor/service/connection"
-	pipeline "github.com/stackrox/rox/central/sensor/service/pipeline"
-	central "github.com/stackrox/rox/generated/internalapi/central"
-	storage "github.com/stackrox/rox/generated/storage"
-	concurrency "github.com/stackrox/rox/pkg/concurrency"
+	common "github.com/stackrox/stackrox/central/sensor/service/common"
+	connection "github.com/stackrox/stackrox/central/sensor/service/connection"
+	pipeline "github.com/stackrox/stackrox/central/sensor/service/pipeline"
+	central "github.com/stackrox/stackrox/generated/internalapi/central"
+	storage "github.com/stackrox/stackrox/generated/storage"
+	concurrency "github.com/stackrox/stackrox/pkg/concurrency"
 )
 
 // MockManager is a mock of Manager interface.

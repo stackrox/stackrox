@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/stackrox/pkg/retry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

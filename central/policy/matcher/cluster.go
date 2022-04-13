@@ -2,9 +2,9 @@ package matcher
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/scopecomp"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/scopecomp"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 type clusterMatcher struct {

@@ -1,7 +1,7 @@
 package kubernetes
 
 import (
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/set"
 	autoscalingV1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

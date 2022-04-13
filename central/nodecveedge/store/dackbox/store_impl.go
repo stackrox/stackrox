@@ -3,13 +3,13 @@ package dackbox
 import (
 	"time"
 
-	"github.com/stackrox/rox/central/metrics"
-	edgeDackBox "github.com/stackrox/rox/central/nodecveedge/dackbox"
-	"github.com/stackrox/rox/central/nodecveedge/store"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/crud"
-	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/stackrox/central/metrics"
+	edgeDackBox "github.com/stackrox/stackrox/central/nodecveedge/dackbox"
+	"github.com/stackrox/stackrox/central/nodecveedge/store"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/dackbox"
+	"github.com/stackrox/stackrox/pkg/dackbox/crud"
+	ops "github.com/stackrox/stackrox/pkg/metrics"
 )
 
 const (

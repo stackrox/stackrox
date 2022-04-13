@@ -5,11 +5,11 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	pTypes "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/log"
-	"github.com/stackrox/rox/migrator/migrations"
-	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
-	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/migrator/log"
+	"github.com/stackrox/stackrox/migrator/migrations"
+	"github.com/stackrox/stackrox/migrator/migrations/rocksdbmigration"
+	"github.com/stackrox/stackrox/migrator/types"
 	"github.com/tecbot/gorocksdb"
 	"go.etcd.io/bbolt"
 )

@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/istioutils"
+	"github.com/stackrox/stackrox/pkg/istioutils"
 )
 
 type istioSupportWrapper struct {

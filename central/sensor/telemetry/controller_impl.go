@@ -6,14 +6,14 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/sensor/service/common"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/stackrox/central/sensor/service/common"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/centralsensor"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/uuid"
 )
 
 const (

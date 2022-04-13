@@ -5,16 +5,16 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/helm/charts"
-	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/urlfmt"
-	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/buildinfo"
+	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/helm/charts"
+	"github.com/stackrox/stackrox/pkg/images/defaults"
+	"github.com/stackrox/stackrox/pkg/images/utils"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/urlfmt"
+	"github.com/stackrox/stackrox/pkg/version"
 )
 
 var (

@@ -10,14 +10,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/uuid"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/clientconn"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/uuid"
 )
 
 var (

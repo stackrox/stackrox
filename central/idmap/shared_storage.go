@@ -4,8 +4,8 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 // sharedIDMapStorage is a concurrency-safe, copy-on-write storage for an IDMap that is optimized in such a way that

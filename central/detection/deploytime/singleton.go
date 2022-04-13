@@ -1,9 +1,9 @@
 package deploytime
 
 import (
-	"github.com/stackrox/rox/central/detection"
-	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/detection"
+	policyDataStore "github.com/stackrox/stackrox/central/policy/datastore"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

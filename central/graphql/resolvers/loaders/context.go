@@ -5,8 +5,8 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var log = logging.LoggerForModule()

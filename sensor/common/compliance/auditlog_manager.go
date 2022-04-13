@@ -1,12 +1,12 @@
 package compliance
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/sensor/common"
+	"github.com/stackrox/stackrox/sensor/common/clusterid"
 )
 
 //go:generate mockgen-wrapper AuditLogCollectionManager

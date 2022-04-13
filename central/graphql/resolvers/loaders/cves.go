@@ -6,13 +6,13 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cve/datastore"
-	distroctx "github.com/stackrox/rox/central/graphql/resolvers/distroctx"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cvss"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/cve/datastore"
+	distroctx "github.com/stackrox/stackrox/central/graphql/resolvers/distroctx"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/cvss"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var cveLoaderType = reflect.TypeOf(storage.CVE{})

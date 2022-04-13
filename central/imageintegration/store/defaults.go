@@ -3,10 +3,10 @@ package store
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/scanners"
-	"github.com/stackrox/rox/pkg/scanners/clairify"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/stackrox/pkg/scanners"
+	"github.com/stackrox/stackrox/pkg/scanners/clairify"
 )
 
 var (

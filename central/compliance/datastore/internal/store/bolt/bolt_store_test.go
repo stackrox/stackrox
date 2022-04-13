@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/compliance"
-	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
-	dsTypes "github.com/stackrox/rox/central/compliance/datastore/types"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/stackrox/central/compliance"
+	"github.com/stackrox/stackrox/central/compliance/datastore/internal/store"
+	dsTypes "github.com/stackrox/stackrox/central/compliance/datastore/types"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/bolthelper"
+	"github.com/stackrox/stackrox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	"go.etcd.io/bbolt"
 )

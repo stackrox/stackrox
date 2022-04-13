@@ -3,9 +3,9 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/nodecveedge/store"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/stackrox/central/nodecveedge/store"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/dackbox/graph"
 )
 
 // DataStore is an intermediary to Node/CVE edge storage.

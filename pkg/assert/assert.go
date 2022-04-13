@@ -3,7 +3,7 @@ package assert
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/pkg/devbuild"
+	"github.com/stackrox/stackrox/pkg/devbuild"
 )
 
 // Panic will panic on devbuilds

@@ -8,13 +8,13 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/fixtures"
+	"github.com/stackrox/stackrox/pkg/postgres/pgtest"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -1,6 +1,6 @@
 package utils
 
-import "github.com/stackrox/rox/generated/storage"
+import "github.com/stackrox/stackrox/generated/storage"
 
 // AddCVETypeIfAbsent adds the given CVE type to the given slice of CVE types if the slice does
 // not already have the CVE type and returns a slice with the given type included.

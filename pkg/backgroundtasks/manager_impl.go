@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/uuid"
 )
 
 var cancelExecutionMarker = func() {}

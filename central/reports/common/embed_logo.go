@@ -4,7 +4,7 @@ import (
 	"embed"
 	"encoding/base64"
 
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 const (

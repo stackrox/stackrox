@@ -3,7 +3,7 @@ package common
 import (
 	"strings"
 
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 var (

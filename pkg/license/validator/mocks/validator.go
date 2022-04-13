@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
-	validator "github.com/stackrox/rox/pkg/license/validator"
+	licenseproto "github.com/stackrox/stackrox/generated/shared/license"
+	validator "github.com/stackrox/stackrox/pkg/license/validator"
 )
 
 // MockValidator is a mock of Validator interface.

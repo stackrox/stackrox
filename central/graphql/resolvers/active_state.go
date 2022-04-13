@@ -3,7 +3,7 @@ package resolvers
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 // ActiveStateEnum represents the active state of a vuln or component in a deployment.

@@ -2,10 +2,10 @@ package preflight
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/sensor/upgrader/common"
-	"github.com/stackrox/rox/sensor/upgrader/plan"
-	"github.com/stackrox/rox/sensor/upgrader/resources"
-	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
+	"github.com/stackrox/stackrox/sensor/upgrader/common"
+	"github.com/stackrox/stackrox/sensor/upgrader/plan"
+	"github.com/stackrox/stackrox/sensor/upgrader/resources"
+	"github.com/stackrox/stackrox/sensor/upgrader/upgradectx"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

@@ -5,13 +5,13 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/metrics"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/k8srbac"
-	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/central/metrics"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/k8srbac"
+	pkgMetrics "github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 func init() {

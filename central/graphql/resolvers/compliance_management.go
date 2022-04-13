@@ -5,8 +5,8 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/utils"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 func init() {

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/scans"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/scans"
 	"github.com/stretchr/testify/assert"
 )
 

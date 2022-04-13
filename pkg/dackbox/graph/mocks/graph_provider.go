@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	graph "github.com/stackrox/rox/pkg/dackbox/graph"
+	graph "github.com/stackrox/stackrox/pkg/dackbox/graph"
 )
 
 // MockProvider is a mock of Provider interface.

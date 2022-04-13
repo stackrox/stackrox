@@ -1,9 +1,9 @@
 package datastore
 
 import (
-	globaldb "github.com/stackrox/rox/central/globaldb/dackbox"
-	"github.com/stackrox/rox/central/nodecveedge/store/dackbox"
-	"github.com/stackrox/rox/pkg/sync"
+	globaldb "github.com/stackrox/stackrox/central/globaldb/dackbox"
+	"github.com/stackrox/stackrox/central/nodecveedge/store/dackbox"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

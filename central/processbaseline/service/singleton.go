@@ -1,10 +1,10 @@
 package service
 
 import (
-	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
-	"github.com/stackrox/rox/central/reprocessor"
-	"github.com/stackrox/rox/central/sensor/service/connection"
-	"github.com/stackrox/rox/pkg/sync"
+	processBaselineDataStore "github.com/stackrox/stackrox/central/processbaseline/datastore"
+	"github.com/stackrox/stackrox/central/reprocessor"
+	"github.com/stackrox/stackrox/central/sensor/service/connection"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

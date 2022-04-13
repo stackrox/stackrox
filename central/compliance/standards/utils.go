@@ -3,7 +3,7 @@ package standards
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/errox"
 )
 
 // GetSupportedStandards returns the ids of all supported compliance standards

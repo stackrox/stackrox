@@ -3,8 +3,8 @@ package maincommand
 import (
 	"testing"
 
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/printer"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 )
 

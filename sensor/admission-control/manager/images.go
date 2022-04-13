@@ -5,12 +5,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/protoconv/resources"
-	"github.com/stackrox/rox/pkg/set"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/images/types"
+	"github.com/stackrox/stackrox/pkg/protoconv/resources"
+	"github.com/stackrox/stackrox/pkg/set"
 	"google.golang.org/grpc/connectivity"
 	admission "k8s.io/api/admission/v1"
 )

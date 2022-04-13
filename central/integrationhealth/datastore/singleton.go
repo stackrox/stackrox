@@ -1,9 +1,9 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/integrationhealth/store/rocksdb"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/central/integrationhealth/store/rocksdb"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/cloudflare/cfssl/initca"
 	pkgErrors "github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/mtls"
 )
 
 var (

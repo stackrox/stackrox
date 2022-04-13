@@ -6,13 +6,13 @@ import (
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cve"
-	pkgCVSSV2 "github.com/stackrox/rox/pkg/cvss/cvssv2"
-	pkgCVSSV3 "github.com/stackrox/rox/pkg/cvss/cvssv3"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/scans"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/cve"
+	pkgCVSSV2 "github.com/stackrox/stackrox/pkg/cvss/cvssv2"
+	pkgCVSSV3 "github.com/stackrox/stackrox/pkg/cvss/cvssv3"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/protoconv"
+	"github.com/stackrox/stackrox/pkg/scans"
 )
 
 const (

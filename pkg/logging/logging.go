@@ -32,7 +32,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/stackrox/pkg/buildinfo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -43,7 +43,7 @@ const (
 	defaultDestination = "stderr"
 
 	// Our project prefix. For all subpackages of this, we strip this prefix.
-	projectPrefix = "github.com/stackrox/rox"
+	projectPrefix = "github.com/stackrox/stackrox"
 
 	// LoggingPath is the common log file so we can export it.
 	LoggingPath = "/var/log/stackrox/log.txt"

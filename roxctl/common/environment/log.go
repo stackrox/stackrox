@@ -3,7 +3,7 @@ package environment
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/roxctl/common/printer"
+	"github.com/stackrox/stackrox/roxctl/common/printer"
 )
 
 // Logger is a struct responsible for printing messages. It should be preferred over fmt functions.

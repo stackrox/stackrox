@@ -13,7 +13,7 @@ import (
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/stringutils"
 )
 
 func configureIDPFromMetadataURL(ctx context.Context, sp *saml2.SAMLServiceProvider, metadataURL string) error {

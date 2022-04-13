@@ -6,9 +6,9 @@ import (
 
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/services"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/services"
 )
 
 // AddCertToFileMap adds `cert.pem` and `key.pem` entries for the given certificate (prefixed with

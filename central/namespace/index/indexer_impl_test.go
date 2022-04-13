@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/central/globalindex"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 

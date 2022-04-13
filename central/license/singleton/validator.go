@@ -1,10 +1,10 @@
 package singleton
 
 import (
-	"github.com/stackrox/rox/pkg/license/publickeys"
-	"github.com/stackrox/rox/pkg/license/validator"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/license/publickeys"
+	"github.com/stackrox/stackrox/pkg/license/validator"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

@@ -9,13 +9,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/certgen"
-	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stackrox/rox/pkg/netutil/pipeconn"
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/stackrox/pkg/certgen"
+	"github.com/stackrox/stackrox/pkg/clientconn"
+	"github.com/stackrox/stackrox/pkg/mtls"
+	"github.com/stackrox/stackrox/pkg/namespaces"
+	"github.com/stackrox/stackrox/pkg/netutil/pipeconn"
+	"github.com/stackrox/stackrox/pkg/testutils"
+	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 

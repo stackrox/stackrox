@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/generated/storage"
-	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/stackrox/generated/storage"
+	pkgMetrics "github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/stackrox/pkg/scanners/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/semaphore"

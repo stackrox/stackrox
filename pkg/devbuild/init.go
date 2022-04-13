@@ -3,7 +3,7 @@ package devbuild
 import (
 	"strings"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/stackrox/pkg/buildinfo"
 )
 
 func init() {

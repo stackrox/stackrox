@@ -2,7 +2,7 @@ package fixtures
 
 import (
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // GetTestSingleKeyStruct returns filled TestSingleKeyStruct

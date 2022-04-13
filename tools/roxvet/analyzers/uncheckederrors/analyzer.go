@@ -5,7 +5,7 @@ import (
 	"go/ast"
 	"go/types"
 
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/set"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/astutil"
@@ -44,7 +44,7 @@ var (
 			"(*Builder).WriteString",
 			"(*Builder).WriteRune",
 		),
-		"github.com/stackrox/rox/pkg/utils": set.NewFrozenStringSet(
+		"github.com/stackrox/stackrox/pkg/utils": set.NewFrozenStringSet(
 			"Should",
 		),
 	}

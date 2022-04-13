@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/utils"
+	pkgSearch "github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 func newStringQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {

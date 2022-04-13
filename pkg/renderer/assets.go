@@ -4,8 +4,8 @@ import (
 	"path"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/zip"
+	"github.com/stackrox/stackrox/image"
+	"github.com/stackrox/stackrox/pkg/zip"
 )
 
 // LoadAssets loads the given asset files (i.e., non-templates) and returns them as ZipFiles.

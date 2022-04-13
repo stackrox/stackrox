@@ -3,15 +3,15 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/deployment/datastore"
-	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
-	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
-	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
-	riskManager "github.com/stackrox/rox/central/risk/manager"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/central/deployment/datastore"
+	processBaselineDataStore "github.com/stackrox/stackrox/central/processbaseline/datastore"
+	processBaselineResultsStore "github.com/stackrox/stackrox/central/processbaselineresults/datastore"
+	processIndicatorDataStore "github.com/stackrox/stackrox/central/processindicator/datastore"
+	riskDataStore "github.com/stackrox/stackrox/central/risk/datastore"
+	riskManager "github.com/stackrox/stackrox/central/risk/manager"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

@@ -3,7 +3,7 @@ package proxy
 import (
 	"testing"
 
-	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/stackrox/operator/apis/platform/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"

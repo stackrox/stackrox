@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/role/resources"
-	centralSAC "github.com/stackrox/rox/central/sac"
-	"github.com/stackrox/rox/central/sac/datastore/internal/store"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/client"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/stackrox/central/role/resources"
+	centralSAC "github.com/stackrox/stackrox/central/sac"
+	"github.com/stackrox/stackrox/central/sac/datastore/internal/store"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/sac/client"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/uuid"
 )
 
 var (

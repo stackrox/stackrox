@@ -8,8 +8,8 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/postgres"
 )
 
 var (

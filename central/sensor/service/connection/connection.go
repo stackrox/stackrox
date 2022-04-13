@@ -1,14 +1,14 @@
 package connection
 
 import (
-	"github.com/stackrox/rox/central/scrape"
-	"github.com/stackrox/rox/central/sensor/networkentities"
-	"github.com/stackrox/rox/central/sensor/networkpolicies"
-	"github.com/stackrox/rox/central/sensor/service/common"
-	"github.com/stackrox/rox/central/sensor/telemetry"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/stackrox/central/scrape"
+	"github.com/stackrox/stackrox/central/sensor/networkentities"
+	"github.com/stackrox/stackrox/central/sensor/networkpolicies"
+	"github.com/stackrox/stackrox/central/sensor/service/common"
+	"github.com/stackrox/stackrox/central/sensor/telemetry"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/centralsensor"
+	"github.com/stackrox/stackrox/pkg/concurrency"
 )
 
 // SensorConnection provides a handle to an established connection from a sensor.

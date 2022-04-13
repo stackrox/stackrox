@@ -1,8 +1,8 @@
 package testutils
 
 import (
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/stackrox/pkg/dackbox"
+	"github.com/stackrox/stackrox/pkg/dackbox/graph"
 )
 
 // AddPathsToGraph adds the given paths to the graph.

@@ -2,8 +2,8 @@ package serialize
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/binenc"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/binenc"
 )
 
 // DeserializePropsKey deserializes a key serialized via `PropsKey`.

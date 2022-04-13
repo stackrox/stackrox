@@ -6,7 +6,7 @@ import (
 
 const (
 	// Rox is the root package path for the project
-	Rox    = "github.com/stackrox/rox"
+	Rox    = "github.com/stackrox/stackrox"
 	roxPkg = Rox + "/pkg"
 )
 

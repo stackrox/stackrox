@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/pkg/timeutil"
+	"github.com/stackrox/stackrox/pkg/timeutil"
 )
 
 const (

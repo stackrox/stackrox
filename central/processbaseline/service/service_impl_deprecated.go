@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/proto"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // TODO(ROX-6194): The code below implements a deprecated `ProcessWhitelistServiceServer`

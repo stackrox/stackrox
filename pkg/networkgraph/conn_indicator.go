@@ -3,7 +3,7 @@ package networkgraph
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // NetworkConnIndicator provides a medium to uniquely identify network connections.

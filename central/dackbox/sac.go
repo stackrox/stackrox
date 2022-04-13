@@ -4,15 +4,15 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
-	"github.com/stackrox/rox/central/idmap"
-	nsDackBox "github.com/stackrox/rox/central/namespace/dackbox"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/pointers"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search/filtered"
+	clusterDackBox "github.com/stackrox/stackrox/central/cluster/dackbox"
+	"github.com/stackrox/stackrox/central/idmap"
+	nsDackBox "github.com/stackrox/stackrox/central/namespace/dackbox"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/dackbox"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/pointers"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/search/filtered"
 )
 
 var log = logging.LoggerForModule()

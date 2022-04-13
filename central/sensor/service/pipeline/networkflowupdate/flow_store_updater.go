@@ -4,10 +4,10 @@ import (
 	"context"
 
 	protobuf "github.com/gogo/protobuf/types"
-	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
-	"github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/networkgraph"
+	networkBaselineManager "github.com/stackrox/stackrox/central/networkbaseline/manager"
+	"github.com/stackrox/stackrox/central/networkgraph/flow/datastore"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/networkgraph"
 )
 
 type flowPersister interface {

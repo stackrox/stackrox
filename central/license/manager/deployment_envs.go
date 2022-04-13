@@ -2,8 +2,8 @@ package manager
 
 import (
 	"github.com/pkg/errors"
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
-	"github.com/stackrox/rox/pkg/set"
+	licenseproto "github.com/stackrox/stackrox/generated/shared/license"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 type deploymentEnvListener struct {

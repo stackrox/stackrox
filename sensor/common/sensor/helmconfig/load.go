@@ -8,7 +8,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
 )
 
 const (

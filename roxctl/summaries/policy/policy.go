@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // TotalPolicyAmountKey relates to the key within the Policy summary map which yields the total amount of violated

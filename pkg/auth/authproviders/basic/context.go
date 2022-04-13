@@ -3,7 +3,7 @@ package basic
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/grpc/authn/basic"
+	"github.com/stackrox/stackrox/pkg/grpc/authn/basic"
 )
 
 type basicAuthMgrContextKey struct{}

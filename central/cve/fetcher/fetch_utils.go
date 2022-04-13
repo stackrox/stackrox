@@ -11,13 +11,13 @@ import (
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/pkg/errors"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
-	"github.com/stackrox/rox/central/cve/converter"
-	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
-	"github.com/stackrox/rox/pkg/fileutils"
-	"github.com/stackrox/rox/pkg/license"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/stackrox/central/cve/converter"
+	licenseSingletons "github.com/stackrox/stackrox/central/license/singleton"
+	"github.com/stackrox/stackrox/pkg/fileutils"
+	"github.com/stackrox/stackrox/pkg/license"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/migrations"
+	"github.com/stackrox/stackrox/pkg/urlfmt"
 )
 
 const (

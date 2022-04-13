@@ -14,9 +14,9 @@ import (
 	"github.com/sigstore/cosign/pkg/oci"
 	"github.com/sigstore/cosign/pkg/oci/static"
 	"github.com/sigstore/sigstore/pkg/signature"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
-	imgUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errox"
+	imgUtils "github.com/stackrox/stackrox/pkg/images/utils"
 )
 
 const (

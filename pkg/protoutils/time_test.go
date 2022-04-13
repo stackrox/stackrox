@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/stackrox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 )
 

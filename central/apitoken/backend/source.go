@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/stackrox/pkg/auth/tokens"
 )
 
 func newSource() *sourceImpl {

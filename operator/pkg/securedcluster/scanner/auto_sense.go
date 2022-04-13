@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/stackrox/operator/apis/platform/v1alpha1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

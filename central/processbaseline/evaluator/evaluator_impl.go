@@ -4,16 +4,16 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/processbaseline"
-	baselinesStore "github.com/stackrox/rox/central/processbaseline/datastore"
-	baselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
-	indicatorsStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/storage"
-	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/central/processbaseline"
+	baselinesStore "github.com/stackrox/stackrox/central/processbaseline/datastore"
+	baselineResultsStore "github.com/stackrox/stackrox/central/processbaselineresults/datastore"
+	indicatorsStore "github.com/stackrox/stackrox/central/processindicator/datastore"
+	"github.com/stackrox/stackrox/central/role/resources"
+	"github.com/stackrox/stackrox/generated/storage"
+	processBaselinePkg "github.com/stackrox/stackrox/pkg/processbaseline"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 var (

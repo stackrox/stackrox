@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
-	"github.com/stackrox/rox/pkg/tlsutils"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/util"
+	pkgCommon "github.com/stackrox/stackrox/pkg/roxctl/common"
+	"github.com/stackrox/stackrox/pkg/tlsutils"
+	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
+	"github.com/stackrox/stackrox/roxctl/common/util"
 )
 
 type centralCertCommand struct {

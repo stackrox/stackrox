@@ -3,7 +3,7 @@ package publickeys
 import (
 	"bytes"
 
-	"github.com/stackrox/rox/pkg/license/validator"
+	"github.com/stackrox/stackrox/pkg/license/validator"
 )
 
 // KeyAndAlgo represents a public key and the signing algorithm.

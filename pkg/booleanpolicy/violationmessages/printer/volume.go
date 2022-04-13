@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/stackrox/pkg/search"
 )
 
 const (

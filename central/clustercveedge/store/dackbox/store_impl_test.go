@@ -3,16 +3,16 @@ package dackbox
 import (
 	"testing"
 
-	"github.com/stackrox/rox/central/clustercveedge/store"
-	"github.com/stackrox/rox/central/cve/converter"
-	cveStore "github.com/stackrox/rox/central/cve/store"
-	cveStoreDackBox "github.com/stackrox/rox/central/cve/store/dackbox"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/stackrox/central/clustercveedge/store"
+	"github.com/stackrox/stackrox/central/cve/converter"
+	cveStore "github.com/stackrox/stackrox/central/cve/store"
+	cveStoreDackBox "github.com/stackrox/stackrox/central/cve/store/dackbox"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/dackbox"
+	"github.com/stackrox/stackrox/pkg/dackbox/edges"
+	"github.com/stackrox/stackrox/pkg/rocksdb"
+	"github.com/stackrox/stackrox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
 

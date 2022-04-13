@@ -3,10 +3,10 @@ package kubernetes
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/compliance/checks/common"
-	"github.com/stackrox/rox/pkg/compliance/checks/standards"
-	"github.com/stackrox/rox/pkg/compliance/msgfmt"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/compliance/checks/common"
+	"github.com/stackrox/stackrox/pkg/compliance/checks/standards"
+	"github.com/stackrox/stackrox/pkg/compliance/msgfmt"
 )
 
 func genericKubernetesCommandlineCheck(processName string, key, target, defaultVal string, evalFunc common.CommandEvaluationFunc, failOverride ...common.FailOverride) *standards.CheckAndMetadata {

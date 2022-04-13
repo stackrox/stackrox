@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/internalapi/sensor"
-	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/generated/internalapi/sensor"
+	pkgGRPC "github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

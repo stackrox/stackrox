@@ -3,9 +3,9 @@ package testutils
 import (
 	"testing"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/sac"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/sac"
+	searchPkg "github.com/stackrox/stackrox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 

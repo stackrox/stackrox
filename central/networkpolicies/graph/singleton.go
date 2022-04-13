@@ -1,8 +1,8 @@
 package graph
 
 import (
-	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	"github.com/stackrox/rox/pkg/sync"
+	namespaceDataStore "github.com/stackrox/stackrox/central/namespace/datastore"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

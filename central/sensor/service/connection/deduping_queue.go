@@ -3,11 +3,11 @@ package connection
 import (
 	"container/list"
 
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/concurrency"
-	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/metrics"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	ops "github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 type dedupingQueue struct {

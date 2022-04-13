@@ -3,9 +3,9 @@ package main
 import (
 	"path/filepath"
 
-	"github.com/stackrox/rox/central/cve/datastore"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/option"
+	"github.com/stackrox/stackrox/central/cve/datastore"
+	"github.com/stackrox/stackrox/central/globalindex"
+	"github.com/stackrox/stackrox/central/option"
 )
 
 func main() {

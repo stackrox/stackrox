@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/protoconv"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/stringutils"
 )
 
 const statFile = "/sys/fs/cgroup/cpu/cpu.stat"

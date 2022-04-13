@@ -3,12 +3,12 @@ package filter
 import (
 	"strings"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/containerid"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/containerid"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 // This filter is a rudimentary filter that prevents a container from spamming Central

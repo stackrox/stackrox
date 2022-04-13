@@ -4,7 +4,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/utils"
 	"gopkg.in/square/go-jose.v2"
 )
 

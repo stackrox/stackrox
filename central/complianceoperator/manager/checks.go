@@ -3,9 +3,9 @@ package manager
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/complianceoperator/api/v1alpha1"
 )
 
 func formatEvidence(status string, result *storage.ComplianceOperatorCheckResult) string {

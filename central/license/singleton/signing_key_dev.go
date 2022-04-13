@@ -6,9 +6,9 @@ package singleton
 import (
 	"time"
 
-	"github.com/stackrox/rox/pkg/license/publickeys"
-	"github.com/stackrox/rox/pkg/license/validator"
-	"github.com/stackrox/rox/pkg/timeutil"
+	"github.com/stackrox/stackrox/pkg/license/publickeys"
+	"github.com/stackrox/stackrox/pkg/license/validator"
+	"github.com/stackrox/stackrox/pkg/timeutil"
 )
 
 func getDevSigningKeyRestrictions(earliestNotValidBefore, latestNotValidAfter time.Time) validator.SigningKeyRestrictions {

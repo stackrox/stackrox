@@ -3,17 +3,17 @@ package datastore
 import (
 	"context"
 
-	sacFilters "github.com/stackrox/rox/central/imagecveedge/sac"
-	"github.com/stackrox/rox/central/imagecveedge/search"
-	"github.com/stackrox/rox/central/imagecveedge/store"
-	"github.com/stackrox/rox/central/role/resources"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
-	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/filtered"
+	sacFilters "github.com/stackrox/stackrox/central/imagecveedge/sac"
+	"github.com/stackrox/stackrox/central/imagecveedge/search"
+	"github.com/stackrox/stackrox/central/imagecveedge/store"
+	"github.com/stackrox/stackrox/central/role/resources"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/dackbox/graph"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/sac"
+	pkgSearch "github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search/filtered"
 )
 
 var (

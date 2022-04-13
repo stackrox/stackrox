@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/apitoken/backend"
-	roleDS "github.com/stackrox/rox/central/role/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/stackrox/central/apitoken/backend"
+	roleDS "github.com/stackrox/stackrox/central/role/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/grpc"
 )
 
 // Service provides the interface to the svc that handles API keys.

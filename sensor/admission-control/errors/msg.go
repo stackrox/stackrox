@@ -3,7 +3,7 @@ package errors
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // ImageScanUnavailableMsg return message indicating inability to handle policies requiring image scans.

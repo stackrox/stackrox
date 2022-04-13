@@ -2,9 +2,9 @@ package helm
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/helm/derivelocalvalues"
-	"github.com/stackrox/rox/roxctl/helm/output"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/helm/derivelocalvalues"
+	"github.com/stackrox/stackrox/roxctl/helm/output"
 )
 
 // Command defines the helm command tree

@@ -6,12 +6,12 @@ import (
 
 	bleveSearchLib "github.com/blevesearch/bleve/search"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/utils"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search/blevesearch"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 // SearchHelper facilitates applying scoped access control to search operations.

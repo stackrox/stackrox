@@ -1,9 +1,9 @@
 package pgsearch
 
 import (
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/postgres/walker"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/postgres/walker"
+	searchPkg "github.com/stackrox/stackrox/pkg/search"
 )
 
 var (

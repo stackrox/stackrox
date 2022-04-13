@@ -36,7 +36,7 @@ const DeploymentEventTimeline = ({
         variables: {
             deploymentId: id,
             podsQuery: queryService.objectToWhereClause({ 'Deployment ID': id }),
-            // TODO: Standardize on 1-indexing for Pagination so we can put the value adjustment into the function itself. https://github.com/stackrox/rox/pull/5075#discussion_r395284332
+            // TODO: Standardize on 1-indexing for Pagination so we can put the value adjustment into the function itself. https://github.com/stackrox/stackrox/pull/5075#discussion_r395284332
             pagination: queryService.getPagination(defaultPodsSort, currentPage - 1, pageSize),
         },
     });

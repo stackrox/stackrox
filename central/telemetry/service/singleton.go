@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/telemetry/manager"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/telemetry/manager"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

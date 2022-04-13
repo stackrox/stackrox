@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	mocks2 "github.com/stackrox/rox/central/policy/datastore/mocks"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/detection"
-	"github.com/stackrox/rox/pkg/detection/mocks"
+	mocks2 "github.com/stackrox/stackrox/central/policy/datastore/mocks"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/detection"
+	"github.com/stackrox/stackrox/pkg/detection/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

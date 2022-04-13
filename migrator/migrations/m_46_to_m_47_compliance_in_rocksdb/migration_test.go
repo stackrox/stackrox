@@ -5,11 +5,11 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/storage"
-	dbTypes "github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/rocksdb"
-	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/stackrox/generated/storage"
+	dbTypes "github.com/stackrox/stackrox/migrator/types"
+	"github.com/stackrox/stackrox/pkg/rocksdb"
+	generic "github.com/stackrox/stackrox/pkg/rocksdb/crud"
+	"github.com/stackrox/stackrox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
 

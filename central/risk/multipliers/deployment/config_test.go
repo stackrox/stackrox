@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/risk/multipliers"
+	"github.com/stackrox/stackrox/central/risk/multipliers"
 	"github.com/stretchr/testify/assert"
 )
 

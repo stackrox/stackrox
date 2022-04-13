@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/stringutils"
+	"github.com/stackrox/stackrox/pkg/uuid"
 )
 
 var (

@@ -1,8 +1,8 @@
 package resources
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 // A namespace store stores a mapping of namespace names to their ids.

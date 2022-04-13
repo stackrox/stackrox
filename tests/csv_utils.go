@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/pkg/testutils"
+	"github.com/stackrox/stackrox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

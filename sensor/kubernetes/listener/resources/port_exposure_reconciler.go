@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
 )
 
 // portExposureReconciler reconciles the port exposures in the deployment store on receiving

@@ -6,7 +6,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
 )
 
 // ExportText prometheus metrics to io.Writer in text format

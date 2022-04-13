@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/metrics"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
-	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/postgres/walker"
-	search "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
-	mappings "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/test/options"
+	"github.com/stackrox/stackrox/central/metrics"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	storage "github.com/stackrox/stackrox/generated/storage"
+	ops "github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/stackrox/pkg/postgres/walker"
+	search "github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search/blevesearch"
+	"github.com/stackrox/stackrox/pkg/search/postgres"
+	"github.com/stackrox/stackrox/pkg/search/postgres/mapping"
+	mappings "github.com/stackrox/stackrox/tools/generate-helpers/pg-table-bindings/test/options"
 )
 
 func init() {

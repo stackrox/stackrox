@@ -1,10 +1,10 @@
 package singleton
 
 import (
-	"github.com/stackrox/rox/central/deploymentenvs"
-	"github.com/stackrox/rox/central/license/datastore"
-	"github.com/stackrox/rox/central/license/manager"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/deploymentenvs"
+	"github.com/stackrox/stackrox/central/license/datastore"
+	"github.com/stackrox/stackrox/central/license/manager"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

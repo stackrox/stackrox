@@ -1,7 +1,7 @@
 package printer
 
 import (
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search"
 )
 
 const (

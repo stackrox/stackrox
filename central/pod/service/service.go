@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/pod/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/central/pod/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/grpc"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 var (

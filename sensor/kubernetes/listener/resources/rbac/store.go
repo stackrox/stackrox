@@ -1,7 +1,7 @@
 package rbac
 
 import (
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 	v1 "k8s.io/api/rbac/v1"
 )
 

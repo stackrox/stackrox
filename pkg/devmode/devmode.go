@@ -4,10 +4,10 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/debughandler"
-	"github.com/stackrox/rox/pkg/devbuild"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/stackrox/pkg/buildinfo"
+	"github.com/stackrox/stackrox/pkg/debughandler"
+	"github.com/stackrox/stackrox/pkg/devbuild"
+	"github.com/stackrox/stackrox/pkg/env"
 )
 
 const binaryRoot = "/stackrox"

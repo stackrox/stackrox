@@ -1,6 +1,6 @@
 package migrations
 
-import "github.com/stackrox/rox/pkg/migrations/internal"
+import "github.com/stackrox/stackrox/pkg/migrations/internal"
 
 // CurrentDBVersionSeqNum is the current DB version number.
 // This must be incremented every time we write a migration.

@@ -3,8 +3,8 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/serviceidentities/internal/store"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/central/serviceidentities/internal/store"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // DataStore is the datastore for serviceidentities keys.

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
 )
 
 const (

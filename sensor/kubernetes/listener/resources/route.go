@@ -2,7 +2,7 @@ package resources
 
 import (
 	routeV1 "github.com/openshift/api/route/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
 )
 
 type routeDispatcher struct {

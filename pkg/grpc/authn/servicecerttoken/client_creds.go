@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/pkg/httputil"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
 	"google.golang.org/grpc/credentials"
 )
 

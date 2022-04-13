@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/renderer"
+	"github.com/stackrox/stackrox/pkg/renderer"
 )
 
 var (

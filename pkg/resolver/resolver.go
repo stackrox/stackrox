@@ -1,6 +1,6 @@
 package resolver
 
-import "github.com/stackrox/rox/pkg/urlfmt"
+import "github.com/stackrox/stackrox/pkg/urlfmt"
 
 // Registry resolves a registry into its fully qualified form
 func Registry(url string) string {

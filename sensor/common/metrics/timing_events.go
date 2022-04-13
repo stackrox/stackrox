@@ -1,9 +1,9 @@
 package metrics
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/sensor/common/messagestream"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/stackrox/sensor/common/messagestream"
 )
 
 type timingMessageStream struct {

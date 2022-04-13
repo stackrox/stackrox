@@ -1,9 +1,9 @@
 package stateutils
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/pointers"
-	"github.com/stackrox/rox/pkg/sensorupgrader"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/pointers"
+	"github.com/stackrox/stackrox/pkg/sensorupgrader"
 )
 
 func statePtr(state storage.UpgradeProgress_UpgradeState) *storage.UpgradeProgress_UpgradeState {

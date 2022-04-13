@@ -1,7 +1,7 @@
 package option
 
 import (
-	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/stackrox/pkg/migrations"
 )
 
 // MigratorOptions contain all options for migrators to run.

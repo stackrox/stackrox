@@ -1,7 +1,7 @@
 package listener
 
 import (
-	"github.com/stackrox/rox/pkg/complianceoperator"
+	"github.com/stackrox/stackrox/pkg/complianceoperator"
 	"k8s.io/client-go/kubernetes"
 )
 

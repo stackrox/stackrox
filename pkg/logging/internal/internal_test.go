@@ -3,7 +3,7 @@ package internal
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/logging"
 	"gotest.tools/assert"
 )
 

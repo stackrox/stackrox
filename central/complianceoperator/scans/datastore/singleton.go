@@ -1,10 +1,10 @@
 package datastore
 
 import (
-	store "github.com/stackrox/rox/central/complianceoperator/scans/store"
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+	store "github.com/stackrox/stackrox/central/complianceoperator/scans/store"
+	"github.com/stackrox/stackrox/central/globaldb"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 var (

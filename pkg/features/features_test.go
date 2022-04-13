@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/stackrox/pkg/buildinfo"
 	"github.com/stretchr/testify/assert"
 )
 

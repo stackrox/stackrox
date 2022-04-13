@@ -1,8 +1,8 @@
 package k8srbac
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 // GetVerbsForRole returns the set of verbs granted by a role.

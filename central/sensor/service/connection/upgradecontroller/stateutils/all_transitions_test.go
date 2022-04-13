@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/sensorupgrader"
+	"github.com/stackrox/stackrox/pkg/sensorupgrader"
 	"github.com/stretchr/testify/assert"
 )
 

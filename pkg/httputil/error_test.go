@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

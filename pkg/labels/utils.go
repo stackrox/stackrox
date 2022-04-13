@@ -1,6 +1,6 @@
 package labels
 
-import "github.com/stackrox/rox/generated/storage"
+import "github.com/stackrox/stackrox/generated/storage"
 
 // LabelSelectorRequirement creates *storage.SetBasedLabelSelector_Requirement.
 func LabelSelectorRequirement(key string, op storage.SetBasedLabelSelector_Operator, values []string) *storage.SetBasedLabelSelector_Requirement {

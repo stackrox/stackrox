@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
-	"github.com/stackrox/rox/pkg/timeutil"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/timeutil"
+	"github.com/stackrox/stackrox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

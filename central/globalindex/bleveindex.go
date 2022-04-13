@@ -15,11 +15,11 @@ import (
 	"github.com/blevesearch/bleve/index/store/moss"
 	"github.com/blevesearch/bleve/index/upsidedown"
 	bleveMapping "github.com/blevesearch/bleve/mapping"
-	complianceMapping "github.com/stackrox/rox/central/compliance/search"
-	"github.com/stackrox/rox/central/globalindex/mapping"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search"
+	complianceMapping "github.com/stackrox/stackrox/central/compliance/search"
+	"github.com/stackrox/stackrox/central/globalindex/mapping"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/search"
 )
 
 var (

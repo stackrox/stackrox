@@ -5,9 +5,9 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/sliceutils"
+	licenseproto "github.com/stackrox/stackrox/generated/shared/license"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
 )
 
 // SigningKeyRestrictions determines restrictions as to what a signing key can be used for. Please refer to the license

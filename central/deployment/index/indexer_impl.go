@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/metrics"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/batcher"
-	"github.com/stackrox/rox/pkg/logging"
-	ops "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/search/options/deployments"
-	"github.com/stackrox/rox/pkg/search/options/processindicators"
+	"github.com/stackrox/stackrox/central/metrics"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/batcher"
+	"github.com/stackrox/stackrox/pkg/logging"
+	ops "github.com/stackrox/stackrox/pkg/metrics"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/search/blevesearch"
+	"github.com/stackrox/stackrox/pkg/search/options/deployments"
+	"github.com/stackrox/stackrox/pkg/search/options/processindicators"
 )
 
 const batchSize = 5000

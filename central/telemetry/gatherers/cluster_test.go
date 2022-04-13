@@ -6,13 +6,13 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
-	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
-	gNodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
-	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
-	"github.com/stackrox/rox/generated/storage"
+	clusterMocks "github.com/stackrox/stackrox/central/cluster/datastore/mocks"
+	deploymentMocks "github.com/stackrox/stackrox/central/deployment/datastore/mocks"
+	namespaceMocks "github.com/stackrox/stackrox/central/namespace/datastore/mocks"
+	nodeMocks "github.com/stackrox/stackrox/central/node/datastore/mocks"
+	gNodeMocks "github.com/stackrox/stackrox/central/node/globaldatastore/mocks"
+	connectionMocks "github.com/stackrox/stackrox/central/sensor/service/connection/mocks"
+	"github.com/stackrox/stackrox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
 

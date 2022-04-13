@@ -1,9 +1,9 @@
 package plugins
 
 import (
-	"github.com/stackrox/rox/central/externalbackups/plugins/types"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/central/externalbackups/plugins/types"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/logging"
 )
 
 type creator func(backup *storage.ExternalBackup) (types.ExternalBackup, error)

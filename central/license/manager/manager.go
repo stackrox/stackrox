@@ -1,12 +1,12 @@
 package manager
 
 import (
-	"github.com/stackrox/rox/central/deploymentenvs"
-	"github.com/stackrox/rox/central/license/datastore"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/license/validator"
+	"github.com/stackrox/stackrox/central/deploymentenvs"
+	"github.com/stackrox/stackrox/central/license/datastore"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	licenseproto "github.com/stackrox/stackrox/generated/shared/license"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/pkg/license/validator"
 )
 
 // LicenseManager is responsible for managing product licenses.

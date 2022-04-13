@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	cfcsr "github.com/cloudflare/cfssl/csr"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 

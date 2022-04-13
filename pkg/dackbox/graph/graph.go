@@ -3,9 +3,9 @@ package graph
 import (
 	"bytes"
 
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
-	"github.com/stackrox/rox/pkg/dackbox/utils"
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/stackrox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/stackrox/pkg/dackbox/utils"
+	"github.com/stackrox/stackrox/pkg/sliceutils"
 )
 
 // RGraph is a read-only view of a Graph.

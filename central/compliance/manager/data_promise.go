@@ -5,11 +5,11 @@ import (
 	"errors"
 	"time"
 
-	"github.com/stackrox/rox/central/compliance/data"
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/central/scrape/factory"
-	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/stackrox/central/compliance/data"
+	"github.com/stackrox/stackrox/central/compliance/framework"
+	"github.com/stackrox/stackrox/central/scrape/factory"
+	"github.com/stackrox/stackrox/generated/internalapi/compliance"
+	"github.com/stackrox/stackrox/pkg/concurrency"
 )
 
 type dataPromise interface {

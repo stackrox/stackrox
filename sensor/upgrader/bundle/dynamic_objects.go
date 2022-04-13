@@ -5,9 +5,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/sensor/upgrader/common"
+	"github.com/stackrox/stackrox/pkg/k8sutil"
+	"github.com/stackrox/stackrox/pkg/utils"
+	"github.com/stackrox/stackrox/sensor/upgrader/common"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

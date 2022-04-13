@@ -2,10 +2,10 @@ package enrichment
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cve/fetcher"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/integration"
-	"github.com/stackrox/rox/pkg/nodes/enricher"
+	"github.com/stackrox/stackrox/central/cve/fetcher"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/images/integration"
+	"github.com/stackrox/stackrox/pkg/nodes/enricher"
 )
 
 // Manager implements a bit of multiplexing logic between ImageIntegrations and NodeIntegrations

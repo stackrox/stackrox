@@ -1,6 +1,6 @@
 package validator
 
-import licenseproto "github.com/stackrox/rox/generated/shared/license"
+import licenseproto "github.com/stackrox/stackrox/generated/shared/license"
 
 // Validator encapsulates the logic for validating license keys, verifying their signatures against a set of registered
 // signing keys.

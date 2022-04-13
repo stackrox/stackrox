@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stackrox/rox/generated/test"
+	"github.com/stackrox/stackrox/generated/test"
 	"github.com/stretchr/testify/assert"
 )
 

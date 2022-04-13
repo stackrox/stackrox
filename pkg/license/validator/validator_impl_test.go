@@ -14,11 +14,11 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
-	"github.com/stackrox/rox/pkg/cryptoutils"
-	"github.com/stackrox/rox/pkg/license"
-	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/uuid"
+	licenseproto "github.com/stackrox/stackrox/generated/shared/license"
+	"github.com/stackrox/stackrox/pkg/cryptoutils"
+	"github.com/stackrox/stackrox/pkg/license"
+	"github.com/stackrox/stackrox/pkg/protoconv"
+	"github.com/stackrox/stackrox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 

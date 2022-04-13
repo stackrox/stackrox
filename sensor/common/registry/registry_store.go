@@ -4,15 +4,15 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/docker/config"
-	"github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/registries"
-	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
-	registryTypes "github.com/stackrox/rox/pkg/registries/types"
-	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/tlscheck"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/docker/config"
+	"github.com/stackrox/stackrox/pkg/images/utils"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/registries"
+	dockerFactory "github.com/stackrox/stackrox/pkg/registries/docker"
+	registryTypes "github.com/stackrox/stackrox/pkg/registries/types"
+	"github.com/stackrox/stackrox/pkg/sync"
+	"github.com/stackrox/stackrox/pkg/tlscheck"
 )
 
 var (

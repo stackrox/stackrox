@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
-	"github.com/stackrox/rox/sensor/common/store/mocks"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/stackrox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/testutils/envisolator"
+	"github.com/stackrox/stackrox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/suite"
 )
 

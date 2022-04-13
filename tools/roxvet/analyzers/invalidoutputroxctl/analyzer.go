@@ -6,7 +6,7 @@ import (
 	"go/types"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/set"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	roxctlPrefixPath = "github.com/stackrox/rox/roxctl"
+	roxctlPrefixPath = "github.com/stackrox/stackrox/roxctl"
 	testFileSuffix   = "_test.go"
 )
 

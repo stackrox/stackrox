@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/stackrox/pkg/k8sutil"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"

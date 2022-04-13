@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // Store provides storage functionality for component-cve edges.

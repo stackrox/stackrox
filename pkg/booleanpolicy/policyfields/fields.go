@@ -3,11 +3,11 @@ package policyfields
 import (
 	"strings"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy"
-	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 // EnvKVPair represents an EnvKVPair defined in a policy.

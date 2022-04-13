@@ -1,9 +1,9 @@
 package generator
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/kubernetes"
+	"github.com/stackrox/stackrox/pkg/namespaces"
 )
 
 func isProtectedNamespace(ns string) bool {

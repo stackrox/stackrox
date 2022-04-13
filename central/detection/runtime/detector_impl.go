@@ -3,10 +3,10 @@ package runtime
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/detection"
-	detectionPkg "github.com/stackrox/rox/pkg/detection"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/stackrox/central/deployment/datastore"
+	"github.com/stackrox/stackrox/central/detection"
+	detectionPkg "github.com/stackrox/stackrox/pkg/detection"
+	"github.com/stackrox/stackrox/pkg/sac"
 )
 
 var (

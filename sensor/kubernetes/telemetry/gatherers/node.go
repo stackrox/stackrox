@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/telemetry/data"
+	"github.com/stackrox/stackrox/pkg/k8sutil"
+	"github.com/stackrox/stackrox/pkg/telemetry/data"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"

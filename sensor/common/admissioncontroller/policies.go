@@ -1,6 +1,6 @@
 package admissioncontroller
 
-import "github.com/stackrox/rox/generated/storage"
+import "github.com/stackrox/stackrox/generated/storage"
 
 func isEnforcedDeployTimePolicy(policy *storage.Policy) bool {
 	if policy.GetDisabled() {

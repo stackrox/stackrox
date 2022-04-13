@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/generated/storage"
-	tenableRegistry "github.com/stackrox/rox/pkg/registries/tenable"
+	"github.com/stackrox/stackrox/generated/storage"
+	tenableRegistry "github.com/stackrox/stackrox/pkg/registries/tenable"
 	"github.com/stretchr/testify/require"
 )
 

@@ -1,7 +1,7 @@
 package analysis
 
 import (
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // Analysis holds an analysis of the state of RBAC looking for common mistakes.

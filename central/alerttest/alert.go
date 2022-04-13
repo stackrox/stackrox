@@ -1,7 +1,7 @@
 package alerttest
 
 import (
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // Constants for unit tests that need fake Alerts.

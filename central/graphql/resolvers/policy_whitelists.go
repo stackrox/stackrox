@@ -3,7 +3,7 @@ package resolvers
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/stackrox/pkg/utils"
 )
 
 // TODO(ROX-6194): This file provides a resolver for the deprecated

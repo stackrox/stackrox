@@ -3,11 +3,11 @@ package manager
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/globaldb"
-	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
-	"github.com/stackrox/rox/central/telemetry/gatherers"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/globaldb"
+	licenseSingletons "github.com/stackrox/stackrox/central/license/singleton"
+	"github.com/stackrox/stackrox/central/telemetry/gatherers"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

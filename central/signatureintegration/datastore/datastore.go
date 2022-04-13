@@ -3,8 +3,8 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/signatureintegration/store"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/central/signatureintegration/store"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // DataStore for signature integrations.

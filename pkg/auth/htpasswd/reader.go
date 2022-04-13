@@ -4,7 +4,7 @@ import (
 	"encoding/csv"
 	"io"
 
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/logging"
 	"golang.org/x/crypto/bcrypt"
 )
 

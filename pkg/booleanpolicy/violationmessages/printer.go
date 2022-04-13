@@ -2,14 +2,14 @@ package violationmessages
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
-	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/evaluator"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/violationmessages/printer"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/search"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 type violationPrinter struct {

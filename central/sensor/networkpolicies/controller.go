@@ -3,10 +3,10 @@ package networkpolicies
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/sensor/service/common"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/stackrox/central/sensor/service/common"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/concurrency"
 )
 
 // Controller handles application of network policies in remote clusters.

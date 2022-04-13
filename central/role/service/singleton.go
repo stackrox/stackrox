@@ -1,10 +1,10 @@
 package service
 
 import (
-	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
-	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
-	"github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/pkg/sync"
+	clusterDS "github.com/stackrox/stackrox/central/cluster/datastore"
+	namespaceDS "github.com/stackrox/stackrox/central/namespace/datastore"
+	"github.com/stackrox/stackrox/central/role/datastore"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

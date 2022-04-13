@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/stackrox/rox/central/clusters"
-	licenseManager "github.com/stackrox/rox/central/license/manager"
-	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
-	probeUploadManager "github.com/stackrox/rox/central/probeupload/manager"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/kocache"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/probeupload"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/clusters"
+	licenseManager "github.com/stackrox/stackrox/central/license/manager"
+	licenseSingletons "github.com/stackrox/stackrox/central/license/singleton"
+	probeUploadManager "github.com/stackrox/stackrox/central/probeupload/manager"
+	"github.com/stackrox/stackrox/pkg/env"
+	"github.com/stackrox/stackrox/pkg/httputil/proxy"
+	"github.com/stackrox/stackrox/pkg/kocache"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/probeupload"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 const (

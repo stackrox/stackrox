@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	deploymentenvs "github.com/stackrox/rox/central/deploymentenvs"
+	deploymentenvs "github.com/stackrox/stackrox/central/deploymentenvs"
 )
 
 // MockListener is a mock of Listener interface.

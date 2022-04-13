@@ -1,7 +1,7 @@
 package crud
 
 import (
-	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/stackrox/pkg/dackbox"
 )
 
 type deleterImpl struct {

@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	store "github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/alert/convert"
-	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	store "github.com/stackrox/stackrox/central/alert/datastore/internal/store/rocksdb"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/alert/convert"
+	"github.com/stackrox/stackrox/pkg/fixtures"
+	"github.com/stackrox/stackrox/pkg/rocksdb"
+	"github.com/stackrox/stackrox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

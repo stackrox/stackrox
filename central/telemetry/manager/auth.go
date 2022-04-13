@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	licenseManager "github.com/stackrox/rox/central/license/manager"
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
+	licenseManager "github.com/stackrox/stackrox/central/license/manager"
+	licenseproto "github.com/stackrox/stackrox/generated/shared/license"
 )
 
 // createAuthToken returns an authentication token for the license server.

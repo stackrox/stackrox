@@ -1,8 +1,8 @@
 package augmentedobjs
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/booleanpolicy/evaluator/pathutil"
 )
 
 const (

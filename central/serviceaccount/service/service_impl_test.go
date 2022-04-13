@@ -7,14 +7,14 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
-	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
-	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
+	deploymentMocks "github.com/stackrox/stackrox/central/deployment/datastore/mocks"
+	namespaceMocks "github.com/stackrox/stackrox/central/namespace/datastore/mocks"
+	roleMocks "github.com/stackrox/stackrox/central/rbac/k8srole/datastore/mocks"
+	bindingMocks "github.com/stackrox/stackrox/central/rbac/k8srolebinding/datastore/mocks"
+	saMocks "github.com/stackrox/stackrox/central/serviceaccount/datastore/mocks"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 

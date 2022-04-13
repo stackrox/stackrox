@@ -1,11 +1,11 @@
 package mapper
 
 import (
-	groupDataStore "github.com/stackrox/rox/central/group/datastore"
-	roleDataStore "github.com/stackrox/rox/central/role/datastore"
-	userDataStore "github.com/stackrox/rox/central/user/datastore"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/sync"
+	groupDataStore "github.com/stackrox/stackrox/central/group/datastore"
+	roleDataStore "github.com/stackrox/stackrox/central/role/datastore"
+	userDataStore "github.com/stackrox/stackrox/central/user/datastore"
+	"github.com/stackrox/stackrox/pkg/auth/permissions"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 var (

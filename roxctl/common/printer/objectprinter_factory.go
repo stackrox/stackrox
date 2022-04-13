@@ -7,8 +7,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/errox"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 var (

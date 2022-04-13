@@ -3,10 +3,10 @@ package networkpolicy
 import (
 	"strings"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/protoconv/k8s"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/protoconv"
+	"github.com/stackrox/stackrox/pkg/protoconv/k8s"
 	k8sCoreV1 "k8s.io/api/core/v1"
 	k8sV1 "k8s.io/api/networking/v1"
 	k8sMetaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"

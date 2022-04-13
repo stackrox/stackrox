@@ -1,9 +1,9 @@
 package commentsstore
 
 import (
-	"github.com/stackrox/rox/central/analystnotes"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/stackrox/central/analystnotes"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/bolthelper"
 	"go.etcd.io/bbolt"
 )
 

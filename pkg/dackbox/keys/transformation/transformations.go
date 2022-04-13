@@ -5,10 +5,10 @@ import (
 	"context"
 	"encoding/base64"
 
-	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/dackbox/keys"
-	"github.com/stackrox/rox/pkg/dbhelper"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/stackrox/pkg/dackbox/graph"
+	"github.com/stackrox/stackrox/pkg/dackbox/keys"
+	"github.com/stackrox/stackrox/pkg/dbhelper"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 // OneToOne is a transformation that changes one key into another key.

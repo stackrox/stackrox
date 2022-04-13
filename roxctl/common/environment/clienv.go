@@ -4,7 +4,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/stackrox/roxctl/common"
 	"google.golang.org/grpc"
 )
 

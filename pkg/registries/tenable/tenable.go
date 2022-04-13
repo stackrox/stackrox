@@ -3,10 +3,10 @@ package tenable
 import (
 	"github.com/pkg/errors"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/registries/docker"
-	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/registries/docker"
+	"github.com/stackrox/stackrox/pkg/registries/types"
 )
 
 var (

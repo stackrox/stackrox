@@ -11,15 +11,15 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/role/resources"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/binenc"
-	"github.com/stackrox/rox/pkg/fsutils"
-	"github.com/stackrox/rox/pkg/ioutils"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/probeupload"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/stackrox/central/role/resources"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/pkg/binenc"
+	"github.com/stackrox/stackrox/pkg/fsutils"
+	"github.com/stackrox/stackrox/pkg/ioutils"
+	"github.com/stackrox/stackrox/pkg/logging"
+	"github.com/stackrox/stackrox/pkg/probeupload"
+	"github.com/stackrox/stackrox/pkg/sac"
+	"github.com/stackrox/stackrox/pkg/sync"
 )
 
 const (

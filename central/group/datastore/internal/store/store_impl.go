@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	serializePkg "github.com/stackrox/rox/central/group/datastore/serialize"
-	"github.com/stackrox/rox/generated/storage"
+	serializePkg "github.com/stackrox/stackrox/central/group/datastore/serialize"
+	"github.com/stackrox/stackrox/generated/storage"
 	bolt "go.etcd.io/bbolt"
 )
 

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/stackrox/pkg/features"
 )
 
 var (

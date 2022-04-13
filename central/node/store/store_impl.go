@@ -1,8 +1,8 @@
 package store
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/bolthelper/crud/proto"
 )
 
 type storeImpl struct {

@@ -7,11 +7,11 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	datastoreMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
+	deploymentMocks "github.com/stackrox/stackrox/central/deployment/datastore/mocks"
+	datastoreMocks "github.com/stackrox/stackrox/central/secret/datastore/mocks"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 

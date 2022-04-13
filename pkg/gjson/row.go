@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/stackrox/pkg/errorhelpers"
 	"github.com/tidwall/gjson"
 )
 

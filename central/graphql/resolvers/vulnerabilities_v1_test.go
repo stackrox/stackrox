@@ -6,12 +6,12 @@ import (
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/golang/mock/gomock"
-	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
-	"github.com/stackrox/rox/central/cve/converter"
-	"github.com/stackrox/rox/central/cve/matcher"
-	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
-	nsMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	"github.com/stackrox/rox/generated/storage"
+	clusterMocks "github.com/stackrox/stackrox/central/cluster/datastore/mocks"
+	"github.com/stackrox/stackrox/central/cve/converter"
+	"github.com/stackrox/stackrox/central/cve/matcher"
+	imageMocks "github.com/stackrox/stackrox/central/image/datastore/mocks"
+	nsMocks "github.com/stackrox/stackrox/central/namespace/datastore/mocks"
+	"github.com/stackrox/stackrox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

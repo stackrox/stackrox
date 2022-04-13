@@ -3,11 +3,11 @@ package alertmanager
 import (
 	"context"
 
-	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
-	"github.com/stackrox/rox/central/detection/runtime"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/set"
+	alertDataStore "github.com/stackrox/stackrox/central/alert/datastore"
+	"github.com/stackrox/stackrox/central/detection/runtime"
+	notifierProcessor "github.com/stackrox/stackrox/central/notifier/processor"
+	"github.com/stackrox/stackrox/generated/storage"
+	"github.com/stackrox/stackrox/pkg/set"
 )
 
 // AlertManager is a simplified interface for fetching and updating alerts.

@@ -1,7 +1,7 @@
 package permissions
 
 import (
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // ResourceWithAccess stored a resource handle paired with an access level for configuring permissions.

@@ -2,9 +2,9 @@ package index
 
 import (
 	"github.com/gogo/protobuf/proto"
-	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
+	imageDackBox "github.com/stackrox/stackrox/central/image/dackbox"
+	v1 "github.com/stackrox/stackrox/generated/api/v1"
+	"github.com/stackrox/stackrox/generated/storage"
 )
 
 // Wrapper implements the wrapper interface for use in dackbox.

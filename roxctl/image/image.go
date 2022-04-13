@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/image/check"
-	"github.com/stackrox/rox/roxctl/image/scan"
+	"github.com/stackrox/stackrox/roxctl/common/environment"
+	"github.com/stackrox/stackrox/roxctl/common/flags"
+	"github.com/stackrox/stackrox/roxctl/image/check"
+	"github.com/stackrox/stackrox/roxctl/image/scan"
 )
 
 // Command defines the image command tree

@@ -3,13 +3,13 @@ package listener
 import (
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/sensor/common/awscredentials"
-	"github.com/stackrox/rox/sensor/common/config"
-	"github.com/stackrox/rox/sensor/common/detector"
-	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/stackrox/generated/internalapi/central"
+	"github.com/stackrox/stackrox/pkg/centralsensor"
+	"github.com/stackrox/stackrox/pkg/concurrency"
+	"github.com/stackrox/stackrox/sensor/common/awscredentials"
+	"github.com/stackrox/stackrox/sensor/common/config"
+	"github.com/stackrox/stackrox/sensor/common/detector"
+	"github.com/stackrox/stackrox/sensor/kubernetes/client"
 )
 
 const (

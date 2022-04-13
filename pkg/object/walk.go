@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/pkg/protoreflect"
+	"github.com/stackrox/stackrox/pkg/protoreflect"
 )
 
 // WalkObject generates a generic struct object that then can be walked by other code

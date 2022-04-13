@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/migrator/bolthelpers"
-	dbTypes "github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/stackrox/migrator/bolthelpers"
+	dbTypes "github.com/stackrox/stackrox/migrator/types"
+	"github.com/stackrox/stackrox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
 )
