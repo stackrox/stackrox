@@ -1,5 +1,7 @@
 FROM bin
 
+COPY . .
+
 RUN ls -la
 RUN ls -la ..
 RUN pwd
