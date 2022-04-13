@@ -53,21 +53,8 @@ spec:
       {{- end}}
       serviceAccount: monitoring
       containers:
-      - name: grafana-renderer
-        image: {{ required "A Grafana renderer image is required" .Values.grafanaRendererImage }}
-        env:
-          - name: IGNORE_HTTPS_ERRORS
-            value: "true"
-        securityContext:
-          capabilities:
-            drop: ["NET_RAW"]
       - name: grafana
         image: {{ required "A Grafana image is required" .Values.grafanaImage }}
-        env:
-          - name: GF_RENDERING_SERVER_URL
-            value: http://localhost:8081/render
-          - name: GF_RENDERING_CALLBACK_URL
-            value: https://localhost:8443/
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
