@@ -3,6 +3,7 @@ package scheduler
 import (
 	"testing"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
@@ -27,12 +28,15 @@ var expectedNoVulnsFoundEmailTemplateStackroxBranding = `
 func TestVulnMessageBranding(t *testing.T) {
 
 	envIsolator := envisolator.NewEnvIsolator(t)
+	rc := storage.ReportConfiguration{}
 
 	// Setting: RHACS release, expected: RHACS branding
 	envIsolator.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameRHACSRelease)
 
-	receivedBrandedVulnFound := getBrandedVulnReportEmailTemplate()
-	receivedBrandedNoVulnFound := getBrandedNoVulnsFoundEmailTemplate()
+	receivedBrandedVulnFound, err := formatMessage(&rc)
+	assert.Nil(t, err)
+	receivedBrandedNoVulnFound, err := formatNoVulnsFoundMessage()
+	assert.Nil(t, err)
 
 	assert.Equal(t, expectedVulnReportEmailTemplateRhacsBranding, receivedBrandedVulnFound)
 	assert.Equal(t, expectedNoVulnsFoundEmailTemplateRhacsBranding, receivedBrandedNoVulnFound)
@@ -41,8 +45,10 @@ func TestVulnMessageBranding(t *testing.T) {
 	envIsolator.RestoreAll()
 	envIsolator.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameStackRoxIORelease)
 
-	receivedBrandedVulnFound = getBrandedVulnReportEmailTemplate()
-	receivedBrandedNoVulnFound = getBrandedNoVulnsFoundEmailTemplate()
+	receivedBrandedVulnFound, err = formatMessage(&rc)
+	assert.Nil(t, err)
+	receivedBrandedNoVulnFound, err = formatNoVulnsFoundMessage()
+	assert.Nil(t, err)
 
 	assert.Equal(t, expectedVulnReportEmailTemplateStackroxBranding, receivedBrandedVulnFound)
 	assert.Equal(t, expectedNoVulnsFoundEmailTemplateStackroxBranding, receivedBrandedNoVulnFound)
@@ -51,8 +57,10 @@ func TestVulnMessageBranding(t *testing.T) {
 	envIsolator.RestoreAll()
 	envIsolator.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameDevelopmentBuild)
 
-	receivedBrandedVulnFound = getBrandedVulnReportEmailTemplate()
-	receivedBrandedNoVulnFound = getBrandedNoVulnsFoundEmailTemplate()
+	receivedBrandedVulnFound, err = formatMessage(&rc)
+	assert.Nil(t, err)
+	receivedBrandedNoVulnFound, err = formatNoVulnsFoundMessage()
+	assert.Nil(t, err)
 
 	assert.Equal(t, expectedVulnReportEmailTemplateRhacsBranding, receivedBrandedVulnFound)
 	assert.Equal(t, expectedNoVulnsFoundEmailTemplateRhacsBranding, receivedBrandedNoVulnFound)
