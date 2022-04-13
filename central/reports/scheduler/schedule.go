@@ -73,12 +73,12 @@ var (
     }`
 
 	vulnReportEmailTemplate = `
-	%s has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
+	{{.ImageFlavorBranding}} has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
 
 	To address these findings, please review the impacted software packages in the container images running within deployments you are responsible for and update them to a version containing the fix, if one is available.`
 
 	noVulnsFoundEmailTemplate = `
-	%s has found zero vulnerabilities associated with the running container images owned by your organization.`
+	{{.ImageFlavorBranding}} has found zero vulnerabilities associated with the running container images owned by your organization.`
 
 	rhacsBranding = `Red Hat Advanced Cluster Security for Kubernetes`
 
@@ -124,30 +124,9 @@ type ReportRequest struct {
 }
 
 type reportEmailFormat struct {
-	WhichVulns string
-	DateStr    string
-}
-
-// Adds RHACS or Stackrox branding to email vulnerability report based on image flavor
-func getBrandedNoVulnsFoundEmailTemplate() string {
-	var brandedNoVulnsFoundEmailTemplate string
-	if defaults.ImageFlavorEnv() == defaults.ImageFlavorNameStackRoxIORelease {
-		brandedNoVulnsFoundEmailTemplate = fmt.Sprintf(noVulnsFoundEmailTemplate, stackroxBranding)
-	} else {
-		brandedNoVulnsFoundEmailTemplate = fmt.Sprintf(noVulnsFoundEmailTemplate, rhacsBranding)
-	}
-	return brandedNoVulnsFoundEmailTemplate
-}
-
-// Adds RHACS or Stackrox branding to email vulnerability report based on image flavor
-func getBrandedVulnReportEmailTemplate() string {
-	var brandedVulnReportEmailTemplate string
-	if defaults.ImageFlavorEnv() == defaults.ImageFlavorNameStackRoxIORelease {
-		brandedVulnReportEmailTemplate = fmt.Sprintf(vulnReportEmailTemplate, stackroxBranding)
-	} else {
-		brandedVulnReportEmailTemplate = fmt.Sprintf(vulnReportEmailTemplate, rhacsBranding)
-	}
-	return brandedVulnReportEmailTemplate
+	ImageFlavorBranding string
+	WhichVulns          string
+	DateStr             string
 }
 
 // New instantiates a new cron scheduler and supports adding and removing report configurations
@@ -312,7 +291,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	}
 	// If it is an empty report, do not send an attachment in the final notification email and the email body
 	// will indicate that no vulns were found
-	messageText := getBrandedNoVulnsFoundEmailTemplate()
+	messageText := noVulnsFoundEmailTemplate
 
 	if zippedCSVData != nil {
 		messageText, err = formatMessage(rc)
@@ -340,17 +319,19 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 
 func formatMessage(rc *storage.ReportConfiguration) (string, error) {
 	data := &reportEmailFormat{
-		WhichVulns: "for all vulnerabilities",
-		DateStr:    time.Now().Format("January 02, 2006"),
+		ImageFlavorBranding: rhacsBranding,
+		WhichVulns:          "for all vulnerabilities",
+		DateStr:             time.Now().Format("January 02, 2006"),
 	}
 	if rc.GetVulnReportFilters().SinceLastReport && rc.GetLastSuccessfulRunTime() != nil {
 		data.WhichVulns = fmt.Sprintf("for new vulnerabilities since %s",
 			timestamp.FromProtobuf(rc.LastSuccessfulRunTime).GoTime().Format("January 02, 2006"))
 	}
+	if defaults.ImageFlavorEnv() == defaults.ImageFlavorNameStackRoxIORelease {
+		data.ImageFlavorBranding = stackroxBranding
+	}
 
-	brandedVulnReportEmailTemplate := getBrandedVulnReportEmailTemplate()
-
-	tmpl, err := template.New("emailBody").Parse(brandedVulnReportEmailTemplate)
+	tmpl, err := template.New("emailBody").Parse(vulnReportEmailTemplate)
 	if err != nil {
 		return "", err
 	}
