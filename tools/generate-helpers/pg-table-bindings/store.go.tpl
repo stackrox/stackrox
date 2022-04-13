@@ -87,6 +87,9 @@ var (
              		globaldb.RegisterTable(schema)
              		return schema
              	}()
+    {{ if eq .ResourceType "globallyScoped" -}}
+    targetResource = resources.{{.Type | storageToResource}}
+    {{- end }}
 )
 
 type Store interface {
@@ -355,7 +358,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
         return sac.ErrResourceAccessDenied
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -376,7 +379,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
         return sac.ErrResourceAccessDenied
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -401,7 +404,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
         return 0, err
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
         return 0, err
     }
@@ -424,7 +427,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
         return false, err
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return false, err
     } else if !ok {
@@ -449,7 +452,7 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
         return nil, false, err
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return nil, false, err
     } else if !ok {
@@ -497,7 +500,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
         return sac.ErrResourceAccessDenied
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -529,7 +532,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
         return nil, err
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return nil, err
     } else if !ok {
@@ -564,7 +567,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
         return nil, nil, nil
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return nil, nil, err
     } else if !ok {
@@ -628,7 +631,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
         return sac.ErrResourceAccessDenied
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
