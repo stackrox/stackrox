@@ -39,7 +39,7 @@ import java.text.SimpleDateFormat
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
-    static final String TEST_IMAGE = "nginx:1.7.9"
+    static final String TEST_IMAGE = "quay.io/rhacs-eng/qa:nginx-1-7-9"
 
     static final String RUN_ID
 

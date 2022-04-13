@@ -187,7 +187,7 @@ class TLSChallengeTest extends BaseSpecification {
         loadBalancerDeployment.setNamespace(PROXY_NAMESPACE)
                 .setName("nginx-loadbalancer")
                 .setExposeAsService(true)
-                .setImage("nginx:1.17.1")
+                .setImage("quay.io/rhacs-eng/qa:nginx-1-17-1")
                 .addVolumeFromConfigMap(nginxConfigMap, "/etc/nginx/conf.d/")
                 .addVolumeFromSecret(tlsConfSecret, "/run/secrets/tls/")
                 .setTargetPort(8443)
