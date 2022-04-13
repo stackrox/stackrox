@@ -84,7 +84,7 @@ type CentralComponentSpec struct {
 	// Specify a secret that contains the administrator password in the "password" data item.
 	// If omitted, the operator will auto-generate a password and store it in the "password" item
 	// in the "central-htpasswd" secret.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1,xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Administrator Password",order=1
 	AdminPasswordSecret *LocalSecretReference `json:"adminPasswordSecret,omitempty"`
 
 	// Disable admin password generation. Do not use this for first-time installations,
@@ -328,6 +328,10 @@ type AdminPasswordStatus struct {
 	// Info stores information on how to obtain the admin password.
 	//+operator-sdk:csv:customresourcedefinitions:type=status,order=1,displayName="Admin Credentials Info"
 	Info string `json:"info,omitempty"`
+
+	// Reference contains reference for the admin password
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret"}
+	Reference string `json:"adminPasswordSecret,omitempty"`
 }
 
 // CentralComponentStatus describes status specific to the central component.
