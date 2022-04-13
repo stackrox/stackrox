@@ -57,32 +57,42 @@ func generateExpectedVulnReportEmailTemplates(t *testing.T) (string, string) {
 	return expectedVulnReportEmailTemplateRhacsBranding, expectedVulnReportEmailTemplateStackroxBranding
 }
 
-func TestVulnMessageBranding(t *testing.T) {
+func TestVulnMessageBranding1(t *testing.T) {
 	envIsolator := envisolator.NewEnvIsolator(t)
 	rc := fixtures.GetValidReportConfiguration()
 
 	expectedVulnReportEmailTemplateRhacsBranding, expectedVulnReportEmailTemplateStackroxBranding := generateExpectedVulnReportEmailTemplates(t)
 
-	// Setting: RHACS release, expected: RHACS branding
-	envIsolator.Setenv(productBrandingName, ProductBrandingNameRHACS)
+	tests := []struct {
+		name            string
+		productBranding string
+		vulnReport      string
+		noVulnReport    string
+	}{
+		{
+			name:            "RHACS branding",
+			productBranding: ProductBrandingNameRHACS,
+			vulnReport:      expectedVulnReportEmailTemplateRhacsBranding,
+			noVulnReport:    expectedNoVulnsFoundEmailTemplateRhacsBranding,
+		},
+		{
+			name:            "Stackrox branding",
+			productBranding: ProductBrandingNameStackrox,
+			vulnReport:      expectedVulnReportEmailTemplateStackroxBranding,
+			noVulnReport:    expectedNoVulnsFoundEmailTemplateStackroxBranding,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			envIsolator.Setenv(productBrandingName, tt.productBranding)
 
-	receivedBrandedVulnFound, err := formatMessage(rc)
-	assert.Nil(t, err)
-	receivedBrandedNoVulnFound, err := formatNoVulnsFoundMessage()
-	assert.Nil(t, err)
+			receivedBrandedVulnFound, err := formatMessage(rc)
+			assert.Nil(t, err)
+			receivedBrandedNoVulnFound, err := formatNoVulnsFoundMessage()
+			assert.Nil(t, err)
 
-	assert.Equal(t, expectedVulnReportEmailTemplateRhacsBranding, receivedBrandedVulnFound)
-	assert.Equal(t, expectedNoVulnsFoundEmailTemplateRhacsBranding, receivedBrandedNoVulnFound)
-
-	// Setting: Stackrox release, expected: Stackrox branding
-	envIsolator.RestoreAll()
-	envIsolator.Setenv(productBrandingName, ProductBrandingNameStackrox)
-
-	receivedBrandedVulnFound, err = formatMessage(rc)
-	assert.Nil(t, err)
-	receivedBrandedNoVulnFound, err = formatNoVulnsFoundMessage()
-	assert.Nil(t, err)
-
-	assert.Equal(t, expectedVulnReportEmailTemplateStackroxBranding, receivedBrandedVulnFound)
-	assert.Equal(t, expectedNoVulnsFoundEmailTemplateStackroxBranding, receivedBrandedNoVulnFound)
+			assert.Equal(t, tt.vulnReport, receivedBrandedVulnFound)
+			assert.Equal(t, tt.noVulnReport, receivedBrandedNoVulnFound)
+		})
+	}
 }
