@@ -1,6 +1,7 @@
 import React from 'react';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
+import capitalize from 'lodash/capitalize';
 
 import { enableDisableNotificationsForPolicies } from 'services/PoliciesService';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
@@ -8,10 +9,10 @@ import { AlertVariantType } from 'hooks/patternfly/useToasts';
 import useTableSelection from 'hooks/useTableSelection';
 import { NotifierIntegration } from 'types/notifier.proto';
 
-export type EnableDisableType = 'enable' | 'disable' | '';
+export type EnableDisableType = 'enable' | 'disable';
 
 type EnableDisableNotificationModalProps = {
-    enableDisableType: EnableDisableType;
+    enableDisableType: EnableDisableType | null;
     setEnableDisableType: (type) => void;
     fetchPoliciesHandler: () => void;
     addToast: (text: string, variant: AlertVariantType, content?: string) => void;
@@ -31,23 +32,22 @@ function EnableDisableNotificationModal({
     const { selected, allRowsSelected, onSelect, onSelectAll, onClearAll, getSelectedIds } =
         useTableSelection(notifiers);
 
-    const selectedNotifierIds = getSelectedIds();
+    const selectedNotifierIds = notifiers.length === 1 ? [notifiers[0].id] : getSelectedIds();
+    const enableDisableTypeText = enableDisableType as string;
 
     function enableDisableNotificationHandler() {
-        const selectedNotifiers =
-            notifiers.length === 1 ? notifiers.map((notifier) => notifier.id) : selectedNotifierIds;
         return enableDisableNotificationsForPolicies(
             selectedPolicyIds,
-            selectedNotifiers,
+            selectedNotifierIds,
             enableDisableType === 'disable'
         )
             .then(() => {
                 fetchPoliciesHandler();
-                addToast(`Successfully ${enableDisableType}d notification`, 'success');
+                addToast(`Successfully ${enableDisableTypeText}d notification`, 'success');
             })
             .catch(({ response }) => {
                 addToast(
-                    `Could not ${enableDisableType} notification`,
+                    `Could not ${enableDisableTypeText} notification`,
                     'danger',
                     response.data.message
                 );
@@ -55,31 +55,35 @@ function EnableDisableNotificationModal({
     }
 
     function onConfirmEnableDisableNotifications() {
-        setEnableDisableType('');
+        setEnableDisableType(null);
         enableDisableNotificationHandler().finally(() => {});
     }
 
     function onCancelEnableDisableNotifications() {
-        setEnableDisableType('');
+        setEnableDisableType(null);
         onClearAll();
     }
 
     return (
         <ConfirmationModal
-            ariaLabel={`Confirm ${enableDisableType} notification`}
-            confirmText={enableDisableType}
-            title={`${enableDisableType} notifications`}
-            isOpen={enableDisableType !== ''}
-            isDestructiveAction={enableDisableType === 'disable'}
+            ariaLabel={`Confirm ${enableDisableTypeText} notification`}
+            confirmText={enableDisableTypeText}
+            title={`${capitalize(enableDisableTypeText)} notification`}
+            isOpen={enableDisableType !== null}
+            isDestructive={enableDisableType === 'disable'}
             onConfirm={onConfirmEnableDisableNotifications}
             onCancel={onCancelEnableDisableNotifications}
+            isConfirmDisabled={
+                notifiers.length === 0 || (notifiers.length > 0 && selectedNotifierIds.length === 0)
+            }
         >
-            {notifiers.length === 1 ? (
-                <>Selected notifier: {notifiers[0].name}</>
-            ) : (
+            {notifiers.length === 0 && <>No notifiers configured!</>}
+            {notifiers.length === 1 && <>Selected notifier: {notifiers[0].name}</>}
+            {notifiers.length > 1 && (
                 <TableComposable
                     aria-label="Policies enable/disable notification table"
                     data-testid="policies-enable-disable-notification-table"
+                    variant="compact"
                 >
                     <Thead>
                         <Tr>
@@ -111,7 +115,7 @@ function EnableDisableNotificationModal({
                     </Tbody>
                 </TableComposable>
             )}
-            {enableDisableType === 'disable' && (
+            {notifiers.length > 0 && enableDisableType === 'disable' && (
                 <div className="pf-u-pt-sm">
                     Are you sure you want to disable notification for {selectedPolicyIds.length}{' '}
                     {pluralize('policy', selectedPolicyIds.length)}?

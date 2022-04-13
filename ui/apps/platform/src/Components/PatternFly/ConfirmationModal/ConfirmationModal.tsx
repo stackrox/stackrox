@@ -9,9 +9,10 @@ type ConfirmationModalProps = {
     confirmText: string;
     onConfirm: () => void;
     onCancel: () => void;
+    isConfirmDisabled?: boolean;
     isOpen: boolean;
     isLoading?: boolean; // if modal remains open until finally block of request promise
-    isDestructiveAction?: boolean;
+    isDestructive?: boolean;
     children: ReactNode;
 };
 
@@ -21,9 +22,10 @@ function ConfirmationModal({
     confirmText,
     onConfirm,
     onCancel,
+    isConfirmDisabled = false,
     isOpen,
     isLoading,
-    isDestructiveAction = true,
+    isDestructive = true,
     children,
 }: ConfirmationModalProps): ReactElement {
     return (
@@ -34,10 +36,10 @@ function ConfirmationModal({
             actions={[
                 <Button
                     key="confirm"
-                    variant={isDestructiveAction ? ButtonVariant.danger : ButtonVariant.primary}
+                    variant={isDestructive ? ButtonVariant.danger : ButtonVariant.primary}
                     onClick={onConfirm}
                     className="pf-confirmation-modal-confirm-btn"
-                    isDisabled={isLoading}
+                    isDisabled={isConfirmDisabled || isLoading}
                     isLoading={isLoading}
                 >
                     {confirmText}

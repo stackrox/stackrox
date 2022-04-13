@@ -126,7 +126,7 @@ function PoliciesTable({
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    const [enableDisableType, setEnableDisableType] = useState<EnableDisableType>('');
+    const [enableDisableType, setEnableDisableType] = useState<EnableDisableType | null>(null);
 
     // index of the currently active column
     const [activeSortIndex, setActiveSortIndex] = useState(0);
