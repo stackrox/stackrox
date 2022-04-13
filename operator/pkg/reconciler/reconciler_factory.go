@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/joelanford/helm-operator/pkg/reconciler"
-	"github.com/joelanford/helm-operator/pkg/values"
+	"github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
+	"github.com/operator-framework/helm-operator-plugins/pkg/values"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo"
