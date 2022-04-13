@@ -170,7 +170,7 @@ class Enforcement extends BaseSpecification {
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY):
                     new Deployment()
-                            .setImage("us.gcr.io/stackrox-ci/quay.io/rhacs-eng/qa:nginx-1-9-1")
+                            .setImage("us.gcr.io/stackrox-ci/nginx:1.9.1")
                             .addPort(22)
                             .setSkipReplicaWait(true)
                             .setCommand(["sleep", "600"]),
