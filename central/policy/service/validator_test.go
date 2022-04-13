@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -44,7 +45,6 @@ func (s *PolicyValidatorTestSuite) SetupTest() {
 	s.cStorage = clusterMocks.NewMockDataStore(s.mockCtrl)
 
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
 	s.validator = newPolicyValidator(s.nStorage)
 }
 
@@ -713,9 +713,13 @@ func (s *PolicyValidatorTestSuite) TestValidateAuditEventSource() {
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
-	if !features.NetworkPolicySystemPolicy.Enabled() {
-		s.T().Skipf("Skipping test since the %s variable is not set", features.NetworkPolicySystemPolicy.EnvVar())
+	if buildinfo.ReleaseBuild {
+		s.T().Skipf("Skipping this test for release build since the feature flag %s is not enable", features.NetworkPolicySystemPolicy.EnvVar())
 	}
+	s.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
+	defer s.envIsolator.RestoreAll()
+
+	validatorWithFlag := newPolicyValidator(s.nStorage)
 
 	cases := map[string]struct {
 		policy        *storage.Policy
@@ -779,7 +783,7 @@ func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
 	}
 	for name, c := range cases {
 		s.T().Run(name, func(t *testing.T) {
-			err := s.validator.validateEnforcement(c.policy)
+			err := validatorWithFlag.validateEnforcement(c.policy)
 			if c.expectedError != "" {
 				assert.Equal(t, c.expectedError, err.Error())
 			} else {
