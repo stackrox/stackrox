@@ -13,13 +13,14 @@ import {
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 
 import useTableSelection from 'hooks/useTableSelection';
-import { TableColumn, SortDirection } from 'hooks/useTableSort';
 import { resolveAlert } from 'services/AlertsService';
 import { excludeDeployments } from 'services/PoliciesService';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import VIOLATION_STATES from 'constants/violationStates';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import TableCell from 'Components/PatternFly/TableCell';
+import { GetSortParams } from 'hooks/useURLSort';
+import { TableColumn } from 'types/table';
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
 import TagConfirmation from './Modals/TagConfirmation';
@@ -41,10 +42,7 @@ type ViolationsTablePanelProps = {
     excludableAlerts: ListAlert[];
     perPage: number;
     setPerPage: (perPage) => void;
-    activeSortIndex: number;
-    setActiveSortIndex: (idx) => void;
-    activeSortDirection: SortDirection;
-    setActiveSortDirection: (dir) => void;
+    getSortParams: GetSortParams;
     columns: TableColumn[];
 };
 
@@ -57,10 +55,7 @@ function ViolationsTablePanel({
     setPerPage,
     resolvableAlerts,
     excludableAlerts,
-    activeSortIndex,
-    setActiveSortIndex,
-    activeSortDirection,
-    setActiveSortDirection,
+    getSortParams,
     columns,
 }: ViolationsTablePanelProps): ReactElement {
     // Handle confirmation modal being open.
@@ -121,11 +116,6 @@ function ViolationsTablePanel({
 
     function resolveAlertAction(addToBaseline, id) {
         return resolveAlert(id, addToBaseline).then(onClearAll, onClearAll);
-    }
-
-    function onSort(e, index, direction) {
-        setActiveSortIndex(index);
-        setActiveSortDirection(direction);
     }
 
     const excludableAlertIds: Set<string> = new Set(excludableAlerts.map((alert) => alert.id));
@@ -204,18 +194,9 @@ function ViolationsTablePanel({
                                     isSelected: allRowsSelected,
                                 }}
                             />
-                            {columns.map(({ Header, sortField }, idx) => {
+                            {columns.map(({ Header, sortField }) => {
                                 const sortParams = sortField
-                                    ? {
-                                          sort: {
-                                              sortBy: {
-                                                  index: activeSortIndex,
-                                                  direction: activeSortDirection,
-                                              },
-                                              onSort,
-                                              columnIndex: idx,
-                                          },
-                                      }
+                                    ? { sort: getSortParams(sortField) }
                                     : {};
                                 return (
                                     <Th key={Header} modifier="wrap" {...sortParams}>

@@ -12,11 +12,13 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 const (
@@ -41,13 +43,17 @@ const (
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), baseTable)
 	log    = logging.LoggerForModule()
+	schema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable(baseTable)
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), baseTable)
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -70,43 +76,13 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableProcessIndicators(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists process_indicators (
-    Id varchar,
-    DeploymentId varchar,
-    ContainerName varchar,
-    PodId varchar,
-    PodUid varchar,
-    Signal_ContainerId varchar,
-    Signal_Name varchar,
-    Signal_Args varchar,
-    Signal_ExecFilePath varchar,
-    Signal_Uid integer,
-    ClusterId varchar,
-    Namespace varchar,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
+// New returns a new Store instance using the provided sql instance.
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableProcessIndicatorsStmt)
 
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{
-
-		"create index if not exists processIndicators_DeploymentId on process_indicators using hash(DeploymentId)",
-
-		"create index if not exists processIndicators_PodUid on process_indicators using hash(PodUid)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoProcessIndicators(ctx context.Context, tx pgx.Tx, obj *storage.ProcessIndicator) error {
@@ -246,15 +222,6 @@ func (s *storeImpl) copyFromProcessIndicators(ctx context.Context, tx pgx.Tx, ob
 	}
 
 	return err
-}
-
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableProcessIndicators(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessIndicator) error {
@@ -499,6 +466,25 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessIndica
 		}
 	}
 	return nil
+}
+
+func isInScope(obj *storage.ProcessIndicator, eas *effectiveaccessscope.ScopeTree) bool {
+	if eas.State == effectiveaccessscope.Included {
+		return true
+	}
+	if eas.State == effectiveaccessscope.Excluded {
+		return false
+	}
+	clusterId := obj.GetClusterId()
+	cluster := eas.GetClusterByID(clusterId)
+	if cluster.State == effectiveaccessscope.Included {
+		return true
+	}
+	if cluster.State == effectiveaccessscope.Excluded {
+		return false
+	}
+	namespaceName := obj.GetNamespace()
+	return cluster.Namespaces[namespaceName].State == effectiveaccessscope.Included
 }
 
 //// Used for testing

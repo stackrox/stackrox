@@ -12,11 +12,13 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 const (
@@ -41,13 +43,17 @@ const (
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.Risk)(nil)), baseTable)
 	log    = logging.LoggerForModule()
+	schema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable(baseTable)
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.Risk)(nil)), baseTable)
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -70,31 +76,13 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableRisk(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists risk (
-    Id varchar,
-    Subject_Namespace varchar,
-    Subject_ClusterId varchar,
-    Subject_Type integer,
-    Score numeric,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
+// New returns a new Store instance using the provided sql instance.
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableRiskStmt)
 
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
@@ -199,15 +187,6 @@ func (s *storeImpl) copyFromRisk(ctx context.Context, tx pgx.Tx, objs ...*storag
 	}
 
 	return err
-}
-
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableRisk(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Risk) error {
@@ -452,6 +431,25 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Risk) error) 
 		}
 	}
 	return nil
+}
+
+func isInScope(obj *storage.Risk, eas *effectiveaccessscope.ScopeTree) bool {
+	if eas.State == effectiveaccessscope.Included {
+		return true
+	}
+	if eas.State == effectiveaccessscope.Excluded {
+		return false
+	}
+	clusterId := obj.GetSubject().GetClusterId()
+	cluster := eas.GetClusterByID(clusterId)
+	if cluster.State == effectiveaccessscope.Included {
+		return true
+	}
+	if cluster.State == effectiveaccessscope.Excluded {
+		return false
+	}
+	namespaceName := obj.GetSubject().GetNamespace()
+	return cluster.Namespaces[namespaceName].State == effectiveaccessscope.Included
 }
 
 //// Used for testing

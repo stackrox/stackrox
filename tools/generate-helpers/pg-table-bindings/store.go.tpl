@@ -24,12 +24,16 @@ import (
     "github.com/jackc/pgx/v4"
     "github.com/stackrox/rox/central/globaldb"
     "github.com/stackrox/rox/central/metrics"
+    pkgSchema "github.com/stackrox/rox/central/postgres/schema"
     "github.com/stackrox/rox/generated/storage"
     "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
     {{if or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker") -}}
     "github.com/stackrox/rox/pkg/sac"
+    {{- end }}
+    {{- if eq .ResourceType "directlyScoped" -}}
+    "github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
     {{- end }}
 )
 
@@ -58,20 +62,35 @@ const (
 )
 
 var (
-    schema = walker.Walk(reflect.TypeOf((*{{.Type}})(nil)), baseTable)
-    {{- /* Attach reference schemas, if provided. */ -}}
-    {{- $schema := .Schema }}
-    {{- range $idx, $ref := $schema.Parents}}
-        {{- if ne $ref.Table $schema.EmbeddedIn -}}.
-        WithReference(walker.Walk(reflect.TypeOf(({{$ref.Type}})(nil)), "{{$ref.Table}}"))
-        {{- end }}
-    {{- end }}
     log = logging.LoggerForModule()
+    schema = func() *walker.Schema {
+             		schema := globaldb.GetSchemaForTable(baseTable)
+             		if schema != nil {
+             			return schema
+             		}
+             		schema = walker.Walk(reflect.TypeOf((*{{.Type}})(nil)), baseTable)
+             		 {{- /* Attach reference schemas, if provided. */ -}}
+                        {{- $schema := .Schema }}
+                        {{- range $idx, $ref := $schema.Parents}}
+                            {{- if ne $ref.Table $schema.EmbeddedIn -}}.
+                            WithReference(func() *walker.Schema {
+                                parent := globaldb.GetSchemaForTable("{{$ref.Table}}")
+                                if parent != nil {
+                                    return parent
+                                }
+                                parent = walker.Walk(reflect.TypeOf(({{$ref.Type}})(nil)), "{{$ref.Table}}")
+                                globaldb.RegisterTable(parent)
+                                return parent
+                            }())
+                            {{- end }}
+                        {{- end }}
+             		globaldb.RegisterTable(schema)
+             		return schema
+             	}()
+    {{ if eq .ResourceType "globallyScoped" -}}
+    targetResource = resources.{{.Type | storageToResource}}
+    {{- end }}
 )
-
-func init() {
-    globaldb.RegisterTable(schema)
-}
 
 type Store interface {
     Count(ctx context.Context) (int, error)
@@ -99,58 +118,24 @@ type storeImpl struct {
     db *pgxpool.Pool
 }
 
-{{- define "createFunctionName"}}createTable{{.Table|upperCamelCase}}
-{{- end}}
-
-{{- define "createTable"}}
-{{- $schema := .schema }}
-func {{template "createFunctionName" $schema}}(ctx context.Context, db *pgxpool.Pool) {
-    table := `
-create table if not exists {{$schema.Table}} (
-{{- range $idx, $field := $schema.ResolvedFields }}
-    {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}},
-{{- end}}
-    PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys }}){{ if gt (len $schema.Parents) 0 }},{{end}}
-{{- range $idx, $pksGrps := $schema.ParentKeysGroupedByTable }}
-    CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrps.Fields}}) REFERENCES {{$pksGrps.Table}}({{template "commandSeparatedRefs" $pksGrps.Fields}}) ON DELETE CASCADE{{if lt (add $idx 1) (len $schema.ParentKeysGroupedByTable)}},{{end}}
-{{- end}}
-)
-`
-
-    _, err := db.Exec(ctx, table)
-    if err != nil {
-        log.Panicf("Error creating table %s: %v", table, err)
-    }
-
-    indexes := []string {
-    {{range $idx, $field := $schema.Fields}}
-        {{if $field.Options.Index}}"create index if not exists {{$schema.Table|lowerCamelCase}}_{{$field.ColumnName}} on {{$schema.Table}} using {{$field.Options.Index}}({{$field.ColumnName}})",{{end}}
-    {{end}}
-    }
-    for _, index := range indexes {
-       if _, err := db.Exec(ctx, index); err != nil {
-           log.Panicf("Error creating index %s: %v", index, err)
-        }
-    }
-
-    {{range $idx, $child := $schema.Children}}
-    {{- if eq $child.EmbeddedIn $schema.Table }}
-    {{template "createFunctionName" $child}}(ctx, db)
-    {{- end}}
-    {{- end}}
-}
-{{range $idx, $child := $schema.Children}}
-{{- if eq $child.EmbeddedIn $schema.Table }}
-{{template "createTable" dict "schema" $child "joinTable" false }}{{end}}
-{{- end}}
-{{end}}
-
-{{- /* If references have been attached synthetically, start at the referenced tables. */ -}}
-{{- range $idx, $parent := .Schema.Parents }}
-    {{- template "createTable" dict "schema" $parent "joinTable" false}}
+{{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
+{{- define "createTable" }}
+{{- $schema := . }}
+pgutils.CreateTable(ctx, db, {{template "createTableStmtVar" $schema}})
 {{- end }}
-{{- /* For the input base schema */ -}}
-{{- template "createTable" dict "schema" .Schema "joinTable" .JoinTable}}
+
+// New returns a new Store instance using the provided sql instance.
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+    {{- /* No top-level has a parent unless attached synthetically. Therefore, start at the referenced tables, if any, so that create of current table succeeds. */ -}}
+    {{- range $idx, $parent := .Schema.Parents }}
+    {{- template "createTable"  $parent}}
+    {{- end }}
+    {{- template "createTable" .Schema}}
+
+    return &storeImpl{
+        db: db,
+    }
+}
 
 {{- define "insertFunctionName"}}{{- $schema := . }}insertInto{{$schema.Table|upperCamelCase}}
 {{- end}}
@@ -311,19 +296,6 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 {{ template "copyObject" .Schema }}
 {{- end }}
 
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-    {{- /* Ensure that the referenced tables exists. This is only in case when we attach references to base table. */ -}}
-    {{- range $idx, $parent := .Schema.Parents}}
-    {{template "createFunctionName" $parent}}(ctx, db)
-    {{- end}}
-    {{template "createFunctionName" .Schema}}(ctx, db)
-
-    return &storeImpl{
-        db: db,
-    }
-}
-
 {{- if not .JoinTable }}
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*{{.Type}}) error {
@@ -386,7 +358,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
         return sac.ErrResourceAccessDenied
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -407,7 +379,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
         return sac.ErrResourceAccessDenied
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -432,7 +404,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
         return 0, err
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
         return 0, err
     }
@@ -455,7 +427,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
         return false, err
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return false, err
     } else if !ok {
@@ -480,7 +452,7 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
         return nil, false, err
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return nil, false, err
     } else if !ok {
@@ -528,7 +500,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
         return sac.ErrResourceAccessDenied
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -560,7 +532,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
         return nil, err
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return nil, err
     } else if !ok {
@@ -595,7 +567,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
         return nil, nil, nil
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return nil, nil, err
     } else if !ok {
@@ -659,7 +631,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
         return sac.ErrResourceAccessDenied
     }
     {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.{{.Type | storageToResource}})
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -702,6 +674,31 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 	}
 	return nil
 }
+
+{{ if eq .ResourceType "directlyScoped" }}
+    func isInScope(obj *{{.Type}}, eas *effectiveaccessscope.ScopeTree) bool {
+    if eas.State == effectiveaccessscope.Included {
+        return true
+    }
+    if eas.State == effectiveaccessscope.Excluded {
+        return false
+    }
+    clusterId := {{ .ClusterGetter }}
+    cluster := eas.GetClusterByID(clusterId)
+    {{ if not .NamespaceGetter -}}
+    return cluster.State == effectiveaccessscope.Included
+    {{  else -}}
+    if cluster.State == effectiveaccessscope.Included {
+        return true
+    }
+    if cluster.State == effectiveaccessscope.Excluded {
+        return false
+    }
+    namespaceName := {{ .NamespaceGetter }}
+    return cluster.Namespaces[namespaceName].State == effectiveaccessscope.Included
+    {{- end }}
+}
+{{ end -}}
 
 //// Used for testing
 {{- define "dropTableFunctionName"}}dropTable{{.Table | upperCamelCase}}{{end}}

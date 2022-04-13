@@ -12,11 +12,13 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 const (
@@ -41,13 +43,17 @@ const (
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.Cluster)(nil)), baseTable)
 	log    = logging.LoggerForModule()
+	schema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable(baseTable)
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.Cluster)(nil)), baseTable)
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -70,33 +76,13 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableClusters(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists clusters (
-    Id varchar,
-    Name varchar UNIQUE,
-    Labels jsonb,
-    HealthStatus_SensorHealthStatus integer,
-    HealthStatus_CollectorHealthStatus integer,
-    HealthStatus_OverallHealthStatus integer,
-    HealthStatus_AdmissionControlHealthStatus integer,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
+// New returns a new Store instance using the provided sql instance.
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableClustersStmt)
 
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoClusters(ctx context.Context, tx pgx.Tx, obj *storage.Cluster) error {
@@ -211,15 +197,6 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 	}
 
 	return err
-}
-
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableClusters(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Cluster) error {
@@ -464,6 +441,19 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Cluster) erro
 		}
 	}
 	return nil
+}
+
+func isInScope(obj *storage.Cluster, eas *effectiveaccessscope.ScopeTree) bool {
+	if eas.State == effectiveaccessscope.Included {
+		return true
+	}
+	if eas.State == effectiveaccessscope.Excluded {
+		return false
+	}
+	clusterId := obj.GetId()
+	cluster := eas.GetClusterByID(clusterId)
+	return cluster.State == effectiveaccessscope.Included
+
 }
 
 //// Used for testing

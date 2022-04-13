@@ -16,7 +16,6 @@ import {
 
 export const types = {
     FETCH_DEPLOYMENTS: createFetchingActionTypes('deployments/FETCH_DEPLOYMENTS'),
-    FETCH_DEPLOYMENT: createFetchingActionTypes('deployments/FETCH_DEPLOYMENT'),
     ...searchTypes('deployments'),
 };
 
@@ -24,7 +23,6 @@ export const types = {
 
 export const actions = {
     fetchDeployments: createFetchingActions(types.FETCH_DEPLOYMENTS),
-    fetchDeployment: createFetchingActions(types.FETCH_DEPLOYMENT),
     ...getSearchActions('deployments'),
 };
 

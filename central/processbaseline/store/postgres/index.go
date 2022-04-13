@@ -20,6 +20,7 @@ func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_BASELINES, schema)
 }
 
+// NewIndexer returns new indexer for `storage.ProcessBaseline`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl{
 		db: db,

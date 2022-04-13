@@ -8,6 +8,7 @@ import subprocess
 
 from common import popen_graceful_kill
 
+QA_TESTS_OUTPUT_DIR = "/tmp/qa-tests-backend-logs"
 
 class BaseTest:
     def __init__(self):
@@ -30,7 +31,7 @@ class UpgradeTest(BaseTest):
             ["tests/upgrade/run.sh", UpgradeTest.TEST_OUTPUT_DIR]
         ) as cmd:
 
-            self.test_output_dirs = [UpgradeTest.TEST_OUTPUT_DIR]
+            self.test_output_dirs = [UpgradeTest.TEST_OUTPUT_DIR, QA_TESTS_OUTPUT_DIR]
 
             try:
                 exitstatus = cmd.wait(UpgradeTest.TEST_TIMEOUT)

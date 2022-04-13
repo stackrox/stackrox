@@ -20,6 +20,7 @@ func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_VULN_EDGE, schema)
 }
 
+// NewIndexer returns new indexer for `storage.ImageCVEEdge`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl{
 		db: db,
