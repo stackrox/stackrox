@@ -45,7 +45,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-central-to-db
+  name: central-db
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "central-db") | nindent 4 }}
