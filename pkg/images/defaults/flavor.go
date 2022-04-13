@@ -42,6 +42,11 @@ var (
 			isAllowedInReleaseBuild: true,
 			constructorFunc:         RHACSReleaseImageFlavor,
 		},
+		{
+			imageFlavorName:         ImageFlavorNameOpenSourceRelease,
+			isAllowedInReleaseBuild: true,
+			constructorFunc:         OpenSourceReleaseImageFlavor,
+		},
 	}
 
 	// imageFlavorMap contains allImageFlavors keyed by ImageFlavorName.
@@ -182,6 +187,38 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 
 		ChartRepo: ChartRepo{
 			URL: "https://mirror.openshift.com/pub/rhacs/charts",
+		},
+		ImagePullSecrets: ImagePullSecrets{
+			AllowNone: true,
+		},
+		Versions: v,
+	}
+}
+
+// OpensourceReleaseImageFlavor returns image values for `opensource` flavor.
+func OpenSourceReleaseImageFlavor() ImageFlavor {
+	v := version.GetAllVersionsDevelopment()
+	return ImageFlavor{
+		MainRegistry:       "quay.io/stackrox-io",
+		MainImageName:      "main",
+		MainImageTag:       v.MainVersion,
+		CentralDBImageTag:  v.MainVersion,
+		CentralDBImageName: "central-db",
+
+		CollectorRegistry:      "quay.io/stackrox-io",
+		CollectorImageName:     "collector",
+		CollectorImageTag:      v.CollectorVersion + "-latest",
+		CollectorSlimImageName: "collector",
+		CollectorSlimImageTag:  v.CollectorVersion + "-slim",
+
+		ScannerImageName:       "scanner",
+		ScannerSlimImageName:   "scanner-slim",
+		ScannerImageTag:        v.ScannerVersion,
+		ScannerDBImageName:     "scanner-db",
+		ScannerDBSlimImageName: "scanner-db-slim",
+
+		ChartRepo: ChartRepo{
+			URL: "https://charts.stackrox.io",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,
