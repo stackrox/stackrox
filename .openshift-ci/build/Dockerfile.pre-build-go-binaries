@@ -1,0 +1,3 @@
+FROM bin
+
+RUN make tag
