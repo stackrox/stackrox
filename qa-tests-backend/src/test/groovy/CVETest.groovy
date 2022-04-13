@@ -163,7 +163,7 @@ class CVETest extends BaseSpecification {
 
     static final private Deployment CVE_DEPLOYMENT = new Deployment()
             .setName(CVE_DEPLOYMENT_NAME)
-            .setImage("us.gcr.io/stackrox-ci/quay.io/rhacs-eng/qa:nginx-1-9")
+            .setImage("us.gcr.io/stackrox-ci/nginx:1.9")
             .addLabel("app", "test")
 
     static final private NGINX_1_10_2_IMAGE = "us.gcr.io/stackrox-ci/nginx:1.10.2"
@@ -185,7 +185,7 @@ class CVETest extends BaseSpecification {
             "docker.io/library/debian@${UNFIXABLE_VULN_IMAGE_DIGEST}"
 
     def setupSpec() {
-        ImageService.scanImage("us.gcr.io/stackrox-ci/quay.io/rhacs-eng/qa:nginx-1-9")
+        ImageService.scanImage("us.gcr.io/stackrox-ci/nginx:1.9")
         ImageService.scanImage(NGINX_1_10_2_IMAGE)
         ImageService.scanImage(RED_HAT_IMAGE)
         ImageService.scanImage(UBUNTU_IMAGE)
