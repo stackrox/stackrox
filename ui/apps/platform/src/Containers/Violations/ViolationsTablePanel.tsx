@@ -13,14 +13,14 @@ import {
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 
 import useTableSelection from 'hooks/useTableSelection';
-import { TableColumn } from 'hooks/useTableSort';
 import { resolveAlert } from 'services/AlertsService';
 import { excludeDeployments } from 'services/PoliciesService';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import VIOLATION_STATES from 'constants/violationStates';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import TableCell from 'Components/PatternFly/TableCell';
-import { GetSortParams } from 'hooks/patternfly/useURLSort';
+import { GetSortParams } from 'hooks/useURLSort';
+import { TableColumn } from 'types/table';
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
 import TagConfirmation from './Modals/TagConfirmation';
