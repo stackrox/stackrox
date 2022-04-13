@@ -72,12 +72,12 @@ var (
     }`
 
 	vulnReportEmailTemplate = `
-	{{.ImageFlavorBranding}} has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
+	{{.BrandedProductName}} has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
 
 	To address these findings, please review the impacted software packages in the container images running within deployments you are responsible for and update them to a version containing the fix, if one is available.`
 
 	noVulnsFoundEmailTemplate = `
-	{{.ImageFlavorBranding}} has found zero vulnerabilities associated with the running container images owned by your organization.`
+	{{.BrandedProductName}} has found zero vulnerabilities associated with the running container images owned by your organization.`
 
 	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 )
@@ -125,13 +125,9 @@ type ReportRequest struct {
 }
 
 type reportEmailFormat struct {
-	ImageFlavorBranding string
-	WhichVulns          string
-	DateStr             string
-}
-
-type reportnoVulnsFoundEmailFormat struct {
-	ImageFlavorBranding string
+	BrandedProductName string
+	WhichVulns         string
+	DateStr            string
 }
 
 // New instantiates a new cron scheduler and supports adding and removing report configurations
@@ -334,8 +330,8 @@ func getBrandedProductName() string {
 }
 
 func formatNoVulnsFoundMessage() (string, error) {
-	data := &reportnoVulnsFoundEmailFormat{
-		ImageFlavorBranding: getBrandedProductName(),
+	data := &reportEmailFormat{
+		BrandedProductName: getBrandedProductName(),
 	}
 	tmpl, err := template.New("emailBody").Parse(noVulnsFoundEmailTemplate)
 	if err != nil {
@@ -351,9 +347,9 @@ func formatNoVulnsFoundMessage() (string, error) {
 
 func formatMessage(rc *storage.ReportConfiguration) (string, error) {
 	data := &reportEmailFormat{
-		ImageFlavorBranding: getBrandedProductName(),
-		WhichVulns:          "for all vulnerabilities",
-		DateStr:             time.Now().Format("January 02, 2006"),
+		BrandedProductName: getBrandedProductName(),
+		WhichVulns:         "for all vulnerabilities",
+		DateStr:            time.Now().Format("January 02, 2006"),
 	}
 	if rc.GetVulnReportFilters().SinceLastReport && rc.GetLastSuccessfulRunTime() != nil {
 		data.WhichVulns = fmt.Sprintf("for new vulnerabilities since %s",
