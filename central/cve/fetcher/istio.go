@@ -13,6 +13,7 @@ import (
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -74,7 +75,12 @@ func (m *istioCVEManager) updateCVEsInDB(embeddedCVEs []*storage.EmbeddedVulnera
 	cves := converter.EmbeddedCVEsToProtoCVEs("", embeddedCVEs...)
 	newCVEs := make([]converter.ClusterCVEParts, 0, len(cves))
 	for _, cve := range cves {
-		nvdCVE := m.getNVDCVE(cve.GetId())
+		var nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem
+		if features.PostgresDatastore.Enabled() {
+			nvdCVE = m.getNVDCVE(cve.GetCve())
+		} else {
+			nvdCVE = m.getNVDCVE(cve.GetId())
+		}
 		if nvdCVE == nil {
 			continue
 		}
