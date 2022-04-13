@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -183,8 +184,6 @@ func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegrationReferencedBy
 	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, savedIntegration.GetId())
 	s.Error(err)
 	s.ErrorIs(err, errox.ReferencedByAnotherObject)
-	// The error should NOT contain the policy name.
-	s.NotContains(err.Error(), "policy-referencing-integration")
 
 	// 3. Return an error when retrieving policies.
 	s.policyStorageMock.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, errors.New("some error"))
@@ -267,4 +266,49 @@ func newSignatureIntegration(name string) *storage.SignatureIntegration {
 
 func (s *signatureDataStoreTestSuite) TearDownTest() {
 	rocksdbtest.TearDownRocksDB(s.rocksie)
+}
+
+func TestIntersectPolicies(t *testing.T) {
+	cases := map[string]struct {
+		policiesVisibleToUser []*storage.Policy
+		policiesWithReference []string
+		expectedOutput        []string
+	}{
+		"empty policies visible to user": {
+			policiesVisibleToUser: nil,
+			policiesWithReference: []string{"policyA", "policyB"},
+			expectedOutput:        []string{"<hidden>"},
+		},
+		"policies visible to user and policies with references are equal": {
+			policiesVisibleToUser: []*storage.Policy{
+				{Name: "policyA"},
+				{Name: "policyB"},
+			},
+			policiesWithReference: []string{"policyA", "policyB"},
+			expectedOutput:        []string{"policyA", "policyB"},
+		},
+		"policies visible to user are greater than policies with references": {
+			policiesVisibleToUser: []*storage.Policy{
+				{Name: "policyA"},
+				{Name: "policyB"},
+				{Name: "policyC"},
+			},
+			policiesWithReference: []string{"policyA", "policyB"},
+			expectedOutput:        []string{"policyA", "policyB"},
+		},
+		"policies visible to user are less than policies with references": {
+			policiesVisibleToUser: []*storage.Policy{
+				{Name: "policyA"},
+			},
+			policiesWithReference: []string{"policyA", "policyB"},
+			expectedOutput:        []string{"policyA", "<hidden>"},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			result := intersectPolicies(c.policiesVisibleToUser, c.policiesWithReference)
+			assert.ElementsMatch(t, c.expectedOutput, result)
+		})
+	}
 }
