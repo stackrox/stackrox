@@ -3,9 +3,8 @@ package scheduler
 import (
 	"bytes"
 	"testing"
-	"time"
-
 	"text/template"
+	"time"
 
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/defaults"
