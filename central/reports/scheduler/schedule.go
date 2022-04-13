@@ -79,10 +79,6 @@ var (
 	noVulnsFoundEmailTemplate = `
 	{{.ImageFlavorBranding}} has found zero vulnerabilities associated with the running container images owned by your organization.`
 
-	rhacsBranding = `Red Hat Advanced Cluster Security for Kubernetes`
-
-	stackroxBranding = `StackRox`
-
 	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 )
 
