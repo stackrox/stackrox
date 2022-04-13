@@ -30,7 +30,6 @@ func (d *detectorImpl) DetectDeployment(ctx deploytime.DetectionContext, enhance
 		log.Errorf("Error running detection on deployment %q: %v", enhancedDeployment.Deployment.GetName(), err)
 	}
 	return alerts
-
 }
 
 func (d *detectorImpl) DetectProcess(enhancedDeployment booleanpolicy.EnhancedDeployment, process *storage.ProcessIndicator, processNotInBaseline bool) []*storage.Alert {

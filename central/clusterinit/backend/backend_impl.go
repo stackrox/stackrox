@@ -24,7 +24,7 @@ type backendImpl struct {
 }
 
 func (b *backendImpl) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error) {
-	if err := checkAccess(ctx, storage.Access_READ_ACCESS); err != nil {
+	if err := CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
 		return nil, err
 	}
 
@@ -74,7 +74,7 @@ func extractExpiryDate(certBundle clusters.CertBundle) (*types.Timestamp, error)
 }
 
 func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMeta, error) {
-	if err := checkAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
+	if err := CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return nil, err
 	}
 
@@ -120,7 +120,7 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 }
 
 func (b *backendImpl) GetCAConfig(ctx context.Context) (*CAConfig, error) {
-	if err := checkAccess(ctx, storage.Access_READ_ACCESS); err != nil {
+	if err := CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
 		return nil, err
 	}
 
@@ -135,7 +135,7 @@ func (b *backendImpl) GetCAConfig(ctx context.Context) (*CAConfig, error) {
 }
 
 func (b *backendImpl) Revoke(ctx context.Context, id string) error {
-	if err := checkAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
+	if err := CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return err
 	}
 
@@ -147,7 +147,7 @@ func (b *backendImpl) Revoke(ctx context.Context, id string) error {
 }
 
 func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {
-	if err := checkAccess(ctx, storage.Access_READ_ACCESS); err != nil {
+	if err := CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
 		return err
 	}
 

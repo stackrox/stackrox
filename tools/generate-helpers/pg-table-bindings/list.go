@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var typeRegistry = make(map[string]string)
@@ -59,4 +60,22 @@ func resourceMetadataFromString(resource string) permissions.ResourceMetadata {
 		}
 	}
 	panic("unknown resource: " + resource)
+}
+
+func clusterGetter(schema *walker.Schema) string {
+	for _, f := range schema.Fields {
+		if strings.Contains(f.Search.FieldName, "Cluster ID") {
+			return f.Getter("obj")
+		}
+	}
+	panic(schema.TypeName + "has no cluster. Is it directly scoped?")
+}
+
+func namespaceGetter(schema *walker.Schema) string {
+	for _, f := range schema.Fields {
+		if strings.Contains(f.Search.FieldName, "Namespace") {
+			return f.Getter("obj")
+		}
+	}
+	return ""
 }

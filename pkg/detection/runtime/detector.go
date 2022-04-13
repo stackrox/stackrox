@@ -35,7 +35,7 @@ type detectorImpl struct {
 	policySet detection.PolicySet
 }
 
-// UpsertPolicy adds or updates a policy in the set.
+// PolicySet returns set of policies.
 func (d *detectorImpl) PolicySet() detection.PolicySet {
 	return d.policySet
 }
@@ -125,7 +125,6 @@ func (d *detectorImpl) detectForDeployment(
 				alerts = append(alerts, alert)
 			}
 		}
-
 		if flow != nil {
 			violation, err := compiled.MatchAgainstDeploymentAndNetworkFlow(&cacheReceptable, enhancedDeployment, flow)
 			if err != nil {
@@ -137,7 +136,6 @@ func (d *detectorImpl) detectForDeployment(
 				alerts = append(alerts, alert)
 			}
 		}
-
 		return nil
 	})
 	if err != nil {

@@ -20,6 +20,7 @@ func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_COMPONENTS, schema)
 }
 
+// NewIndexer returns new indexer for `storage.ImageComponent`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl{
 		db: db,

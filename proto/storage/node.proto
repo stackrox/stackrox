@@ -76,8 +76,9 @@ message NodeScan {
     repeated EmbeddedNodeScanComponent components       = 2;
 
     enum Note {
-        UNSET          = 0;
-        OS_UNSUPPORTED = 1;
+        UNSET              = 0;
+        OS_UNSUPPORTED     = 1;
+        KERNEL_UNSUPPORTED = 2;
     }
     repeated Note                      notes            = 4;
 }
