@@ -152,7 +152,7 @@ class SplunkUtil {
                             .setName(deploymentName)
                             .setImage(useLegacySplunk ?
                                     "quay.io/rhacs-eng/qa:splunk-test-repo-6-6-2" :
-                                    "splunk/splunk:8.1.2")
+                                    "quay.io/rhacs-eng/qa:splunk-test-repo-8-1-2")
                             .addPort(8000)
                             .addPort(8088)
                             .addPort(8089)

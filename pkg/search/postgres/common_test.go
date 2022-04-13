@@ -135,6 +135,18 @@ func TestMultiTableQueries(t *testing.T) {
 				Data:  []interface{}{"central%"},
 			},
 		},
+		{
+			desc: "nil query",
+			q:    nil,
+			expected: &query{
+				Select: selectQuery{
+					Query: "select deployments.Id",
+				},
+				From:  "deployments",
+				Where: "",
+				Data:  []interface{}{},
+			},
+		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			actual, err := standardizeQueryAndPopulatePath(c.q, mappings.OptionsMap, deploymentBaseSchema, GET)

@@ -158,6 +158,47 @@ func (root *ScopeTree) Compactify() ScopeTreeCompacted {
 	return compacted
 }
 
+// FromClustersAndNamespacesMap will build and return a ScopeTree that allows access to all clusters and
+// (cluster, namespace) pairs provided in input.
+func FromClustersAndNamespacesMap(includedClusters []string, includedNamespaces map[string][]string) *ScopeTree {
+	if len(includedClusters) == 0 && len(includedNamespaces) == 0 {
+		return DenyAllEffectiveAccessScope()
+	}
+	root := &ScopeTree{
+		State:           Partial,
+		clusterIDToName: make(map[string]string, 0),
+		Clusters:        make(map[string]*clustersScopeSubTree, 0),
+	}
+	includedClusterSubTree := &clustersScopeSubTree{
+		State: Included,
+	}
+	includedNamespaceSubTree := &namespacesScopeSubTree{
+		State: Included,
+	}
+	for _, clusterID := range includedClusters {
+		root.clusterIDToName[clusterID] = clusterID
+		root.Clusters[clusterID] = includedClusterSubTree
+	}
+	for clusterID, namespaces := range includedNamespaces {
+		root.clusterIDToName[clusterID] = clusterID
+		clusterTree := root.Clusters[clusterID]
+		if clusterTree == nil && len(namespaces) == 0 {
+			continue
+		}
+		if clusterTree == nil {
+			clusterTree = &clustersScopeSubTree{
+				State:      Partial,
+				Namespaces: make(map[string]*namespacesScopeSubTree, 0),
+			}
+		}
+		for _, namespace := range namespaces {
+			clusterTree.Namespaces[namespace] = includedNamespaceSubTree
+		}
+		root.Clusters[clusterID] = clusterTree
+	}
+	return root
+}
+
 // String yields a compacted one-line string representation.
 func (root *ScopeTree) String() string {
 	return root.Compactify().String()

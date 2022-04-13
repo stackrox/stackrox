@@ -9,9 +9,9 @@ import {
 /**
  *  Adds a search modifier to the searchOptions
  *
- *  @param {!Object[]} searchOptions an array of search options
- *  @param {!string} modifier a modifier term (ie. 'Cluster:')
- *  @returns {!Object[]} the modified search options
+ *  @param searchOptions an array of search options
+ *  @param modifier a modifier term (ie. 'Cluster:')
+ *  @returns the modified search options
  */
 export function addSearchModifier(
     searchOptions: GlobalSearchOption[],
@@ -24,9 +24,9 @@ export function addSearchModifier(
 /**
  *  Adds a search keyword to the searchOptions
  *
- *  @param {!Object[]} searchOptions an array of search options
- *  @param {!string} keyword a keyword term (ie. 'remote')
- *  @returns {!Object[]} the modified search options
+ *  @param searchOptions an array of search options
+ *  @param keyword a keyword term (ie. 'remote')
+ *  @returns the modified search options
  */
 export function addSearchKeyword(
     searchOptions: GlobalSearchOption[],

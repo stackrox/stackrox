@@ -5,7 +5,6 @@ go 1.17
 require (
 	github.com/golangci/golangci-lint v1.45.2
 	github.com/nilslice/protolock v0.15.2
-	honnef.co/go/tools v0.3.0
 )
 
 require (
@@ -156,6 +155,7 @@ require (
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	honnef.co/go/tools v0.3.0 // indirect
 	mvdan.cc/gofumpt v0.3.0 // indirect
 	mvdan.cc/interfacer v0.0.0-20180901003855-c20040233aed // indirect
 	mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b // indirect

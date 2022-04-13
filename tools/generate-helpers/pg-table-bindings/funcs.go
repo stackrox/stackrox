@@ -85,8 +85,9 @@ func valueExpansion(size int) string {
 }
 
 var funcMap = template.FuncMap{
-	"lowerCamelCase": lowerCamelCase,
-	"upperCamelCase": upperCamelCase,
-	"valueExpansion": valueExpansion,
-	"lowerCase":      strings.ToLower,
+	"lowerCamelCase":    lowerCamelCase,
+	"upperCamelCase":    upperCamelCase,
+	"valueExpansion":    valueExpansion,
+	"lowerCase":         strings.ToLower,
+	"storageToResource": storageToResource,
 }

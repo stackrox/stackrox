@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,9 +36,9 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // AckKeysIndexed mocks base method.
-func (m *MockStore) AckKeysIndexed(keys ...string) error {
+func (m *MockStore) AckKeysIndexed(ctx context.Context, keys ...string) error {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{}
+	varargs := []interface{}{ctx}
 	for _, a := range keys {
 		varargs = append(varargs, a)
 	}
@@ -47,75 +48,76 @@ func (m *MockStore) AckKeysIndexed(keys ...string) error {
 }
 
 // AckKeysIndexed indicates an expected call of AckKeysIndexed.
-func (mr *MockStoreMockRecorder) AckKeysIndexed(keys ...interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) AckKeysIndexed(ctx interface{}, keys ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AckKeysIndexed", reflect.TypeOf((*MockStore)(nil).AckKeysIndexed), keys...)
+	varargs := append([]interface{}{ctx}, keys...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AckKeysIndexed", reflect.TypeOf((*MockStore)(nil).AckKeysIndexed), varargs...)
 }
 
-// CountImages mocks base method.
-func (m *MockStore) CountImages() (int, error) {
+// Count mocks base method.
+func (m *MockStore) Count(ctx context.Context) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountImages")
+	ret := m.ctrl.Call(m, "Count", ctx)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CountImages indicates an expected call of CountImages.
-func (mr *MockStoreMockRecorder) CountImages() *gomock.Call {
+// Count indicates an expected call of Count.
+func (mr *MockStoreMockRecorder) Count(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountImages", reflect.TypeOf((*MockStore)(nil).CountImages))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), ctx)
 }
 
 // Delete mocks base method.
-func (m *MockStore) Delete(id string) error {
+func (m *MockStore) Delete(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockStoreMockRecorder) Delete(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), ctx, id)
 }
 
 // Exists mocks base method.
-func (m *MockStore) Exists(id string) (bool, error) {
+func (m *MockStore) Exists(ctx context.Context, id string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Exists", id)
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Exists indicates an expected call of Exists.
-func (mr *MockStoreMockRecorder) Exists(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), ctx, id)
 }
 
-// GetImage mocks base method.
-func (m *MockStore) GetImage(sha string) (*storage.Image, bool, error) {
+// Get mocks base method.
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.Image, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImage", sha)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*storage.Image)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// GetImage indicates an expected call of GetImage.
-func (mr *MockStoreMockRecorder) GetImage(sha interface{}) *gomock.Call {
+// Get indicates an expected call of Get.
+func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockStore)(nil).GetImage), sha)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
 // GetImageMetadata mocks base method.
-func (m *MockStore) GetImageMetadata(sha string) (*storage.Image, bool, error) {
+func (m *MockStore) GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImageMetadata", sha)
+	ret := m.ctrl.Call(m, "GetImageMetadata", ctx, id)
 	ret0, _ := ret[0].(*storage.Image)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -123,83 +125,52 @@ func (m *MockStore) GetImageMetadata(sha string) (*storage.Image, bool, error) {
 }
 
 // GetImageMetadata indicates an expected call of GetImageMetadata.
-func (mr *MockStoreMockRecorder) GetImageMetadata(sha interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetImageMetadata(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageMetadata", reflect.TypeOf((*MockStore)(nil).GetImageMetadata), sha)
-}
-
-// GetImages mocks base method.
-func (m *MockStore) GetImages() ([]*storage.Image, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImages")
-	ret0, _ := ret[0].([]*storage.Image)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetImages indicates an expected call of GetImages.
-func (mr *MockStoreMockRecorder) GetImages() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImages", reflect.TypeOf((*MockStore)(nil).GetImages))
-}
-
-// GetImagesBatch mocks base method.
-func (m *MockStore) GetImagesBatch(shas []string) ([]*storage.Image, []int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImagesBatch", shas)
-	ret0, _ := ret[0].([]*storage.Image)
-	ret1, _ := ret[1].([]int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetImagesBatch indicates an expected call of GetImagesBatch.
-func (mr *MockStoreMockRecorder) GetImagesBatch(shas interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesBatch", reflect.TypeOf((*MockStore)(nil).GetImagesBatch), shas)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageMetadata", reflect.TypeOf((*MockStore)(nil).GetImageMetadata), ctx, id)
 }
 
 // GetKeysToIndex mocks base method.
-func (m *MockStore) GetKeysToIndex() ([]string, error) {
+func (m *MockStore) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetKeysToIndex")
+	ret := m.ctrl.Call(m, "GetKeysToIndex", ctx)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetKeysToIndex indicates an expected call of GetKeysToIndex.
-func (mr *MockStoreMockRecorder) GetKeysToIndex() *gomock.Call {
+func (mr *MockStoreMockRecorder) GetKeysToIndex(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeysToIndex", reflect.TypeOf((*MockStore)(nil).GetKeysToIndex))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeysToIndex", reflect.TypeOf((*MockStore)(nil).GetKeysToIndex), ctx)
 }
 
-// ListImage mocks base method.
-func (m *MockStore) ListImage(sha string) (*storage.ListImage, bool, error) {
+// GetMany mocks base method.
+func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListImage", sha)
-	ret0, _ := ret[0].(*storage.ListImage)
-	ret1, _ := ret[1].(bool)
+	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
+	ret0, _ := ret[0].([]*storage.Image)
+	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// ListImage indicates an expected call of ListImage.
-func (mr *MockStoreMockRecorder) ListImage(sha interface{}) *gomock.Call {
+// GetMany indicates an expected call of GetMany.
+func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListImage", reflect.TypeOf((*MockStore)(nil).ListImage), sha)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
 }
 
 // Upsert mocks base method.
-func (m *MockStore) Upsert(image *storage.Image) error {
+func (m *MockStore) Upsert(ctx context.Context, image *storage.Image) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", image)
+	ret := m.ctrl.Call(m, "Upsert", ctx, image)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert.
-func (mr *MockStoreMockRecorder) Upsert(image interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Upsert(ctx, image interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), image)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, image)
 }

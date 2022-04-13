@@ -4,7 +4,7 @@ go 1.16
 
 // CAVEAT: This introduces a circular dependency. If you change this line, you MUST change the "exclude"
 // directive at the bottom of the file as well.
-require github.com/stackrox/scanner v0.0.0-20220214215744-13c0e1db0298
+require github.com/stackrox/scanner v0.0.0-20220408151911-460993206ee4
 
 require (
 	cloud.google.com/go/compute v1.5.0
@@ -94,7 +94,7 @@ require (
 	github.com/sergi/go-diff v1.2.0
 	github.com/sigstore/cosign v1.5.1
 	github.com/sigstore/sigstore v1.1.1-0.20220130134424-bae9b66b8442
-	github.com/spf13/cobra v1.3.0
+	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stackrox/anchore-client v0.0.0-20190929180200-981e05834836
 	github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855

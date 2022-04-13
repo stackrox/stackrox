@@ -173,6 +173,15 @@ func initializeFieldMetadata() FieldMetadata {
 		negationForbidden,
 	)
 
+	f.registerFieldMetadata(fieldnames.AllowPrivilegeEscalation,
+		querybuilders.ForFieldLabel(search.AllowPrivilegeEscalation),
+		violationmessages.ContainerContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+
 	f.registerFieldMetadata(fieldnames.AppArmorProfile,
 		querybuilders.ForFieldLabelRegex(search.AppArmorProfile),
 		violationmessages.ContainerContextFields,
@@ -395,14 +404,16 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
 
-	f.registerFieldMetadata(fieldnames.ImageSignatureVerifiedBy,
-		querybuilders.ForFieldLabel(augmentedobjs.ImageSignatureVerifiedCustomTag),
-		violationmessages.ImageContextFields,
-		func(*validateConfiguration) *regexp.Regexp {
-			return signatureIntegrationIDValueRegex
-		},
-		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
-		[]RuntimeFieldType{})
+	if features.ImageSignatureVerification.Enabled() {
+		f.registerFieldMetadata(fieldnames.ImageSignatureVerifiedBy,
+			querybuilders.ForImageSignatureVerificationStatus(),
+			violationmessages.ImageContextFields,
+			func(*validateConfiguration) *regexp.Regexp {
+				return signatureIntegrationIDValueRegex
+			},
+			[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+			[]RuntimeFieldType{}, negationForbidden)
+	}
 
 	f.registerFieldMetadata(fieldnames.ImageTag,
 		querybuilders.ForFieldLabelRegex(search.ImageTag),

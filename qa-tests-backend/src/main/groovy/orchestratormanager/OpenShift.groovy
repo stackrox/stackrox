@@ -43,7 +43,8 @@ class OpenShift extends Kubernetes {
 
         try {
             String sccName = "anyuid"
-            if (Env.CI_JOBNAME =~ /-(osd|rosa|aro)-/) {
+            if (Env.CI_JOBNAME =~ /-(rosa|aro)-/ || Env.CI_JOBNAME =~ /^osd-/) {
+                println "Using a non default SCC"
                 sccName = "qatest-anyuid"
             }
             SecurityContextConstraints anyuid = oClient.securityContextConstraints().withName(sccName).get()
@@ -53,8 +54,9 @@ class OpenShift extends Kubernetes {
                             !anyuid.allowHostDirVolumePlugin ||
                             !anyuid.allowHostPorts
                     )) {
-                println "Adding system:serviceaccount:" + ns + ":default to anyuid user list"
+                println "Adding system:serviceaccount:${ns}:default to ${sccName} user list"
                 anyuid.with {
+                    // (Note: + string concatenation here to avoid json unmarshal errors
                     users.addAll(["system:serviceaccount:" + ns + ":default"])
                     setAllowHostNetwork(true)
                     setAllowHostDirVolumePlugin(true)

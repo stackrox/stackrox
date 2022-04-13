@@ -20,6 +20,7 @@ type violationPrinter struct {
 var (
 	policyFieldsToPrinters = map[string][]violationPrinter{
 		fieldnames.AddCaps:                      {{required: set.NewStringSet(search.AddCapabilities.String()), printerFuncKey: printer.AddCapabilityKey}},
+		fieldnames.AllowPrivilegeEscalation:     {{required: set.NewStringSet(search.AllowPrivilegeEscalation.String()), printerFuncKey: printer.AllowPrivilegeEscalationKey}},
 		fieldnames.AppArmorProfile:              {{required: set.NewStringSet(search.AppArmorProfile.String()), printerFuncKey: printer.AppArmorProfileKey}},
 		fieldnames.AutomountServiceAccountToken: {{required: set.NewStringSet(search.AutomountServiceAccountToken.String()), printerFuncKey: printer.AutomountServiceAccountTokenKey}},
 		fieldnames.CVE:                          {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},

@@ -23,6 +23,8 @@ var (
 	ErrUnexpectedScopeKey = errors.New("unexpected scope key")
 	// ErrUnknownResource is returned when resource is unknown.
 	ErrUnknownResource = errors.New("unknown resource")
+
+	errNoGlobalEffectiveAccessScope = errors.New("global scope checker has no effective access scope")
 )
 
 // NewBuiltInScopeChecker returns a new SAC-aware scope checker for the given
@@ -90,7 +92,7 @@ func (a *globalScopeChecker) PerformChecks(_ context.Context) error {
 }
 
 func (a *globalScopeChecker) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
-	return nil, errors.New("global scope checker has no effective access scope")
+	return nil, errNoGlobalEffectiveAccessScope
 }
 
 func (a *globalScopeChecker) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {
@@ -184,11 +186,21 @@ func (a *resourceLevelScopeCheckerCore) TryAllowed() sac.TryAllowedResult {
 }
 
 func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
-	// TODO(ROX-9537): Implement it
 	// 1. Get all roles and filter them to get only roles with desired access level (here: READ_ACCESS)
 	// 2. For every role get it's effective access scope (EAS)
 	// 3. Merge all EAS into a single tree
-	panic("Implement me: ROX-9537")
+	if a.access < resource.Access || a.resource != resource.Resource {
+		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+	}
+	eas := effectiveaccessscope.DenyAllEffectiveAccessScope()
+	for _, role := range a.roles {
+		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
+		if err != nil {
+			return nil, err
+		}
+		eas.Merge(scope)
+	}
+	return eas, nil
 }
 
 func (a *resourceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {

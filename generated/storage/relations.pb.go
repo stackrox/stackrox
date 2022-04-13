@@ -6,6 +6,7 @@ package storage
 import (
 	fmt "fmt"
 	_ "github.com/gogo/protobuf/gogoproto"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	io "io"
 	math "math"
@@ -25,7 +26,7 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type ImageComponentEdge struct {
 	// id is base 64 encoded Image:Component ids.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`
 	/// Layer that contains this component
 	//
 	// Types that are valid to be assigned to HasLayerIndex:
@@ -33,7 +34,7 @@ type ImageComponentEdge struct {
 	HasLayerIndex        isImageComponentEdge_HasLayerIndex `protobuf_oneof:"has_layer_index"`
 	Location             string                             `protobuf:"bytes,3,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,store,hidden"`
 	ImageId              string                             `protobuf:"bytes,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"pk,fk(Image:id)"`
-	ImageComponentId     string                             `protobuf:"bytes,5,opt,name=image_component_id,json=imageComponentId,proto3" json:"image_component_id,omitempty" sql:"pk,fk(ImageComponent:id)"`
+	ImageComponentId     string                             `protobuf:"bytes,5,opt,name=image_component_id,json=imageComponentId,proto3" json:"image_component_id,omitempty" sql:"pk"`
 	XXX_NoUnkeyedLiteral struct{}                           `json:"-"`
 	XXX_unrecognized     []byte                             `json:"-"`
 	XXX_sizecache        int32                              `json:"-"`
@@ -161,7 +162,7 @@ func (m *ImageComponentEdge) Clone() *ImageComponentEdge {
 
 type ComponentCVEEdge struct {
 	// base 64 encoded Component:CVE ids.
-	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`
 	IsFixable bool   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable,store"`
 	// Whether there is a version the CVE is fixed in the component.
 	//
@@ -169,8 +170,7 @@ type ComponentCVEEdge struct {
 	//	*ComponentCVEEdge_FixedBy
 	HasFixedBy           isComponentCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
 	ImageComponentId     string                        `protobuf:"bytes,4,opt,name=image_component_id,json=imageComponentId,proto3" json:"image_component_id,omitempty" sql:"pk,fk(ImageComponent:id)"`
-	CveId                string                        `protobuf:"bytes,5,opt,name=cve_id,json=cveId,proto3" json:"cve_id,omitempty" sql:"pk,fk(CVE:id)"`
-	CveOperatingSystem   string                        `protobuf:"bytes,6,opt,name=cve_operating_system,json=cveOperatingSystem,proto3" json:"cve_operating_system,omitempty" sql:"pk,fk(CVE:operating_system)"`
+	CveId                string                        `protobuf:"bytes,5,opt,name=cve_id,json=cveId,proto3" json:"cve_id,omitempty" sql:"pk"`
 	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
 	XXX_unrecognized     []byte                        `json:"-"`
 	XXX_sizecache        int32                         `json:"-"`
@@ -273,13 +273,6 @@ func (m *ComponentCVEEdge) GetCveId() string {
 	return ""
 }
 
-func (m *ComponentCVEEdge) GetCveOperatingSystem() string {
-	if m != nil {
-		return m.CveOperatingSystem
-	}
-	return ""
-}
-
 // XXX_OneofWrappers is for the internal use of the proto package.
 func (*ComponentCVEEdge) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
@@ -303,45 +296,147 @@ func (m *ComponentCVEEdge) Clone() *ComponentCVEEdge {
 	return cloned
 }
 
+type ImageCVEEdge struct {
+	// base 64 encoded Image:CVE ids.
+	Id                   string             `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`
+	FirstImageOccurrence *types.Timestamp   `protobuf:"bytes,2,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"`
+	State                VulnerabilityState `protobuf:"varint,3,opt,name=state,proto3,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State"`
+	ImageId              string             `protobuf:"bytes,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"pk,fk(Image:id)"`
+	ImageCveId           string             `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId,proto3" json:"image_cve_id,omitempty" sql:"pk"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
+}
+
+func (m *ImageCVEEdge) Reset()         { *m = ImageCVEEdge{} }
+func (m *ImageCVEEdge) String() string { return proto.CompactTextString(m) }
+func (*ImageCVEEdge) ProtoMessage()    {}
+func (*ImageCVEEdge) Descriptor() ([]byte, []int) {
+	return fileDescriptor_62f882e266fcf764, []int{2}
+}
+func (m *ImageCVEEdge) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ImageCVEEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ImageCVEEdge.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ImageCVEEdge) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ImageCVEEdge.Merge(m, src)
+}
+func (m *ImageCVEEdge) XXX_Size() int {
+	return m.Size()
+}
+func (m *ImageCVEEdge) XXX_DiscardUnknown() {
+	xxx_messageInfo_ImageCVEEdge.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ImageCVEEdge proto.InternalMessageInfo
+
+func (m *ImageCVEEdge) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ImageCVEEdge) GetFirstImageOccurrence() *types.Timestamp {
+	if m != nil {
+		return m.FirstImageOccurrence
+	}
+	return nil
+}
+
+func (m *ImageCVEEdge) GetState() VulnerabilityState {
+	if m != nil {
+		return m.State
+	}
+	return VulnerabilityState_OBSERVED
+}
+
+func (m *ImageCVEEdge) GetImageId() string {
+	if m != nil {
+		return m.ImageId
+	}
+	return ""
+}
+
+func (m *ImageCVEEdge) GetImageCveId() string {
+	if m != nil {
+		return m.ImageCveId
+	}
+	return ""
+}
+
+func (m *ImageCVEEdge) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ImageCVEEdge) Clone() *ImageCVEEdge {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ImageCVEEdge)
+	*cloned = *m
+
+	cloned.FirstImageOccurrence = m.FirstImageOccurrence.Clone()
+	return cloned
+}
+
 func init() {
 	proto.RegisterType((*ImageComponentEdge)(nil), "storage.ImageComponentEdge")
 	proto.RegisterType((*ComponentCVEEdge)(nil), "storage.ComponentCVEEdge")
+	proto.RegisterType((*ImageCVEEdge)(nil), "storage.ImageCVEEdge")
 }
 
 func init() { proto.RegisterFile("storage/relations.proto", fileDescriptor_62f882e266fcf764) }
 
 var fileDescriptor_62f882e266fcf764 = []byte{
-	// 474 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x93, 0x4f, 0x6e, 0xd3, 0x40,
-	0x14, 0x87, 0xe3, 0xb4, 0xf9, 0xd3, 0x01, 0x95, 0x32, 0x14, 0xea, 0x76, 0x61, 0xa7, 0x23, 0x21,
-	0xa5, 0x52, 0x94, 0x2e, 0xe8, 0x86, 0x6c, 0x90, 0x1c, 0x05, 0x25, 0x12, 0x12, 0xc8, 0x48, 0x45,
-	0x62, 0x63, 0x4d, 0x3c, 0x2f, 0xce, 0x28, 0x8e, 0x27, 0x78, 0xac, 0x28, 0x3e, 0x02, 0x37, 0xe0,
-	0x10, 0x1c, 0x84, 0x25, 0x27, 0xb0, 0x50, 0xb8, 0x81, 0x4f, 0x80, 0x66, 0x6c, 0xa7, 0x6d, 0x04,
-	0x1b, 0x76, 0xd1, 0xef, 0xbd, 0xef, 0xcd, 0xcb, 0x37, 0x63, 0x74, 0x26, 0x13, 0x11, 0xd3, 0x00,
-	0xae, 0x63, 0x08, 0x69, 0xc2, 0x45, 0x24, 0xfb, 0xab, 0x58, 0x24, 0x02, 0xb7, 0xca, 0xc2, 0xc5,
-	0x69, 0x20, 0x02, 0xa1, 0xb3, 0x6b, 0xf5, 0xab, 0x28, 0x93, 0xef, 0x75, 0x84, 0x27, 0x4b, 0x1a,
-	0xc0, 0x50, 0x2c, 0x57, 0x22, 0x82, 0x28, 0x19, 0xb1, 0x00, 0xf0, 0x31, 0xaa, 0x73, 0x66, 0x1a,
-	0x1d, 0xa3, 0x7b, 0xe4, 0xd6, 0x39, 0xc3, 0x97, 0xe8, 0x51, 0x48, 0x53, 0x88, 0x3d, 0x1e, 0x31,
-	0xd8, 0x98, 0xf5, 0x8e, 0xd1, 0x6d, 0x8c, 0x6b, 0x2e, 0xd2, 0xe1, 0x44, 0x65, 0x78, 0x8c, 0xda,
-	0xa1, 0xf0, 0xf5, 0xd9, 0xe6, 0x81, 0x02, 0x9d, 0x5e, 0x9e, 0xd9, 0x5d, 0x09, 0x34, 0xf6, 0xe7,
-	0x03, 0xb2, 0x9b, 0xdf, 0x79, 0x57, 0x76, 0xf5, 0xd4, 0x66, 0xd0, 0x9b, 0x73, 0xc6, 0x20, 0x22,
-	0xee, 0x8e, 0xc6, 0x37, 0xa8, 0xcd, 0xd5, 0x4a, 0x1e, 0x67, 0xe6, 0xa1, 0x9e, 0x74, 0x9e, 0x67,
-	0xf6, 0x73, 0xf9, 0x25, 0x1c, 0x90, 0xd5, 0xa2, 0x37, 0x5b, 0x74, 0xf5, 0xc6, 0x03, 0xce, 0xae,
-	0x88, 0xdb, 0xd2, 0xad, 0x13, 0x86, 0x3f, 0x20, 0x5c, 0x50, 0x7e, 0x75, 0x92, 0xe2, 0x1b, 0x9a,
-	0x27, 0x79, 0x66, 0x5b, 0xfb, 0xfc, 0x6e, 0xa3, 0x62, 0xd0, 0x09, 0x7f, 0x10, 0x4e, 0x98, 0xf3,
-	0x14, 0x3d, 0x99, 0x53, 0xe9, 0xdd, 0xfb, 0xe3, 0xe4, 0xeb, 0x01, 0x3a, 0xd9, 0xb5, 0x0c, 0x6f,
-	0x47, 0x7f, 0x95, 0xf5, 0x1a, 0x21, 0x2e, 0xbd, 0x19, 0xdf, 0xd0, 0x69, 0x08, 0xda, 0x55, 0xdb,
-	0xb9, 0xc8, 0x33, 0xfb, 0x45, 0xe5, 0xe2, 0x6d, 0x51, 0x2a, 0x04, 0x10, 0xf7, 0x88, 0xcb, 0x32,
-	0xc1, 0x6f, 0x50, 0x7b, 0xc6, 0x37, 0xc0, 0xbc, 0x69, 0x5a, 0x4a, 0x2c, 0x56, 0xbf, 0x03, 0x81,
-	0x75, 0x9c, 0xf4, 0xa1, 0xba, 0x71, 0xcd, 0x6d, 0x69, 0xca, 0x49, 0xff, 0x61, 0xe1, 0xf0, 0xff,
-	0x2d, 0xe0, 0x3e, 0x6a, 0xfa, 0x6b, 0xb8, 0x73, 0x79, 0x96, 0x67, 0xf6, 0xb3, 0x7b, 0x53, 0x86,
-	0xb7, 0xa3, 0x02, 0x6d, 0xf8, 0x6b, 0x75, 0x0f, 0x9f, 0xd0, 0xa9, 0xea, 0x17, 0x2b, 0x88, 0x69,
-	0xc2, 0xa3, 0xc0, 0x93, 0xa9, 0x4c, 0x60, 0x69, 0x36, 0x35, 0xfd, 0x32, 0xcf, 0xec, 0xcb, 0x3d,
-	0x7a, 0xbf, 0xf5, 0x8a, 0xb8, 0xd8, 0x5f, 0xc3, 0xfb, 0x2a, 0xfe, 0xa8, 0x53, 0xe7, 0x18, 0x3d,
-	0x56, 0xd7, 0x51, 0xf9, 0x71, 0x6e, 0x7e, 0x6c, 0x2d, 0xe3, 0xe7, 0xd6, 0x32, 0x7e, 0x6d, 0x2d,
-	0xe3, 0xdb, 0x6f, 0xab, 0x86, 0xce, 0xb9, 0xe8, 0xcb, 0x84, 0xfa, 0x8b, 0x58, 0x6c, 0x8a, 0xf7,
-	0xdd, 0x2f, 0x5f, 0xff, 0xe7, 0xea, 0x33, 0x98, 0x36, 0x75, 0xfe, 0xea, 0x4f, 0x00, 0x00, 0x00,
-	0xff, 0xff, 0x32, 0x4e, 0x5f, 0xe5, 0x31, 0x03, 0x00, 0x00,
+	// 588 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x94, 0x4f, 0x6e, 0xd3, 0x40,
+	0x14, 0xc6, 0x63, 0xd3, 0x34, 0xe9, 0x34, 0x2a, 0xed, 0xa8, 0x94, 0x34, 0x54, 0xb1, 0x31, 0x9b,
+	0x20, 0x45, 0x0e, 0x2a, 0xd9, 0x90, 0x0d, 0x92, 0xab, 0xa2, 0x44, 0x42, 0x02, 0xb9, 0xa8, 0x0b,
+	0x36, 0x96, 0xe3, 0x99, 0x38, 0xa3, 0x38, 0x9e, 0xe0, 0x99, 0x44, 0xc9, 0x05, 0x38, 0x03, 0x07,
+	0xe0, 0x06, 0x5c, 0x82, 0x25, 0x27, 0xb0, 0x50, 0xb8, 0x00, 0xf2, 0x09, 0x90, 0x67, 0x6c, 0x37,
+	0x81, 0x56, 0xaa, 0xd8, 0x8d, 0xde, 0x7c, 0xef, 0xcf, 0xf7, 0x9b, 0x67, 0x83, 0xc7, 0x8c, 0xd3,
+	0xc8, 0xf5, 0x71, 0x27, 0xc2, 0x81, 0xcb, 0x09, 0x0d, 0x99, 0x39, 0x8b, 0x28, 0xa7, 0xb0, 0x92,
+	0x5d, 0x34, 0x34, 0x9f, 0x52, 0x3f, 0xc0, 0x1d, 0x11, 0x1e, 0xce, 0x47, 0x1d, 0x4e, 0xa6, 0x98,
+	0x71, 0x77, 0x3a, 0x93, 0xca, 0xc6, 0x51, 0x5e, 0xc2, 0x5b, 0xe0, 0x2c, 0x74, 0xec, 0x53, 0x9f,
+	0x8a, 0x63, 0x27, 0x3d, 0xc9, 0xa8, 0xf1, 0x55, 0x05, 0x70, 0x30, 0x75, 0x7d, 0x7c, 0x41, 0xa7,
+	0x33, 0x1a, 0xe2, 0x90, 0x5f, 0x22, 0x1f, 0xc3, 0x33, 0xa0, 0x12, 0x54, 0x57, 0x74, 0xa5, 0xb5,
+	0x67, 0xd5, 0x92, 0x58, 0xab, 0xb2, 0x4f, 0x41, 0xcf, 0x98, 0x4d, 0x0c, 0x5b, 0x25, 0x08, 0x3e,
+	0x05, 0xfb, 0x81, 0xbb, 0xc2, 0x91, 0x43, 0x42, 0x84, 0x97, 0x75, 0x55, 0x57, 0x5a, 0xe5, 0x7e,
+	0xc9, 0x06, 0x22, 0x38, 0x48, 0x63, 0xb0, 0x0f, 0xaa, 0x01, 0xf5, 0xc4, 0xf4, 0xf5, 0x07, 0xa2,
+	0x4c, 0x3b, 0x89, 0xb5, 0x16, 0xc3, 0x6e, 0xe4, 0x8d, 0x7b, 0x46, 0xd1, 0x4d, 0x7f, 0x9b, 0xa9,
+	0xda, 0xe9, 0xc4, 0xb8, 0x3d, 0x26, 0x08, 0xe1, 0xd0, 0xb0, 0x8b, 0x6c, 0xd8, 0x05, 0x55, 0x92,
+	0x0e, 0xe8, 0x10, 0x54, 0xdf, 0x11, 0x95, 0x4e, 0x93, 0x58, 0x7b, 0x94, 0x0d, 0xd4, 0x1e, 0x4d,
+	0x5a, 0x62, 0xfe, 0x1e, 0x41, 0xcf, 0x0d, 0xbb, 0x22, 0xa4, 0x03, 0x04, 0x7b, 0x00, 0xca, 0x2c,
+	0x2f, 0xef, 0x94, 0xe6, 0x97, 0x6f, 0x31, 0x74, 0x48, 0xb6, 0xec, 0x0f, 0x90, 0x75, 0x04, 0x1e,
+	0x8e, 0x5d, 0xe6, 0x6c, 0x58, 0x34, 0xbe, 0xa9, 0xe0, 0xb0, 0x90, 0x5c, 0x5c, 0x5f, 0xde, 0x03,
+	0xd2, 0x2b, 0x00, 0x08, 0x73, 0x46, 0x64, 0xe9, 0x0e, 0x03, 0x2c, 0x18, 0x55, 0xad, 0x46, 0x12,
+	0x6b, 0x27, 0x39, 0x83, 0x37, 0xf2, 0x4a, 0x1a, 0x37, 0xec, 0x3d, 0xc2, 0xb2, 0x08, 0x7c, 0x0d,
+	0xaa, 0x23, 0xb2, 0xc4, 0xc8, 0x19, 0xae, 0x32, 0x78, 0x46, 0x12, 0x6b, 0xcd, 0x8d, 0x44, 0x8c,
+	0x74, 0x6b, 0xb5, 0x8d, 0xac, 0x5f, 0xb2, 0x2b, 0x22, 0xcb, 0x5a, 0xc1, 0xf7, 0xb7, 0xba, 0xdf,
+	0xd9, 0x28, 0xf5, 0x17, 0xbd, 0xc2, 0x9b, 0xc4, 0xf8, 0x0f, 0x13, 0xf8, 0x0c, 0xec, 0x7a, 0x0b,
+	0x7c, 0x17, 0xc3, 0xb2, 0xb7, 0xc0, 0x03, 0x64, 0x1d, 0x80, 0x5a, 0x0a, 0x2e, 0x9f, 0xdd, 0xf8,
+	0xad, 0x82, 0x9a, 0x2c, 0x7f, 0x2f, 0x62, 0x9f, 0x15, 0x70, 0x32, 0x22, 0x11, 0xe3, 0x8e, 0x1c,
+	0x9e, 0x7a, 0xde, 0x3c, 0x8a, 0x70, 0xe8, 0x49, 0x7c, 0xfb, 0xe7, 0x0d, 0x53, 0xee, 0xbd, 0x99,
+	0xef, 0xbd, 0xf9, 0x21, 0xdf, 0x7b, 0xab, 0x9b, 0xc4, 0xda, 0x8b, 0x1b, 0x42, 0x11, 0xe3, 0xba,
+	0x68, 0xad, 0xbf, 0x2b, 0xaa, 0xe8, 0x85, 0xba, 0x58, 0xb3, 0x63, 0xd1, 0x4f, 0x08, 0x6f, 0x74,
+	0xf0, 0x0a, 0x94, 0x19, 0x77, 0x39, 0x16, 0xf0, 0x0f, 0xce, 0x9f, 0x98, 0xd9, 0xd7, 0x64, 0x5e,
+	0xcf, 0x83, 0x10, 0x47, 0xee, 0x90, 0x04, 0x84, 0xaf, 0xae, 0x52, 0x89, 0xa5, 0x27, 0xb1, 0x76,
+	0x96, 0xf7, 0xdd, 0xba, 0xd7, 0x85, 0xc0, 0xb0, 0x65, 0xad, 0xff, 0xdc, 0x63, 0x13, 0xd4, 0xb2,
+	0x97, 0xbc, 0x9b, 0x3e, 0x90, 0xaf, 0x25, 0x9e, 0xa0, 0xfb, 0x7d, 0xdd, 0x54, 0x7e, 0xac, 0x9b,
+	0xca, 0xcf, 0x75, 0x53, 0xf9, 0xf2, 0xab, 0x59, 0x02, 0xa7, 0x84, 0x9a, 0x8c, 0xbb, 0xde, 0x24,
+	0xa2, 0x4b, 0x09, 0x2e, 0xb7, 0xf3, 0x31, 0xff, 0x9f, 0x0c, 0x77, 0x45, 0xfc, 0xe5, 0x9f, 0x00,
+	0x00, 0x00, 0xff, 0xff, 0x6e, 0x7b, 0x04, 0x18, 0x7a, 0x04, 0x00, 0x00,
 }
 
 func (m *ImageComponentEdge) Marshal() (dAtA []byte, err error) {
@@ -444,13 +539,6 @@ func (m *ComponentCVEEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.CveOperatingSystem) > 0 {
-		i -= len(m.CveOperatingSystem)
-		copy(dAtA[i:], m.CveOperatingSystem)
-		i = encodeVarintRelations(dAtA, i, uint64(len(m.CveOperatingSystem)))
-		i--
-		dAtA[i] = 0x32
-	}
 	if len(m.CveId) > 0 {
 		i -= len(m.CveId)
 		copy(dAtA[i:], m.CveId)
@@ -508,6 +596,71 @@ func (m *ComponentCVEEdge_FixedBy) MarshalToSizedBuffer(dAtA []byte) (int, error
 	dAtA[i] = 0x1a
 	return len(dAtA) - i, nil
 }
+func (m *ImageCVEEdge) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ImageCVEEdge) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ImageCVEEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ImageCveId) > 0 {
+		i -= len(m.ImageCveId)
+		copy(dAtA[i:], m.ImageCveId)
+		i = encodeVarintRelations(dAtA, i, uint64(len(m.ImageCveId)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.ImageId) > 0 {
+		i -= len(m.ImageId)
+		copy(dAtA[i:], m.ImageId)
+		i = encodeVarintRelations(dAtA, i, uint64(len(m.ImageId)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.State != 0 {
+		i = encodeVarintRelations(dAtA, i, uint64(m.State))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.FirstImageOccurrence != nil {
+		{
+			size, err := m.FirstImageOccurrence.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintRelations(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintRelations(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintRelations(dAtA []byte, offset int, v uint64) int {
 	offset -= sovRelations(v)
 	base := offset
@@ -583,10 +736,6 @@ func (m *ComponentCVEEdge) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovRelations(uint64(l))
 	}
-	l = len(m.CveOperatingSystem)
-	if l > 0 {
-		n += 1 + l + sovRelations(uint64(l))
-	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -601,6 +750,36 @@ func (m *ComponentCVEEdge_FixedBy) Size() (n int) {
 	_ = l
 	l = len(m.FixedBy)
 	n += 1 + l + sovRelations(uint64(l))
+	return n
+}
+func (m *ImageCVEEdge) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	if m.FirstImageOccurrence != nil {
+		l = m.FirstImageOccurrence.Size()
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	if m.State != 0 {
+		n += 1 + sovRelations(uint64(m.State))
+	}
+	l = len(m.ImageId)
+	if l > 0 {
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	l = len(m.ImageCveId)
+	if l > 0 {
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
 	return n
 }
 
@@ -986,9 +1165,60 @@ func (m *ComponentCVEEdge) Unmarshal(dAtA []byte) error {
 			}
 			m.CveId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 6:
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRelations(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ImageCVEEdge) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRelations
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ImageCVEEdge: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ImageCVEEdge: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CveOperatingSystem", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1016,7 +1246,126 @@ func (m *ComponentCVEEdge) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.CveOperatingSystem = string(dAtA[iNdEx:postIndex])
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FirstImageOccurrence", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.FirstImageOccurrence == nil {
+				m.FirstImageOccurrence = &types.Timestamp{}
+			}
+			if err := m.FirstImageOccurrence.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
+			}
+			m.State = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.State |= VulnerabilityState(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ImageId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageCveId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ImageCveId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

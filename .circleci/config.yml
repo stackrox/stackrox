@@ -90,7 +90,6 @@ saveGoLintCache: &saveGoLintCache
     key: go-lint-cache-v1-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-{{ .Revision }}
     paths:
     - /home/circleci/.cache/golangci-lint
-    - /home/circleci/.cache/staticcheck
     - /go/pkg/mod
 
 goModCacheKey: &goModCacheKey 'rox-go-pkg-mod-v3-{{ checksum "go.sum" }}'
@@ -2620,7 +2619,6 @@ jobs:
       - ADMISSION_CONTROLLER_UPDATES: true
       - AUTH0_SUPPORT: false
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - checkout
@@ -3493,6 +3491,7 @@ jobs:
       - SENSOR_HELM_DEPLOY: true
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
       - ROX_VERIFY_IMAGE_SIGNATURE: true
+      - ROX_NETPOL_FIELDS: true
 
     steps:
       - checkout
@@ -3646,7 +3645,6 @@ jobs:
       - OUTPUT_FORMAT: helm
       - ROX_SYSTEM_HEALTH_PF: true
       - ROX_POLICIES_PATTERNFLY: true
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
 
     steps:
@@ -3713,7 +3711,6 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - run-qa-tests:
@@ -3736,7 +3733,6 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
       - ROX_POSTGRES_DATASTORE: true
 
     steps:
@@ -3764,7 +3760,6 @@ jobs:
       - OUTPUT_FORMAT: helm
       - SENSOR_HELM_DEPLOY: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - run-qa-tests:
@@ -3824,7 +3819,6 @@ jobs:
       - STORAGE_SIZE: 100
       - LOAD_BALANCER: lb
       - OUTPUT_FORMAT: helm
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - checkout
@@ -3973,7 +3967,6 @@ jobs:
       - SENSOR_HELM_DEPLOY: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_BASELINE_GENERATION_DURATION: 1m
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - check-label-exists-or-skip:
@@ -3994,7 +3987,6 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - check-label-exists-or-skip:
@@ -4017,7 +4009,6 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - checkout
@@ -4107,7 +4098,6 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - run-qa-tests:
@@ -4144,7 +4134,6 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - run-qa-tests:
@@ -4370,7 +4359,6 @@ jobs:
       ADMISSION_CONTROLLER_UPDATES: "true"
       ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       IS_RACE_BUILD: "true"
-      ROX_VERIFY_IMAGE_SIGNATURE: "true"
 
 
     steps:
@@ -4719,7 +4707,6 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - run-qa-tests:
@@ -4759,7 +4746,6 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_VERIFY_IMAGE_SIGNATURE: true
 
     steps:
       - run-qa-tests:
@@ -4875,21 +4861,6 @@ jobs:
           destroy-cluster:
             - nop-steps-stanza
       - destroy-osd-gcp-cluster
-
-  openshift-ci-upgrade-test:
-    executor: custom
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-      - openshift-ci-mimic-env
-      - run:
-          name: Run the OpenShift CI upgrade test hook
-          command: |
-            .openshift-ci/gke_upgrade_test.py
-      - store_artifacts:
-          path: /tmp/artifact_dir/howto-locate-artifacts.html
-          destination: howto-locate-artifacts.html
 
 workflows:
   version: 2
@@ -5225,16 +5196,6 @@ workflows:
               only: /.*/
             branches:
               ignore: /.*/
-          requires:
-            - build-stackrox
-            - build-rhacs
-
-      - openshift-ci-upgrade-test:
-          context:
-          - quay-rhacs-eng-readonly
-          filters:
-            branches:
-              only: /.*(osci).*/
           requires:
             - build-stackrox
             - build-rhacs

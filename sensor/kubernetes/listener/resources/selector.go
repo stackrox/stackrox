@@ -34,3 +34,12 @@ func SelectorFromMap(labelsMap map[string]string) labels.Selector {
 	}
 	return labels.SelectorFromSet(labels.Set(labelsMap))
 }
+
+// MatcherOrEverything converts the given map to a selector. If the map is `nil` or empty it will translate to `everything`
+// selector. This is needed in cases like Network Policies where an empty PodSelector matches everything in the namespace.
+func MatcherOrEverything(labelsMap map[string]string) labels.Selector {
+	if len(labelsMap) == 0 {
+		return labels.Everything()
+	}
+	return labels.SelectorFromSet(labels.Set(labelsMap))
+}

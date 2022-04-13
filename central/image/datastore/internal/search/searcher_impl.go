@@ -74,7 +74,11 @@ func (ds *searcherImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.Se
 
 func (ds *searcherImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error) {
 	images, _, err := ds.searchImages(ctx, q)
-	return images, err
+	listImages := make([]*storage.ListImage, 0, len(images))
+	for _, image := range images {
+		listImages = append(listImages, types.ConvertImageToListImage(image))
+	}
+	return listImages, err
 }
 
 // SearchRawImages retrieves SearchResults from the indexer and storage
@@ -84,22 +88,22 @@ func (ds *searcherImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*st
 		return nil, err
 	}
 
-	images, _, err := ds.storage.GetImagesBatch(search.ResultsToIDs(results))
+	images, _, err := ds.storage.GetMany(ctx, search.ResultsToIDs(results))
 	if err != nil {
 		return nil, err
 	}
 	return images, nil
 }
 
-func (ds *searcherImpl) searchImages(ctx context.Context, q *v1.Query) ([]*storage.ListImage, []search.Result, error) {
+func (ds *searcherImpl) searchImages(ctx context.Context, q *v1.Query) ([]*storage.Image, []search.Result, error) {
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, nil, err
 	}
-	var images []*storage.ListImage
+	var images []*storage.Image
 	var newResults []search.Result
 	for _, result := range results {
-		image, exists, err := ds.storage.ListImage(result.ID)
+		image, exists, err := ds.storage.GetImageMetadata(ctx, result.ID)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -126,17 +130,6 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (count int, err 
 		count, err = ds.searcher.Count(inner, q)
 	})
 	return count, err
-}
-
-// ConvertImage returns proto search result from a image object and the internal search result
-func convertImage(image *storage.ListImage, result search.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGES,
-		Id:             types.NewDigest(image.GetId()).Digest(),
-		Name:           image.GetName(),
-		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.

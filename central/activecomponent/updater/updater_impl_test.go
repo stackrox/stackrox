@@ -87,9 +87,9 @@ var (
 					Version: "1",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/root/bin/image1_component1_match_file1", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1")}},
-						{Path: "/root/bin/image1_component1_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1")}},
-						{Path: "/root/bin/image1_component1_nonmatch_file3", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1")}},
+						{Path: "/root/bin/image1_component1_match_file1", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1", "")}},
+						{Path: "/root/bin/image1_component1_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1", "")}},
+						{Path: "/root/bin/image1_component1_nonmatch_file3", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1", "")}},
 					},
 				},
 				{
@@ -97,9 +97,9 @@ var (
 					Version: "2",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/root/bin/image1_component2_nonmatch_file1", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2")}},
-						{Path: "/root/bin/image1_component2_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2")}},
-						{Path: "/root/bin/image1_component2_match_file3", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2")}},
+						{Path: "/root/bin/image1_component2_nonmatch_file1", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2", "")}},
+						{Path: "/root/bin/image1_component2_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2", "")}},
+						{Path: "/root/bin/image1_component2_match_file3", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2", "")}},
 					},
 				},
 				{
@@ -112,9 +112,9 @@ var (
 					Version: "2",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/root/bin/image1_component4_nonmatch_file1", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2")}},
-						{Path: "/root/bin/image1_component4_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2")}},
-						{Path: "/root/bin/image1_component4_match_file3", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2")}},
+						{Path: "/root/bin/image1_component4_nonmatch_file1", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2", "")}},
+						{Path: "/root/bin/image1_component4_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2", "")}},
+						{Path: "/root/bin/image1_component4_match_file3", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2", "")}},
 					},
 				},
 			},
@@ -274,7 +274,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 			}
 			s.Assert().Contains(ac.ActiveComponent.ActiveContexts, expectedContainer)
 			s.Assert().True(strings.HasSuffix(imageComponent.ParentID, expectedComponent.GetName()))
-			s.Assert().Equal(componentID, scancomponent.ComponentID(expectedComponent.GetName(), expectedComponent.GetVersion()))
+			s.Assert().Equal(componentID, scancomponent.ComponentID(expectedComponent.GetName(), expectedComponent.GetVersion(), ""))
 		}
 	})
 
@@ -335,7 +335,7 @@ func (s *acUpdaterTestSuite) verifyExecutableCache(updater *updaterImpl, image *
 		if component.Source != storage.SourceType_OS {
 			continue
 		}
-		componentID := scancomponent.ComponentID(component.GetName(), component.GetVersion())
+		componentID := scancomponent.ComponentID(component.GetName(), component.GetVersion(), "")
 		for _, exec := range component.Executables {
 			s.Assert().Contains(execToComponents, exec.GetPath())
 			s.Assert().Len(execToComponents[exec.GetPath()], 1)
@@ -365,12 +365,12 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					Version: "1",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/usr/bin/component1_file1", Dependencies: []string{scancomponent.ComponentID("component1", "1")}},
-						{Path: "/usr/bin/component1_file2", Dependencies: []string{scancomponent.ComponentID("component1", "1")}},
-						{Path: "/usr/bin/component1and2_file3", Dependencies: []string{scancomponent.ComponentID("component1", "1")}},
+						{Path: "/usr/bin/component1_file1", Dependencies: []string{scancomponent.ComponentID("component1", "1", "")}},
+						{Path: "/usr/bin/component1_file2", Dependencies: []string{scancomponent.ComponentID("component1", "1", "")}},
+						{Path: "/usr/bin/component1and2_file3", Dependencies: []string{scancomponent.ComponentID("component1", "1", "")}},
 						{Path: "/usr/bin/component1_file4", Dependencies: []string{
-							scancomponent.ComponentID("component1", "1"),
-							scancomponent.ComponentID("component2", "1"),
+							scancomponent.ComponentID("component1", "1", ""),
+							scancomponent.ComponentID("component2", "1", ""),
 						}},
 					},
 				},
@@ -379,9 +379,9 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					Version: "1",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/usr/bin/component2_file1", Dependencies: []string{scancomponent.ComponentID("component2", "1")}},
-						{Path: "/usr/bin/component2_file2", Dependencies: []string{scancomponent.ComponentID("component2", "1")}},
-						{Path: "/usr/bin/component1and2_file3", Dependencies: []string{scancomponent.ComponentID("component2", "1")}},
+						{Path: "/usr/bin/component2_file1", Dependencies: []string{scancomponent.ComponentID("component2", "1", "")}},
+						{Path: "/usr/bin/component2_file2", Dependencies: []string{scancomponent.ComponentID("component2", "1", "")}},
+						{Path: "/usr/bin/component1and2_file3", Dependencies: []string{scancomponent.ComponentID("component2", "1", "")}},
 					},
 				},
 			},
@@ -392,7 +392,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 	deployment := mockDeployments[0]
 	var componentsIDs []string
 	for _, component := range components {
-		componentsIDs = append(componentsIDs, scancomponent.ComponentID(component.GetName(), component.GetVersion()))
+		componentsIDs = append(componentsIDs, scancomponent.ComponentID(component.GetName(), component.GetVersion(), ""))
 	}
 
 	var containerNames []string
