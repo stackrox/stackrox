@@ -429,12 +429,6 @@ openshift_ci_mods() {
     info "HOME ${HOME:-}"
     export GRADLE_USER_HOME="${HOME}"
     info "GRADLE_USER_HOME ${GRADLE_USER_HOME:-}"
-    # For OpenJDK
-    set -x
-    mkdir -p "/tmp/.java/.userPrefs"
-    chmod -R 0777 "/tmp/.java"
-    ls -laR "/tmp/.java"
-    set +x
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

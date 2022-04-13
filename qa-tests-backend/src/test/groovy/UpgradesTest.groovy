@@ -1,6 +1,7 @@
 import com.google.protobuf.util.JsonFormat
 import groovy.io.FileType
 import groups.Upgrade
+import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -202,11 +203,19 @@ class UpgradesTest extends BaseSpecification {
 
         when:
         "Upgraded default policies are fetched from central"
-        def upgradedPolicies = PolicyService.getPolicyClient().exportPolicies(
-                PolicyServiceOuterClass.ExportPoliciesRequest.newBuilder().
-                        addAllPolicyIds(defaultPolicies.keySet()).
-                        build()
-        ).getPoliciesList()
+        def upgradedPolicies
+        try {
+            println("Exporting policies: ${defaultPolicies.keySet().join(", ")}")
+            upgradedPolicies = PolicyService.getPolicyClient().exportPolicies(
+                    PolicyServiceOuterClass.ExportPoliciesRequest.newBuilder().
+                            addAllPolicyIds(defaultPolicies.keySet()).
+                            build()
+            ).getPoliciesList()
+        } catch (StatusRuntimeException e) {
+            println "Exception in exportPolicies(): ${e.getStatus()}"
+            println "See central log for more details."
+            throw(e)
+        }
 
         def knownPolicyDifferences = [
                 "2e90874a-3521-44de-85c6-5720f519a701": new KnownPolicyDiffs()

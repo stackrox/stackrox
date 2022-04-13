@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -41,13 +42,17 @@ const (
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.NetworkBaseline)(nil)), baseTable)
 	log    = logging.LoggerForModule()
+	schema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable(baseTable)
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.NetworkBaseline)(nil)), baseTable)
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -70,27 +75,13 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableNetworkbaseline(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists networkbaseline (
-    DeploymentId varchar,
-    serialized bytea,
-    PRIMARY KEY(DeploymentId)
-)
-`
+// New returns a new Store instance using the provided sql instance.
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNetworkbaselineStmt)
 
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, obj *storage.NetworkBaseline) error {
@@ -175,15 +166,6 @@ func (s *storeImpl) copyFromNetworkbaseline(ctx context.Context, tx pgx.Tx, objs
 	}
 
 	return err
-}
-
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableNetworkbaseline(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkBaseline) error {

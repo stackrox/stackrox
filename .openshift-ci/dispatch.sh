@@ -30,6 +30,9 @@ case "$ci_job" in
     gke-upgrade-tests)
         "$ROOT/.openshift-ci/gke_upgrade_test.py"
         ;;
+    style-checks)
+        make style
+        ;;
     *)
         # For ease of initial integration this function does not fail when the
         # job is unknown.

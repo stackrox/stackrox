@@ -3210,7 +3210,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 				MissingEgressNetworkPolicy:  false,
 			},
 			alerts: []*storage.Alert_Violation{
-				{Message: "Missing Ingress Network Policy violation message placeholder"},
+				{Message: "The deployment is missing Ingress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
 			},
 		},
 		"Missing Egress Network Policy": {
@@ -3219,7 +3219,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 				MissingEgressNetworkPolicy:  true,
 			},
 			alerts: []*storage.Alert_Violation{
-				{Message: "Missing Egress Network Policy violation message placeholder"},
+				{Message: "The deployment is missing Egress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
 			},
 		},
 		"Missing both policies": {
@@ -3228,8 +3228,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 				MissingEgressNetworkPolicy:  true,
 			},
 			alerts: []*storage.Alert_Violation{
-				{Message: "Missing Ingress Network Policy violation message placeholder"},
-				{Message: "Missing Egress Network Policy violation message placeholder"},
+				{Message: "The deployment is missing Ingress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
+				{Message: "The deployment is missing Egress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
 			},
 		},
 		"No alerts": {
@@ -3242,6 +3242,29 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 		"No violations on nil augmentedobj": {
 			netpolsApplied: nil,
 			alerts:         []*storage.Alert_Violation(nil),
+		},
+		"Policies attached to augmentedobj": {
+			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
+				MissingIngressNetworkPolicy: true,
+				MissingEgressNetworkPolicy:  false,
+				Policies: map[string]*storage.NetworkPolicy{
+					"ID1": {Id: "ID1", Name: "policy1"},
+				},
+			},
+			alerts: []*storage.Alert_Violation{
+				{
+					Message: "The deployment is missing Ingress Network Policy.",
+					Type:    storage.Alert_Violation_NETWORK_POLICY,
+					MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+						KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+							Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+								{Key: printer.PolicyID, Value: "ID1"},
+								{Key: printer.PolicyName, Value: "policy1"},
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 
@@ -3261,7 +3284,13 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 			v2 := suite.getViolations(missingEgressPolicy, enhanced)
 
 			allAlerts := append(v1.AlertViolations, v2.AlertViolations...)
-			suite.Equal(testCase.alerts, allAlerts)
+			for i, expected := range testCase.alerts {
+				suite.Equal(expected.GetType(), allAlerts[i].Type)
+				suite.Equal(expected.GetMessage(), allAlerts[i].Message)
+				suite.Equal(expected.GetKeyValueAttrs(), allAlerts[i].GetKeyValueAttrs())
+				// We do not want to compare time, as the violation timestamp uses now()
+				suite.NotNil(allAlerts[i].GetTime())
+			}
 		})
 	}
 }
