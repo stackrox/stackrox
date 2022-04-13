@@ -325,7 +325,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 
 func formatNoVulnsFoundMessage() (string, error) {
 	data := &reportnoVulnsFoundEmailFormat{
-		ImageFlavorBranding: ProductBranding(),
+		ImageFlavorBranding: getBrandedProductName(),
 	}
 	tmpl, err := template.New("emailBody").Parse(noVulnsFoundEmailTemplate)
 	if err != nil {
@@ -341,7 +341,7 @@ func formatNoVulnsFoundMessage() (string, error) {
 
 func formatMessage(rc *storage.ReportConfiguration) (string, error) {
 	data := &reportEmailFormat{
-		ImageFlavorBranding: ProductBranding(),
+		ImageFlavorBranding: getBrandedProductName(),
 		WhichVulns:          "for all vulnerabilities",
 		DateStr:             time.Now().Format("January 02, 2006"),
 	}
