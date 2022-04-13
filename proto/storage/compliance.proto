@@ -6,10 +6,7 @@ option java_package = "io.stackrox.proto.storage";
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
-import "storage/cluster.proto";
-import "storage/deployment.proto";
 import "storage/image.proto";
-import "storage/node.proto";
 
 package storage;
 
@@ -60,17 +57,41 @@ message ComplianceResultValue {
 }
 
 message ComplianceControlResult {
-    ComplianceResource resource = 1;
-    string control_id           = 2;
-    ComplianceResultValue value = 3;
+    ComplianceResource    resource   = 1;
+    string                control_id = 2;
+    ComplianceResultValue value      = 3;
 }
 
 // Next available tag: 5
 message ComplianceDomain {
     string id = 4 [(gogoproto.moretags) = 'sql:"pk" search:"Compliance Domain ID,hidden"'];
 
+    // These must mirror the tags _exactly_ in cluster.proto for backwards compatibility
+    message Cluster {
+        string id   = 1;
+        string name = 2;
+    }
     Cluster cluster = 1 [(gogoproto.moretags) = 'sql:"ignore_pk,ignore_unique"'];
+
+    // These must mirror the tags _exactly_ in node.proto for backwards compatibility
+    message Node {
+        string id                              = 1;
+        string name                            = 2;
+        string cluster_id                      = 4;
+        string cluster_name                    = 5;
+    }
     map<string, Node> nodes = 2;
+
+    // This must mirror the tags _exactly_ in deployment.proto for backwards compatibility
+    message Deployment {
+        string id                                  = 1;
+        string name                                = 2;
+        string type                                = 4;
+        string namespace                           = 5;
+        string namespace_id                        = 23;
+        string cluster_id                          = 9;
+        string cluster_name                        = 10;
+    }
     map<string, Deployment> deployments = 3;
 }
 

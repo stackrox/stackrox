@@ -373,6 +373,25 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"resource: ComplianceResource",
 		"value: ComplianceResultValue",
 	}))
+	utils.Must(builder.AddType("ComplianceDomain_Cluster", []string{
+		"id: ID!",
+		"name: String!",
+	}))
+	utils.Must(builder.AddType("ComplianceDomain_Deployment", []string{
+		"clusterId: String!",
+		"clusterName: String!",
+		"id: ID!",
+		"name: String!",
+		"namespace: String!",
+		"namespaceId: String!",
+		"type: String!",
+	}))
+	utils.Must(builder.AddType("ComplianceDomain_Node", []string{
+		"clusterId: String!",
+		"clusterName: String!",
+		"id: ID!",
+		"name: String!",
+	}))
 	utils.Must(builder.AddType("ComplianceResource", []string{
 		"cluster: ComplianceResource_ClusterName",
 		"deployment: ComplianceResource_DeploymentName",
@@ -4967,6 +4986,143 @@ func (resolver *complianceControlResultResolver) Resource(ctx context.Context) (
 func (resolver *complianceControlResultResolver) Value(ctx context.Context) (*complianceResultValueResolver, error) {
 	value := resolver.data.GetValue()
 	return resolver.root.wrapComplianceResultValue(value, true, nil)
+}
+
+type complianceDomain_ClusterResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ComplianceDomain_Cluster
+}
+
+func (resolver *Resolver) wrapComplianceDomain_Cluster(value *storage.ComplianceDomain_Cluster, ok bool, err error) (*complianceDomain_ClusterResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceDomain_ClusterResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_Clusters(values []*storage.ComplianceDomain_Cluster, err error) ([]*complianceDomain_ClusterResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceDomain_ClusterResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceDomain_ClusterResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceDomain_ClusterResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceDomain_ClusterResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+type complianceDomain_DeploymentResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ComplianceDomain_Deployment
+}
+
+func (resolver *Resolver) wrapComplianceDomain_Deployment(value *storage.ComplianceDomain_Deployment, ok bool, err error) (*complianceDomain_DeploymentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceDomain_DeploymentResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_Deployments(values []*storage.ComplianceDomain_Deployment, err error) ([]*complianceDomain_DeploymentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceDomain_DeploymentResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceDomain_DeploymentResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceDomain_DeploymentResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *complianceDomain_DeploymentResolver) ClusterName(ctx context.Context) string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *complianceDomain_DeploymentResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceDomain_DeploymentResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *complianceDomain_DeploymentResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *complianceDomain_DeploymentResolver) NamespaceId(ctx context.Context) string {
+	value := resolver.data.GetNamespaceId()
+	return value
+}
+
+func (resolver *complianceDomain_DeploymentResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value
+}
+
+type complianceDomain_NodeResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ComplianceDomain_Node
+}
+
+func (resolver *Resolver) wrapComplianceDomain_Node(value *storage.ComplianceDomain_Node, ok bool, err error) (*complianceDomain_NodeResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceDomain_NodeResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceDomain_Nodes(values []*storage.ComplianceDomain_Node, err error) ([]*complianceDomain_NodeResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceDomain_NodeResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceDomain_NodeResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceDomain_NodeResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *complianceDomain_NodeResolver) ClusterName(ctx context.Context) string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *complianceDomain_NodeResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceDomain_NodeResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
 }
 
 type complianceResourceResolver struct {

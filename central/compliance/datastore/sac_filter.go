@@ -141,14 +141,14 @@ func (ds *sacFilterImpl) filterDomain(ctx context.Context, domain *storage.Compl
 	if deploymentsInClusterChecker.IsAllowed() {
 		newDomain.Deployments = domain.Deployments
 	} else {
-		filteredMap, err := sac.FilterMapReflect(ctx, deploymentsInClusterChecker, domain.Deployments, func(deployment *storage.Deployment) sac.ScopePredicate {
+		filteredMap, err := sac.FilterMapReflect(ctx, deploymentsInClusterChecker, domain.Deployments, func(deployment *storage.ComplianceDomain_Deployment) sac.ScopePredicate {
 			return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
 		})
 		if err != nil {
 			return nil, false, err
 		}
 
-		newDomain.Deployments = filteredMap.(map[string]*storage.Deployment)
+		newDomain.Deployments = filteredMap.(map[string]*storage.ComplianceDomain_Deployment)
 		if len(newDomain.Deployments) < len(domain.Deployments) {
 			filtered = true
 		}
