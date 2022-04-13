@@ -10,9 +10,11 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/defaults/policies"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -41,8 +43,9 @@ func (s *PolicyValidatorTestSuite) SetupTest() {
 	s.nStorage = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.cStorage = clusterMocks.NewMockDataStore(s.mockCtrl)
 
-	s.validator = newPolicyValidator(s.nStorage)
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+	s.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
+	s.validator = newPolicyValidator(s.nStorage)
 }
 
 func (s *PolicyValidatorTestSuite) TearDownTest() {
@@ -707,4 +710,81 @@ func (s *PolicyValidatorTestSuite) TestValidateAuditEventSource() {
 			},
 		},
 	}))
+}
+
+func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
+	if !features.NetworkPolicySystemPolicy.Enabled() {
+		s.T().Skipf("Skipping test since the %s variable is not set", features.NetworkPolicySystemPolicy.EnvVar())
+	}
+
+	cases := map[string]struct {
+		policy        *storage.Policy
+		expectedError string
+		featureFlag   bool
+	}{
+		"Missing Egress Policy Field": {
+			policy: &storage.Policy{
+				EnforcementActions: []storage.EnforcementAction{
+					storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+				},
+				PolicySections: []*storage.PolicySection{
+					{
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: augmentedobjs.MissingEgressPolicyCustomTag,
+							},
+						},
+					},
+				},
+			},
+			featureFlag:   true,
+			expectedError: fmt.Sprintf("enforcement of %s is not allowed", augmentedobjs.MissingEgressPolicyCustomTag),
+		},
+		"Missing Ingress Policy Field": {
+			policy: &storage.Policy{
+				EnforcementActions: []storage.EnforcementAction{
+					storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+				},
+				PolicySections: []*storage.PolicySection{
+					{
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: augmentedobjs.MissingIngressPolicyCustomTag,
+							},
+						},
+					},
+				},
+			},
+			featureFlag:   true,
+			expectedError: fmt.Sprintf("enforcement of %s is not allowed", augmentedobjs.MissingIngressPolicyCustomTag),
+		},
+		"Enforceable Policy Field": {
+			policy: &storage.Policy{
+				EnforcementActions: []storage.EnforcementAction{
+					storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+				},
+				PolicySections: []*storage.PolicySection{
+					{
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: augmentedobjs.ContainerNameCustomTag,
+							},
+						},
+					},
+				},
+			},
+			featureFlag:   true,
+			expectedError: "",
+		},
+	}
+	for name, c := range cases {
+		s.T().Run(name, func(t *testing.T) {
+			err := s.validator.validateEnforcement(c.policy)
+			if c.expectedError != "" {
+				assert.Equal(t, c.expectedError, err.Error())
+			} else {
+				assert.Truef(t, err == nil, "Error not expected")
+			}
+		})
+	}
 }
