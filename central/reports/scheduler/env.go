@@ -3,20 +3,15 @@ package scheduler
 import "github.com/stackrox/rox/pkg/env"
 
 const (
-	// productBrandingName is the variable storing the branding name of the product.
-	productBrandingName = "ROX_BRANDING_NAME"
-
-	// ProductBrandingNameRHACS is the name for the product using RHACS branding
-	ProductBrandingNameRHACS = "Red Hat Advanced Cluster Security for Kubernetes"
-	// ProductBrandingNameStackrox is the name for the product using Stackrox branding
-	ProductBrandingNameStackrox = "StackRox"
+	// ProductBranding should hold RHACS_BRANDING or STACKROX_BRANDING
+	productBranding = "RHACS_BRANDING"
 )
 
 var (
-	productBrandingSetting = env.RegisterSetting(productBrandingName)
+	productBrandingSetting = env.RegisterSetting(productBranding)
 )
 
-// getBrandedProductName returns the environment variable ROX_BRANDING_NAME value
-func getBrandedProductName() string {
+// GetBrandedProductName returns the environment variable ROX_BRANDING_NAME value
+func GetProductBranding() string {
 	return productBrandingSetting.Setting()
 }

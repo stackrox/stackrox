@@ -71,20 +71,20 @@ func TestVulnMessageBranding1(t *testing.T) {
 	}{
 		{
 			name:            "RHACS branding",
-			productBranding: ProductBrandingNameRHACS,
+			productBranding: "RHACS_BRANDING",
 			vulnReport:      expectedVulnReportEmailTemplateRhacsBranding,
 			noVulnReport:    expectedNoVulnsFoundEmailTemplateRhacsBranding,
 		},
 		{
-			name:            "Stackrox branding",
-			productBranding: ProductBrandingNameStackrox,
+			name:            "StackRox branding",
+			productBranding: "STACKROX_BRANDING",
 			vulnReport:      expectedVulnReportEmailTemplateStackroxBranding,
 			noVulnReport:    expectedNoVulnsFoundEmailTemplateStackroxBranding,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			envIsolator.Setenv(productBrandingName, tt.productBranding)
+			envIsolator.Setenv(productBranding, tt.productBranding)
 
 			receivedBrandedVulnFound, err := formatMessage(rc)
 			assert.Nil(t, err)
