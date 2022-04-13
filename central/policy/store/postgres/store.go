@@ -54,6 +54,7 @@ var (
 		globaldb.RegisterTable(schema)
 		return schema
 	}()
+	targetResource = resources.Policy
 )
 
 type Store interface {
@@ -278,7 +279,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Policy) error {
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Policy) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Policy")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.Policy)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -291,7 +292,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Policy) error {
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Policy) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Policy")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.Policy)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -309,7 +310,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Policy) erro
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Policy")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Policy)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
 		return 0, err
 	}
@@ -326,7 +327,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Policy")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Policy)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return false, err
 	} else if !ok {
@@ -345,7 +346,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Policy, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Policy")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Policy)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, false, err
 	} else if !ok {
@@ -384,7 +385,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Policy")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.Policy)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -407,7 +408,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.PolicyIDs")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Policy)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
@@ -434,7 +435,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Policy, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Policy")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Policy)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, nil, err
 	} else if !ok {
@@ -489,7 +490,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Polic
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Policy")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.Policy)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
