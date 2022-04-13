@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ThProps } from '@patternfly/react-table';
-
-export type SortOption = {
-    field: string;
-    direction: 'asc' | 'desc';
-};
+import { SortOption, TableSortOption } from 'types/table';
 
 export type GetSortParams = (field: string) => ThProps['sort'];
 
@@ -14,10 +10,7 @@ type UseTableSortProps = {
 };
 
 type UseTableSortResult = {
-    sortOption: {
-        field: string;
-        reversed: boolean;
-    };
+    sortOption: TableSortOption;
     getSortParams: GetSortParams;
 };
 

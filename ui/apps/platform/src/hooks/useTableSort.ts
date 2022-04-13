@@ -1,27 +1,15 @@
-import { useEffect, useState, ReactElement } from 'react';
-
-export type TableColumn = {
-    Header: string;
-    accessor: string;
-    Cell?: ({ original, value }) => ReactElement | string;
-    sortField?: string;
-};
-
-export type SortDirection = 'asc' | 'desc';
-type SortOption = {
-    field: string;
-    reversed: boolean;
-};
+import { useEffect, useState } from 'react';
+import { SortDirection, TableColumn, TableSortOption } from 'types/table';
 
 export type UseTableSort = {
     activeSortIndex: number;
     setActiveSortIndex: (idx) => void;
     activeSortDirection: SortDirection;
     setActiveSortDirection: (dir) => void;
-    sortOption: SortOption;
+    sortOption: TableSortOption;
 };
 
-function useTableSort(columns: TableColumn[], defaultSort: SortOption): UseTableSort {
+function useTableSort(columns: TableColumn[], defaultSort: TableSortOption): UseTableSort {
     const defaultSortIndex = columns.findIndex((column) => column?.sortField === defaultSort.field);
     const defaultSortDirection = defaultSort.reversed ? 'desc' : 'asc';
     // index of the currently active column
@@ -30,12 +18,12 @@ function useTableSort(columns: TableColumn[], defaultSort: SortOption): UseTable
     const [activeSortDirection, setActiveSortDirection] =
         useState<SortDirection>(defaultSortDirection);
 
-    const [sortOption, setSortOption] = useState<SortOption>(defaultSort);
+    const [sortOption, setSortOption] = useState<TableSortOption>(defaultSort);
 
     useEffect(() => {
         const { sortField } = columns[activeSortIndex];
         if (sortField) {
-            const newSortOption: SortOption = {
+            const newSortOption: TableSortOption = {
                 field: sortField,
                 reversed: activeSortDirection === 'desc',
             };
