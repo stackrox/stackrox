@@ -624,7 +624,8 @@
       "type": "string",
       "enum": [
         "UNSET",
-        "OS_UNSUPPORTED"
+        "OS_UNSUPPORTED",
+        "KERNEL_UNSUPPORTED"
       ],
       "default": "UNSET"
     },
