@@ -31,7 +31,6 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"gopkg.in/robfig/cron.v2"
 )
@@ -294,13 +293,13 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	}
 	// If it is an empty report, do not send an attachment in the final notification email and the email body
 	// will indicate that no vulns were found
-	messageText, err := formatNoVulnsFoundMessage()
+	messageText, err := formatMessage(rc, noVulnsFoundEmailTemplate)
 	if err != nil {
 		return err
 	}
 
 	if zippedCSVData != nil {
-		messageText, err = formatMessage(rc)
+		messageText, err = formatMessage(rc, vulnReportEmailTemplate)
 		if err != nil {
 			return errors.Wrap(err, "error formatting the report email text")
 		}
@@ -331,24 +330,7 @@ func getBrandedProductName() string {
 	}
 }
 
-func formatNoVulnsFoundMessage() (string, error) {
-	data := &reportEmailFormat{
-		BrandedProductName: getBrandedProductName(),
-	}
-
-	tmpl, err := template.New("emailBody").Parse(noVulnsFoundEmailTemplate)
-	if err != nil {
-		return "", err
-	}
-	message, err := templates.ExecuteToString(tmpl, data)
-	if err != nil {
-		return "", err
-	}
-
-	return message, nil
-}
-
-func formatMessage(rc *storage.ReportConfiguration) (string, error) {
+func formatMessage(rc *storage.ReportConfiguration, EmailTemplate string) (string, error) {
 	data := &reportEmailFormat{
 		BrandedProductName: getBrandedProductName(),
 		WhichVulns:         "for all vulnerabilities",
@@ -359,7 +341,7 @@ func formatMessage(rc *storage.ReportConfiguration) (string, error) {
 			timestamp.FromProtobuf(rc.LastSuccessfulRunTime).GoTime().Format("January 02, 2006"))
 	}
 
-	tmpl, err := template.New("emailBody").Parse(vulnReportEmailTemplate)
+	tmpl, err := template.New("emailBody").Parse(EmailTemplate)
 	if err != nil {
 		return "", err
 	}

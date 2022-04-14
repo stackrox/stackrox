@@ -87,9 +87,9 @@ func TestVulnMessageBranding1(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			envIsolator.Setenv(branding.ProductBrandingEnvName, tt.productBranding)
 
-			receivedBrandedVulnFound, err := formatMessage(rc)
+			receivedBrandedVulnFound, err := formatMessage(rc, vulnReportEmailTemplate)
 			assert.Nil(t, err)
-			receivedBrandedNoVulnFound, err := formatNoVulnsFoundMessage()
+			receivedBrandedNoVulnFound, err := formatMessage(rc, noVulnsFoundEmailTemplate)
 			assert.Nil(t, err)
 
 			assert.Equal(t, tt.vulnReport, receivedBrandedVulnFound)
