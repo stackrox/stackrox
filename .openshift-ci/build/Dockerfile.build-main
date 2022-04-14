@@ -2,3 +2,5 @@ FROM bin
 
 COPY . .
 RUN ls -la
+RUN mkdir /output
+RUN cp -r pre-* /output
