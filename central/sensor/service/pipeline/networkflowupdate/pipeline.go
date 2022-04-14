@@ -67,7 +67,7 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 
 	for _, flow := range allUpdatedFlows {
 		id := GetID(flow.GetProps())
-		flow, ok := seen[id]
+		_, ok := seen[id]
 		if ok {
 			log.Infof("Already seen flow: %s", flow)
 		} else {
