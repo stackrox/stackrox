@@ -6,7 +6,7 @@ const (
 	productBrandingNameStackrox = "StackRox"
 )
 
-// GetBrandedProductName returns product name based on ProductBranding env variable
+// GetBrandedProductName returns the product name based on ProductBranding env variable
 func GetBrandedProductName() string {
 	if GetProductBrandingEnv() == "RHACS_BRANDING" {
 		return productBrandingNameRHACS

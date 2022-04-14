@@ -82,7 +82,7 @@ func TestVulnMessageBranding1(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			envIsolator.Setenv(branding.ProductBranding, tt.productBranding)
+			envIsolator.Setenv(branding.ProductBrandingEnvName, tt.productBranding)
 
 			receivedBrandedVulnFound, err := formatMessage(rc, vulnReportEmailTemplate)
 			assert.Nil(t, err)
