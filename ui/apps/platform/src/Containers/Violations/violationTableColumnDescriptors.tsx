@@ -107,7 +107,7 @@ const tableColumnDescriptor = [
     {
         Header: 'Enforced',
         accessor: 'enforcementCount',
-        sortField: 'Policy',
+        sortField: 'Enforcement',
         Cell: EnforcementColumn,
     },
     {
