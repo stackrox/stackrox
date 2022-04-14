@@ -28,10 +28,11 @@ updates:
       day: 'wednesday'
     open-pull-requests-limit: 1
     labels:
+      - "ci-aks-tests"
       - "ci-all-qa-tests"
+      - "ci-eks-tests"
       - "ci-no-api-tests"
       - "ci-no-ui-tests"
-      - "ci-eks-tests"
       - "ci-openshift-4-tests"
       - "ci-rhel-tests"
       - "dependencies"
