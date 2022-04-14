@@ -660,6 +660,8 @@ spec:
                       passwordReference:
                         description: Reference contains reference for the admin password
                         type: string
+                    required:
+                    - adminPasswordSecret
                     type: object
                 type: object
               conditions:
