@@ -22,6 +22,7 @@ func init() {
 	mapping.RegisterCategoryToTable(v1.{{.SearchCategory}}, schema)
 }
 
+// NewIndexer returns new indexer for `{{.Type}}`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl {
 		db: db,

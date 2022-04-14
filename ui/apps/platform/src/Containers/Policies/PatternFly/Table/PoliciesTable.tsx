@@ -31,10 +31,10 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { ActionItem } from 'Containers/Violations/ViolationsTablePanel';
 import useTableSelection from 'hooks/useTableSelection';
-import { SortDirection } from 'hooks/useTableSort';
 import { policiesBasePath } from 'routePaths';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { SearchFilter } from 'types/search';
+import { SortDirection } from 'types/table';
 
 import {
     LabelAndNotifierIdsForType,

@@ -143,7 +143,9 @@ class BaseSpecification extends Specification {
             BaseService.setUseClientCert(false)
             withRetry(30, 1) {
                 services.ApiTokenService.revokeToken(tokenResp.metadata.id)
-                RoleService.deleteRole(testRole.name)
+                if (testRole) {
+                    RoleService.deleteRole(testRole.name)
+                }
             }
         }
 
@@ -397,7 +399,7 @@ class BaseSpecification extends Specification {
     }
 
     static Boolean isRaceBuild() {
-        return Env.get("IS_RACE_BUILD", null) == "true"
+        return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOBNAME == "race-condition-tests"
     }
 
     static Void printlnDated(String msg) {

@@ -69,7 +69,10 @@ func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) 
 }
 
 func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sel selector) {
-	for _, deploymentWrap := range h.deploymentStore.getMatchingDeployments(np.GetNamespace(), sel) {
-		h.detector.ProcessDeployment(deploymentWrap.GetDeployment(), central.ResourceAction_UPDATE_RESOURCE)
+	deployments := h.deploymentStore.getMatchingDeployments(np.GetNamespace(), sel)
+	idsRequireReprocessing := make([]string, 0, len(deployments))
+	for _, deploymentWrap := range deployments {
+		idsRequireReprocessing = append(idsRequireReprocessing, deploymentWrap.GetId())
 	}
+	h.detector.ReprocessDeployments(idsRequireReprocessing...)
 }

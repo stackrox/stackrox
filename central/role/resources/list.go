@@ -44,7 +44,6 @@ var (
 	ImageComponent                   = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
 	ImageIntegration                 = newResourceMetadata("ImageIntegration", permissions.GlobalScope)
 	Indicator                        = newResourceMetadata("Indicator", permissions.NamespaceScope)
-	InitBundleMeta                   = newResourceMetadata("InitBundleMeta", permissions.GlobalScope)
 	K8sRole                          = newResourceMetadata("K8sRole", permissions.NamespaceScope)
 	K8sRoleBinding                   = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
 	K8sSubject                       = newResourceMetadata("K8sSubject", permissions.NamespaceScope)

@@ -324,74 +324,6 @@ storeDiagnosticBundle: &storeDiagnosticBundle
     path: /tmp/diagnostic-bundle
     destination: diagnostic-bundle
 
-connectToMonitoring: &connectToMonitoring
-  run:
-    name: Connect to monitoring via port-forward on 9443
-
-    command: |
-      set +e
-      nohup kubectl port-forward -n 'stackrox' svc/monitoring "9443:8443" 1>/dev/null 2>&1 &
-      sleep 5
-    when: always
-
-collectMonitoringImages: &collectMonitoringImages
-  run:
-    name: Collect monitoring images
-
-    command: |
-      set +e
-      ./monitoring/grafana/fetch-core-images.sh
-    when: always
-
-storeMonitoringImages: &storeMonitoringImages
-  ci-artifacts/store:
-    path: monitoring/grafana/captures
-    destination: monitoring-images
-
-storeMonitoringMetrics: &storeMonitoringMetrics
-  ci-artifacts/store:
-    path: monitoring/grafana/rawmetrics.zip
-    destination: monitoring-metrics.zip
-
-benchmarkDashboard: &benchmarkDashboard
-  run:
-    name: Benchmark dashboard queries
-
-    command: |
-      ./scripts/ci/bench-and-graph.sh .*Dashboard ./scale/tests/
-
-storeDashBenchImages: &storeDashBenchImages
-  ci-artifacts/store:
-    path: monitoring/grafana/captures
-    destination: monitoring-images-dashboard-bench
-
-benchmarkCompliance: &benchmarkCompliance
-  run:
-    name: Benchmark compliance queries
-
-    command: |
-      ./scale/mocksensor/launch_mock_sensor.sh scale-test --node-interval=10ms --max-nodes=500 --deployment-interval=10ms --max-deployments=1000
-      # allow enough time for all the deployments to be processed
-      sleep 400
-      ./scripts/ci/bench-and-graph.sh .*Compliance ./scale/tests/
-
-storeComplianceBenchImages: &storeComplianceBenchImages
-  ci-artifacts/store:
-    path: monitoring/grafana/captures
-    destination: monitoring-images-compliance-bench
-
-benchmarkDryRunPolicies: &benchmarkDryRunPolicies
-  run:
-    name: Benchmark dry run policies
-
-    command: |
-      ./scripts/ci/bench-and-graph.sh .*DryRunPolicies ./scale/tests
-
-storeDryRunBenchImages: &storeDryRunBenchImages
-  ci-artifacts/store:
-    path: monitoring/grafana/captures
-    destination: monitoring-images-dryrun-bench
-
 storeQALogs: &storeQALogs
   ci-artifacts/store:
     path: /tmp/qa-tests-backend-logs
@@ -2012,7 +1944,6 @@ commands:
               fi
             fi
 
-            cci-export MONITORING_IMAGE quay.io/rhacs-eng/monitoring:$(cat MONITORING_VERSION)
             deploy_dir="deploy/<< parameters.orchestrator-flavor >>"
             "${deploy_dir}/central.sh"
 
@@ -3122,7 +3053,7 @@ jobs:
           name: Build images
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" --password-stdin \<<<"$DOCKER_IO_PUSH_PASSWORD" docker.io
-            make scale-image mock-grpc-server-image monitoring-image
+            make scale-image mock-grpc-server-image
 
       - *saveGoBuildCache
 
@@ -3490,6 +3421,8 @@ jobs:
       - ROXDEPLOY_CONFIG_FILE_MAP: "scripts/ci/endpoints/endpoints.yaml"
       - SENSOR_HELM_DEPLOY: true
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
+      - ROX_VERIFY_IMAGE_SIGNATURE: true
+      - ROX_NETPOL_FIELDS: true
 
     steps:
       - checkout
@@ -3922,7 +3855,7 @@ jobs:
         command: |
           ./deploy/k8s/deploy.sh
           ./scale/launch_workload.sh scale-test
-          
+
           source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
           cci-export ROX_USERNAME "$ROX_USERNAME"
           cci-export ROX_PASSWORD "$ROX_PASSWORD"
@@ -4860,21 +4793,6 @@ jobs:
             - nop-steps-stanza
       - destroy-osd-gcp-cluster
 
-  openshift-ci-upgrade-test:
-    executor: custom
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-      - openshift-ci-mimic-env
-      - run:
-          name: Run the OpenShift CI upgrade test hook
-          command: |
-            .openshift-ci/gke_upgrade_test.py
-      - store_artifacts:
-          path: /tmp/artifact_dir/howto-locate-artifacts.html
-          destination: howto-locate-artifacts.html
-
 workflows:
   version: 2
 
@@ -5209,16 +5127,6 @@ workflows:
               only: /.*/
             branches:
               ignore: /.*/
-          requires:
-            - build-stackrox
-            - build-rhacs
-
-      - openshift-ci-upgrade-test:
-          context:
-          - quay-rhacs-eng-readonly
-          filters:
-            branches:
-              only: /.*(osci).*/
           requires:
             - build-stackrox
             - build-rhacs

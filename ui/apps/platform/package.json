@@ -12,10 +12,10 @@
     "dependencies": {
         "@apollo/client": "^3.5.5",
         "@lifeomic/axios-fetch": "^3.0.0",
-        "@patternfly/react-core": "^4.198.19",
-        "@patternfly/react-icons": "^4.49.19",
-        "@patternfly/react-styles": "^4.48.19",
-        "@patternfly/react-table": "^4.67.19",
+        "@patternfly/react-core": "^4.202.16",
+        "@patternfly/react-icons": "^4.53.16",
+        "@patternfly/react-styles": "^4.52.16",
+        "@patternfly/react-table": "^4.71.16",
         "@stackrox/ui-components": "*",
         "axios": "^0.25.0",
         "computed-style-to-inline-style": "^3.0.0",
@@ -93,7 +93,7 @@
         "typeface-open-sans": "^1.1.13",
         "typeface-open-sans-condensed": "^1.1.13",
         "use-deep-compare-effect": "^1.8.1",
-        "yup": "^1.0.0-beta.3"
+        "yup": "^1.0.0-beta.4"
     },
     "resolutions": {
         "react-cytoscapejs/cytoscape": "^3.17.0"
@@ -139,7 +139,7 @@
         "@types/react-dom": "^17.0.11",
         "@types/react-redux": "^7.1.20",
         "autoprefixer": "^10.2.5",
-        "cypress": "^9.5.3",
+        "cypress": "^9.5.4",
         "cypress-file-upload": "^5.0.8",
         "eslint": "^7.32.0",
         "eslint-config-airbnb": "^18.2.1",

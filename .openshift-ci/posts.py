@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Common steps for after tests are complete
+Common steps when tests complete
 """
 
 import subprocess

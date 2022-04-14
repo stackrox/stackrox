@@ -23,12 +23,10 @@ ROX_IMAGE_FLAVOR ?= $(shell if [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then 
 DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
 BUILD_IMAGE_VERSION=$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
 BUILD_IMAGE := $(DEFAULT_IMAGE_REGISTRY)/apollo-ci:$(BUILD_IMAGE_VERSION)
-MONITORING_IMAGE := $(DEFAULT_IMAGE_REGISTRY)/monitoring:$(shell cat MONITORING_VERSION)
 DOCS_IMAGE_BASE := $(DEFAULT_IMAGE_REGISTRY)/docs
 
 ifdef CI
     CI_QUAY_REPO := rhacs-eng
-    MONITORING_IMAGE := quay.io/$(CI_QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
     DOCS_IMAGE_BASE := quay.io/$(CI_QUAY_REPO)/docs
 endif
 
@@ -145,11 +143,11 @@ ifdef CI
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
 	@echo 'If this fails, run `make style`.'
 	@echo "Running with no tags..."
-	golangci-lint run --timeout 4m0s
+	golangci-lint run --timeout 8m0s
 	@echo "Running with release tags..."
 	@# We use --tests=false because some unit tests don't compile with release tags,
 	@# since they use functions that we don't define in the release build. That's okay.
-	golangci-lint run --timeout 4m0s --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
+	golangci-lint run --timeout 8m0s --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 else
 	golangci-lint run --fix
 	golangci-lint run --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
@@ -326,8 +324,8 @@ build-prep: deps
 
 .PHONY: cli-build
 cli-build: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
 ifdef CI
 	RACE=0 CGO_ENABLED=0 GOOS=windows $(GOBUILD) ./roxctl
 endif
@@ -339,10 +337,10 @@ cli: cli-build
 	chmod u+w $(GOPATH)/bin/roxctl
 
 cli-linux: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=linux $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
 
 cli-darwin: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
 
 upgrader: bin/$(HOST_OS)/upgrader
 
@@ -494,17 +492,6 @@ generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
 # image is an alias for main-image
 .PHONY: image
 image: main-image
-
-monitoring/static-bin/%: image/static-bin/%
-	mkdir -p "$(dir $@)"
-	cp -fLp $< $@
-
-.PHONY: monitoring-build-context
-monitoring-build-context: monitoring/static-bin/save-dir-contents monitoring/static-bin/restore-all-dir-contents
-
-.PHONY: monitoring-image
-monitoring-image: monitoring-build-context
-	scripts/ensure_image.sh $(MONITORING_IMAGE) monitoring/Dockerfile monitoring/
 
 .PHONY: all-builds
 all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build

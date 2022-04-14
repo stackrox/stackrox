@@ -2,10 +2,9 @@ import queryString from 'qs';
 
 import { Alert, ListAlert } from 'Containers/Violations/types/violationTypes';
 
-import { SearchFilter } from 'types/search';
+import { ApiSortOption, SearchFilter } from 'types/search';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import axios from './instance';
-import { RestSortOption } from './sortOption';
 
 const baseUrl = '/v1/alerts';
 const baseCountUrl = '/v1/alertscount';
@@ -96,7 +95,7 @@ export function fetchSummaryAlertCounts(
  */
 export function fetchAlerts(
     searchFilter: SearchFilter,
-    sortOption: RestSortOption,
+    sortOption: ApiSortOption,
     page: number,
     pageSize: number
 ): Promise<ListAlert[]> {

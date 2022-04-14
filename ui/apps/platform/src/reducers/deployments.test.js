@@ -19,15 +19,6 @@ const deploymentsResponse = {
     result: Object.keys(deploymentsById),
 };
 
-const singleDeployment = { id: 'dep1', data: 'data' };
-const deploymentResponse = {
-    entities: {
-        deployment: {
-            [singleDeployment.id]: singleDeployment,
-        },
-    },
-};
-
 describe('Deployments Reducer', () => {
     it('should return the initial state', () => {
         expect(reducer(undefined, {})).toEqual(initialState);
@@ -49,19 +40,6 @@ describe('Deployments Reducer', () => {
             ...prevState.byId,
         });
         expect(nextState.filteredIds).toEqual(Object.keys(deploymentsById));
-    });
-
-    it('should enrich existing deployment', () => {
-        const prevState = {
-            ...initialState,
-            byId: deploymentsById,
-        };
-        const nextState = reducer(prevState, actions.fetchDeployment.success(deploymentResponse));
-
-        expect(nextState.byId).toEqual({
-            ...deploymentsById,
-            [singleDeployment.id]: singleDeployment,
-        });
     });
 
     it('should cleanup non-existing deployments when received new list of deployments', () => {

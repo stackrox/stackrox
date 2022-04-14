@@ -1,10 +1,7 @@
 import { all, takeLatest, call, fork, put, select } from 'redux-saga/effects';
 
 import { dashboardPath, policiesPath } from 'routePaths';
-import {
-    fetchDeploymentsLegacy as fetchDeployments,
-    fetchDeploymentLegacy as fetchDeployment,
-} from 'services/DeploymentsService';
+import { fetchDeploymentsLegacy as fetchDeployments } from 'services/DeploymentsService';
 import { actions } from 'reducers/deployments';
 import { types as dashboardTypes } from 'reducers/dashboard';
 import { selectors } from 'reducers';
@@ -16,15 +13,6 @@ export function* getDeployments({ options = [] }) {
         yield put(actions.fetchDeployments.success(result.response, { options }));
     } catch (error) {
         yield put(actions.fetchDeployments.failure(error));
-    }
-}
-
-export function* getDeployment(id) {
-    try {
-        const result = yield call(fetchDeployment, id);
-        yield put(actions.fetchDeployment.success(result.response, { id }));
-    } catch (error) {
-        yield put(actions.fetchDeployment.failure(error));
     }
 }
 

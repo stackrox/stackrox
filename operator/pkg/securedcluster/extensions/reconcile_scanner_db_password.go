@@ -35,14 +35,15 @@ func reconcile(ctx context.Context, s *platform.SecuredCluster, client ctrlClien
 		return nil
 	}
 
-	enabled, err := scanner.AutoSenseLocalScannerSupport(ctx, client, *s)
+	config, err := scanner.AutoSenseLocalScannerConfig(ctx, client, *s)
 	if err != nil {
 		return err
 	}
 
+	// Only reconcile password if resources are deployed with the SecuredCluster.
 	securedClusterWithScanner := &securedClusterWithScannerBearer{
 		SecuredCluster: s,
-		scannerEnabled: enabled,
+		scannerEnabled: config.DeployScannerResources,
 	}
 	return commonExtensions.ReconcileScannerDBPassword(ctx, securedClusterWithScanner, client)
 }

@@ -15,7 +15,7 @@ var (
 	once     sync.Once
 	instance PermissionChecker
 
-	requesterOrApproverSAC = sac.ForResources(
+	multiResourceSAC = sac.ForResources(
 		sac.ForResource(resources.ImageIntegration),
 		sac.ForResource(resources.Notifier),
 		sac.ForResource(resources.BackupPlugins),
@@ -30,37 +30,37 @@ func permissionCheckerSingleton() PermissionChecker {
 }
 
 func (permissionChecker) CountAllowed(ctx context.Context) (bool, error) {
-	return requesterOrApproverSAC.ReadAllowedToAny(ctx)
+	return multiResourceSAC.ReadAllowedToAny(ctx)
 }
 
 func (permissionChecker) ExistsAllowed(ctx context.Context) (bool, error) {
-	return requesterOrApproverSAC.ReadAllowedToAny(ctx)
+	return multiResourceSAC.ReadAllowedToAny(ctx)
 }
 
 func (permissionChecker) GetAllowed(ctx context.Context) (bool, error) {
-	return requesterOrApproverSAC.ReadAllowedToAny(ctx)
+	return multiResourceSAC.ReadAllowedToAny(ctx)
 }
 
 func (permissionChecker) UpsertAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
-	return requesterOrApproverSAC.WriteAllowedToAny(ctx)
+	return multiResourceSAC.WriteAllowedToAny(ctx)
 }
 
 func (permissionChecker) UpsertManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
-	return requesterOrApproverSAC.WriteAllowedToAny(ctx)
+	return multiResourceSAC.WriteAllowedToAny(ctx)
 }
 
 func (permissionChecker) DeleteAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
-	return requesterOrApproverSAC.WriteAllowedToAny(ctx)
+	return multiResourceSAC.WriteAllowedToAny(ctx)
 }
 
 func (permissionChecker) GetIDsAllowed(ctx context.Context) (bool, error) {
-	return requesterOrApproverSAC.ReadAllowedToAny(ctx)
+	return multiResourceSAC.ReadAllowedToAny(ctx)
 }
 
 func (permissionChecker) GetManyAllowed(ctx context.Context) (bool, error) {
-	return requesterOrApproverSAC.ReadAllowedToAny(ctx)
+	return multiResourceSAC.ReadAllowedToAny(ctx)
 }
 
 func (permissionChecker) DeleteManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
-	return requesterOrApproverSAC.WriteAllowedToAny(ctx)
+	return multiResourceSAC.WriteAllowedToAny(ctx)
 }

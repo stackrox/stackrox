@@ -4,8 +4,9 @@ import React, { ReactElement, useState } from 'react';
 
 import usePagination from 'hooks/patternfly/usePagination';
 import { SearchFilter } from 'types/search';
+import { SortOption } from 'types/table';
 import queryService from 'utils/queryService';
-import useTableSort, { SortOption } from 'hooks/patternfly/useTableSort';
+import useTableSort from 'hooks/patternfly/useTableSort';
 import DeferredCVEsTable from './DeferredCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
 

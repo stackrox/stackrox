@@ -152,12 +152,15 @@ func waitForTermination(t testutils.T, deploymentName string) {
 	}
 }
 
-// The deploymentName must be copied form the file path passed in
-func setupDeploymentFromFile(t testutils.T, deploymentName, path string) {
+func applyFile(t testutils.T, path string) {
 	cmd := exec.Command(`kubectl`, `create`, `-f`, path)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
+}
 
+// The deploymentName must be copied form the file path passed in
+func setupDeploymentFromFile(t testutils.T, deploymentName, path string) {
+	applyFile(t, path)
 	waitForDeployment(t, deploymentName)
 }
 
@@ -201,11 +204,14 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 	}, "image updated", time.Minute, 5*time.Second)
 }
 
-func teardownDeploymentFromFile(t testutils.T, deploymentName, path string) {
+func teardownFile(t testutils.T, path string) {
 	cmd := exec.Command(`kubectl`, `delete`, `-f`, path, `--ignore-not-found=true`)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
+}
 
+func teardownDeploymentFromFile(t testutils.T, deploymentName, path string) {
+	teardownFile(t, path)
 	waitForTermination(t, deploymentName)
 }
 
@@ -215,6 +221,14 @@ func teardownDeployment(t *testing.T, deploymentName string) {
 	require.NoError(t, err, string(output))
 
 	waitForTermination(t, deploymentName)
+}
+
+func scaleDeployment(t testutils.T, deploymentName, replicas string) {
+	cmd := exec.Command(`kubectl`, `scale`, `deployment`, deploymentName, `--replicas`, replicas)
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err, string(output))
+
+	waitForDeployment(t, deploymentName)
 }
 
 func teardownNginxLatestTagDeployment(t *testing.T) {

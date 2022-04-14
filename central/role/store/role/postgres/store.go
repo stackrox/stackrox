@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -43,13 +44,18 @@ const (
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.Role)(nil)), baseTable)
 	log    = logging.LoggerForModule()
+	schema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable(baseTable)
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.Role)(nil)), baseTable)
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
+	targetResource = resources.Role
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -72,27 +78,13 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableRoles(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists roles (
-    Name varchar,
-    serialized bytea,
-    PRIMARY KEY(Name)
-)
-`
+// New returns a new Store instance using the provided sql instance.
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableRolesStmt)
 
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoRoles(ctx context.Context, tx pgx.Tx, obj *storage.Role) error {
@@ -179,15 +171,6 @@ func (s *storeImpl) copyFromRoles(ctx context.Context, tx pgx.Tx, objs ...*stora
 	return err
 }
 
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableRoles(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
-}
-
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Role) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "Role")
 	if err != nil {
@@ -241,7 +224,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Role) error {
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Role) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Role")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.Role)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -254,7 +237,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Role) error {
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Role) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Role")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.Role)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -272,7 +255,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Role) error 
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Role")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Role)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
 		return 0, err
 	}
@@ -289,7 +272,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, name string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Role")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Role)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return false, err
 	} else if !ok {
@@ -308,7 +291,7 @@ func (s *storeImpl) Exists(ctx context.Context, name string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, name string) (*storage.Role, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Role")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Role)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, false, err
 	} else if !ok {
@@ -347,7 +330,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, name string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Role")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.Role)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -370,7 +353,7 @@ func (s *storeImpl) Delete(ctx context.Context, name string) error {
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.RoleIDs")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Role)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
@@ -397,7 +380,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Role, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Role")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Role)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, nil, err
 	} else if !ok {
@@ -452,7 +435,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Role,
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Role")
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(resources.Role)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {

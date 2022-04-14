@@ -22,9 +22,10 @@ var securedCluster = platform.SecuredCluster{
 func TestAutoSenseLocalScannerSupportShouldBeEnabled(t *testing.T) {
 	client := testutils.NewFakeClientBuilder(t, testutils.ValidClusterVersion).Build()
 
-	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
+	config, err := AutoSenseLocalScannerConfig(context.Background(), client, securedCluster)
 	require.NoError(t, err)
-	assert.True(t, enabled, "Expected Scanner to be enabled for OpenShift cluster if Central is not present")
+	assert.True(t, config.EnableLocalImageScanning)
+	assert.True(t, config.DeployScannerResources)
 }
 
 func TestAutoSenseIsDisabledWithCentralPresentShouldBeDisabled(t *testing.T) {
@@ -36,9 +37,10 @@ func TestAutoSenseIsDisabledWithCentralPresentShouldBeDisabled(t *testing.T) {
 		Spec: platform.CentralSpec{},
 	}).Build()
 
-	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
+	config, err := AutoSenseLocalScannerConfig(context.Background(), client, securedCluster)
 	require.NoError(t, err)
-	require.False(t, enabled, "Expected Scanner to be disabled if Central is present")
+	assert.False(t, config.DeployScannerResources, "Expected Scanner resource deployment to be disabled if Central is present")
+	assert.True(t, config.EnableLocalImageScanning, "Expected Local Image Scanning feature to be enabled.")
 }
 
 func TestAutoSenseIsEnabledWithCentralInADifferentNamespace(t *testing.T) {
@@ -50,9 +52,10 @@ func TestAutoSenseIsEnabledWithCentralInADifferentNamespace(t *testing.T) {
 		Spec: platform.CentralSpec{},
 	}).Build()
 
-	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
+	config, err := AutoSenseLocalScannerConfig(context.Background(), client, securedCluster)
 	require.NoError(t, err)
-	require.True(t, enabled, "Expected Scanner to be enabled if Central is deployed in a different namespace")
+	require.True(t, config.DeployScannerResources)
+	require.True(t, config.EnableLocalImageScanning)
 }
 
 func TestAutoSenseIsDisabledIfClusterVersionNotFound(t *testing.T) {
@@ -66,15 +69,15 @@ func TestAutoSenseIsDisabledIfClusterVersionNotFound(t *testing.T) {
 		},
 	}).Build()
 
-	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
+	config, err := AutoSenseLocalScannerConfig(context.Background(), client, securedCluster)
 	require.Error(t, err)
-	require.False(t, enabled, "Expected an error if clusterversions.config.openshift.io %q not found", clusterVersionDefaultName)
+	require.False(t, config.EnableLocalImageScanning, "Expected an error if clusterversions.config.openshift.io %q not found", clusterVersionDefaultName)
 }
 
 func TestAutoSenseIsDisabledIfClusterVersionKindNotFound(t *testing.T) {
 	client := testutils.NewFakeClientBuilder(t).Build()
 
-	enabled, err := AutoSenseLocalScannerSupport(context.Background(), client, securedCluster)
+	config, err := AutoSenseLocalScannerConfig(context.Background(), client, securedCluster)
 	require.Error(t, err)
-	require.False(t, enabled, "Expected an error if clusterversions.config.openshift.io kind not found")
+	require.False(t, config.EnableLocalImageScanning, "Expected an error if clusterversions.config.openshift.io kind not found")
 }
