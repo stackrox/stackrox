@@ -35,8 +35,8 @@ patterns=$(jq -c '.[]' "$DIR/restart-ok-patterns.json")
             job_pattern=$(echo "$pattern" | jq -r '.job')
             logfile_pattern=$(echo "$pattern" | jq -r '.logfile')
             logline_pattern=$(echo "$pattern" | jq -r '.logline')
-            if [[ "${job}" =~ ${job_pattern} ]] && 
-               [[ "${logfile}" =~ ${logfile_pattern} ]] && 
+            if [[ "${job}" =~ ${job_pattern} ]] &&
+               [[ "${logfile}" =~ ${logfile_pattern} ]] &&
                egrep -q "${logline_pattern}" "${logfile}"
             then
                 echo "Ignoring this restart due to: ${comment}"
