@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-export KUBE_COMMAND=${KUBE_COMMAND:-kubectl}
-echo "KUBE_COMMAND set to ${KUBE_COMMAND}"
-
 export STACKROX_NAMESPACE="${STACKROX_NAMESPACE:-stackrox}"
 echo "STACKROX_NAMESPACE set to ${STACKROX_NAMESPACE}"
 
