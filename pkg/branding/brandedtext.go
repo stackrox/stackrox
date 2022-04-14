@@ -1,15 +1,15 @@
 package branding
 
 const (
-	productBrandingNameRHACS = "Red Hat Advanced Cluster Security for Kubernetes"
+	productNameRHACS = "Red Hat Advanced Cluster Security for Kubernetes"
 
-	productBrandingNameStackrox = "StackRox"
+	productNameStackrox = "StackRox"
 )
 
-// GetBrandedProductName returns the product name based on ProductBranding env variable
-func GetBrandedProductName() string {
+// GetProductName returns the product name based on ProductBranding env variable
+func GetProductName() string {
 	if getProductBrandingEnv() == "RHACS_BRANDING" {
-		return productBrandingNameRHACS
+		return productNameRHACS
 	}
-	return productBrandingNameStackrox
+	return productNameStackrox
 }

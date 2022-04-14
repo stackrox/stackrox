@@ -16,21 +16,21 @@ func TestGetBrandedProductName(t *testing.T) {
 	}{
 		"RHACS branding": {
 			productBrandingEnv: ProductBrandingRHACS,
-			brandedProductName: productBrandingNameRHACS,
+			brandedProductName: productNameRHACS,
 		},
 		"Stackrox branding": {
 			productBrandingEnv: "STACKROX_BRANDING",
-			brandedProductName: productBrandingNameStackrox,
+			brandedProductName: productNameStackrox,
 		},
 		"Default setting": {
 			productBrandingEnv: "ROX_PRODUCT_BRANDING",
-			brandedProductName: productBrandingNameStackrox,
+			brandedProductName: productNameStackrox,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			envIsolator.Setenv(ProductBrandingEnvName, tt.productBrandingEnv)
-			receivedProductName := GetBrandedProductName()
+			receivedProductName := GetProductName()
 			assert.Equal(t, tt.brandedProductName, receivedProductName)
 		})
 	}
