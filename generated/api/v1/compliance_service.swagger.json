@@ -993,6 +993,9 @@
         "admissionControlHealthInfo": {
           "$ref": "#/definitions/storageAdmissionControlHealthInfo"
         },
+        "localScannerHealthInfo": {
+          "$ref": "#/definitions/storageLocalScannerHealthInfo"
+        },
         "sensorHealthStatus": {
           "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel",
           "description": "The following _health_status fields provide aggregated health status of the respective components and are assigned by central."
@@ -1004,6 +1007,9 @@
           "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel"
         },
         "admissionControlHealthStatus": {
+          "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel"
+        },
+        "localScannerHealthStatus": {
           "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel"
         },
         "lastContact": {
@@ -1814,6 +1820,35 @@
           "type": "boolean"
         }
       }
+    },
+    "storageLocalScannerHealthInfo": {
+      "type": "object",
+      "properties": {
+        "totalDesiredAnalyzerPods": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalReadyAnalyzerPods": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalDesiredDbPods": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalReadyDbPods": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "statusErrors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Collection of errors that occurred while trying to obtain local scanner health info."
+        }
+      },
+      "description": "LocalScannerHealthInfo carries data about local scanner deployment but does not include local scanner health status\nderived from this data.\nAggregated local scanner health status is not included because it is derived in central and not in the component that\nfirst reports LocalScannerHealthInfo (sensor)."
     },
     "storageManagerType": {
       "type": "string",

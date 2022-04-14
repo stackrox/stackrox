@@ -263,6 +263,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"healthInfoComplete: Boolean!",
 		"id: ID!",
 		"lastContact: Time",
+		"localScannerHealthInfo: LocalScannerHealthInfo",
+		"localScannerHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 		"overallHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 		"sensorHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 	}))
@@ -754,6 +756,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ListAlert_ResourceType(0)))
 	utils.Must(builder.AddType("LivenessProbe", []string{
 		"defined: Boolean!",
+	}))
+	utils.Must(builder.AddType("LocalScannerHealthInfo", []string{
+		"statusErrors: [String!]!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ManagerType(0)))
 	utils.Must(builder.AddType("Metadata", []string{
@@ -3299,6 +3304,16 @@ func (resolver *clusterHealthStatusResolver) Id(ctx context.Context) graphql.ID 
 func (resolver *clusterHealthStatusResolver) LastContact(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastContact()
 	return timestamp(value)
+}
+
+func (resolver *clusterHealthStatusResolver) LocalScannerHealthInfo(ctx context.Context) (*localScannerHealthInfoResolver, error) {
+	value := resolver.data.GetLocalScannerHealthInfo()
+	return resolver.root.wrapLocalScannerHealthInfo(value, true, nil)
+}
+
+func (resolver *clusterHealthStatusResolver) LocalScannerHealthStatus(ctx context.Context) string {
+	value := resolver.data.GetLocalScannerHealthStatus()
+	return value.String()
 }
 
 func (resolver *clusterHealthStatusResolver) OverallHealthStatus(ctx context.Context) string {
@@ -7140,6 +7155,35 @@ func (resolver *Resolver) wrapLivenessProbes(values []*storage.LivenessProbe, er
 
 func (resolver *livenessProbeResolver) Defined(ctx context.Context) bool {
 	value := resolver.data.GetDefined()
+	return value
+}
+
+type localScannerHealthInfoResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.LocalScannerHealthInfo
+}
+
+func (resolver *Resolver) wrapLocalScannerHealthInfo(value *storage.LocalScannerHealthInfo, ok bool, err error) (*localScannerHealthInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &localScannerHealthInfoResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapLocalScannerHealthInfos(values []*storage.LocalScannerHealthInfo, err error) ([]*localScannerHealthInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*localScannerHealthInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &localScannerHealthInfoResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *localScannerHealthInfoResolver) StatusErrors(ctx context.Context) []string {
+	value := resolver.data.GetStatusErrors()
 	return value
 }
 

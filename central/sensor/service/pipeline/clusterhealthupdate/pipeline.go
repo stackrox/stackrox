@@ -49,14 +49,17 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	cInfo := msg.GetClusterHealthInfo().GetCollectorHealthInfo()
 	aInfo := msg.GetClusterHealthInfo().GetAdmissionControlHealthInfo()
+	lsInfo := msg.GetClusterHealthInfo().GetLocalScannerHealthInfo()
 
 	conn := connection.FromContext(ctx)
 	clusterHealthStatus := &storage.ClusterHealthStatus{
 		CollectorHealthInfo:          cInfo,
 		AdmissionControlHealthInfo:   aInfo,
+		LocalScannerHealthInfo:       lsInfo,
 		SensorHealthStatus:           storage.ClusterHealthStatus_HEALTHY,
 		CollectorHealthStatus:        clusterhealth.PopulateCollectorStatus(cInfo),
 		AdmissionControlHealthStatus: clusterhealth.PopulateAdmissionControlStatus(aInfo),
+		LocalScannerHealthStatus:     clusterhealth.PopulateLocalScannerStatus(lsInfo),
 		LastContact:                  timestamp.Now().GogoProtobuf(),
 		// When sensor health monitoring is revised update the sensor capability
 		HealthInfoComplete: conn != nil && conn.HasCapability(centralsensor.HealthMonitoringCap),

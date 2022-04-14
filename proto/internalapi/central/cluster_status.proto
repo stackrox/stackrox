@@ -21,4 +21,5 @@ message ClusterStatusUpdate {
 message RawClusterHealthInfo {
     storage.CollectorHealthInfo collector_health_info                   = 1;
     storage.AdmissionControlHealthInfo admission_control_health_info    = 2;
+    storage.LocalScannerHealthInfo local_scanner_health_info            = 3;
 }

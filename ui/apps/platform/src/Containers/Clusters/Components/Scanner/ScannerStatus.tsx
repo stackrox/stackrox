@@ -1,0 +1,111 @@
+import React from 'react';
+
+import { DetailedTooltipOverlay, Tooltip } from '@stackrox/ui-components';
+import { ClusterHealthStatus } from '../../clusterTypes';
+import {
+    delayedCollectorStatusStyle,
+    healthStatusStyles,
+    isDelayedSensorHealthStatus,
+} from '../../cluster.helpers';
+import HealthLabelWithDelayed from '../HealthLabelWithDelayed';
+import { getDistanceStrictAsPhrase } from '../../../../utils/dateUtils';
+import HealthStatusNotApplicable from '../HealthStatusNotApplicable';
+import HealthStatus from '../HealthStatus';
+import ScannerStatusTotals from './ScannerStatusTotals';
+import ScannerUnavailableStatus from './ScannerUnavailableStatus';
+
+/*
+ * Scanner Status in Clusters list if `isList={true}` or Cluster side panel if `isList={false}`
+ *
+ * Caller is responsible for optional chaining in case healthStatus is null.
+ */
+
+type ScannerStatusProps = {
+    healthStatus: ClusterHealthStatus;
+    isList?: boolean;
+};
+
+const ScannerStatus = ({ healthStatus, isList = false }: ScannerStatusProps) => {
+    if (!healthStatus?.localScannerHealthStatus) {
+        return <HealthStatusNotApplicable testId="localScannerStatus" isList={isList} />;
+    }
+    const {
+        localScannerHealthStatus,
+        localScannerHealthInfo,
+        healthInfoComplete,
+        sensorHealthStatus,
+        lastContact,
+    } = healthStatus;
+    const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
+    const { Icon, fgColor } = isDelayed
+        ? delayedCollectorStatusStyle
+        : healthStatusStyles[localScannerHealthStatus];
+    const icon = <Icon className={`${isList ? 'inline' : ''} h-4 w-4`} />;
+    const currentDatetime = new Date();
+
+    const healthLabelElement = (
+        <HealthLabelWithDelayed
+            isDelayed={isDelayed}
+            delayedText={getDistanceStrictAsPhrase(lastContact, currentDatetime)}
+            clusterHealthItem="scanner"
+            clusterHealthItemStatus={localScannerHealthStatus}
+            isList={isList}
+        />
+    );
+
+    const healthStatusElement = (
+        <HealthStatus icon={icon} iconColor={fgColor} isList={isList}>
+            {healthLabelElement}
+        </HealthStatus>
+    );
+
+    if (localScannerHealthInfo) {
+        const scannerTotalsElement = (
+            <ScannerStatusTotals localScannerHealthInfo={localScannerHealthInfo} />
+        );
+        const infoElement = healthInfoComplete ? (
+            scannerTotalsElement
+        ) : (
+            <div>
+                {scannerTotalsElement}
+                <div data-testid="scannerInfoComplete">
+                    <strong>Upgrade Sensor</strong> to get complete Scanner health information
+                </div>
+            </div>
+        );
+
+        return isList ? (
+            <Tooltip
+                content={
+                    <DetailedTooltipOverlay title="Scanner Health Information" body={infoElement} />
+                }
+            >
+                <div className="inline">{healthStatusElement}</div>
+            </Tooltip>
+        ) : (
+            <HealthStatus icon={icon} iconColor={fgColor}>
+                <div>
+                    {healthLabelElement}
+                    {infoElement}
+                </div>
+            </HealthStatus>
+        );
+    }
+
+    if (localScannerHealthStatus === 'UNAVAILABLE') {
+        return (
+            <ScannerUnavailableStatus
+                isList={isList}
+                icon={icon}
+                fgColor={fgColor}
+                healthStatusElement={healthStatusElement}
+                healthLabelElement={healthLabelElement}
+            />
+        );
+    }
+
+    // UNINITIALIZED
+    return healthStatusElement;
+};
+
+export default ScannerStatus;
