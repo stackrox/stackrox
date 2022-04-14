@@ -120,6 +120,8 @@ func (r *reconcileAdminPasswordExtensionRun) updateStatus(status *platform.Centr
 	status.Central.AdminPassword.Reference = r.passwordSecretName
 	if status.Central.AdminPassword.SecretName != nil {
 		status.Central.AdminPassword.SecretName.Name = r.passwordSecretName
+	} else {
+		status.Central.AdminPassword.SecretName = &platform.LocalSecretReference{Name: r.passwordSecretName}
 	}
 	return true
 }
