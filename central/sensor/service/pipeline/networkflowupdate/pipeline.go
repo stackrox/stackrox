@@ -3,6 +3,7 @@ package networkflowupdate
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -42,6 +43,12 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetNetworkFlowUpdate() != nil
 }
 
+var seen = make(map[string]*storage.NetworkFlow)
+
+func GetID(props *storage.NetworkFlowProperties) string {
+	return fmt.Sprintf("%x:%s:%x:%s:%x:%x", int32(props.GetSrcEntity().GetType()), props.GetSrcEntity().GetId(), int32(props.GetDstEntity().GetType()), props.GetDstEntity().GetId(), props.GetDstPort(), int32(props.GetL4Protocol()))
+}
+
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) (err error) {
 	update := msg.GetNetworkFlowUpdate()
@@ -58,6 +65,15 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	allUpdatedFlows = append(allUpdatedFlows, endpointsToListenFlows(update.GetUpdatedEndpoints())...)
 	countMetrics.IncrementTotalNetworkEndpointsReceivedCounter(s.clusterID, len(update.GetUpdatedEndpoints()))
 
+	for _, flow := range allUpdatedFlows {
+		id := GetID(flow.GetProps())
+		flow, ok := seen[id]
+		if ok {
+			log.Infof("Already seen flow: %s", flow)
+		} else {
+			seen[id] = flow
+		}
+	}
 	if len(allUpdatedFlows) == 0 {
 		return nil
 	}
