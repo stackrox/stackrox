@@ -8,6 +8,7 @@ setup_file() {
   local -r roxctl_version="$(roxctl-development version || true)"
   echo "Testing roxctl version: '${roxctl_version}'" >&3
 
+  command -v cat || skip "Command 'cat' required."
   command -v grep || skip "Command 'grep' required."
   [[ -n "${API_ENDPOINT}" ]] || fail "Environment variable 'API_ENDPOINT' required"
   [[ -n "${ROX_PASSWORD}" ]] || fail "Environment variable 'ROX_PASSWORD' required"
@@ -35,11 +36,18 @@ run_scanner_generate_and_check() {
   assert_success
 }
 
+assert_number_of_k8s_resources() {
+    local -r k8s_resources_count=$(cat "${output_dir}/scanner/"*.yaml | grep -c "^apiVersion") || true
+
+    [[ "${k8s_resources_count}" = "${1}" ]] || fail "Unexpected number of k8s resources"
+}
+
 @test "[openshift4] roxctl scanner generate" {
   run_scanner_generate_and_check openshift4
 
   assert_file_exist "${output_dir}/scanner/02-scanner-06-deployment.yaml"
   run -0 grep -q 'trusted-ca-volume' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
+  assert_number_of_k8s_resources 16
 }
 
 @test "[openshift] roxctl scanner generate" {
@@ -48,6 +56,7 @@ run_scanner_generate_and_check() {
   assert_file_exist "${output_dir}/scanner/02-scanner-06-deployment.yaml"
   run -0 grep -q 'ROX_OPENSHIFT_API' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
   run -1 grep -q 'trusted-ca-volume' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
+  assert_number_of_k8s_resources 16
 }
 
 @test "[k8s] roxctl scanner generate" {
@@ -58,6 +67,8 @@ run_scanner_generate_and_check() {
 
   assert_file_exist "${output_dir}/scanner/02-scanner-06-deployment.yaml"
   run -1 grep -q 'ROX_OPENSHIFT_API' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
+
+  assert_number_of_k8s_resources 15
 }
 
 @test "[k8s istio-support] roxctl scanner generate" {
@@ -65,6 +76,7 @@ run_scanner_generate_and_check() {
 
   assert_file_exist "${output_dir}/scanner/02-scanner-07-service.yaml"
   run -0 grep -q "^apiVersion: networking.istio.io/v1alpha3" "${output_dir}/scanner/02-scanner-07-service.yaml"
+  assert_number_of_k8s_resources 17
 }
 
 @test "[k8s scanner-image] roxctl scanner generate" {
