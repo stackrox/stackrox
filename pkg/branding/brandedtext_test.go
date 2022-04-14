@@ -15,7 +15,7 @@ func TestGetBrandedProductName(t *testing.T) {
 		brandedProductName string
 	}{
 		"RHACS branding": {
-			productBrandingEnv: "RHACS_BRANDING",
+			productBrandingEnv: ProductBrandingRHACS,
 			brandedProductName: productBrandingNameRHACS,
 		},
 		"Stackrox branding": {
@@ -29,7 +29,7 @@ func TestGetBrandedProductName(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			envIsolator.Setenv(ProductBranding, tt.productBrandingEnv)
+			envIsolator.Setenv(ProductBrandingEnvName, tt.productBrandingEnv)
 			receivedProductName := GetBrandedProductName()
 			assert.Equal(t, tt.brandedProductName, receivedProductName)
 		})

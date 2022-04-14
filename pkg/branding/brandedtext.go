@@ -8,7 +8,7 @@ const (
 
 // GetBrandedProductName returns the product name based on ProductBranding env variable
 func GetBrandedProductName() string {
-	if GetProductBrandingEnv() == "RHACS_BRANDING" {
+	if getProductBrandingEnv() == "RHACS_BRANDING" {
 		return productBrandingNameRHACS
 	}
 	return productBrandingNameStackrox
