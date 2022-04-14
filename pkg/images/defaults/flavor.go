@@ -195,7 +195,7 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 	}
 }
 
-// OpensourceReleaseImageFlavor returns image values for `opensource` flavor.
+// OpenSourceReleaseImageFlavor returns image values for `opensource` flavor.
 func OpenSourceReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
 	return ImageFlavor{
