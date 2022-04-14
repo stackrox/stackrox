@@ -8,7 +8,6 @@ import (
 	"io"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	deployConfScheme "github.com/openshift/client-go/apps/clientset/versioned/scheme"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
@@ -26,7 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -70,8 +69,7 @@ var (
 func init() {
 	metav1.AddToGroupVersion(workloadScheme, k8sSchema.GroupVersion{Version: "v1"})
 	pkgUtils.Must(errors.Wrap(scheme.AddToScheme(workloadScheme), "failed to load scheme"))
-	pkgUtils.Must(errors.Wrap(deployConfScheme.AddToScheme(workloadScheme), "failed to load scheme"))
-	pkgUtils.Must(errors.Wrap(k8sutil.AddLegacyOpenshiftAppsToScheme(workloadScheme), "failed to load scheme"))
+	pkgUtils.Must(errors.Wrap(k8sutil.AddOpenShiftSchemes(workloadScheme), "failed to load openshift schemes"))
 }
 
 // serviceImpl provides APIs for alerts.
@@ -95,7 +93,7 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	apiV1.RegisterDetectionServiceServer(grpcServer, s)
 }
 
-// RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
+// RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
 	return apiV1.RegisterDetectionServiceHandler(ctx, mux, conn)
 }
@@ -127,7 +125,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		}
 	}
 	if image.GetName() == nil {
-		return nil, errors.New("image or image_name must be specified")
+		return nil, errox.NewErrInvalidArgs("image or image_name must be specified")
 	}
 	// This is a workaround for those who post the full image, but don't fill in fullname
 	if name := image.GetName(); name != nil && name.GetFullName() == "" {
@@ -216,7 +214,7 @@ func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext
 
 	deployment, err := resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, "", "")
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Could not convert to deployment from resource: %v", err)
+		return nil, errox.InvalidArgs.New("could not convert to deployment from resource").CausedBy(err.Error())
 	}
 	return s.enrichAndDetect(ctx, enrichmentContext, deployment, policyCategories...)
 }
@@ -230,11 +228,11 @@ func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {
 			break
 		}
 		if err != nil {
-			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Failed to read YAML with err: %v", err)
+			return nil, errox.InvalidArgs.New("failed to read yaml").CausedBy(err.Error())
 		}
 		obj, _, err := workloadDeserializer.Decode(yamlBytes, nil, nil)
 		if err != nil {
-			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "could not parse YAML: %v", err)
+			return nil, errox.InvalidArgs.New("could not parse yaml").CausedBy(err.Error())
 		}
 		if list, ok := obj.(*coreV1.List); ok {
 			listResources, err := getObjectsFromList(list)
@@ -254,17 +252,17 @@ func getObjectsFromList(list *coreV1.List) ([]k8sRuntime.Object, error) {
 	for i, item := range list.Items {
 		obj, _, err := workloadDeserializer.Decode(item.Raw, nil, nil)
 		if err != nil {
-			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Could not decode item %d in the list: %v", i, err)
+			return nil, errox.InvalidArgs.Newf("could not decode item %d in the list", i).CausedBy(err.Error())
 		}
 		objects = append(objects, obj)
 	}
 	return objects, nil
 }
 
-// DetectDeployTime runs detection on a deployment
+// DetectDeployTimeFromYAML runs detection on a deployment.
 func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.DeployYAMLDetectionRequest) (*apiV1.DeployDetectionResponse, error) {
 	if req.GetYaml() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "yaml field must be specified in detection request")
+		return nil, errox.NewErrInvalidArgs("yaml field must be specified in detection request")
 	}
 
 	resources, err := getObjectsFromYAML(req.GetYaml())
@@ -283,7 +281,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	for _, r := range resources {
 		run, err := s.runDeployTimeDetect(ctx, eCtx, r, req.GetPolicyCategories())
 		if err != nil {
-			return nil, errors.Errorf("Unable to convert object: %v", err)
+			return nil, errox.InvalidArgs.New("unable to convert object").CausedBy(err.Error())
 		}
 		if run != nil {
 			runs = append(runs, run)
@@ -312,16 +310,17 @@ func (s *serviceImpl) populateDeploymentWithClusterInfo(ctx context.Context, clu
 		return err
 	}
 	if !exists {
-		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "cluster with ID %q does not exist", clusterID)
+		return errox.InvalidArgs.Newf("cluster with ID %q does not exist", clusterID)
 	}
 	deployment.ClusterId = clusterID
 	deployment.ClusterName = clusterName
 	return nil
 }
 
+// DetectDeployTime runs detection on a deployment.
 func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDetectionRequest) (*apiV1.DeployDetectionResponse, error) {
 	if req.GetDeployment() == nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Deployment must be passed to deploy time detection")
+		return nil, errox.NewErrInvalidArgs("deployment must be passed to deploy time detection")
 	}
 	if err := s.populateDeploymentWithClusterInfo(ctx, req.GetClusterId(), req.GetDeployment()); err != nil {
 		return nil, err
