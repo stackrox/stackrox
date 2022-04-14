@@ -1,13 +1,13 @@
 package scheduler
 
 import (
-	"bytes"
 	"testing"
 	"text/template"
 	"time"
 
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 )
@@ -40,20 +40,13 @@ func generateExpectedVulnReportEmailTemplates(t *testing.T) (string, string) {
 	}
 
 	tmpl, err := template.New("VulnsRHACS").Parse(expectedVulnReportEmailTemplateRhacsBrandingWithPlaceholders)
-	assert.Nil(t, err)
-	var tpl0 bytes.Buffer
-	err = tmpl.Execute(&tpl0, data)
-	assert.Nil(t, err)
-
-	expectedVulnReportEmailTemplateRhacsBranding := tpl0.String()
+	assert.NoError(t, err)
+	expectedVulnReportEmailTemplateRhacsBranding, err := templates.ExecuteToString(tmpl, data)
+	assert.NoError(t, err)
 
 	tmpl, err = template.New("VulnsStackrox").Parse(expectedVulnReportEmailTemplateStackroxBrandingWithPlaceholders)
-	assert.Nil(t, err)
-	var tpl1 bytes.Buffer
-	err = tmpl.Execute(&tpl1, data)
-	assert.Nil(t, err)
-
-	expectedVulnReportEmailTemplateStackroxBranding := tpl1.String()
+	expectedVulnReportEmailTemplateStackroxBranding, err := templates.ExecuteToString(tmpl, data)
+	assert.NoError(t, err)
 
 	return expectedVulnReportEmailTemplateRhacsBranding, expectedVulnReportEmailTemplateStackroxBranding
 }
@@ -85,9 +78,9 @@ func TestVulnMessageBranding1(t *testing.T) {
 			envIsolator.Setenv(branding.ProductBrandingEnvName, tt.productBranding)
 
 			receivedBrandedVulnFound, err := formatMessage(rc, vulnReportEmailTemplate)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			receivedBrandedNoVulnFound, err := formatMessage(rc, noVulnsFoundEmailTemplate)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			assert.Equal(t, tt.vulnReport, receivedBrandedVulnFound)
 			assert.Equal(t, tt.noVulnReport, receivedBrandedNoVulnFound)
