@@ -2,17 +2,6 @@ package runner
 
 import (
 	// Import these packages to trigger the registration.
-	_ "github.com/stackrox/rox/migrator/migrations/m_44_to_m_45_rocksdb_clusters"
-	_ "github.com/stackrox/rox/migrator/migrations/m_45_to_m_46_imagecveedge"
-	_ "github.com/stackrox/rox/migrator/migrations/m_46_to_m_47_compliance_in_rocksdb"
-	_ "github.com/stackrox/rox/migrator/migrations/m_47_to_m_48_drop_bolt_buckets"
-	_ "github.com/stackrox/rox/migrator/migrations/m_48_to_m_49_externalize_compliance_domains"
-	_ "github.com/stackrox/rox/migrator/migrations/m_49_to_m_50_deprecate_email_label_policy"
-	_ "github.com/stackrox/rox/migrator/migrations/m_50_to_m_51_default_integration_health"
-	_ "github.com/stackrox/rox/migrator/migrations/m_51_to_m_52_remove_invalid_transactions"
-	_ "github.com/stackrox/rox/migrator/migrations/m_52_to_m_53_aws_endpoints"
-	_ "github.com/stackrox/rox/migrator/migrations/m_53_to_m_54_enable_exec_webhook"
-	_ "github.com/stackrox/rox/migrator/migrations/m_54_to_m_55_deprecate_policy_whitelist"
 	_ "github.com/stackrox/rox/migrator/migrations/m_55_to_m_56_node_scanning_empty"
 	_ "github.com/stackrox/rox/migrator/migrations/m_56_to_m_57_compliance_policy_categories"
 	_ "github.com/stackrox/rox/migrator/migrations/m_57_to_m_58_update_run_secrets_volume_policy_regex"
