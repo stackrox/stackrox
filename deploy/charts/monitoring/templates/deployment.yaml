@@ -101,8 +101,8 @@ spec:
       # volumes when running on gke in combination with `readOnlyRootFilesystem: true`.
       initContainers:
         - name: changemod
-          image: busybox
-          command: ["sh", "-c", "chmod -R 777:777 /prometheus"]
+          image: busybox:1.35.0
+          command: ["/bin/chmod", "-R", "777", "/prometheus"]
           volumeMounts:
           - name: prometheus-data-volume
             mountPath: /prometheus
