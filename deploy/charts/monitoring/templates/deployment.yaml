@@ -95,8 +95,6 @@ spec:
             readOnly: true
           - name: prometheus-data-volume
             mountPath: /prometheus
-          - name: prometheus-var-volume
-            mountPath: /var/lib/prometheus
       # This is a workaround for Prometheus not being able to write logs on persisted
       # volumes when running on gke in combination with `readOnlyRootFilesystem: true`.
       initContainers:
@@ -129,8 +127,6 @@ spec:
       - name: prometheus-config-volume
         configMap:
           name: prometheus
-      - name: prometheus-var-volume
-        emptyDir: {}
       - name: prometheus-data-volume
         {{- if eq .Values.persistence.type "hostpath" }}
         hostPath:
