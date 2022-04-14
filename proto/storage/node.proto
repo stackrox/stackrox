@@ -77,7 +77,7 @@ message NodeScan {
 
     enum Note {
         UNSET              = 0;
-        OS_UNSUPPORTED     = 1;
+        UNSUPPORTED        = 1;
         KERNEL_UNSUPPORTED = 2;
     }
     repeated Note                      notes            = 4;
