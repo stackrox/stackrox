@@ -271,7 +271,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setImageName(
                                         ImageNamePolicy.newBuilder()
-                                                .setRemote("quay.io/rhacs-eng/qa")
+                                                .setRemote("rhacs-eng/qa")
                                                 .build())
                                 .build())
                         .build()                       | DEPLOYMENTNGINX | null
