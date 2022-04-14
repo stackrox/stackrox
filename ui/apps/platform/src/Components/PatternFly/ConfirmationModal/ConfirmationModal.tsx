@@ -1,35 +1,45 @@
 import React, { ReactElement, ReactNode } from 'react';
 import { Modal, ModalVariant, Button, ButtonVariant } from '@patternfly/react-core';
 
+import './ConfirmationModal.css';
+
 type ConfirmationModalProps = {
     ariaLabel: string;
+    title?: string;
     confirmText: string;
     onConfirm: () => void;
     onCancel: () => void;
+    isConfirmDisabled?: boolean;
     isOpen: boolean;
     isLoading?: boolean; // if modal remains open until finally block of request promise
+    isDestructive?: boolean;
     children: ReactNode;
 };
 
 function ConfirmationModal({
     ariaLabel,
+    title,
     confirmText,
     onConfirm,
     onCancel,
+    isConfirmDisabled = false,
     isOpen,
     isLoading,
+    isDestructive = true,
     children,
 }: ConfirmationModalProps): ReactElement {
     return (
         <Modal
             isOpen={isOpen}
             variant={ModalVariant.small}
+            title={title || ''}
             actions={[
                 <Button
                     key="confirm"
-                    variant={ButtonVariant.danger}
+                    variant={isDestructive ? ButtonVariant.danger : ButtonVariant.primary}
                     onClick={onConfirm}
-                    isDisabled={isLoading}
+                    className="pf-confirmation-modal-confirm-btn"
+                    isDisabled={isConfirmDisabled || isLoading}
                     isLoading={isLoading}
                 >
                     {confirmText}
