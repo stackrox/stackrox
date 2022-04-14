@@ -58,7 +58,7 @@ require_environment() {
             fi
             die "$message"
         fi
-    )
+    ) || exit 1
 }
 
 require_executable() {
