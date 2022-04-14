@@ -54,12 +54,13 @@ metadata:
 spec:
   policyTypes:
   - Ingress
+  - Egress
   ingress:
     - from:
       - podSelector:
           matchLabels:
             app: central
-    - ports:
+      ports:
       - port: 5432
         protocol: TCP
   podSelector:
