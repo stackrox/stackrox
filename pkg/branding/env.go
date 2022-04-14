@@ -3,7 +3,7 @@ package branding
 import "github.com/stackrox/rox/pkg/env"
 
 const (
-	// ProductBranding should hold RHACS_BRANDING or STACKROX_BRANDING
+	// ProductBrandingEnvName should hold RHACS_BRANDING or STACKROX_BRANDING
 	ProductBrandingEnvName = "ROX_PRODUCT_BRANDING"
 )
 
