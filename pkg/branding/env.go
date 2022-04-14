@@ -15,7 +15,7 @@ var (
 	productBrandingSetting = env.RegisterSetting(ProductBrandingEnvName, env.WithDefault("RHACS_BRANDING"))
 )
 
-// getProductBrandingEnv returns the value of ProductBrandingEnvName
+// getProductBrandingEnv returns a value of the environment variable that defines the product branding.
 func getProductBrandingEnv() string {
 	return productBrandingSetting.Setting()
 }
