@@ -65,6 +65,7 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	allUpdatedFlows = append(allUpdatedFlows, endpointsToListenFlows(update.GetUpdatedEndpoints())...)
 	countMetrics.IncrementTotalNetworkEndpointsReceivedCounter(s.clusterID, len(update.GetUpdatedEndpoints()))
 
+	log.Infof("--------- NEW SENSOR PAYLOAD ---------")
 	for _, flow := range allUpdatedFlows {
 		id := GetID(flow.GetProps())
 		_, ok := seen[id]

@@ -129,6 +129,13 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 			networkInfoMsg := msg.GetInfo()
 			networkInfoMsgTimestamp := timestamp.Now()
 
+			for _, conn := range networkInfoMsg.GetUpdatedConnections() {
+				log.Infof("%s: connection: %s", hostname, conn)
+			}
+			for _, endpoint := range networkInfoMsg.GetUpdatedEndpoints() {
+				log.Infof("%s: endpoint: %s", hostname, endpoint)
+
+			}
 			if networkInfoMsg == nil {
 				return errors.Errorf("received unexpected message type %T from hostname %s", networkInfoMsg, hostname)
 			}
