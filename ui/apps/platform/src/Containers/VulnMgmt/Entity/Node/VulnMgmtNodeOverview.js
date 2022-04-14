@@ -7,11 +7,12 @@ import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
 import entityTypes from 'constants/entityTypes';
 import TopCvssLabel from 'Components/TopCvssLabel';
+import ScanDataMessage from 'Containers/VulnMgmt/Components/ScanDataMessage';
+import getNodeScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getNodeScanMessage';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import dateTimeFormat from 'constants/dateTimeFormat';
-import ScanDataMessage from './ScanDataMessage';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
 
@@ -107,10 +108,12 @@ const VulnMgmtNodeOverview = ({ data, entityContext }) => {
     const currentEntity = { [entityTypes.NODE]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };
 
+    const scanMessage = getNodeScanMessage(notes || [], scan?.notes || []);
+
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
-                <ScanDataMessage nodeNotes={notes} scanNotes={scan?.notes} />
+                <ScanDataMessage header={scanMessage.header} body={scanMessage.body} />
                 <CollapsibleSection title="Node Summary">
                     <div className={entityGridContainerClassName}>
                         <div className="sx-2">

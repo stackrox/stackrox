@@ -1,4 +1,4 @@
-export type ScanMessages = {
+export type ScanMessage = {
     header?: string;
     body?: string;
 };
@@ -43,5 +43,9 @@ export const nodeScanMessages = {
     osUnsupported: {
         header: 'Node OS unsupported.',
         body: 'The node’s OS is not supported at this time. Please contact ???',
+    },
+    kernelUnsupported: {
+        header: 'Nodes kernel unsupported.',
+        body: 'The node’s kernel is not supported at this time. Please contact ???',
     },
 };

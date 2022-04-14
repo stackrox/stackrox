@@ -6,8 +6,6 @@ import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
 
 import FixableCVECount from 'Components/FixableCVECount';
 import SeverityStackedPill from 'Components/visuals/SeverityStackedPill';
-import getImageScanMessages from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScanMessages';
-import getNodeScanMessages from 'Containers/VulnMgmt/VulnMgmt.utils/getNodeScanMessages';
 
 function PillTooltipBody({ vulnCounter }) {
     if (vulnCounter?.all?.total > 0) {
@@ -39,13 +37,14 @@ const CVEStackedPill = ({
     url,
     fixableUrl,
     showTooltip,
-    imageNotes,
-    nodeNotes,
+    entityName,
     scan,
+    scanMessage,
 }) => {
     const hasCounts = vulnCounter?.all?.total > 0;
     const useScan = !!scan;
     const hasScan = !!scan?.scanTime;
+    const hasScanMessage = !!scanMessage?.header;
 
     const pillTooltip = showTooltip
         ? {
@@ -56,23 +55,9 @@ const CVEStackedPill = ({
 
     const width = horizontal ? '' : 'min-w-16';
 
-    let scanMessagesNonConst = {};
-    let entityNonConst = 'Entity';
-    if (imageNotes?.length > 0) {
-        scanMessagesNonConst = getImageScanMessages(imageNotes || [], scan?.notes || []);
-        entityNonConst = 'Image';
-    } else if (nodeNotes?.length > 0) {
-        scanMessagesNonConst = getNodeScanMessages(nodeNotes || [], scan?.notes || []);
-        entityNonConst = 'Node';
-    }
-
-    const scanMessages = scanMessagesNonConst;
-    const hasScanMessages = Object.keys(scanMessages).length > 0;
-    const entity = entityNonConst;
-
     return (
         <div className="flex items-center w-full">
-            {useScan && !hasScan && <span>{entity} not scanned</span>}
+            {useScan && !hasScan && <span>{entityName} not scanned</span>}
             {!hasCounts && <span>No CVEs</span>}
             {hasCounts && (
                 <>
@@ -95,18 +80,18 @@ const CVEStackedPill = ({
                     />
                 </>
             )}
-            {hasScanMessages && (
+            {hasScanMessage && (
                 <Tooltip
                     type="alert"
                     content={
                         <DetailedTooltipOverlay
                             extraClassName="text-alert-800"
                             title="CVE Data May Be Inaccurate"
-                            subtitle={scanMessages?.header}
+                            subtitle={scanMessage?.header}
                             body={
                                 <div className="">
                                     <h3 className="text-font-700">Reason:</h3>
-                                    <p className="font-600">{scanMessages?.body}</p>
+                                    <p className="font-600">{scanMessage?.body}</p>
                                 </div>
                             }
                         />
@@ -147,11 +132,14 @@ CVEStackedPill.propTypes = {
     url: PropTypes.string,
     fixableUrl: PropTypes.string,
     showTooltip: PropTypes.bool,
-    imageNotes: PropTypes.arrayOf(PropTypes.string),
-    nodeNotes: PropTypes.arrayOf(PropTypes.string),
+    entityName: PropTypes.string,
     scan: PropTypes.shape({
         scanTime: PropTypes.string,
         notes: PropTypes.arrayOf(PropTypes.string),
+    }),
+    scanMessage: PropTypes.shape({
+        header: PropTypes.string,
+        body: PropTypes.string,
     }),
 };
 
@@ -161,9 +149,9 @@ CVEStackedPill.defaultProps = {
     url: '',
     fixableUrl: '',
     showTooltip: true,
-    imageNotes: null,
-    nodeNotes: null,
+    entityName: '',
     scan: null,
+    scanMessage: null,
 };
 
 export default CVEStackedPill;

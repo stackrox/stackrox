@@ -20,6 +20,7 @@ import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { imageWatchStatuses } from 'Containers/VulnMgmt/VulnMgmt.constants';
 import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import getImageScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScanMessage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { imageSortFields } from 'constants/sortFields';
@@ -67,9 +68,10 @@ export function getCurriedImageTableColumns(watchedImagesTrigger) {
                             vulnCounter={vulnCounter}
                             url={url}
                             fixableUrl={fixableUrl}
+                            entityName="Image"
                             hideLink={pdf}
-                            imageNotes={notes}
                             scan={scan}
+                            scanMessage={getImageScanMessage(notes || [], scan?.notes || [])}
                         />
                     );
                 },

@@ -1,9 +1,9 @@
-import { imageScanMessages, ScanMessages } from 'messages/vulnMgmt.messages';
+import { imageScanMessages, ScanMessage } from 'messages/vulnMgmt.messages';
 
-export default function getImageScanMessages(
+export default function getImageScanMessage(
     imageNotes: string[],
     scanNotes: string[]
-): ScanMessages {
+): ScanMessage {
     const hasMissingMetadata = imageNotes?.includes('MISSING_METADATA');
     const hasMissingScanData = imageNotes?.includes('MISSING_SCAN_DATA');
 

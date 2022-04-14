@@ -1,12 +1,12 @@
 import { nodeScanMessages } from 'messages/vulnMgmt.messages';
-import getNodeScanMessages from './getNodeScanMessages';
+import getNodeScanMessage from './getNodeScanMessage';
 
-describe('getNodeScanMessages', () => {
+describe('getNodeScanMessage', () => {
     it('should return an empty object when there are no notes in the notes arrays', () => {
         const nodesNotes = [];
         const scanNotes = [];
 
-        const messageObj = getNodeScanMessages(nodesNotes, scanNotes);
+        const messageObj = getNodeScanMessage(nodesNotes, scanNotes);
 
         expect(messageObj).toEqual({});
     });
@@ -15,7 +15,7 @@ describe('getNodeScanMessages', () => {
         const nodesNotes = ['MISSING_SCAN_DATA'];
         const scanNotes = [];
 
-        const messageObj = getNodeScanMessages(nodesNotes, scanNotes);
+        const messageObj = getNodeScanMessage(nodesNotes, scanNotes);
 
         expect(messageObj).toEqual(nodeScanMessages.missingScanData);
     });
@@ -24,8 +24,17 @@ describe('getNodeScanMessages', () => {
         const nodesNotes = [];
         const scanNotes = ['OS_UNSUPPORTED'];
 
-        const messageObj = getNodeScanMessages(nodesNotes, scanNotes);
+        const messageObj = getNodeScanMessage(nodesNotes, scanNotes);
 
         expect(messageObj).toEqual(nodeScanMessages.osUnsupported);
+    });
+
+    it('should return an object for kernelUnsupported when scan notes contain KERNEL_UNSUPPORTED', () => {
+        const nodesNotes = [];
+        const scanNotes = ['KERNEL_UNSUPPORTED'];
+
+        const messageObj = getNodeScanMessage(nodesNotes, scanNotes);
+
+        expect(messageObj).toEqual(nodeScanMessages.kernelUnsupported);
     });
 });

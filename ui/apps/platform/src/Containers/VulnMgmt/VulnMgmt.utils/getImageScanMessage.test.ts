@@ -1,12 +1,12 @@
 import { imageScanMessages } from 'messages/vulnMgmt.messages';
-import getImageScanMessages from './getImageScanMessages';
+import getImageScanMessage from './getImageScanMessage';
 
-describe('getImageScanMessages', () => {
+describe('getImageScanMessage', () => {
     it('should return an empty object when there are no notes in the notes arrays', () => {
         const imagesNotes = [];
         const scanNotes = [];
 
-        const messageObj = getImageScanMessages(imagesNotes, scanNotes);
+        const messageObj = getImageScanMessage(imagesNotes, scanNotes);
 
         expect(messageObj).toEqual({});
     });
@@ -15,7 +15,7 @@ describe('getImageScanMessages', () => {
         const imagesNotes = ['MISSING_METADATA'];
         const scanNotes = [];
 
-        const messageObj = getImageScanMessages(imagesNotes, scanNotes);
+        const messageObj = getImageScanMessage(imagesNotes, scanNotes);
 
         expect(messageObj).toEqual(imageScanMessages.missingMetadata);
     });
@@ -24,7 +24,7 @@ describe('getImageScanMessages', () => {
         const imagesNotes = ['MISSING_SCAN_DATA'];
         const scanNotes = [];
 
-        const messageObj = getImageScanMessages(imagesNotes, scanNotes);
+        const messageObj = getImageScanMessage(imagesNotes, scanNotes);
 
         expect(messageObj).toEqual(imageScanMessages.missingScanData);
     });
@@ -33,7 +33,7 @@ describe('getImageScanMessages', () => {
         const imagesNotes = [];
         const scanNotes = ['OS_UNAVAILABLE'];
 
-        const messageObj = getImageScanMessages(imagesNotes, scanNotes);
+        const messageObj = getImageScanMessage(imagesNotes, scanNotes);
 
         expect(messageObj).toEqual(imageScanMessages.osUnavailable);
     });
@@ -42,7 +42,7 @@ describe('getImageScanMessages', () => {
         const imagesNotes = [];
         const scanNotes = ['PARTIAL_SCAN_DATA', 'LANGUAGE_CVES_UNAVAILABLE'];
 
-        const messageObj = getImageScanMessages(imagesNotes, scanNotes);
+        const messageObj = getImageScanMessage(imagesNotes, scanNotes);
 
         expect(messageObj).toEqual(imageScanMessages.languageCvesUnavailable);
     });
@@ -51,7 +51,7 @@ describe('getImageScanMessages', () => {
         const imagesNotes = [];
         const scanNotes = ['PARTIAL_SCAN_DATA', 'OS_CVES_UNAVAILABLE'];
 
-        const messageObj = getImageScanMessages(imagesNotes, scanNotes);
+        const messageObj = getImageScanMessage(imagesNotes, scanNotes);
 
         expect(messageObj).toEqual(imageScanMessages.osCvesUnavailable);
     });
@@ -60,7 +60,7 @@ describe('getImageScanMessages', () => {
         const imagesNotes = [];
         const scanNotes = ['OS_CVES_STALE'];
 
-        const messageObj = getImageScanMessages(imagesNotes, scanNotes);
+        const messageObj = getImageScanMessage(imagesNotes, scanNotes);
 
         expect(messageObj).toEqual(imageScanMessages.osCvesStale);
     });
@@ -69,7 +69,7 @@ describe('getImageScanMessages', () => {
         const imagesNotes = [];
         const scanNotes = ['PARTIAL_SCAN_DATA', 'CERTIFIED_RHEL_SCAN_UNAVAILABLE'];
 
-        const messageObj = getImageScanMessages(imagesNotes, scanNotes);
+        const messageObj = getImageScanMessage(imagesNotes, scanNotes);
 
         expect(messageObj).toEqual(imageScanMessages.certifiedRHELUnavailable);
     });

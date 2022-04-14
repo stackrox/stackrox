@@ -1,12 +1,10 @@
 import React, { ReactElement } from 'react';
 import { Message } from '@stackrox/ui-components';
 
-import getNodeScanMessages from 'Containers/VulnMgmt/VulnMgmt.utils/getNodeScanMessages';
+import { ScanMessage } from 'messages/vulnMgmt.messages';
 
-function ScanDataMessage({ nodeNotes = [], scanNotes = [] }): ReactElement | null {
-    const nodeScanMessages = getNodeScanMessages(nodeNotes || [], scanNotes || []);
-
-    return Object.keys(nodeScanMessages).length > 0 ? (
+function ScanDataMessage({ header = '', body = '' }: ScanMessage): ReactElement | null {
+    return header?.length > 0 || body?.length > 0 ? (
         <div className="px-4 pt-4">
             <Message type="error">
                 <div className="w-full">
@@ -14,9 +12,9 @@ function ScanDataMessage({ nodeNotes = [], scanNotes = [] }): ReactElement | nul
                         <h2 className="mb-1 font-700 tracking-wide uppercase">
                             CVE Data May Be Inaccurate
                         </h2>
-                        <span>{nodeScanMessages.header}</span>
+                        <span>{header}</span>
                     </header>
-                    <p>{nodeScanMessages.body}</p>
+                    <p>{body}</p>
                 </div>
             </Message>
         </div>
