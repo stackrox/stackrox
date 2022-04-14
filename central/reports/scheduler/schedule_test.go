@@ -51,7 +51,7 @@ func generateExpectedVulnReportEmailTemplates(t *testing.T) (string, string) {
 	return expectedVulnReportEmailTemplateRhacsBranding, expectedVulnReportEmailTemplateStackroxBranding
 }
 
-func TestVulnMessageBranding1(t *testing.T) {
+func TestFormatVulnMessageBranding(t *testing.T) {
 	envIsolator := envisolator.NewEnvIsolator(t)
 	rc := fixtures.GetValidReportConfiguration()
 
