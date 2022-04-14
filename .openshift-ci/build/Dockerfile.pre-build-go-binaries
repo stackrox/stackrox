@@ -1,20 +1,7 @@
 FROM bin
 
-COPY . .
-
+COPY stackrox /go/src/github.com/stackrox/stackrox
+WORKDIR /go/src/github.com/stackrox/stackrox
 RUN ls -la
-RUN ls -la ..
-RUN pwd
-RUN make tag || true
-
-RUN cd /go/src/github.com/stackrox/rox-openshift-ci-mirror || true
-RUN ls -la
-RUN ls -la ..
-RUN pwd
-RUN make tag || true
-
-RUN cd /go/src/github.com/stackrox/stackrox || true
-RUN ls -la
-RUN ls -la ..
-RUN pwd
-RUN make tag || true
+RUN mkdir /output
+RUN make tag > /output/pre-build-go-binaries-tag
