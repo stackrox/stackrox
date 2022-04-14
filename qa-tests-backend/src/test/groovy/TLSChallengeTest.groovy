@@ -33,7 +33,8 @@ class TLSChallengeTest extends BaseSpecification {
 
     def setupSpec() {
         originalCentralEndpoint = orchestrator.getDeploymentEnv("stackrox", "sensor", "ROX_CENTRAL_ENDPOINT")
-        orchestrator.createNamespace(PROXY_NAMESPACE)
+        orchestrator.ensureNamespaceExists(PROXY_NAMESPACE)
+        addStackroxImagePullSecret(PROXY_NAMESPACE)
 
         ByteArrayOutputStream out = new ByteArrayOutputStream()
         out.write(LEAF_CERT_CONTENT)
