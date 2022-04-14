@@ -93,7 +93,6 @@ func (s *ClusterHealthStatusStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(clusterHealthStatus, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		clusterHealthStatuss = append(clusterHealthStatuss, clusterHealthStatus)
 	}
-
 	s.NoError(store.UpsertMany(ctx, clusterHealthStatuss))
 
 	clusterHealthStatusCount, err = store.Count(ctx)

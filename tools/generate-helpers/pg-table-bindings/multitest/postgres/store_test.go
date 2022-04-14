@@ -93,7 +93,6 @@ func (s *MultikeyStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(testMultiKeyStruct, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testMultiKeyStructs = append(testMultiKeyStructs, testMultiKeyStruct)
 	}
-
 	s.NoError(store.UpsertMany(ctx, testMultiKeyStructs))
 
 	testMultiKeyStructCount, err = store.Count(ctx)

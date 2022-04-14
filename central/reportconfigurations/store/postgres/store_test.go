@@ -101,7 +101,6 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(reportConfiguration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		reportConfigurations = append(reportConfigurations, reportConfiguration)
 	}
-
 	s.NoError(store.UpsertMany(ctx, reportConfigurations))
 
 	reportConfigurationCount, err = store.Count(ctx)
