@@ -11,7 +11,7 @@ var (
 	productBrandingSetting = env.RegisterSetting(ProductBrandingEnvName, env.WithDefault("RHACS_BRANDING"))
 )
 
-// GetProductBrandingEnvName returns the environment variable ROX_BRANDING_NAME value
-func GetProductBrandingEnvName() string {
+// GetProductBrandingEnv returns the environment variable ROX_BRANDING_NAME value
+func GetProductBrandingEnv() string {
 	return productBrandingSetting.Setting()
 }

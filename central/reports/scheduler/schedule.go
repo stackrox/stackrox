@@ -323,7 +323,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 }
 
 func getBrandedProductName() string {
-	if branding.GetProductBrandingEnvName() == "RHACS_BRANDING" {
+	if branding.GetProductBrandingEnv() == "RHACS_BRANDING" {
 		return productBrandingNameRHACS
 	}
 	return productBrandingNameStackrox
