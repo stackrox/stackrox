@@ -645,11 +645,20 @@ spec:
                       admin password.
                     properties:
                       adminPasswordSecret:
-                        description: Reference contains reference for the admin password
-                        type: string
+                        description: SecretName contains reference for the admin password
+                        properties:
+                          name:
+                            description: The name of the referenced secret.
+                            type: string
+                        required:
+                        - name
+                        type: object
                       info:
                         description: Info stores information on how to obtain the
                           admin password.
+                        type: string
+                      passwordReference:
+                        description: Reference contains reference for the admin password
                         type: string
                     type: object
                 type: object
