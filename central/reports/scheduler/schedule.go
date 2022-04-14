@@ -79,7 +79,7 @@ const (
 
 var (
 	log = logging.LoggerForModule()
-	
+
 	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 )
 
@@ -287,16 +287,16 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	}
 	// If it is an empty report, do not send an attachment in the final notification email and the email body
 	// will indicate that no vulns were found
-	messageText, err := formatMessage(rc, noVulnsFoundEmailTemplate)
-	if err != nil {
-		return err
+
+	templateStr := vulnReportEmailTemplate
+	if zippedCSVData == nil {
+		// If it is an empty report, the email body will indicate that no vulns were found
+		templateStr = noVulnsFoundEmailTemplate
 	}
 
-	if zippedCSVData != nil {
-		messageText, err = formatMessage(rc, vulnReportEmailTemplate)
-		if err != nil {
-			return errors.Wrap(err, "error formatting the report email text")
-		}
+	messageText, err := formatMessage(rc, templateStr)
+	if err != nil {
+		return errors.Wrap(err, "error formatting the report email text")
 	}
 
 	if err = retry.WithRetry(func() error {
