@@ -258,10 +258,10 @@ class SACTest extends BaseSpecification {
         BaseService.useBasicAuth()
     }
 
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify ListSecrets using a token without access receives no results"() {
         when:
         "ListSecrets is called using a token without view access to Secrets"
-        disableAuthzPlugin()
         BaseService.useBasicAuth()
         createSecret(DEPLOYMENT_QA1.namespace)
         useToken(NOACCESSTOKEN)
@@ -275,10 +275,10 @@ class SACTest extends BaseSpecification {
         deleteSecret(DEPLOYMENT_QA1.namespace)
     }
 
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify ListSecrets using a token with access receives some results"() {
         when:
         "ListSecrets is called using a token with view access to Secrets"
-        disableAuthzPlugin()
         BaseService.useBasicAuth()
         createSecret(DEPLOYMENT_QA1.namespace)
         createSecret(DEPLOYMENT_QA2.namespace)
