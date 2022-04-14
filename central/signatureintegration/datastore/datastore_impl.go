@@ -20,6 +20,12 @@ var (
 	signatureSAC = sac.ForResource(resources.SignatureIntegration)
 )
 
+const (
+	// invisiblePolicyPlaceHolder will be used as a placeholder when returning policy names that have references to
+	// signature integration for policies that are invisible to the user due to missing access scopes.
+	invisiblePolicyPlaceHolder = "<hidden>"
+)
+
 type datastoreImpl struct {
 	storage store.SignatureIntegrationStore
 
@@ -237,7 +243,7 @@ func removePoliciesInvisibleToUser(policiesVisibleToUser []*storage.Policy,
 	// If we had to skip any amount of policies, add "<hidden>" as a placeholder for non-visible policies referencing
 	// integration to the user.
 	if len(policiesWithReferences) != len(policyNames) {
-		policyNames = append(policyNames, "<hidden>")
+		policyNames = append(policyNames, invisiblePolicyPlaceHolder)
 	}
 
 	return policyNames
