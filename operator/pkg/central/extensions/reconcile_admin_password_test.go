@@ -22,7 +22,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 	var buf bytes.Buffer
 	require.NoError(t, hf.Write(&buf))
 
-	//htpasswdWithSomePassword := &v1.Secret{
+	// htpasswdWithSomePassword := &v1.Secret{
 	//	ObjectMeta: metav1.ObjectMeta{
 	//		Name:      "central-htpasswd",
 	//		Namespace: testutils.TestNamespace,
@@ -32,7 +32,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 	//	},
 	//}
 
-	//htpasswdWithNoPassword := &v1.Secret{
+	// htpasswdWithNoPassword := &v1.Secret{
 	//	ObjectMeta: metav1.ObjectMeta{
 	//		Name:      "central-htpasswd",
 	//		Namespace: testutils.TestNamespace,
@@ -50,7 +50,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 	}
 
 	cases := map[string]secretReconciliationTestCase{
-		//"If no central-htpasswd secret exists and no plaintext secret reference was specified, a password should be automatically generated": {
+		// "If no central-htpasswd secret exists and no plaintext secret reference was specified, a password should be automatically generated": {
 		//	ExpectedCreatedSecrets: map[string]secretVerifyFunc{
 		//		"central-htpasswd": func(t *testing.T, data types.SecretDataMap) {
 		//			plaintextPW := string(data[adminPasswordKey])
