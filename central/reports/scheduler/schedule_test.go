@@ -12,21 +12,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var expectedVulnReportEmailTemplateRhacsBrandingWithPlaceholders = `
+const (
+	expectedVulnReportEmailTemplateRhacsBrandingWithPlaceholders = `
 	Red Hat Advanced Cluster Security for Kubernetes has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
 
 	To address these findings, please review the impacted software packages in the container images running within deployments you are responsible for and update them to a version containing the fix, if one is available.`
 
-var expectedVulnReportEmailTemplateStackroxBrandingWithPlaceholders = `
+	expectedVulnReportEmailTemplateStackroxBrandingWithPlaceholders = `
 	StackRox has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
 
 	To address these findings, please review the impacted software packages in the container images running within deployments you are responsible for and update them to a version containing the fix, if one is available.`
 
-var expectedNoVulnsFoundEmailTemplateRhacsBranding = `
+	expectedNoVulnsFoundEmailTemplateRhacsBranding = `
 	Red Hat Advanced Cluster Security for Kubernetes has found zero vulnerabilities associated with the running container images owned by your organization.`
 
-var expectedNoVulnsFoundEmailTemplateStackroxBranding = `
+	expectedNoVulnsFoundEmailTemplateStackroxBranding = `
 	StackRox has found zero vulnerabilities associated with the running container images owned by your organization.`
+)
 
 type vulnsAndDate struct {
 	WhichVulns string
