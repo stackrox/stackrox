@@ -316,7 +316,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	return nil
 }
 
-func formatMessage(rc *storage.ReportConfiguration, EmailTemplate string) (string, error) {
+func formatMessage(rc *storage.ReportConfiguration, emailTemplate string) (string, error) {
 	data := &reportEmailFormat{
 		BrandedProductName: branding.GetBrandedProductName(),
 		WhichVulns:         "for all vulnerabilities",
@@ -326,7 +326,7 @@ func formatMessage(rc *storage.ReportConfiguration, EmailTemplate string) (strin
 		data.WhichVulns = fmt.Sprintf("for new vulnerabilities since %s",
 			timestamp.FromProtobuf(rc.LastSuccessfulRunTime).GoTime().Format("January 02, 2006"))
 	}
-	tmpl, err := template.New("emailBody").Parse(EmailTemplate)
+	tmpl, err := template.New("emailBody").Parse(emailTemplate)
 	if err != nil {
 		return "", err
 	}
