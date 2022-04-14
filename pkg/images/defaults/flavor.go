@@ -207,9 +207,9 @@ func OpenSourceReleaseImageFlavor() ImageFlavor {
 
 		CollectorRegistry:      "quay.io/stackrox-io",
 		CollectorImageName:     "collector",
-		CollectorImageTag:      v.CollectorVersion + "-latest",
-		CollectorSlimImageName: "collector",
-		CollectorSlimImageTag:  v.CollectorVersion + "-slim",
+		CollectorImageTag:      v.CollectorVersion,
+		CollectorSlimImageName: "collector-slim",
+		CollectorSlimImageTag:  v.CollectorVersion,
 
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",
