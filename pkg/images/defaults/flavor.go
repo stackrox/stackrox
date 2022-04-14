@@ -197,7 +197,7 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 
 // OpenSourceReleaseImageFlavor returns image values for `opensource` flavor.
 func OpenSourceReleaseImageFlavor() ImageFlavor {
-	v := version.GetAllVersionsDevelopment()
+	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
 		MainRegistry:       "quay.io/stackrox-io",
 		MainImageName:      "main",

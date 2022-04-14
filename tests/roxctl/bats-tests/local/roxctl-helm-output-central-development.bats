@@ -58,7 +58,7 @@ teardown() {
 @test "roxctl-development helm output central-services --image-defaults=dummy should fail" {
   run roxctl-development helm output central-services --image-defaults=dummy --output-dir "$out_dir"
   assert_failure
-  assert_line --regexp "ERROR:[[:space:]]+unable to get chart meta values: '--image-defaults': unexpected value 'dummy', allowed values are \[development_build stackrox.io rhacs\]"
+  assert_line --regexp "ERROR:[[:space:]]+unable to get chart meta values: '--image-defaults': unexpected value 'dummy', allowed values are \[development_build stackrox.io rhacs opensource\]"
 }
 
 @test "roxctl-development helm output central-services --image-defaults=stackrox.io should use stackrox.io registry" {
