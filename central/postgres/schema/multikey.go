@@ -6,9 +6,11 @@ import (
 	"reflect"
 
 	"github.com/stackrox/rox/central/globaldb"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -67,6 +69,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestMultiKeyStruct)(nil)), "multikey")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "multikey", (*storage.TestMultiKeyStruct)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()
