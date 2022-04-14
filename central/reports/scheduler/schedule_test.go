@@ -3,7 +3,6 @@ package scheduler
 import (
 	"testing"
 	"text/template"
-	"time"
 
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -28,6 +27,8 @@ const (
 
 	expectedNoVulnsFoundEmailTemplateStackroxBranding = `
 	StackRox has found zero vulnerabilities associated with the running container images owned by your organization.`
+
+	timeStr = `today`
 )
 
 type vulnsAndDate struct {
@@ -38,7 +39,7 @@ type vulnsAndDate struct {
 func generateExpectedVulnReportEmailTemplates(t *testing.T) (string, string) {
 	data := &vulnsAndDate{
 		WhichVulns: "for all vulnerabilities",
-		DateStr:    time.Now().Format("January 02, 2006"),
+		DateStr:    timeStr,
 	}
 
 	tmpl, err := template.New("VulnsRHACS").Parse(expectedVulnReportEmailTemplateRhacsBrandingWithPlaceholders)
@@ -80,9 +81,9 @@ func TestFormatVulnMessage(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			envIsolator.Setenv(branding.ProductBrandingEnvName, tt.productBranding)
 
-			receivedBrandedVulnFound, err := formatMessage(rc, vulnReportEmailTemplate)
+			receivedBrandedVulnFound, err := formatMessage(rc, vulnReportEmailTemplate, timeStr)
 			assert.NoError(t, err)
-			receivedBrandedNoVulnFound, err := formatMessage(rc, noVulnsFoundEmailTemplate)
+			receivedBrandedNoVulnFound, err := formatMessage(rc, noVulnsFoundEmailTemplate, timeStr)
 			assert.NoError(t, err)
 
 			assert.Equal(t, tt.vulnReport, receivedBrandedVulnFound)
