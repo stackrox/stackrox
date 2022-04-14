@@ -89,4 +89,5 @@ func TestFormatVulnMessageBranding(t *testing.T) {
 			assert.Equal(t, tt.noVulnReport, receivedBrandedNoVulnFound)
 		})
 	}
+	envIsolator.RestoreAll()
 }

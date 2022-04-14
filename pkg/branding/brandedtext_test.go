@@ -39,4 +39,5 @@ func TestGetBrandedProductName(t *testing.T) {
 			assert.Equal(t, tt.brandedProductName, receivedProductName)
 		})
 	}
+	envIsolator.RestoreAll()
 }
