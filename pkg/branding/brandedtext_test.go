@@ -31,6 +31,11 @@ func TestGetBrandedProductName(t *testing.T) {
 			productBrandingEnv: "ROX_PRODUCT_BRANDING",
 			brandedProductName: brandedProductNameStackrox,
 		},
+		// TODO @jschnath: Change this to StackRox after changing the default value of ProductBrandingEnvName.
+		"Unset env": {
+			productBrandingEnv: "",
+			brandedProductName: brandedProductNameRHACS,
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
