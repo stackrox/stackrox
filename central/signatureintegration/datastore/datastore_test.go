@@ -268,7 +268,7 @@ func (s *signatureDataStoreTestSuite) TearDownTest() {
 	rocksdbtest.TearDownRocksDB(s.rocksie)
 }
 
-func TestIntersectPolicies(t *testing.T) {
+func TestRemovePoliciesInvisibleToUser(t *testing.T) {
 	cases := map[string]struct {
 		policiesVisibleToUser []*storage.Policy
 		policiesWithReference []string
@@ -307,7 +307,7 @@ func TestIntersectPolicies(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			result := intersectPolicies(c.policiesVisibleToUser, c.policiesWithReference)
+			result := removePoliciesInvisibleToUser(c.policiesVisibleToUser, c.policiesWithReference)
 			assert.ElementsMatch(t, c.expectedOutput, result)
 		})
 	}

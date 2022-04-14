@@ -186,10 +186,10 @@ func (d *datastoreImpl) verifyIntegrationIDIsNotInPolicy(ctx context.Context, id
 		// Fetch policies with the user context. Return any error that's not sac.ErrResourceAccessDenied.
 		policiesVisibleToUser, err := d.policyStore.GetAllPolicies(ctx)
 		if err != nil && !errors.Is(err, sac.ErrResourceAccessDenied) {
-			return errors.Wrap(err, "retrieving all policies")
+			return errors.Wrap(err, "retrieving all policies visible to user")
 		}
 
-		listOfPolicies := strings.Join(intersectPolicies(policiesVisibleToUser, policiesContainingID), ",")
+		listOfPolicies := strings.Join(removePoliciesInvisibleToUser(policiesVisibleToUser, policiesContainingID), ",")
 
 		return errox.ReferencedByAnotherObject.Newf("cannot delete signature integration %q since there are "+
 			"existing policies that reference it: [%s]", integration.GetName(), listOfPolicies)
@@ -214,23 +214,22 @@ func checkIfPolicyContainsID(id string, policy *storage.Policy) bool {
 	return false
 }
 
-// intersectPolicies will intersect the policy names of policies which are visible to a user
+// removePoliciesInvisibleToUser will intersect the policy names of policies which are visible to a user
 // and policies which have references of signature integrations.
 // It will return a list of policy names that are visible to the user, replacing policies
 // that have a reference but are not visibile to the user with "<hidden>".
-// Note: It is expected that policiesWithReferences is non-empty.
-func intersectPolicies(policiesVisibleToUser []*storage.Policy,
+func removePoliciesInvisibleToUser(policiesVisibleToUser []*storage.Policy,
 	policiesWithReferences []string) []string {
 	// Get names of all policies that are accessible to the user.
-	policyNamesAccessibleToUser := set.NewStringSet()
+	policyNamesVisibleToUser := set.NewStringSet()
 	for _, p := range policiesVisibleToUser {
-		policyNamesAccessibleToUser.Add(p.GetName())
+		policyNamesVisibleToUser.Add(p.GetName())
 	}
 
 	// Ensure we only return policy names that are visible to the user.
 	var policyNames []string
 	for _, p := range policiesWithReferences {
-		if policyNamesAccessibleToUser.Contains(p) {
+		if policyNamesVisibleToUser.Contains(p) {
 			policyNames = append(policyNames, p)
 		}
 	}
