@@ -62,20 +62,20 @@ func resourceMetadataFromString(resource string) permissions.ResourceMetadata {
 	panic("unknown resource: " + resource)
 }
 
-func clusterGetter(schema *walker.Schema) string {
+func clusterGetter(prefix string, schema *walker.Schema) string {
 	for _, f := range schema.Fields {
 		if strings.Contains(f.Search.FieldName, "Cluster ID") {
-			return f.Getter("obj")
+			return f.Getter(prefix)
 		}
 	}
 	panic(schema.TypeName + "has no cluster. Is it directly scoped?")
 }
 
-func namespaceGetter(schema *walker.Schema) string {
+func namespaceGetter(prefix string, schema *walker.Schema) string {
 	for _, f := range schema.Fields {
 		if strings.Contains(f.Search.FieldName, "Namespace") {
-			return f.Getter("obj")
+			return f.Getter(prefix)
 		}
 	}
-	return ""
+	panic(schema.TypeName + "has no cluster. Is it directly and namespace scoped?")
 }
