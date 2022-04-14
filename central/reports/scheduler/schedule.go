@@ -37,10 +37,6 @@ import (
 
 const (
 	numDeploymentsLimit = 50
-)
-
-var (
-	log = logging.LoggerForModule()
 
 	reportDataQuery = `query getVulnReportData($scopequery: String, 
 							$cvequery: String, $pagination: Pagination) {
@@ -79,7 +75,11 @@ var (
 
 	noVulnsFoundEmailTemplate = `
 	{{.BrandedProductName}} has found zero vulnerabilities associated with the running container images owned by your organization.`
+)
 
+var (
+	log = logging.LoggerForModule()
+	
 	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 )
 
