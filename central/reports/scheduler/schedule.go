@@ -339,7 +339,6 @@ func formatMessage(rc *storage.ReportConfiguration, EmailTemplate string) (strin
 		data.WhichVulns = fmt.Sprintf("for new vulnerabilities since %s",
 			timestamp.FromProtobuf(rc.LastSuccessfulRunTime).GoTime().Format("January 02, 2006"))
 	}
-
 	tmpl, err := template.New("emailBody").Parse(EmailTemplate)
 	if err != nil {
 		return "", err

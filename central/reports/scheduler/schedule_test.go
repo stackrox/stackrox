@@ -64,27 +64,24 @@ func TestVulnMessageBranding1(t *testing.T) {
 
 	expectedVulnReportEmailTemplateRhacsBranding, expectedVulnReportEmailTemplateStackroxBranding := generateExpectedVulnReportEmailTemplates(t)
 
-	tests := []struct {
-		name            string
+	tests := map[string]struct {
 		productBranding string
 		vulnReport      string
 		noVulnReport    string
 	}{
-		{
-			name:            "RHACS branding",
+		"RHACS branding": {
 			productBranding: "RHACS_BRANDING",
 			vulnReport:      expectedVulnReportEmailTemplateRhacsBranding,
 			noVulnReport:    expectedNoVulnsFoundEmailTemplateRhacsBranding,
 		},
-		{
-			name:            "StackRox branding",
+		"StackRox branding": {
 			productBranding: "STACKROX_BRANDING",
 			vulnReport:      expectedVulnReportEmailTemplateStackroxBranding,
 			noVulnReport:    expectedNoVulnsFoundEmailTemplateStackroxBranding,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			envIsolator.Setenv(branding.ProductBrandingEnvName, tt.productBranding)
 
 			receivedBrandedVulnFound, err := formatMessage(rc, vulnReportEmailTemplate)
