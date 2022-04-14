@@ -83,12 +83,6 @@ var (
 	scheduledCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 )
 
-const (
-	productBrandingNameRHACS = "Red Hat Advanced Cluster Security for Kubernetes"
-
-	productBrandingNameStackrox = "StackRox"
-)
-
 // Scheduler maintains the schedules for reports
 type Scheduler interface {
 	UpsertReportSchedule(reportConfig *storage.ReportConfiguration) error
@@ -322,16 +316,9 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	return nil
 }
 
-func getBrandedProductName() string {
-	if branding.GetProductBrandingEnv() == "RHACS_BRANDING" {
-		return productBrandingNameRHACS
-	}
-	return productBrandingNameStackrox
-}
-
 func formatMessage(rc *storage.ReportConfiguration, EmailTemplate string) (string, error) {
 	data := &reportEmailFormat{
-		BrandedProductName: getBrandedProductName(),
+		BrandedProductName: branding.GetBrandedProductName(),
 		WhichVulns:         "for all vulnerabilities",
 		DateStr:            time.Now().Format("January 02, 2006"),
 	}
