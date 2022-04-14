@@ -239,8 +239,8 @@ function launch_central {
 
     echo "Deploying Central..."
 
-    ${KUBE_COMMAND} get namespace "${STACKROX_NAMESPACE}" &>/dev/null || \
-      ${KUBE_COMMAND} create namespace "${STACKROX_NAMESPACE}"
+    ${KUBE_COMMAND:-kubectl} get namespace "${STACKROX_NAMESPACE}" &>/dev/null || \
+      ${KUBE_COMMAND:-kubectl} create namespace "${STACKROX_NAMESPACE}"
 
     if [[ -f "$unzip_dir/values-public.yaml" ]]; then
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
