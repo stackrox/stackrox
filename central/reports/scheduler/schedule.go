@@ -318,7 +318,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 
 func formatMessage(rc *storage.ReportConfiguration, emailTemplate string) (string, error) {
 	data := &reportEmailFormat{
-		BrandedProductName: branding.GetBrandedProductName(),
+		BrandedProductName: branding.GetProductName(),
 		WhichVulns:         "for all vulnerabilities",
 		DateStr:            time.Now().Format("January 02, 2006"),
 	}
