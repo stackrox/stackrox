@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -31,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"gopkg.in/robfig/cron.v2"
 )
@@ -325,9 +325,8 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 func getBrandedProductName() string {
 	if branding.GetProductBrandingEnvName() == "RHACS_BRANDING" {
 		return productBrandingNameRHACS
-	} else {
-		return productBrandingNameStackrox
 	}
+	return productBrandingNameStackrox
 }
 
 func formatMessage(rc *storage.ReportConfiguration, EmailTemplate string) (string, error) {
@@ -345,12 +344,7 @@ func formatMessage(rc *storage.ReportConfiguration, EmailTemplate string) (strin
 	if err != nil {
 		return "", err
 	}
-	var tpl bytes.Buffer
-	err = tmpl.Execute(&tpl, data)
-	if err != nil {
-		return "", err
-	}
-	return tpl.String(), nil
+	return templates.ExecuteToString(tmpl, data)
 }
 
 func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuery) ([]common.Result, error) {
