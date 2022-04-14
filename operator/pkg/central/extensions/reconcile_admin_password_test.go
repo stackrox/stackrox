@@ -22,22 +22,22 @@ func TestReconcileAdminPassword(t *testing.T) {
 	var buf bytes.Buffer
 	require.NoError(t, hf.Write(&buf))
 
-	// htpasswdWithSomePassword := &v1.Secret{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "central-htpasswd",
-	//		Namespace: testutils.TestNamespace,
-	//	},
-	//	Data: map[string][]byte{
-	//		"htpasswd": buf.Bytes(),
-	//	},
-	//}
+	htpasswdWithSomePassword := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-htpasswd",
+			Namespace: testutils.TestNamespace,
+		},
+		Data: map[string][]byte{
+			"htpasswd": buf.Bytes(),
+		},
+	}
 
-	// htpasswdWithNoPassword := &v1.Secret{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "central-htpasswd",
-	//		Namespace: testutils.TestNamespace,
-	//	},
-	//}
+	htpasswdWithNoPassword := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "central-htpasswd",
+			Namespace: testutils.TestNamespace,
+		},
+	}
 
 	plaintextPasswordSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -50,41 +50,41 @@ func TestReconcileAdminPassword(t *testing.T) {
 	}
 
 	cases := map[string]secretReconciliationTestCase{
-		// "If no central-htpasswd secret exists and no plaintext secret reference was specified, a password should be automatically generated": {
-		//	ExpectedCreatedSecrets: map[string]secretVerifyFunc{
-		//		"central-htpasswd": func(t *testing.T, data types.SecretDataMap) {
-		//			plaintextPW := string(data[adminPasswordKey])
-		//			require.NotEmpty(t, plaintextPW)
-		//
-		//			htpasswdBytes := data[htpasswdKey]
-		//			hf, err := htpasswd.ReadHashFile(bytes.NewReader(htpasswdBytes))
-		//			require.NoError(t, err)
-		//
-		//			assert.True(t, hf.Check(basic.DefaultUsername, plaintextPW))
-		//		},
-		//	},
-		//	VerifyStatus: func(t *testing.T, status *platform.CentralStatus) {
-		//		require.NotNil(t, status.Central)
-		//		require.NotNil(t, status.Central.AdminPassword)
-		//		assert.Contains(t, status.Central.AdminPassword.Info, "A password for the 'admin' user has been automatically generated and stored")
-		//	},
-		// },
-		// "If a central-htpasswd secret with a password exists, no password should be generated": {
-		//	Existing: []*v1.Secret{htpasswdWithSomePassword},
-		//	VerifyStatus: func(t *testing.T, status *platform.CentralStatus) {
-		//		require.NotNil(t, status.Central)
-		//		require.NotNil(t, status.Central.AdminPassword)
-		//		assert.Contains(t, status.Central.AdminPassword.Info, "A user-defined central-htpasswd secret was found, containing htpasswd-encoded credentials.")
-		//	},
-		// },
-		// "If a central-htpasswd secret with no password exists, no password should be generated and the user should be informed that basic auth is disabled": {
-		//	Existing: []*v1.Secret{htpasswdWithNoPassword},
-		//	VerifyStatus: func(t *testing.T, status *platform.CentralStatus) {
-		//		require.NotNil(t, status.Central)
-		//		require.NotNil(t, status.Central.AdminPassword)
-		//		assert.Contains(t, status.Central.AdminPassword.Info, "Login with username/password has been disabled")
-		//	},
-		// },
+		"If no central-htpasswd secret exists and no plaintext secret reference was specified, a password should be automatically generated": {
+			ExpectedCreatedSecrets: map[string]secretVerifyFunc{
+				"central-htpasswd": func(t *testing.T, data types.SecretDataMap) {
+					plaintextPW := string(data[adminPasswordKey])
+					require.NotEmpty(t, plaintextPW)
+
+					htpasswdBytes := data[htpasswdKey]
+					hf, err := htpasswd.ReadHashFile(bytes.NewReader(htpasswdBytes))
+					require.NoError(t, err)
+
+					assert.True(t, hf.Check(basic.DefaultUsername, plaintextPW))
+				},
+			},
+			VerifyStatus: func(t *testing.T, status *platform.CentralStatus) {
+				require.NotNil(t, status.Central)
+				require.NotNil(t, status.Central.AdminPassword)
+				assert.Contains(t, status.Central.AdminPassword.Info, "A password for the 'admin' user has been automatically generated and stored")
+			},
+		},
+		"If a central-htpasswd secret with a password exists, no password should be generated": {
+			Existing: []*v1.Secret{htpasswdWithSomePassword},
+			VerifyStatus: func(t *testing.T, status *platform.CentralStatus) {
+				require.NotNil(t, status.Central)
+				require.NotNil(t, status.Central.AdminPassword)
+				assert.Contains(t, status.Central.AdminPassword.Info, "A user-defined central-htpasswd secret was found, containing htpasswd-encoded credentials.")
+			},
+		},
+		"If a central-htpasswd secret with no password exists, no password should be generated and the user should be informed that basic auth is disabled": {
+			Existing: []*v1.Secret{htpasswdWithNoPassword},
+			VerifyStatus: func(t *testing.T, status *platform.CentralStatus) {
+				require.NotNil(t, status.Central)
+				require.NotNil(t, status.Central.AdminPassword)
+				assert.Contains(t, status.Central.AdminPassword.Info, "Login with username/password has been disabled")
+			},
+		},
 		"If a secret with a plaintext password is referenced, a central-htpasswd secret should be created accordingly": {
 			Spec: platform.CentralSpec{
 				Central: &platform.CentralComponentSpec{
