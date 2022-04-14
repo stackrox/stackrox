@@ -185,6 +185,8 @@ function PoliciesTablePage({
                 <PoliciesTable
                     notifiers={notifiers}
                     policies={policies}
+                    fetchPoliciesHandler={() => fetchPolicies(query)}
+                    addToast={addToast}
                     hasWriteAccessForPolicy={hasWriteAccessForPolicy}
                     deletePoliciesHandler={deletePoliciesHandler}
                     exportPoliciesHandler={exportPoliciesHandler}

@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 
-type AlertVariantType = 'default' | 'info' | 'success' | 'danger' | 'warning';
+export type AlertVariantType = 'default' | 'info' | 'success' | 'danger' | 'warning';
 
 export type Toast = {
     title: string;
