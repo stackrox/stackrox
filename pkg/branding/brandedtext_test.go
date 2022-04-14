@@ -7,6 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	brandedProductNameRHACS    = "Red Hat Advanced Cluster Security for Kubernetes"
+	brandedProductNameStackrox = "StackRox"
+)
+
 func TestGetBrandedProductName(t *testing.T) {
 	envIsolator := envisolator.NewEnvIsolator(t)
 
@@ -15,21 +20,21 @@ func TestGetBrandedProductName(t *testing.T) {
 		brandedProductName string
 	}{
 		"RHACS branding": {
-			productBrandingEnv: ProductBrandingRHACS,
-			brandedProductName: productNameRHACS,
+			productBrandingEnv: "RHACS_BRANDING",
+			brandedProductName: brandedProductNameRHACS,
 		},
 		"Stackrox branding": {
 			productBrandingEnv: "STACKROX_BRANDING",
-			brandedProductName: productNameStackrox,
+			brandedProductName: brandedProductNameStackrox,
 		},
 		"Default setting": {
 			productBrandingEnv: "ROX_PRODUCT_BRANDING",
-			brandedProductName: productNameStackrox,
+			brandedProductName: brandedProductNameStackrox,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			envIsolator.Setenv(ProductBrandingEnvName, tt.productBrandingEnv)
+			envIsolator.Setenv("ROX_PRODUCT_BRANDING", tt.productBrandingEnv)
 			receivedProductName := GetProductName()
 			assert.Equal(t, tt.brandedProductName, receivedProductName)
 		})
