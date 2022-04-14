@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
+	openshiftRouteV1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -490,6 +491,25 @@ spec:
     type: Rolling
 `
 
+const openshiftRouteYaml = `
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  namespace: frontend
+  name: frontend
+spec:
+  host: frontend.local
+  to:
+    kind: Service
+    name: frontend
+    weight: 100
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  port:
+    targetPort: 8443
+`
+
 func TestParseList_Success(t *testing.T) {
 	_, err := getObjectsFromYAML(listYAML)
 	require.NoError(t, err)
@@ -510,11 +530,27 @@ func TestParseList_Error(t *testing.T) {
 }
 
 func TestParseList_ConversionToOpenshiftObjects(t *testing.T) {
-	objs, err := getObjectsFromYAML(openshiftDeployConfMultiYaml)
-	require.NoError(t, err)
+	cases := map[string]struct {
+		yaml         string
+		expectedType interface{}
+	}{
+		"list of apps.openshift.io/v1/DeployConfig": {
+			yaml:         openshiftDeploymentConfigYaml,
+			expectedType: (*openshiftAppsV1.DeploymentConfig)(nil),
+		},
+		"single route.openshift.io/v1/Route": {
+			yaml:         openshiftRouteYaml,
+			expectedType: (*openshiftRouteV1.Route)(nil),
+		},
+	}
 
-	for i := range objs {
-		obj := objs[i]
-		assert.IsType(t, (*openshiftAppsV1.DeploymentConfig)(nil), obj)
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			objs, err := getObjectsFromYAML(c.yaml)
+			require.NoError(t, err)
+			for _, obj := range objs {
+				assert.IsType(t, c.expectedType, obj)
+			}
+		})
 	}
 }
