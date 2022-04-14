@@ -45,6 +45,7 @@ func generateExpectedVulnReportEmailTemplates(t *testing.T) (string, string) {
 	assert.NoError(t, err)
 
 	tmpl, err = template.New("VulnsStackrox").Parse(expectedVulnReportEmailTemplateStackroxBrandingWithPlaceholders)
+	assert.NoError(t, err)
 	expectedVulnReportEmailTemplateStackroxBranding, err := templates.ExecuteToString(tmpl, data)
 	assert.NoError(t, err)
 
