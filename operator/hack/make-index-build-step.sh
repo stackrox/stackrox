@@ -124,7 +124,7 @@ mkdir -p "${BUILD_INDEX_DIR}"
 
 BUNDLE_VERSION=$(echo "${BUNDLE_TAG}" | awk -F: '{print $NF}')
 BUNDLE_VERSION="${BUNDLE_VERSION:1}"
-"${YQ}" --inplace --prettyPrint "with(select(.schema==\"olm.channel\"); .entries += {\"name\":\"rhacs-operator.v${BUNDLE_VERSION}\",\"replaces\":\"rhacs-operator.v${REPLACED_VERSION}\",\"skipRange\":\">= ${REPLACED_VERSION} < ${BUNDLE_VERSION}\"})" "${BUILD_INDEX_DIR}/index.yaml"
+"${YQ}" --inplace --prettyPrint "with(select(.schema==\"olm.channel\" and .name==\"latest\"); .entries += {\"name\":\"rhacs-operator.v${BUNDLE_VERSION}\",\"replaces\":\"rhacs-operator.v${REPLACED_VERSION}\",\"skipRange\":\">= ${REPLACED_VERSION} < ${BUNDLE_VERSION}\"})" "${BUILD_INDEX_DIR}/index.yaml"
 "${OPM}" render "${BUNDLE_TAG}" --output=yaml ${USE_HTTP} >> "${BUILD_INDEX_DIR}/index.yaml"
 "${OPM}" validate "${BUILD_INDEX_DIR}"
 docker build --quiet --file "${BUILD_INDEX_DIR}.Dockerfile" --tag "${INDEX_TAG}" "${BUILD_INDEX_DIR}/.."
