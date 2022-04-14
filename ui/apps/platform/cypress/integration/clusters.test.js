@@ -1,7 +1,7 @@
 import cloneDeep from 'lodash/cloneDeep';
 
 import { selectors, clustersUrl } from '../constants/ClustersPage';
-import { clusters as clustersApi, metadata as metadataApi } from '../constants/apiEndpoints';
+import { clusters as clustersApi } from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import {
     visitClusters,
@@ -51,13 +51,7 @@ describe('Clusters page', () => {
 describe.skip('Cluster Certificate Expiration', () => {
     withAuth();
 
-    let clusters;
-
-    before(() => {
-        cy.fixture('clusters/health.json').then((response) => {
-            clusters = response.clusters;
-        });
-    });
+    const fixturePath = 'clusters/health.json';
 
     const metadata = {
         version: '3.0.50.0', // for comparison to `sensorVersion` in clusters fixture
@@ -69,30 +63,15 @@ describe.skip('Cluster Certificate Expiration', () => {
     // For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
     const currentDatetime = new Date('2020-08-31T13:01:00Z');
 
-    beforeEach(() => {
-        cy.intercept('GET', clustersApi.list, {
-            body: { clusters },
-        }).as('GetClusters');
-        cy.intercept('GET', metadataApi, {
-            body: metadata,
-        }).as('GetMetadata');
-
-        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
-
-        cy.visit(clustersUrl);
-        cy.wait(['@GetClusters', '@GetMetadata']);
-    });
-
     describe('Credential Expiration status is Healthy', () => {
         it('should not show link or form', () => {
-            const n = clusters.findIndex((cluster) => cluster.name === 'kappa-kilogramme-10');
-            const cluster = clusters[n];
-
-            cy.intercept('GET', clustersApi.single, {
-                body: { cluster },
-            }).as('GetCluster');
-            cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
-            cy.wait('@GetCluster');
+            const clusterName = 'kappa-kilogramme-10';
+            visitClusterByNameWithFixtureMetadataDatetime(
+                clusterName,
+                fixturePath,
+                metadata,
+                currentDatetime
+            );
 
             cy.get(selectors.clusterHealth.credentialExpiration).should('have.text', 'in 1 month');
             cy.get(selectors.clusterHealth.reissueCertificatesLink).should('not.exist');
@@ -106,14 +85,13 @@ describe.skip('Cluster Certificate Expiration', () => {
         const expectedExpiration = 'in 6 days on Monday'; // Unhealthy
 
         it('should disable the upgrade option', () => {
-            const n = clusters.findIndex((cluster) => cluster.name === 'epsilon-edison-5');
-            const cluster = clusters[n];
-
-            cy.intercept('GET', clustersApi.single, {
-                body: { cluster },
-            }).as('GetCluster');
-            cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
-            cy.wait('@GetCluster');
+            const clusterName = 'epsilon-edison-5';
+            visitClusterByNameWithFixtureMetadataDatetime(
+                clusterName,
+                fixturePath,
+                metadata,
+                currentDatetime
+            );
 
             cy.get(selectors.clusterHealth.credentialExpiration).should(
                 'have.text',
@@ -134,14 +112,13 @@ describe.skip('Cluster Certificate Expiration', () => {
         const expectedExpiration = 'in 29 days on 09/29/2020'; // Degraded
 
         it('should enable the upgrade option', () => {
-            const n = clusters.findIndex((cluster) => cluster.name === 'eta-7');
-            const cluster = clusters[n];
-
-            cy.intercept('GET', clustersApi.single, {
-                body: { cluster },
-            }).as('GetCluster');
-            cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
-            cy.wait('@GetCluster');
+            const clusterName = 'eta-7';
+            visitClusterByNameWithFixtureMetadataDatetime(
+                clusterName,
+                fixturePath,
+                metadata,
+                currentDatetime
+            );
 
             cy.get(selectors.clusterHealth.credentialExpiration).should(
                 'have.text',
@@ -156,36 +133,41 @@ describe.skip('Cluster Certificate Expiration', () => {
         });
 
         it('should display a message for success instead of the form', () => {
-            const n = clusters.findIndex((cluster) => cluster.name === 'eta-7');
-            const cluster = cloneDeep(clusters[n]);
+            const clusterName = 'eta-7';
+            visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, currentDatetime);
 
-            // Mock the result of using an automatic upgrade to re-issue the certificate.
-            cluster.status.upgradeStatus.mostRecentProcess = {
-                type: 'CERT_ROTATION',
-                initiatedAt: currentDatetime,
-                progress: {
-                    upgradeState: 'UPGRADE_COMPLETE',
-                },
-            };
+            cy.fixture(fixturePath).then(({ clusters }) => {
+                const n = clusters.findIndex((cluster) => cluster.name === clusterName);
+                const cluster = cloneDeep(clusters[n]);
 
-            cy.intercept('GET', clustersApi.single, {
-                body: { cluster },
-            }).as('GetCluster');
-            cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
-            cy.wait('@GetCluster');
+                // Mock the result of using an automatic upgrade to re-issue the certificate.
+                cluster.status.upgradeStatus.mostRecentProcess = {
+                    type: 'CERT_ROTATION',
+                    initiatedAt: currentDatetime,
+                    progress: {
+                        upgradeState: 'UPGRADE_COMPLETE',
+                    },
+                };
 
-            cy.get(selectors.clusterHealth.credentialExpiration).should(
-                'have.text',
-                expectedExpiration
-            );
-            cy.get(selectors.clusterHealth.reissueCertificatesLink);
-            cy.get(selectors.clusterHealth.upgradedToReissueCertificate).should(
-                'have.text',
-                'An automatic upgrade applied new credentials to the cluster 0 seconds ago.'
-            );
-            cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
-            cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
-            cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
+                cy.intercept('GET', clustersApi.single, {
+                    body: { cluster },
+                }).as('getCluster');
+                cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
+                cy.wait('@getCluster');
+
+                cy.get(selectors.clusterHealth.credentialExpiration).should(
+                    'have.text',
+                    expectedExpiration
+                );
+                cy.get(selectors.clusterHealth.reissueCertificatesLink);
+                cy.get(selectors.clusterHealth.upgradedToReissueCertificate).should(
+                    'have.text',
+                    'An automatic upgrade applied new credentials to the cluster 0 seconds ago.'
+                );
+                cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
+                cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
+                cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
+            });
         });
     });
 });
