@@ -5,7 +5,8 @@ import React, { ReactElement, useState } from 'react';
 import usePagination from 'hooks/patternfly/usePagination';
 import { SearchFilter } from 'types/search';
 import queryService from 'utils/queryService';
-import useTableSort, { SortOption } from 'hooks/patternfly/useTableSort';
+import useTableSort from 'hooks/patternfly/useTableSort';
+import { SortOption } from 'types/table';
 import FalsePositiveCVEsTable from './FalsePositiveCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
 

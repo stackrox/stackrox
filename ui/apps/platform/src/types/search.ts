@@ -24,7 +24,7 @@ export type GlobalSearchOption = {
     type?: string;
 };
 
-export type RestSortOption = {
+export type ApiSortOption = {
     field: string;
     reversed: boolean;
 };

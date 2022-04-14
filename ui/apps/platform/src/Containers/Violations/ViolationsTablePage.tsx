@@ -12,7 +12,8 @@ import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import { SEARCH_CATEGORIES } from 'constants/searchOptions';
 
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
-import useURLSort, { SortOption } from 'hooks/patternfly/useURLSort';
+import useURLSort from 'hooks/useURLSort';
+import { SortOption } from 'types/table';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
