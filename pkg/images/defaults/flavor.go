@@ -218,6 +218,7 @@ func OpenSourceReleaseImageFlavor() ImageFlavor {
 		ScannerDBSlimImageName: "scanner-db-slim",
 
 		ChartRepo: ChartRepo{
+			// TODO(ROX-10079): establish a place where open source users will be able to download Helm charts.
 			URL: "https://charts.stackrox.io",
 		},
 		ImagePullSecrets: ImagePullSecrets{
