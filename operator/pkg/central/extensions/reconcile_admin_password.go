@@ -123,6 +123,11 @@ func (r *reconcileAdminPasswordExtensionRun) updateStatus(status *platform.Centr
 	} else {
 		status.Central.AdminPassword.SecretName = &platform.LocalSecretReference{Name: r.passwordSecretName}
 	}
+	if r.centralObj == nil {
+		r.centralObj = &platform.Central{Spec: platform.CentralSpec{Central: &platform.CentralComponentSpec{}}}
+		// r.centralObj.Spec.Central = &platform.CentralComponentSpec{}
+		r.centralObj.Spec.Central.AdminPasswordSecret = &platform.LocalSecretReference{Name: r.passwordSecretName}
+	}
 	if r.centralObj.Spec.Central.AdminPasswordSecret == nil {
 		r.centralObj.Spec.Central.AdminPasswordSecret = &platform.LocalSecretReference{Name: r.passwordSecretName}
 	} else {
