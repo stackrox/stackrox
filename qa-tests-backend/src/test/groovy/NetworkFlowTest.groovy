@@ -431,13 +431,14 @@ class NetworkFlowTest extends BaseSpecification {
         assert targetUid != null
 
         when:
-        "Network graph is filtered by deployment A"
-        def graph = NetworkGraphService.getNetworkGraph(null, "Deployment:\"${TCPCONNECTIONSOURCE}\"", "")
+        "Check for edge in network graph"
+        println "Checking for edge between ${TCPCONNECTIONSOURCE} and ${TCPCONNECTIONTARGET}"
+        List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
+        assert edges
 
         then:
-        "Edge between A and B should exist in network graph"
-        List<Edge> edges = NetworkGraphUtil.findEdges(graph, sourceUid, targetUid)
-        assert edges && edges.size() > 0
+        "Wait for collector update and fetch graph again to confirm short interval connections remain"
+        assert waitForEdgeUpdate(edges.get(0), 90)
     }
 
     @Category([NetworkFlowVisualization])
