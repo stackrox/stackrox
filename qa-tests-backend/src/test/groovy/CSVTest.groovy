@@ -172,13 +172,13 @@ class CSVTest extends BaseSpecification {
 
         graphQLQuery                    | graphQLPayload | csvQuery
         FIXABLE_CVES_IN_IMAGE_QUERY     | [
-                id        : "sha256:c8c29d842c09d6c61f537843808e01c0af4079e9e74079616f57dfcfa91d4e25",
+                id        : "sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f",
                 query: "",
                 // must scope without scope query since graphQL is hitting sub-resolver
                 scopeQuery: "",
                 vulnQuery : "Fixable:true",
                 vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
-        ] | "Image Sha:sha256:c8c29d842c09d6c61f537843808e01c0af4079e9e74079616f57dfcfa91d4e25+Fixable:true"
+        ] | "Image Sha:sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f+Fixable:true"
         FIXABLE_CVES_IN_COMPONENT_QUERY | [
                 // openssl 1.0.1k-3+deb8u5
                 id        : "b3BlbnNzbA:MS4wLjFrLTMrZGViOHU1",
