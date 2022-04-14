@@ -12,7 +12,7 @@ func GetMockResult() (*storage.ComplianceRunResults, *storage.ComplianceDomain) 
 
 	domain := &storage.ComplianceDomain{
 		Id: domainID,
-		Cluster: &storage.Cluster{
+		Cluster: &storage.ComplianceDomain_Cluster{
 			Id: clusterID,
 		},
 	}

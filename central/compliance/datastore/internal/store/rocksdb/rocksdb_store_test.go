@@ -79,7 +79,7 @@ func (s *RocksDBStoreTestSuite) storeAggregationResult() ([]*storage.ComplianceA
 
 	domain := &storage.ComplianceDomain{
 		Id: "woooo",
-		Cluster: &storage.Cluster{
+		Cluster: &storage.ComplianceDomain_Cluster{
 			Id: clusterID,
 		},
 	}

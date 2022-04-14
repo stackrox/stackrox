@@ -23,11 +23,11 @@ export const LIST_STANDARD = gql`
                         description
                         standardId
                     }
-                    ... on Cluster {
+                    ... on ComplianceDomain_Cluster {
                         id
                         name
                     }
-                    ... on Node {
+                    ... on ComplianceDomain_Node {
                         id
                         name
                         clusterName
@@ -71,7 +71,7 @@ export const LIST_STANDARD_NO_NODES = gql`
                         description
                         standardId
                     }
-                    ... on Cluster {
+                    ... on ComplianceDomain_Cluster {
                         id
                         name
                     }

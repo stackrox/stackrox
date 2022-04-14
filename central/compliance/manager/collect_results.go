@@ -23,22 +23,50 @@ var (
 
 func getDomainProto(domain framework.ComplianceDomain) *storage.ComplianceDomain {
 	nodes := framework.Nodes(domain)
-	nodeMap := make(map[string]*storage.Node, len(nodes))
+	nodeMap := make(map[string]*storage.ComplianceDomain_Node, len(nodes))
 	for _, node := range nodes {
-		nodeMap[node.GetId()] = node
+		nodeMap[node.GetId()] = convertNode(node)
 	}
 
 	deployments := framework.Deployments(domain)
-	deploymentMap := make(map[string]*storage.Deployment, len(deployments))
+	deploymentMap := make(map[string]*storage.ComplianceDomain_Deployment, len(deployments))
 	for _, deployment := range deployments {
-		deploymentMap[deployment.GetId()] = deployment
+		deploymentMap[deployment.GetId()] = convertDeployment(deployment)
 	}
 
 	return &storage.ComplianceDomain{
 		Id:          domain.ID(),
-		Cluster:     domain.Cluster().Cluster(),
+		Cluster:     convertCluster(domain.Cluster().Cluster()),
 		Nodes:       nodeMap,
 		Deployments: deploymentMap,
+	}
+}
+
+func convertCluster(cluster *storage.Cluster) *storage.ComplianceDomain_Cluster {
+	return &storage.ComplianceDomain_Cluster{
+		Id:   cluster.GetId(),
+		Name: cluster.GetName(),
+	}
+}
+
+func convertDeployment(dep *storage.Deployment) *storage.ComplianceDomain_Deployment {
+	return &storage.ComplianceDomain_Deployment{
+		Id:          dep.GetId(),
+		NamespaceId: dep.GetNamespaceId(),
+		Name:        dep.GetName(),
+		Type:        dep.GetType(),
+		Namespace:   dep.GetNamespace(),
+		ClusterId:   dep.GetClusterId(),
+		ClusterName: dep.GetClusterName(),
+	}
+}
+
+func convertNode(node *storage.Node) *storage.ComplianceDomain_Node {
+	return &storage.ComplianceDomain_Node{
+		Id:          node.GetId(),
+		Name:        node.GetName(),
+		ClusterId:   node.GetClusterId(),
+		ClusterName: node.GetClusterName(),
 	}
 }
 
