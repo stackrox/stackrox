@@ -510,6 +510,16 @@ spec:
     targetPort: 8443
 `
 
+const operatorCRDYaml = `
+apiVersion: apps.3scale.net/v1alpha1
+kind: APIcast
+metadata:
+  name: example-apicast
+spec:
+  adminPortalCredentialsRef:
+    name: asecretname
+`
+
 func TestParseList_Success(t *testing.T) {
 	_, err := getObjectsFromYAML(listYAML)
 	require.NoError(t, err)
@@ -553,4 +563,9 @@ func TestParseList_ConversionToOpenshiftObjects(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestParseList_IgnoreUnknownResources(t *testing.T) {
+	_, err := getObjectsFromYAML(operatorCRDYaml)
+	require.NoError(t, err)
 }

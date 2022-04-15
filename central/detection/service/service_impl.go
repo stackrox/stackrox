@@ -232,7 +232,12 @@ func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {
 		}
 		obj, _, err := workloadDeserializer.Decode(yamlBytes, nil, nil)
 		if err != nil {
-			return nil, errox.InvalidArgs.New("could not parse yaml").CausedBy(err.Error())
+			// Do not return an error on objects that were not registered. Output an info message that indicates that
+			// these objects will be skipped.
+			if !k8sRuntime.IsNotRegisteredError(err) {
+				return nil, errox.InvalidArgs.New("could not parse yaml").CausedBy(err.Error())
+			}
+			continue
 		}
 		if list, ok := obj.(*coreV1.List); ok {
 			listResources, err := getObjectsFromList(list)
@@ -252,7 +257,10 @@ func getObjectsFromList(list *coreV1.List) ([]k8sRuntime.Object, error) {
 	for i, item := range list.Items {
 		obj, _, err := workloadDeserializer.Decode(item.Raw, nil, nil)
 		if err != nil {
-			return nil, errox.InvalidArgs.Newf("could not decode item %d in the list", i).CausedBy(err.Error())
+			if !k8sRuntime.IsNotRegisteredError(err) {
+				return nil, errox.InvalidArgs.Newf("could not decode item %d in the list", i).CausedBy(err.Error())
+			}
+			continue
 		}
 		objects = append(objects, obj)
 	}
