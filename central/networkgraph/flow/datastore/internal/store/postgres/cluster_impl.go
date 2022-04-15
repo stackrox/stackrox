@@ -1,8 +1,6 @@
 package postgres
 
 import (
-	"context"
-
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/pkg/sync"
@@ -18,7 +16,7 @@ func NewClusterStore(db *pgxpool.Pool) store.ClusterStore {
 
 type clusterStoreImpl struct {
 	db               *pgxpool.Pool
-	clusterMutexLock sync.RWMutex
+	clusterMutexLock sync.Mutex
 	clusterMutexes   map[string]*sync.Mutex
 }
 
@@ -36,9 +34,4 @@ func (s *clusterStoreImpl) GetFlowStore(clusterID string) store.FlowStore {
 		clusterID: clusterID,
 		lock:      lock,
 	}
-}
-
-// CreateFlowStore returns the FlowStore for the cluster ID, or creates one if none exists.
-func (s *clusterStoreImpl) CreateFlowStore(ctx context.Context, clusterID string) (store.FlowStore, error) {
-	return New(ctx, s.db, clusterID), nil
 }

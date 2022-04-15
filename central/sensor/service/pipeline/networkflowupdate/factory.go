@@ -29,12 +29,5 @@ func (s *factoryImpl) GetFragment(ctx context.Context, clusterID string) (pipeli
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not obtain flow store for cluster %s", clusterID)
 	}
-
-	if flowStore == nil {
-		flowStore, err = s.clusterStore.CreateFlowStore(ctx, clusterID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "creating flow store for cluster %s", clusterID)
-		}
-	}
 	return NewPipeline(clusterID, newFlowPersister(flowStore, s.networkBaselines)), nil
 }

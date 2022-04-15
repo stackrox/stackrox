@@ -44,19 +44,13 @@ func (cds *clusterDataStoreImpl) CreateFlowStore(ctx context.Context, clusterID 
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	underlying, err := cds.storage.CreateFlowStore(ctx, clusterID)
-
-	if err != nil {
-		return nil, err
-	}
-
 	aggr, err := cds.getAggregator(ctx, clusterID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &flowDataStoreImpl{
-		storage:                   underlying,
+		storage:                   cds.storage.GetFlowStore(clusterID),
 		graphConfig:               cds.graphConfig,
 		hideDefaultExtSrcsManager: aggr,
 		deletedDeploymentsCache:   cds.deletedDeploymentsCache,
