@@ -4,7 +4,6 @@ import { PageSection } from '@patternfly/react-core';
 
 import {
     mainPath,
-    notFoundPath,
     dashboardPath,
     networkPath,
     violationsPath,
@@ -102,7 +101,8 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
         >
             <ErrorBoundary>
                 <Switch>
-                    <Route path={notFoundPath} component={NotFoundPage} />
+                    <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
+                    <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={dashboardPath} component={AsyncDashboardPage} />
                     <Route path={networkPath} component={AsyncNetworkPage} />
                     <Route path={violationsPath} component={AsyncViolationsPage} />
@@ -131,8 +131,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     {isSystemHealthPatternFlyEnabled && (
                         <Route path={systemHealthPathPF} component={AsyncSystemHealthPagePF} />
                     )}
-                    <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
-                    <Route path={mainPath} render={() => <Redirect to={notFoundPath} />} />
+                    <Route component={NotFoundPage} />
                 </Switch>
             </ErrorBoundary>
         </div>
