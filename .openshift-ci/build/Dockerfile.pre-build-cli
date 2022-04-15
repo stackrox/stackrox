@@ -1,5 +1,10 @@
 FROM bin
 
+# TODO remove: temp hack while waiting to switch to stackrox-test
+RUN yum update -y && \
+    yum install -y \
+        jq
+
 COPY stackrox /go/src/github.com/stackrox/stackrox
 WORKDIR /go/src/github.com/stackrox/stackrox
 RUN make cli
