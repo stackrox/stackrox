@@ -2,6 +2,7 @@ FROM bin
 
 COPY stackrox /go/src/github.com/stackrox/stackrox
 WORKDIR /go/src/github.com/stackrox/stackrox
-RUN ls -la
+RUN make cli
+RUN ./scripts/ci/lib.sh validate_expected_go_version
 RUN mkdir /output
-RUN make tag > /output/pre-build-cli
+RUN cp -vr bin /output
