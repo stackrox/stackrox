@@ -1,7 +1,14 @@
 FROM bin
 
+# TODO remove: temp hack while waiting to switch to stackrox-test
+RUN yum update -y && \
+    yum install -y \
+        jq
+
 COPY stackrox /go/src/github.com/stackrox/stackrox
 WORKDIR /go/src/github.com/stackrox/stackrox
-RUN ls -la
-RUN mkdir /output
-RUN make tag > /output/pre-build-go-binaries-tag
+RUN ./scripts/ci/jobs/pre-build-go-binaries.sh
+RUN mkdir -p /output/image
+RUN cp -vr bin /output
+RUN cp -vr image/docs /output/image
+RUN cp -vr image/keys /output/image
