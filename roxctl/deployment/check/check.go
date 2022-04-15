@@ -129,7 +129,7 @@ func (d *deploymentCheckCommand) Construct(args []string, cmd *cobra.Command, f 
 
 func (d *deploymentCheckCommand) Validate() error {
 	if _, err := os.Open(d.file); err != nil {
-		return errox.NewErrInvalidArgs(err.Error())
+		return errors.Wrap(errox.NewErrInvalidArgs(err.Error()), "validating command")
 	}
 
 	return nil
@@ -158,18 +158,18 @@ func (d *deploymentCheckCommand) checkDeployment() error {
 		return errors.Wrapf(err, "could not read deployment file: %q", d.file)
 	}
 
-	alerts, err := d.getAlerts(string(deploymentFileContents))
+	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(string(deploymentFileContents))
 	if err != nil {
-		return retry.MakeRetryable(err)
+		return errors.Wrap(retry.MakeRetryable(err), "retrieving alerts from central")
 	}
 
-	return d.printResults(alerts)
+	return d.printResults(alerts, ignoredObjRefs)
 }
 
-func (d *deploymentCheckCommand) getAlerts(deploymentYaml string) ([]*storage.Alert, error) {
+func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml string) ([]*storage.Alert, []string, error) {
 	conn, err := d.env.GRPCConnection()
 	if err != nil {
-		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
+		return nil, nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 	defer utils.IgnoreError(conn.Close)
 
@@ -182,17 +182,24 @@ func (d *deploymentCheckCommand) getAlerts(deploymentYaml string) ([]*storage.Al
 		PolicyCategories: d.policyCategories,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "could not check deploy-time alerts")
+		return nil, nil, errors.Wrap(err, "could not check deploy-time alerts")
 	}
 
 	var alerts []*storage.Alert
 	for _, r := range response.GetRuns() {
 		alerts = append(alerts, r.GetAlerts()...)
 	}
-	return alerts, nil
+	return alerts, response.GetIgnoredObjectRefs(), nil
 }
 
-func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert) error {
+func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredObjectRefs []string) error {
+	// Print all ignored objects whose schema was not registered, i.e. CRDs. We don't need to take standardizedFormat
+	// into account since we will print to os.StdErr by default. We shall do this at the beginning, since we also
+	// want this to be visible to the old output format.
+	for _, ignoredObjRef := range ignoredObjectRefs {
+		d.env.Logger().InfofLn("Ignored object %q as its schema was not registered.", ignoredObjRef)
+	}
+
 	if d.json {
 		return errors.Wrap(report.JSON(d.env.InputOutput().Out, alerts), "could not print JSON report")
 	}
@@ -217,7 +224,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert) error {
 	}
 
 	if amountBreakingPolicies != 0 {
-		return policy.NewErrBreakingPolicies(amountBreakingPolicies)
+		return errors.Wrap(policy.NewErrBreakingPolicies(amountBreakingPolicies), "breaking policies found")
 	}
 	return nil
 }
