@@ -98,3 +98,27 @@ export function clearStoredCredentials<I extends IntegrationBase>(
     });
     return integration;
 }
+
+export const daysOfWeek = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+];
+
+const getTimes = () => {
+    const times = ['12:00'];
+    for (let i = 1; i <= 11; i += 1) {
+        if (i < 10) {
+            times.push(`0${i}:00`);
+        } else {
+            times.push(`${i}:00`);
+        }
+    }
+    return times.map((x) => `${x}AM`).concat(times.map((x) => `${x}PM`));
+};
+
+export const timesOfDay = getTimes();
