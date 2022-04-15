@@ -96,6 +96,8 @@ type storeImpl struct {
     db *pgxpool.Pool
 }
 
+{{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
+
 {{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 {{- define "createTable" }}
 {{- $schema := . }}
@@ -336,7 +338,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
         return sac.ErrResourceAccessDenied
     }
     {{- else if .Obj.IsGloballyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+    {{ template "defineScopeChecker" "READ_WRITE" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -357,7 +359,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
         return sac.ErrResourceAccessDenied
     }
     {{- else if .Obj.IsGloballyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+    {{ template "defineScopeChecker" "READ_WRITE" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -382,7 +384,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
         return 0, err
     }
     {{- else if .Obj.IsGloballyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+    {{ template "defineScopeChecker" "READ" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
         return 0, err
     }
@@ -405,7 +407,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
         return false, err
     }
     {{- else if .Obj.IsGloballyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+    {{ template "defineScopeChecker" "READ" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return false, err
     } else if !ok {
@@ -430,7 +432,7 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
         return nil, false, err
     }
     {{- else if .Obj.IsGloballyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+    {{ template "defineScopeChecker" "READ" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return nil, false, err
     } else if !ok {
@@ -478,7 +480,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
         return sac.ErrResourceAccessDenied
     }
     {{- else if .Obj.IsGloballyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+    {{ template "defineScopeChecker" "READ_WRITE" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -510,7 +512,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
         return nil, err
     }
     {{- else if .Obj.IsGloballyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+    {{ template "defineScopeChecker" "READ" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return nil, err
     } else if !ok {
@@ -545,7 +547,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
         return nil, nil, nil
     }
     {{- else if .Obj.IsGloballyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+    {{ template "defineScopeChecker" "READ" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return nil, nil, err
     } else if !ok {
@@ -609,7 +611,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
         return sac.ErrResourceAccessDenied
     }
     {{- else if .Obj.IsGloballyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+    {{ template "defineScopeChecker" "READ_WRITE" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
