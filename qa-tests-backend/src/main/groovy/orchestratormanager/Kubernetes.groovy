@@ -148,7 +148,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def ensureNamespaceExists(String ns) {
-        Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns), null, null)
+        Namespace namespace = newNamespace(ns)
         try {
             client.namespaces().create(namespace)
             defaultPspForNamespace(ns)
@@ -1741,10 +1741,6 @@ class Kubernetes implements OrchestratorMain {
             ExecWatch watch = client.pods().inNamespace(namespace).withName(name)
                     .redirectingOutput().usingListener(new ExecListener() {
                 @Override
-                void onOpen(Response response) {
-                }
-
-                @Override
                 void onFailure(Throwable t, Response response) {
                     latch.countDown()
                 }
@@ -2252,11 +2248,20 @@ class Kubernetes implements OrchestratorMain {
 
     String createNamespace(String ns) {
         return evaluateWithRetry(2, 3) {
-            Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns), null, null)
+            Namespace namespace = newNamespace(ns)
             def namespaceId = client.namespaces().createOrReplace(namespace).metadata.getUid()
             defaultPspForNamespace(ns)
             return namespaceId
         }
+    }
+
+    static Namespace newNamespace(String ns) {
+        Namespace namespace = new Namespace()
+        ObjectMeta meta = new ObjectMeta()
+        meta.setNamespace(ns)
+        meta.setName(ns)
+        namespace.setMetadata(meta)
+        return namespace
     }
 
     def deleteNamespace(String ns, Boolean waitForDeletion = true) {
