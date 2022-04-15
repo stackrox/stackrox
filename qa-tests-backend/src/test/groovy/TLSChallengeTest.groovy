@@ -33,7 +33,8 @@ class TLSChallengeTest extends BaseSpecification {
 
     def setupSpec() {
         originalCentralEndpoint = orchestrator.getDeploymentEnv("stackrox", "sensor", "ROX_CENTRAL_ENDPOINT")
-        orchestrator.createNamespace(PROXY_NAMESPACE)
+        orchestrator.ensureNamespaceExists(PROXY_NAMESPACE)
+        addStackroxImagePullSecret(PROXY_NAMESPACE)
 
         ByteArrayOutputStream out = new ByteArrayOutputStream()
         out.write(LEAF_CERT_CONTENT)
@@ -187,7 +188,7 @@ class TLSChallengeTest extends BaseSpecification {
         loadBalancerDeployment.setNamespace(PROXY_NAMESPACE)
                 .setName("nginx-loadbalancer")
                 .setExposeAsService(true)
-                .setImage("nginx:1.17.1")
+                .setImage("quay.io/rhacs-eng/qa:nginx-1-17-1")
                 .addVolumeFromConfigMap(nginxConfigMap, "/etc/nginx/conf.d/")
                 .addVolumeFromSecret(tlsConfSecret, "/run/secrets/tls/")
                 .setTargetPort(8443)
