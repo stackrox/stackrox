@@ -44,10 +44,6 @@ func (o object) IsClusterScope() bool {
 	return o.isScope(permissions.ClusterScope)
 }
 
-func (o object) IsGlobalScope() bool {
-	return o.isScope(permissions.GlobalScope)
-}
-
 func (o object) isScope(scope permissions.ResourceScope) bool {
 	if o.isJoinTable || o.permissionCheckerEnabled {
 		return false
