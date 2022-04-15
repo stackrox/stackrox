@@ -20,7 +20,9 @@ pre_build_go_binaries() {
 
     make main-build-nodeps
 
+    info "making swagger docs"
     make swagger-docs
+    info "done"
 }
 
 pre_build_go_binaries
