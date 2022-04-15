@@ -12,15 +12,12 @@ export type Node = {
     taints: Taint[];
     clusterId: string;
     clusterName: string;
-    // TODO(ROX-6895): "Label" search term is ambiguous.
     labels: Record<string, string>;
     annotations: Record<string, string>;
     // When the cluster reported the node was added
     joinedAt: string; // ISO 8601 date string
-    // node internal IP addresses
     internalIpAddresses: string[];
-    // node external IP addresses
-    external_ip_addresses: string[];
+    externalIpAddresses: string[];
     // From NodeInfo
     containerRuntimeVersion: string; // deprecated, use containerRuntime.version
     containerRuntime: ContainerRuntimeInfo;
@@ -31,26 +28,15 @@ export type Node = {
     osImage: string;
     kubeletVersion: string;
     kubeProxyVersion: string;
-
     lastUpdated: string; // ISO 8601 date string
-    // Time we received an update from Kubernetes.
     k8sUpdated: string; // ISO 8601 date string
-
     scan: NodeScan;
-    // oneof set_components {
-    components: number; // int32
-    // }
-    // oneof set_cves {
-    cves: number; // int32
-    // }
-    // oneof set_fixable {
-    fixableCves: number; // int32
-    // }
-    priority: number; // int64
+    components?: number; // int32
+    cves?: number; // int32
+    fixableCves?: number; // int32
+    priority: string; // int64
     riskScore: number; // float
-    // oneof set_top_cvss {
-    topCvss: number; // float
-    // }
+    topCvss?: number; // float
 };
 
 export type NodeScan = {
@@ -63,20 +49,7 @@ export type EmbeddedNodeScanComponent = {
     name: string;
     version: string;
     vulns: EmbeddedVulnerability[];
-    priority: number; // int64
-    // oneof set_top_cvss {
-    topCvss: number; // float
-    // }
+    priority: string; // int64
+    topCvss?: number; // float
     riskScore: number; // float
-};
-
-export type NodeComponentEdge = {
-    // base 64 encoded Node:Component ids.
-    id: string;
-};
-
-export type NodeCVEEdge = {
-    // base 64 encoded Node:CVE ids.
-    id: string;
-    firstNodeOccurrence: string; // ISO 8601 date string
 };
