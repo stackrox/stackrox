@@ -29,7 +29,7 @@ shift
 
 case "$ci_job" in
     binary_build_commands)
-        "$ROOT/.openshift-ci-migration/binary_build_commands.sh"
+        "$ROOT/scripts/ci/jobs/binary-build-commands.sh"
         ;;
     gke-upgrade-tests)
         "$ROOT/.openshift-ci/gke_upgrade_test.py"

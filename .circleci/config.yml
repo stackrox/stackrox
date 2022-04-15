@@ -2705,25 +2705,8 @@ jobs:
       - run:
           name: Validate expected Go version
           command: |
-            roxctl_go_version="$(roxctl version --json | jq '.GoVersion' -r)"
-            expected_go_version="$(cat EXPECTED_GO_VERSION)"
-            if [[ "${roxctl_go_version}" != "${expected_go_version}" ]]; then
-              echo "Got unexpected go version ${roxctl_go_version} (wanted ${expected_go_version})"
-              exit 1
-            fi
+            ./scripts/ci/lib.sh validate_expected_go_version
 
-            # Ensure that the Go version is up-to-date in go.mod as well.
-            # Note that the patch version is not specified in go.mod.
-            [[ "${expected_go_version}" =~ ^go(1\.[0-9]{2})(\.[0-9]+)?$ ]]
-            go_version="${BASH_REMATCH[1]}"
-
-            # TODO(ROX-8056): temporarily suspend the following check. The source needs to be go1.16 compatible
-            # due to OSBS build constraints, but we don't want everyone to revert their local toolchain
-            # to that.
-            go_version="1.16" # hardcode. To be removed once the above is fixed.
-
-            go mod edit -go "${go_version}"
-            git diff --exit-code -- go.mod
       - *saveGoModCache
 
       - *saveGoBuildCache
@@ -3027,6 +3010,8 @@ jobs:
           run-on-master: true
           run-on-tags: true
           changed-path: '^migrator/.*$|^image/'
+      - check-label-to-skip-tests:
+          label: ci-no-upgrade-tests
 
       - provision-gke-cluster:
           cluster-id: upgrade-test
@@ -3715,6 +3700,8 @@ jobs:
           run-on-master: true
           run-on-tags: true
           changed-path: '^migrator/.*$|^image/'
+      - check-label-to-skip-tests:
+          label: ci-no-upgrade-tests
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
       - restore-go-mod-cache
