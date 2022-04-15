@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
@@ -102,6 +103,7 @@ type FlowStore interface {
 type flowStoreImpl struct {
 	db        *pgxpool.Pool
 	clusterID string
+	lock      *sync.Mutex
 }
 
 func createTableNetworkflow(ctx context.Context, db *pgxpool.Pool) {
@@ -278,11 +280,17 @@ func (s *flowStoreImpl) upsert(ctx context.Context, objs ...*storage.NetworkFlow
 func (s *flowStoreImpl) Upsert(ctx context.Context, obj *storage.NetworkFlow) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NetworkFlow")
 
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	return s.upsert(ctx, obj)
 }
 
 func (s *flowStoreImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkFlow) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	// for small batches, simply write them 1 at a time.
 	if len(objs) < batchAfter {
@@ -294,6 +302,9 @@ func (s *flowStoreImpl) UpsertMany(ctx context.Context, objs []*storage.NetworkF
 
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NetworkFlow")
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	// RocksDB implementation was adding the lastUpdatedTS to a key.  That is not necessary in PG world so that
 	// parameter is not being passed forward and should be removed from the interface once RocksDB is removed.
@@ -416,6 +427,9 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 func (s *flowStoreImpl) Delete(ctx context.Context, propsSrcEntityType storage.NetworkEntityInfo_Type, propsSrcEntityID string, propsDstEntityType storage.NetworkEntityInfo_Type, propsDstEntityID string, propsDstPort uint32, propsL4Protocol storage.L4Protocol) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
 		return err
@@ -482,6 +496,9 @@ func (s *flowStoreImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkFl
 // RemoveFlowsForDeployment removes all flows where the source OR destination match the deployment id
 func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveFlowsByDeployment, "NetworkFlow")
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
 	if err != nil {
@@ -594,6 +611,9 @@ func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlow
 func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	if err := s.delete(ctx, props); err != nil {
 		return err
 	}
@@ -606,6 +626,9 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 // TODO(ROX-9921) Figure out what to do with the functions.
 func (s *flowStoreImpl) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
+
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
