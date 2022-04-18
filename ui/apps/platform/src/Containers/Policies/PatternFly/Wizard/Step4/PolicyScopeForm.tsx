@@ -23,9 +23,6 @@ import { fetchImages } from 'services/ImagesService';
 import { fetchDeployments } from 'services/DeploymentsService';
 import PolicyScopeCard from './PolicyScopeCard';
 
-const MAX_INCLUSION_SCOPES = 10;
-const MAX_EXCLUSION_SCOPES = 10;
-
 function PolicyScopeForm() {
     const [isExcludeImagesOpen, setIsExcludeImagesOpen] = React.useState(false);
     const [images, setImages] = React.useState<Image[]>([]);
@@ -40,9 +37,7 @@ function PolicyScopeForm() {
         values.lifecycleStages.includes('DEPLOY') || values.lifecycleStages.includes('RUNTIME');
 
     function addNewInclusionScope() {
-        if (scope.length < MAX_INCLUSION_SCOPES) {
-            setFieldValue('scope', [...scope, {}]);
-        }
+        setFieldValue('scope', [...scope, {}]);
     }
 
     function deleteInclusionScope(index) {
@@ -51,9 +46,7 @@ function PolicyScopeForm() {
     }
 
     function addNewExclusionDeploymentScope() {
-        if (excludedDeploymentScopes.length < MAX_EXCLUSION_SCOPES) {
-            setFieldValue('excludedDeploymentScopes', [...excludedDeploymentScopes, {}]);
-        }
+        setFieldValue('excludedDeploymentScopes', [...excludedDeploymentScopes, {}]);
     }
 
     function deleteExclusionDeploymentScope(index) {
