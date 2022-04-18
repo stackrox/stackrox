@@ -127,11 +127,11 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	}
 
 	suite.searcher.EXPECT().Search(gomock.Any(), search.EmptyQuery()).Return([]search.Result{{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"}}, nil)
-	suite.storage.EXPECT().Get(suite.ctx, deployments[0].Id).Return(deployments[0], true, nil)
-	suite.storage.EXPECT().Get(suite.ctx, deployments[1].Id).Return(deployments[1], true, nil)
-	suite.storage.EXPECT().Get(suite.ctx, deployments[2].Id).Return(deployments[2], true, nil)
-	suite.storage.EXPECT().Get(suite.ctx, deployments[3].Id).Return(nil, false, nil)
-	suite.storage.EXPECT().Get(suite.ctx, deployments[4].Id).Return(nil, false, errors.New("fake error"))
+	suite.storage.EXPECT().Get(gomock.Any(), deployments[0].Id).Return(deployments[0], true, nil)
+	suite.storage.EXPECT().Get(gomock.Any(), deployments[1].Id).Return(deployments[1], true, nil)
+	suite.storage.EXPECT().Get(gomock.Any(), deployments[2].Id).Return(deployments[2], true, nil)
+	suite.storage.EXPECT().Get(gomock.Any(), deployments[3].Id).Return(nil, false, nil)
+	suite.storage.EXPECT().Get(gomock.Any(), deployments[4].Id).Return(nil, false, errors.New("fake error"))
 
 	ds.initializeRanker()
 
