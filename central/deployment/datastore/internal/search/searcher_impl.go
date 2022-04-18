@@ -123,7 +123,7 @@ func (ds *searcherImpl) searchDeployments(ctx context.Context, q *v1.Query) ([]*
 	}
 
 	ids := search.ResultsToIDs(results)
-	deployments, _, err := ds.storage.GetMany(ctx, ids...)
+	deployments, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
