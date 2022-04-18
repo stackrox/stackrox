@@ -21,7 +21,7 @@
         "computed-style-to-inline-style": "^3.0.0",
         "connected-react-router": "^6.9.2",
         "core-js": "^3.1.4",
-        "cytoscape": "^3.19.1",
+        "cytoscape": "^3.21.1",
         "cytoscape-cose-bilkent": "^4.0.0",
         "cytoscape-node-html-label": "^1.2.2",
         "cytoscape-popper": "^2.0.0",
