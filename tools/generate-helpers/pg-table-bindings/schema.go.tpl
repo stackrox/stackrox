@@ -63,7 +63,7 @@ var (
         {{- end }}
         {{- if .SearchCategory }}
             {{- $ty := .Schema.Type }}
-            {{ /* special case */ }}
+            {{- /* special case */ -}}
             {{- if eq $ty "*storage.Alert"}}
                 {{- $ty = "*storage.ListAlert"}}
             {{- end}}
