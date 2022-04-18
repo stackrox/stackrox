@@ -63,7 +63,7 @@ var (
         {{- end }}
         {{- if .SearchCategory }}
             {{- $ty := .Schema.Type }}
-            {{- /* special case */ -}}
+            {{- /* TODO: [ROX-10206] Reconcile storage.ListAlert search terms with storage.Alert */ -}}
             {{- if eq $ty "*storage.Alert"}}
                 {{- $ty = "*storage.ListAlert"}}
             {{- end}}
