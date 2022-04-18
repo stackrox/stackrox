@@ -178,7 +178,7 @@ func TestViolationsScore(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			mult := NewViolations(&getters.MockAlertsGetter{
+			mult := NewViolations(&getters.MockAlertsSearcher{
 				Alerts: c.alerts,
 			})
 			deployment := multipliers.GetMockDeployment()

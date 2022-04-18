@@ -42,7 +42,7 @@ func TestScore(t *testing.T) {
 	mockEvaluator := evaluatorMocks.NewMockEvaluator(mockCtrl)
 
 	deployment := pkgScorer.GetMockDeployment()
-	scorer := NewDeploymentScorer(&getters.MockAlertsGetter{
+	scorer := NewDeploymentScorer(&getters.MockAlertsSearcher{
 		Alerts: []*storage.ListAlert{
 			{
 				Entity: &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{}},

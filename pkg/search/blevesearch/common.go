@@ -3,7 +3,6 @@ package blevesearch
 import (
 	"fmt"
 	"math"
-	"strconv"
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search"
@@ -69,25 +68,6 @@ var categoryRelationships = map[relationship]join{
 	},
 }
 
-func getValueFromField(val interface{}) string {
-	switch val := val.(type) {
-	case string:
-		return val
-	case float64:
-		i, f := math.Modf(val)
-		// If it's an int, return just the int portion.
-		if math.Abs(f) < 1e-3 {
-			return fmt.Sprintf("%d", int(i))
-		}
-		return fmt.Sprintf("%.2f", val)
-	case bool:
-		return strconv.FormatBool(val)
-	default:
-		log.Errorf("Unknown type field from index: %T", val)
-	}
-	return ""
-}
-
 func getMatchingValuesFromFields(field string, hit *search.DocumentMatch, validArrayPositions *validpositions.Tree, includeArrayPositions bool) ([]string, []search.ArrayPositions) {
 	if validArrayPositions.Empty() {
 		return nil, nil
@@ -111,7 +91,7 @@ func getMatchingValuesFromFields(field string, hit *search.DocumentMatch, validA
 				break
 			}
 			if validArrayPositions.Contains(arrayPositions[i]) {
-				strVal := getValueFromField(v)
+				strVal := searchPkg.GetValueFromField(v)
 				values = append(values, strVal)
 				if includeArrayPositions {
 					matchingArrayPositions = append(matchingArrayPositions, arrayPositions[i])
@@ -126,7 +106,7 @@ func getMatchingValuesFromFields(field string, hit *search.DocumentMatch, validA
 	if len(arrayPositions) != 1 || !validArrayPositions.Contains(arrayPositions[0]) {
 		return nil, nil
 	}
-	strVal := getValueFromField(val)
+	strVal := searchPkg.GetValueFromField(val)
 	if strVal == "" {
 		return nil, nil
 	}
@@ -137,31 +117,6 @@ type searchFieldAndValue struct {
 	sf        *searchPkg.Field
 	value     string
 	highlight bool
-}
-
-// GetValuesFromFields returns the values from the given field as a string slice.
-func GetValuesFromFields(field string, m map[string]interface{}) []string {
-	val, ok := m[field]
-	if !ok {
-		return nil
-	}
-
-	if asSlice, ok := val.([]interface{}); ok {
-		values := make([]string, 0, len(asSlice))
-		for _, v := range asSlice {
-			strVal := getValueFromField(v)
-			if strVal != "" {
-				values = append(values, strVal)
-			}
-		}
-		return values
-	}
-
-	strVal := getValueFromField(val)
-	if strVal == "" {
-		return nil
-	}
-	return []string{strVal}
 }
 
 func getSubQueryContext(parent bleveContext, category v1.SearchCategory) bleveContext {
@@ -232,7 +187,7 @@ func resolveMatchFieldQuery(ctx bleveContext, index bleve.Index, category v1.Sea
 	// Reference set is the overall references so we can dedupe if there are many results for the same top level id
 	refSet := make(map[string]struct{})
 	for _, r := range results {
-		fieldValues := GetValuesFromFields(relationshipField.dstField, r.Fields)
+		fieldValues := searchPkg.GetValuesFromFields(relationshipField.dstField, r.Fields)
 		if len(fieldValues) == 0 {
 			continue
 		}

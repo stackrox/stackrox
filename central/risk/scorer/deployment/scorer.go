@@ -25,7 +25,7 @@ type Scorer interface {
 }
 
 // NewDeploymentScorer returns a new scorer that encompasses multipliers for evaluating deployment risk
-func NewDeploymentScorer(alertGetter getters.AlertGetter, roles roleStore.DataStore, bindings bindingStore.DataStore, serviceAccounts saStore.DataStore, allowlistEvaluator evaluator.Evaluator) Scorer {
+func NewDeploymentScorer(alertGetter getters.AlertSearcher, roles roleStore.DataStore, bindings bindingStore.DataStore, serviceAccounts saStore.DataStore, allowlistEvaluator evaluator.Evaluator) Scorer {
 	scoreImpl := &deploymentScorerImpl{
 		// These multipliers are intentionally ordered based on the order that we want them to be displayed in.
 		// Order aligns with the maximum output multiplier value, which would make sense to correlate
