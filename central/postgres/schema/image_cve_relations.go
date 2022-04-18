@@ -23,8 +23,10 @@ var (
                    State integer,
                    ImageId varchar,
                    ImageCveId varchar,
+                   ImageCve varchar,
+                   ImageCveOperatingSystem varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, ImageId, ImageCveId),
+                   PRIMARY KEY(Id, ImageId, ImageCveId, ImageCve, ImageCveOperatingSystem),
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE
                )
                `,
@@ -39,7 +41,8 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ImageCVEEdge)(nil)), "image_cve_relations").
-			WithReference(ImagesSchema)
+			WithReference(ImagesSchema).
+			WithReference(ImageCvesSchema)
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_VULN_EDGE, "image_cve_relations", (*storage.ImageCVEEdge)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema

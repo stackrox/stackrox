@@ -38,12 +38,12 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponent(image.GetScan().GetOperatingSystem(), cp, parts.ImageCVEEdges))
 	}
 
-	sort.SliceStable(parts.Children, func(i, j int) bool {
-		return parts.Children[i].Component.GetId() < parts.Children[j].Component.GetId()
+	sort.SliceStable(image.GetScan().GetComponents(), func(i, j int) bool {
+		return image.GetScan().GetComponents()[i].GetName() < image.GetScan().GetComponents()[j].GetName()
 	})
-	for _, comp := range parts.Children {
-		sort.SliceStable(comp.Children, func(i, j int) bool {
-			return comp.Children[i].Cve.GetId() < comp.Children[j].Cve.GetId()
+	for _, comp := range image.GetScan().GetComponents() {
+		sort.SliceStable(comp.Vulns, func(i, j int) bool {
+			return comp.Vulns[i].GetCve() < comp.Vulns[j].GetCve()
 		})
 	}
 }

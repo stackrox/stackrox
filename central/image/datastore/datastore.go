@@ -75,7 +75,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve
 // NewWithPostgres returns a new instance of DataStore using the input store, indexer, and searcher.
 // noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
 // This should be set to `false` except for some tests.
-func NewWithPostgres(storage store.Store, index imageIndexer.Indexer, noUpdateTimestamps bool, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
+func NewWithPostgres(storage store.Store, index imageIndexer.Indexer, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
 	ds := newDatastoreImpl(storage, index, search.NewV2(storage, index), risks, imageRanker, imageComponentRanker)
 	ds.initializeRankers()
 	return ds

@@ -26,7 +26,7 @@ var (
                    TopCvss numeric,
                    OperatingSystem varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, OperatingSystem)
+                   PRIMARY KEY(Id, Name, Version, OperatingSystem)
                )
                `,
 		Indexes:  []string{},

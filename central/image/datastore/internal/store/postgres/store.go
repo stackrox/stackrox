@@ -260,6 +260,9 @@ func copyFromImageComponentRelations(ctx context.Context, tx pgx.Tx, objs ...*st
 		"location",
 		"imageid",
 		"imagecomponentid",
+		"imagecomponentname",
+		"imagecomponentversion",
+		"imagecomponentoperatingsystem",
 		"serialized",
 	}
 
@@ -284,6 +287,9 @@ func copyFromImageComponentRelations(ctx context.Context, tx pgx.Tx, objs ...*st
 			obj.GetLocation(),
 			obj.GetImageId(),
 			obj.GetImageComponentId(),
+			obj.GetImageComponentName(),
+			obj.GetImageComponentVersion(),
+			obj.GetImageComponentOperatingSystem(),
 			serialized,
 		})
 
@@ -398,11 +404,15 @@ func copyFromImageComponentCVERelations(ctx context.Context, tx pgx.Tx, os strin
 
 	copyCols := []string{
 		"id",
-		"image_components_operatingsystem",
 		"isfixable",
 		"fixedby",
 		"imagecomponentid",
-		"cveid",
+		"imagecomponentname",
+		"imagecomponentversion",
+		"imagecomponentoperatingsystem",
+		"imagecveid",
+		"imagecve",
+		"imagecveoperatingsystem",
 		"serialized",
 	}
 
@@ -414,11 +424,15 @@ func copyFromImageComponentCVERelations(ctx context.Context, tx pgx.Tx, os strin
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			os,
 			obj.GetIsFixable(),
 			obj.GetFixedBy(),
 			obj.GetImageComponentId(),
-			obj.GetCveId(),
+			obj.GetImageComponentName(),
+			obj.GetImageComponentVersion(),
+			obj.GetImageComponentOperatingSystem(),
+			obj.GetImageCveId(),
+			obj.GetImageCve(),
+			obj.GetImageComponentOperatingSystem(),
 			serialized,
 		})
 
@@ -461,6 +475,8 @@ func copyFromImageCVERelations(ctx context.Context, tx pgx.Tx, iTime *protoTypes
 		"state",
 		"imageid",
 		"imagecveid",
+		"imagecve",
+		"imagecveoperatingsystem",
 		"serialized",
 	}
 
@@ -500,6 +516,8 @@ func copyFromImageCVERelations(ctx context.Context, tx pgx.Tx, iTime *protoTypes
 			obj.GetState(),
 			obj.GetImageId(),
 			obj.GetImageCveId(),
+			obj.GetImageCve(),
+			obj.GetImageCveOperatingSystem(),
 			serialized,
 		})
 
@@ -720,7 +738,7 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx pgx.Tx, imageID string)
 		for _, edge := range componentCVEEdgeMap[componentID] {
 			child.Children = append(child.Children, common.CVEParts{
 				Edge: edge,
-				Cve:  cveMap[edge.GetCveId()],
+				Cve:  cveMap[edge.GetImageCveId()],
 			})
 		}
 		imageParts.Children = append(imageParts.Children, child)
@@ -924,7 +942,7 @@ func (s *storeImpl) deleteImageTree(ctx context.Context, conn *pgxpool.Conn, ima
 		return err
 	}
 	// Delete orphaned cves.
-	if _, err := conn.Exec(ctx, "delete from image_cves where not exists (select image_cves.id FROM image_cves, image_component_cve_relations WHERE image_cves.id = image_component_cve_relations.cveid)"); err != nil {
+	if _, err := conn.Exec(ctx, "delete from image_cves where not exists (select image_cves.id FROM image_cves, image_component_cve_relations WHERE image_cves.id = image_component_cve_relations.imagecveid)"); err != nil {
 		return err
 	}
 	return nil

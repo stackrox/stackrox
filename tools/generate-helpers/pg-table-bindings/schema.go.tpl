@@ -22,9 +22,9 @@ import (
                {{- range $idx, $field := $schema.ResolvedFields }}
                    {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}},
                {{- end}}
-                   PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys }}){{ if gt (len $schema.Parents) 0 }},{{end}}
-               {{- range $idx, $pksGrps := $schema.ParentKeysGroupedByTable }}
-                   CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrps.Fields}}) REFERENCES {{$pksGrps.Table}}({{template "commandSeparatedRefs" $pksGrps.Fields}}) ON DELETE CASCADE{{if lt (add $idx 1) (len $schema.ParentKeysGroupedByTable)}},{{end}}
+                   PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys }})
+               {{- range $idx, $pksGrps := $schema.ParentKeysGroupedByTable -}},
+                   CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrps.Fields}}) REFERENCES {{$pksGrps.Table}}({{template "commandSeparatedRefs" $pksGrps.Fields}}) ON DELETE CASCADE
                {{- end}}
                )
                `,

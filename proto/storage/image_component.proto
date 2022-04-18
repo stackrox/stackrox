@@ -9,9 +9,9 @@ import "gogoproto/gogo.proto";
 package storage;
 
 message ImageComponent {
-    string                         id               = 1 [(gogoproto.moretags) = 'search:"Component ID,store,hidden" sql:"pk"'];
-    string                         name             = 2 [(gogoproto.moretags) = 'search:"Component,store"'];
-    string                         version          = 3 [(gogoproto.moretags) = 'search:"Component Version,store"'];
+    string                         id               = 1 [(gogoproto.moretags) = 'search:"Component ID,store,hidden" sql:"pk"']; // This field exists because UI depends on it, for now.
+    string                         name             = 2 [(gogoproto.moretags) = 'search:"Component,store" sql:"pk"'];
+    string                         version          = 3 [(gogoproto.moretags) = 'search:"Component Version,store" sql:"pk"'];
     License                        license          = 4;
     int64                          priority         = 5;
     SourceType                     source           = 6 [(gogoproto.moretags) = 'search:"Component Source,store"'];

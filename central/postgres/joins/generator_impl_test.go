@@ -243,6 +243,9 @@ func getSchema(curr string, parents ...*walker.Schema) *walker.Schema {
 			},
 		},
 	}
+	for _, f := range ret.Fields {
+		f.Schema = ret
+	}
 
 	for _, parent := range parents {
 		ret.Parents = append(ret.Parents, parent)

@@ -19,10 +19,10 @@ import (
 const (
 	baseTable  = "image_cve_relations"
 	countStmt  = "SELECT COUNT(*) FROM image_cve_relations"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3 AND ImageCve = $4 AND ImageCveOperatingSystem = $5)"
 
-	getStmt    = "SELECT serialized FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3"
-	deleteStmt = "DELETE FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3"
+	getStmt    = "SELECT serialized FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3 AND ImageCve = $4 AND ImageCveOperatingSystem = $5"
+	deleteStmt = "DELETE FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3 AND ImageCve = $4 AND ImageCveOperatingSystem = $5"
 	walkStmt   = "SELECT serialized FROM image_cve_relations"
 
 	batchAfter = 100
@@ -40,8 +40,8 @@ var (
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string, imageId string, imageCveId string) (bool, error)
-	Get(ctx context.Context, id string, imageId string, imageCveId string) (*storage.ImageCVEEdge, bool, error)
+	Exists(ctx context.Context, id string, imageId string, imageCveId string, imageCve string, imageCveOperatingSystem string) (bool, error)
+	Get(ctx context.Context, id string, imageId string, imageCveId string, imageCve string, imageCveOperatingSystem string) (*storage.ImageCVEEdge, bool, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.ImageCVEEdge) error) error
 
@@ -56,6 +56,7 @@ type storeImpl struct {
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImagesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCvesStmt)
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCveRelationsStmt)
 
 	return &storeImpl{
@@ -76,10 +77,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string, imageId string, imageCveId string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string, imageId string, imageCveId string, imageCve string, imageCveOperatingSystem string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ImageCVEEdge")
 
-	row := s.db.QueryRow(ctx, existsStmt, id, imageId, imageCveId)
+	row := s.db.QueryRow(ctx, existsStmt, id, imageId, imageCveId, imageCve, imageCveOperatingSystem)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -88,7 +89,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string, imageId string, image
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string, imageId string, imageCveId string) (*storage.ImageCVEEdge, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string, imageId string, imageCveId string, imageCve string, imageCveOperatingSystem string) (*storage.ImageCVEEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEEdge")
 
 	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageCVEEdge")
@@ -97,7 +98,7 @@ func (s *storeImpl) Get(ctx context.Context, id string, imageId string, imageCve
 	}
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, id, imageId, imageCveId)
+	row := conn.QueryRow(ctx, getStmt, id, imageId, imageCveId, imageCve, imageCveOperatingSystem)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)

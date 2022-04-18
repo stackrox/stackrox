@@ -259,16 +259,18 @@ func getTableFieldsForQuery(schema *walker.Schema, q *v1.Query) map[string]*walk
 
 func getDBFieldsForSearchFields(schema *walker.Schema, searchFields set.StringSet) map[string]*walker.Field {
 	reachableFields := make(map[string]*walker.Field)
-	recursiveSearchForFields([]*walker.Schema{schema}, searchFields, reachableFields, set.NewStringSet())
+	schemaQ := []*walker.Schema{schema}
+	recursiveSearchForFields(&schemaQ, searchFields, reachableFields, set.NewStringSet())
 	return reachableFields
 }
 
-func recursiveSearchForFields(schemaQ []*walker.Schema, searchFields set.StringSet, reachableFields map[string]*walker.Field, visitedTables set.StringSet) {
-	if len(schemaQ) == 0 || len(searchFields) == 0 {
+func recursiveSearchForFields(schemaQ *[]*walker.Schema, searchFields set.StringSet, reachableFields map[string]*walker.Field, visitedTables set.StringSet) {
+	if len(*schemaQ) == 0 || len(searchFields) == 0 {
 		return
 	}
 
-	curr, schemaQ := schemaQ[0], schemaQ[1:]
+	curr := (*schemaQ)[0]
+	*schemaQ = (*schemaQ)[1:]
 	if !visitedTables.Add(curr.Table) {
 		return
 	}
@@ -290,8 +292,16 @@ func recursiveSearchForFields(schemaQ []*walker.Schema, searchFields set.StringS
 
 	// We want to traverse shortest length from current schema to find the tables containing the getDBFieldsForSearchFields fields.
 	// Therefore, perform BFS.
-	schemaQ = append(schemaQ, curr.Parents...)
-	schemaQ = append(schemaQ, curr.Children...)
+	for _, p := range curr.Parents {
+		if !visitedTables.Contains(p.Table) {
+			*schemaQ = append(*schemaQ, p)
+		}
+	}
+	for _, c := range curr.Children {
+		if !visitedTables.Contains(c.Table) {
+			*schemaQ = append(*schemaQ, c)
+		}
+	}
 	recursiveSearchForFields(schemaQ, searchFields, reachableFields, visitedTables)
 }
 

@@ -22,8 +22,11 @@ var (
                    Location varchar,
                    ImageId varchar,
                    ImageComponentId varchar,
+                   ImageComponentName varchar,
+                   ImageComponentVersion varchar,
+                   ImageComponentOperatingSystem varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, ImageId, ImageComponentId),
+                   PRIMARY KEY(Id, ImageId, ImageComponentId, ImageComponentName, ImageComponentVersion, ImageComponentOperatingSystem),
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE
                )
                `,
@@ -38,7 +41,8 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ImageComponentEdge)(nil)), "image_component_relations").
-			WithReference(ImagesSchema)
+			WithReference(ImagesSchema).
+			WithReference(ImageComponentsSchema)
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_COMPONENT_EDGE, "image_component_relations", (*storage.ImageComponentEdge)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema

@@ -18,7 +18,7 @@ var (
 		"Deployment":           v1.SearchCategory_DEPLOYMENTS,
 		"Image":                v1.SearchCategory_IMAGES,
 		"ImageComponent":       v1.SearchCategory_IMAGE_COMPONENTS,
-		"ImageCVE":             v1.SearchCategory_VULNERABILITIES,
+		"CVE":                  v1.SearchCategory_VULNERABILITIES,
 		"ImageCVEEdge":         v1.SearchCategory_IMAGE_VULN_EDGE,
 		"ImageComponentEdge":   v1.SearchCategory_IMAGE_COMPONENT_EDGE,
 		"K8SRoleBinding":       v1.SearchCategory_ROLEBINDINGS,
