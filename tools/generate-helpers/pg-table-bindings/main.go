@@ -188,7 +188,8 @@ func generateSchemaRecursive(schema *walker.Schema, visited set.StringSet, pkgPa
 	}
 
 	templateMap := map[string]interface{}{
-		"Schema": schema,
+		"Schema":         schema,
+		"SearchCategory": "",
 	}
 	searchCategory, ok := typeToSearchCategoryMap[stringutils.GetAfter(schema.Type, ".")]
 	if ok {
