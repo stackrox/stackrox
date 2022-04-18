@@ -13,8 +13,6 @@ import {
 } from '@patternfly/react-core';
 
 import { PrivateConfig } from './SystemConfigTypes';
-import useFeatureFlagEnabled from '../../hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from '../../utils/featureFlags';
 
 const UNKNOWN_FLAG = -1;
 
@@ -42,8 +40,6 @@ export type DataRetentionDetailWidgetProps = {
 const DataRetentionDetailWidget = ({
     privateConfig,
 }: DataRetentionDetailWidgetProps): ReactElement => {
-    const isVulnReportingEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
-
     return (
         <Card data-testid="data-retention-config">
             <CardTitle>Data Retention Configuration</CardTitle>
@@ -94,15 +90,13 @@ const DataRetentionDetailWidget = ({
                             suffix="Day"
                         />
                     </GalleryItem>
-                    {isVulnReportingEnabled && (
-                        <GalleryItem>
-                            <NumberBox
-                                label="Expired Vulnerability Requests"
-                                value={privateConfig?.expiredVulnReqRetentionDurationDays}
-                                suffix="Day"
-                            />
-                        </GalleryItem>
-                    )}
+                    <GalleryItem>
+                        <NumberBox
+                            label="Expired Vulnerability Requests"
+                            value={privateConfig?.expiredVulnReqRetentionDurationDays}
+                            suffix="Day"
+                        />
+                    </GalleryItem>
                 </Gallery>
             </CardBody>
         </Card>
