@@ -3,18 +3,11 @@
 package schema
 
 import (
-	"reflect"
-
-	"github.com/stackrox/rox/central/globaldb"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	// CreateTableDeploymentsStmt holds the create statement for table `deployments`.
+	// CreateTableDeploymentsStmt holds the create statement for table `Deployments`.
 	CreateTableDeploymentsStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists deployments (
@@ -166,17 +159,4 @@ var (
 			},
 		},
 	}
-
-	// DeploymentsSchema is the go schema for table `deployments`.
-	DeploymentsSchema = func() *walker.Schema {
-		schema := globaldb.GetSchemaForTable("deployments")
-		if schema != nil {
-			return schema
-		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments").
-			WithReference(ImagesSchema)
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployments", (*storage.Deployment)(nil)))
-		globaldb.RegisterTable(schema)
-		return schema
-	}()
 )

@@ -204,7 +204,7 @@ func (ds *datastoreImpl) GetDeployments(ctx context.Context, ids []string) ([]*s
 		return ds.SearchRawDeployments(ctx, pkgSearch.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery())
 	}
 
-	deployments, _, err = ds.deploymentStore.GetMany(ctx, ids...)
+	deployments, _, err = ds.deploymentStore.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

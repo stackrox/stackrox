@@ -11,6 +11,10 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
+<<<<<<< HEAD
+=======
+	mappings "github.com/stackrox/rox/pkg/search/options/deployments"
+>>>>>>> 66e90c798 (Wire up deployments into Postgres)
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
@@ -33,13 +37,21 @@ type indexerImpl struct {
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Deployment")
 
+<<<<<<< HEAD
 	return postgres.RunCountRequest(v1.SearchCategory_DEPLOYMENTS, q, b.db)
+=======
+	return postgres.RunCountRequest(v1.SearchCategory_DEPLOYMENTS, q, b.db, mappings.OptionsMap)
+>>>>>>> 66e90c798 (Wire up deployments into Postgres)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Deployment")
 
+<<<<<<< HEAD
 	return postgres.RunSearchRequest(v1.SearchCategory_DEPLOYMENTS, q, b.db)
+=======
+	return postgres.RunSearchRequest(v1.SearchCategory_DEPLOYMENTS, q, b.db, mappings.OptionsMap)
+>>>>>>> 66e90c798 (Wire up deployments into Postgres)
 }
 
 //// Stubs for satisfying interfaces
