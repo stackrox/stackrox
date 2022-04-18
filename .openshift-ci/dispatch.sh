@@ -31,6 +31,9 @@ case "$ci_job" in
     gke-upgrade-tests)
         "$ROOT/.openshift-ci/gke_upgrade_test.py"
         ;;
+    shell-unit-tests)
+        make shell-unit-tests
+        ;;
     style-checks)
         make style
         ;;
