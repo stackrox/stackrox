@@ -13,6 +13,8 @@ import (
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/deployment/store/cache"
 	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
+	"github.com/stackrox/rox/central/deployment/store/postgres"
+	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
@@ -28,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -89,6 +92,12 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, processTagsStore
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
-	storage := dackBoxStore.New(dacky, keyFence)
+
+	var storage store.Store
+	if features.PostgresDatastore.Enabled() {
+		storage = postgres.NewFullStore(context.TODO(), globaldb.GetPostgres())
+	} else {
+		storage = dackBoxStore.New(dacky, keyFence)
+	}
 	return newDataStore(storage, dacky, processTagsStore, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 }

@@ -136,7 +136,7 @@ func (c *cachedStore) Get(ctx context.Context, id string) (*storage.Deployment, 
 	return deployment, true, nil
 }
 
-func (c *cachedStore) GetMany(ctx context.Context, ids ...string) ([]*storage.Deployment, []int, error) {
+func (c *cachedStore) GetMany(ctx context.Context, ids []string) ([]*storage.Deployment, []int, error) {
 	var deployments []*storage.Deployment
 	var missingIndices []int
 	for i, id := range ids {

@@ -135,7 +135,7 @@ func (b *StoreImpl) Get(_ context.Context, id string) (deployment *storage.Deplo
 }
 
 // GetMany returns deployments with the given ids.
-func (b *StoreImpl) GetMany(_ context.Context, ids ...string) ([]*storage.Deployment, []int, error) {
+func (b *StoreImpl) GetMany(_ context.Context, ids []string) ([]*storage.Deployment, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
 
 	txn, err := b.dacky.NewReadOnlyTransaction()
