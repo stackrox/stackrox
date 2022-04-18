@@ -20,6 +20,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-9946: Fixed default permissions for the default Vuln Reporter role to exclude the modify permission on notifiers, since it is not needed for report creation.
 - Added AllowPrivilegeEscalation as a new policy criteria.
 - ROX-10038: Removed limit of 10 inclusions and 10 exclusions from policy form
+- ROX-10090: Made the username and password optional on the Artifactory integration form
 
 ## [69.1]
 
