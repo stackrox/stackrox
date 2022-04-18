@@ -243,9 +243,20 @@ func getSchema(curr string, parents ...*walker.Schema) *walker.Schema {
 			},
 		},
 	}
-	for _, f := range ret.Fields {
-		f.Schema = ret
+	idField := walker.Field{
+		Name:       "id",
+		ColumnName: "id",
+		Options: walker.PostgresOptions{
+			PrimaryKey: true,
+		},
+		Schema: ret,
 	}
+	nameField := walker.Field{
+		Name:       "name",
+		ColumnName: "name",
+		Schema:     ret,
+	}
+	ret.Fields = append(ret.Fields, idField, nameField)
 
 	for _, parent := range parents {
 		ret.Parents = append(ret.Parents, parent)
