@@ -82,9 +82,9 @@ class SACTest extends BaseSpecification {
         deployments.each {
             def depID = it.id
             try {
-                withRetry(30, 2, {
+                withRetry(30, 2) {
                     assert DeploymentService.getDeploymentWithRisk(depID).hasRisk()
-                })
+                }
             } catch (Exception e) {
                 if (strictIntegrationTesting) {
                     throw (e)
