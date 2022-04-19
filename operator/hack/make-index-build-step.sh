@@ -18,11 +18,13 @@ Usage:
   make-index-build-step.sh [options]
 
 Options:
-  --base-dir           Working directory for the script. Default: .
+  --base-dir           Working directory for the script. Default: '.'
   --base-index-tag     The base index image tag. Example: docker.io/stackrox/stackrox-operator-index:v1.0.0
   --index-tag          The new index image tag. Example: docker.io/stackrox/stackrox-operator-index:v1.1.0
   --bundle-tag         The bundle image tag that should be appended to base index. Example: docker.io/stackrox/stackrox-operator-bundle:v1.1.0
   --replaced-version   Version that the bundle replaces. Example: v1.0.0
+  --clean-output-dir   Delete build output directory: '{base-dir}/build/index'.
+  --use-http           Use plain HTTP for container image registries.
 " 1>&2
 }
 
@@ -39,7 +41,7 @@ BUNDLE_TAG=""
 INDEX_TAG=""
 
 # Helpful for local development and testing
-CLEAN_BUILD=""
+CLEAN_OUTPUT_DIR=""
 USE_HTTP=""
 
 function read_arguments() {
@@ -57,8 +59,8 @@ function read_arguments() {
                 INDEX_TAG="${2}";shift;;
             "--use-http")
                 USE_HTTP="--use-http";;
-            "--clean-build")
-                CLEAN_BUILD="true";;
+            "--clean-output-dir")
+                CLEAN_OUTPUT_DIR="true";;
             *)
                 echo "Error: Unknown parameter: ${1}" >&2
                 usage_exit
@@ -102,7 +104,7 @@ validate_arguments
 fetch_opm
 fetch_yq
 
-if [[ "${CLEAN_BUILD}" = "true" ]]; then
+if [[ "${CLEAN_OUTPUT_DIR}" = "true" ]]; then
   rm -rf "${BASE_DIR}/build/index"
 fi
 
