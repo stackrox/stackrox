@@ -132,8 +132,8 @@ class Graph extends Component {
             simulatedBaselines,
         } = this.props;
 
-        // If we have more than 1100 nodes, display a message instead of the graph.
-        const nodeLimit = 1100;
+        // If we have more than 2000 nodes, display a message instead of the graph.
+        const nodeLimit = 2000;
         if (Object.keys(networkNodeMap).length > nodeLimit) {
             // hopefully a temporal solution
             return (
