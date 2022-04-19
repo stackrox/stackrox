@@ -121,6 +121,7 @@ export BUILDKIT_PROGRESS="plain"
 BUILD_INDEX_DIR="${BASE_DIR}/build/index/rhacs-operator-index"
 mkdir -p "${BUILD_INDEX_DIR}"
 
+# With "--binary-image", we are setting the exact base image version. By default, "latest" would be used.
 "${OPM}" generate dockerfile --binary-image "quay.io/operator-framework/opm:v${OPM_VERSION}" "${BUILD_INDEX_DIR}"
 "${OPM}" render "${BASE_INDEX_TAG}" --output=yaml ${USE_HTTP} > "${BUILD_INDEX_DIR}/index.yaml"
 
