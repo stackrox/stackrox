@@ -37,7 +37,7 @@ type vulnsAndDate struct {
 	DateStr    string
 }
 
-func TestBrandedText(t *testing.T) {
+func TestSchedule(t *testing.T) {
 	suite.Run(t, new(ScheduleTestSuite))
 }
 
