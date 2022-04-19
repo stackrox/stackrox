@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -12,6 +11,8 @@ const (
 	brandedProductNameRHACS    = "Red Hat Advanced Cluster Security for Kubernetes"
 	brandedProductNameStackrox = "StackRox"
 )
+
+var _ suite.TearDownTestSuite = (*BrandedTextTestSuite)(nil)
 
 func TestBrandedText(t *testing.T) {
 	suite.Run(t, new(BrandedTextTestSuite))
@@ -57,7 +58,7 @@ func (s *BrandedTextTestSuite) TestGetBrandedProductName() {
 		s.Run(name, func() {
 			s.envIsolator.Setenv("ROX_PRODUCT_BRANDING", tt.productBrandingEnv)
 			receivedProductName := GetProductName()
-			assert.Equal(t, tt.brandedProductName, receivedProductName)
+			s.Equal(tt.brandedProductName, receivedProductName)
 		})
 	}
 }
