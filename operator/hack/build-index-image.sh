@@ -127,7 +127,17 @@ mkdir -p "${BUILD_INDEX_DIR}"
 "${OPM}" render "${BASE_INDEX_TAG}" --output=yaml ${USE_HTTP} > "${BUILD_INDEX_DIR}/index.yaml"
 
 BUNDLE_VERSION="${BUNDLE_TAG##*:v}"
-"${YQ}" --inplace --prettyPrint "with(select(.schema==\"olm.channel\" and .name==\"latest\"); .entries += {\"name\":\"rhacs-operator.v${BUNDLE_VERSION}\",\"replaces\":\"rhacs-operator.v${REPLACED_VERSION}\",\"skipRange\":\">= ${REPLACED_VERSION} < ${BUNDLE_VERSION}\"})" "${BUILD_INDEX_DIR}/index.yaml"
+YQ_FILTER_CHANNEL_DOCUMENT='.schema=="olm.channel" and .name=="latest"'
+YQ_NEW_BUNDLE_ENTRY=$(cat <<EOF
+{
+    "name": "rhacs-operator.v${BUNDLE_VERSION}",
+    "replaces": "rhacs-operator.v${REPLACED_VERSION}",
+    "skipRange": ">= ${REPLACED_VERSION} < ${BUNDLE_VERSION}"
+}
+EOF
+)
+
+"${YQ}" --inplace --prettyPrint "with(select(${YQ_FILTER_CHANNEL_DOCUMENT}); .entries += ${YQ_NEW_BUNDLE_ENTRY})" "${BUILD_INDEX_DIR}/index.yaml"
 "${OPM}" render "${BUNDLE_TAG}" --output=yaml ${USE_HTTP} >> "${BUILD_INDEX_DIR}/index.yaml"
 "${OPM}" validate "${BUILD_INDEX_DIR}"
 docker build --quiet --file "${BUILD_INDEX_DIR}.Dockerfile" --tag "${INDEX_TAG}" "${BUILD_INDEX_DIR}/.."
