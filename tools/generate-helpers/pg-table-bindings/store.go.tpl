@@ -199,7 +199,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         // Todo: ROX-9499 Figure out how to more cleanly template around this issue.
         log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
-        {{- /* If embedded, the top-level has the full serialized object */ -}}
+        {{/* If embedded, the top-level has the full serialized object */}}
         {{if not $schema.EmbeddedIn }}
         serialized, marshalErr := obj.Marshal()
         if marshalErr != nil {

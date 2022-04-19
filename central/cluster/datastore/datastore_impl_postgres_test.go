@@ -95,7 +95,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.netFlows.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(s.mockCtrl), nil)
 	c1ID, err := s.clusterDatastore.AddCluster(ctx, &storage.Cluster{
 		Name:               "c1",
-		Labels:             map[string]string{"env": "prod"},
+		Labels:             map[string]string{"env": "prod", "team": "team"},
 		MainImage:          mainImage,
 		CentralApiEndpoint: centralEndpoint,
 	})
@@ -110,7 +110,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.netFlows.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(s.mockCtrl), nil)
 	c2ID, err := s.clusterDatastore.AddCluster(ctx, &storage.Cluster{
 		Name:               "c2",
-		Labels:             map[string]string{"env": "test"},
+		Labels:             map[string]string{"env": "test", "team": "team"},
 		MainImage:          mainImage,
 		CentralApiEndpoint: centralEndpoint,
 	})
@@ -153,4 +153,21 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.NoError(err)
 	s.Len(results, 1)
 	s.Equal(ns1C2.Id, results[0].ID)
+
+	// Query cluster with cluster+namespace search fields.
+	results, err = s.clusterDatastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").AddMapQuery(pkgSearch.ClusterLabel, "team", "team").ProtoQuery())
+	s.NoError(err)
+	s.Len(results, 2)
+	s.ElementsMatch([]string{c1ID, c2ID}, pkgSearch.ResultsToIDs(results))
+
+	// Query namespace with cluster+namespace search fields.
+	results, err = s.nsDatastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").AddMapQuery(pkgSearch.ClusterLabel, "team", "team").ProtoQuery())
+	s.NoError(err)
+	s.Len(results, 2)
+	s.ElementsMatch([]string{ns1C1.Id, ns1C2.Id}, pkgSearch.ResultsToIDs(results))
+
+	// Query namespace with cluster+namespace search fields.
+	results, err = s.nsDatastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").AddMapQuery(pkgSearch.ClusterLabel, "team", "blah").ProtoQuery())
+	s.NoError(err)
+	s.Len(results, 0)
 }
