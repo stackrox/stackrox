@@ -48,10 +48,8 @@ func Singleton() DataStore {
 		// Which role format is used is determined solely by the feature flag.
 		ds = New(roleStorage, permissionSetStorage, accessScopeStorage)
 
-		if features.VulnReporting.Enabled() {
-			for r, a := range vulnReportingDefaultRoles {
-				defaultRoles[r] = a
-			}
+		for r, a := range vulnReportingDefaultRoles {
+			defaultRoles[r] = a
 		}
 
 		ctx := sac.WithGlobalAccessScopeChecker(context.Background(),

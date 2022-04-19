@@ -89,7 +89,6 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled(
         knownBackendFlags.ROX_SYSTEM_HEALTH_PF
     );
-    const isVulnReportingEnabled = isFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
 
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
 
@@ -114,7 +113,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={apidocsPath} component={AsyncApiDocsPage} />
                     <Route path={userBasePath} component={AsyncUserPage} />
                     <Route path={systemConfigPath} component={AsyncSystemConfigPage} />
-                    {isVulnReportingEnabled && hasVulnerabilityReportsPermission && (
+                    {hasVulnerabilityReportsPermission && (
                         <Route path={vulnManagementReportsPath} component={AsyncVulnMgmtReports} />
                     )}
                     <Route
