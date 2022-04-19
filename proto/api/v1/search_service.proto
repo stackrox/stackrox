@@ -8,6 +8,11 @@ import "api/v1/pagination.proto";
 
 package v1;
 
+// **********************************************************************
+//  PLEASE ALSO ADD NEW SEARCH CATEGORIES TO
+// `tools/generate-helpers/pg-table-bindings/search_categories.go`
+// **********************************************************************
+
 // Next available tag: 37
 enum SearchCategory {
     SEARCH_UNSET              = 0;

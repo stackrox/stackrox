@@ -4,13 +4,11 @@ package postgres
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/role/resources"
@@ -18,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -44,16 +41,8 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = func() *walker.Schema {
-		schema := globaldb.GetSchemaForTable(baseTable)
-		if schema != nil {
-			return schema
-		}
-		schema = walker.Walk(reflect.TypeOf((*storage.SignatureIntegration)(nil)), baseTable)
-		globaldb.RegisterTable(schema)
-		return schema
-	}()
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.SignatureintegrationsSchema
 	targetResource = resources.SignatureIntegration
 )
 
