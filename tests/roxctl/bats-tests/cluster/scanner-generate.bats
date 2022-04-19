@@ -46,6 +46,9 @@ assert_number_of_k8s_resources() {
   run_scanner_generate_and_check openshift4
 
   assert_file_exist "${output_dir}/scanner/02-scanner-06-deployment.yaml"
+
+  # The only difference between OpenShift and OpenShift 4 configurations is that OpenShift 4 configuration has additional
+  # mounted volume. It's called "trusted-ca-volume" and we use it to identify OpenShift 4 configuration.
   run -0 grep -q 'trusted-ca-volume' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
   assert_number_of_k8s_resources 16
 }
