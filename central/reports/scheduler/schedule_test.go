@@ -37,6 +37,10 @@ type vulnsAndDate struct {
 	DateStr    string
 }
 
+func TestBrandedText(t *testing.T) {
+	suite.Run(t, new(ScheduleTestSuite))
+}
+
 type ScheduleTestSuite struct {
 	suite.Suite
 
@@ -91,9 +95,9 @@ func (s *ScheduleTestSuite) TestFormatVulnMessage() {
 		s.T().Run(name, func(t *testing.T) {
 			s.envIsolator.Setenv(branding.ProductBrandingEnvName, tt.productBranding)
 
-			receivedBrandedVulnFound, err := formatMessage(rc, vulnReportEmailTemplate, timeStr)
+			receivedBrandedVulnFound, err := formatMessage(s.rc, vulnReportEmailTemplate, timeStr)
 			s.NoError(err)
-			receivedBrandedNoVulnFound, err := formatMessage(rc, noVulnsFoundEmailTemplate, timeStr)
+			receivedBrandedNoVulnFound, err := formatMessage(s.rc, noVulnsFoundEmailTemplate, timeStr)
 			s.NoError(err)
 
 			s.Equal(tt.vulnReport, receivedBrandedVulnFound)

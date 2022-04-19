@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 const (
@@ -12,9 +13,24 @@ const (
 	brandedProductNameStackrox = "StackRox"
 )
 
-func TestGetBrandedProductName(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
+func TestBrandedText(t *testing.T) {
+	suite.Run(t, new(BrandedTextTestSuite))
+}
 
+type BrandedTextTestSuite struct {
+	suite.Suite
+	envIsolator *envisolator.EnvIsolator
+}
+
+func (s *BrandedTextTestSuite) SetupSuite() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+}
+
+func (s *BrandedTextTestSuite) TeardownTest() {
+	s.envIsolator.RestoreAll()
+}
+
+func (s *BrandedTextTestSuite) TestGetBrandedProductName() {
 	tests := map[string]struct {
 		productBrandingEnv string
 		brandedProductName string
@@ -38,11 +54,10 @@ func TestGetBrandedProductName(t *testing.T) {
 		},
 	}
 	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			envIsolator.Setenv("ROX_PRODUCT_BRANDING", tt.productBrandingEnv)
+		s.T().Run(name, func(t *testing.T) {
+			s.envIsolator.Setenv("ROX_PRODUCT_BRANDING", tt.productBrandingEnv)
 			receivedProductName := GetProductName()
 			assert.Equal(t, tt.brandedProductName, receivedProductName)
 		})
 	}
-	envIsolator.RestoreAll()
 }
