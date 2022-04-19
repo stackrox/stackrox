@@ -120,8 +120,8 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 
 {{- define "insertObject"}}
 {{- $schema := .schema }}
-func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{if not .joinTable}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.Parents}}, idx int{{end}}{{end}}) error {
-    {{if not $schema.Parents }}
+func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{if not .joinTable}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.EmbeddedIn}}, idx int{{end}}{{end}}) error {
+    {{if not $schema.EmbeddedIn }}
     serialized, marshalErr := obj.Marshal()
     if marshalErr != nil {
         return marshalErr
@@ -183,7 +183,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
     var err error
 
-    {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.Parents) }}
+    {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.EmbeddedIn) }}
     // This is a copy so first we must delete the rows and re-add them
     // Which is essentially the desired behaviour of an upsert.
     var deletes []string
@@ -199,7 +199,8 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         // Todo: ROX-9499 Figure out how to more cleanly template around this issue.
         log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
-        {{if not $schema.Parents }}
+        {{/* If embedded, the top-level has the full serialized object */}}
+        {{if not $schema.EmbeddedIn }}
         serialized, marshalErr := obj.Marshal()
         if marshalErr != nil {
             return marshalErr
@@ -215,7 +216,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
             {{end}}
         })
 
-        {{ if not $schema.Parents }}
+        {{ if not $schema.EmbeddedIn }}
         {{if eq (len $schema.LocalPrimaryKeys) 1}}
         // Add the id to be deleted.
         deletes = append(deletes, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
@@ -231,7 +232,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         if (idx + 1) % batchSize == 0 || idx == len(objs) - 1  {
             // copy does not upsert so have to delete first.  parent deletion cascades so only need to
             // delete for the top level parent
-            {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.Parents) }}
+            {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.EmbeddedIn) }}
             _, err = tx.Exec(ctx, deleteManyStmt, deletes);
             if err != nil {
                 return err
@@ -252,7 +253,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
     }
 
     {{if $schema.Children}}
-    {{if not $schema.Parents }}
+    {{if not $schema.EmbeddedIn }}
     for _, obj := range objs {
     {{else}}
     for idx, obj := range objs {

@@ -1,4 +1,4 @@
-package clusterhealthstatus
+package clusterhealth
 
 import (
 	"context"
