@@ -92,7 +92,7 @@ func (s *ScheduleTestSuite) TestFormatVulnMessage() {
 		},
 	}
 	for name, tt := range tests {
-		s.T().Run(name, func(t *testing.T) {
+		s.Run(name, func() {
 			s.envIsolator.Setenv(branding.ProductBrandingEnvName, tt.productBranding)
 
 			receivedBrandedVulnFound, err := formatMessage(s.rc, vulnReportEmailTemplate, timeStr)

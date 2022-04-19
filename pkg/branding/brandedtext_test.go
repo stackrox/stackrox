@@ -54,7 +54,7 @@ func (s *BrandedTextTestSuite) TestGetBrandedProductName() {
 		},
 	}
 	for name, tt := range tests {
-		s.T().Run(name, func(t *testing.T) {
+		s.Run(name, func() {
 			s.envIsolator.Setenv("ROX_PRODUCT_BRANDING", tt.productBrandingEnv)
 			receivedProductName := GetProductName()
 			assert.Equal(t, tt.brandedProductName, receivedProductName)
