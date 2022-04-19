@@ -3,26 +3,51 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	// CreateTableImageComponentCveRelationsStmt holds the create statement for table `ImageComponentCveRelations`.
+	// CreateTableImageComponentCveRelationsStmt holds the create statement for table `image_component_cve_relations`.
 	CreateTableImageComponentCveRelationsStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists image_component_cve_relations (
-                   image_components_OperatingSystem varchar,
                    Id varchar,
                    IsFixable bool,
                    FixedBy varchar,
                    ImageComponentId varchar,
-                   CveId varchar,
+                   ImageComponentName varchar,
+                   ImageComponentVersion varchar,
+                   ImageComponentOperatingSystem varchar,
+                   ImageCveId varchar,
+                   ImageCve varchar,
+                   ImageCveOperatingSystem varchar,
                    serialized bytea,
-                   PRIMARY KEY(image_components_OperatingSystem, Id, ImageComponentId, CveId),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageComponentId, image_components_OperatingSystem) REFERENCES image_components(Id, OperatingSystem) ON DELETE CASCADE
+                   PRIMARY KEY(Id, ImageComponentId, ImageComponentName, ImageComponentVersion, ImageComponentOperatingSystem, ImageCveId, ImageCve, ImageCveOperatingSystem),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageComponentId, ImageComponentName, ImageComponentVersion, ImageComponentOperatingSystem) REFERENCES image_components(Id, Name, Version, OperatingSystem) ON DELETE CASCADE
                )
                `,
 		Indexes:  []string{},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// ImageComponentCveRelationsSchema is the go schema for table `image_component_cve_relations`.
+	ImageComponentCveRelationsSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("image_component_cve_relations")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.ComponentCVEEdge)(nil)), "image_component_cve_relations").
+			WithReference(ImageComponentsSchema).
+			WithReference(ImageCvesSchema)
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPONENT_VULN_EDGE, "image_component_cve_relations", (*storage.ComponentCVEEdge)(nil)))
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

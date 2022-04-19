@@ -3,11 +3,18 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	// CreateTableProcessIndicatorsStmt holds the create statement for table `ProcessIndicators`.
+	// CreateTableProcessIndicatorsStmt holds the create statement for table `process_indicators`.
 	CreateTableProcessIndicatorsStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists process_indicators (
@@ -35,4 +42,16 @@ var (
 		},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// ProcessIndicatorsSchema is the go schema for table `process_indicators`.
+	ProcessIndicatorsSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("process_indicators")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), "process_indicators")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_INDICATORS, "process_indicators", (*storage.ProcessIndicator)(nil)))
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

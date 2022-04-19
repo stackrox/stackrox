@@ -3,11 +3,16 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var (
-	// CreateTableNetworkbaselineStmt holds the create statement for table `Networkbaseline`.
+	// CreateTableNetworkbaselineStmt holds the create statement for table `networkbaseline`.
 	CreateTableNetworkbaselineStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists networkbaseline (
@@ -19,4 +24,15 @@ var (
 		Indexes:  []string{},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// NetworkbaselineSchema is the go schema for table `networkbaseline`.
+	NetworkbaselineSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("networkbaseline")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.NetworkBaseline)(nil)), "networkbaseline")
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

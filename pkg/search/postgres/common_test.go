@@ -20,6 +20,7 @@ var (
 func TestMultiTableQueries(t *testing.T) {
 	t.Parallel()
 
+	deploymentBaseSchema.SetOptionsMap(mappings.OptionsMap)
 	for _, c := range []struct {
 		desc     string
 		q        *v1.Query
@@ -149,7 +150,7 @@ func TestMultiTableQueries(t *testing.T) {
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
-			actual, err := standardizeQueryAndPopulatePath(c.q, mappings.OptionsMap, deploymentBaseSchema, GET)
+			actual, err := standardizeQueryAndPopulatePath(c.q, deploymentBaseSchema, GET)
 			assert.NoError(t, err)
 			assert.Equal(t, c.expected.Select, actual.Select)
 			assert.ElementsMatch(t, strings.Split(c.expected.From, ", "), strings.Split(actual.From, ", "))

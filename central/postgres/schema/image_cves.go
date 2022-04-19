@@ -3,11 +3,18 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	// CreateTableImageCvesStmt holds the create statement for table `ImageCves`.
+	// CreateTableImageCvesStmt holds the create statement for table `image_cves`.
 	CreateTableImageCvesStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists image_cves (
@@ -22,10 +29,22 @@ var (
                    SuppressExpiry timestamp,
                    Severity integer,
                    serialized bytea,
-                   PRIMARY KEY(Id, OperatingSystem)
+                   PRIMARY KEY(Id, Cve, OperatingSystem)
                )
                `,
 		Indexes:  []string{},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// ImageCvesSchema is the go schema for table `image_cves`.
+	ImageCvesSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("image_cves")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), "image_cves")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_VULNERABILITIES, "image_cves", (*storage.CVE)(nil)))
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

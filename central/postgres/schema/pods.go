@@ -3,11 +3,18 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	// CreateTablePodsStmt holds the create statement for table `Pods`.
+	// CreateTablePodsStmt holds the create statement for table `pods`.
 	CreateTablePodsStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists pods (
@@ -39,4 +46,16 @@ var (
 			},
 		},
 	}
+
+	// PodsSchema is the go schema for table `pods`.
+	PodsSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("pods")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.Pod)(nil)), "pods")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PODS, "pods", (*storage.Pod)(nil)))
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

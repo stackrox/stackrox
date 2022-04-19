@@ -3,11 +3,18 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	// CreateTableRolebindingsStmt holds the create statement for table `Rolebindings`.
+	// CreateTableRolebindingsStmt holds the create statement for table `rolebindings`.
 	CreateTableRolebindingsStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists rolebindings (
@@ -44,4 +51,16 @@ var (
 			},
 		},
 	}
+
+	// RolebindingsSchema is the go schema for table `rolebindings`.
+	RolebindingsSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("rolebindings")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.K8SRoleBinding)(nil)), "rolebindings")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ROLEBINDINGS, "rolebindings", (*storage.K8SRoleBinding)(nil)))
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )
