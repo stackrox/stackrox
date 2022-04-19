@@ -66,7 +66,7 @@ func (s *ScheduleTestSuite) SetupSuite() {
 	s.NoError(err)
 }
 
-func (s *ScheduleTestSuite) TeardownSuite() {
+func (s *ScheduleTestSuite) TeardownTest() {
 	s.envIsolator.RestoreAll()
 }
 
