@@ -404,12 +404,12 @@ index-build: bundle-post-process ## Build Index (a.k.a. Catalog) image with the 
 # dot in `replaces:` value. E.g. `  replaces: rhacs-operator.v3.62.0` -> `v3.62.0`
 	@set -euo pipefail ;\
 	replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
-	./hack/make-index-build-step.sh \
+	./hack/build-index-image.sh \
 		--base-index-tag "$(INDEX_IMG_BASE):$${replaced_version}" \
-		--replaced-version "$${replaced_version}" \
-		--bundle-tag "$(BUNDLE_IMG)" \
 		--index-tag "$(INDEX_IMG)" \
-		--clean-build
+		--bundle-tag "$(BUNDLE_IMG)" \
+		--replaced-version "$${replaced_version}" \
+		--clean-output-dir
 
 ##@ Push images
 
