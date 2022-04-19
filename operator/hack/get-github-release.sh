@@ -23,13 +23,13 @@ function get_github_release() {
   local to=""
 
   while [[ -n "${1:-}" ]]; do
-      case "${1:-}" in
+      case "${1}" in
           "--from")
-              from="${2:-}"
+              from="${2}"
               shift
               ;;
           "--to")
-              to="${2:-}"
+              to="${2}"
               shift
               ;;
           *)

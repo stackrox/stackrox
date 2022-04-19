@@ -31,11 +31,11 @@ function usage_exit() {
 }
 
 # Script argument variables
-BASE_DIR="."
 BASE_INDEX_TAG=""
-REPLACED_VERSION=""
-BUNDLE_TAG=""
 INDEX_TAG=""
+BUNDLE_TAG=""
+REPLACED_VERSION=""
+REPLACED_VERSION=""
 
 # Helpful for local development and testing
 CLEAN_OUTPUT_DIR=""
@@ -43,7 +43,7 @@ USE_HTTP=""
 
 function read_arguments() {
     while [[ -n "${1:-}" ]]; do
-        case "${1:-}" in
+        case "${1}" in
             "--base-index-tag")
                 BASE_INDEX_TAG="${2}";shift;;
             "--index-tag")
@@ -72,9 +72,9 @@ function read_arguments() {
 
 function validate_arguments() {
   [[ "${BASE_INDEX_TAG}" = "" ]] && echo "Error: Base index tag is required." >&2 && usage_exit
-  [[ "${REPLACED_VERSION}" = "" ]] && echo "Error: Replaced version is required." >&2 && usage_exit
-  [[ "${BUNDLE_TAG}" = "" ]] && echo "Error: Bundle tag is required." >&2 && usage_exit
   [[ "${INDEX_TAG}" = "" ]] && echo "Error: Index tag is required." >&2 && usage_exit
+  [[ "${BUNDLE_TAG}" = "" ]] && echo "Error: Bundle tag is required." >&2 && usage_exit
+  [[ "${REPLACED_VERSION}" = "" ]] && echo "Error: Replaced version is required." >&2 && usage_exit
 
   return 0
 }
@@ -84,19 +84,19 @@ SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 OPM="opm"
 function fetch_opm() {
   local -r os_name=$(uname | tr '[:upper:]' '[:lower:]') || true
-  local -r os_arch=$(go env GOARCH) || true
+  local -r arch=$(go env GOARCH) || true
 
   OPM="${BASE_DIR}/bin/opm-${OPM_VERSION}"
-  "${SCRIPT_DIR}/get-github-release.sh" --to "${OPM}" --from "https://github.com/operator-framework/operator-registry/releases/download/v${OPM_VERSION}/${os_name}-${os_arch}-opm"
+  "${SCRIPT_DIR}/get-github-release.sh" --to "${OPM}" --from "https://github.com/operator-framework/operator-registry/releases/download/v${OPM_VERSION}/${os_name}-${arch}-opm"
 }
 
 YQ="yq"
 function fetch_yq() {
   local -r os_name=$(uname | tr '[:upper:]' '[:lower:]') || true
-  local -r os_arch=$(go env GOARCH) || true
+  local -r arch=$(go env GOARCH) || true
 
   YQ="${BASE_DIR}/bin/yq-${YQ_VERSION}"
-  "${SCRIPT_DIR}/get-github-release.sh" --to "${YQ}" --from "https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_${os_name}_${os_arch}"
+  "${SCRIPT_DIR}/get-github-release.sh" --to "${YQ}" --from "https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_${os_name}_${arch}"
 }
 
 # Script body
