@@ -12,7 +12,9 @@ export function visitRiskDeployments() {
 export function viewRiskDeploymentByName(deploymentName) {
     // Assume location is risk deployments table.
     cy.intercept('GET', api.risks.fetchDeploymentWithRisk).as('getDeploymentWithRisk');
-    cy.get(`${selectors.table.rows}:contains("${deploymentName}")`).click();
+    cy.get(
+        `${selectors.table.rows} ${selectors.table.cells}:nth-child(1):contains("${deploymentName}")`
+    ).click();
     cy.wait('@getDeploymentWithRisk');
 }
 
