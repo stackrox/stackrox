@@ -116,7 +116,7 @@ describe('Risk page', () => {
             viewRiskDeploymentByName('central');
             viewRiskDeploymentInNetworkGraph();
 
-            cy.location('pathname').should('match', /^\/main\/network\/[0-9a-z]+/);
+            cy.location('pathname').should('match', /^\/main\/network\/[0-9a-z]+$/);
         });
     });
 
