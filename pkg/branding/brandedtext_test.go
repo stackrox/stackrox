@@ -26,7 +26,7 @@ func (s *BrandedTextTestSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
-func (s *BrandedTextTestSuite) TeardownTest() {
+func (s *BrandedTextTestSuite) TearDownTest() {
 	s.envIsolator.RestoreAll()
 }
 
