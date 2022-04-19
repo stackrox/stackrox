@@ -20,9 +20,9 @@ Usage:
 Options:
   --base-dir           Working directory for the script. Default: .
   --base-index-tag     The base index image tag. Example: docker.io/stackrox/stackrox-operator-index:v1.0.0
-  --replaced-version   Replaced version of bundle. Example v1.0.0
-  --bundle-tag         The bundle image tag that should be appended to base index. Example: docker.io/stackrox/stackrox-operator-bundle:v1.1.0
   --index-tag          The new index image tag. Example: docker.io/stackrox/stackrox-operator-index:v1.1.0
+  --bundle-tag         The bundle image tag that should be appended to base index. Example: docker.io/stackrox/stackrox-operator-bundle:v1.1.0
+  --replaced-version   Version that the bundle replaces. Example: v1.0.0
 " 1>&2
 }
 
