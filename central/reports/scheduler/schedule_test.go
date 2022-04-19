@@ -46,7 +46,7 @@ type ScheduleTestSuite struct {
 	expectedVulnReportEmailTemplateStackroxBranding string
 }
 
-func (s *ScheduleTestSuite) SetupTest() {
+func (s *ScheduleTestSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.rc = fixtures.GetValidReportConfiguration()
 
@@ -66,7 +66,7 @@ func (s *ScheduleTestSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *ScheduleTestSuite) TeardownTest() {
+func (s *ScheduleTestSuite) TeardownSuite() {
 	s.envIsolator.RestoreAll()
 }
 
