@@ -21,6 +21,7 @@ import util.NetworkGraphUtil
 
 import util.Env
 import spock.lang.IgnoreIf
+import org.junit.AssumptionViolatedException
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
 
@@ -62,8 +63,10 @@ class SACTest extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 600 : 60
 
     def setupSpec() {
-        // ROX-6260: pre scan the image to avoid missing risk score
-        Services.scanImage(TEST_IMAGE)
+        // ROX-6260: pre scan the image to avoid missing risk score.
+        def img = Services.scanImage(TEST_IMAGE)
+        assert img.hasScan()
+
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
@@ -73,6 +76,22 @@ class SACTest extends BaseSpecification {
                 WAIT_FOR_VIOLATION_TIMEOUT)
         assert waitForViolation(DEPLOYMENT_QA2.name, "Secure Shell (ssh) Port Exposed",
                 WAIT_FOR_VIOLATION_TIMEOUT)
+
+        // Make sure each deployment has a risk score.
+        def deployments = DeploymentService.listDeployments()
+        deployments.each {
+            def depID = it.id
+            try {
+                withRetry(30, 2, {
+                    assert DeploymentService.getDeploymentWithRisk(depID).hasRisk()
+                })
+            } catch (Exception e) {
+                if (strictIntegrationTesting) {
+                    throw (e)
+                }
+                throw new AssumptionViolatedException("Failed to retrieve risk from deployment ${it.name}")
+            }
+        }
     }
 
     def cleanupSpec() {
