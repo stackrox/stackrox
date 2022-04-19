@@ -112,7 +112,7 @@ if [[ "${REPLACED_VERSION}" = v* ]]; then
   REPLACED_VERSION="${REPLACED_VERSION:1}"
 fi
 
-echo "Detected that this bundle updates (replaces) version ${REPLACED_VERSION}. Will use index image ${BASE_INDEX_TAG} as the base for the current one."
+echo "Detected that bundle ${BUNDLE_TAG} updates (replaces) version ${REPLACED_VERSION}. Will use index image ${BASE_INDEX_TAG} as the base for the current one." >&2
 
 # Exports for docker build and opm in case it builds the image
 export DOCKER_BUILDKIT=1
