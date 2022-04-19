@@ -5,9 +5,9 @@ set -eou pipefail
 function usage() {
   echo "
 Usage:
-  get-github-release.sh [options]
+  get-github-release.sh MANDATORY
 
-Options:
+MANDATORY:
   --from   GitHub URL to the executable file.
   --to     A local path where the downloaded file will be saved.
 " >&2
