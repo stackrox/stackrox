@@ -37,6 +37,7 @@ type vulnsAndDate struct {
 	DateStr    string
 }
 
+var _ suite.SetupAllSuite = (*ScheduleTestSuite)(nil)
 var _ suite.TearDownTestSuite = (*ScheduleTestSuite)(nil)
 
 func TestSchedule(t *testing.T) {

@@ -12,6 +12,7 @@ const (
 	brandedProductNameStackrox = "StackRox"
 )
 
+var _ suite.SetupAllSuite = (*BrandedTextTestSuite)(nil)
 var _ suite.TearDownTestSuite = (*BrandedTextTestSuite)(nil)
 
 func TestBrandedText(t *testing.T) {
