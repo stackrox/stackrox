@@ -4,11 +4,12 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 const (
@@ -36,31 +37,40 @@ type vulnsAndDate struct {
 	DateStr    string
 }
 
-func generateExpectedVulnReportEmailTemplates(t *testing.T) (string, string) {
+type ScheduleTestSuite struct {
+	suite.Suite
+
+	rc                                              *storage.ReportConfiguration
+	envIsolator                                     *envisolator.EnvIsolator
+	expectedVulnReportEmailTemplateRhacsBranding    string
+	expectedVulnReportEmailTemplateStackroxBranding string
+}
+
+func (s *ScheduleTestSuite) SetupTest() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+	s.rc = fixtures.GetValidReportConfiguration()
+
 	data := &vulnsAndDate{
 		WhichVulns: "for all vulnerabilities",
 		DateStr:    timeStr,
 	}
 
 	tmpl, err := template.New("VulnsRHACS").Parse(expectedVulnReportEmailTemplateRhacsBrandingWithPlaceholders)
-	assert.NoError(t, err)
-	expectedVulnReportEmailTemplateRhacsBranding, err := templates.ExecuteToString(tmpl, data)
-	assert.NoError(t, err)
+	s.NoError(err)
+	s.expectedVulnReportEmailTemplateRhacsBranding, err = templates.ExecuteToString(tmpl, data)
+	s.NoError(err)
 
 	tmpl, err = template.New("VulnsStackrox").Parse(expectedVulnReportEmailTemplateStackroxBrandingWithPlaceholders)
-	assert.NoError(t, err)
-	expectedVulnReportEmailTemplateStackroxBranding, err := templates.ExecuteToString(tmpl, data)
-	assert.NoError(t, err)
-
-	return expectedVulnReportEmailTemplateRhacsBranding, expectedVulnReportEmailTemplateStackroxBranding
+	s.NoError(err)
+	s.expectedVulnReportEmailTemplateStackroxBranding, err = templates.ExecuteToString(tmpl, data)
+	s.NoError(err)
 }
 
-func TestFormatVulnMessage(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
-	rc := fixtures.GetValidReportConfiguration()
+func (s *ScheduleTestSuite) TeardownTest() {
+	s.envIsolator.RestoreAll()
+}
 
-	expectedVulnReportEmailTemplateRhacsBranding, expectedVulnReportEmailTemplateStackroxBranding := generateExpectedVulnReportEmailTemplates(t)
-
+func (s *ScheduleTestSuite) TestFormatVulnMessage() {
 	tests := map[string]struct {
 		productBranding string
 		vulnReport      string
@@ -68,27 +78,26 @@ func TestFormatVulnMessage(t *testing.T) {
 	}{
 		"RHACS branding": {
 			productBranding: "RHACS_BRANDING",
-			vulnReport:      expectedVulnReportEmailTemplateRhacsBranding,
+			vulnReport:      s.expectedVulnReportEmailTemplateRhacsBranding,
 			noVulnReport:    expectedNoVulnsFoundEmailTemplateRhacsBranding,
 		},
 		"StackRox branding": {
 			productBranding: "STACKROX_BRANDING",
-			vulnReport:      expectedVulnReportEmailTemplateStackroxBranding,
+			vulnReport:      s.expectedVulnReportEmailTemplateStackroxBranding,
 			noVulnReport:    expectedNoVulnsFoundEmailTemplateStackroxBranding,
 		},
 	}
 	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			envIsolator.Setenv(branding.ProductBrandingEnvName, tt.productBranding)
+		s.T().Run(name, func(t *testing.T) {
+			s.envIsolator.Setenv(branding.ProductBrandingEnvName, tt.productBranding)
 
 			receivedBrandedVulnFound, err := formatMessage(rc, vulnReportEmailTemplate, timeStr)
-			assert.NoError(t, err)
+			s.NoError(err)
 			receivedBrandedNoVulnFound, err := formatMessage(rc, noVulnsFoundEmailTemplate, timeStr)
-			assert.NoError(t, err)
+			s.NoError(err)
 
-			assert.Equal(t, tt.vulnReport, receivedBrandedVulnFound)
-			assert.Equal(t, tt.noVulnReport, receivedBrandedNoVulnFound)
+			s.Equal(tt.vulnReport, receivedBrandedVulnFound)
+			s.Equal(tt.noVulnReport, receivedBrandedNoVulnFound)
 		})
 	}
-	envIsolator.RestoreAll()
 }
