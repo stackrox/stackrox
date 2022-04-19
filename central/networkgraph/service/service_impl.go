@@ -265,6 +265,25 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 		return nil, err
 	}
 
+	count, err := s.deployments.Count(ctx, deploymentQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	maxDeploymentsAllowed, err := maxNumberOfDeploymentsInGraph()
+	if err != nil {
+		log.Warnf("%s env set to non-number value %s, using default %d",
+			maxNumberOfDeploymentsInGraphEnv.EnvVar(),
+			maxNumberOfDeploymentsInGraphEnv.Setting(),
+			defaultMaxNumberOfDeploymentsInGraph)
+		maxDeploymentsAllowed = defaultMaxNumberOfDeploymentsInGraph
+	}
+
+	if count > maxDeploymentsAllowed {
+		log.Warnf("Number of deployments is too high to be rendered in Network Graph: %d", count)
+		return nil, errors.Errorf("number of deployments (%d) exceeds maximum allowed for Network Graph: %d", count, maxDeploymentsAllowed)
+	}
+
 	deployments, err := s.deployments.SearchListDeployments(ctx, deploymentQuery)
 	if err != nil {
 		return nil, err
