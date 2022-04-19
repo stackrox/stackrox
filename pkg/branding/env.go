@@ -11,7 +11,7 @@ const (
 )
 
 var (
-	// TODO @jschnath: Remove the default in the followup task of adding the new env variable to CI
+	// TODO #ROX-10208: Remove the default in the followup task of adding the new env variable to CI
 	productBrandingSetting = env.RegisterSetting(ProductBrandingEnvName, env.WithDefault("RHACS_BRANDING"))
 )
 
