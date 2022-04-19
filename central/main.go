@@ -326,6 +326,8 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		processIndicatorService.Singleton(),
 		processBaselineService.Singleton(),
 		rbacService.Singleton(),
+		reportConfigurationService.Singleton(),
+		reportService.Singleton(),
 		roleService.Singleton(),
 		sacService.Singleton(),
 		searchService.Singleton(),
@@ -339,12 +341,6 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		vulnRequestService.Singleton(),
-	}
-
-	if features.VulnReporting.Enabled() {
-		servicesToRegister = append(servicesToRegister,
-			reportConfigurationService.Singleton(),
-			reportService.Singleton())
 	}
 
 	if features.ImageSignatureVerification.Enabled() {
@@ -709,11 +705,8 @@ func waitForTerminationSignal() {
 		{suppress.Singleton(), "cve unsuppress loop"},
 		{pruning.Singleton(), "gargage collector"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
+		{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
-	}
-
-	if features.VulnReporting.Enabled() {
-		stoppables = append(stoppables, stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports schedule manager"})
 	}
 
 	var wg sync.WaitGroup
