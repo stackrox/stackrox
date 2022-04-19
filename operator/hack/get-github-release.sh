@@ -54,13 +54,12 @@ function get_github_release() {
   local -r bin_dir=$(dirname "${to}")
   mkdir -p "${bin_dir}"
 
+  echo "Downloading ${from} to ${to}."
   curl --silent --fail --location --output "${to}" "${from}"
   chmod +x "${to}"
 
   local -r kernel_name=$(uname -s) || true
   [[ "${kernel_name}" != "Darwin" ]] || xattr -c "${to}"
-
-  echo "Successfully downloaded ${from} to ${to}."
 }
 
 get_github_release "$@"
