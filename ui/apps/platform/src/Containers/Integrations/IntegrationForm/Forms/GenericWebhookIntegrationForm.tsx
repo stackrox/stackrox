@@ -53,18 +53,11 @@ export type GenericWebhookIntegrationFormValues = {
     updatePassword: boolean;
 };
 
-const validEndpointRegex =
-    /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/;
-
 export const validationSchema = yup.object().shape({
     notifier: yup.object().shape({
         name: yup.string().trim().required('Name is required'),
         generic: yup.object().shape({
-            endpoint: yup
-                .string()
-                .trim()
-                .required('Endpoint is required')
-                .matches(validEndpointRegex, 'Endpoint must be a valid URL'),
+            endpoint: yup.string().trim().required('Endpoint is required'),
             skipTlsVerify: yup.bool(),
             auditLoggingEnabled: yup.bool(),
             username: yup
