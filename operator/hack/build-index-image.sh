@@ -35,7 +35,7 @@ BASE_INDEX_TAG=""
 INDEX_TAG=""
 BUNDLE_TAG=""
 REPLACED_VERSION=""
-REPLACED_VERSION=""
+BASE_DIR="."
 
 # Helpful for local development and testing
 CLEAN_OUTPUT_DIR=""
