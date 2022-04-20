@@ -4,15 +4,15 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useFormikContext } from 'formik';
 
+import { Policy } from 'types/policy.proto';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import {
     policyConfigurationDescriptor,
     networkDetectionDescriptor,
     auditLogDescriptor,
     Descriptor,
     imageSigningCriteriaDescriptor,
-} from 'Containers/Policies/Wizard/Step3/policyCriteriaDescriptors';
-import { Policy } from 'types/policy.proto';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+} from './policyCriteriaDescriptors';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
 import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
 

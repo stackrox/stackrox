@@ -10,7 +10,7 @@ import {
     SelectVariant,
 } from '@patternfly/react-core';
 
-import { Descriptor } from 'Containers/Policies/Wizard/Step3/policyCriteriaDescriptors';
+import { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
 import ImageSignersCriteriaFieldInput from './ImageSignersCriteriaFieldInput';
 

@@ -12,8 +12,8 @@ import {
 } from '@patternfly/react-core';
 
 import { fetchAlert } from 'services/AlertsService';
-import PolicyDetailContent from '../../Policies/Detail/PolicyDetailContent';
-import { getClientWizardPolicy } from '../../Policies/policies.utils';
+import PolicyDetailContent from 'Containers/Policies/Detail/PolicyDetailContent';
+import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
 import DeploymentDetails from './DeploymentDetails';
 import EnforcementDetails from './EnforcementDetails';
 import { Alert } from '../types/violationTypes';

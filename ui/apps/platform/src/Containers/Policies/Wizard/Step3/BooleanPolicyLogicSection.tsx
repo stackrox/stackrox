@@ -2,15 +2,15 @@ import React from 'react';
 import { Flex, GridItem } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
+import { Policy } from 'types/policy.proto';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import {
     policyConfigurationDescriptor,
     networkDetectionDescriptor,
     auditLogDescriptor,
     Descriptor,
     imageSigningCriteriaDescriptor,
-} from 'Containers/Policies/Wizard/Step3/policyCriteriaDescriptors';
-import { Policy } from 'types/policy.proto';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+} from './policyCriteriaDescriptors';
 import PolicySection from './PolicySection';
 
 import './BooleanPolicyLogicSection.css';
