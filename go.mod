@@ -129,7 +129,7 @@ require (
 	helm.sh/helm/v3 v3.7.1
 	k8s.io/api v0.22.8
 	k8s.io/apimachinery v0.22.8
-	k8s.io/apiserver v0.22.5
+	k8s.io/apiserver v0.22.8
 	k8s.io/client-go v0.22.8
 	k8s.io/kubectl v0.22.8
 	k8s.io/kubelet v0.22.8
