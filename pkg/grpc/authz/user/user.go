@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/internal/permissioncheck"
@@ -77,7 +78,7 @@ func (p *permissionChecker) checkGlobalSACPermissions(ctx context.Context, rootS
 
 func (p *permissionChecker) checkPermissions(rolePerms map[string]storage.Access) error {
 	if rolePerms == nil {
-		return errorhelpers.ErrNoCredentials
+		return errox.NoCredentials
 	}
 	for _, requiredPerm := range p.requiredPermissions {
 		if !evaluateAgainstPermissions(rolePerms, requiredPerm) {

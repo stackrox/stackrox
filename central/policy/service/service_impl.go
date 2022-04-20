@@ -714,7 +714,7 @@ func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interfac
 		return err
 	}
 	if identityUID != id.UID() {
-		return errorhelpers.ErrNotAuthorized
+		return errox.NotAuthorized
 	}
 
 	return nil

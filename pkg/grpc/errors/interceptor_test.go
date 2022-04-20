@@ -173,7 +173,7 @@ func TestPanicOnInvariantViolationUnaryInterceptor(t *testing.T) {
 		{
 			name: "Error is ErrInvariantViolation -> panic",
 			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
-				return "err", errorhelpers.ErrInvariantViolation
+				return "err", errox.InvariantViolation
 			},
 			resp: nil, err: nil,
 			panics: true,
@@ -181,9 +181,9 @@ func TestPanicOnInvariantViolationUnaryInterceptor(t *testing.T) {
 		{
 			name: "Error is not ErrInvariantViolation -> do nothing, just pass through",
 			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
-				return "err", errorhelpers.ErrNoCredentials
+				return "err", errox.NoCredentials
 			},
-			resp: "err", err: errorhelpers.ErrNoCredentials,
+			resp: "err", err: errox.NoCredentials,
 			panics: false,
 		},
 	}

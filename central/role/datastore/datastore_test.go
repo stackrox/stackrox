@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -541,10 +542,10 @@ func (s *roleDataStoreTestSuite) TestForeignKeyConstraints() {
 	s.NoError(s.dataStore.AddRole(s.hasWriteCtx, role))
 
 	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, permissionSet.GetId())
-	s.ErrorIs(err, errorhelpers.ErrReferencedByAnotherObject, "cannot delete a PermissionSet referred to by a Role")
+	s.ErrorIs(err, errox.ReferencedByAnotherObject, "cannot delete a PermissionSet referred to by a Role")
 
 	err = s.dataStore.RemoveAccessScope(s.hasWriteCtx, scope.GetId())
-	s.ErrorIs(err, errorhelpers.ErrReferencedByAnotherObject, "cannot delete an Access Scope referred to by a Role")
+	s.ErrorIs(err, errox.ReferencedByAnotherObject, "cannot delete an Access Scope referred to by a Role")
 
 	s.NoError(s.dataStore.RemoveRole(s.hasWriteCtx, role.GetName()))
 	s.NoError(s.dataStore.RemovePermissionSet(s.hasWriteCtx, permissionSet.GetId()))

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -236,7 +237,7 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 	}
 	for _, role := range roles {
 		if role.GetPermissionSetId() == id {
-			return errors.Wrapf(errorhelpers.ErrReferencedByAnotherObject, "cannot delete permission set in use by role %q", role.GetName())
+			return errors.Wrapf(errox.ReferencedByAnotherObject, "cannot delete permission set in use by role %q", role.GetName())
 		}
 	}
 
@@ -360,7 +361,7 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 	}
 	for _, role := range roles {
 		if role.GetAccessScopeId() == id {
-			return errors.Wrapf(errorhelpers.ErrReferencedByAnotherObject, "cannot delete access scope in use by role %q", role.GetName())
+			return errors.Wrapf(errox.ReferencedByAnotherObject, "cannot delete access scope in use by role %q", role.GetName())
 		}
 	}
 
@@ -537,7 +538,7 @@ func (ds *dataStoreImpl) getRolePermissionSetOrError(ctx context.Context, role *
 		return nil, err
 	} else if !found || permissionSet == nil {
 		log.Errorf("Failed to fetch permission set %s for the existing role %q", role.GetPermissionSetId(), role.GetName())
-		return nil, errors.Wrapf(errorhelpers.ErrInvariantViolation, "permission set %s for role %q is missing", role.GetPermissionSetId(), role.GetName())
+		return nil, errors.Wrapf(errox.InvariantViolation, "permission set %s for role %q is missing", role.GetPermissionSetId(), role.GetName())
 	}
 	return permissionSet, nil
 }
@@ -550,7 +551,7 @@ func (ds *dataStoreImpl) getRoleAccessScopeOrError(ctx context.Context, role *st
 		return nil, err
 	} else if !found || accessScope == nil {
 		log.Errorf("Failed to fetch access scope %s for the existing role %q", role.GetAccessScopeId(), role.GetName())
-		return nil, errors.Wrapf(errorhelpers.ErrInvariantViolation, "access scope %s for role %q is missing", role.GetAccessScopeId(), role.GetName())
+		return nil, errors.Wrapf(errox.InvariantViolation, "access scope %s for role %q is missing", role.GetAccessScopeId(), role.GetName())
 	}
 	return accessScope, nil
 }

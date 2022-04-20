@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -87,7 +88,7 @@ func TestJUnitPrinterFactory_Validate(t *testing.T) {
 				printers.JUnitTestCasesExpressionKey: "test",
 			},
 			shouldFail: true,
-			error:      errorhelpers.ErrInvariantViolation,
+			error:      errox.InvariantViolation,
 		},
 	}
 

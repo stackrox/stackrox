@@ -3,6 +3,7 @@ package idcheck
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
@@ -13,7 +14,7 @@ type serviceType storage.ServiceType
 func (s serviceType) AuthorizeByIdentity(id authn.Identity) error {
 	svc := id.Service()
 	if svc == nil {
-		return errorhelpers.ErrNoCredentials
+		return errox.NoCredentials
 	}
 	if svc.GetType() != storage.ServiceType(s) {
 		return errorhelpers.NewErrNotAuthorized("service source type not allowed")

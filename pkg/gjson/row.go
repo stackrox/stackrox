@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/tidwall/gjson"
 )
 
@@ -110,10 +111,9 @@ func getRowsFromColumns(columns [][]string) [][]string {
 	return rows
 }
 
-// jaggedArrayError helper to create an errorhelpers.ErrInvariantViolation with an explanation about
-// a jagged array being found
+// jaggedArrayError helper to create an errox.InvariantViolation with an explanation about a jagged array being found
 func jaggedArrayError(maxAmount, violatedAmount, arrayIndex int) error {
-	return errorhelpers.NewErrInvariantViolation(fmt.Sprintf("jagged array found: yielded values within "+
+	return errox.NewErrInvariantViolation(fmt.Sprintf("jagged array found: yielded values within "+
 		"each array are not matching; expected each array to hold %d elements but found an array with %d elements "+
 		"at array index %d", maxAmount, violatedAmount, arrayIndex+1))
 }
