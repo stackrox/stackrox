@@ -46,7 +46,7 @@ func (s *apiTokenDataStoreTestSuite) SetupTest() {
 	s.dataStore = New(s.storage)
 }
 
-func (s *apiTokenDataStoreTestSuite) TeardownTest() {
+func (s *apiTokenDataStoreTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
