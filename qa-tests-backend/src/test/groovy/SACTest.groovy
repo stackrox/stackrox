@@ -1,3 +1,5 @@
+import io.stackrox.proto.storage.DeploymentOuterClass
+
 import static Services.waitForViolation
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
 
@@ -78,7 +80,7 @@ class SACTest extends BaseSpecification {
 
         // Make sure each deployment has a risk score.
         def deployments = DeploymentService.listDeployments()
-        deployments.each { ListDeployment dep ->
+        deployments.each { DeploymentOuterClass.ListDeployment dep ->
             try {
                 withRetry(30, 2) {
                     assert DeploymentService.getDeploymentWithRisk(dep.id).hasRisk()
