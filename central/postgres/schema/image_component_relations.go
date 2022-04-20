@@ -3,11 +3,18 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	// CreateTableImageComponentRelationsStmt holds the create statement for table `ImageComponentRelations`.
+	// CreateTableImageComponentRelationsStmt holds the create statement for table `image_component_relations`.
 	CreateTableImageComponentRelationsStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists image_component_relations (
@@ -15,12 +22,29 @@ var (
                    Location varchar,
                    ImageId varchar,
                    ImageComponentId varchar,
+                   ImageComponentName varchar,
+                   ImageComponentVersion varchar,
+                   ImageComponentOperatingSystem varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, ImageId, ImageComponentId),
+                   PRIMARY KEY(Id, ImageId, ImageComponentId, ImageComponentName, ImageComponentVersion, ImageComponentOperatingSystem),
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE
                )
                `,
 		Indexes:  []string{},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// ImageComponentRelationsSchema is the go schema for table `image_component_relations`.
+	ImageComponentRelationsSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("image_component_relations")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.ImageComponentEdge)(nil)), "image_component_relations").
+			WithReference(ImagesSchema).
+			WithReference(ImageComponentsSchema)
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_COMPONENT_EDGE, "image_component_relations", (*storage.ImageComponentEdge)(nil)))
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

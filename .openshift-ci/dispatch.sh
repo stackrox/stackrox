@@ -5,6 +5,7 @@ source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
 
+shopt -s nullglob
 for cred in /tmp/secret/**/[A-Z]*; do
     export "$(basename "$cred")"="$(cat "$cred")"
 done
@@ -27,6 +28,9 @@ ci_job="$1"
 shift
 
 case "$ci_job" in
+    binary_build_commands)
+        "$ROOT/.openshift-ci-migration/binary_build_commands.sh"
+        ;;
     gke-upgrade-tests)
         "$ROOT/.openshift-ci/gke_upgrade_test.py"
         ;;
@@ -36,6 +40,6 @@ case "$ci_job" in
     *)
         # For ease of initial integration this function does not fail when the
         # job is unknown.
-        info "nothing to see here"
+        info "nothing to see here: ${ci_job}"
         exit 0
 esac

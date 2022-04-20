@@ -2,7 +2,8 @@ import React from 'react';
 
 import { defaultColumnClassName } from 'Components/Table';
 import { knownBackendFlags } from 'utils/featureFlags';
-import { times, daysOfWeek } from '../Form/Schedule';
+
+import { daysOfWeek, timesOfDay } from './integrationUtils';
 
 const classNameWordBreak = `${defaultColumnClassName} word-break`;
 
@@ -207,10 +208,10 @@ const tableColumnDescriptor = Object.freeze({
                     const { schedule } = data;
                     if (schedule.weekly) {
                         return `Weekly on ${daysOfWeek[schedule.weekly.day]} @ ${
-                            times[schedule.hour]
+                            timesOfDay[schedule.hour]
                         } UTC`;
                     }
-                    return `Daily @ ${times[schedule.hour]} UTC`;
+                    return `Daily @ ${timesOfDay[schedule.hour]} UTC`;
                 },
                 Header: 'Schedule',
             },
@@ -224,10 +225,10 @@ const tableColumnDescriptor = Object.freeze({
                     const { schedule } = data;
                     if (schedule.weekly) {
                         return `Weekly on ${daysOfWeek[schedule.weekly.day]} @ ${
-                            times[schedule.hour]
+                            timesOfDay[schedule.hour]
                         } UTC`;
                     }
-                    return `Daily @ ${times[schedule.hour]} UTC`;
+                    return `Daily @ ${timesOfDay[schedule.hour]} UTC`;
                 },
                 Header: 'Schedule',
             },

@@ -63,10 +63,15 @@ func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.Emb
 
 func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, convertedCVE *storage.CVE, embedded *storage.EmbeddedVulnerability) *storage.ComponentCVEEdge {
 	ret := &storage.ComponentCVEEdge{
-		Id:               edges.EdgeID{ParentID: convertedComponent.GetId(), ChildID: convertedCVE.GetId()}.ToString(),
-		IsFixable:        embedded.GetFixedBy() != "",
-		CveId:            convertedCVE.GetId(),
-		ImageComponentId: convertedComponent.GetId(),
+		Id:                            edges.EdgeID{ParentID: convertedComponent.GetId(), ChildID: convertedCVE.GetId()}.ToString(),
+		IsFixable:                     embedded.GetFixedBy() != "",
+		ImageCveId:                    convertedCVE.GetId(),
+		ImageComponentId:              convertedComponent.GetId(),
+		ImageComponentName:            convertedComponent.GetName(),
+		ImageComponentVersion:         convertedComponent.GetVersion(),
+		ImageComponentOperatingSystem: convertedComponent.GetOperatingSystem(),
+		ImageCve:                      convertedCVE.GetCve(),
+		ImageCveOperatingSystem:       convertedCVE.GetOperatingSystem(),
 	}
 
 	if ret.IsFixable {
@@ -98,10 +103,13 @@ func generateImageComponent(os string, from *storage.EmbeddedImageScanComponent)
 
 func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.ImageComponent, embedded *storage.EmbeddedImageScanComponent) *storage.ImageComponentEdge {
 	ret := &storage.ImageComponentEdge{
-		Id:               edges.EdgeID{ParentID: image.GetId(), ChildID: convImgComponent.GetId()}.ToString(),
-		ImageId:          image.GetId(),
-		ImageComponentId: convImgComponent.GetId(),
-		Location:         embedded.GetLocation(),
+		Id:                            edges.EdgeID{ParentID: image.GetId(), ChildID: convImgComponent.GetId()}.ToString(),
+		ImageId:                       image.GetId(),
+		ImageComponentId:              convImgComponent.GetId(),
+		Location:                      embedded.GetLocation(),
+		ImageComponentName:            embedded.GetName(),
+		ImageComponentVersion:         embedded.GetVersion(),
+		ImageComponentOperatingSystem: image.GetScan().GetOperatingSystem(),
 	}
 
 	if embedded.HasLayerIndex != nil {
@@ -114,10 +122,12 @@ func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.
 
 func generateImageCVEEdge(imageID string, convertedCVE *storage.CVE, embedded *storage.EmbeddedVulnerability) *storage.ImageCVEEdge {
 	ret := &storage.ImageCVEEdge{
-		Id:         edges.EdgeID{ParentID: imageID, ChildID: convertedCVE.GetId()}.ToString(),
-		State:      embedded.GetState(),
-		ImageId:    imageID,
-		ImageCveId: convertedCVE.GetId(),
+		Id:                      edges.EdgeID{ParentID: imageID, ChildID: convertedCVE.GetId()}.ToString(),
+		State:                   embedded.GetState(),
+		ImageId:                 imageID,
+		ImageCveId:              convertedCVE.GetId(),
+		ImageCve:                convertedCVE.GetCve(),
+		ImageCveOperatingSystem: convertedCVE.GetOperatingSystem(),
 	}
 	if ret.GetState() != storage.VulnerabilityState_OBSERVED {
 		return ret

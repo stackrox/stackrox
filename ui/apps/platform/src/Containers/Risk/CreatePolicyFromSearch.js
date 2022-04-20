@@ -4,33 +4,24 @@ import { useHistory } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { Plus } from 'react-feather';
 
-import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 import workflowStateContext from 'Containers/workflowStateContext';
 import PanelButton from 'Components/PanelButton';
 import { actions as formMessageActions } from 'reducers/formMessages';
 import { actions as notificationActions } from 'reducers/notifications';
-import { actions as pageActions } from 'reducers/policies/page';
 import { actions as wizardActions } from 'reducers/policies/wizard';
 import { generatePolicyFromSearch } from 'services/PoliciesService';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { convertToRestSearch } from 'utils/searchUtils';
-import { knownBackendFlags } from 'utils/featureFlags';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { policiesBasePath } from 'routePaths';
 
 function CreatePolicyFromSearch({
-    openWizard,
     setWizardPolicy,
-    setWizardStage,
     addToast,
     removeToast,
     addFormMessage,
     clearFormMessages,
 }) {
     const workflowState = useContext(workflowStateContext);
-    const isPoliciesPatternFlyEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_POLICIES_PATTERNFLY
-    );
     const history = useHistory();
 
     // this utility filters out incomplete search pairs
@@ -48,7 +39,7 @@ function CreatePolicyFromSearch({
             .then((response) => {
                 history.push({
                     pathname: policiesBasePath,
-                    search: isPoliciesPatternFlyEnabled ? '?action=generate' : '',
+                    search: '?action=generate',
                 });
 
                 const newPolicy = {
@@ -71,8 +62,6 @@ function CreatePolicyFromSearch({
                 }
 
                 setWizardPolicy(newPolicy);
-                setWizardStage(wizardStages.edit);
-                openWizard();
             })
             .catch((err) => {
                 // to get the actual error returned by the server, we have to dereference the response object first
@@ -102,8 +91,6 @@ function CreatePolicyFromSearch({
 }
 
 CreatePolicyFromSearch.propTypes = {
-    openWizard: PropTypes.func.isRequired,
-    setWizardStage: PropTypes.func.isRequired,
     setWizardPolicy: PropTypes.func.isRequired,
     addToast: PropTypes.func.isRequired,
     removeToast: PropTypes.func.isRequired,
@@ -112,8 +99,6 @@ CreatePolicyFromSearch.propTypes = {
 };
 
 const mapDispatchToProps = {
-    openWizard: pageActions.openWizard,
-    setWizardStage: wizardActions.setWizardStage,
     setWizardPolicy: wizardActions.setWizardPolicy,
     addToast: notificationActions.addNotification,
     removeToast: notificationActions.removeOldestNotification,

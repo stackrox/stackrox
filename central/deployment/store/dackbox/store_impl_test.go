@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"testing"
 
 	ptypes "github.com/gogo/protobuf/types"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
@@ -25,6 +27,8 @@ type DeploymentStoreTestSuite struct {
 	dacky *dackbox.DackBox
 
 	store *StoreImpl
+
+	ctx context.Context
 }
 
 func (suite *DeploymentStoreTestSuite) SetupSuite() {
@@ -38,6 +42,7 @@ func (suite *DeploymentStoreTestSuite) SetupSuite() {
 		suite.FailNowf("failed to create dackbox: %+v", err.Error())
 	}
 	suite.store = New(suite.dacky, concurrency.NewKeyFence())
+	suite.ctx = sac.WithAllAccess(context.Background())
 }
 
 func (suite *DeploymentStoreTestSuite) TearDownSuite() {
@@ -47,13 +52,13 @@ func (suite *DeploymentStoreTestSuite) TearDownSuite() {
 func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store *StoreImpl, deployments ...*storage.Deployment) {
 	for _, d := range deployments {
 		// Test retrieval of full objects
-		got, exists, err := store.GetDeployment(d.GetId())
+		got, exists, err := store.Get(suite.ctx, d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(d, got)
 
 		// Test retrieval of list objects
-		gotList, exists, err := store.ListDeployment(d.GetId())
+		gotList, exists, err := store.GetListDeployment(suite.ctx, d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(&storage.ListDeployment{
@@ -66,7 +71,7 @@ func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store *StoreImpl, de
 	}
 
 	// Test Count
-	count, err := store.CountDeployments()
+	count, err := store.Count(suite.ctx)
 	suite.NoError(err)
 	suite.Equal(len(deployments), count)
 }
@@ -95,7 +100,7 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 
 	// Test Add
 	for _, d := range deployments1 {
-		suite.NoError(suite.store.UpsertDeployment(d))
+		suite.NoError(suite.store.Upsert(suite.ctx, d))
 	}
 
 	suite.verifyDeploymentsAre(suite.store, deployments1...)
@@ -127,7 +132,7 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 	}
 
 	for _, d := range deployments2 {
-		suite.NoError(suite.store.UpsertDeployment(d))
+		suite.NoError(suite.store.Upsert(suite.ctx, d))
 	}
 
 	suite.verifyDeploymentsAre(newStore, deployments2...)
@@ -140,7 +145,7 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 
 	// Test Remove
 	for _, d := range deployments2 {
-		suite.NoError(suite.store.RemoveDeployment(d.GetId()))
+		suite.NoError(suite.store.Delete(suite.ctx, d.GetId()))
 	}
 	suite.verifyDeploymentsAre(suite.store)
 

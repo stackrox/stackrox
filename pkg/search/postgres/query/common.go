@@ -3,7 +3,6 @@ package pgsearch
 import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -77,12 +76,12 @@ func NewTrueQuery() *QueryEntry {
 }
 
 // MatchFieldQuery is a simple query that performs operations on a single field.
-func MatchFieldQuery(dbField *walker.Field, value string, highlight bool, optionsMap searchPkg.OptionsMap) (*QueryEntry, error) {
+func MatchFieldQuery(dbField *walker.Field, value string, highlight bool) (*QueryEntry, error) {
 	if dbField == nil {
 		return nil, nil
 	}
 	// Need to find base value
-	field, ok := optionsMap.Get(dbField.Search.FieldName)
+	field, ok := dbField.Schema.OptionsMap.Get(dbField.Search.FieldName)
 	if !ok {
 		log.Infof("Options Map for %s does not have field: %v", dbField.Schema.Table, dbField.Search.FieldName)
 		return nil, nil

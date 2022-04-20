@@ -110,7 +110,7 @@ func (s *baseSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
-func (s *baseSuite) TeardownTest() {
+func (s *baseSuite) TearDownTest() {
 	s.envIsolator.RestoreAll()
 }
 

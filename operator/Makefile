@@ -167,14 +167,6 @@ kuttl: ## Download kuttl.
 	$(GET_GITHUB_RELEASE_FN); \
 	get_github_release $(KUTTL) $${KUTTL_URL}
 
-OPM_VERSION = 1.17.5
-OPM = $(PROJECT_DIR)/bin/opm-$(OPM_VERSION)
-.PHONY: opm
-opm: ## Download opm.
-	@OPM_URL=https://github.com/operator-framework/operator-registry/releases/download/v$(OPM_VERSION)/$(OS)-$$(go env GOARCH)-opm ;\
-	$(GET_GITHUB_RELEASE_FN); \
-	get_github_release $(OPM) $${OPM_URL}
-
 ENVTEST = $(PROJECT_DIR)/bin/setup-envtest
 envtest: ## Download envtest-setup locally if necessary.
 	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
@@ -405,25 +397,21 @@ bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in t
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) $(BUNDLE_IMG)
 
 .PHONY: index-build
-index-build: opm bundle-post-process ## Build Index (a.k.a. Catalog) image with the bundle. Bundle image must be pushed beforehand.
-# If the bundle has `replaces:` attribute in CSV, then the one it replaces has to already be in the index. Otherwise
-# `opm index add` fails with an error like this:
-#  Invalid bundle rhacs-operator.v3.63.0-73-g7aab09c265-dirty, replaces nonexistent bundle rhacs-operator.v3.62.0
-# We assume that the index for the replaced bundle is already in the registry with the same tag and so we tell opm to
-# pull previous index image and use it as a base when building the current index image.
-# The sed expression below should extract everything after the first dot in `replaces:` value.
-# E.g. `  replaces: rhacs-operator.v3.62.0` -> `v3.62.0`
+index-build: bundle-post-process ## Build Index (a.k.a. Catalog) image with the bundle. Bundle image must be pushed beforehand.
+# If the bundle has `replaces:` attribute in CSV, then the one it replaces has to already be in the index. Otherwise,
+# validation of the index fails because more than one version is identified as the head of the channel. An example of an
+# error: `multiple channel heads found in graph: rhacs-operator.v3.67.0, rhacs-operator.v3.69.0`
+# We assume that the index for the replaced bundle is already in the registry with the same tag and so we use previous
+# index image as a base when building the current index image. The sed expression below should extract everything after
+# the first dot in `replaces:` value. E.g. `  replaces: rhacs-operator.v3.62.0` -> `v3.62.0`
 	@set -euo pipefail ;\
 	replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
-	if [[ -n "$$replaced_version" ]]; then \
-		previous_index="$(INDEX_IMG_BASE):$${replaced_version}" ;\
-		previous_index_arg="--from-index $${previous_index}" ;\
-		echo "Detected that this bundle updates (replaces) version $$replaced_version. Will use index image $${previous_index} as the base for the current one." ;\
-	else \
-		previous_index_arg="" ;\
-	fi ;\
-	set -x ;\
-	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain $(OPM) index add --bundles $(BUNDLE_IMG) --tag $(INDEX_IMG) $${previous_index_arg} --build-tool docker
+	./hack/build-index-image.sh \
+		--base-index-tag "$(INDEX_IMG_BASE):$${replaced_version}" \
+		--index-tag "$(INDEX_IMG)" \
+		--bundle-tag "$(BUNDLE_IMG)" \
+		--replaced-version "$${replaced_version}" \
+		--clean-output-dir
 
 ##@ Push images
 

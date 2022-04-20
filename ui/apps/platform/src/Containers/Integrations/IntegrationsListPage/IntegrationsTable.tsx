@@ -22,7 +22,7 @@ import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
 import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
-import DownloadCAConfigBundle from '../ClusterInitBundles/DownloadCAConfigBundle';
+import DownloadCAConfigBundle from './DownloadCAConfigBundle';
 
 function getNewButtonText(type) {
     if (type === 'apitoken') {

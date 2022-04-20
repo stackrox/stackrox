@@ -8,7 +8,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import {
     getMitreAttackVector,
     getMitreTechnique,
-} from 'Containers/Policies/PatternFly/Wizard/Step1/mitreAttackVectors.utils';
+} from 'Containers/Policies/Wizard/Step1/mitreAttackVectors.utils';
 import MitreAttackVectorsView from './MitreAttackVectorsView';
 
 const GET_MITRE_ATTACK_VECTORS = gql`

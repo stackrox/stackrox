@@ -4,6 +4,7 @@ import static services.ClusterService.DEFAULT_CLUSTER_NAME
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
+import io.stackrox.proto.storage.DeploymentOuterClass
 
 import groups.BAT
 import objects.Deployment
@@ -21,6 +22,7 @@ import util.NetworkGraphUtil
 
 import util.Env
 import spock.lang.IgnoreIf
+import org.junit.AssumptionViolatedException
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
 
@@ -30,7 +32,6 @@ class SACTest extends BaseSpecification {
     static final private String NAMESPACE_QA1 = "qa-test1"
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA2 = "sac-deploymentnginx-qa2"
     static final private String NAMESPACE_QA2 = "qa-test2"
-    static final private String TEST_IMAGE = "nginx:1.7.9"
     static final private String TESTROLE = "Continuous Integration"
     static final private String SECRETNAME = "sac-secret"
     static final protected String ALLACCESSTOKEN = "allAccessToken"
@@ -62,8 +63,10 @@ class SACTest extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 600 : 60
 
     def setupSpec() {
-        // ROX-6260: pre scan the image to avoid missing risk score
-        Services.scanImage(TEST_IMAGE)
+        // Make sure we scan the image initially to make reprocessing faster.
+        def img = Services.scanImage(TEST_IMAGE)
+        assert img.hasScan()
+
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
@@ -73,6 +76,18 @@ class SACTest extends BaseSpecification {
                 WAIT_FOR_VIOLATION_TIMEOUT)
         assert waitForViolation(DEPLOYMENT_QA2.name, "Secure Shell (ssh) Port Exposed",
                 WAIT_FOR_VIOLATION_TIMEOUT)
+
+        // Make sure each deployment has a risk score.
+        def deployments = DeploymentService.listDeployments()
+        deployments.each { DeploymentOuterClass.ListDeployment dep ->
+            try {
+                withRetry(30, 2) {
+                    assert DeploymentService.getDeploymentWithRisk(dep.id).hasRisk()
+                }
+            } catch (Exception e) {
+                throw new AssumptionViolatedException("Failed to retrieve risk from deployment ${dep.name}", e)
+            }
+        }
     }
 
     def cleanupSpec() {

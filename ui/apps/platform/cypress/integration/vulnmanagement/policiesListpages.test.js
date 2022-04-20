@@ -1,6 +1,6 @@
 import withAuth from '../../helpers/basicAuth';
 import { url, selectors } from '../../constants/VulnManagementPage';
-import { selectors as policySelectors } from '../../constants/PoliciesPage';
+import { selectors as policySelectors } from '../../constants/PoliciesPagePatternFly';
 import { hasExpectedHeaderColumns, allChecksForEntities } from '../../helpers/vmWorkflowUtils';
 
 describe('Policies list Page and its entity detail page , related entities sub list  validations ', () => {
@@ -38,8 +38,8 @@ describe('Policies list Page and its entity detail page , related entities sub l
             cy.get(`${selectors.tableRows}:contains('Privileged')`).click();
 
             cy.get(
-                `${policySelectors.booleanPolicySection.policyFieldCard}:contains("Privileged container status") ${policySelectors.booleanPolicySection.policyFieldValue}:first button`
-            ).should('have.value', 'true');
+                `${policySelectors.step3.policyCriteria.groupCards}:contains("Privileged container status") ${policySelectors.step3.policyCriteria.value.radioGroupItem}:first button`
+            ).should('have.class', 'pf-m-selected');
         });
     });
 });

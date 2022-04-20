@@ -69,6 +69,9 @@ type properties struct {
 	// When set to true, it means that the schema represents a join table. The generation of mutating functions
 	// such as inserts, updates, deletes, is skipped. This is because join tables should be filled from parents.
 	JoinTable bool
+
+	// Indicates whether to generate only the schema. If set to true, only the schema is generated, and not store and indexer.
+	SchemaOnly bool
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -108,6 +111,7 @@ func main() {
 	c.Flags().StringVar(&props.PermissionChecker, "permission-checker", "", "the permission checker that should be used")
 	c.Flags().StringSliceVar(&props.Refs, "references", []string{}, "additional foreign key references as <table_name:type>")
 	c.Flags().BoolVar(&props.JoinTable, "join-table", false, "indicates the schema represents a join table. The generation of mutating functions is skipped")
+	c.Flags().BoolVar(&props.SchemaOnly, "schema-only", false, "if true, generates only the schema and not store and index")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
@@ -125,7 +129,6 @@ func main() {
 		compileFKArgAndAttachToSchema(schema, props.Refs)
 
 		permissionCheckerEnabled := props.PermissionChecker != ""
-		resourceType := getResourceType(props.Type, schema, permissionCheckerEnabled, props.JoinTable)
 		templateMap := map[string]interface{}{
 			"Type":              props.Type,
 			"TrimmedType":       stringutils.GetAfter(props.Type, "."),
@@ -135,15 +138,19 @@ func main() {
 			"OptionsPath":       path.Join(packagenames.Rox, props.OptionsPath),
 			"JoinTable":         props.JoinTable,
 			"PermissionChecker": props.PermissionChecker,
-			"ResourceType":      resourceType.String(),
-		}
-		if resourceType == directlyScoped {
-			templateMap["ClusterGetter"] = clusterGetter(schema)
-			templateMap["NamespaceGetter"] = namespaceGetter(schema)
+			"Obj": object{
+				storageType:              props.Type,
+				permissionCheckerEnabled: permissionCheckerEnabled,
+				isJoinTable:              props.JoinTable,
+				schema:                   schema,
+			},
 		}
 
 		if err := generateSchema(schema); err != nil {
 			return err
+		}
+		if props.SchemaOnly {
+			return nil
 		}
 		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
 			return err
@@ -181,8 +188,14 @@ func generateSchemaRecursive(schema *walker.Schema, visited set.StringSet, pkgPa
 	}
 
 	templateMap := map[string]interface{}{
-		"Schema": schema,
+		"Schema":         schema,
+		"SearchCategory": "",
 	}
+	searchCategory, ok := typeToSearchCategoryMap[stringutils.GetAfter(schema.Type, ".")]
+	if ok {
+		templateMap["SearchCategory"] = fmt.Sprintf("v1.SearchCategory_%s", searchCategory)
+	}
+
 	if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(pkgPath, schema.Table)); err != nil {
 		return err
 	}
