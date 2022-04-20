@@ -242,7 +242,7 @@ export const imageSigningCriteriaDescriptor: SignatureDescriptor = {
 export const networkPolicyFieldDescriptors: Descriptor[] = [
     {
         label: 'Ingress Network Policy',
-        name: 'Ingress Network Policy',
+        name: 'Missing Ingress Network Policy',
         shortName: 'Ingress Network Policy',
         longName: 'Ingress Network Policy',
         category: policyCriteriaCategories.NETWORKING,
@@ -262,7 +262,7 @@ export const networkPolicyFieldDescriptors: Descriptor[] = [
     },
     {
         label: 'Egress Network Policy',
-        name: 'Egress Network Policy',
+        name: 'Missing Egress Network Policy',
         shortName: 'Egress Network Policy',
         longName: 'Egress Network Policy',
         category: policyCriteriaCategories.NETWORKING,
