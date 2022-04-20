@@ -1,53 +1,11 @@
 import set from 'lodash/set';
 
 import { IntegrationBase } from 'services/IntegrationsService';
+import { IntegrationSource, IntegrationType } from 'types/integration';
 
 import integrationsList from './integrationsList';
 
-export type IntegrationSource =
-    | 'authProviders'
-    | 'notifiers'
-    | 'imageIntegrations'
-    | 'backups'
-    | 'authPlugins'
-    | 'signatureIntegrations';
-export type IntegrationType =
-    | 'oidc'
-    | 'auth0'
-    | 'saml'
-    | 'iap'
-    | 'generic'
-    | 'awsSecurityHub'
-    | 'jira'
-    | 'email'
-    | 'slack'
-    | 'teams'
-    | 'cscc'
-    | 'splunk'
-    | 'sumologic'
-    | 'pagerduty'
-    | 'syslog'
-    | 'tenable'
-    | 'docker'
-    | 'dtr'
-    | 'artifactory'
-    | 'quay'
-    | 'clair'
-    | 'clairify'
-    | 'artifactregistry'
-    | 'google'
-    | 'ecr'
-    | 'nexus'
-    | 'azure'
-    | 'anchore'
-    | 'ibm'
-    | 'rhel'
-    | 's3'
-    | 'gcs'
-    | 'scopedAccess'
-    | 'apitoken'
-    | 'clusterInitBundle'
-    | 'signature';
+export type { IntegrationSource, IntegrationType };
 
 export type Integration = {
     type: IntegrationType;
@@ -55,17 +13,11 @@ export type Integration = {
     name: string;
 };
 
-export type IntegrationTile = {
-    source: string;
-    type: string;
-    label: string;
-};
-
 export function getIntegrationLabel(source: string, type: string): string {
-    const integrationTile = integrationsList[source]?.find(
-        (integration: IntegrationTile) => integration.type === type
-    ) as IntegrationTile;
-    return integrationTile.label;
+    const integrationTileLabel = integrationsList[source]?.find(
+        (integration) => integration.type === type
+    )?.label;
+    return typeof integrationTileLabel === 'string' ? integrationTileLabel : '';
 }
 
 export function getIsAPIToken(source: IntegrationSource, type: IntegrationType): boolean {
