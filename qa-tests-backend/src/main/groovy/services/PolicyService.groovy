@@ -48,6 +48,10 @@ class PolicyService extends BaseService {
         }
     }
 
+    static PolicyServiceOuterClass.DryRunResponse dryRunPolicy(PolicyOuterClass.Policy policy) {
+            return getPolicyClient().dryRunPolicy(policy)
+    }
+
     static patchPolicy(PolicyServiceOuterClass.PatchPolicyRequest pr) {
         try {
             getPolicyClient().patchPolicy(pr).newBuilder().build()
