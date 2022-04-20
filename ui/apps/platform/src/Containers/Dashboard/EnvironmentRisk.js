@@ -1,9 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { selectors } from 'reducers';
-import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
 
 import SeverityTile from 'Containers/Dashboard/SeverityTile';
 import { severityColorMap } from 'constants/severityColors';
@@ -74,8 +71,4 @@ EnvironmentRisk.propTypes = {
     ).isRequired,
 };
 
-const mapStateToProps = createStructuredSelector({
-    globalViolationsCounts: selectors.getAlertCountsByCluster,
-});
-
-export default connect(mapStateToProps, null)(EnvironmentRisk);
+export default EnvironmentRisk;

@@ -1,3 +1,4 @@
+import qs from 'qs';
 import {
     SearchEntry,
     GlobalSearchOption,
@@ -124,4 +125,17 @@ export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter)
         .filter(([, value]) => value.length !== 0)
         .map(([key, value]) => `${key}:${Array.isArray(value) ? value.join(',') : value}`)
         .join('+');
+}
+
+export function getUrlQueryStringForSearchFilter(
+    searchFilter: SearchFilter,
+    searchPrefix = 'search'
+): string {
+    return qs.stringify(
+        { [searchPrefix]: searchFilter },
+        {
+            arrayFormat: 'repeat',
+            encodeValuesOnly: true,
+        }
+    );
 }

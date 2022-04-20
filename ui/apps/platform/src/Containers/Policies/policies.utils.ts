@@ -69,16 +69,6 @@ export function parsePoliciesSearchString(search: string): PoliciesSearch {
     };
 }
 
-export function getSearchStringForFilter(s: SearchFilter): string {
-    return qs.stringify(
-        { s },
-        {
-            arrayFormat: 'repeat',
-            encodeValuesOnly: true,
-        }
-    );
-}
-
 // categories
 
 export function formatCategories(categories: string[]): string {
