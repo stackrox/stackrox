@@ -18,6 +18,7 @@ const (
 )
 
 var (
+	// registeredTables is map of sql table name to go schema of the sql table.
 	registeredTables = make(map[string]*walker.Schema)
 
 	postgresOpenRetries        = 10
