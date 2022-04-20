@@ -32,7 +32,7 @@ import SearchFilterInput from 'Components/SearchFilterInput';
 import { ActionItem } from 'Containers/Violations/ViolationsTablePanel';
 import EnableDisableNotificationModal, {
     EnableDisableType,
-} from 'Containers/Policies/PatternFly/Modal/EnableDisableNotificationModal';
+} from 'Containers/Policies/Modal/EnableDisableNotificationModal';
 import useTableSelection from 'hooks/useTableSelection';
 import { AlertVariantType } from 'hooks/patternfly/useToasts';
 import { policiesBasePath } from 'routePaths';
