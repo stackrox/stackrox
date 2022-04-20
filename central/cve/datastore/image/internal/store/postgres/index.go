@@ -17,7 +17,7 @@ import (
 )
 
 func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_VULNERABILITIES, schema)
+	mapping.RegisterCategoryToTable(v1.SearchCategory_VULNERABILITIES, schema)
 }
 
 // NewIndexer returns new indexer for `storage.CVE`.
@@ -34,13 +34,13 @@ type indexerImpl struct {
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "CVE")
 
-	return postgres.RunCountRequest(v1.SearchCategory_IMAGE_VULNERABILITIES, q, b.db, mappings.OptionsMap)
+	return postgres.RunCountRequest(v1.SearchCategory_VULNERABILITIES, q, b.db, mappings.OptionsMap)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "CVE")
 
-	return postgres.RunSearchRequest(v1.SearchCategory_IMAGE_VULNERABILITIES, q, b.db, mappings.OptionsMap)
+	return postgres.RunSearchRequest(v1.SearchCategory_VULNERABILITIES, q, b.db, mappings.OptionsMap)
 }
 
 //// Stubs for satisfying interfaces
