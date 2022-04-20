@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -270,7 +271,7 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 		return nil, err
 	}
 
-	maxDeploymentsAllowed, err := maxNumberOfDeploymentsInGraph()
+	maxDeploymentsAllowed, err := strconv.Atoi(maxNumberOfDeploymentsInGraphEnv.Setting())
 	if err != nil {
 		log.Warnf("%s env set to non-number value %s, using default %d",
 			maxNumberOfDeploymentsInGraphEnv.EnvVar(),
