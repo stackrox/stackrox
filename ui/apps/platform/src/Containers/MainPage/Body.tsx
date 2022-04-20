@@ -56,7 +56,7 @@ const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/V
 // TODO: rename this to AsyncPoliciesPage after we remove the old deprecated policies code
 // Jira issue to track: https://issues.redhat.com/browse/ROX-9450
 const AsyncPoliciesPagePatternFly = asyncComponent(
-    () => import('Containers/Policies/PatternFly/PoliciesPage')
+    () => import('Containers/Policies/PoliciesPage')
 );
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
