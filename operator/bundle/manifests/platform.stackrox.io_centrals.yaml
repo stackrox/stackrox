@@ -658,6 +658,10 @@ spec:
                       passwordReference:
                         description: Reference contains reference for the admin password
                         type: string
+                      secretRef:
+                        description: SecretRef contains secret reference for the admin
+                          password
+                        type: string
                     required:
                     - adminPasswordSecret
                     type: object

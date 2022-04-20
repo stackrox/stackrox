@@ -333,6 +333,10 @@ type AdminPasswordStatus struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=status,xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret"}
 	Reference string `json:"passwordReference,omitempty"`
 
+	// SecretRef contains secret reference for the admin password
+	//+operator-sdk:csv:customresourcedefinitions:type=status,xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret"}
+	SecretRef string `json:"secretRef,omitempty"`
+
 	// SecretName contains reference for the admin password
 	//+operator-sdk:csv:customresourcedefinitions:type=status,xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret"}
 	SecretName *LocalSecretReference `json:"adminPasswordSecret"`

@@ -307,6 +307,11 @@ spec:
         path: central.adminPassword.passwordReference
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: SecretRef contains secret reference for the admin password
+        displayName: Secret Ref
+        path: central.adminPassword.secretRef
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
       version: v1alpha1
     - description: SecuredCluster is the configuration template for the secured cluster
         services. These include Sensor, which is responsible for the connection to
