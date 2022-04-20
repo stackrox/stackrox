@@ -80,6 +80,11 @@ ENABLE_WEBHOOKS ?= false
 # Use the value figured in the parent directory Makefile, unless provided explicitly in the environment.
 ROX_IMAGE_FLAVOR ?= $(shell $(MAKE) --quiet --no-print-directory -C .. image-flavor)
 
+# ALLOW_DIRTY_TAG_INSTALLATION determines if OLM installation should proceed with -dirty prefixed operator image tag.
+# -dirty prefix shows that current branch changes are not committed
+# therefore CI has not built and pushed image with current changes to the registry.
+ALLOW_DIRTY_TAG_INSTALLATION ?= false
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -321,7 +326,12 @@ undeploy: check-ci-setup kustomize ## Undeploy operator image from the K8s clust
 deploy-via-olm: ## Deploy operator image to the cluster using OLM.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(VERSION)
+	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(VERSION) $(ALLOW_DIRTY_TAG_INSTALLATION)
+
+.PHONY: deploy-dirty-tag-via-olm
+deploy-dirty-tag-via-olm: ## Deploy operator dirty tagged image to the cluster using OLM.
+# This command ignores filter for dirty tagged images.
+	ALLOW_DIRTY_TAG_INSTALLATION ?=true KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(VERSION) true
 
 .PHONY: deploy-previous-via-olm
 deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLM.
@@ -329,11 +339,15 @@ deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
 	@replaced_version_no_v=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.v(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
 	set -x ;\
-	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(VERSION) $${replaced_version_no_v}
+	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(VERSION) $(ALLOW_DIRTY_TAG_INSTALLATION) $${replaced_version_no_v}
 
 .PHONY: upgrade-via-olm
 upgrade-via-olm: kuttl
-	KUTTL=$(KUTTL) ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(VERSION)
+	KUTTL=$(KUTTL) ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(VERSION) $(ALLOW_DIRTY_TAG_INSTALLATION)
+
+.PHONY: upgrade-dirty-tag-via-olm
+upgrade-via-olm: kuttl
+	KUTTL=$(KUTTL) ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(VERSION) true
 
 ##@ Bundle and Index build
 

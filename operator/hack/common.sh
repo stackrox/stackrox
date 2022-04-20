@@ -67,11 +67,22 @@ function retry() {
 
 function check_version_tag() {
   local -r version_tag="$1"
+  local -r allow_dirty_tag="$2"
 
-  if [[ $version_tag == *-dirty ]]; then
-    log "Cannot install from *-dirty image tag. Dirty tag images are not supposed to be pushed to the registry."
+  echo $IMAGE_TAG_BASE
+  if docker manifest inspect $IMAGE_TAG_BASE:$version_tag ; then
+    return 0
+  else
+    log "Cannot find $IMAGE_TAG_BASE:$version_tag image tag in the registry."
+  fi
+
+
+  if [[ $version_tag == *-dirty ]] && [[ $allow_dirty_tag = false ]]; then
+    log "Cannot install from *-dirty image tag. Please, use 'deploy-dirty-tag-via-olm' command instead if you need to install dirty tagged image"
     return 1
   fi
+
+  return 0
 }
 
 function approve_install_plan() {

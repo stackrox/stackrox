@@ -7,21 +7,23 @@ source "$(dirname "$0")/common.sh"
 function main() {
   local -r operator_ns="${1:-}"
   case $# in
-  2)
-    local -r index_version="${2:-}"
-    local -r operator_version="${2:-}"
-    ;;
   3)
     local -r index_version="${2:-}"
-    local -r operator_version="${3:-}"
+    local -r operator_version="${2:-}"
+    local -r allow_dirty_tag="${3:-}"
+    ;;
+  4)
+    local -r index_version="${2:-}"
+    local -r allow_dirty_tag="${3:-}"
+    local -r operator_version="${4:-}"
     ;;
   *)
-    echo "Usage: $0 <operator_ns> <index-version> [<install-version>]" >&2
+    echo "Usage: $0 <operator_ns> <index-version> <allow-dirty-tag> [<install-version>]" >&2
     exit 1
     ;;
   esac
 
-  check_version_tag "${operator_version}"
+  check_version_tag "${operator_version}" "${allow_dirty_tag}"
   create_namespace "${operator_ns}"
   create_pull_secret "${operator_ns}"
   apply_operator_manifests "${operator_ns}" "${index_version}" "${operator_version}"
