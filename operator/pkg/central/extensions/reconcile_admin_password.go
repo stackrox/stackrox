@@ -118,7 +118,7 @@ func (r *reconcileAdminPasswordExtensionRun) updateStatus(status *platform.Centr
 	}
 	fmt.Printf("Password secret name: %s", r.passwordSecretName)
 	status.Central.AdminPassword.Info = r.infoUpdate
-	status.Central.AdminPassword.Reference = r.passwordSecretName
+	status.Central.AdminPassword.Reference = "central-htpasswd"
 	if status.Central.AdminPassword.SecretName != nil {
 		status.Central.AdminPassword.SecretName.Name = r.passwordSecretName
 	} else {
