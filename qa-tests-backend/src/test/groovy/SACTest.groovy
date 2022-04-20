@@ -31,7 +31,6 @@ class SACTest extends BaseSpecification {
     static final private String NAMESPACE_QA1 = "qa-test1"
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA2 = "sac-deploymentnginx-qa2"
     static final private String NAMESPACE_QA2 = "qa-test2"
-    static final private String TEST_IMAGE = "quay.io/rhacs-eng/qa:nginx-1-7-9"
     static final private String TESTROLE = "Continuous Integration"
     static final private String SECRETNAME = "sac-secret"
     static final protected String ALLACCESSTOKEN = "allAccessToken"
@@ -63,7 +62,7 @@ class SACTest extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 600 : 60
 
     def setupSpec() {
-        // ROX-6260: pre scan the image to avoid missing risk score.
+        // Make sure we scan the image initially to make reprocessing faster.
         def img = Services.scanImage(TEST_IMAGE)
         assert img.hasScan()
 
@@ -79,17 +78,13 @@ class SACTest extends BaseSpecification {
 
         // Make sure each deployment has a risk score.
         def deployments = DeploymentService.listDeployments()
-        deployments.each {
-            def depID = it.id
+        deployments.each { ListDeployment dep ->
             try {
                 withRetry(30, 2) {
-                    assert DeploymentService.getDeploymentWithRisk(depID).hasRisk()
+                    assert DeploymentService.getDeploymentWithRisk(dep.id).hasRisk()
                 }
             } catch (Exception e) {
-                if (strictIntegrationTesting) {
-                    throw (e)
-                }
-                throw new AssumptionViolatedException("Failed to retrieve risk from deployment ${it.name}")
+                throw new AssumptionViolatedException("Failed to retrieve risk from deployment ${dep.name}", e)
             }
         }
     }
