@@ -241,37 +241,43 @@ export const imageSigningCriteriaDescriptor: SignatureDescriptor = {
 
 export const networkPolicyFieldDescriptors: Descriptor[] = [
     {
-        label: 'Missing Ingress Network Policy',
-        name: 'Missing Ingress Network Policy',
-        shortName: 'Missing Ingress Network Policy',
-        longName: 'Missing Ingress Network Policy',
+        label: 'Ingress Network Policy',
+        name: 'Ingress Network Policy',
+        shortName: 'Ingress Network Policy',
+        longName: 'Ingress Network Policy',
         category: policyCriteriaCategories.NETWORKING,
         type: 'radioGroup',
         radioButtons: [
             {
-                text: 'Missing Ingress Network Policy',
+                text: 'Policy Missing',
                 value: true,
+            },
+            {
+                text: 'Policy Present',
+                value: false,
             },
         ],
         defaultValue: true,
-        disabled: true,
         canBooleanLogic: false,
     },
     {
-        label: 'Missing Egress Network Policy',
-        name: 'Missing Egress Network Policy',
-        shortName: 'Missing Egress Network Policy',
-        longName: 'Missing Egress Network Policy',
+        label: 'Egress Network Policy',
+        name: 'Egress Network Policy',
+        shortName: 'Egress Network Policy',
+        longName: 'Egress Network Policy',
         category: policyCriteriaCategories.NETWORKING,
         type: 'radioGroup',
         radioButtons: [
             {
-                text: 'Missing Egress Network Policy',
+                text: 'Policy Missing',
                 value: true,
+            },
+            {
+                text: 'Policy Present',
+                value: false,
             },
         ],
         defaultValue: true,
-        disabled: true,
         canBooleanLogic: false,
     },
 ];
