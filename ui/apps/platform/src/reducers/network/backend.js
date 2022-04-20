@@ -7,7 +7,6 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 export const types = {
     FETCH_NETWORK_POLICY_GRAPH: createFetchingActionTypes('network/FETCH_NETWORK_POLICY_GRAPH'),
     FETCH_NETWORK_FLOW_GRAPH: createFetchingActionTypes('network/FETCH_NETWORK_FLOW_GRAPH'),
-    FETCH_NETWORK_POLICIES: createFetchingActionTypes('network/FETCH_NETWORK_POLICIES'),
     FETCH_NODE_UPDATES: createFetchingActionTypes('network/FETCH_NODE_UPDATES'),
     APPLY_NETWORK_POLICY_MODIFICATION: createFetchingActionTypes(
         'network/APPLY_NETWORK_POLICY_MODIFICATION'
@@ -19,7 +18,6 @@ export const types = {
 export const actions = {
     fetchNetworkPolicyGraph: createFetchingActions(types.FETCH_NETWORK_POLICY_GRAPH),
     fetchNetworkFlowGraph: createFetchingActions(types.FETCH_NETWORK_FLOW_GRAPH),
-    fetchNetworkPolicies: createFetchingActions(types.FETCH_NETWORK_POLICIES),
     fetchNodeUpdates: createFetchingActions(types.FETCH_NODE_UPDATES),
     applyNetworkPolicyModification: createFetchingActions(types.APPLY_NETWORK_POLICY_MODIFICATION),
 };
@@ -28,13 +26,6 @@ export const actions = {
 
 const networkPolicyGraph = (state = { nodes: [] }, action) => {
     if (action.type === types.FETCH_NETWORK_POLICY_GRAPH.SUCCESS) {
-        return isEqual(action.response, state) ? state : action.response;
-    }
-    return state;
-};
-
-const networkPolicies = (state = [], action) => {
-    if (action.type === types.FETCH_NETWORK_POLICIES.SUCCESS) {
         return isEqual(action.response, state) ? state : action.response;
     }
     return state;
@@ -99,7 +90,6 @@ const networkPolicyApplicationState = (state = 'INITIAL', action) => {
 
 const reducer = combineReducers({
     networkPolicyGraph,
-    networkPolicies,
     nodeUpdatesEpoch,
     networkErrorMessage,
     networkPolicyGraphState,
@@ -110,7 +100,6 @@ const reducer = combineReducers({
 // Selectors
 
 const getNetworkPolicyGraph = (state) => state.networkPolicyGraph;
-const getNetworkPolicies = (state) => state.networkPolicies;
 const getNodeUpdatesEpoch = (state) => state.nodeUpdatesEpoch;
 const getNetworkErrorMessage = (state) => state.networkErrorMessage;
 const getNetworkPolicyGraphState = (state) => state.networkPolicyGraphState;
@@ -119,7 +108,6 @@ const getNetworkPolicyApplicationState = (state) => state.networkPolicyApplicati
 
 export const selectors = {
     getNetworkPolicyGraph,
-    getNetworkPolicies,
     getNodeUpdatesEpoch,
     getNetworkErrorMessage,
     getNetworkPolicyGraphState,
