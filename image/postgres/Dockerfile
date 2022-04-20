@@ -1,5 +1,6 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8/ubi
+# Be sure to keep the pg_rhel_version in create-bundle.sh up-to-date.
 ARG BASE_TAG=8.5
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
@@ -17,6 +18,7 @@ LABEL name="central-db" \
 ARG ROX_IMAGE_FLAVOR
 ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
 
+# Be sure to keep the postgres_major in create-bundle.sh up-to-date.
 ENV PG_MAJOR=14
 ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/"
 
