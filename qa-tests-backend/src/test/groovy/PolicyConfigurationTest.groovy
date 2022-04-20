@@ -1,5 +1,3 @@
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass
-
 import static Services.checkForNoViolations
 import static Services.waitForViolation
 
@@ -17,6 +15,7 @@ import common.Constants
 import objects.Volume
 import io.stackrox.proto.storage.Rbac
 import io.stackrox.proto.storage.NodeOuterClass
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.DryRunResponse
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyFields
 import io.stackrox.proto.storage.PolicyOuterClass.ImageNamePolicy
@@ -784,21 +783,21 @@ class PolicyConfigurationTest extends BaseSpecification {
     def "Verify dryRun on a disabled policy generates violations for matching deployments"() {
         when:
         "Initialize a new disabled policy that will match an existing deployment"
-        Policy.Builder policy = Policy.newBuilder()
-                                                    .setName("TestPrivilegedPolicy")
-                                                    .setDescription("TestPrivileged")
-                                                    .setRationale("TestPrivileged")
-                                                    .addLifecycleStages(LifecycleStage.DEPLOY)
-                                                    .addCategories("DevOps Best Practices")
-                                                    .setDisabled(true)
-                                                    .setSeverityValue(2)
-                                                    .setFields(PolicyFields.newBuilder()
-                                                        .setPrivileged(true))
-                                                    .build()
+        Policy policy = Policy.newBuilder()
+                                .setName("TestPrivilegedPolicy")
+                                .setDescription("TestPrivileged")
+                                .setRationale("TestPrivileged")
+                                .addLifecycleStages(LifecycleStage.DEPLOY)
+                                .addCategories("DevOps Best Practices")
+                                .setDisabled(true)
+                                .setSeverityValue(2)
+                                .setFields(PolicyFields.newBuilder()
+                                        .setPrivileged(true))
+                                .build()
 
         and:
         "dryRun is called on the policy"
-        PolicyServiceOuterClass.DryRunResponse dryRunResponse = PolicyService.dryRunPolicy(policy)
+        DryRunResponse dryRunResponse = PolicyService.dryRunPolicy(policy)
 
         then:
         "Verify dryRun response contains alert/s for matching deployments"
