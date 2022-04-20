@@ -45,7 +45,13 @@ describe('Dashboard page', () => {
     });
 
     it('should navigate to violations page when clicking the low severity tile', () => {
+        cy.intercept('GET', api.alerts.countsByCluster, {
+            fixture: 'alerts/countsByCluster-single.json',
+        }).as('alertsByCluster');
+
         cy.visit(dashboardUrl);
+        cy.wait('@alertsByCluster');
+
         cy.get(selectors.sectionHeaders.systemViolations).next('div').children().as('riskTiles');
 
         cy.get('@riskTiles').last().click();
