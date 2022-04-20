@@ -1,5 +1,7 @@
 #! /bin/bash
 
+# TODO(ROX-8801): Move these tests to bats.
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 extra_args=()
