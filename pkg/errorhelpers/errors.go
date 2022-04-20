@@ -6,9 +6,8 @@ import (
 
 // Deprecated: use the errox errors and functions instead of these aliases.
 var (
-	ErrAlreadyExists = errox.AlreadyExists
-	ErrInvalidArgs   = errox.InvalidArgs
-	ErrNotFound      = errox.NotFound
+	ErrInvalidArgs = errox.InvalidArgs
+	ErrNotFound    = errox.NotFound
 
 	GenericNoValidRole       = errox.GenericNoValidRole
 	NewErrNotAuthorized      = errox.NewErrNotAuthorized

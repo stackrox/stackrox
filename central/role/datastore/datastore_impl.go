@@ -444,7 +444,7 @@ func (ds *dataStoreImpl) verifyPermissionSetIDExists(ctx context.Context, id str
 	return nil
 }
 
-// Returns errorhelpers.ErrAlreadyExists if there is a permission set with the same ID.
+// Returns errox.AlreadyExists if there is a permission set with the same ID.
 func (ds *dataStoreImpl) verifyPermissionSetIDDoesNotExist(ctx context.Context, id string) error {
 	_, found, err := ds.permissionSetStorage.Get(ctx, id)
 
@@ -452,7 +452,7 @@ func (ds *dataStoreImpl) verifyPermissionSetIDDoesNotExist(ctx context.Context, 
 		return err
 	}
 	if found {
-		return errors.Wrapf(errorhelpers.ErrAlreadyExists, "id = %s", id)
+		return errors.Wrapf(errox.AlreadyExists, "id = %s", id)
 	}
 	return nil
 }
@@ -479,7 +479,7 @@ func (ds *dataStoreImpl) verifyAccessScopeIDExists(ctx context.Context, id strin
 	return nil
 }
 
-// Returns errorhelpers.ErrAlreadyExists if there is an access scope with the same ID.
+// Returns errox.AlreadyExists if there is an access scope with the same ID.
 func (ds *dataStoreImpl) verifyAccessScopeIDDoesNotExist(ctx context.Context, id string) error {
 	_, found, err := ds.accessScopeStorage.Get(ctx, id)
 
@@ -487,12 +487,12 @@ func (ds *dataStoreImpl) verifyAccessScopeIDDoesNotExist(ctx context.Context, id
 		return err
 	}
 	if found {
-		return errors.Wrapf(errorhelpers.ErrAlreadyExists, "id = %s", id)
+		return errors.Wrapf(errox.AlreadyExists, "id = %s", id)
 	}
 	return nil
 }
 
-// Returns errorhelpers.ErrAlreadyExists if there is a role with the same name.
+// Returns errox.AlreadyExists if there is a role with the same name.
 func (ds *dataStoreImpl) verifyRoleNameDoesNotExist(ctx context.Context, name string) error {
 	_, found, err := ds.roleStorage.Get(ctx, name)
 
@@ -500,7 +500,7 @@ func (ds *dataStoreImpl) verifyRoleNameDoesNotExist(ctx context.Context, name st
 		return err
 	}
 	if found {
-		return errors.Wrapf(errorhelpers.ErrAlreadyExists, "name = %q", name)
+		return errors.Wrapf(errox.AlreadyExists, "name = %q", name)
 	}
 	return nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
@@ -277,7 +278,7 @@ func (ds *dataStoreImpl) create(ctx context.Context, entity *storage.NetworkEnti
 		return errors.Wrapf(err, "could not determine if network entity %s already exists in DB. SKIPPING",
 			entity.GetInfo().GetExternalSource().GetName())
 	} else if found {
-		return errors.Wrapf(errorhelpers.ErrAlreadyExists,
+		return errors.Wrapf(errox.AlreadyExists,
 			"network %s of entity %s (CIDR=%s) conflicts with network of stored entity %s (CIDR=%s)",
 			network,
 			entity.GetInfo().GetExternalSource().GetName(), entity.GetInfo().GetExternalSource().GetCidr(),

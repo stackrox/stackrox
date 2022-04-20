@@ -212,7 +212,7 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid role for Add*() yields an error")
 
 	err = s.dataStore.AddRole(s.hasWriteCtx, cloneRole)
-	s.ErrorIs(err, errorhelpers.ErrAlreadyExists, "adding role with an existing name yields an error")
+	s.ErrorIs(err, errox.AlreadyExists, "adding role with an existing name yields an error")
 
 	err = s.dataStore.UpdateRole(s.hasWriteCtx, goodRole)
 	s.ErrorIs(err, errorhelpers.ErrNotFound, "updating non-existing role yields an error")
@@ -341,10 +341,10 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid permission set for Add*() yields an error")
 
 	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, clonePermissionSet)
-	s.ErrorIs(err, errorhelpers.ErrAlreadyExists, "adding permission set with an existing ID yields an error")
+	s.ErrorIs(err, errox.AlreadyExists, "adding permission set with an existing ID yields an error")
 
 	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, mimicPermissionSet)
-	s.ErrorIs(err, errorhelpers.ErrAlreadyExists, "adding permission set with an existing name yields an error")
+	s.ErrorIs(err, errox.AlreadyExists, "adding permission set with an existing name yields an error")
 
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, goodPermissionSet)
 	s.ErrorIs(err, errorhelpers.ErrNotFound, "updating non-existing permission set yields an error")
@@ -365,7 +365,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid permission set for Update*() yields an error")
 
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, mimicPermissionSet)
-	s.ErrorIs(err, errorhelpers.ErrAlreadyExists, "introducing a name collision with Update*() yields an error")
+	s.ErrorIs(err, errox.AlreadyExists, "introducing a name collision with Update*() yields an error")
 
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, goodPermissionSet)
 	s.NoError(err)
@@ -481,10 +481,10 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid scope for Add*() yields an error")
 
 	err = s.dataStore.AddAccessScope(s.hasWriteCtx, cloneScope)
-	s.ErrorIs(err, errorhelpers.ErrAlreadyExists, "adding scope with an existing ID yields an error")
+	s.ErrorIs(err, errox.AlreadyExists, "adding scope with an existing ID yields an error")
 
 	err = s.dataStore.AddAccessScope(s.hasWriteCtx, mimicScope)
-	s.ErrorIs(err, errorhelpers.ErrAlreadyExists, "adding scope with an existing name yields an error")
+	s.ErrorIs(err, errox.AlreadyExists, "adding scope with an existing name yields an error")
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, goodScope)
 	s.ErrorIs(err, errorhelpers.ErrNotFound, "updating non-existing scope yields an error")
@@ -505,7 +505,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	s.ErrorIs(err, errorhelpers.ErrInvalidArgs, "invalid scope for Update*() yields an error")
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, mimicScope)
-	s.ErrorIs(err, errorhelpers.ErrAlreadyExists, "introducing a name collision with Update*() yields an error")
+	s.ErrorIs(err, errox.AlreadyExists, "introducing a name collision with Update*() yields an error")
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, goodScope)
 	s.NoError(err)
