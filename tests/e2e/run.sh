@@ -81,7 +81,6 @@ test_preamble() {
         export MAIN_TAG
     fi
 
-    export MONITORING_SUPPORT=true
     export SCANNER_SUPPORT=true
     export LOAD_BALANCER=lb
     export ROX_PLAINTEXT_ENDPOINTS="8080,grpc@8081"
@@ -91,8 +90,6 @@ test_preamble() {
     export SENSOR_HELM_DEPLOY=true
     export ROX_ACTIVE_VULN_MANAGEMENT=true
     export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
-    MONITORING_IMAGE="$REGISTRY/monitoring:$(cat "$TEST_ROOT"/MONITORING_VERSION)"
-    export MONITORING_IMAGE
     SCANNER_IMAGE="$REGISTRY/scanner:$(cat "$TEST_ROOT"/SCANNER_VERSION)"
     export SCANNER_IMAGE
     SCANNER_DB_IMAGE="$REGISTRY/scanner-db:$(cat "$TEST_ROOT"/SCANNER_VERSION)"
