@@ -186,7 +186,8 @@ func getTestImage(id string) *storage.Image {
 	return &storage.Image{
 		Id: id,
 		Scan: &storage.ImageScan{
-			ScanTime: types.TimestampNow(),
+			OperatingSystem: "blah",
+			ScanTime:        types.TimestampNow(),
 			Components: []*storage.EmbeddedImageScanComponent{
 				{
 					Name:    "comp1",
