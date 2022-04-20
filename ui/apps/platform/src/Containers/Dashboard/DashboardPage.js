@@ -16,6 +16,18 @@ import ViolationsByClusterChart from './ViolationsByClusterChart';
 import ViolationsByPolicyCategory from './ViolationsByPolicyCategory';
 import EnvironmentRisk from './EnvironmentRisk';
 
+// The search filter value could either be `undefined`, a string, or a string[], so
+// we coerce to an array for consistency.
+function getFilteredClusters(clusterSearchValue) {
+    if (Array.isArray(clusterSearchValue)) {
+        return clusterSearchValue;
+    }
+    if (clusterSearchValue) {
+        return [clusterSearchValue];
+    }
+    return [];
+}
+
 const DashboardPage = () => {
     const { isDarkMode } = useTheme();
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -28,6 +40,8 @@ const DashboardPage = () => {
     const [violationCountsByPolicyCategories, setViolationCountsByPolicyCategories] = useState([]);
     const [alertsByTimeseries, setAlertsByTimeseries] = useState([]);
     const [topRiskyDeployments, setTopRiskyDeployments] = useState([]);
+
+    const filteredClusters = getFilteredClusters(searchFilter.Cluster);
 
     // TODO All of these effects need cancellation/cleanup
     useEffect(() => {
@@ -134,6 +148,7 @@ const DashboardPage = () => {
                                 </div>
                                 <ViolationsByPolicyCategory
                                     data={violationCountsByPolicyCategories}
+                                    clusters={filteredClusters}
                                 />
                             </div>
                         </div>

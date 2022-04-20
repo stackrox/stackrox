@@ -9,7 +9,7 @@ import TwoLevelPieChart from 'Components/visuals/TwoLevelPieChart';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import severityPropType from './severityPropTypes';
 
-const ViolationsByPolicyCategory = ({ data, history }) => {
+const ViolationsByPolicyCategory = ({ data, history, clusters }) => {
     if (!data) {
         return '';
     }
@@ -22,6 +22,7 @@ const ViolationsByPolicyCategory = ({ data, history }) => {
                 const searchFilter = {
                     Severity: d.severity,
                     Category: policyType.group,
+                    Cluster: clusters,
                 };
                 const searchString = getUrlQueryStringForSearchFilter(searchFilter);
                 history.push(`/main/violations?${searchString}`);
@@ -64,10 +65,12 @@ ViolationsByPolicyCategory.propTypes = {
     history: PropTypes.shape({
         push: PropTypes.func.isRequired,
     }).isRequired,
+    clusters: PropTypes.arrayOf(PropTypes.string),
 };
 
 ViolationsByPolicyCategory.defaultProps = {
     data: [],
+    clusters: [],
 };
 
 export default withRouter(ViolationsByPolicyCategory);
