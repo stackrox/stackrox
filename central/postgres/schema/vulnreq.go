@@ -3,11 +3,18 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	// CreateTableVulnreqStmt holds the create statement for table `Vulnreq`.
+	// CreateTableVulnreqStmt holds the create statement for table `vulnreq`.
 	CreateTableVulnreqStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists vulnreq (
@@ -59,4 +66,16 @@ var (
 			},
 		},
 	}
+
+	// VulnreqSchema is the go schema for table `vulnreq`.
+	VulnreqSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("vulnreq")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.VulnerabilityRequest)(nil)), "vulnreq")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_VULN_REQUEST, "vulnreq", (*storage.VulnerabilityRequest)(nil)))
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

@@ -273,13 +273,20 @@ class CVETest extends BaseSpecification {
         where:
         "data inputs"
 
-        query                                                                  | cve             | checkImageCount
-        "Deployment:${CVE_DEPLOYMENT_NAME}+Image:nginx:1.9+CVE:CVE-2005-2541"  | "CVE-2005-2541" | true
-        "Label:name=cve-deployment+CVE:CVE-2005-2541"                          | "CVE-2005-2541" | true
-        "Image:nginx:1.9+CVE:CVE-2005-2541"                                    | "CVE-2005-2541" | true
-        "CVSS:10+CVE:CVE-2005-2541"                                            | "CVE-2005-2541" | false
-        "Component:tar+CVE:CVE-2005-2541"                                      | "CVE-2005-2541" | false
-        "CVE:CVE-2005-2541"                                                    | "CVE-2005-2541" | false
+        query                                                                  |
+                cve             | checkImageCount
+        "Deployment:${CVE_DEPLOYMENT_NAME}+Image:quay.io/rhacs-eng/qa:nginx-1-9+CVE:CVE-2005-2541"  |
+                "CVE-2005-2541" | true
+        "Label:name=cve-deployment+CVE:CVE-2005-2541"                          |
+                "CVE-2005-2541" | true
+        "Image:quay.io/rhacs-eng/qa:nginx-1-9+CVE:CVE-2005-2541"               |
+                "CVE-2005-2541" | true
+        "CVSS:10+CVE:CVE-2005-2541"                                            |
+                "CVE-2005-2541" | false
+        "Component:tar+CVE:CVE-2005-2541"                                      |
+                "CVE-2005-2541" | false
+        "CVE:CVE-2005-2541"                                                    |
+                "CVE-2005-2541" | false
     }
 
     @Unroll

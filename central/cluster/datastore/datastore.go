@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	"github.com/stackrox/rox/central/cluster/index"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
-	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/cluster_health_status"
+	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"

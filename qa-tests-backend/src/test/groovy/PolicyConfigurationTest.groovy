@@ -111,7 +111,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .setName(DEPLOYMENT_RBAC)
                     .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
                     .setServiceAccountName(SERVICE_ACCOUNT_NAME)
-                    .setImage("nginx:1.15.4-alpine")
+                    .setImage("quay.io/rhacs-eng/qa:nginx-1-15-4-alpine")
                     .setSkipReplicaWait(true),
     ]
 
@@ -254,7 +254,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setImageName(
                                         ImageNamePolicy.newBuilder()
-                                                .setTag("1.7.9")
+                                                .setTag("nginx-1-7-9")
                                                 .build())
                                 .build())
                         .build()                       | DEPLOYMENTNGINX | null
@@ -271,7 +271,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setImageName(
                                         ImageNamePolicy.newBuilder()
-                                                .setRemote("library/nginx")
+                                                .setRemote("rhacs-eng/qa")
                                                 .build())
                                 .build())
                         .build()                       | DEPLOYMENTNGINX | null

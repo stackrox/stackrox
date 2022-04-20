@@ -20,7 +20,7 @@ def grpcVersion = '1.21.0'
 def protocVersion = '3.19.4'
 def protobufVersion = '3.19.4'
 def nettyTcNativeVersion = '2.0.45.Final'
-def fabric8Version = '5.10.1'
+def fabric8Version = '5.12.2'
 
 protobuf {
     // There is no protoc-grpc-gen for Apple Silicon (M1), so if you are running on it, force the osx-x86_64 version
@@ -74,7 +74,7 @@ dependencies {
     testImplementation group: 'org.yaml', name: 'snakeyaml', version: '1.29'
     implementation group: 'com.jayway.restassured', name: 'rest-assured', version: '2.9.0'
     testImplementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.6'
-    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.6.1'
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.13.2'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.5.3'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.6.1'
     testImplementation( 'com.athaydes:spock-reports:1.4.0' ) {

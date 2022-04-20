@@ -3,11 +3,16 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var (
-	// CreateTableProcesswhitelistresultsStmt holds the create statement for table `Processwhitelistresults`.
+	// CreateTableProcesswhitelistresultsStmt holds the create statement for table `processwhitelistresults`.
 	CreateTableProcesswhitelistresultsStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists processwhitelistresults (
@@ -19,4 +24,15 @@ var (
 		Indexes:  []string{},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// ProcesswhitelistresultsSchema is the go schema for table `processwhitelistresults`.
+	ProcesswhitelistresultsSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("processwhitelistresults")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.ProcessBaselineResults)(nil)), "processwhitelistresults")
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

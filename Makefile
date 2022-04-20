@@ -23,12 +23,10 @@ ROX_IMAGE_FLAVOR ?= $(shell if [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then 
 DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
 BUILD_IMAGE_VERSION=$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
 BUILD_IMAGE := $(DEFAULT_IMAGE_REGISTRY)/apollo-ci:$(BUILD_IMAGE_VERSION)
-MONITORING_IMAGE := $(DEFAULT_IMAGE_REGISTRY)/monitoring:$(shell cat MONITORING_VERSION)
 DOCS_IMAGE_BASE := $(DEFAULT_IMAGE_REGISTRY)/docs
 
 ifdef CI
     CI_QUAY_REPO := rhacs-eng
-    MONITORING_IMAGE := quay.io/$(CI_QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
     DOCS_IMAGE_BASE := quay.io/$(CI_QUAY_REPO)/docs
 endif
 
@@ -456,7 +454,7 @@ go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*postgres/*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
+		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
 		| tee test-output/test.log
 
 .PHONY: shell-unit-tests
@@ -494,17 +492,6 @@ generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
 # image is an alias for main-image
 .PHONY: image
 image: main-image
-
-monitoring/static-bin/%: image/static-bin/%
-	mkdir -p "$(dir $@)"
-	cp -fLp $< $@
-
-.PHONY: monitoring-build-context
-monitoring-build-context: monitoring/static-bin/save-dir-contents monitoring/static-bin/restore-all-dir-contents
-
-.PHONY: monitoring-image
-monitoring-image: monitoring-build-context
-	scripts/ensure_image.sh $(MONITORING_IMAGE) monitoring/Dockerfile monitoring/
 
 .PHONY: all-builds
 all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build

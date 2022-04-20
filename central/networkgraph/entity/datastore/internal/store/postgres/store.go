@@ -4,20 +4,17 @@ package postgres
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 const (
@@ -43,15 +40,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = func() *walker.Schema {
-		schema := globaldb.GetSchemaForTable(baseTable)
-		if schema != nil {
-			return schema
-		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NetworkEntity)(nil)), baseTable)
-		globaldb.RegisterTable(schema)
-		return schema
-	}()
+	schema = pkgSchema.NetworkentitySchema
 )
 
 type Store interface {

@@ -17,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-    {{- if (or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker")) }}
+    {{- if (or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker)) }}
     "github.com/stackrox/rox/pkg/sac"{{- end }}
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -49,7 +49,7 @@ func (s *{{$namePrefix}}StoreSuite) TearDownTest() {
 }
 
 func (s *{{$namePrefix}}StoreSuite) TestStore() {
-    {{- if or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker") }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
     ctx := sac.WithAllAccess(context.Background())
     {{- else -}}
     ctx := context.Background()
@@ -74,7 +74,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
     {{if not .JoinTable -}}
-    {{- if or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker") }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
     withNoAccessCtx := sac.WithNoAccess(ctx)
     {{- end }}
 
@@ -88,7 +88,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal({{$name}}Count, 1)
 
-    {{- if or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker") }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
     {{$name}}Count, err = store.Count(withNoAccessCtx)
     s.NoError(err)
     s.Zero({{$name}}Count)
@@ -98,7 +98,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.NoError(err)
 	s.True({{$name}}Exists)
 	s.NoError(store.Upsert(ctx, {{$name}}))
-    {{- if or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker") }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
 	s.ErrorIs(store.Upsert(withNoAccessCtx, {{$name}}), sac.ErrResourceAccessDenied)
     {{- end }}
 
@@ -113,7 +113,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
-    {{- if or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker") }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
     s.ErrorIs(store.Delete(withNoAccessCtx, {{template "paramList" $}}), sac.ErrResourceAccessDenied)
     {{- end }}
 

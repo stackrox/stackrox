@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -17,8 +18,9 @@ type DataStore interface {
 }
 
 // New returns an instance of DataStore.
-func New(storage store.SignatureIntegrationStore) DataStore {
+func New(storage store.SignatureIntegrationStore, policyStore policyDataStore.DataStore) DataStore {
 	return &datastoreImpl{
-		storage: storage,
+		storage:     storage,
+		policyStore: policyStore,
 	}
 }
