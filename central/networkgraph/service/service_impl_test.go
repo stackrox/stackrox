@@ -203,6 +203,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 		sac.ClusterScopeKey("mycluster"),
 	})
 
+	s.deployments.EXPECT().Count(gomock.Any(), gomock.Any()).Return(5, nil)
 	s.deployments.EXPECT().SearchListDeployments(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
 		[]*storage.ListDeployment{
 			{
@@ -480,6 +481,7 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 		},
 	}
 
+	s.deployments.EXPECT().Count(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(len(relevantDeployments), nil)
 	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(relevantDeployments, nil)
 
 	es1ID, _ := externalsrcs.NewClusterScopedID("mycluster", "35.187.144.0/20")
