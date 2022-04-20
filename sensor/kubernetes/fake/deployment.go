@@ -35,7 +35,12 @@ func createRandMap(stringSize, entries int) map[string]string {
 }
 
 func (w *WorkloadManager) getDeployment(workload DeploymentWorkload) *deploymentResourcesToBeManaged {
-	labels := createRandMap(16, 3)
+	var labels map[string]string
+	if workload.NumLabels == 0 {
+		labels = createRandMap(16, 3)
+	} else {
+		labels = createMap(workload.NumLabels)
+	}
 
 	var containers []corev1.Container
 	for i := 0; i < workload.PodWorkload.NumContainers; i++ {
