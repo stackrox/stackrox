@@ -147,14 +147,14 @@ describe('Network page', () => {
 describe('Network Deployment Details', () => {
     withAuth();
 
-    it('should show the port exposure levels using port configuration labels', () => {
+    it('should show the deployment name and namespace', () => {
         visitRiskDeployments();
         viewRiskDeploymentByName('central');
         viewRiskDeploymentInNetworkGraph();
 
         cy.get(`${selectors.tab.tabs}:contains('Details')`).click();
-        cy.get(`[data-testid="exposure"]:contains('ClusterIP')`);
-        cy.get(`[data-testid="level"]:contains('ClusterIP')`);
+        cy.get(`[data-testid="Deployment Name"]:contains('central')`);
+        cy.get(`[data-testid="Namespace"]:contains('stackrox')`);
     });
 });
 
