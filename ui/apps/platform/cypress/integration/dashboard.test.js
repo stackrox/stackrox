@@ -7,6 +7,7 @@ import {
 } from '../constants/CompliancePage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
+import { visitMainDashboard } from '../helpers/main';
 
 describe('Dashboard page', () => {
     withAuth();
@@ -45,12 +46,7 @@ describe('Dashboard page', () => {
     });
 
     it('should navigate to violations page when clicking the low severity tile', () => {
-        cy.intercept('GET', api.alerts.countsByCluster, {
-            fixture: 'alerts/countsByCluster-single.json',
-        }).as('alertsByCluster');
-
-        cy.visit(dashboardUrl);
-        cy.wait('@alertsByCluster');
+        visitMainDashboard();
 
         cy.get(selectors.sectionHeaders.systemViolations).next('div').children().as('riskTiles');
 
