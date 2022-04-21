@@ -44,11 +44,11 @@ bitfield_to_failure() {
 }
 
 assert_flavor_prompt_development() {
-  assert_line --partial 'Enter default container images settings (development_build, stackrox.io, rhacs); it controls repositories from where to download the images, image names and tags format (default: "development_build"):'
+  assert_line --partial 'Enter default container images settings (development_build, stackrox.io, rhacs, opensource); it controls repositories from where to download the images, image names and tags format (default: "development_build"):'
 }
 
 assert_flavor_prompt_release() {
-  assert_line --partial 'Enter default container images settings (stackrox.io, rhacs); it controls repositories from where to download the images, image names and tags format (default: "rhacs"):'
+  assert_line --partial 'Enter default container images settings (stackrox.io, rhacs, opensource); it controls repositories from where to download the images, image names and tags format (default: "rhacs"):'
 }
 
 assert_prompts_development() {
