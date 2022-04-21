@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stretchr/testify/assert"
@@ -222,7 +221,7 @@ func TestPanicOnInvariantViolationStreamInterceptor(t *testing.T) {
 		},
 		"Error is ErrInvariantViolation -> panic": {
 			handler: func(srv interface{}, stream grpc.ServerStream) error {
-				return errorhelpers.NewErrInvariantViolation("some explanation")
+				return errox.NewErrInvariantViolation("some explanation")
 			},
 			err:    nil,
 			panics: true,

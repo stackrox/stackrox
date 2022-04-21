@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/tidwall/gjson"
 )
@@ -23,7 +22,7 @@ type RowMapper struct {
 func NewRowMapper(jsonObj interface{}, multiPathExpression string) (*RowMapper, error) {
 	bytes, err := json.Marshal(jsonObj)
 	if err != nil {
-		return nil, errorhelpers.NewErrInvariantViolation(err.Error())
+		return nil, errox.NewErrInvariantViolation(err.Error())
 	}
 
 	result, err := getResultFromBytes(bytes, multiPathExpression)
@@ -86,7 +85,7 @@ func isJaggedArray(array [][]string) error {
 func getResultFromBytes(bytes []byte, jsonPathExpression string) (gjson.Result, error) {
 	results := gjson.GetManyBytes(bytes, jsonPathExpression)
 	if len(results) != 1 {
-		return gjson.Result{}, errorhelpers.NewErrInvariantViolation("expected gjson " +
+		return gjson.Result{}, errox.NewErrInvariantViolation("expected gjson " +
 			"results to be exactly 1")
 	}
 
