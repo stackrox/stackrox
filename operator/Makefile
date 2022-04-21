@@ -330,7 +330,7 @@ deploy-via-olm: ## Deploy operator image to the cluster using OLM.
 
 .PHONY: deploy-dirty-tag-via-olm
 deploy-dirty-tag-via-olm: ## Deploy operator dirty tagged image to the cluster using OLM.
-# This command ignores filter for dirty tagged images.
+# This target ignores filter for dirty tagged images.
 	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(VERSION) true
 
 .PHONY: deploy-previous-via-olm
