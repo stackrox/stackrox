@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -71,7 +70,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 	svc := identity.Service()
 	if svc == nil || svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
-		return errorhelpers.NewErrNotAuthorized("only sensor may access this API")
+		return errox.NewErrNotAuthorized("only sensor may access this API")
 	}
 
 	sensorHello, sensorSupportsHello, err := receiveSensorHello(server)

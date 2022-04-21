@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -71,7 +70,7 @@ func (p *permissionChecker) checkGlobalSACPermissions(ctx context.Context, rootS
 		return err
 	}
 	if !allowed {
-		return errorhelpers.NewErrNotAuthorized("scoped access")
+		return errox.NewErrNotAuthorized("scoped access")
 	}
 	return nil
 }
@@ -82,7 +81,7 @@ func (p *permissionChecker) checkPermissions(rolePerms map[string]storage.Access
 	}
 	for _, requiredPerm := range p.requiredPermissions {
 		if !evaluateAgainstPermissions(rolePerms, requiredPerm) {
-			return errorhelpers.NewErrNotAuthorized(fmt.Sprintf("%q for %q", requiredPerm.Access, requiredPerm.Resource))
+			return errox.NewErrNotAuthorized(fmt.Sprintf("%q for %q", requiredPerm.Access, requiredPerm.Resource))
 		}
 	}
 	return nil

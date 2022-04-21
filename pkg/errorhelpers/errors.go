@@ -6,6 +6,5 @@ import (
 
 // Deprecated: use the errox errors and functions instead of these aliases.
 var (
-	NewErrNotAuthorized = errox.NewErrNotAuthorized
-	NewErrInvalidArgs   = errox.NewErrInvalidArgs
+	NewErrInvalidArgs = errox.NewErrInvalidArgs
 )

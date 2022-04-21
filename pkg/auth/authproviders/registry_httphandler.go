@@ -16,7 +16,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -276,7 +275,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 
 	userInfo := user.GetUserInfo()
 	if userInfo == nil {
-		err := errorhelpers.NewErrNotAuthorized("failed to get user info")
+		err := errox.NewErrNotAuthorized("failed to get user info")
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}
