@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import { severityLabels } from 'messages/common';
 import { useTheme } from 'Containers/ThemeProvider';
 
-const SeverityTile = ({ severity, count, index, color }) => {
+const SeverityTile = ({ severity, count, index, color, link }) => {
     const { isDarkMode } = useTheme();
     function renderTileContent() {
         const backgroundStyle = {
@@ -46,7 +46,7 @@ const SeverityTile = ({ severity, count, index, color }) => {
             }  flex flex-1 flex-col border-3 p-4 text-center relative cursor-pointer rounded-sm no-underline hover:bg-primary-200 hover:shadow hover:bg-base-200 ${
                 index !== 0 ? 'ml-4' : ''
             }`}
-            to={`/main/violations?severity=${severity}`}
+            to={link}
             data-testid="severity-tile"
         >
             {renderTileContent()}
@@ -59,6 +59,7 @@ SeverityTile.propTypes = {
     count: PropTypes.number.isRequired,
     index: PropTypes.number.isRequired,
     color: PropTypes.string.isRequired,
+    link: PropTypes.string.isRequired,
 };
 
 export default SeverityTile;
