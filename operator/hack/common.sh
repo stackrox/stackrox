@@ -76,9 +76,12 @@ function check_version_tag() {
     log "Cannot find $IMAGE_TAG_BASE:$version_tag image tag in the registry."
   fi
 
-  if [[ "$version_tag" == *-dirty ]] && [[ "$allow_dirty_tag" == false ]]; then
-    log "Cannot install from *-dirty image tag. Please, use 'deploy-dirty-tag-via-olm' command instead if you need to install dirty tagged image"
-    return 1
+  if [[ "$version_tag" == *-dirty ]]; then
+    log "Target image tag has -dirty suffix."
+    if [[ "$allow_dirty_tag" == false ]]; then
+      log "Cannot install from *-dirty image tag. Please, use 'deploy-dirty-tag-via-olm' command or add '--allow-dirty-tag' flag if you need to install dirty tagged image."
+      return 1
+    fi
   fi
 
   return 0
