@@ -14,6 +14,7 @@ function PreviewViolations({ alertsFromDryRun }: PreviewViolationsProps): ReactE
 
     return (
         <div>
+            <Title headingLevel="h2">Deployment results</Title>
             {alertsFromDryRun.map(({ deployment, violations }, alertIndex) => {
                 /*
                  * pf-u-mb-sm separates deployment name from first list item with same spacing as subsequent list items.

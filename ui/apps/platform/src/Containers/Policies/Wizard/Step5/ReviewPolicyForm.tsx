@@ -167,9 +167,10 @@ function ReviewPolicyForm({
                                 variant="info"
                                 title="Policy disabled"
                             >
-                                <p>Violations will not generate unless policy is enabled</p>
+                                <p>Violations will not be generated unless the policy is enabled</p>
                             </Alert>
                         )}
+                        <Divider component="div" />
                         {isRunningDryRun ? (
                             <Flex justifyContent={{ default: 'justifyContentCenter' }}>
                                 <FlexItem>
