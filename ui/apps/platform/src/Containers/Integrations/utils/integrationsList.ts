@@ -93,6 +93,7 @@ export type BaseIntegrationDescriptor = {
     type: string;
     label: string;
     image: string;
+    featureFlagDependency?: string;
 };
 
 type IntegrationDescriptorMap = {
