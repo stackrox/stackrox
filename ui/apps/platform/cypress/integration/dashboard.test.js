@@ -7,6 +7,7 @@ import {
 } from '../constants/CompliancePage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
+import { visitMainDashboard } from '../helpers/main';
 
 describe('Dashboard page', () => {
     withAuth();
@@ -45,7 +46,8 @@ describe('Dashboard page', () => {
     });
 
     it('should navigate to violations page when clicking the low severity tile', () => {
-        cy.visit(dashboardUrl);
+        visitMainDashboard();
+
         cy.get(selectors.sectionHeaders.systemViolations).next('div').children().as('riskTiles');
 
         cy.get('@riskTiles').last().click();
@@ -139,8 +141,10 @@ describe('Dashboard page', () => {
 
         cy.get(selectors.sectionHeaders.topRiskyDeployments).next().as('list');
 
-        // Should only display the top 5 risky deployments
-        cy.get('@list').find('li').should('have.length', 5);
+        // When the API is not mocked, the UI requests the top 5 deployments from the server.
+        // Here we are intercepting the call and injecting 6 deployments, so that is what
+        // the component will display.
+        cy.get('@list').find('li').should('have.length', 6);
 
         cy.get(selectors.buttons.viewAll).click();
         cy.url().should('match', /\/main\/risk/);
