@@ -80,8 +80,8 @@ ENABLE_WEBHOOKS ?= false
 # Use the value figured in the parent directory Makefile, unless provided explicitly in the environment.
 ROX_IMAGE_FLAVOR ?= $(shell $(MAKE) --quiet --no-print-directory -C .. image-flavor)
 
-# ALLOW_DIRTY_TAG_INSTALLATION determines if OLM installation should proceed with -dirty prefixed operator image tag.
-# -dirty prefix shows that current branch changes are not committed
+# ALLOW_DIRTY_TAG_INSTALLATION determines if OLM installation should proceed with -dirty suffixed operator image tag.
+# -dirty suffix shows that current branch changes are not committed
 # therefore CI has not built and pushed image with current changes to the registry.
 ALLOW_DIRTY_TAG_INSTALLATION ?= false
 
