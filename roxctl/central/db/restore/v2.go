@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
@@ -76,10 +76,10 @@ func validate(cbr *cobra.Command, args []string) error {
 		return cbr.Usage()
 	}
 	if len(args) > 1 {
-		return errors.WithMessagef(errorhelpers.ErrInvalidArgs, "too many positional arguments (%d given)", len(args))
+		return errors.WithMessagef(errox.InvalidArgs, "too many positional arguments (%d given)", len(args))
 	}
 	if file, _ := cbr.Flags().GetString("file"); file != "" {
-		return errors.WithMessage(errorhelpers.ErrInvalidArgs, "legacy --file flag must not be used in conjunction with a positional argument")
+		return errors.WithMessage(errox.InvalidArgs, "legacy --file flag must not be used in conjunction with a positional argument")
 	}
 	return nil
 }
@@ -97,7 +97,7 @@ func (cmd *centralDbRestoreCommand) construct(cbr *cobra.Command, args []string)
 
 func (cmd *centralDbRestoreCommand) validate() error {
 	if cmd.file == "" {
-		return errors.WithMessage(errorhelpers.ErrInvalidArgs, "file to restore from must be specified")
+		return errors.WithMessage(errox.InvalidArgs, "file to restore from must be specified")
 	}
 	return nil
 }

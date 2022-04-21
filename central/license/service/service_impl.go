@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -106,7 +106,7 @@ var (
 
 func (s *service) AddLicense(ctx context.Context, req *v1.AddLicenseRequest) (*v1.AddLicenseResponse, error) {
 	if req.GetLicenseKey() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "must provide a non-empty license key")
+		return nil, errors.Wrap(errox.InvalidArgs, "must provide a non-empty license key")
 	}
 
 	licenseInfo, err := s.licenseMgr.AddLicenseKey(req.GetLicenseKey(), req.GetActivate())

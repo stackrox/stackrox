@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mitre"
 )
@@ -53,7 +54,7 @@ func (s *mitreAttackStoreImpl) GetAll() []*storage.MitreAttackVector {
 
 func (s *mitreAttackStoreImpl) Get(id string) (*storage.MitreAttackVector, error) {
 	if id == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "MITRE ATT&CK tactic ID must be provided")
+		return nil, errors.Wrap(errox.InvalidArgs, "MITRE ATT&CK tactic ID must be provided")
 	}
 
 	v := s.mitreAttackVectors[id]

@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -110,7 +111,7 @@ func (s *serviceImpl) GetComplianceControlResults(ctx context.Context, query *v1
 	if query.GetQuery() != "" {
 		q, err = search.ParseQuery(query.GetQuery())
 		if err != nil {
-			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 		}
 	}
 	results, err := s.complianceDataStore.QueryControlResults(ctx, q)

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -78,13 +79,13 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 
 func (s *serviceImpl) DryRunAuthzPluginConfig(ctx context.Context, req *v1.UpsertAuthzPluginConfigRequest) (*v1.Empty, error) {
 	if err := validateConfig(req.GetConfig()); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if _, err := s.reconcileUpsertAuthzPluginConfigRequest(ctx, req); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if err := s.testConfig(ctx, req.GetConfig()); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	return &v1.Empty{}, nil
 }
@@ -106,11 +107,11 @@ func (s *serviceImpl) AddAuthzPluginConfig(ctx context.Context, req *v1.UpsertAu
 	cfg := req.GetConfig()
 
 	if err := validateConfig(cfg); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if cfg.GetEnabled() {
 		if err := s.testConfig(ctx, cfg); err != nil {
-			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "%v\nCheck the central logs for full error.", err)
+			return nil, errors.Wrapf(errox.InvalidArgs, "%v\nCheck the central logs for full error.", err)
 		}
 	}
 
@@ -131,19 +132,19 @@ func (s *serviceImpl) UpdateAuthzPluginConfig(ctx context.Context, req *v1.Upser
 	cfg := req.GetConfig()
 
 	if cfg.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "update must specify an ID")
+		return nil, errors.Wrap(errox.InvalidArgs, "update must specify an ID")
 	}
 
 	if err := validateConfig(cfg); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	reconciled, err := s.reconcileUpsertAuthzPluginConfigRequest(ctx, req)
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	if cfg.GetEnabled() {
 		if err := s.testConfig(ctx, cfg); err != nil {
-			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "%v\nCheck the central logs for full error.", err)
+			return nil, errors.Wrapf(errox.InvalidArgs, "%v\nCheck the central logs for full error.", err)
 		}
 	}
 
@@ -192,7 +193,7 @@ func (s *serviceImpl) reconcileUpsertAuthzPluginConfigRequest(ctx context.Contex
 		return false, nil
 	}
 	if updateRequest.GetConfig() == nil {
-		return false, errors.Wrap(errorhelpers.ErrInvalidArgs, "request is missing authz plugin config")
+		return false, errors.Wrap(errox.InvalidArgs, "request is missing authz plugin config")
 	}
 	if updateRequest.GetConfig().GetId() == "" {
 		return false, errors.Wrap(errorhelpers.ErrNotFound, "id required for stored credential reconciliation")
@@ -205,7 +206,7 @@ func (s *serviceImpl) reconcileUpsertAuthzPluginConfigRequest(ctx context.Contex
 		return false, errors.Wrapf(errorhelpers.ErrNotFound, "existing authz plugin %s not found", updateRequest.GetConfig().GetId())
 	}
 	if err := reconcileAuthzPluginConfigWithExisting(updateRequest.GetConfig(), existingAuthzPluginConfig); err != nil {
-		return false, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return false, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	return true, nil
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -72,18 +73,18 @@ func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (
 func (s *service) verifyToken(ctx context.Context, token string, expectedSubject string) error {
 	parsedToken, err := jwt.ParseSigned(token)
 	if err != nil {
-		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid JWT: %s", err)
+		return errors.Wrapf(errox.InvalidArgs, "invalid JWT: %s", err)
 	}
 
 	var claims map[string]interface{}
 	if err := parsedToken.UnsafeClaimsWithoutVerification(&claims); err != nil {
-		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "unparseable claims in token: %s", err)
+		return errors.Wrapf(errox.InvalidArgs, "unparseable claims in token: %s", err)
 	}
 
 	if sub, ok := claims["sub"].(string); !ok {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "non-string subject claim in token")
+		return errors.Wrap(errox.InvalidArgs, "non-string subject claim in token")
 	} else if sub != expectedSubject {
-		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "unexpected subject %s", sub)
+		return errors.Wrapf(errox.InvalidArgs, "unexpected subject %s", sub)
 	}
 
 	// Now, create the token review
@@ -96,7 +97,7 @@ func (s *service) verifyToken(ctx context.Context, token string, expectedSubject
 
 	reviewWithStatus, err := s.k8sAuthnClient.TokenReviews().Create(ctx, review, metav1.CreateOptions{})
 	if err != nil {
-		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "failed to authenticate with Kubernetes API server: %s", err)
+		return errors.Wrapf(errox.InvalidArgs, "failed to authenticate with Kubernetes API server: %s", err)
 	}
 
 	reviewStatus := reviewWithStatus.Status
@@ -150,7 +151,7 @@ func (s *service) verifyRequestViaIdentity(requestingServiceIdentity *storage.Se
 
 func (s *service) verifyRequestViaServiceAccountToken(ctx context.Context, serviceName, token string) error {
 	if token == "" {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "no token specified")
+		return errors.Wrap(errox.InvalidArgs, "no token specified")
 	}
 
 	// This API is rate limit such that an untrusted user cannot get us to DDoS the Kubernetes API server.
@@ -168,7 +169,7 @@ func (s *service) verifyRequestViaServiceAccountToken(ctx context.Context, servi
 func (s *service) FetchCertificate(ctx context.Context, req *sensor.FetchCertificateRequest) (*sensor.FetchCertificateResponse, error) {
 	serviceName := services.ServiceTypeToSlugName(req.GetServiceType())
 	if serviceName == "" {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid service type %s", req.GetServiceType())
+		return nil, errors.Wrapf(errox.InvalidArgs, "invalid service type %s", req.GetServiceType())
 	}
 
 	var requestingServiceIdentity *storage.ServiceIdentity

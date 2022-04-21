@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
@@ -162,7 +163,7 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 
 	clusterIDFromCert := serviceID.GetId()
 	if helmConfigInit == nil && centralsensor.IsInitCertClusterID(clusterIDFromCert) {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "sensor using cluster init certificate must transmit a helm-managed configuration")
+		return nil, errors.Wrap(errox.InvalidArgs, "sensor using cluster init certificate must transmit a helm-managed configuration")
 	}
 
 	clusterID := helmConfigInit.GetClusterId()
@@ -170,7 +171,7 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 		var err error
 		clusterID, err = centralsensor.GetClusterID(clusterID, clusterIDFromCert)
 		if err != nil {
-			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "incompatible cluster IDs in config init and certificate: %v", err)
+			return nil, errors.Wrapf(errox.InvalidArgs, "incompatible cluster IDs in config init and certificate: %v", err)
 		}
 	}
 

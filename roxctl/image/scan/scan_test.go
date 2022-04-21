@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
@@ -305,7 +305,7 @@ func (s *imageScanTestSuite) TestConstruct() {
 		"invalid printer factory should return an error": {
 			printerFactory: invalidObjPrinterFactory,
 			shouldFail:     true,
-			error:          errorhelpers.ErrInvalidArgs,
+			error:          errox.InvalidArgs,
 		},
 	}
 
@@ -398,13 +398,13 @@ func (s *imageScanTestSuite) TestValidate() {
 		},
 		"invalid image name should result in an error": {
 			image: "c:",
-			error: errorhelpers.ErrInvalidArgs,
+			error: errox.InvalidArgs,
 		},
 		"wrong legacy output format should result in an error when new output format IS NOT used": {
 			image:        s.defaultImageScanCommand.image,
 			legacyFormat: "table",
 			shouldFail:   true,
-			error:        errorhelpers.ErrInvalidArgs,
+			error:        errox.InvalidArgs,
 		},
 		"wrong legacy output format should NOT result in an error when new output format IS used": {
 			image:        s.defaultImageScanCommand.image,

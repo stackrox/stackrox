@@ -303,13 +303,13 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 
 func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.SendNetworkPolicyYamlRequest) (*v1.Empty, error) {
 	if request.GetClusterId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Cluster ID must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "Cluster ID must be specified")
 	}
 	if len(request.GetNotifierIds()) == 0 {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Notifier IDs must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "Notifier IDs must be specified")
 	}
 	if request.GetModification().GetApplyYaml() == "" && len(request.GetModification().GetToDelete()) == 0 {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Modification must have contents")
+		return nil, errors.Wrap(errox.InvalidArgs, "Modification must have contents")
 	}
 
 	clusterName, exists, err := s.clusterStore.GetClusterName(ctx, request.GetClusterId())
@@ -363,7 +363,7 @@ func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.Gener
 	}
 
 	if req.GetClusterId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Cluster ID must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "Cluster ID must be specified")
 	}
 
 	generated, toDelete, err := s.policyGenerator.Generate(ctx, req)
@@ -421,7 +421,7 @@ func (s *serviceImpl) GetBaselineGeneratedNetworkPolicyForDeployment(ctx context
 	// Currently we don't look at request.GetDeleteExisting. We try to delete the existing baseline generated
 	// policy no matter what
 	if request.GetDeploymentId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Cluster ID must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "Cluster ID must be specified")
 	}
 
 	generated, toDelete, err := s.policyGenerator.GenerateFromBaselineForDeployment(ctx, request)
@@ -479,7 +479,7 @@ func (s *serviceImpl) getRelevantClusterObjectsForDeployment(ctx context.Context
 	if err != nil {
 		return nil, nil, nil, err
 	} else if !found {
-		return nil, nil, nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "specified deployment not found")
+		return nil, nil, nil, errors.Wrap(errox.InvalidArgs, "specified deployment not found")
 	}
 
 	networkTree, err := s.getNetworkTree(deployment.GetClusterId())
@@ -621,7 +621,7 @@ func (s *serviceImpl) applyModificationAndGetUndoRecord(
 	modification *storage.NetworkPolicyModification,
 ) (*storage.NetworkPolicyApplicationUndoRecord, error) {
 	if strings.TrimSpace(modification.GetApplyYaml()) == "" && len(modification.GetToDelete()) == 0 {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Modification must have contents")
+		return nil, errors.Wrap(errox.InvalidArgs, "Modification must have contents")
 	}
 
 	// Check that:
@@ -1126,7 +1126,7 @@ func validateNoPolicyDiff(applyPolicy *storage.NetworkPolicy, currPolicy *storag
 
 func (s *serviceImpl) clusterExists(ctx context.Context, clusterID string) error {
 	if clusterID == "" {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "cluster ID must be specified")
+		return errors.Wrap(errox.InvalidArgs, "cluster ID must be specified")
 	}
 	exists, err := s.clusterStore.Exists(ctx, clusterID)
 	if err != nil {

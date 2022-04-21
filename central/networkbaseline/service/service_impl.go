@@ -77,7 +77,7 @@ func (s *serviceImpl) GetNetworkBaseline(
 	request *v1.ResourceByID,
 ) (*storage.NetworkBaseline, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Network baseline id must be provided")
+		return nil, errors.Wrap(errox.InvalidArgs, "Network baseline id must be provided")
 	}
 	baseline, found, err := s.datastore.GetNetworkBaseline(ctx, request.GetId())
 	if err != nil {

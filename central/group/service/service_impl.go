@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -100,7 +101,7 @@ func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperti
 func (s *serviceImpl) BatchUpdate(ctx context.Context, req *v1.GroupBatchUpdateRequest) (*v1.Empty, error) {
 	for _, group := range req.GetRequiredGroups() {
 		if err := validate(group); err != nil {
-			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 		}
 	}
 
@@ -113,7 +114,7 @@ func (s *serviceImpl) BatchUpdate(ctx context.Context, req *v1.GroupBatchUpdateR
 
 func (s *serviceImpl) CreateGroup(ctx context.Context, group *storage.Group) (*v1.Empty, error) {
 	if err := validate(group); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	err := s.groups.Add(ctx, group)
 	if err != nil {
@@ -124,7 +125,7 @@ func (s *serviceImpl) CreateGroup(ctx context.Context, group *storage.Group) (*v
 
 func (s *serviceImpl) UpdateGroup(ctx context.Context, group *storage.Group) (*v1.Empty, error) {
 	if err := validate(group); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	err := s.groups.Update(ctx, group)
 	if err != nil {

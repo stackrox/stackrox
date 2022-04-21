@@ -16,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -852,7 +853,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 		Query: "",
 	}, GroupBy: unknownGroupBy})
 
-	s.EqualError(err, errors.Wrapf(errorhelpers.ErrInvalidArgs, "unknown group by: %v", unknownGroupBy).Error())
+	s.EqualError(err, errors.Wrapf(errox.InvalidArgs, "unknown group by: %v", unknownGroupBy).Error())
 	s.Equal((*v1.GetAlertsCountsResponse)(nil), result)
 }
 
@@ -1057,7 +1058,7 @@ func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {
 	snoozeTill, err := types.TimestampProto(time.Now().Add(-1 * time.Hour))
 	s.NoError(err)
 	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
-	s.EqualError(err, errors.Wrap(errorhelpers.ErrInvalidArgs, badSnoozeErrorMsg).Error())
+	s.EqualError(err, errors.Wrap(errox.InvalidArgs, badSnoozeErrorMsg).Error())
 }
 
 func (s *patchAlertTests) TestResolveAlert() {

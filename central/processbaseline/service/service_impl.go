@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -84,7 +85,7 @@ func validateKeyNotEmpty(key *storage.ProcessBaselineKey) error {
 
 func (s *serviceImpl) GetProcessBaseline(ctx context.Context, request *v1.GetProcessBaselineRequest) (*storage.ProcessBaseline, error) {
 	if err := validateKeyNotEmpty(request.GetKey()); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	baseline, exists, err := s.dataStore.GetProcessBaseline(ctx, request.GetKey())
 	if err != nil {
@@ -167,12 +168,12 @@ func (s *serviceImpl) LockProcessBaselines(ctx context.Context, request *v1.Lock
 
 func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.DeleteProcessBaselinesRequest) (*v1.DeleteProcessBaselinesResponse, error) {
 	if request.GetQuery() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "query string must be nonempty")
+		return nil, errors.Wrap(errox.InvalidArgs, "query string must be nonempty")
 	}
 
 	q, err := search.ParseQuery(request.GetQuery())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	results, err := s.dataStore.Search(ctx, q)

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -222,7 +223,7 @@ func (r *registryImpl) DeleteProvider(ctx context.Context, id string, ignoreActi
 func (r *registryImpl) ResolveProvider(typ, state string) (Provider, error) {
 	factory := r.getFactory(typ)
 	if factory == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid auth provider type %q", typ)
+		return nil, errors.Wrapf(errox.InvalidArgs, "invalid auth provider type %q", typ)
 	}
 
 	providerID, _, err := factory.ResolveProviderAndClientState(state)
@@ -239,7 +240,7 @@ func (r *registryImpl) ResolveProvider(typ, state string) (Provider, error) {
 func (r *registryImpl) GetExternalUserClaim(ctx context.Context, externalToken, typ, state string) (*AuthResponse, string, error) {
 	factory := r.getFactory(typ)
 	if factory == nil {
-		return nil, "", errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid auth provider type %q", typ)
+		return nil, "", errors.Wrapf(errox.InvalidArgs, "invalid auth provider type %q", typ)
 	}
 
 	providerID, clientState, err := factory.ResolveProviderAndClientState(state)

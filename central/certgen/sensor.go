@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/renderer"
@@ -26,7 +27,7 @@ func (s *serviceImpl) getSensorCerts(r *http.Request) ([]byte, *storage.Cluster,
 
 	clusterID := params.ID
 	if clusterID == "" {
-		return nil, nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "no cluster ID specified")
+		return nil, nil, errors.Wrap(errox.InvalidArgs, "no cluster ID specified")
 	}
 
 	cluster, _, err := s.clusters.GetCluster(r.Context(), clusterID)

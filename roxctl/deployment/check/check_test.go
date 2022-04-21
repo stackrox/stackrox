@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
@@ -313,7 +313,7 @@ func (d *deployCheckTestSuite) TestConstruct() {
 			timeout:    expectedTimeout,
 			f:          invalidObjectPrinterFactory,
 			shouldFail: true,
-			error:      errorhelpers.ErrInvalidArgs,
+			error:      errox.InvalidArgs,
 		},
 	}
 
@@ -346,7 +346,7 @@ func (d *deployCheckTestSuite) TestValidate() {
 		"should fail with non existing file name": {
 			file:       "invalidfile",
 			shouldFail: true,
-			error:      errorhelpers.ErrInvalidArgs,
+			error:      errox.InvalidArgs,
 		},
 	}
 

@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -62,7 +63,7 @@ func (s *service) GetSensorUpgradeConfig(ctx context.Context, _ *v1.Empty) (*v1.
 
 func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateSensorUpgradeConfigRequest) (*v1.Empty, error) {
 	if req.GetConfig() == nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "need to specify a config")
+		return nil, errors.Wrap(errox.InvalidArgs, "need to specify a config")
 	}
 	if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, req.GetConfig()); err != nil {
 		return nil, err
@@ -72,7 +73,7 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 
 func (s *service) TriggerSensorUpgrade(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "no cluster ID specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "no cluster ID specified")
 	}
 
 	err := s.manager.TriggerUpgrade(ctx, req.GetId())
@@ -83,7 +84,7 @@ func (s *service) TriggerSensorUpgrade(ctx context.Context, req *v1.ResourceByID
 }
 func (s *service) TriggerSensorCertRotation(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "no cluster ID specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "no cluster ID specified")
 	}
 
 	err := s.manager.TriggerCertRotation(ctx, req.GetId())

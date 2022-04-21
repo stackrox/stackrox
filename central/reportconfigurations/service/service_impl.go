@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -56,7 +57,7 @@ func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *v1.Raw
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	// Fill in pagination.
@@ -118,7 +119,7 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *v1
 
 func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
 	if id.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration id is required for deletion")
+		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required for deletion")
 	}
 	if err := s.reportConfigStore.RemoveReportConfiguration(ctx, id.GetId()); err != nil {
 		return &v1.Empty{}, err
@@ -129,7 +130,7 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *v1.Reso
 func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *v1.RawQuery) (*v1.CountReportConfigurationsResponse, error) {
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	numReportConfigs, err := s.reportConfigStore.Count(ctx, parsedQuery)
@@ -153,11 +154,11 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 
 func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *storage.ReportConfiguration) error {
 	if config.GetName() == "" {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration name empty")
+		return errors.Wrap(errox.InvalidArgs, "Report configuration name empty")
 	}
 
 	if config.GetSchedule() == nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must have a schedule")
+		return errors.Wrap(errox.InvalidArgs, "Report configuration must have a schedule")
 	}
 
 	schedule := config.GetSchedule()
@@ -165,39 +166,39 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 	switch schedule.GetIntervalType() {
 	case storage.Schedule_UNSET:
 	case storage.Schedule_DAILY:
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must have a valid schedule type")
+		return errors.Wrap(errox.InvalidArgs, "Report configuration must have a valid schedule type")
 	case storage.Schedule_WEEKLY:
 		if schedule.GetDaysOfWeek() == nil {
-			return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must specify days of week for the schedule")
+			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of week for the schedule")
 		}
 		for _, day := range schedule.GetDaysOfWeek().GetDays() {
 			if day < 0 || day > 6 {
-				return errors.Wrap(errorhelpers.ErrInvalidArgs, "Invalid schedule: Days of the week can be Sunday (0) - Saturday(6)")
+				return errors.Wrap(errox.InvalidArgs, "Invalid schedule: Days of the week can be Sunday (0) - Saturday(6)")
 			}
 		}
 	case storage.Schedule_MONTHLY:
 		if schedule.GetDaysOfMonth() == nil || schedule.GetDaysOfMonth().GetDays() == nil {
-			return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must specify days of the month for the schedule")
+			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of the month for the schedule")
 		}
 		for _, day := range schedule.GetDaysOfMonth().GetDays() {
 			if day != 1 && day != 15 {
-				return errors.Wrap(errorhelpers.ErrInvalidArgs, "Reports can be sent out only 1st or 15th of the month")
+				return errors.Wrap(errox.InvalidArgs, "Reports can be sent out only 1st or 15th of the month")
 			}
 		}
 	}
 	if config.GetEmailConfig() == nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must specify an email notifier configuration")
+		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify an email notifier configuration")
 	}
 	if config.GetEmailConfig().GetNotifierId() == "" {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must specify a valid email notifier")
+		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid email notifier")
 	}
 	if len(config.GetEmailConfig().GetMailingLists()) == 0 {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Report configuration must specify one more recipients to send the report to")
+		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify one more recipients to send the report to")
 	}
 
 	for _, addr := range config.GetEmailConfig().GetMailingLists() {
 		if _, err := mail.ParseAddress(addr); err != nil {
-			return errors.Wrapf(errorhelpers.ErrInvalidArgs, "Invalid mailing list address: %s", addr)
+			return errors.Wrapf(errox.InvalidArgs, "Invalid mailing list address: %s", addr)
 		}
 	}
 
