@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -271,18 +270,13 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 		return nil, err
 	}
 
-	maxDeploymentsAllowed, err := strconv.Atoi(maxNumberOfDeploymentsInGraphEnv.Setting())
-	if err != nil {
-		log.Warnf("%s env set to non-number value %s, using default %d",
-			maxNumberOfDeploymentsInGraphEnv.EnvVar(),
-			maxNumberOfDeploymentsInGraphEnv.Setting(),
-			defaultMaxNumberOfDeploymentsInGraph)
-		maxDeploymentsAllowed = defaultMaxNumberOfDeploymentsInGraph
-	}
-
-	if count > maxDeploymentsAllowed {
+	if count > maxNumberOfDeploymentsInGraphEnv.IntegerSetting() {
 		log.Warnf("Number of deployments is too high to be rendered in Network Graph: %d", count)
-		return nil, errors.Errorf("number of deployments (%d) exceeds maximum allowed for Network Graph: %d", count, maxDeploymentsAllowed)
+		return nil, errors.Errorf(
+			"number of deployments (%d) exceeds maximum allowed for Network Graph: %d",
+			count,
+			maxNumberOfDeploymentsInGraphEnv.IntegerSetting(),
+		)
 	}
 
 	deployments, err := s.deployments.SearchListDeployments(ctx, deploymentQuery)
