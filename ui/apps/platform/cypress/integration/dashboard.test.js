@@ -53,7 +53,7 @@ describe('Dashboard page', () => {
         cy.get('@riskTiles').last().click();
         cy.location().should((location) => {
             expect(location.pathname).to.eq(violationsUrl);
-            expect(location.search).to.eq('?severity=LOW_SEVERITY');
+            expect(location.search).to.eq('?search[Severity]=LOW_SEVERITY');
         });
     });
 
