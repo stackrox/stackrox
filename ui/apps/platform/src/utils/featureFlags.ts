@@ -16,6 +16,7 @@ export const knownBackendFlags = {
     ROX_NETWORK_DETECTION_BLOCKED_FLOWS: 'ROX_NETWORK_DETECTION_BLOCKED_FLOWS',
     ROX_POLICIES_PATTERNFLY: 'ROX_POLICIES_PATTERNFLY',
     ROX_SYSTEM_HEALTH_PF: 'ROX_SYSTEM_HEALTH_PF',
+    ROX_NEW_POLICY_CATEGORIES: 'ROX_NEW_POLICY_CATEGORIES',
 };
 
 // isBackendFeatureFlagEnabled returns whether a feature flag retrieved from the backend is enabled.

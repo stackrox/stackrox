@@ -3423,6 +3423,7 @@ jobs:
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
       - ROX_VERIFY_IMAGE_SIGNATURE: true
       - ROX_NETPOL_FIELDS: true
+      - ROX_NEW_POLICY_CATEGORIES: true
 
     steps:
       - checkout
@@ -3577,6 +3578,7 @@ jobs:
       - ROX_SYSTEM_HEALTH_PF: true
       - ROX_POLICIES_PATTERNFLY: true
       - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
+      - ROX_NEW_POLICY_CATEGORIES: true
 
     steps:
       - checkout
@@ -3642,6 +3644,7 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_NEW_POLICY_CATEGORIES: true
 
     steps:
       - run-qa-tests:
