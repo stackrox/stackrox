@@ -74,7 +74,7 @@ func (s *serviceImpl) GetExternalBackup(ctx context.Context, request *v1.Resourc
 		return nil, err
 	}
 	if backup == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "No external backup with id %q found", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "No external backup with id %q found", request.GetId())
 	}
 	secrets.ScrubSecretsFromStructWithReplacement(backup, secrets.ScrubReplacementStr)
 	return backup, nil
@@ -232,7 +232,7 @@ func (s *serviceImpl) reconcileUpdateExternalBackupRequest(ctx context.Context, 
 		return err
 	}
 	if existingBackupConfig == nil {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "backup config %s not found", updateRequest.GetExternalBackup().GetId())
+		return errors.Wrapf(errox.NotFound, "backup config %s not found", updateRequest.GetExternalBackup().GetId())
 	}
 	if err := reconcileExternalBackupWithExisting(updateRequest.GetExternalBackup(), existingBackupConfig); err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())

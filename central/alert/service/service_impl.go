@@ -104,7 +104,7 @@ func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "alert with id '%s' does not exist", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "alert with id '%s' does not exist", request.GetId())
 	}
 
 	return alert, nil
@@ -203,7 +203,7 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "alert with id '%s' does not exist", req.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "alert with id '%s' does not exist", req.GetId())
 	}
 
 	if req.GetWhitelist() || req.GetAddToBaseline() {
@@ -349,7 +349,7 @@ func (s *serviceImpl) SnoozeAlert(ctx context.Context, req *v1.SnoozeAlertReques
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "alert with id '%s' does not exist", req.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "alert with id '%s' does not exist", req.GetId())
 	}
 	alert.SnoozeTill = req.GetSnoozeTill()
 	err = s.changeAlertState(ctx, alert, storage.ViolationState_SNOOZED)

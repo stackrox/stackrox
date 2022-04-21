@@ -143,7 +143,7 @@ func (s *serviceImpl) getPolicy(ctx context.Context, id string) (*storage.Policy
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "policy with ID '%s' does not exist", id)
+		return nil, errors.Wrapf(errox.NotFound, "policy with ID '%s' does not exist", id)
 	}
 	if len(policy.GetCategories()) == 0 {
 		policy.Categories = []string{uncategorizedCategory}
@@ -297,7 +297,7 @@ func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRe
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Policy with id '%s' not found", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "Policy with id '%s' not found", request.GetId())
 	}
 	if request.SetDisabled != nil {
 		policy.Disabled = request.GetDisabled()
@@ -550,7 +550,7 @@ func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.Dele
 	}
 
 	if !categorySet.Contains(request.GetCategory()) {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Policy Category %s does not exist", request.GetCategory())
+		return nil, errors.Wrapf(errox.NotFound, "Policy Category %s does not exist", request.GetCategory())
 	}
 
 	if err := s.policies.DeletePolicyCategory(ctx, request); err != nil {
@@ -626,7 +626,7 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 		return errors.Errorf("failed to retrieve policy: %v", err)
 	}
 	if !exists {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "Policy %q not found", policyID)
+		return errors.Wrapf(errox.NotFound, "Policy %q not found", policyID)
 	}
 	notifierSet := set.NewStringSet(policy.Notifiers...)
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
@@ -675,7 +675,7 @@ func (s *serviceImpl) disablePolicyNotification(ctx context.Context, policyID st
 		return errors.Errorf("failed to retrieve policy: %v", err)
 	}
 	if !exists {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "Policy %q not found", policyID)
+		return errors.Wrapf(errox.NotFound, "Policy %q not found", policyID)
 	}
 	notifierSet := set.NewStringSet(policy.Notifiers...)
 	if notifierSet.Cardinality() == 0 {

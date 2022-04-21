@@ -9,7 +9,6 @@ import (
 	rocksDBStore "github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -224,7 +223,7 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 		return err
 	}
 	if !found {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "id = %s", id)
+		return errors.Wrapf(errox.NotFound, "id = %s", id)
 	}
 	if err := verifyNotDefaultPermissionSet(permissionSet.GetName()); err != nil {
 		return err
@@ -348,7 +347,7 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 		return err
 	}
 	if !found {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "id = %s", id)
+		return errors.Wrapf(errox.NotFound, "id = %s", id)
 	}
 	if err := verifyNotDefaultAccessScope(accessScope); err != nil {
 		return err
@@ -431,7 +430,7 @@ func verifyNotDefaultRole(name string) error {
 	return nil
 }
 
-// Returns errorhelpers.ErrNotFound if there is no permission set with the supplied ID.
+// Returns errox.NotFound if there is no permission set with the supplied ID.
 func (ds *dataStoreImpl) verifyPermissionSetIDExists(ctx context.Context, id string) error {
 	_, found, err := ds.permissionSetStorage.Get(ctx, id)
 
@@ -439,7 +438,7 @@ func (ds *dataStoreImpl) verifyPermissionSetIDExists(ctx context.Context, id str
 		return err
 	}
 	if !found {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "id = %s", id)
+		return errors.Wrapf(errox.NotFound, "id = %s", id)
 	}
 	return nil
 }
@@ -466,7 +465,7 @@ func verifyNotDefaultPermissionSet(name string) error {
 	return nil
 }
 
-// Returns errorhelpers.ErrNotFound if there is no access scope with the supplied ID.
+// Returns errox.NotFound if there is no access scope with the supplied ID.
 func (ds *dataStoreImpl) verifyAccessScopeIDExists(ctx context.Context, id string) error {
 	_, found, err := ds.accessScopeStorage.Get(ctx, id)
 
@@ -474,7 +473,7 @@ func (ds *dataStoreImpl) verifyAccessScopeIDExists(ctx context.Context, id strin
 		return err
 	}
 	if !found {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "id = %s", id)
+		return errors.Wrapf(errox.NotFound, "id = %s", id)
 	}
 	return nil
 }
@@ -505,7 +504,7 @@ func (ds *dataStoreImpl) verifyRoleNameDoesNotExist(ctx context.Context, name st
 	return nil
 }
 
-// Returns errorhelpers.ErrNotFound if there is no role with the supplied name.
+// Returns errox.NotFound if there is no role with the supplied name.
 func (ds *dataStoreImpl) verifyRoleNameExists(ctx context.Context, name string) error {
 	_, found, err := ds.roleStorage.Get(ctx, name)
 
@@ -513,7 +512,7 @@ func (ds *dataStoreImpl) verifyRoleNameExists(ctx context.Context, name string) 
 		return err
 	}
 	if !found {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "name = %q", name)
+		return errors.Wrapf(errox.NotFound, "name = %q", name)
 	}
 	return nil
 }

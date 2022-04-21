@@ -12,7 +12,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -100,7 +99,7 @@ func (s *serviceImpl) getCluster(ctx context.Context, id string) (*v1.ClusterRes
 		return nil, errors.Errorf("Could not get cluster: %s", err)
 	}
 	if !ok {
-		return nil, errors.Wrap(errorhelpers.ErrNotFound, "Not found")
+		return nil, errors.Wrap(errox.NotFound, "Not found")
 	}
 
 	return &v1.ClusterResponse{

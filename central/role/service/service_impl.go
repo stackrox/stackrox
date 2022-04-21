@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -99,7 +100,7 @@ func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*storag
 		return nil, errors.Wrapf(err, "failed to retrieve role %q", id.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "failed to retrieve role %q", id.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "failed to retrieve role %q", id.GetId())
 	}
 	return role, nil
 }
@@ -186,7 +187,7 @@ func (s *serviceImpl) GetPermissionSet(ctx context.Context, id *v1.ResourceByID)
 		return nil, errors.Wrapf(err, "failed to retrieve permission set %s", id.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "failed to retrieve permission set %s", id.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "failed to retrieve permission set %s", id.GetId())
 	}
 
 	return permissionSet, nil
@@ -252,7 +253,7 @@ func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceB
 		return nil, errors.Wrapf(err, "failed to retrieve access scope %s", id.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "failed to retrieve access scope %s", id.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "failed to retrieve access scope %s", id.GetId())
 	}
 
 	return scope, nil

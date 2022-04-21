@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -48,7 +48,7 @@ func (ds *datastoreImpl) GetSpecificRunResults(ctx context.Context, clusterID, s
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return types.ResultsWithStatus{}, err
 	} else if !ok {
-		return types.ResultsWithStatus{}, errorhelpers.ErrNotFound
+		return types.ResultsWithStatus{}, errox.NotFound
 	}
 
 	res, err := ds.storage.GetSpecificRunResults(clusterID, standardID, runID, flags)
@@ -72,7 +72,7 @@ func (ds *datastoreImpl) GetLatestRunResults(ctx context.Context, clusterID, sta
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return types.ResultsWithStatus{}, err
 	} else if !ok {
-		return types.ResultsWithStatus{}, errorhelpers.ErrNotFound
+		return types.ResultsWithStatus{}, errox.NotFound
 	}
 
 	res, err := ds.storage.GetLatestRunResults(clusterID, standardID, flags)
@@ -126,7 +126,7 @@ func (ds *datastoreImpl) IsComplianceRunSuccessfulOnCluster(ctx context.Context,
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return false, err
 	} else if !ok {
-		return false, errors.Wrapf(errorhelpers.ErrNotFound, "ClusterID %s", clusterID)
+		return false, errors.Wrapf(errox.NotFound, "ClusterID %s", clusterID)
 	}
 	results, err := ds.storage.GetLatestRunMetadataBatch(clusterID, standardIDs)
 	if err != nil || len(results) == 0 {

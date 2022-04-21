@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/clusters/zip"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -35,7 +34,7 @@ func (s *serviceImpl) getSensorCerts(r *http.Request) ([]byte, *storage.Cluster,
 		return nil, nil, errors.Errorf("failed to retrieve cluster: %v", err)
 	}
 	if cluster == nil {
-		return nil, nil, errors.Wrapf(errorhelpers.ErrNotFound, "cluster with ID %q not found", clusterID)
+		return nil, nil, errors.Wrapf(errox.NotFound, "cluster with ID %q not found", clusterID)
 	}
 
 	certs, err := zip.GenerateCertsAndAddToZip(nil, cluster, s.serviceIdentities)

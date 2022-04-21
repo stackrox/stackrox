@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -92,7 +91,7 @@ func (s *serviceImpl) GetProcessBaseline(ctx context.Context, request *v1.GetPro
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "No process baseline with key %+v found", request.GetKey())
+		return nil, errors.Wrapf(errox.NotFound, "No process baseline with key %+v found", request.GetKey())
 	}
 	return baseline, nil
 }

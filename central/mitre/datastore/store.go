@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mitre"
@@ -59,7 +58,7 @@ func (s *mitreAttackStoreImpl) Get(id string) (*storage.MitreAttackVector, error
 
 	v := s.mitreAttackVectors[id]
 	if v == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "MITRE ATT&CK vector for tactic %q not found. Please check the tactic ID and retry.", id)
+		return nil, errors.Wrapf(errox.NotFound, "MITRE ATT&CK vector for tactic %q not found. Please check the tactic ID and retry.", id)
 	}
 	return v, nil
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
@@ -116,7 +115,7 @@ func (c *clusterDeleteTestSuite) TestCommandFailsIfClusterNotFound() {
 	err := cbr.Execute()
 
 	c.Require().Error(err)
-	c.Assert().ErrorIs(err, errorhelpers.ErrNotFound)
+	c.Assert().ErrorIs(err, errox.NotFound)
 }
 
 func (c *clusterDeleteTestSuite) TestConstructSetsTimeoutFlag() {

@@ -10,7 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -78,7 +78,7 @@ func (s *nodeServiceImpl) GetNode(ctx context.Context, req *v1.GetNodeRequest) (
 	}
 
 	if node == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "node %q in cluster %q does not exist", req.GetNodeId(), req.GetClusterId())
+		return nil, errors.Wrapf(errox.NotFound, "node %q in cluster %q does not exist", req.GetNodeId(), req.GetClusterId())
 	}
 
 	return node, nil

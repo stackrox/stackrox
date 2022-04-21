@@ -15,7 +15,6 @@ import (
 	baselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -107,7 +106,7 @@ func (s *getAlertTests) TestGetAlertWhenAlertIsMissing() {
 
 	result, err := s.service.GetAlert(fakeContext, s.fakeResourceByIDRequest)
 
-	s.EqualError(err, errors.Wrapf(errorhelpers.ErrNotFound, "alert with id '%s' does not exist", alerttest.FakeAlertID).Error())
+	s.EqualError(err, errors.Wrapf(errox.NotFound, "alert with id '%s' does not exist", alerttest.FakeAlertID).Error())
 	s.Equal((*storage.Alert)(nil), result)
 }
 

@@ -14,7 +14,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -76,7 +75,7 @@ func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *v1.Resourc
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "report configuration with id '%s' does not exist", id)
+		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", id)
 	}
 	return &v1.GetReportConfigurationResponse{
 		ReportConfig: reportConfig,
@@ -204,15 +203,15 @@ func (s *serviceImpl) validateReportConfiguration(ctx context.Context, config *s
 
 	_, found, err := s.accessScopeStore.GetAccessScope(ctx, config.GetScopeId())
 	if !found || err != nil {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "Access scope %s not found. Error: %s", config.GetScopeId(), err)
+		return errors.Wrapf(errox.NotFound, "Access scope %s not found. Error: %s", config.GetScopeId(), err)
 	}
 
 	_, found, err = s.notifierStore.GetNotifier(ctx, config.GetEmailConfig().GetNotifierId())
 	if err != nil {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "Failed to fetch notifier %s with error %s", config.GetEmailConfig().GetNotifierId(), err)
+		return errors.Wrapf(errox.NotFound, "Failed to fetch notifier %s with error %s", config.GetEmailConfig().GetNotifierId(), err)
 	}
 	if !found {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "Notifier %s not found", config.GetEmailConfig().GetNotifierId())
+		return errors.Wrapf(errox.NotFound, "Notifier %s not found", config.GetEmailConfig().GetNotifierId())
 	}
 
 	return nil

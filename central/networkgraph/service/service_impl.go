@@ -19,7 +19,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -188,7 +187,7 @@ func (s *serviceImpl) getEntityAndValidateMutable(ctx context.Context, id string
 		return nil, err
 	}
 	if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "network entity %s not found", id)
+		return nil, errors.Wrapf(errox.NotFound, "network entity %s not found", id)
 	}
 	if entity.GetInfo().GetExternalSource().GetDefault() {
 		return nil, status.Error(codes.PermissionDenied, "StackRox-generated network entities are immutable")
@@ -223,7 +222,7 @@ func (s *serviceImpl) getFlowStore(ctx context.Context, clusterID string) (netwo
 		return nil, errors.Errorf("could not obtain flows for cluster %s: %v", clusterID, err)
 	}
 	if flowStore == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "no flows found for cluster %s", clusterID)
+		return nil, errors.Wrapf(errox.NotFound, "no flows found for cluster %s", clusterID)
 	}
 	return flowStore, nil
 }
@@ -238,7 +237,7 @@ func (s *serviceImpl) validateCluster(clusterID string) error {
 	if exists, err := s.clusters.Exists(clusterReadCtx, clusterID); err != nil {
 		return err
 	} else if !exists {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "cluster %s not found. It may have been deleted", clusterID)
+		return errors.Wrapf(errox.NotFound, "cluster %s not found. It may have been deleted", clusterID)
 	}
 	return nil
 }

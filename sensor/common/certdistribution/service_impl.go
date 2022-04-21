@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -121,7 +120,7 @@ func (s *service) loadCertsForService(serviceName string) (certPEM, keyPEM strin
 	if allExist, err := fileutils.AllExist(certFileName, keyFileName); err != nil {
 		return "", "", errors.New("failed to check for existence of certificates")
 	} else if !allExist {
-		return "", "", errors.Wrapf(errorhelpers.ErrNotFound, "no set of certificates for service %s is available", serviceName)
+		return "", "", errors.Wrapf(errox.NotFound, "no set of certificates for service %s is available", serviceName)
 	}
 
 	certBytes, err := os.ReadFile(certFileName)

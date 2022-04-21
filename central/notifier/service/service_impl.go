@@ -82,7 +82,7 @@ func (s *serviceImpl) GetNotifier(ctx context.Context, request *v1.ResourceByID)
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "notifier %v not found", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "notifier %v not found", request.GetId())
 	}
 	secrets.ScrubSecretsFromStructWithReplacement(notifier, secrets.ScrubReplacementStr)
 	return notifier, nil
@@ -267,7 +267,7 @@ func (s *serviceImpl) reconcileUpdateNotifierRequest(ctx context.Context, update
 		return err
 	}
 	if !exists {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "notifier integration %s not found", updateRequest.GetNotifier().GetId())
+		return errors.Wrapf(errox.NotFound, "notifier integration %s not found", updateRequest.GetNotifier().GetId())
 	}
 	if err := reconcileNotifierConfigWithExisting(updateRequest.GetNotifier(), existingNotifierConfig); err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())

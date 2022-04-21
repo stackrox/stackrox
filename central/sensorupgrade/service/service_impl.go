@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -56,7 +55,7 @@ func (s *service) GetSensorUpgradeConfig(ctx context.Context, _ *v1.Empty) (*v1.
 		return nil, err
 	}
 	if config == nil {
-		return nil, errors.Wrap(errorhelpers.ErrNotFound, "couldn't find sensor upgrade config")
+		return nil, errors.Wrap(errox.NotFound, "couldn't find sensor upgrade config")
 	}
 	return &v1.GetSensorUpgradeConfigResponse{Config: config}, nil
 }

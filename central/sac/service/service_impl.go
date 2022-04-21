@@ -12,7 +12,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -196,14 +195,14 @@ func (s *serviceImpl) reconcileUpsertAuthzPluginConfigRequest(ctx context.Contex
 		return false, errors.Wrap(errox.InvalidArgs, "request is missing authz plugin config")
 	}
 	if updateRequest.GetConfig().GetId() == "" {
-		return false, errors.Wrap(errorhelpers.ErrNotFound, "id required for stored credential reconciliation")
+		return false, errors.Wrap(errox.NotFound, "id required for stored credential reconciliation")
 	}
 	existingAuthzPluginConfig, err := s.ds.GetAuthzPluginConfig(ctx, updateRequest.GetConfig().GetId())
 	if err != nil {
 		return false, err
 	}
 	if existingAuthzPluginConfig == nil {
-		return false, errors.Wrapf(errorhelpers.ErrNotFound, "existing authz plugin %s not found", updateRequest.GetConfig().GetId())
+		return false, errors.Wrapf(errox.NotFound, "existing authz plugin %s not found", updateRequest.GetConfig().GetId())
 	}
 	if err := reconcileAuthzPluginConfigWithExisting(updateRequest.GetConfig(), existingAuthzPluginConfig); err != nil {
 		return false, errors.Wrap(errox.InvalidArgs, err.Error())

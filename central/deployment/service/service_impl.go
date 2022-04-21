@@ -17,7 +17,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -124,7 +123,7 @@ func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByI
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "deployment with id '%s' does not exist", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "deployment with id '%s' does not exist", request.GetId())
 	}
 	return deployment, nil
 }
@@ -136,7 +135,7 @@ func (s *serviceImpl) GetDeploymentWithRisk(ctx context.Context, request *v1.Res
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "deployment with id '%s' does not exist", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "deployment with id '%s' does not exist", request.GetId())
 	}
 
 	risk, _, err := s.risks.GetRiskForDeployment(ctx, deployment)

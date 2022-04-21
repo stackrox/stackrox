@@ -11,7 +11,6 @@ import (
 	simpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -215,13 +214,13 @@ func (s *roleDataStoreTestSuite) TestRoleWriteOperations() {
 	s.ErrorIs(err, errox.AlreadyExists, "adding role with an existing name yields an error")
 
 	err = s.dataStore.UpdateRole(s.hasWriteCtx, goodRole)
-	s.ErrorIs(err, errorhelpers.ErrNotFound, "updating non-existing role yields an error")
+	s.ErrorIs(err, errox.NotFound, "updating non-existing role yields an error")
 
 	err = s.dataStore.UpdateRole(s.hasWriteCtx, updatedAdminRole)
 	s.ErrorIs(err, errox.InvalidArgs, "updating a default role yields an error")
 
 	err = s.dataStore.RemoveRole(s.hasWriteCtx, goodRole.GetName())
-	s.ErrorIs(err, errorhelpers.ErrNotFound, "removing non-existing role yields an error")
+	s.ErrorIs(err, errox.NotFound, "removing non-existing role yields an error")
 
 	err = s.dataStore.AddRole(s.hasWriteCtx, goodRole)
 	s.NoError(err)
@@ -347,13 +346,13 @@ func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	s.ErrorIs(err, errox.AlreadyExists, "adding permission set with an existing name yields an error")
 
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, goodPermissionSet)
-	s.ErrorIs(err, errorhelpers.ErrNotFound, "updating non-existing permission set yields an error")
+	s.ErrorIs(err, errox.NotFound, "updating non-existing permission set yields an error")
 
 	err = s.dataStore.UpdatePermissionSet(s.hasWriteCtx, updatedAdminPermissionSet)
 	s.ErrorIs(err, errox.InvalidArgs, "updating a default permission set yields an error")
 
 	err = s.dataStore.RemovePermissionSet(s.hasWriteCtx, goodPermissionSet.GetId())
-	s.ErrorIs(err, errorhelpers.ErrNotFound, "removing non-existing permission set yields an error")
+	s.ErrorIs(err, errox.NotFound, "removing non-existing permission set yields an error")
 
 	err = s.dataStore.AddPermissionSet(s.hasWriteCtx, goodPermissionSet)
 	s.NoError(err)
@@ -487,13 +486,13 @@ func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	s.ErrorIs(err, errox.AlreadyExists, "adding scope with an existing name yields an error")
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, goodScope)
-	s.ErrorIs(err, errorhelpers.ErrNotFound, "updating non-existing scope yields an error")
+	s.ErrorIs(err, errox.NotFound, "updating non-existing scope yields an error")
 
 	err = s.dataStore.UpdateAccessScope(s.hasWriteCtx, updatedDefaultScope)
 	s.ErrorIs(err, errox.InvalidArgs, "updating a default scope yields an error")
 
 	err = s.dataStore.RemoveAccessScope(s.hasWriteCtx, goodScope.GetId())
-	s.ErrorIs(err, errorhelpers.ErrNotFound, "removing non-existing scope yields an error")
+	s.ErrorIs(err, errox.NotFound, "removing non-existing scope yields an error")
 
 	err = s.dataStore.AddAccessScope(s.hasWriteCtx, goodScope)
 	s.NoError(err)

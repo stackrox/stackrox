@@ -12,7 +12,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -93,7 +92,7 @@ func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperti
 		return nil, err
 	}
 	if group == nil {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "group %q not found", proto.MarshalTextString(props))
+		return nil, errors.Wrapf(errox.NotFound, "group %q not found", proto.MarshalTextString(props))
 	}
 	return group, nil
 }

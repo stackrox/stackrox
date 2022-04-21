@@ -41,9 +41,9 @@ func TestErrorToGrpcCodeInterceptor(t *testing.T) {
 		{
 			name: "Error is one of types from pkg/errorhelpers (ErrNotFound etc.) -> map to correct gRPC code, preserve error message",
 			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
-				return "err", errors.Wrap(errorhelpers.ErrNotFound, "error message")
+				return "err", errors.Wrap(errox.NotFound, "error message")
 			},
-			resp: "err", err: status.Error(codes.NotFound, errors.Wrap(errorhelpers.ErrNotFound, "error message").Error()),
+			resp: "err", err: status.Error(codes.NotFound, errors.Wrap(errox.NotFound, "error message").Error()),
 		},
 		{
 			name: "Error is not a gRPC status error and not a known error type -> set error to internal",
@@ -129,9 +129,9 @@ func TestErrorToGrpcCodeStreamInterceptor(t *testing.T) {
 		{
 			name: "Error is one of types from pkg/errorhelpers (ErrNotFound etc.) -> map to correct gRPC code, preserve error message",
 			handler: func(srv interface{}, stream grpc.ServerStream) error {
-				return errors.Wrap(errorhelpers.ErrNotFound, "error message")
+				return errors.Wrap(errox.NotFound, "error message")
 			},
-			err: status.Error(codes.NotFound, errors.Wrap(errorhelpers.ErrNotFound, "error message").Error()),
+			err: status.Error(codes.NotFound, errors.Wrap(errox.NotFound, "error message").Error()),
 		},
 		{
 			name: "Error is not a gRPC status error and not a known error type -> set error to internal",
@@ -229,9 +229,9 @@ func TestPanicOnInvariantViolationStreamInterceptor(t *testing.T) {
 		},
 		"Error is not ErrInvariantViolation -> do nothing, just pass through": {
 			handler: func(srv interface{}, stream grpc.ServerStream) error {
-				return errorhelpers.ErrNotFound
+				return errox.NotFound
 			},
-			err:    errorhelpers.ErrNotFound,
+			err:    errox.NotFound,
 			panics: false,
 		},
 	}

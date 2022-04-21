@@ -132,7 +132,7 @@ func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.Resource
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "network policy with id '%s' does not exist", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "network policy with id '%s' does not exist", request.GetId())
 	}
 	populateYAML(networkPolicy)
 	return networkPolicy, nil
@@ -317,7 +317,7 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 		return nil, errors.Errorf("failed to retrieve cluster: %s", err.Error())
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Cluster '%s' not found", request.GetClusterId())
+		return nil, errors.Wrapf(errox.NotFound, "Cluster '%s' not found", request.GetClusterId())
 	}
 
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
@@ -392,7 +392,7 @@ func (s *serviceImpl) GetUndoModification(ctx context.Context, req *v1.GetUndoMo
 		return nil, errors.Errorf("could not query undo store: %v", err)
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "no undo record stored for cluster %q", req.GetClusterId())
+		return nil, errors.Wrapf(errox.NotFound, "no undo record stored for cluster %q", req.GetClusterId())
 	}
 	return &v1.GetUndoModificationResponse{
 		UndoRecord: undoRecord,
@@ -673,7 +673,7 @@ func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, r
 	if err != nil {
 		return nil, err
 	} else if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "requested deployment %q not found", request.GetDeploymentId())
+		return nil, errors.Wrapf(errox.NotFound, "requested deployment %q not found", request.GetDeploymentId())
 	}
 
 	undoRecord, err := s.applyModificationAndGetUndoRecord(ctx, deployment.GetClusterId(), request.GetModification())
@@ -702,14 +702,14 @@ func (s *serviceImpl) GetUndoModificationForDeployment(ctx context.Context, requ
 	if err != nil {
 		return nil, err
 	} else if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "deployment with ID %q not found", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "deployment with ID %q not found", request.GetId())
 	}
 
 	undoRecord, found, err := s.networkPolicies.GetUndoDeploymentRecord(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	} else if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "no undo record stored for deployment %q", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "no undo record stored for deployment %q", request.GetId())
 	}
 	return &v1.GetUndoModificationForDeploymentResponse{
 		UndoRecord: undoRecord.GetUndoRecord(),
@@ -1133,7 +1133,7 @@ func (s *serviceImpl) clusterExists(ctx context.Context, clusterID string) error
 		return err
 	}
 	if !exists {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "cluster with ID %q doesn't exist", clusterID)
+		return errors.Wrapf(errox.NotFound, "cluster with ID %q doesn't exist", clusterID)
 	}
 	return nil
 }

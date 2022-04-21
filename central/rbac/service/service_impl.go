@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -65,7 +64,7 @@ func (s *serviceImpl) GetRole(ctx context.Context, request *v1.ResourceByID) (*v
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "k8s role with id '%q' does not exist", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "k8s role with id '%q' does not exist", request.GetId())
 	}
 
 	return &v1.GetRoleResponse{Role: role}, nil
@@ -95,7 +94,7 @@ func (s *serviceImpl) GetRoleBinding(ctx context.Context, request *v1.ResourceBy
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "k8s role binding with id '%q' does not exist", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "k8s role binding with id '%q' does not exist", request.GetId())
 	}
 
 	return &v1.GetRoleBindingResponse{Binding: binding}, nil

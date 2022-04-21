@@ -86,7 +86,7 @@ func (s *serviceImpl) GetImageIntegration(ctx context.Context, request *v1.Resou
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "image integration %s not found", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "image integration %s not found", request.GetId())
 	}
 	scrubImageIntegration(integration)
 	return integration, nil
@@ -322,7 +322,7 @@ func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context
 		return err
 	}
 	if !exists {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "image integration %s not found", updateRequest.GetConfig().GetId())
+		return errors.Wrapf(errox.NotFound, "image integration %s not found", updateRequest.GetConfig().GetId())
 	}
 	if err := s.reconcileImageIntegrationWithExisting(updateRequest.GetConfig(), integration); err != nil {
 		return errors.Wrap(errox.InvalidArgs, err.Error())
