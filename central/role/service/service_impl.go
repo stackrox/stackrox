@@ -14,7 +14,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -114,7 +113,7 @@ func (s *serviceImpl) CreateRole(ctx context.Context, roleRequest *v1.CreateRole
 
 	// Check role request correctness.
 	if role.GetName() != "" && role.GetName() != roleRequest.GetName() {
-		return nil, errorhelpers.NewErrInvalidArgs("different role names in path and body")
+		return nil, errox.NewErrInvalidArgs("different role names in path and body")
 	}
 	role.Name = roleRequest.GetName()
 
@@ -209,7 +208,7 @@ func (s *serviceImpl) ListPermissionSets(ctx context.Context, _ *v1.Empty) (*v1.
 
 func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) (*storage.PermissionSet, error) {
 	if permissionSet.GetId() != "" {
-		return nil, errorhelpers.NewErrInvalidArgs("setting id field is not allowed")
+		return nil, errox.NewErrInvalidArgs("setting id field is not allowed")
 	}
 	permissionSet.Id = rolePkg.GeneratePermissionSetID()
 
@@ -275,7 +274,7 @@ func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, _ *v1.Empty) (
 
 func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) (*storage.SimpleAccessScope, error) {
 	if scope.GetId() != "" {
-		return nil, errorhelpers.NewErrInvalidArgs("setting id field is not allowed")
+		return nil, errox.NewErrInvalidArgs("setting id field is not allowed")
 	}
 	scope.Id = rolePkg.GenerateAccessScopeID()
 
