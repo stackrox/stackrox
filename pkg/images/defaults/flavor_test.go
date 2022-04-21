@@ -53,6 +53,9 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 		"rhacs": {
 			expectedFlavor: RHACSReleaseImageFlavor(),
 		},
+		"opensource": {
+			expectedFlavor: OpenSourceReleaseImageFlavor(),
+		},
 		"wrong_value": {
 			shouldPanicAlways: true,
 		},
@@ -97,6 +100,9 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorByName() {
 		"rhacs": {
 			expectedFlavor: RHACSReleaseImageFlavor(),
 		},
+		"opensource": {
+			expectedFlavor: OpenSourceReleaseImageFlavor(),
+		},
 		"wrong_value": {
 			expectedErrorRelease:    "unexpected value 'wrong_value'",
 			expectedErrorNonRelease: "unexpected value 'wrong_value'",
@@ -132,8 +138,8 @@ func TestGetAllowedImageFlavorNames(t *testing.T) {
 		isRelease bool
 		want      []string
 	}{
-		{"development", false, []string{"development_build", "stackrox.io", "rhacs"}},
-		{"release", true, []string{"stackrox.io", "rhacs"}},
+		{"development", false, []string{"development_build", "stackrox.io", "rhacs", "opensource"}},
+		{"release", true, []string{"stackrox.io", "rhacs", "opensource"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
