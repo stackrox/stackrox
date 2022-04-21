@@ -12,6 +12,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
@@ -24,7 +25,9 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/backgroundtasks"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/networkpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection"
@@ -35,6 +38,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -99,6 +103,7 @@ type serviceImpl struct {
 	policies          datastore.DataStore
 	clusters          clusterDataStore.DataStore
 	deployments       deploymentDataStore.DataStore
+	networkPolicies   networkPolicyDS.DataStore
 	notifiers         notifierDataStore.DataStore
 	mitreStore        mitreDataStore.MitreAttackReadOnlyDataStore
 	reprocessor       reprocessor.Loop
@@ -401,6 +406,22 @@ func (s *serviceImpl) CancelDryRunJob(ctx context.Context, jobid *v1.JobId) (*v1
 	return &v1.Empty{}, nil
 }
 
+func (s *serviceImpl) getNetworkPoliciesForDeployment(ctx context.Context, dep *storage.Deployment) (*augmentedobjs.NetworkPoliciesApplied, error) {
+	storedPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, dep.GetClusterId(), dep.GetNamespace())
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get network policies for clusterId %s on namespace %s", dep.GetClusterId(), dep.GetNamespace())
+	}
+
+	matchedNetworkPolicies := map[string]*storage.NetworkPolicy{}
+	for _, p := range storedPolicies {
+		if labels.MatchLabels(p.GetSpec().GetPodSelector(), dep.GetPodLabels()) {
+			matchedNetworkPolicies[p.GetId()] = p
+		}
+	}
+
+	return networkpolicy.GetNetworkPoliciesApplied(matchedNetworkPolicies), nil
+}
+
 func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx concurrency.ErrorWaitable, request *storage.Policy) (*v1.DryRunResponse, error) {
 	var resp v1.DryRunResponse
 
@@ -466,9 +487,15 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				return
 			}
 
+			matched, err := s.getNetworkPoliciesForDeployment(ctx, deployment)
+			if err != nil {
+				return
+			}
+
 			violations, err := compiledPolicy.MatchAgainstDeployment(nil, booleanpolicy.EnhancedDeployment{
-				Deployment: deployment,
-				Images:     images,
+				Deployment:             deployment,
+				Images:                 images,
+				NetworkPoliciesApplied: matched,
 			})
 
 			if err != nil {
