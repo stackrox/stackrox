@@ -29,7 +29,7 @@ describe('Authentication', () => {
         // Replace /.*/ RegExp for route method with '/v1/*' string for intercept method
         // because it is not limited to XHR, therefore it matches HTML requests too!
         cy.intercept('/v1/*', { body: {} }).as('everythingElse');
-        cy.intercept('GET', api.clusters.list, { fixture: 'clusters/couple.json' }).as('clusters');
+        cy.intercept('GET', api.clusters.list, { fixture: 'clusters/health.json' }).as('clusters');
         cy.intercept('GET', api.search.options, { fixture: 'search/metadataOptions.json' }).as(
             'searchOptions'
         );
