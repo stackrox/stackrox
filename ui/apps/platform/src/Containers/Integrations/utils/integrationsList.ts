@@ -33,7 +33,79 @@ import signature from 'images/signature.svg';
 // and then add the following property to the new tiles object definition in the list below:
 //     featureFlagDependency: knownBackendFlags.ROX_<flag_constant>,
 
-const integrationsList = {
+import {
+    AuthPluginType,
+    AuthProviderType,
+    BackupIntegrationType,
+    ImageIntegrationType,
+    IntegrationSource,
+    NotifierIntegrationType,
+    SignatureIntegrationType,
+} from 'types/integration';
+
+export type IntegrationDescriptor =
+    | AuthPluginDescriptor
+    | AuthProviderDescriptor
+    | BackupIntegrationDescriptor
+    | ImageIntegrationDescriptor
+    | NotifierIntegrationDescriptor
+    | SignatureIntegrationDescriptor;
+
+export type AuthPluginDescriptor = {
+    source: 'authPlugins';
+    type: AuthPluginType;
+} & BaseIntegrationDescriptor;
+
+export type AuthProviderDescriptor = {
+    source: 'authProviders';
+    type: AuthProviderType;
+} & BaseIntegrationDescriptor;
+
+export type BackupIntegrationDescriptor = {
+    source: 'backups';
+    type: BackupIntegrationType;
+} & BaseIntegrationDescriptor;
+
+export type ImageIntegrationDescriptor = {
+    source: 'imageIntegrations';
+    type: ImageIntegrationType;
+    categories: ImageIntegrationCategories;
+} & BaseIntegrationDescriptor;
+
+export type ImageIntegrationCategories =
+    | 'Image Scanner + Node Scanner'
+    | 'Registry'
+    | 'Registry + Scanner'
+    | 'Scanner';
+
+export type NotifierIntegrationDescriptor = {
+    source: 'notifiers';
+    type: NotifierIntegrationType;
+} & BaseIntegrationDescriptor;
+
+export type SignatureIntegrationDescriptor = {
+    source: 'signatureIntegrations';
+    type: SignatureIntegrationType;
+} & BaseIntegrationDescriptor;
+
+export type BaseIntegrationDescriptor = {
+    source: IntegrationSource;
+    type: string;
+    label: string;
+    image: string;
+    featureFlagDependency?: string;
+};
+
+type IntegrationDescriptorMap = {
+    authPlugins: AuthPluginDescriptor[];
+    authProviders: AuthProviderDescriptor[];
+    backups: BackupIntegrationDescriptor[];
+    imageIntegrations: ImageIntegrationDescriptor[];
+    notifiers: NotifierIntegrationDescriptor[];
+    signatureIntegrations: SignatureIntegrationDescriptor[];
+};
+
+const integrationsList: IntegrationDescriptorMap = {
     authProviders: [
         {
             label: 'API Token',
@@ -55,7 +127,6 @@ const integrationsList = {
             categories: 'Image Scanner + Node Scanner',
             source: 'imageIntegrations',
             image: logo,
-            disabled: false,
         },
         {
             label: 'Generic Docker Registry',
@@ -63,7 +134,6 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: docker,
-            disabled: false,
         },
         {
             label: 'Anchore Scanner',
@@ -71,7 +141,6 @@ const integrationsList = {
             categories: 'Scanner',
             source: 'imageIntegrations',
             image: anchore,
-            disabled: false,
         },
         {
             label: 'Amazon ECR',
@@ -79,7 +148,6 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: aws,
-            disabled: false,
         },
         {
             label: 'Google Container Registry',
@@ -87,16 +155,13 @@ const integrationsList = {
             categories: 'Registry + Scanner',
             source: 'imageIntegrations',
             image: googleregistry,
-            disabled: false,
         },
         {
             label: 'Google Artifact Registry',
             type: 'artifactregistry',
-            typeLabel: 'artifactregistry',
             categories: 'Registry',
             source: 'imageIntegrations',
             image: googleartifact,
-            disabled: false,
         },
         {
             label: 'Microsoft ACR',
@@ -104,7 +169,6 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: azure,
-            disabled: false,
         },
         {
             label: 'JFrog Artifactory',
@@ -112,7 +176,6 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: artifactory,
-            disabled: false,
         },
         {
             label: 'Docker Trusted Registry',
@@ -120,7 +183,6 @@ const integrationsList = {
             categories: 'Registry + Scanner',
             source: 'imageIntegrations',
             image: docker,
-            disabled: false,
         },
         {
             label: 'Quay.io',
@@ -128,7 +190,6 @@ const integrationsList = {
             categories: 'Registry + Scanner',
             source: 'imageIntegrations',
             image: quay,
-            disabled: false,
         },
         {
             label: 'CoreOS Clair',
@@ -136,7 +197,6 @@ const integrationsList = {
             categories: 'Scanner',
             source: 'imageIntegrations',
             image: clair,
-            disabled: false,
         },
         {
             label: 'Sonatype Nexus',
@@ -144,7 +204,6 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: nexus,
-            disabled: false,
         },
         {
             label: 'Tenable.io',
@@ -152,7 +211,6 @@ const integrationsList = {
             categories: 'Registry + Scanner',
             source: 'imageIntegrations',
             image: tenable,
-            disabled: false,
         },
         {
             label: 'IBM Cloud',
@@ -160,7 +218,6 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: ibm,
-            disabled: false,
         },
         {
             label: 'Red Hat',
@@ -168,7 +225,6 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: redhat,
-            disabled: false,
         },
     ],
     signatureIntegrations: [
