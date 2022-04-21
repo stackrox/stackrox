@@ -346,7 +346,7 @@ upgrade-via-olm: kuttl
 	KUTTL=$(KUTTL) ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(VERSION) $(ALLOW_DIRTY_TAG_INSTALLATION)
 
 .PHONY: upgrade-dirty-tag-via-olm
-upgrade-via-olm: kuttl
+upgrade-dirty-tag-via-olm: kuttl
 	KUTTL=$(KUTTL) ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(VERSION) true
 
 ##@ Bundle and Index build
