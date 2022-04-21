@@ -70,7 +70,7 @@ function check_version_tag() {
   local -r allow_dirty_tag="$2"
 
   echo $IMAGE_TAG_BASE
-  if docker manifest inspect $IMAGE_TAG_BASE:$version_tag ; then
+  if docker manifest inspect "$IMAGE_TAG_BASE:$version_tag" ; then
     return 0
   else
     log "Cannot find $IMAGE_TAG_BASE:$version_tag image tag in the registry."
