@@ -11,42 +11,61 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
 )
 
 const (
-	reqLabelPolicyID = "d3e480c1-c6de-4cd2-9006-9a3eb3ad36b6"
+	reqLabelPolicyID    = "d3e480c1-c6de-4cd2-9006-9a3eb3ad36b6"
+	nginxDeploymentYaml = `yamls/nginx.yaml`
 )
 
-func TestRequiredImageLabelPolicy(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+type ImageLabelPolicyTestSuite struct {
+	suite.Suite
+	conn          *grpc.ClientConn
+	originalState *storage.Policy
+	policyService v1.PolicyServiceClient
+}
+
+func (suite *ImageLabelPolicyTestSuite) SetupSuite() {
+	suite.conn = testutils.GRPCConnectionToCentral(suite.T())
 
 	// Make sure image label policy is enabled
-	policyService := v1.NewPolicyServiceClient(conn)
-	originalState := getPolicy(t, policyService, reqLabelPolicyID)
-	enabledPolicy := originalState.Clone()
+	suite.policyService = v1.NewPolicyServiceClient(suite.conn)
+	suite.originalState = getPolicy(suite.T(), suite.policyService, reqLabelPolicyID)
+	enabledPolicy := suite.originalState.Clone()
 	enabledPolicy.Disabled = false
-	setPolicy(t, policyService, enabledPolicy)
-	defer setPolicy(t, policyService, originalState)
+	setPolicy(suite.T(), suite.policyService, enabledPolicy)
 	time.Sleep(5 * time.Second) // Allow time to sync the policy with sensor
+}
 
+func (suite *ImageLabelPolicyTestSuite) TeardownSuite() {
+	// restore original image label policy
+	setPolicy(suite.T(), suite.policyService, suite.originalState)
+	if err := suite.conn.Close(); err != nil {
+		log.Errorf("Failed to tear down grpc connection %v", err)
+	}
+}
+
+func (suite *ImageLabelPolicyTestSuite) TestRequiredImageLabelPolicy() {
 	// Create a deployment which should violate the policy
-	setupNginxLatestTagDeployment(t)
-	defer teardownNginxLatestTagDeployment(t)
+	deployment := createDeployment(suite.T(), nginxDeploymentYaml)
+	defer deleteDeployment(suite.T(), deployment)
 
 	// Retry to get the new alert
 	err := retry.WithRetry(
 		func() error {
 			// Get all alerts
-			alertService := v1.NewAlertServiceClient(conn)
+			alertService := v1.NewAlertServiceClient(suite.conn)
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			alertResp, err := alertService.ListAlerts(ctx, &v1.ListAlertsRequest{})
 			cancel()
-			require.NoError(t, err)
+			require.NoError(suite.T(), err)
 
 			// Make sure there are violations for the test deployment
 			var imageLabelAlerts []*storage.ListAlert
 			for _, alert := range alertResp.GetAlerts() {
-				if alert.GetPolicy().GetId() == reqLabelPolicyID && alert.GetDeployment().GetName() == nginxDeploymentName {
+				if alert.GetPolicy().GetId() == reqLabelPolicyID && alert.GetDeployment().GetName() == deployment.GetName() {
 					imageLabelAlerts = append(imageLabelAlerts, alert)
 				}
 			}
@@ -61,9 +80,13 @@ func TestRequiredImageLabelPolicy(t *testing.T) {
 			time.Sleep(time.Second)
 		}),
 	)
-	require.NoError(t, err)
+	require.NoError(suite.T(), err)
 
 	// TODO: Test an image which should not violate the policy
+}
+
+func TestImageLabelPolicyTestSuite(t *testing.T) {
+	suite.Run(t, new(ImageLabelPolicyTestSuite))
 }
 
 func getPolicy(t *testing.T, client v1.PolicyServiceClient, policyID string) *storage.Policy {
