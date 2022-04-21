@@ -6,7 +6,8 @@ import { policiesBasePath } from 'routePaths';
 import { SearchFilter } from 'types/search';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
-import { getSearchStringForFilter, parsePoliciesSearchString } from './policies.utils';
+import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
+import { parsePoliciesSearchString } from './policies.utils';
 import PoliciesTablePage from './Table/PoliciesTablePage';
 import PolicyPage from './PolicyPage';
 
@@ -37,7 +38,7 @@ function PoliciesPage() {
         // Browser history has only the most recent search filter.
         history.replace({
             pathname: policiesBasePath,
-            search: getSearchStringForFilter(changedSearchFilter),
+            search: getUrlQueryStringForSearchFilter(changedSearchFilter, 's'),
         });
     }
 

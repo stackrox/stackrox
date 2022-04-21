@@ -1,9 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
-import { selectors } from 'reducers';
-import { createSelector, createStructuredSelector } from 'reselect';
 
 import {
     BarChart,
@@ -21,13 +18,23 @@ import slickSettings from 'constants/slickSettings';
 import { severityColorMap } from 'constants/severityColors';
 import { severityLabels } from 'messages/common';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
+import severityPropType from './severityPropTypes';
 
-const ViolationsByClusterChart = ({ history, violationsByCluster }) => {
+const ViolationsByClusterChart = ({ history, globalViolationsCounts }) => {
+    const violationsByCluster = useMemo(
+        () => formatViolationsByCluster(globalViolationsCounts),
+        [globalViolationsCounts]
+    );
     function makeBarClickHandler(clusterName, severity) {
         return () => {
+            const searchFilter = { Severity: severity };
             // if clusters are not loaded yet, at least we can redirect to unfiltered violations
-            const clusterQuery = clusterName !== '' ? `cluster=${clusterName}` : '';
-            history.push(`/main/violations?severity=${severity}&${clusterQuery}`);
+            if (clusterName !== '') {
+                searchFilter.Cluster = clusterName;
+            }
+            const searchString = getUrlQueryStringForSearchFilter(searchFilter);
+            history.push(`/main/violations?${searchString}`);
         };
     }
     if (!violationsByCluster || !violationsByCluster.length) {
@@ -107,63 +114,55 @@ const ViolationsByClusterChart = ({ history, violationsByCluster }) => {
 };
 
 ViolationsByClusterChart.propTypes = {
-    violationsByCluster: PropTypes.arrayOf(
-        PropTypes.arrayOf(
-            PropTypes.shape({
-                name: PropTypes.string.isRequired,
-                Critical: PropTypes.number.isRequired,
-                High: PropTypes.number.isRequired,
-                Medium: PropTypes.number.isRequired,
-                Low: PropTypes.number.isRequired,
-            })
-        )
-    ),
+    globalViolationsCounts: PropTypes.arrayOf(
+        PropTypes.shape({
+            counts: PropTypes.arrayOf(
+                PropTypes.shape({
+                    count: PropTypes.string.isRequired,
+                    severity: severityPropType,
+                })
+            ),
+            group: PropTypes.string.isRequired,
+        })
+    ).isRequired,
     history: PropTypes.shape({
         push: PropTypes.func.isRequired,
     }),
 };
 
 ViolationsByClusterChart.defaultProps = {
-    violationsByCluster: [],
     history: null,
 };
 
-const formatViolationsByCluster = createSelector(
-    [selectors.getAlertCountsByCluster],
-    (violationsByCluster) => {
-        const clusterCharts = [];
+function formatViolationsByCluster(violationsByCluster) {
+    const clusterCharts = [];
 
-        let i = 0;
-        const limit = 4;
-        while (i < violationsByCluster.length) {
-            let j = i;
-            let groupIndex = 0;
-            const barCharts = [];
-            while (j < violationsByCluster.length && groupIndex < limit) {
-                const cluster = violationsByCluster[j];
-                const dataPoint = {
-                    name: cluster.group,
-                    Critical: 0,
-                    High: 0,
-                    Medium: 0,
-                    Low: 0,
-                };
-                cluster.counts.forEach((d) => {
-                    dataPoint[severityLabels[d.severity]] = parseInt(d.count, 10);
-                });
-                barCharts.push(dataPoint);
-                j += 1;
-                groupIndex += 1;
-            }
-            clusterCharts.push(barCharts);
-            i += 4;
+    let i = 0;
+    const limit = 4;
+    while (i < violationsByCluster.length) {
+        let j = i;
+        let groupIndex = 0;
+        const barCharts = [];
+        while (j < violationsByCluster.length && groupIndex < limit) {
+            const cluster = violationsByCluster[j];
+            const dataPoint = {
+                name: cluster.group,
+                Critical: 0,
+                High: 0,
+                Medium: 0,
+                Low: 0,
+            };
+            cluster.counts.forEach((d) => {
+                dataPoint[severityLabels[d.severity]] = parseInt(d.count, 10);
+            });
+            barCharts.push(dataPoint);
+            j += 1;
+            groupIndex += 1;
         }
-        return clusterCharts;
+        clusterCharts.push(barCharts);
+        i += 4;
     }
-);
+    return clusterCharts;
+}
 
-const mapStateToProps = createStructuredSelector({
-    violationsByCluster: formatViolationsByCluster,
-});
-
-export default withRouter(connect(mapStateToProps, null)(ViolationsByClusterChart));
+export default withRouter(ViolationsByClusterChart);
