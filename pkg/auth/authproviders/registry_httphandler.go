@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sac"
@@ -281,7 +282,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 	userRoles := userInfo.GetRoles()
 	if len(userRoles) == 0 {
-		err := errorhelpers.GenericNoValidRole()
+		err := errox.GenericNoValidRole()
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}
