@@ -104,7 +104,10 @@ const DashboardPage = () => {
                         className={`flex flex-wrap ${!isDarkMode ? 'bg-base-300' : 'bg-base-100'}`}
                     >
                         <div className="w-full lg:w-1/2 p-6 z-1">
-                            <EnvironmentRisk globalViolationsCounts={globalViolationsCounts} />
+                            <EnvironmentRisk
+                                globalViolationsCounts={globalViolationsCounts}
+                                clusters={filteredClusters}
+                            />
                         </div>
                         <div className="w-full lg:w-1/2 p-6 z-1 border-l border-base-400">
                             <DashboardCompliance />
