@@ -34,6 +34,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -872,7 +873,8 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		lastContact := protoconv.ConvertTimestampToTimeOrDefault(cluster.GetHealthStatus().GetLastContact(), time.Time{})
 		timeLeftInGracePeriod := clusterMoveGracePeriod - time.Since(lastContact)
 
-		if timeLeftInGracePeriod > 0 {
+		// In a scale test environment, allow Sensors to reconnect in under the time limit
+		if timeLeftInGracePeriod > 0 && !env.ScaleTestEnabled.BooleanSetting() {
 			if err := common.CheckConnReplace(hello.GetDeploymentIdentification(), cluster.GetMostRecentSensorId()); err != nil {
 				managerPretty := "non-manually" // Unless we extend the `ManagerType` and forget to extend the switch here, this should never surface to the user.
 				switch manager {
