@@ -4,11 +4,13 @@ package postgres
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/role/resources"
@@ -257,13 +259,17 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NamespaceMet
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
+		var deniedIds []string
 		for _, obj := range objs {
 			subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetId())
 			if ok, err := subScopeChecker.Allowed(ctx); err != nil {
 				return err
 			} else if !ok {
-				return sac.ErrResourceAccessDenied
+				deniedIds = append(deniedIds, obj.GetId())
 			}
+		}
+		if len(deniedIds) != 0 {
+			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying namespaceMetadatas with IDs [%s] was denied", strings.Join(deniedIds, ", "))
 		}
 	}
 

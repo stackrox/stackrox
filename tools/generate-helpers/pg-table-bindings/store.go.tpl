@@ -384,6 +384,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
+        var deniedIds []string
         for _, obj := range objs {
             {{- if .Obj.IsClusterScope }}
             subScopeChecker := scopeChecker.ClusterID({{ "obj" | .Obj.GetClusterID }})
@@ -393,8 +394,11 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
             if ok, err := subScopeChecker.Allowed(ctx); err != nil {
                 return err
             } else if !ok {
-                return sac.ErrResourceAccessDenied
+                deniedIds = append(deniedIds, obj.GetId())
             }
+        }
+        if len(deniedIds) != 0 {
+            return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying {{ .TrimmedType|lowerCamelCase }}s with IDs [%s] was denied", strings.Join(deniedIds, ", "))
         }
     }
     {{- end }}
