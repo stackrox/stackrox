@@ -5,15 +5,23 @@ set -eu -o pipefail
 
 source "$(dirname "$0")/common.sh"
 
+declare allow_dirty_tag=false
+
 function main() {
-  if [[ $# -ne 3 ]]; then
-    echo "Usage: $0 <operator_ns> <operator-version> <allow-dirty-tag>" >&2
+  case "$1" in
+  -d | --allow-dirty-tag)
+    allow_dirty_tag=true
+    shift
+    ;;
+  esac
+
+  if [[ $# -ne 2 ]]; then
+    echo "Usage: $0 [-d | --allow-dirty-tag] <operator_ns> <operator-version>" >&2
     exit 1
   fi
 
   local -r operator_ns="${1:-}"
   local -r operator_version="${2:-}"
-  local -r allow_dirty_tag="${3:-}"
 
   # Unfortunately simply changing to automatic approval does not work:
   # https://github.com/operator-framework/operator-lifecycle-manager/issues/2341
