@@ -731,34 +731,35 @@ class IntegrationsTest extends BaseSpecification {
         }       | StatusRuntimeException | /PermissionDenied/ | "incorrect project"
     }
 
-    @Category(Integration)
-    def "Verify syslog notifier"() {
-        given:
-        "the some syslog receiver is created"
-        // Change the local port numbers so we don't conflict with any other splunk instances
-        SplunkUtil.SplunkDeployment splunkDeployment = SplunkUtil.createSplunk(orchestrator,
-                Constants.ORCHESTRATOR_NAMESPACE, true)
+    // TODO disabled due to flaking (ROX-7902), shoudl be re-enabled once reworked (ROX-10310)
+    //@Category(Integration)
+    //def "Verify syslog notifier"() {
+    //    given:
+    //    "the some syslog receiver is created"
+    //    // Change the local port numbers so we don't conflict with any other splunk instances
+    //    SplunkUtil.SplunkDeployment splunkDeployment = SplunkUtil.createSplunk(orchestrator,
+    //            Constants.ORCHESTRATOR_NAMESPACE, true)
 
-        when:
-        "call the grpc API for the syslog integration."
-        SyslogNotifier notifier = new SyslogNotifier(splunkDeployment.syslogSvc.name, 514,
-                splunkDeployment.splunkPortForward.localPort)
-        try {
-            notifier.createNotifier()
-        } catch (Exception e) {
-            throw new AssumptionViolatedException("Could not create syslog notifier. Skipping test!", e)
-        }
+    //    when:
+    //    "call the grpc API for the syslog integration."
+    //    SyslogNotifier notifier = new SyslogNotifier(splunkDeployment.syslogSvc.name, 514,
+    //            splunkDeployment.splunkPortForward.localPort)
+    //    try {
+    //        notifier.createNotifier()
+    //    } catch (Exception e) {
+    //        throw new AssumptionViolatedException("Could not create syslog notifier. Skipping test!", e)
+    //    }
 
-        then:
-        "Verify the messages are seen in the json"
-        // We should have at least one audit log for the message which created the syslog integration.
-        notifier.validateViolationNotification(null, null, false)
+    //    then:
+    //    "Verify the messages are seen in the json"
+    //    // We should have at least one audit log for the message which created the syslog integration.
+    //    notifier.validateViolationNotification(null, null, false)
 
-        cleanup:
-        "remove splunk and syslog notifier integration"
-        SplunkUtil.tearDownSplunk(orchestrator, splunkDeployment)
-        notifier.deleteNotifier()
-    }
+    //    cleanup:
+    //    "remove splunk and syslog notifier integration"
+    //    SplunkUtil.tearDownSplunk(orchestrator, splunkDeployment)
+    //    notifier.deleteNotifier()
+    //}
 
     def uniqueName(String name) {
         return name + RandomStringUtils.randomAlphanumeric(5).toLowerCase()
