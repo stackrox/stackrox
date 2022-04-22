@@ -19,7 +19,7 @@ class OrchestratorCommon {
         process.waitForOrKill(COMMAND_EXEC_TIMEOUT)
 
         if (process.exitValue() == 143) {
-            log.debug "runCommand killed due to timeout (${COMMAND_EXEC_TIMEOUT} ms)"
+            log.warn "runCommand killed due to timeout (${COMMAND_EXEC_TIMEOUT} ms)"
         }
 
         if (print) {
