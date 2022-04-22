@@ -22,7 +22,7 @@ func (o *or) Authorized(ctx context.Context, fullMethodName string) error {
 		}
 		errors = append(errors, err)
 	}
-	return errox.NewErrNotAuthorized(errorhelpers.NewErrorListWithErrors("no authorizer could authorize this request:", errors).String())
+	return errox.NotAuthorized.CausedBy(errorhelpers.NewErrorListWithErrors("no authorizer could authorize this request:", errors).String())
 }
 
 // Or creates an Authorizer that succeeds if any of the provided Authorizers succeed.

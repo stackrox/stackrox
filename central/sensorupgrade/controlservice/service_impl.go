@@ -36,12 +36,12 @@ func clusterIDFromCtx(ctx context.Context) (string, error) {
 
 	svc := id.Service()
 	if svc == nil || svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
-		return "", errox.NewErrNotAuthorized("only sensor/upgrader may access this API")
+		return "", errox.NotAuthorized.CausedBy("only sensor/upgrader may access this API")
 	}
 
 	clusterID := svc.GetId()
 	if clusterID == "" {
-		return "", errox.NewErrNotAuthorized("only sensors with a valid cluster ID may access this API")
+		return "", errox.NotAuthorized.CausedBy("only sensors with a valid cluster ID may access this API")
 	}
 	return clusterID, nil
 }

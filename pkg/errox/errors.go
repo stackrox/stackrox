@@ -53,11 +53,6 @@ func GenericNoValidRole() error {
 		" please contact your system administrator")
 }
 
-// NewErrNotAuthorized wraps NotAuthorized into an explanation.
-func NewErrNotAuthorized(explanation string) error {
-	return NotAuthorized.CausedBy(explanation)
-}
-
 // NewErrInvalidArgs wraps InvalidArgs into an explanation.
 func NewErrInvalidArgs(explanation string) error {
 	return InvalidArgs.CausedBy(explanation)

@@ -275,7 +275,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 
 	userInfo := user.GetUserInfo()
 	if userInfo == nil {
-		err := errox.NewErrNotAuthorized("failed to get user info")
+		err := errox.NotAuthorized.CausedBy("failed to get user info")
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}

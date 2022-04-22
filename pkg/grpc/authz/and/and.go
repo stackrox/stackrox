@@ -20,7 +20,7 @@ func (a *and) Authorized(ctx context.Context, fullMethodName string) error {
 		}
 	}
 	if len(errors) != 0 {
-		return errox.NewErrNotAuthorized(errorhelpers.NewErrorListWithErrors("some authorizer could not authorize this request:", errors).String())
+		return errox.NotAuthorized.CausedBy(errorhelpers.NewErrorListWithErrors("some authorizer could not authorize this request:", errors).String())
 	}
 	return nil
 }
