@@ -80,8 +80,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		// TODO add postgres support
 		return nil, nil
 	} else {
-		log.Errorf("osward -- scope query: %q", q.ScopeQuery)
-		log.Errorf("osward -- query: %q", q.Query)
+		log.Errorf("osward -- top level object %s", q.String())
 		return resolver.vulnerabilitiesV2(ctx, q)
 	}
 }
