@@ -1,11 +1,7 @@
-import React from 'react';
-import { connect } from 'react-redux';
+import React, { ReactElement } from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
-import { createStructuredSelector } from 'reselect';
-import PropTypes from 'prop-types';
 
-import { selectors } from 'reducers';
-import { actions, getHasReadPermission } from 'reducers/roles';
+import usePermissions from 'hooks/usePermissions';
 
 import { accessControlBasePath, accessControlPath, getEntityPath } from './accessControlPaths';
 
@@ -18,14 +14,15 @@ import Roles from './Roles/Roles';
 
 const paramId = ':entityId?';
 
-function AccessControl({ userRolePermissions }) {
+function AccessControl(): ReactElement {
     // TODO is read access required for all routes in improved Access Control?
     // TODO Is write access required anywhere in classic Access Control?
-    const hasReadAccess = getHasReadPermission('AuthProvider', userRolePermissions);
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForAuthProvider = hasReadAccess('AuthProvider');
 
     return (
         <>
-            {hasReadAccess ? (
+            {hasReadAccessForAuthProvider ? (
                 <Switch>
                     <Route exact path={accessControlBasePath}>
                         <Redirect to={getEntityPath('AUTH_PROVIDER')} />
@@ -57,18 +54,4 @@ function AccessControl({ userRolePermissions }) {
     );
 }
 
-AccessControl.propTypes = {
-    userRolePermissions: PropTypes.shape({
-        resourceToAccess: PropTypes.shape({ AuthProvider: PropTypes.string }),
-    }).isRequired,
-};
-
-const mapStateToProps = createStructuredSelector({
-    userRolePermissions: selectors.getUserRolePermissions,
-});
-
-const mapDispatchToProps = {
-    fetchResources: actions.fetchResources.request,
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(AccessControl);
+export default AccessControl;
