@@ -414,7 +414,7 @@ func (d *detectorImpl) getNetworkPoliciesApplied(deployment *storage.Deployment)
 		// It is fine (from the Matcher perspective) to use nil augmented objects
 		return nil
 	}
-	networkPolicies := d.networkPolicyStore.Find(deployment.GetName(), deployment.GetLabels())
+	networkPolicies := d.networkPolicyStore.Find(deployment.GetNamespace(), deployment.GetLabels())
 	return networkpolicy.GetNetworkPoliciesApplied(networkPolicies)
 }
 
