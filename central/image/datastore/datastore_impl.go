@@ -278,6 +278,7 @@ func (ds *datastoreImpl) UpdateVulnerabilityState(ctx context.Context, cve strin
 	}
 	return nil
 }
+
 func (ds *datastoreImpl) initializeRankers() {
 	readCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
