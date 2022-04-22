@@ -61,8 +61,8 @@ SCORECARD_STORAGE_IMAGE_BASE ?= quay.io/rhacs-eng/mirror-busybox
 SCORECARD_STORAGE_IMAGE_TAG ?= @sha256:fe9664ceda9c13b7fd65f5bc3c0bca5060de3a66fedc39d33926b573599da3b7
 SCORECARD_STORAGE_IMAGE ?= $(SCORECARD_STORAGE_IMAGE_BASE):$(SCORECARD_STORAGE_IMAGE_TAG)
 
-# Increase the scorecard wait time from (default) 30s to 40s, since we experienced some time out issues in the past.
-SCORECARD_WAIT_TIME_DURATION ?= 40s
+# Increase the scorecard wait time from (default) 30s to 5m, since we experienced some time out issues in the past.
+SCORECARD_WAIT_TIME_DURATION ?= 5m
 
 # SCORECARD_ARGS should be passed to any invocation of "$(OPERATOR_SDK) scorecard".
 SCORECARD_ARGS ?= --storage-image="$(SCORECARD_STORAGE_IMAGE)" --wait-time="$(SCORECARD_WAIT_TIME_DURATION)" --verbose
