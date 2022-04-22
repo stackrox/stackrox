@@ -363,6 +363,22 @@ func (s *Schema) LocalPrimaryKeys() []Field {
 	return pks
 }
 
+// ID is the id field in the current schema, if any.
+func (s *Schema) ID() Field {
+	for _, f := range s.Fields {
+		if f.Options.ID {
+			return f
+		}
+	}
+	// If there is only one primary key, that is considered Id column by default even if not specified explicitly.
+	pks := s.LocalPrimaryKeys()
+	if len(pks) == 1 {
+		return pks[0]
+	}
+	log.Errorf("No ID column defined for %s", s.Table)
+	return Field{}
+}
+
 // WithReference adds the specified schema as a reference to this schema and returns it. The referencing receiver
 // schema is not a direct field in proto object of the specified reference.
 func (s *Schema) WithReference(ref *Schema) *Schema {
@@ -394,6 +410,7 @@ type SearchField struct {
 
 // PostgresOptions is the parsed representation of the sql tag on the struct field
 type PostgresOptions struct {
+	ID                     bool
 	Ignored                bool
 	Index                  string
 	PrimaryKey             bool

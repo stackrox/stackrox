@@ -50,7 +50,7 @@ message CVE {
         repeated string tags = 2;
     }
 
-    string                    id                    = 1 [(gogoproto.moretags) = 'search:"CVE ID,hidden" sql:"pk"'];  // This field exists because UI depends on it, for now.
+    string                    id                    = 1 [(gogoproto.moretags) = 'search:"CVE ID,hidden" sql:"pk,id"'];  // This field exists because UI depends on it, for now.
     string                    cve                   = 22 [(gogoproto.moretags) = 'search:"CVE,store" sql:"pk"'];
     string                    operating_system      = 21 [(gogoproto.moretags) = 'sql:"pk"'];
     float                     cvss                  = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];

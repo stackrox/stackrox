@@ -11,7 +11,7 @@ package storage;
 
 message ImageComponentEdge {
   // id is base 64 encoded Image:Component ids.
-  string    id                                = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  string    id                                = 1 [(gogoproto.moretags) = 'sql:"pk,id"'];
   /// Layer that contains this component
   oneof has_layer_index {
     int32   layer_index                       = 2;
@@ -27,7 +27,7 @@ message ImageComponentEdge {
 
 message ComponentCVEEdge {
   // base 64 encoded Component:CVE ids.
-  string     id                               = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  string     id                               = 1 [(gogoproto.moretags) = 'sql:"pk,id"'];
 
   bool       is_fixable                       = 2 [(gogoproto.moretags) = 'search:"Fixable,store"'];
 
@@ -46,7 +46,7 @@ message ComponentCVEEdge {
 
 message ImageCVEEdge {
   // base 64 encoded Image:CVE ids.
-  string                    id                          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  string                    id                          = 1 [(gogoproto.moretags) = 'sql:"pk,id"'];
   google.protobuf.Timestamp first_image_occurrence      = 2 [(gogoproto.moretags) = 'search:"First Image Occurrence Timestamp,hidden"'];
   VulnerabilityState        state                       = 3 [(gogoproto.moretags) = 'search:"Vulnerability State"'];
   string                    image_id                    = 4 [(gogoproto.moretags) = 'sql:"pk,fk(Image:id)"'];

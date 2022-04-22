@@ -12,6 +12,9 @@
 {{- $singlePK := false }}
 {{- if eq (len $pks) 1 }}
 {{ $singlePK = index $pks 0 }}
+{{/*If there are multiple pks, then use the explicitly specified id column.*/}}
+{{- else if .Schema.ID.ColumnName}}
+{{ $singlePK = .Schema.ID }}
 {{- end }}
 
 package postgres
@@ -83,7 +86,9 @@ type Store interface {
 {{- if $singlePK }}
     GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
     GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error)
+{{- if not .JoinTable }}
     DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error
+{{- end }}
 {{- end }}
 
     Walk(ctx context.Context, fn func(obj *{{.Type}}) error) error
