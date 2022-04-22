@@ -82,26 +82,11 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		// TODO add postgres support
 		return nil, nil
 	} else {
-		log.Errorf("osward -- top level object %s", q.String())
-
-		filterImageQuery := &v1.Query{
-			Query: &v1.Query_BaseQuery{
-				BaseQuery: &v1.BaseQuery{
-					Query: &v1.BaseQuery_MatchFieldQuery{
-						MatchFieldQuery: &v1.MatchFieldQuery{
-							Field: "CVE Type",
-							Value: "image",
-						},
-					},
-				},
-			},
-		}
-
 		baseQuery, err := q.AsV1QueryOrEmpty()
 		if err != nil {
 			return nil, err
 		}
-		newQuery, err := search.AddAsConjunction(filterImageQuery, baseQuery)
+		newQuery, err := filterToImageVulns(baseQuery)
 		if err != nil {
 			return nil, err
 		}
@@ -115,6 +100,16 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	log.Errorf("osward -- ImageVulnerabilityCount")
 	//defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnerabilityCount")
+	baseQuery, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	newQuery, err := filterToImageVulns(baseQuery)
+	if err != nil {
+		return 0, err
+	}
+	newQueryString := newQuery.String()
+	args.Query = &newQueryString
 	return resolver.vulnerabilityCountV2(ctx, args)
 }
 
@@ -124,3 +119,25 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 //	//defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnCounter")
 //	return resolver.vulnCounterV2(ctx, args)
 //}
+
+func filterToImageVulns(baseQuery *v1.Query) (*v1.Query, error) {
+
+	filterImageQuery := &v1.Query{
+		Query: &v1.Query_BaseQuery{
+			BaseQuery: &v1.BaseQuery{
+				Query: &v1.BaseQuery_MatchFieldQuery{
+					MatchFieldQuery: &v1.MatchFieldQuery{
+						Field: "CVE Type",
+						Value: "image",
+					},
+				},
+			},
+		},
+	}
+
+	newQuery, err := search.AddAsConjunction(filterImageQuery, baseQuery)
+	if err != nil {
+		return nil, err
+	}
+	return newQuery, nil
+}
