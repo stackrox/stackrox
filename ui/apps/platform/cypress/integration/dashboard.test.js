@@ -8,6 +8,7 @@ import {
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import { visitMainDashboard } from '../helpers/main';
+import { table } from '../selectors/index';
 
 describe('Dashboard page', () => {
     withAuth();
@@ -127,23 +128,21 @@ describe('Dashboard page', () => {
     });
 
     it('should display top risky deployments', () => {
-        cy.intercept('GET', api.risks.riskyDeployments, {
-            fixture: 'risks/riskyDeployments.json',
-        });
-
         visitMainDashboard();
 
-        cy.get(selectors.sectionHeaders.topRiskyDeployments).next().as('list');
+        // Gets the list of top risky deployments on the dashboard and checks to
+        // see that the order matches on the Risk page.
+        cy.get(`${selectors.sectionHeaders.topRiskyDeployments} + div li`).then(($deployments) => {
+            cy.get(selectors.buttons.viewAll).click();
+            cy.url().should('match', /\/main\/risk/);
 
-        // When the API is not mocked, the UI requests the top 5 deployments from the server.
-        // Here we are intercepting the call and injecting 6 deployments, so that is what
-        // the component will display.
-        cy.get('@list').find('li').should('have.length', 6);
-
-        cy.get(selectors.buttons.viewAll).click();
-        cy.url().should('match', /\/main\/risk/);
-
-        // TODO: validate clicking on any sector (for some reason '.click()' isn't stable for D3 chart)
+            $deployments.each((i, elem) => {
+                const deploymentName = elem.innerText.replace(/\n.*/, '');
+                const nthGroup = `${table.body} ${table.group}:nth-child(${i + 1})`;
+                const firstCell = `${table.cells}:nth-child(1)`;
+                cy.get(`${nthGroup} ${firstCell}:contains("${deploymentName}")`);
+            });
+        });
     });
 
     it('should display a search input with only the cluster search modifier', () => {
