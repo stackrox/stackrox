@@ -251,8 +251,6 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 		}
 	}
 
-	log.Errorf("osward -- query string: %s", query)
-
 	vulns, err := vulnLoader.FromQuery(ctx, query)
 	if err != nil {
 		return nil, err

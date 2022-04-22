@@ -86,13 +86,13 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		if err != nil {
 			return nil, err
 		}
+		log.Errorf("osward -- baseQuery %s", baseQuery)
 		newQuery, err := filterToImageVulns(baseQuery)
 		if err != nil {
 			return nil, err
 		}
-		newQueryString := newQuery.String()
-		q.Query = &newQueryString
-		return resolver.vulnerabilitiesV2(ctx, q)
+		log.Errorf("osward -- newQuery %s", newQuery)
+		return resolver.vulnerabilitiesV2Query(ctx, newQuery)
 	}
 }
 
@@ -104,13 +104,13 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 	if err != nil {
 		return 0, err
 	}
+	log.Errorf("osward -- baseQuery %s", baseQuery)
 	newQuery, err := filterToImageVulns(baseQuery)
 	if err != nil {
 		return 0, err
 	}
-	newQueryString := newQuery.String()
-	args.Query = &newQueryString
-	return resolver.vulnerabilityCountV2(ctx, args)
+	log.Errorf("osward -- newQuery %s", newQuery)
+	return resolver.vulnerabilityCountV2Query(ctx, newQuery)
 }
 
 // ImageVulnCounter returns a VulnerabilityCounterResolver for the input query.s
@@ -121,7 +121,6 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 //}
 
 func filterToImageVulns(baseQuery *v1.Query) (*v1.Query, error) {
-
 	filterImageQuery := &v1.Query{
 		Query: &v1.Query_BaseQuery{
 			BaseQuery: &v1.BaseQuery{
