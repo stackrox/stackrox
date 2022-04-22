@@ -20,7 +20,7 @@ class Helpers {
             try {
                 return closure()
             } catch (Exception | PowerAssertionError | SpockAssertionError t) {
-                log.debug "Caught exception: ${t}. Retrying in ${pauseSecs}s"
+                log.debug("Caught exception. Retrying in ${pauseSecs}s", t)
             }
             sleep pauseSecs * 1000
         }
@@ -40,7 +40,7 @@ class Helpers {
         retryAttempt++
         def willRetry = retryAttempt <= MAX_RETRY_ATTEMPTS
         if (willRetry) {
-            log.debug "An exception occurred which will cause a retry: " + failure
+            log.debug("An exception occurred which will cause a retry: ", failure)
             log.debug "Test Failed... Attempting Retry #${retryAttempt}"
         }
         return willRetry
