@@ -1,0 +1,29 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} | %-5level | %thread | %logger{1} | %m%n%rEx{full,
+                com.sun,
+                groovy.lang,
+                io.grpc.stub,
+                java.base,
+                org.codehaus.groovy,
+                org.gradle,
+                org.spockframework,
+                sun.reflect,
+                worker.org.gradle,
+            }
+            </pattern>
+        </encoder>
+    </appender>
+
+    <logger name="services" level="DEBUG"/>
+    <logger name="orchestratormanager" level="DEBUG"/>
+    <logger name="util" level="DEBUG"/>
+    <logger name="objects" level="DEBUG"/>
+    <logger name="common" level="DEBUG"/>
+
+    <!-- control the level of output here -->
+    <root level="ERROR">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
