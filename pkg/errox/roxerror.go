@@ -98,3 +98,13 @@ func (e *RoxError) Newf(format string, args ...interface{}) *RoxError {
 func (e *RoxError) CausedBy(cause interface{}) error {
 	return fmt.Errorf("%w: %v", e, cause)
 }
+
+// CausedByf adds a cause to the RoxError. The resulting message is a
+// combination of the rox error and the cause message, formatted based on the
+// provided format specifier and arguments, following a colon.
+//
+// Example:
+//     return errox.InvalidArgument.CausedByf("unknown parameter %v", p)
+func (e *RoxError) CausedByf(format string, args ...interface{}) error {
+	return e.CausedBy(fmt.Sprintf(format, args...))
+}
