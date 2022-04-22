@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -75,7 +76,14 @@ func init() {
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]VulnerabilityResolver, error) {
 	//defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Vulnerabilities")
 	log.Errorf("osward -- ImageVulnerabilities")
-	return resolver.vulnerabilitiesV2(ctx, q)
+	if features.PostgresDatastore.Enabled() {
+		// TODO add postgres support
+		return nil, nil
+	} else {
+		log.Errorf("osward -- scope query: %q", q.ScopeQuery)
+		log.Errorf("osward -- query: %q", q.Query)
+		return resolver.vulnerabilitiesV2(ctx, q)
+	}
 }
 
 // ImageVulnerabilityCount returns count of all clusters across infrastructure
