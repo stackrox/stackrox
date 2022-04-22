@@ -315,6 +315,11 @@ deploy-via-olm: ## Deploy operator image to the cluster using OLM.
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
 	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(VERSION)
 
+.PHONY: deploy-dirty-tag-via-olm
+deploy-dirty-tag-via-olm: ## Deploy operator dirty tagged image to the cluster using OLM.
+# This target ignores filter for dirty tagged images.
+	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh --allow-dirty-tag $(TEST_NAMESPACE) $(VERSION)
+
 .PHONY: deploy-previous-via-olm
 deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLM.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
@@ -326,6 +331,10 @@ deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of
 .PHONY: upgrade-via-olm
 upgrade-via-olm: kuttl
 	KUTTL=$(KUTTL) ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(VERSION)
+
+.PHONY: upgrade-dirty-tag-via-olm
+upgrade-dirty-tag-via-olm: kuttl
+	KUTTL=$(KUTTL) ./hack/olm-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(VERSION)
 
 ##@ Bundle and Index build
 
