@@ -102,6 +102,8 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique bool) 
 			// primary key since the owning entity's primary key is what we'd like to use
 			opts.IgnorePrimaryKey = true
 
+		case field == "id":
+			opts.ID = true
 		case field == "pk":
 			// if we have a child object, we don't want to propagate its primary key
 			// an example of this is process_indicator.  It is its own object

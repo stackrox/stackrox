@@ -481,7 +481,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 			idParts = append(idParts, valueFromStringPtrInterface(highlightedResults[i]))
 		}
 		result := searchPkg.Result{
-			ID: strings.Join(idParts, "+"), // TODO: figure out what separator to use
+			ID: strings.Join(idParts, IDSeparator), // TODO: figure out what separator to use
 		}
 		if len(query.Select.Fields) > 0 {
 			result.Matches = make(map[string][]string)
