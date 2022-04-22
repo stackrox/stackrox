@@ -25,6 +25,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-10038: Removed limit of 10 inclusions and 10 exclusions from policy form
 - ROX-10090: Made the username and password optional on the Artifactory integration form
 - ROX-10217: Remove format validation from the URL field of the generic webhook integration form
+- ROX-9435: Updated dryrun API to generate preview violations for disabled policies
 
 ## [69.1]
 
