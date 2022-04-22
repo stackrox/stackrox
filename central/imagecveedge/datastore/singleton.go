@@ -5,13 +5,14 @@ import (
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
-	globaldb "github.com/stackrox/rox/central/globaldb/dackbox"
+	globalDackbox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
 	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	"github.com/stackrox/rox/central/imagecveedge/search"
+	"github.com/stackrox/rox/central/imagecveedge/store"
 	"github.com/stackrox/rox/central/imagecveedge/store/dackbox"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -23,9 +24,21 @@ var (
 )
 
 func initialize() {
-	storage := dackbox.New(globaldb.GetGlobalDackBox(), globaldb.GetKeyFence())
-	var searcher = search.New(storage, cveIndexer.New(globalindex.GetGlobalIndex()),
-		imageCVEEdgeIndexer.New(globalindex.GetGlobalIndex()),
+	var storage store.Store
+	var indexer imageCVEEdgeIndexer.Indexer
+	var searcher search.Searcher
+
+	// TODO: Wire up.
+	// if features.PostgresDatastore.Enabled() {
+	//	storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+	//	indexer = postgres.NewIndexer(globaldb.GetPostgres())
+	//	searcher = search.NewV2(storage, indexer)
+	//}
+
+	storage = dackbox.New(globalDackbox.GetGlobalDackBox(), globalDackbox.GetKeyFence())
+	indexer = imageCVEEdgeIndexer.New(globalindex.GetGlobalIndex())
+	searcher = search.New(storage, cveIndexer.New(globalindex.GetGlobalIndex()),
+		indexer,
 		componentCVEEdgeIndexer.New(globalindex.GetGlobalIndex()),
 		componentIndexer.New(globalindex.GetGlobalIndex()),
 		imageComponentEdgeIndexer.New(globalindex.GetGlobalIndex()),
@@ -33,7 +46,7 @@ func initialize() {
 		deploymentIndexer.New(globalindex.GetGlobalIndex(), globalindex.GetProcessIndex()),
 		clusterIndexer.New(globalindex.GetGlobalIndex()))
 
-	ad = New(globaldb.GetGlobalDackBox(), storage, searcher)
+	ad = New(globalDackbox.GetGlobalDackBox(), storage, searcher)
 }
 
 // Singleton provides the interface for non-service external interaction.

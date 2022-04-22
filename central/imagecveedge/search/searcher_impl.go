@@ -46,7 +46,7 @@ func (ds *searcherImpl) SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.Sea
 	if err != nil {
 		return nil, err
 	}
-	return ds.resultsToSearchResults(results)
+	return ds.resultsToSearchResults(ctx, results)
 }
 
 // Search returns the raw search results from the query
@@ -69,36 +69,18 @@ func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]se
 }
 
 // resultsToImageCVEEdges returns the ImageCVEEdges from the db for the given search results.
-func (ds *searcherImpl) resultsToImageCVEEdges(results []search.Result) ([]*storage.ImageCVEEdge, []int, error) {
-	return ds.storage.GetMany(search.ResultsToIDs(results))
+func (ds *searcherImpl) resultsToImageCVEEdges(ctx context.Context, results []search.Result) ([]*storage.ImageCVEEdge, []int, error) {
+	return ds.storage.GetMany(ctx, search.ResultsToIDs(results))
 }
 
 // ToSearchResults returns the searchResults from the db for the given search results.
-func (ds *searcherImpl) resultsToSearchResults(results []search.Result) ([]*v1.SearchResult, error) {
-	edges, missingIndices, err := ds.resultsToImageCVEEdges(results)
+func (ds *searcherImpl) resultsToSearchResults(ctx context.Context, results []search.Result) ([]*v1.SearchResult, error) {
+	edges, missingIndices, err := ds.resultsToImageCVEEdges(ctx, results)
 	if err != nil {
 		return nil, err
 	}
 	results = search.RemoveMissingResults(results, missingIndices)
 	return convertMany(edges, results), nil
-}
-
-func convertMany(edges []*storage.ImageCVEEdge, results []search.Result) []*v1.SearchResult {
-	ret := make([]*v1.SearchResult, len(edges))
-	for index, sar := range edges {
-		ret[index] = convertOne(sar, &results[index])
-	}
-	return ret
-}
-
-func convertOne(edge *storage.ImageCVEEdge, result *search.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGE_VULN_EDGE,
-		Id:             edge.GetId(),
-		Name:           edge.GetId(),
-		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
 }
 
 func (ds *searcherImpl) searchImageCVEEdges(ctx context.Context, q *v1.Query) ([]*storage.ImageCVEEdge, error) {
@@ -108,7 +90,7 @@ func (ds *searcherImpl) searchImageCVEEdges(ctx context.Context, q *v1.Query) ([
 	}
 
 	ids := search.ResultsToIDs(results)
-	cves, _, err := ds.storage.GetMany(ids)
+	cves, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
