@@ -95,5 +95,6 @@
     "LOW": 1,
     "MEDIUM": 3,
     "TOTAL": 6
-  }
+  },
+  "NetworkPolicyEncountered": false
 }
