@@ -575,7 +575,7 @@ class Kubernetes implements OrchestratorMain {
                 mostRecentException = null
                 break
             } catch (Exception e) {
-                log.debug("Failed to scale the deployment", e)
+                log.warn("Failed to scale the deployment", e)
                 mostRecentException = e
             }
         }
