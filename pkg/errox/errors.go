@@ -58,11 +58,6 @@ func NewErrNotAuthorized(explanation string) error {
 	return NotAuthorized.CausedBy(explanation)
 }
 
-// NewErrInvariantViolation wraps InvariantViolation into an explanation.
-func NewErrInvariantViolation(explanation string) error {
-	return InvariantViolation.CausedBy(explanation)
-}
-
 // NewErrInvalidArgs wraps InvalidArgs into an explanation.
 func NewErrInvalidArgs(explanation string) error {
 	return InvalidArgs.CausedBy(explanation)

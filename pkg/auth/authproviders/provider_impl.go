@@ -117,7 +117,7 @@ func (p *providerImpl) GetOrCreateBackend(ctx context.Context) (Backend, error) 
 
 	// Backend factories are not guaranteed to survive product upgrades or restarts.
 	if p.backendFactory == nil {
-		return nil, errox.NewErrInvariantViolation(
+		return nil, errox.InvariantViolation.CausedBy(
 			"the backend for this authentication provider cannot be instantiated;" +
 				" this is probably because of a recent upgrade or a configuration change")
 	}
