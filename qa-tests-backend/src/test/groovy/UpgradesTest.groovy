@@ -189,8 +189,8 @@ class UpgradesTest extends BaseSpecification {
         given:
         "Default policies in code"
 
-        // @TODO(ROX-10249): Policy is no longer guarded by a feature flag
         def policiesGuardedByFeatureFlags = [
+                // @TODO(ROX-10249): Remove when policy is no longer guarded by a feature flag
                 "38bf79e7-48bf-4ab1-b72f-38e8ad8b4ec3"
         ]
         Map<String, PolicyOuterClass.Policy> defaultPolicies = [:]
