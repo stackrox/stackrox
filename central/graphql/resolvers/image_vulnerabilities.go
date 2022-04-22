@@ -3,7 +3,9 @@ package resolvers
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -81,6 +83,30 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		return nil, nil
 	} else {
 		log.Errorf("osward -- top level object %s", q.String())
+
+		filterImageQuery := &v1.Query{
+			Query: &v1.Query_BaseQuery{
+				BaseQuery: &v1.BaseQuery{
+					Query: &v1.BaseQuery_MatchFieldQuery{
+						MatchFieldQuery: &v1.MatchFieldQuery{
+							Field: "CVE Type",
+							Value: "image",
+						},
+					},
+				},
+			},
+		}
+
+		baseQuery, err := q.AsV1QueryOrEmpty()
+		if err != nil {
+			return nil, err
+		}
+		newQuery, err := search.AddAsConjunction(filterImageQuery, baseQuery)
+		if err != nil {
+			return nil, err
+		}
+		newQueryString := newQuery.String()
+		q.Query = &newQueryString
 		return resolver.vulnerabilitiesV2(ctx, q)
 	}
 }
