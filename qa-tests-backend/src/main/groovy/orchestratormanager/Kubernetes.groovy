@@ -646,7 +646,7 @@ class Kubernetes implements OrchestratorMain {
             log.debug "Told the orchestrator to create job " + job.getName()
             return this.jobs.inNamespace(job.namespace).createOrReplace(k8sJob)
         } catch (Exception e) {
-            log.error("Error creating k8s job", e)
+            log.warn("Error creating k8s job", e)
         }
         return null
     }
