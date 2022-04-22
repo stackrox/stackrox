@@ -418,7 +418,7 @@ class Kubernetes implements OrchestratorMain {
                 deleted = true
                 break
             } catch (KubernetesClientException ex) {
-                log.debug("Failed to delete deployment:", ex)
+                log.warn("Failed to delete deployment:", ex)
             }
         }
         if (deleted) {
