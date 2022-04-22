@@ -69,8 +69,7 @@ else
 GOPATH_VOLUME_SRC := $(GOPATH_VOLUME_NAME)
 endif
 
-SSH_AUTH_SOCK_MAGIC_PATH := /run/host-services/ssh-auth.sock
-LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(SSH_AUTH_SOCK_MAGIC_PATH):$(SSH_AUTH_SOCK_MAGIC_PATH) -e SSH_AUTH_SOCK=$(SSH_AUTH_SOCK_MAGIC_PATH) -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated -v $(HOME)/.ssh:/root/.ssh:ro -v $(HOME)/.gitconfig:/root/.gitconfig:ro
+LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated
 GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go
 
 null :=
