@@ -40,7 +40,7 @@ class OpenShift extends Kubernetes {
             if (kce.code != 409) {
                 throw kce
             } else {
-                log.debug("already exists", kce)
+                log.info("namespace already exists", kce)
             }
         }
 
