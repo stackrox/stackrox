@@ -89,3 +89,25 @@ func (p *permissionChecker) checkPermissions(rolePerms map[string]storage.Access
 func evaluateAgainstPermissions(permissions map[string]storage.Access, perm permissions.ResourceWithAccess) bool {
 	return permissions[string(perm.Resource.GetResource())] >= perm.Access
 }
+
+// Any returns an authorizer that only authorizes users / tokens which satisfy either of the given
+// authorizer.
+func Any(authorizers ...authz.Authorizer) authz.Authorizer {
+	return &anyPermissionChecker{authorizers: authorizers}
+}
+
+type anyPermissionChecker struct {
+	authorizers []authz.Authorizer
+}
+
+func (a *anyPermissionChecker) Authorized(ctx context.Context, _ string) error {
+	authorizerErrs := errorhelpers.NewErrorList("authorizing resource access")
+	for _, authorizer := range a.authorizers {
+		err := authorizer.Authorized(ctx, "")
+		if err == nil {
+			return nil
+		}
+		authorizerErrs.AddError(err)
+	}
+	return authorizerErrs.ToError()
+}
