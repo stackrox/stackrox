@@ -72,7 +72,7 @@ class OpenShift extends Kubernetes {
                 oClient.securityContextConstraints().createOrReplace(anyuid)
             }
         } catch (Exception e) {
-            log.error("could not check if namespace exists", e)
+            log.warn("could not check if namespace exists", e)
         }
     }
 
