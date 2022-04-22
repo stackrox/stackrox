@@ -4,7 +4,6 @@ import apiTokens from './apiTokenSagas';
 import authProviders from './authSagas';
 import clusterInitBundles from './clusterInitBundleSagas';
 import clusters from './clusterSagas';
-import deployments from './deploymentSagas';
 import featureFlags from './featureFlagSagas';
 import images from './imageSagas';
 import integrations from './integrationSagas';
@@ -27,7 +26,6 @@ export default function* root() {
         fork(authProviders),
         fork(clusterInitBundles),
         fork(clusters),
-        fork(deployments),
         fork(images),
         fork(featureFlags),
         fork(integrations),
