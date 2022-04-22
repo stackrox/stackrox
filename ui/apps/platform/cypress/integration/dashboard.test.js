@@ -20,10 +20,9 @@ describe('Dashboard page', () => {
     it('should display system violations tiles', () => {
         cy.intercept('GET', api.alerts.countsByCluster, {
             fixture: 'alerts/countsByCluster-single.json',
-        }).as('alertsByCluster');
+        });
 
-        cy.visit(dashboardUrl);
-        cy.wait('@alertsByCluster');
+        visitMainDashboard();
 
         cy.get(selectors.sectionHeaders.systemViolations).next('div').children().as('riskTiles');
 
@@ -36,7 +35,7 @@ describe('Dashboard page', () => {
     });
 
     it('should not navigate to the violations page when clicking the critical severity risk tile', () => {
-        cy.visit(dashboardUrl);
+        visitMainDashboard();
         cy.get(selectors.sectionHeaders.systemViolations).next('div').children().as('riskTiles');
 
         cy.get('@riskTiles').first().click();
@@ -58,7 +57,7 @@ describe('Dashboard page', () => {
     });
 
     it('should navigate to compliance standards page when clicking on standard', () => {
-        cy.visit(dashboardUrl);
+        visitMainDashboard();
         cy.get(selectors.sectionHeaders.compliance).should('exist');
         cy.get(selectors.chart.legendLink).click();
         cy.location().should((location) => {
@@ -70,10 +69,9 @@ describe('Dashboard page', () => {
     it('should display violations by cluster chart for single cluster', () => {
         cy.intercept('GET', api.alerts.countsByCluster, {
             fixture: 'alerts/countsByCluster-single.json',
-        }).as('alertsByCluster');
+        });
 
-        cy.visit(dashboardUrl);
-        cy.wait('@alertsByCluster');
+        visitMainDashboard();
 
         cy.get(selectors.sectionHeaders.violationsByClusters).next().as('chart');
 
@@ -97,10 +95,9 @@ describe('Dashboard page', () => {
     it('should display violations by cluster chart for two clusters', () => {
         cy.intercept('GET', api.alerts.countsByCluster, {
             fixture: 'alerts/countsByCluster-couple.json',
-        }).as('alertsByCluster');
+        });
 
-        cy.visit(dashboardUrl);
-        cy.wait('@alertsByCluster');
+        visitMainDashboard();
 
         cy.get(selectors.sectionHeaders.violationsByClusters)
             .next()
@@ -111,19 +108,17 @@ describe('Dashboard page', () => {
     it('should display events by time charts', () => {
         cy.intercept('GET', api.dashboard.timeseries, {
             fixture: 'alerts/alertsByTimeseries.json',
-        }).as('alertsByTimeseries');
-        cy.visit(dashboardUrl);
-        cy.wait('@alertsByTimeseries');
+        });
+        visitMainDashboard();
         cy.get(selectors.sectionHeaders.eventsByTime).next().find(selectors.timeseries);
     });
 
     it('should display violations category chart', () => {
         cy.intercept('GET', api.alerts.countsByCategory, {
             fixture: 'alerts/countsByCategory.json',
-        }).as('alertsByCategory');
+        });
 
-        cy.visit(dashboardUrl);
-        cy.wait('@alertsByCategory');
+        visitMainDashboard();
 
         cy.get(selectors.sectionHeaders.securityBestPractices).next().as('chart');
         cy.get('@chart').find(selectors.chart.legendItem).should('have.text', 'Low');
@@ -134,10 +129,9 @@ describe('Dashboard page', () => {
     it('should display top risky deployments', () => {
         cy.intercept('GET', api.risks.riskyDeployments, {
             fixture: 'risks/riskyDeployments.json',
-        }).as('riskyDeployments');
+        });
 
-        cy.visit(dashboardUrl);
-        cy.wait('@riskyDeployments');
+        visitMainDashboard();
 
         cy.get(selectors.sectionHeaders.topRiskyDeployments).next().as('list');
 
@@ -166,9 +160,7 @@ describe('Dashboard page', () => {
             body: { groups: [] },
         }).as('alertsByCluster');
 
-        cy.visit(dashboardUrl);
-        cy.wait('@alertsByCategory');
-        cy.wait('@alertsByCluster');
+        visitMainDashboard();
 
         cy.get(selectors.sectionHeaders.securityBestPractices).should('not.exist');
         cy.get(selectors.sectionHeaders.devopsBestPractices).should('not.exist');
