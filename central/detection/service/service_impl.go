@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/errox"
@@ -169,6 +170,23 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}, nil
 }
 
+func (s *serviceImpl) getNetworkPoliciesForDeployment(deployment *storage.Deployment) (*augmentedobjs.NetworkPoliciesApplied, error) {
+	// If the deployment does not contain a clusterId we assume there are no NetworkPolicies
+	if deployment.GetClusterId() == "" {
+		return &augmentedobjs.NetworkPoliciesApplied{
+			MissingIngressNetworkPolicy: true,
+			MissingEgressNetworkPolicy:  true,
+			Policies:                    nil,
+		}, nil
+	}
+	// TODO (ROX-10246): call GetNetworkPoliciesForDeployment after ROX-10248 is merged
+	return &augmentedobjs.NetworkPoliciesApplied{
+		MissingIngressNetworkPolicy: true,
+		MissingEgressNetworkPolicy:  true,
+		Policies:                    nil,
+	}, nil
+}
+
 func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment, policyCategories ...string) (*apiV1.DeployDetectionResponse_Run, error) {
 	images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(ctx, enrichmentContext, deployment)
 	if err != nil {
@@ -190,9 +208,14 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}
 
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
+	np, err := s.getNetworkPoliciesForDeployment(deployment)
+	if err != nil {
+		return nil, err
+	}
 	alerts, err := s.detector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
-		Deployment: deployment,
-		Images:     images,
+		Deployment:             deployment,
+		Images:                 images,
+		NetworkPoliciesApplied: np,
 	}, filter)
 	if err != nil {
 		return nil, err
