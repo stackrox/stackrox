@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
@@ -21,9 +22,13 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM image_cve_relations"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3 AND ImageCve = $4 AND ImageCveOperatingSystem = $5)"
 
-	getStmt    = "SELECT serialized FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3 AND ImageCve = $4 AND ImageCveOperatingSystem = $5"
-	deleteStmt = "DELETE FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3 AND ImageCve = $4 AND ImageCveOperatingSystem = $5"
-	walkStmt   = "SELECT serialized FROM image_cve_relations"
+	getStmt     = "SELECT serialized FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3 AND ImageCve = $4 AND ImageCveOperatingSystem = $5"
+	deleteStmt  = "DELETE FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3 AND ImageCve = $4 AND ImageCveOperatingSystem = $5"
+	walkStmt    = "SELECT serialized FROM image_cve_relations"
+	getIDsStmt  = "SELECT Id FROM image_cve_relations"
+	getManyStmt = "SELECT serialized FROM image_cve_relations WHERE Id = ANY($1::text[])"
+
+	deleteManyStmt = "DELETE FROM image_cve_relations WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -42,6 +47,8 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string, imageId string, imageCveId string, imageCve string, imageCveOperatingSystem string) (bool, error)
 	Get(ctx context.Context, id string, imageId string, imageCveId string, imageCve string, imageCveOperatingSystem string) (*storage.ImageCVEEdge, bool, error)
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.ImageCVEEdge, []int, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.ImageCVEEdge) error) error
 
@@ -118,6 +125,74 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 		return nil, nil, err
 	}
 	return conn, conn.Release, nil
+}
+
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ImageCVEEdgeIDs")
+
+	rows, err := s.db.Query(ctx, getIDsStmt)
+	if err != nil {
+		return nil, pgutils.ErrNilIfNoRows(err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ImageCVEEdge, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageCVEEdge")
+
+	conn, release, err := s.acquireConn(ctx, ops.GetMany, "ImageCVEEdge")
+	if err != nil {
+		return nil, nil, err
+	}
+	defer release()
+
+	rows, err := conn.Query(ctx, getManyStmt, ids)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			missingIndices := make([]int, 0, len(ids))
+			for i := range ids {
+				missingIndices = append(missingIndices, i)
+			}
+			return nil, missingIndices, nil
+		}
+		return nil, nil, err
+	}
+	defer rows.Close()
+	resultsByID := make(map[string]*storage.ImageCVEEdge)
+	for rows.Next() {
+		var data []byte
+		if err := rows.Scan(&data); err != nil {
+			return nil, nil, err
+		}
+		msg := &storage.ImageCVEEdge{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, nil, err
+		}
+		resultsByID[msg.GetId()] = msg
+	}
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.ImageCVEEdge, 0, len(resultsByID))
+	for i, id := range ids {
+		if result, ok := resultsByID[id]; !ok {
+			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
+		}
+	}
+	return elems, missingIndices, nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure

@@ -4,10 +4,11 @@ import (
 	clusterIndexer "github.com/stackrox/rox/central/cluster/index"
 	"github.com/stackrox/rox/central/componentcveedge/index"
 	"github.com/stackrox/rox/central/componentcveedge/search"
+	"github.com/stackrox/rox/central/componentcveedge/store"
 	"github.com/stackrox/rox/central/componentcveedge/store/dackbox"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
-	globaldb "github.com/stackrox/rox/central/globaldb/dackbox"
+	globalDackbox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
@@ -26,11 +27,23 @@ var (
 )
 
 func initialize() {
-	storage, err := dackbox.New(globaldb.GetGlobalDackBox())
-	utils.CrashOnError(err)
+	var err error
+	var storage store.Store
+	var indexer index.Indexer
+	var searcher search.Searcher
 
-	searcher := search.New(storage, globaldb.GetGlobalDackBox(),
-		index.New(globalindex.GetGlobalIndex()),
+	// TODO: Wire up.
+	// if features.PostgresDatastore.Enabled() {
+	//	storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+	//	indexer = postgres.NewIndexer(globaldb.GetPostgres())
+	//	searcher = search.NewV2(storage, indexer)
+	//}
+
+	storage, err = dackbox.New(globalDackbox.GetGlobalDackBox())
+	utils.CrashOnError(err)
+	indexer = index.New(globalindex.GetGlobalIndex())
+	searcher = search.New(storage, globalDackbox.GetGlobalDackBox(),
+		indexer,
 		cveIndexer.New(globalindex.GetGlobalIndex()),
 		componentIndexer.New(globalindex.GetGlobalIndex()),
 		imageComponentEdgeIndexer.New(globalindex.GetGlobalIndex()),
@@ -41,7 +54,7 @@ func initialize() {
 		deploymentIndexer.New(globalindex.GetGlobalIndex(), globalindex.GetProcessIndex()),
 		clusterIndexer.New(globalindex.GetGlobalTmpIndex()))
 
-	ad, err = New(globaldb.GetGlobalDackBox(), storage, index.New(globalindex.GetGlobalIndex()), searcher)
+	ad, err = New(globalDackbox.GetGlobalDackBox(), storage, indexer, searcher)
 	utils.CrashOnError(err)
 }
 
