@@ -39,7 +39,7 @@ spec:
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-            # Central is single-homed, so avoid preemptive nodes.
+            # Central is single-homed, so avoid preemptible nodes.
             - weight: 100
               preference:
                 matchExpressions:
