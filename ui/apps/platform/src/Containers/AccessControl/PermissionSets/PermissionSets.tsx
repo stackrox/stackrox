@@ -20,7 +20,7 @@ import {
     createPermissionSet,
     deletePermissionSet,
     fetchPermissionSets,
-    fetchResourcesAsArray,
+    fetchResources,
     fetchRolesAsArray,
     updatePermissionSet,
 } from 'services/RolesService';
@@ -83,7 +83,7 @@ function PermissionSets(): ReactElement {
 
         setCounterFetching((counterPrev) => counterPrev + 1);
         setAlertResources(null);
-        fetchResourcesAsArray()
+        fetchResources()
             .then((resourcesFetched) => {
                 setResources(resourcesFetched);
             })
