@@ -1,6 +1,9 @@
 import { url as dashboardUrl, selectors } from '../constants/DashboardPage';
 
-import { url as violationsUrl } from '../constants/ViolationsPage';
+import {
+    url as violationsUrl,
+    selectors as violationsSelectors,
+} from '../constants/ViolationsPage';
 import {
     url as complianceUrl,
     selectors as complianceSelectors,
@@ -8,7 +11,7 @@ import {
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import { visitMainDashboard } from '../helpers/main';
-import { table } from '../selectors/index';
+import baseSelectors from '../selectors/index';
 
 describe('Dashboard page', () => {
     withAuth();
@@ -48,13 +51,19 @@ describe('Dashboard page', () => {
     it('should navigate to violations page when clicking the low severity tile', () => {
         visitMainDashboard();
 
-        cy.get(selectors.sectionHeaders.systemViolations).next('div').children().as('riskTiles');
-
-        cy.get('@riskTiles').last().click();
-        cy.location().should((location) => {
-            expect(location.pathname).to.eq(violationsUrl);
-            expect(location.search).to.eq('?search[Severity]=LOW_SEVERITY');
-        });
+        // Click on the "Low" severity tile to link to the Violations page, and then ensure
+        // the number of filtered Violations matches what was displayed on the Dashboard
+        cy.get(`${selectors.sectionHeaders.systemViolations} + div *:contains("Low")`).then(
+            ([lowSeverityTile]) => {
+                const lowSeverityCount = lowSeverityTile.innerText.replace(/\D.*/, '');
+                cy.wrap(lowSeverityTile).click();
+                cy.location().should((location) => {
+                    expect(location.pathname).to.eq(violationsUrl);
+                    expect(location.search).to.eq('?search[Severity]=LOW_SEVERITY');
+                });
+                cy.get(violationsSelectors.resultsFoundHeader(lowSeverityCount));
+            }
+        );
     });
 
     it('should navigate to compliance standards page when clicking on standard', () => {
@@ -128,6 +137,8 @@ describe('Dashboard page', () => {
     });
 
     it('should display top risky deployments', () => {
+        const { table } = baseSelectors;
+
         visitMainDashboard();
 
         // Gets the list of top risky deployments on the dashboard and checks to
