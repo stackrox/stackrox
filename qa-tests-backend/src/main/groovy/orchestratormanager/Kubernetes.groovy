@@ -748,7 +748,7 @@ class Kubernetes implements OrchestratorMain {
                     return true
                 }
             } catch (Exception e) {
-                log.debug("wasContainerKilled: error fetching pod details - retrying", e)
+                log.warn("wasContainerKilled: error fetching pod details - retrying", e)
             }
         }
         log.warn "wasContainerKilled: did not determine container was killed before 60s timeout"
