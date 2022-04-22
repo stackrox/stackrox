@@ -45,10 +45,6 @@ func (s *BrandedTextTestSuite) TestGetBrandedProductName() {
 			productBrandingEnv: "STACKROX_BRANDING",
 			brandedProductName: brandedProductNameStackrox,
 		},
-		"Default setting": {
-			productBrandingEnv: "ROX_PRODUCT_BRANDING",
-			brandedProductName: brandedProductNameStackrox,
-		},
 		// TODO(ROX-10208): Change this to StackRox after changing the default value of ProductBrandingEnvName.
 		"Unset env": {
 			productBrandingEnv: "",

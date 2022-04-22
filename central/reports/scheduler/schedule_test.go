@@ -56,24 +56,21 @@ func (s *ScheduleTestSuite) TearDownTest() {
 
 func (s *ScheduleTestSuite) TestFormatVulnMessage() {
 	tests := map[string]struct {
-		productBranding string
-		vulnReport      string
-		noVulnReport    string
+		vulnReport   string
+		noVulnReport string
 	}{
-		"RHACS branding": {
-			productBranding: "RHACS_BRANDING",
-			vulnReport:      expectedVulnReportEmailTemplateRhacsBranding,
-			noVulnReport:    expectedNoVulnsFoundEmailTemplateRhacsBranding,
+		"RHACS_BRANDING": {
+			vulnReport:   expectedVulnReportEmailTemplateRhacsBranding,
+			noVulnReport: expectedNoVulnsFoundEmailTemplateRhacsBranding,
 		},
-		"StackRox branding": {
-			productBranding: "STACKROX_BRANDING",
-			vulnReport:      expectedVulnReportEmailTemplateStackroxBranding,
-			noVulnReport:    expectedNoVulnsFoundEmailTemplateStackroxBranding,
+		"STACKROX_BRANDING": {
+			vulnReport:   expectedVulnReportEmailTemplateStackroxBranding,
+			noVulnReport: expectedNoVulnsFoundEmailTemplateStackroxBranding,
 		},
 	}
-	for name, tt := range tests {
-		s.Run(name, func() {
-			s.envIsolator.Setenv(branding.ProductBrandingEnvName, tt.productBranding)
+	for productBranding, tt := range tests {
+		s.Run(productBranding, func() {
+			s.envIsolator.Setenv(branding.ProductBrandingEnvName, productBranding)
 
 			receivedBrandedVulnFound, err := formatMessage(s.rc, vulnReportEmailTemplate, s.time)
 			s.NoError(err)
