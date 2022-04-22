@@ -12,7 +12,7 @@ class Constants {
     static final FAILURE_DEBUG_DIR = "/tmp/qa-tests-backend-logs"
     static final FAILURE_DEBUG_LIMIT = 10
     static final AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION = "Stackrox Scanner"
-    static final ANY_FIXED_VULN_POLICY = "any-fixed-vulnerabilities"
+    static final ANY_FIXED_VULN_POLICY = "any-fixed-vulnerabilities-1"
     static final Map<String, String> CSV_COLUMN_MAPPING = [
             "Standard" : "standard",
             "Cluster" : "cluster",

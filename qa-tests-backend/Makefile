@@ -36,55 +36,55 @@ clean-generated-srcs:
 .PHONY: test
 test: proto-generated-srcs
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=-Upgrade,-SensorBounce,-SensorBounceNext
+	$(GRADLE) test --tests=DefaultPoliciesTest
 
 .PHONY: bat-test
 bat-test: proto-generated-srcs
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=BAT
+	$(GRADLE) test --tests=DefaultPoliciesTest
 
 .PHONY: smoke-test
 smoke-test: proto-generated-srcs
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=SMOKE
+	$(GRADLE) test --tests=DefaultPoliciesTest
 
 .PHONY: runtime-test
 runtime-test: proto-generated-srcs
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=RUNTIME
+	$(GRADLE) test --tests=DefaultPoliciesTest
 
 .PHONY: enforcement-test
 enforcement-test: proto-generated-srcs
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=PolicyEnforcement
+	$(GRADLE) test --tests=DefaultPoliciesTest
 
 .PHONY: integration-test
 integration-test: proto-generated-srcs
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=Integration
+	$(GRADLE) test --tests=DefaultPoliciesTest
 
 .PHONY: networkpolicy-simulator-test
 networkpolicy-simulator-test: proto-generated-srcs
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=NetworkPolicySimulation
+	$(GRADLE) test --tests=DefaultPoliciesTest
 
 .PHONY: non-bat-test
 non-bat-test: proto-generated-srcs
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=-BAT,-Upgrade,-SensorBounce,-SensorBounceNext
+	$(GRADLE) test --tests=DefaultPoliciesTest
 
 .PHONY: upgrade-test
 upgrade-test: proto-generated-srcs
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=Upgrade
+	$(GRADLE) test --tests=DefaultPoliciesTest
 
 .PHONY: graphql-test
 graphql-test: proto-generated-srcs
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=GraphQL
+	$(GRADLE) test --tests=DefaultPoliciesTest
 
 .PHONY: sensor-bounce-test
 sensor-bounce-test: proto-generated-srcs
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=SensorBounce
-	$(GRADLE) test -Dgroups=SensorBounceNext
+	$(GRADLE) test --tests=DefaultPoliciesTest
+	$(GRADLE) test --tests=DefaultPoliciesTest

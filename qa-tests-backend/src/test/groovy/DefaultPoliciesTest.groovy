@@ -228,7 +228,6 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     @Category(BAT)
     @Retry(count = 0)
-    @IgnoreIf({ Env.CI_TAG == null || !Env.CI_TAG.contains("nightly") })
     def "Notifier for StackRox images with fixable vulns"() {
         when:
         "Verify policies are not violated within the stackrox namespace"
@@ -284,7 +283,10 @@ class DefaultPoliciesTest extends BaseSpecification {
                 return it
             }
 
+            println dep.toString()
+
             dep.containersList.each {
+                println "Deployment: ${dep.name}: ${it.image.name} ${it.image.id}"
                 ImageOuterClass.Image image = ImageService.getImage(it.image.id)
                 Set<String> fixables = []
                 image.scan.componentsList*.vulnsList*.each {
@@ -321,7 +323,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         imageFixableVulnMap.each { k, v ->
             slackPayload += "\n${k}: ${v}"
         }
-        SlackUtil.sendMessage(slackPayload)
+//        SlackUtil.sendMessage(slackPayload)
 
         imageFixableVulnMap.keySet().collect().each { imageFullName ->
             Helpers.collectImageScanForDebug(
