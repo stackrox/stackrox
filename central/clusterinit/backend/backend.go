@@ -52,14 +52,24 @@ func newBackend(store store.Store, certProvider certificate.Provider) Backend {
 // CheckAccess returns nil if requested access level is granted in context.
 func CheckAccess(ctx context.Context, access storage.Access) error {
 	// we need access to the API token and service identity resources
-	scopes := [][]sac.ScopeKey{
+	serviceIdentityScope := []sac.ScopeKey{
+		sac.AccessModeScopeKey(access), sac.ResourceScopeKey(resources.ServiceIdentity.GetResource())}
+	apiTokenScopes := [][]sac.ScopeKey{
 		{sac.AccessModeScopeKey(access), sac.ResourceScopeKey(resources.APIToken.GetResource())},
-		{sac.AccessModeScopeKey(access), sac.ResourceScopeKey(resources.ServiceIdentity.GetResource())},
+		{sac.AccessModeScopeKey(access), sac.ResourceScopeKey(resources.Integration.GetResource())},
 	}
-	if allowed, err := sac.GlobalAccessScopeChecker(ctx).AllAllowed(ctx, scopes); err != nil {
+
+	svcIdentityAllowed, err := sac.GlobalAccessScopeChecker(ctx).Allowed(ctx, serviceIdentityScope...)
+	if err != nil {
 		return errors.Wrap(err, "checking access")
-	} else if !allowed {
+	}
+	apiTokenAllowed, err := sac.GlobalAccessScopeChecker(ctx).AnyAllowed(ctx, apiTokenScopes)
+	if err != nil {
+		return errors.Wrap(err, "checking access")
+	}
+	if !apiTokenAllowed || !svcIdentityAllowed {
 		return errox.NotAuthorized
 	}
+
 	return nil
 }

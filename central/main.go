@@ -578,8 +578,10 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB()),
 		},
 		{
-			Route:         "/api/docs/swagger",
-			Authorizer:    user.With(permissions.View(resources.APIToken)),
+			Route: "/api/docs/swagger",
+			// TODO(ROX-XXXX): Fully deprecated fine grained resources in favor of grouped resources.
+			Authorizer: user.Any(user.With(permissions.View(resources.APIToken)),
+				user.With(permissions.View(resources.Integration))),
 			ServerHandler: docs.Swagger(),
 			Compression:   true,
 		},

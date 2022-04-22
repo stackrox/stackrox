@@ -43,7 +43,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ApitokensSchema
-	targetResource = resources.APIToken
+	targetResource = resources.Integration
 )
 
 type Store interface {

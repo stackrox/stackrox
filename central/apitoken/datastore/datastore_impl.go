@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	apiTokenSAC = sac.ForResource(resources.APIToken)
+	apiTokenSAC = sac.ForResources(sac.ForResource(resources.APIToken), sac.ForResource(resources.Integration))
 )
 
 type datastoreImpl struct {
@@ -22,7 +22,7 @@ type datastoreImpl struct {
 }
 
 func (b *datastoreImpl) AddToken(ctx context.Context, token *storage.TokenMetadata) error {
-	if ok, err := apiTokenSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := apiTokenSAC.WriteAllowedToAny(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -35,7 +35,7 @@ func (b *datastoreImpl) AddToken(ctx context.Context, token *storage.TokenMetada
 }
 
 func (b *datastoreImpl) GetTokenOrNil(ctx context.Context, id string) (token *storage.TokenMetadata, err error) {
-	if ok, err := apiTokenSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := apiTokenSAC.ReadAllowedToAny(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -55,7 +55,7 @@ func (b *datastoreImpl) GetTokenOrNil(ctx context.Context, id string) (token *st
 }
 
 func (b *datastoreImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error) {
-	if ok, err := apiTokenSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := apiTokenSAC.ReadAllowedToAny(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -79,7 +79,7 @@ func (b *datastoreImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensReque
 }
 
 func (b *datastoreImpl) RevokeToken(ctx context.Context, id string) (bool, error) {
-	if ok, err := apiTokenSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := apiTokenSAC.WriteAllowedToAny(ctx); err != nil {
 		return false, err
 	} else if !ok {
 		return false, sac.ErrResourceAccessDenied
