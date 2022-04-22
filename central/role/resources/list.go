@@ -24,56 +24,92 @@ import (
 //
 // KEEP THE FOLLOWING LIST SORTED IN LEXICOGRAPHIC ORDER (case-sensitive).
 var (
-	APIToken                         = newResourceMetadata("APIToken", permissions.GlobalScope)
-	Alert                            = newResourceMetadata("Alert", permissions.NamespaceScope)
-	AllComments                      = newResourceMetadata("AllComments", permissions.GlobalScope)
-	AuthPlugin                       = newResourceMetadata("AuthPlugin", permissions.GlobalScope)
-	AuthProvider                     = newResourceMetadata("AuthProvider", permissions.GlobalScope)
-	BackupPlugins                    = newResourceMetadata("BackupPlugins", permissions.GlobalScope)
-	CVE                              = newResourceMetadata("CVE", permissions.NamespaceScope)
-	Cluster                          = newResourceMetadata("Cluster", permissions.ClusterScope)
-	Compliance                       = newResourceMetadata("Compliance", permissions.ClusterScope)
-	ComplianceRunSchedule            = newResourceMetadata("ComplianceRunSchedule", permissions.GlobalScope)
-	ComplianceRuns                   = newResourceMetadata("ComplianceRuns", permissions.ClusterScope)
-	Config                           = newResourceMetadata("Config", permissions.GlobalScope)
-	DebugLogs                        = newResourceMetadata("DebugLogs", permissions.GlobalScope)
-	Deployment                       = newResourceMetadata("Deployment", permissions.NamespaceScope)
-	Detection                        = newResourceMetadata("Detection", permissions.GlobalScope)
-	Group                            = newResourceMetadata("Group", permissions.GlobalScope)
-	Image                            = newResourceMetadata("Image", permissions.NamespaceScope)
-	ImageComponent                   = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
-	ImageIntegration                 = newResourceMetadata("ImageIntegration", permissions.GlobalScope)
+	// Access is the new resource grouping all access related resources.
+	Access = newResourceMetadata("Access", permissions.GlobalScope)
+	// Administration is the new resource grouping all administration-like resources.
+	Administration = newResourceMetadata("Administration", permissions.GlobalScope)
+	Alert          = newResourceMetadata("Alert", permissions.NamespaceScope)
+	CVE            = newResourceMetadata("CVE", permissions.NamespaceScope)
+	Cluster        = newResourceMetadata("Cluster", permissions.ClusterScope)
+	Compliance     = newResourceMetadata("Compliance", permissions.GlobalScope)
+	Deployment     = newResourceMetadata("Deployment", permissions.NamespaceScope)
+	// DeploymentExtensions is the new resource grouping all deployment extending resources.
+	DeploymentExtensions = newResourceMetadata("DeploymentExtensions", permissions.NamespaceScope)
+	Detection            = newResourceMetadata("Detection", permissions.GlobalScope)
+	Image                = newResourceMetadata("Image", permissions.NamespaceScope)
+	ImageComponent       = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
+	// Integration is the new  resource grouping all integration resources.
+	Integration                      = newResourceMetadata("Integration", permissions.GlobalScope)
 	Indicator                        = newResourceMetadata("Indicator", permissions.NamespaceScope)
 	K8sRole                          = newResourceMetadata("K8sRole", permissions.NamespaceScope)
 	K8sRoleBinding                   = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
 	K8sSubject                       = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
-	Licenses                         = newResourceMetadata("Licenses", permissions.GlobalScope)
 	Namespace                        = newResourceMetadata("Namespace", permissions.NamespaceScope)
-	NetworkBaseline                  = newResourceMetadata("NetworkBaseline", permissions.NamespaceScope)
 	NetworkGraph                     = newResourceMetadata("NetworkGraph", permissions.NamespaceScope)
-	NetworkGraphConfig               = newResourceMetadata("NetworkGraphConfig", permissions.GlobalScope)
 	NetworkPolicy                    = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
 	Node                             = newResourceMetadata("Node", permissions.ClusterScope)
-	Notifier                         = newResourceMetadata("Notifier", permissions.GlobalScope)
 	Policy                           = newResourceMetadata("Policy", permissions.GlobalScope)
-	ProbeUpload                      = newResourceMetadata("ProbeUpload", permissions.GlobalScope)
-	ProcessWhitelist                 = newResourceMetadata("ProcessWhitelist", permissions.NamespaceScope)
-	Risk                             = newResourceMetadata("Risk", permissions.NamespaceScope)
-	Role                             = newResourceMetadata("Role", permissions.GlobalScope)
-	ScannerBundle                    = newResourceMetadata("ScannerBundle", permissions.GlobalScope)
-	ScannerDefinitions               = newResourceMetadata("ScannerDefinitions", permissions.GlobalScope)
 	Secret                           = newResourceMetadata("Secret", permissions.NamespaceScope)
-	SensorUpgradeConfig              = newResourceMetadata("SensorUpgradeConfig", permissions.GlobalScope)
 	ServiceAccount                   = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
-	ServiceIdentity                  = newResourceMetadata("ServiceIdentity", permissions.GlobalScope)
-	SignatureIntegration             = newResourceMetadataWithFeatureFlag("SignatureIntegration", permissions.GlobalScope, features.ImageSignatureVerification)
-	User                             = newResourceMetadata("User", permissions.GlobalScope)
 	VulnerabilityManagementApprovals = newResourceMetadata("VulnerabilityManagementApprovals", permissions.GlobalScope)
 	VulnerabilityManagementRequests  = newResourceMetadata("VulnerabilityManagementRequests", permissions.GlobalScope)
 	VulnerabilityReports             = newResourceMetadata("VulnerabilityReports", permissions.GlobalScope)
 	WatchedImage                     = newResourceMetadata("WatchedImage", permissions.GlobalScope)
 
-	// Internal Resources
+	// Deprecated resources.
+
+	// Deprecated: AllComments is deprecated, use Administration.
+	AllComments = newResourceMetadata("AllComments", permissions.GlobalScope)
+	// Deprecated: APIToken is deprecated, use Integration.
+	APIToken = newResourceMetadata("APIToken", permissions.GlobalScope)
+	// Deprecated: AuthPlugin is deprecated, use Access.
+	AuthPlugin = newResourceMetadata("AuthPlugin", permissions.GlobalScope)
+	// Deprecated: AuthProvider is deprecated, use Access.
+	AuthProvider = newResourceMetadata("AuthProvider", permissions.GlobalScope)
+	// Deprecated: BackupPlugins is deprecated, use Integration.
+	BackupPlugins = newResourceMetadata("BackupPlugins", permissions.GlobalScope)
+	// Deprecated: ComplianceRuns is deprecated, use Compliance.
+	ComplianceRuns = newResourceMetadata("ComplianceRuns", permissions.ClusterScope)
+	// Deprecated: ComplianceRunSchedule is deprecated, use Administration.
+	ComplianceRunSchedule = newResourceMetadata("ComplianceRunSchedule", permissions.GlobalScope)
+	// Deprecated: Config is deprecated, use Administration.
+	Config = newResourceMetadata("Config", permissions.GlobalScope)
+	// Deprecated: DebugLogs is deprecated, use Administration.
+	DebugLogs = newResourceMetadata("DebugLogs", permissions.GlobalScope)
+	// Deprecated: Group is deprecated, use Access.
+	Group = newResourceMetadata("Group", permissions.GlobalScope)
+	// Deprecated: ImageIntegration is deprecated, use Integration.
+	ImageIntegration = newResourceMetadata("ImageIntegration", permissions.GlobalScope)
+	// Deprecated: Licenses is deprecated, use Access.
+	Licenses = newResourceMetadata("Licenses", permissions.GlobalScope)
+	// Deprecated: NetworkBaseline is deprecated, use DeploymentExtensions.
+	NetworkBaseline = newResourceMetadata("NetworkBaseline", permissions.NamespaceScope)
+	// Deprecated: NetworkGraphConfig is deprecated, use Administration.
+	NetworkGraphConfig = newResourceMetadata("NetworkGraphConfig", permissions.GlobalScope)
+	// Deprecated: Notifier is deprecated, use Integration.
+	Notifier = newResourceMetadata("Notifier", permissions.GlobalScope)
+	// Deprecated: ProbeUpload is deprecated, use Administration.
+	ProbeUpload = newResourceMetadata("ProbeUpload", permissions.GlobalScope)
+	// Deprecated: ProcessWhitelist is deprecated, use DeploymentExtensions.
+	ProcessWhitelist = newResourceMetadata("ProcessWhitelist", permissions.NamespaceScope)
+	// Deprecated: Risk is deprecated, use DeploymentExtensions.
+	Risk = newResourceMetadata("Risk", permissions.NamespaceScope)
+	// Deprecated: Role is deprecated, use Access.
+	Role = newResourceMetadata("Role", permissions.GlobalScope)
+	// Deprecated: ScannerBundle is deprecated, use Administration.
+	ScannerBundle = newResourceMetadata("ScannerBundle", permissions.GlobalScope)
+	// Deprecated: ScannerDefinitions is deprecated, use Administration.
+	ScannerDefinitions = newResourceMetadata("ScannerDefinitions", permissions.GlobalScope)
+	// Deprecated: SensorUpgradeConfig is deprecated, use Administration.
+	SensorUpgradeConfig = newResourceMetadata("SensorUpgradeConfig", permissions.GlobalScope)
+	// Deprecated: ServiceIdentity is deprecated, use Administration.
+	ServiceIdentity = newResourceMetadata("ServiceIdentity", permissions.GlobalScope)
+	// Deprecated: SignatureIntegration is deprecated, use Integration.
+	SignatureIntegration = newResourceMetadataWithFeatureFlag("SignatureIntegration", permissions.GlobalScope, features.ImageSignatureVerification)
+	// Deprecated: User is deprecated, use Access.
+	User = newResourceMetadata("User", permissions.GlobalScope)
+
+	// Internal Resources.
 	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
 
 	resourceToMetadata         = make(map[permissions.Resource]permissions.ResourceMetadata)
