@@ -1,4 +1,5 @@
 import { url as dashboardUrl, selectors } from '../constants/DashboardPage';
+import { url as riskUrl } from '../constants/RiskPage';
 
 import {
     url as violationsUrl,
@@ -145,7 +146,7 @@ describe('Dashboard page', () => {
         // see that the order matches on the Risk page.
         cy.get(`${selectors.sectionHeaders.topRiskyDeployments} + div li`).then(($deployments) => {
             cy.get(selectors.buttons.viewAll).click();
-            cy.url().should('match', /\/main\/risk/);
+            cy.location('pathname').should('eq', riskUrl);
 
             $deployments.each((i, elem) => {
                 const deploymentName = elem.innerText.replace(/\n.*/, '');
