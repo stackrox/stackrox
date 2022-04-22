@@ -3577,7 +3577,6 @@ jobs:
       - OUTPUT_FORMAT: helm
       - ROX_SYSTEM_HEALTH_PF: true
       - ROX_POLICIES_PATTERNFLY: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
       - ROX_NEW_POLICY_CATEGORIES: true
 
     steps:
