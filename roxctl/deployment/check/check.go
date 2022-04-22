@@ -196,6 +196,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 	// Print all ignored objects whose schema was not registered, i.e. CRDs. We don't need to take standardizedFormat
 	// into account since we will print to os.StdErr by default. We shall do this at the beginning, since we also
 	// want this to be visible to the old output format.
+	d.env.Logger().WarnfLn("Ingress/Egress Network Policy criteria will not be evaluated")
 	for _, ignoredObjRef := range ignoredObjectRefs {
 		d.env.Logger().InfofLn("Ignored object %q as its schema was not registered.", ignoredObjRef)
 	}
