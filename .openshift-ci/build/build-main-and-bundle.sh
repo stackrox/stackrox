@@ -31,10 +31,30 @@ build_go_binaries() {
     make swagger-docs
 }
 
-build_ui() {
-    info "Building the UI"
+UI_BUILD_LOG="/tmp/ui_build_log.txt"
 
-    make -C ui build
+background_build_ui() {
+    info "Building the UI in the background"
+
+    (make -C ui build > "$UI_BUILD_LOG" 2>&1)&
+    ui_build_pid=$!
+}
+
+wait_for_ui_build() {
+    info "Waiting for the UI build to complete..."
+
+    local ui_build_exit=0
+
+    wait "$ui_build_pid" || {
+        ui_build_exit="$?"
+    }
+
+    cat "$UI_BUILD_LOG"
+
+    if [[ "$ui_build_exit" != "0" ]]; then
+        info "The UI build failed with exit $ui_build_exit"
+        exit "$ui_build_exit"
+    fi
 }
 
 make_stackrox_data() {
@@ -93,9 +113,10 @@ build() {
 
     openshift_ci_mods
 
+    background_build_ui
     build_cli
     build_go_binaries
-    build_ui
+    wait_for_ui_build
 
     info "Making THIRD_PARTY_NOTICES"
     make ossls-notice
