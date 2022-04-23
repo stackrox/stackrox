@@ -572,3 +572,22 @@ func (s *PolicyValueValidator) TestValidatePolicyValueRegexForAuditEventSource()
 		})
 	}
 }
+
+func (s *PolicyValueValidator) TestValidatePolicyHasCorrectVersion() {
+	group := &storage.PolicyGroup{FieldName: fieldnames.CVE, Values: []*storage.PolicyValue{{Value: "CVE-2017-1234"}}}
+	s.NoError(Validate(&storage.Policy{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{
+		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
+	}}))
+
+	s.Error(Validate(&storage.Policy{Name: "name", PolicyVersion: "", PolicySections: []*storage.PolicySection{
+		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
+	}}))
+
+	s.Error(Validate(&storage.Policy{Name: "name", PolicyVersion: "1", PolicySections: []*storage.PolicySection{
+		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
+	}}))
+
+	s.Error(Validate(&storage.Policy{Name: "name", PolicyVersion: "x.y.z", PolicySections: []*storage.PolicySection{
+		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
+	}}))
+}

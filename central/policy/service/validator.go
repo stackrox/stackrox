@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
@@ -86,6 +87,7 @@ func (s *policyValidator) internalValidate(policy *storage.Policy, additionalVal
 	s.removeEnforcementsForMissingLifecycles(policy)
 
 	errorList := errorhelpers.NewErrorList("policy invalid")
+	errorList.AddError(s.validateVersion(policy))
 	errorList.AddError(s.validateName(policy))
 	errorList.AddError(s.validateDescription(policy))
 	errorList.AddError(s.validateCompilableForLifecycle(policy, options...))
@@ -101,6 +103,20 @@ func (s *policyValidator) internalValidate(policy *storage.Policy, additionalVal
 		errorList.AddError(validator(policy))
 	}
 	return errorList.ToError()
+}
+
+func (s *policyValidator) validateVersion(policy *storage.Policy) error {
+	ver, err := policyversion.FromString(policy.GetPolicyVersion())
+	if err != nil {
+		return errors.New("policy has invalid version")
+	}
+
+	// As of 70.0 we only support the latest version (1.1). This may in the future be expanded to support more, but for
+	// now it's enough to just check it matches current version
+	if !policyversion.IsCurrentVersion(ver) {
+		return errors.New("only policy with version 1.1 is supported")
+	}
+	return nil
 }
 
 func (s *policyValidator) validateName(policy *storage.Policy) error {

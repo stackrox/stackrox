@@ -1,6 +1,7 @@
 package policyversion
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -50,5 +51,35 @@ func TestVersionCompare(t *testing.T) {
 
 	for _, tc := range testCases {
 		assert.Equal(t, tc.compare, Compare(tc.a, tc.b), "a: '%+v', b: '%+v'", tc.a, tc.b)
+	}
+}
+
+func TestIsCurrentVersion(t *testing.T) {
+	tests := []struct {
+		version   PolicyVersion
+		isCurrent bool
+	}{
+		{
+			PolicyVersion{version1_1},
+			true,
+		},
+		{
+			PolicyVersion{version1},
+			false,
+		},
+		{
+			PolicyVersion{legacyVersion},
+			false,
+		},
+		{
+			PolicyVersion{"2.0"},
+			false,
+		},
+	}
+
+	for _, c := range tests {
+		t.Run(c.version.String()+" - "+strconv.FormatBool(c.isCurrent), func(t *testing.T) {
+			assert.Equal(t, c.isCurrent, IsCurrentVersion(c.version))
+		})
 	}
 }

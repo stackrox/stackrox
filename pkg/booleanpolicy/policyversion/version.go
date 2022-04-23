@@ -36,6 +36,12 @@ func CurrentVersion() PolicyVersion {
 	return PolicyVersion{versions[len(versions)-1]}
 }
 
+// MinimumSupportedVersionForSensor returns the minimum policy version that sensor can support
+// Anything lower will result in unexpected behavior
+func MinimumSupportedVersionForSensor() PolicyVersion {
+	return PolicyVersion{version1_1}
+}
+
 // PolicyVersion wraps string-based policy version and provides comparison
 // operations.
 type PolicyVersion struct {
@@ -62,6 +68,10 @@ func Compare(a, b PolicyVersion) int {
 	rankB := versionRanks[b.String()]
 
 	return rankA - rankB
+}
+
+func IsCurrentVersion(policyVersion PolicyVersion) bool {
+	return Compare(policyVersion, CurrentVersion()) == 0
 }
 
 // isKnownPolicyVersion returns true if the supplied string is a known

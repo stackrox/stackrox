@@ -1828,31 +1828,27 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {
 	for _, p := range suite.defaultPolicies {
 		if policyUtils.AppliesAtRunTime(p) {
-			processName := getPolicyField(p.GetPolicySections(), fieldnames.ProcessName)
-			if len(processName) > 0 && processName[0].Value != "" {
-				regexp.MustCompile(processName[0].Value)
-			}
-			processArgs := getPolicyField(p.GetPolicySections(), fieldnames.ProcessArguments)
-			if len(processArgs) > 0 && processArgs[0].Value != "" {
-				regexp.MustCompile(processArgs[0].Value)
-			}
-			processAncestor := getPolicyField(p.GetPolicySections(), fieldnames.ProcessAncestor)
-			if len(processAncestor) > 0 && processAncestor[0].Value != "" {
-				regexp.MustCompile(processAncestor[0].Value)
-			}
+			checkRegexCompiles(p.GetPolicySections(), fieldnames.ProcessName)
+			checkRegexCompiles(p.GetPolicySections(), fieldnames.ProcessArguments)
+			checkRegexCompiles(p.GetPolicySections(), fieldnames.ProcessAncestor)
 		}
 	}
 }
 
-func getPolicyField(sections []*storage.PolicySection, fieldname string) []*storage.PolicyValue {
+func checkRegexCompiles(sections []*storage.PolicySection, fieldname string) {
 	for _, s := range sections {
 		for _, g := range s.GetPolicyGroups() {
 			if g.GetFieldName() == fieldname {
-				return g.GetValues()
+				if policyVals := g.GetValues(); len(policyVals) > 0 {
+					for _, policyVal := range policyVals {
+						if v := policyVal.GetValue(); v != "" {
+							regexp.MustCompile(v)
+						}
+					}
+				}
 			}
 		}
 	}
-	return []*storage.PolicyValue{}
 }
 
 func policyWithGroups(eventSrc storage.EventSource, groups ...*storage.PolicyGroup) *storage.Policy {

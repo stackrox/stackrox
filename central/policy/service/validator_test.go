@@ -97,6 +97,53 @@ func (s *PolicyValidatorTestSuite) TestValidatesName() {
 	s.Error(err, "special characters should not be supported")
 }
 
+func (s *PolicyValidatorTestSuite) TestValidateVersion() {
+	tests := []struct {
+		name    string
+		version string
+		valid   bool
+	}{
+		{
+			"Current version should be valid",
+			policyversion.CurrentVersion().String(),
+			true,
+		},
+		{
+			"No version is no longer valid",
+			"",
+			false,
+		},
+		{
+			"Version 1 is no longer valid",
+			"1",
+			false,
+		},
+		{
+			"Invalid version string is not valid",
+			"x.y.z",
+			false,
+		},
+		{
+			"Non-existent version is not valid",
+			"2.0",
+			false,
+		},
+	}
+	for _, c := range tests {
+		s.T().Run(c.name, func(t *testing.T) {
+			policy := &storage.Policy{
+				PolicyVersion: c.version,
+			}
+			err := s.validator.validateVersion(policy)
+			if c.valid {
+				s.NoError(err, "Version should be valid")
+			} else {
+				s.Error(err, "Version should be invalid")
+			}
+		})
+	}
+}
+
 func (s *PolicyValidatorTestSuite) TestsValidateCapabilities() {
 
 	cases := []struct {
