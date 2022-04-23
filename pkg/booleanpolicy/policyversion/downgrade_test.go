@@ -48,7 +48,12 @@ func SetupDowngradersForTest(_ *testing.T) {
 }
 
 func TestDowngradePolicyTo(t *testing.T) {
+	origVersions := versions
 	SetupDowngradersForTest(t)
+	defer func() {
+		versions = origVersions
+		downgradersByVersionRank = organizeByVersionRank(downgraders, versions[:])
+	}()
 
 	cases := []struct {
 		desc            string

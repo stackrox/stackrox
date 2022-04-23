@@ -48,7 +48,12 @@ func SetupUpgradersForTest(_ *testing.T) {
 }
 
 func TestUpgradePolicyTo(t *testing.T) {
+	origVersions := versions
 	SetupUpgradersForTest(t)
+	defer func() {
+		versions = origVersions
+		upgradersByVersionRank = getUpgradersByVersions(upgraders, versions[:])
+	}()
 
 	cases := []struct {
 		desc            string

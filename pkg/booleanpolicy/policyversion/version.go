@@ -70,6 +70,8 @@ func Compare(a, b PolicyVersion) int {
 	return rankA - rankB
 }
 
+// IsCurrentVersion returns true if the policyVersion is equal to the current latest version
+// Purely a convenient way of using Compare to find if it's equal
 func IsCurrentVersion(policyVersion PolicyVersion) bool {
 	return Compare(policyVersion, CurrentVersion()) == 0
 }

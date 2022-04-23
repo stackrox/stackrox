@@ -15,7 +15,12 @@ type convertTestCase struct {
 }
 
 func TestCloneAndEnsureConverted(t *testing.T) {
+	origVersions := versions
 	SetupUpgradersForTest(t)
+	defer func() {
+		versions = origVersions
+		upgradersByVersionRank = getUpgradersByVersions(upgraders, versions[:])
+	}()
 
 	cases := []convertTestCase{
 		{
