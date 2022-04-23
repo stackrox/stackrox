@@ -21,7 +21,7 @@ extract_from_image() {
   local dst=$3
 
   [[ -n "$image" && -n "$src" && -n "$dst" ]] \
-      || die "extract_from_image: <local || image> <src> <dst>"
+      || die "extract_from_image: <image> <src> <dst>"
 
   docker create --name copier "${image}"
   docker cp "copier:${src}" "${dst}"
