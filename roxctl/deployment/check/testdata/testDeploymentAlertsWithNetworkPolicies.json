@@ -1,0 +1,42 @@
+{
+  "results": [
+    {
+      "metadata": {
+        "id": "",
+        "additionalInfo": {
+          "name": "wordpress",
+          "namespace": "",
+          "type": "Deployment"
+        }
+      },
+      "summary": {
+        "CRITICAL": 0,
+        "HIGH": 1,
+        "LOW": 0,
+        "MEDIUM": 0,
+        "TOTAL": 1
+      },
+      "violatedPolicies": [
+        {
+          "name": "policy 8",
+          "severity": "HIGH",
+          "description": "",
+          "violation": [
+            "testing multiple alert violation messages 1",
+            "testing multiple alert violation messages 2",
+            "testing multiple alert violation messages 3"
+          ],
+          "remediation": "policy 8 for testing",
+          "failingCheck": false
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "CRITICAL": 0,
+    "HIGH": 1,
+    "LOW": 0,
+    "MEDIUM": 0,
+    "TOTAL": 1
+  }
+}

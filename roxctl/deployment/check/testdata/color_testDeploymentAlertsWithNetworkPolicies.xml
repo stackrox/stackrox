@@ -1,0 +1,5 @@
+<testsuite name="deployment-check" tests="1" failures="0" skipped="1" errors="0">
+  <testcase name="policy 8" classname="">
+    <skipped></skipped>
+  </testcase>
+</testsuite>

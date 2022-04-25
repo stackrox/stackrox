@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -92,6 +93,25 @@ var (
 		Severity:    storage.Severity_CRITICAL_SEVERITY,
 		EnforcementActions: []storage.EnforcementAction{
 			storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
+		},
+	}
+	// Network Policy Fields
+	policyWithNetworkPolicyFields = &storage.Policy{
+		Id:          "policy9",
+		Name:        "policy 9",
+		Description: "policy 9 for testing",
+		Remediation: "policy 9 for testing",
+		Rationale:   "policy 9 for testing",
+		Severity:    storage.Severity_CRITICAL_SEVERITY,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section 1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: augmentedobjs.MissingIngressPolicyCustomTag,
+					},
+				},
+			},
 		},
 	}
 
@@ -193,6 +213,19 @@ var (
 			Policy:     criticalSevPolicyWithBuildFail,
 			Entity:     testDeploymentEntity,
 			Violations: multipleViolationMessages,
+		},
+		{
+			Policy:     highSevPolicyWithNoDescription,
+			Entity:     testDeploymentEntity,
+			Violations: multipleViolationMessages,
+		},
+	}
+
+	testDeploymentAlertsWithNetworkPolicyField = []*storage.Alert{
+		{
+			Policy:     policyWithNetworkPolicyFields,
+			Entity:     testDeploymentEntity,
+			Violations: nil,
 		},
 		{
 			Policy:     highSevPolicyWithNoDescription,
@@ -396,6 +429,14 @@ func (d *deployCheckTestSuite) TestCheck_TableOutput() {
 			error:      policy.ErrBreakingPolicies,
 			shouldFail: true,
 		},
+		"should print warning if network policy field is present": {
+			alerts:         testDeploymentAlertsWithNetworkPolicyField,
+			expectedOutput: "testDeploymentAlertsWithNetworkPolicies.txt",
+			expectedErrOutput: "WARN:\tIngress/Egress Network Policy criteria will not be evaluated\n" +
+				"WARN:\tA total of 1 policies have been violated\n",
+			expectedErrOutputColorized: "\x1b[95mWARN:\tIngress/Egress Network Policy criteria will not be evaluated\n\x1b[0m" +
+				"\x1b[95mWARN:\tA total of 1 policies have been violated\n\x1b[0m",
+		},
 	}
 
 	tablePrinter, err := printer.NewTabularPrinterFactory(defaultDeploymentCheckHeaders,
@@ -425,6 +466,12 @@ func (d *deployCheckTestSuite) TestCheck_JSONOutput() {
 			expectedErrOutputColorized: "\x1b[94mINFO:\tIgnored object \"some-namespace/some-name[my.custom.resource/v1, Kind=CRD]\" as its schema was not registered.\n" +
 				"\x1b[0m\x1b[94mINFO:\tIgnored object \"some--other-namespace/some--other-name[my.custom.resource/v1, Kind=CRD]\" as its schema was not registered.\n\x1b[0m",
 		},
+		"should print warning if network policy field is present": {
+			alerts:                     testDeploymentAlertsWithNetworkPolicyField,
+			expectedOutput:             "testDeploymentAlertsWithNetworkPolicies.json",
+			expectedErrOutput:          "WARN:\tIngress/Egress Network Policy criteria will not be evaluated\n",
+			expectedErrOutputColorized: "\x1b[95mWARN:\tIngress/Egress Network Policy criteria will not be evaluated\n\x1b[0m",
+		},
 	}
 
 	jsonPrinter, err := printer.NewJSONPrinterFactory(false, false).CreatePrinter("json")
@@ -443,6 +490,12 @@ func (d *deployCheckTestSuite) TestCheck_CSVOutput() {
 			expectedOutput: "testDeploymentAlertsWithFailure.csv",
 			shouldFail:     true,
 			error:          policy.ErrBreakingPolicies,
+		},
+		"should print warning if network policy field is present": {
+			alerts:                     testDeploymentAlertsWithNetworkPolicyField,
+			expectedOutput:             "testDeploymentAlertsWithNetworkPolicies.csv",
+			expectedErrOutput:          "WARN:\tIngress/Egress Network Policy criteria will not be evaluated\n",
+			expectedErrOutputColorized: "\x1b[95mWARN:\tIngress/Egress Network Policy criteria will not be evaluated\n\x1b[0m",
 		},
 	}
 
@@ -463,6 +516,12 @@ func (d *deployCheckTestSuite) TestCheck_JunitOutput() {
 			expectedOutput: "testDeploymentAlertsWithFailure.xml",
 			shouldFail:     true,
 			error:          policy.ErrBreakingPolicies,
+		},
+		"should print warning if network policy field is present": {
+			alerts:                     testDeploymentAlertsWithNetworkPolicyField,
+			expectedOutput:             "testDeploymentAlertsWithNetworkPolicies.xml",
+			expectedErrOutput:          "WARN:\tIngress/Egress Network Policy criteria will not be evaluated\n",
+			expectedErrOutputColorized: "\x1b[95mWARN:\tIngress/Egress Network Policy criteria will not be evaluated\n\x1b[0m",
 		},
 	}
 

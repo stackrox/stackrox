@@ -1,0 +1,4 @@
+POLICY,SEVERITY,BREAKS DEPLOY,DEPLOYMENT,DESCRIPTION,VIOLATION,REMEDIATION
+policy 8,HIGH,-,wordpress,-,"- testing multiple alert violation messages 1
+- testing multiple alert violation messages 2
+- testing multiple alert violation messages 3",policy 8 for testing

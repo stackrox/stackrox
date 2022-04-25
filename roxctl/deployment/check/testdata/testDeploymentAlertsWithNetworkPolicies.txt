@@ -1,0 +1,15 @@
+Policy check results for deployments: [wordpress]
+(TOTAL: 1, LOW: 0, MEDIUM: 0, HIGH: 1, CRITICAL: 0)
+
++----------+----------+---------------+------------+-------------+--------------------------------+----------------------+
+|  POLICY  | SEVERITY | BREAKS DEPLOY | DEPLOYMENT | DESCRIPTION |           VIOLATION            |     REMEDIATION      |
++----------+----------+---------------+------------+-------------+--------------------------------+----------------------+
+| policy 8 |   HIGH   |       -       | wordpress  |      -      |    - testing multiple alert    | policy 8 for testing |
+|          |          |               |            |             |      violation messages 1      |                      |
+|          |          |               |            |             |                                |                      |
+|          |          |               |            |             |    - testing multiple alert    |                      |
+|          |          |               |            |             |      violation messages 2      |                      |
+|          |          |               |            |             |                                |                      |
+|          |          |               |            |             |    - testing multiple alert    |                      |
+|          |          |               |            |             |      violation messages 3      |                      |
++----------+----------+---------------+------------+-------------+--------------------------------+----------------------+
