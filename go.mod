@@ -4,7 +4,7 @@ go 1.16
 
 // CAVEAT: This introduces a circular dependency. If you change this line, you MUST change the "exclude"
 // directive at the bottom of the file as well.
-require github.com/stackrox/scanner v0.0.0-20220425181842-132314af0486
+require github.com/stackrox/scanner v0.0.0-20220408151911-460993206ee4
 
 require (
 	cloud.google.com/go/compute v1.5.0
@@ -27,7 +27,7 @@ require (
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
 	github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e
-	github.com/containers/image/v5 v5.21.0
+	github.com/containers/image/v5 v5.20.0
 	github.com/coreos/go-oidc/v3 v3.1.0
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/couchbase/moss v0.1.0 // indirect
@@ -36,7 +36,7 @@ require (
 	github.com/deckarep/golang-set v1.8.0
 	github.com/dexidp/dex v0.0.0-20210917061239-f0186ff2651e
 	github.com/docker/distribution v2.8.1+incompatible
-	github.com/docker/docker v20.10.14+incompatible
+	github.com/docker/docker v20.10.13+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
 	github.com/facebookincubator/flog v0.0.0-20190930132826-d2511d0ce33c // indirect
@@ -44,7 +44,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logr/logr v1.2.2
+	github.com/go-logr/logr v0.4.0
 	github.com/godbus/dbus/v5 v5.0.4
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2
