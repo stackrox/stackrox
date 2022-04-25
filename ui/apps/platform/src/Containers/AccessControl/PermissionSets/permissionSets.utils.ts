@@ -1,6 +1,5 @@
 import { defaultMinimalReadAccessResources } from 'constants/accessControl';
 import { AccessLevel, PermissionsMap, PermissionSet } from 'services/RolesService';
-import { IsDeprecatedResource } from 'types/roleResources';
 
 /*
  * Return a new permission set with default minimal read access.
@@ -93,6 +92,9 @@ export function getWriteAccessCount(resourceToAccess: PermissionsMap): number {
     return count;
 }
 
+/*
+ * Return the PermissionsMap for deprecated resources and non-deprecated ones.
+ */
 export function splitDeprecatedResources(
     resourceToAccess: PermissionsMap
 ): [PermissionsMap, PermissionsMap] {
@@ -101,11 +103,46 @@ export function splitDeprecatedResources(
 
     // eslint-disable-next-line no-restricted-syntax
     for (const r in resourceToAccess) {
-        if (IsDeprecatedResource(r)) {
+        if (isDeprecatedResource(r)) {
             deprecated[r] = resourceToAccess[r];
         } else {
             current[r] = resourceToAccess[r];
         }
     }
     return [current, deprecated];
+}
+
+const deprecatedResourceNames = new Set([
+    'AllComments',
+    'APIToken',
+    'AuthPlugin',
+    'AuthProvider',
+    'BackupPlugins',
+    'ComplianceRuns',
+    'ComplianceRunSchedule',
+    'Config',
+    'DebugLogs',
+    'Group',
+    'ImageIntegration',
+    'Licenses',
+    'NetworkBaseline',
+    'NetworkGraphConfig',
+    'Notifier',
+    'ProbeUpload',
+    'ProcessWhitelist',
+    'Risk',
+    'Role',
+    'ScannerBundle',
+    'ScannerDefinitions',
+    'SensorUpgradeConfig',
+    'ServiceIdentity',
+    'SignatureIntegration',
+    'User',
+]);
+
+/*
+ * Return whether the given resource name is deprecated.
+ */
+export function isDeprecatedResource(resourceName: string): boolean {
+    return deprecatedResourceNames.has(resourceName);
 }

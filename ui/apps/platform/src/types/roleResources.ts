@@ -53,35 +53,3 @@ export type ResourceName =
     | 'VulnerabilityManagementRequests'
     | 'VulnerabilityReports'
     | 'WatchedImage';
-
-const deprecatedResourceNames = new Set([
-    'AllComments',
-    'APIToken',
-    'AuthPlugin',
-    'AuthProvider',
-    'BackupPlugins',
-    'ComplianceRuns',
-    'ComplianceRunSchedule',
-    'Config',
-    'DebugLogs',
-    'Group',
-    'ImageIntegration',
-    'Licenses',
-    'NetworkBaseline',
-    'NetworkGraphConfig',
-    'Notifier',
-    'ProbeUpload',
-    'ProcessWhitelist',
-    'Risk',
-    'Role',
-    'ScannerBundle',
-    'ScannerDefinitions',
-    'SensorUpgradeConfig',
-    'ServiceIdentity',
-    'SignatureIntegration',
-    'User',
-]);
-
-export function IsDeprecatedResource(resourceName: string): boolean {
-    return deprecatedResourceNames.has(resourceName);
-}
