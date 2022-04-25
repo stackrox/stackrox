@@ -67,6 +67,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 				require.NotNil(t, status.Central)
 				require.NotNil(t, status.Central.AdminPassword)
 				assert.Contains(t, status.Central.AdminPassword.Info, "A password for the 'admin' user has been automatically generated and stored")
+				assert.Contains(t, status.Central.AdminPassword.AdminPasswordSecret, "central-htpasswd")
 			},
 		},
 		"If a central-htpasswd secret with a password exists, no password should be generated": {
@@ -75,6 +76,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 				require.NotNil(t, status.Central)
 				require.NotNil(t, status.Central.AdminPassword)
 				assert.Contains(t, status.Central.AdminPassword.Info, "A user-defined central-htpasswd secret was found, containing htpasswd-encoded credentials.")
+				assert.Contains(t, status.Central.AdminPassword.AdminPasswordSecret, htpasswdWithSomePassword.Name)
 			},
 		},
 		"If a central-htpasswd secret with no password exists, no password should be generated and the user should be informed that basic auth is disabled": {
@@ -83,6 +85,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 				require.NotNil(t, status.Central)
 				require.NotNil(t, status.Central.AdminPassword)
 				assert.Contains(t, status.Central.AdminPassword.Info, "Login with username/password has been disabled")
+				assert.Contains(t, status.Central.AdminPassword.AdminPasswordSecret, htpasswdWithNoPassword.Name)
 			},
 		},
 		"If a secret with a plaintext password is referenced, a central-htpasswd secret should be created accordingly": {
