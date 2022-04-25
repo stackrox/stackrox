@@ -26,8 +26,8 @@ const (
 	ImageUserKey                    = "imageUser"
 	LineKey                         = "line"
 	LivenessProbeDefinedKey         = "livenessProbeDefined"
-	MissingEgressNetworkPolicyKey   = "missingEgressNetworkPolicy"
-	MissingIngressNetworkPolicyKey  = "missingIngressNetworkPolicy"
+	HasEgressNetworkPolicyKey       = "hasEgressNetworkPolicy"
+	HasIngressNetworkPolicyKey      = "hasIngressNetworkPolicy"
 	NamespaceKey                    = "namespace"
 	NodePortKey                     = "nodePort"
 	PortKey                         = "port"
@@ -72,8 +72,8 @@ func init() {
 	registerFunc(ImageUserKey, imageUserPrinter)
 	registerFunc(LineKey, linePrinter)
 	registerFunc(LivenessProbeDefinedKey, livenessProbeDefinedPrinter)
-	registerFunc(MissingEgressNetworkPolicyKey, missingEgressNetworkPolicyPrinter)
-	registerFunc(MissingIngressNetworkPolicyKey, missingIngressNetworkPolicyPrinter)
+	registerFunc(HasEgressNetworkPolicyKey, hasEgressNetworkPolicyPrinter)
+	registerFunc(HasIngressNetworkPolicyKey, hasIngressNetworkPolicyPrinter)
 	registerFunc(NamespaceKey, namespacePrinter)
 	registerFunc(NodePortKey, nodePortPrinter)
 	registerFunc(PortKey, portPrinter)

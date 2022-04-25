@@ -52,8 +52,8 @@ var (
 		fieldnames.ImageSignatureVerifiedBy:     {{required: set.NewStringSet(augmentedobjs.ImageSignatureVerifiedCustomTag), printerFuncKey: printer.ImageSignatureVerifiedKey}},
 		fieldnames.LivenessProbeDefined:         {{required: set.NewStringSet(search.LivenessProbeDefined.String()), printerFuncKey: printer.LivenessProbeDefinedKey}},
 		fieldnames.MinimumRBACPermissions:       {{required: set.NewStringSet(search.ServiceAccountPermissionLevel.String()), printerFuncKey: printer.RbacKey}},
-		fieldnames.MissingIngressNetworkPolicy:  {{required: set.NewStringSet(augmentedobjs.MissingIngressPolicyCustomTag), printerFuncKey: printer.MissingIngressNetworkPolicyKey}},
-		fieldnames.MissingEgressNetworkPolicy:   {{required: set.NewStringSet(augmentedobjs.MissingEgressPolicyCustomTag), printerFuncKey: printer.MissingEgressNetworkPolicyKey}},
+		fieldnames.HasIngressNetworkPolicy:      {{required: set.NewStringSet(augmentedobjs.HasIngressPolicyCustomTag), printerFuncKey: printer.HasIngressNetworkPolicyKey}},
+		fieldnames.HasEgressNetworkPolicy:       {{required: set.NewStringSet(augmentedobjs.HasEgressPolicyCustomTag), printerFuncKey: printer.HasEgressNetworkPolicyKey}},
 		fieldnames.MountPropagation:             {{required: set.NewStringSet(search.MountPropagation.String()), printerFuncKey: printer.VolumeKey}},
 		fieldnames.Namespace:                    {{required: set.NewStringSet(search.Namespace.String()), printerFuncKey: printer.NamespaceKey}},
 		fieldnames.PortExposure:                 {{required: set.NewStringSet(search.ExposureLevel.String()), printerFuncKey: printer.PortExposureKey}},
@@ -83,7 +83,7 @@ var (
 		search.ProcessUID.String(), search.ProcessArguments.String(), augmentedobjs.NotInProcessBaselineCustomTag)
 	requiredKubeEventFields     = set.NewFrozenStringSet(augmentedobjs.KubernetesAPIVerbCustomTag, augmentedobjs.KubernetesResourceCustomTag)
 	requiredNetworkFlowFields   = set.NewFrozenStringSet(augmentedobjs.NotInNetworkBaselineCustomTag)
-	requiredNetworkPolicyFields = set.NewFrozenStringSet(augmentedobjs.MissingEgressPolicyCustomTag, augmentedobjs.MissingIngressPolicyCustomTag)
+	requiredNetworkPolicyFields = set.NewFrozenStringSet(augmentedobjs.HasEgressPolicyCustomTag, augmentedobjs.HasIngressPolicyCustomTag)
 )
 
 func containsAllRequiredFields(fieldMap map[string][]string, required set.StringSet) bool {
