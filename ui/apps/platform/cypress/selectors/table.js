@@ -1,5 +1,7 @@
 const table = {
     header: '[data-testid="filtered-header"]',
+    body: '.rt-tbody',
+    group: '.rt-tr-group',
     column: {
         name: 'div.rt-th div:contains("Name")',
         priority: 'div.rt-th div:contains("Priority")',

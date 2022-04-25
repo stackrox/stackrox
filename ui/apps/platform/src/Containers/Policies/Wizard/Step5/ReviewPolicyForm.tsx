@@ -160,6 +160,17 @@ function ReviewPolicyForm({
                         <div className="pf-u-mb-md">
                             Before you save the policy, verify that the violations seem accurate.
                         </div>
+                        {values.disabled && (
+                            <Alert
+                                className="pf-u-mb-md"
+                                isInline
+                                variant="info"
+                                title="Policy disabled"
+                            >
+                                <p>Violations will not be generated unless the policy is enabled</p>
+                            </Alert>
+                        )}
+                        <Divider component="div" />
                         {isRunningDryRun ? (
                             <Flex justifyContent={{ default: 'justifyContentCenter' }}>
                                 <FlexItem>

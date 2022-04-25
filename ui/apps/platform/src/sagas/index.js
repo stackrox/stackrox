@@ -1,11 +1,9 @@
 import { all, fork } from 'redux-saga/effects';
 
-import alerts from './alertSagas';
 import apiTokens from './apiTokenSagas';
 import authProviders from './authSagas';
 import clusterInitBundles from './clusterInitBundleSagas';
 import clusters from './clusterSagas';
-import deployments from './deploymentSagas';
 import featureFlags from './featureFlagSagas';
 import images from './imageSagas';
 import integrations from './integrationSagas';
@@ -24,12 +22,10 @@ import telemetryConfig from './telemetryConfig';
 
 export default function* root() {
     yield all([
-        fork(alerts),
         fork(apiTokens),
         fork(authProviders),
         fork(clusterInitBundles),
         fork(clusters),
-        fork(deployments),
         fork(images),
         fork(featureFlags),
         fork(integrations),

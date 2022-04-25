@@ -452,10 +452,6 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				<-pChan
 			}()
 
-			if compiledPolicy.Policy().GetDisabled() {
-				return
-			}
-
 			deployment, exists, err := s.deployments.GetDeployment(ctx, depId)
 			if !exists || err != nil {
 				return

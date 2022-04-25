@@ -19,11 +19,13 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Fixed permissions checks in the UI that prevented users with certain limited permissions from creating report configurations.
 - ROX-8789: Change operator catalog format from deprecated SQLite database format to new file-based format.
 - ROX-8331: Increase the front-end limit on rendered nodes in the Network Graph from 1100 to 2000
+- ROX-9792: Introduced central limit of 2000 nodes in a Network Graph to avoid out-of-memory crashes
 - ROX-9946: Fixed default permissions for the default Vuln Reporter role to exclude the modify permission on notifiers, since it is not needed for report creation.
 - Added AllowPrivilegeEscalation as a new policy criteria.
 - ROX-10038: Removed limit of 10 inclusions and 10 exclusions from policy form
 - ROX-10090: Made the username and password optional on the Artifactory integration form
 - ROX-10217: Remove format validation from the URL field of the generic webhook integration form
+- ROX-9435: Updated dryrun API to generate preview violations for disabled policies
 
 ## [69.1]
 

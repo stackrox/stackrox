@@ -1,16 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { selectors } from 'reducers';
-import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
 
 import SeverityTile from 'Containers/Dashboard/SeverityTile';
 import { severityColorMap } from 'constants/severityColors';
 import { useTheme } from 'Containers/ThemeProvider';
+import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import severityPropType from './severityPropTypes';
 
-const EnvironmentRisk = ({ globalViolationsCounts }) => {
+const EnvironmentRisk = ({ globalViolationsCounts, clusters }) => {
     const { isDarkMode } = useTheme();
     const counts = {
         CRITICAL_SEVERITY: 0,
@@ -46,15 +44,24 @@ const EnvironmentRisk = ({ globalViolationsCounts }) => {
                 </Link>
             </h2>
             <div className="flex">
-                {severities.map((severity, i) => (
-                    <SeverityTile
-                        severity={severity}
-                        count={counts[severity]}
-                        color={severityColorMap[severity]}
-                        index={i}
-                        key={severity}
-                    />
-                ))}
+                {severities.map((severity, i) => {
+                    const searchFilter = {
+                        Severity: severity,
+                        Cluster: clusters,
+                    };
+                    const searchString = getUrlQueryStringForSearchFilter(searchFilter);
+                    const link = `/main/violations?${searchString}`;
+                    return (
+                        <SeverityTile
+                            severity={severity}
+                            count={counts[severity]}
+                            color={severityColorMap[severity]}
+                            index={i}
+                            key={severity}
+                            link={link}
+                        />
+                    );
+                })}
             </div>
         </div>
     );
@@ -72,10 +79,11 @@ EnvironmentRisk.propTypes = {
             group: PropTypes.string.isRequired,
         })
     ).isRequired,
+    clusters: PropTypes.arrayOf(PropTypes.string),
 };
 
-const mapStateToProps = createStructuredSelector({
-    globalViolationsCounts: selectors.getAlertCountsByCluster,
-});
+EnvironmentRisk.defaultProps = {
+    clusters: [],
+};
 
-export default connect(mapStateToProps, null)(EnvironmentRisk);
+export default EnvironmentRisk;

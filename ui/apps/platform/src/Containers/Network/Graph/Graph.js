@@ -6,7 +6,6 @@ import isEmpty from 'lodash/isEmpty';
 import cloneDeep from 'lodash/cloneDeep';
 
 import { selectors } from 'reducers';
-import { actions as backendActions } from 'reducers/network/backend';
 import { actions as graphActions } from 'reducers/network/graph';
 import { actions as pageActions } from 'reducers/network/page';
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
@@ -30,7 +29,6 @@ class Graph extends Component {
         networkEdgeMap: PropTypes.shape({}),
 
         networkFlowGraphUpdateKey: PropTypes.number.isRequired,
-        fetchNetworkPolicies: PropTypes.func.isRequired,
 
         setSelectedNode: PropTypes.func.isRequired,
         setSelectedNamespace: PropTypes.func.isRequired,
@@ -107,7 +105,6 @@ class Graph extends Component {
             return;
         }
         this.props.setSelectedNode(node);
-        this.props.fetchNetworkPolicies([...node.policyIds]);
         this.props.setSidePanelStage(sidepanelStages.details);
         this.props.openSidePanel();
     };
@@ -209,7 +206,6 @@ const mapStateToProps = createStructuredSelector({
 const mapDispatchToProps = {
     setSelectedNode: graphActions.setSelectedNode,
     setSelectedNamespace: graphActions.setSelectedNamespace,
-    fetchNetworkPolicies: backendActions.fetchNetworkPolicies.request,
     openSidePanel: pageActions.openSidePanel,
     setSidePanelStage: sidepanelActions.setSidePanelStage,
     setNetworkGraphRef: graphActions.setNetworkGraphRef,

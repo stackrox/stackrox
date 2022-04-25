@@ -22,9 +22,13 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM multikey"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM multikey WHERE Key1 = $1 AND Key2 = $2)"
 
-	getStmt    = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
-	deleteStmt = "DELETE FROM multikey WHERE Key1 = $1 AND Key2 = $2"
-	walkStmt   = "SELECT serialized FROM multikey"
+	getStmt     = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
+	deleteStmt  = "DELETE FROM multikey WHERE Key1 = $1 AND Key2 = $2"
+	walkStmt    = "SELECT serialized FROM multikey"
+	getIDsStmt  = "SELECT Key1 FROM multikey"
+	getManyStmt = "SELECT serialized FROM multikey WHERE Key1 = ANY($1::text[])"
+
+	deleteManyStmt = "DELETE FROM multikey WHERE Key1 = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -46,6 +50,9 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.TestMultiKeyStruct) error
 	UpsertMany(ctx context.Context, objs []*storage.TestMultiKeyStruct) error
 	Delete(ctx context.Context, key1 string, key2 string) error
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.TestMultiKeyStruct, []int, error)
+	DeleteMany(ctx context.Context, ids []string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.TestMultiKeyStruct) error) error
 
@@ -453,6 +460,89 @@ func (s *storeImpl) Delete(ctx context.Context, key1 string, key2 string) error 
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, key1, key2); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.TestMultiKeyStructIDs")
+
+	rows, err := s.db.Query(ctx, getIDsStmt)
+	if err != nil {
+		return nil, pgutils.ErrNilIfNoRows(err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestMultiKeyStruct, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "TestMultiKeyStruct")
+
+	conn, release, err := s.acquireConn(ctx, ops.GetMany, "TestMultiKeyStruct")
+	if err != nil {
+		return nil, nil, err
+	}
+	defer release()
+
+	rows, err := conn.Query(ctx, getManyStmt, ids)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			missingIndices := make([]int, 0, len(ids))
+			for i := range ids {
+				missingIndices = append(missingIndices, i)
+			}
+			return nil, missingIndices, nil
+		}
+		return nil, nil, err
+	}
+	defer rows.Close()
+	resultsByID := make(map[string]*storage.TestMultiKeyStruct)
+	for rows.Next() {
+		var data []byte
+		if err := rows.Scan(&data); err != nil {
+			return nil, nil, err
+		}
+		msg := &storage.TestMultiKeyStruct{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, nil, err
+		}
+		resultsByID[msg.GetKey1()] = msg
+	}
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.TestMultiKeyStruct, 0, len(resultsByID))
+	for i, id := range ids {
+		if result, ok := resultsByID[id]; !ok {
+			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
+		}
+	}
+	return elems, missingIndices, nil
+}
+
+// Delete removes the specified IDs from the store
+func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "TestMultiKeyStruct")
+
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "TestMultiKeyStruct")
+	if err != nil {
+		return err
+	}
+	defer release()
+	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil

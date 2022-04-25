@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
+	pkgPostgres "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/multitest/postgres"
@@ -82,7 +83,7 @@ func (s *IndexSuite) getStruct(i int, f func(s *storage.TestMultiKeyStruct)) *st
 }
 
 func getID(s *storage.TestMultiKeyStruct) string {
-	return s.Key1 + "+" + s.Key2
+	return s.Key1 + pkgPostgres.IDSeparator + s.Key2
 }
 
 type testCase struct {
@@ -1347,7 +1348,7 @@ func (s *IndexSuite) TestPagination() {
 			actualMatches := make([]int, 0, len(results))
 			for resultIdx, r := range results {
 				for i, s := range testStructs {
-					if r.ID == s.Key1+"+"+s.Key2 {
+					if r.ID == s.Key1+pkgPostgres.IDSeparator+s.Key2 {
 						actualMatches = append(actualMatches, i)
 						break
 					}

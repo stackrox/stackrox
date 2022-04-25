@@ -2,16 +2,7 @@ import axios from './instance';
 
 const resourcesUrl = '/v1/resources';
 
-export function fetchResources(): Promise<{ response: { resources: string[] } }> {
-    return axios.get<{ resources: string[] }>(resourcesUrl).then((response) => ({
-        response: response.data,
-    }));
-}
-
-// TODO After classic Access Control code has been deleted,
-// delete preceding function fetchResources also its Redux support,
-// and then rename the following function as fetchResources.
-export function fetchResourcesAsArray(): Promise<string[]> {
+export function fetchResources(): Promise<string[]> {
     return axios
         .get<{ resources: string[] }>(resourcesUrl)
         .then((response) => response?.data?.resources ?? []);
