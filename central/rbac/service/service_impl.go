@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -64,7 +64,7 @@ func (s *serviceImpl) GetRole(ctx context.Context, request *v1.ResourceByID) (*v
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "k8s role with id '%q' does not exist", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "k8s role with id '%q' does not exist", request.GetId())
 	}
 
 	return &v1.GetRoleResponse{Role: role}, nil
@@ -76,7 +76,7 @@ func (s *serviceImpl) ListRoles(ctx context.Context, rawQuery *v1.RawQuery) (*v1
 	// roles that can get pods are returned, not roles that can get anything, and can do any operation on Pods.
 	q, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	roles, err := s.roles.SearchRawRoles(ctx, q)
@@ -94,7 +94,7 @@ func (s *serviceImpl) GetRoleBinding(ctx context.Context, request *v1.ResourceBy
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "k8s role binding with id '%q' does not exist", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "k8s role binding with id '%q' does not exist", request.GetId())
 	}
 
 	return &v1.GetRoleBindingResponse{Binding: binding}, nil
@@ -104,7 +104,7 @@ func (s *serviceImpl) GetRoleBinding(ctx context.Context, request *v1.ResourceBy
 func (s *serviceImpl) ListRoleBindings(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListRoleBindingsResponse, error) {
 	q, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	bindings, err := s.bindings.SearchRawRoleBindings(ctx, q)
 	if err != nil {

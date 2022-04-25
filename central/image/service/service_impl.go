@@ -20,7 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -115,7 +115,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetImage returns an image with given sha if it exists.
 func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest) (*storage.Image, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "id must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "id must be specified")
 	}
 
 	id := types.NewDigest(request.GetId()).Digest()
@@ -125,7 +125,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest)
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "image with id %q does not exist", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "image with id %q does not exist", request.GetId())
 	}
 
 	if !request.GetIncludeSnoozed() {
@@ -145,7 +145,7 @@ func (s *serviceImpl) CountImages(ctx context.Context, request *v1.RawQuery) (*v
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	numImages, err := s.datastore.Count(ctx, parsedQuery)
@@ -160,7 +160,7 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	// Fill in pagination.
@@ -410,7 +410,7 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 
 	query, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "error parsing query: %v", err)
+		return nil, errors.Wrapf(errox.InvalidArgs, "error parsing query: %v", err)
 	}
 	paginated.FillPagination(query, request.GetQuery().GetPagination(), math.MaxInt32)
 

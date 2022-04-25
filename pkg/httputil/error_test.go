@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -51,7 +51,7 @@ func TestWriteError(t *testing.T) {
 		},
 		{
 			name:           "Known internal error yields appropriate status in response header",
-			incomingErr:    errors.Wrap(errorhelpers.ErrNotFound, "Origin: known internal error"),
+			incomingErr:    errors.Wrap(errox.NotFound, "Origin: known internal error"),
 			expectedStatus: 404,
 		},
 		{
