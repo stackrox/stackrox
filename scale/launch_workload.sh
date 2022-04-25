@@ -31,7 +31,7 @@ kubectl -n "${namespace}" delete deploy/admission-control
 kubectl -n "${namespace}" delete daemonset collector
 
 kubectl -n "${namespace}" set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
-kubectl -n "${namespace}" set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0
+kubectl -n "${namespace}" set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0  ROX_SCALE_TEST=true
 kubectl -n "${namespace}" delete configmap scale-workload-config || true
 kubectl -n "${namespace}" create configmap scale-workload-config --from-file=workload.yaml="$file"
 kubectl -n "${namespace}" patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","volumeMounts":[{"name":"scale-workload-config","mountPath":"/var/scale/stackrox"}]}],"volumes":[{"name":"scale-workload-config","configMap":{"name": "scale-workload-config"}}]}}}}'
