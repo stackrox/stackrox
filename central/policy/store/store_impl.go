@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/secondarykey"
@@ -236,7 +237,7 @@ func (s *storeImpl) UpdatePolicy(policy *storage.Policy) error {
 		// If the update is changing the name, check if the name has already been taken
 		val, ok := secondarykey.GetCurrentUniqueKey(tx, policyBucket, policy.GetId())
 		if !ok {
-			return errorhelpers.ErrNotFound
+			return errox.NotFound
 		}
 		if val != policy.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, policyBucket, policy.GetId(), policy.GetName()); err != nil {

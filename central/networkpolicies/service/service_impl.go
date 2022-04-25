@@ -132,7 +132,7 @@ func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.Resource
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "network policy with id '%s' does not exist", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "network policy with id '%s' does not exist", request.GetId())
 	}
 	populateYAML(networkPolicy)
 	return networkPolicy, nil
@@ -303,13 +303,13 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 
 func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.SendNetworkPolicyYamlRequest) (*v1.Empty, error) {
 	if request.GetClusterId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Cluster ID must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "Cluster ID must be specified")
 	}
 	if len(request.GetNotifierIds()) == 0 {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Notifier IDs must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "Notifier IDs must be specified")
 	}
 	if request.GetModification().GetApplyYaml() == "" && len(request.GetModification().GetToDelete()) == 0 {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Modification must have contents")
+		return nil, errors.Wrap(errox.InvalidArgs, "Modification must have contents")
 	}
 
 	clusterName, exists, err := s.clusterStore.GetClusterName(ctx, request.GetClusterId())
@@ -317,7 +317,7 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 		return nil, errors.Errorf("failed to retrieve cluster: %s", err.Error())
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Cluster '%s' not found", request.GetClusterId())
+		return nil, errors.Wrapf(errox.NotFound, "Cluster '%s' not found", request.GetClusterId())
 	}
 
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
@@ -363,7 +363,7 @@ func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.Gener
 	}
 
 	if req.GetClusterId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Cluster ID must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "Cluster ID must be specified")
 	}
 
 	generated, toDelete, err := s.policyGenerator.Generate(ctx, req)
@@ -392,7 +392,7 @@ func (s *serviceImpl) GetUndoModification(ctx context.Context, req *v1.GetUndoMo
 		return nil, errors.Errorf("could not query undo store: %v", err)
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "no undo record stored for cluster %q", req.GetClusterId())
+		return nil, errors.Wrapf(errox.NotFound, "no undo record stored for cluster %q", req.GetClusterId())
 	}
 	return &v1.GetUndoModificationResponse{
 		UndoRecord: undoRecord,
@@ -421,7 +421,7 @@ func (s *serviceImpl) GetBaselineGeneratedNetworkPolicyForDeployment(ctx context
 	// Currently we don't look at request.GetDeleteExisting. We try to delete the existing baseline generated
 	// policy no matter what
 	if request.GetDeploymentId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Cluster ID must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "Cluster ID must be specified")
 	}
 
 	generated, toDelete, err := s.policyGenerator.GenerateFromBaselineForDeployment(ctx, request)
@@ -479,7 +479,7 @@ func (s *serviceImpl) getRelevantClusterObjectsForDeployment(ctx context.Context
 	if err != nil {
 		return nil, nil, nil, err
 	} else if !found {
-		return nil, nil, nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "specified deployment not found")
+		return nil, nil, nil, errors.Wrap(errox.InvalidArgs, "specified deployment not found")
 	}
 
 	networkTree, err := s.getNetworkTree(deployment.GetClusterId())
@@ -621,7 +621,7 @@ func (s *serviceImpl) applyModificationAndGetUndoRecord(
 	modification *storage.NetworkPolicyModification,
 ) (*storage.NetworkPolicyApplicationUndoRecord, error) {
 	if strings.TrimSpace(modification.GetApplyYaml()) == "" && len(modification.GetToDelete()) == 0 {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Modification must have contents")
+		return nil, errors.Wrap(errox.InvalidArgs, "Modification must have contents")
 	}
 
 	// Check that:
@@ -673,7 +673,7 @@ func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, r
 	if err != nil {
 		return nil, err
 	} else if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "requested deployment %q not found", request.GetDeploymentId())
+		return nil, errors.Wrapf(errox.NotFound, "requested deployment %q not found", request.GetDeploymentId())
 	}
 
 	undoRecord, err := s.applyModificationAndGetUndoRecord(ctx, deployment.GetClusterId(), request.GetModification())
@@ -702,14 +702,14 @@ func (s *serviceImpl) GetUndoModificationForDeployment(ctx context.Context, requ
 	if err != nil {
 		return nil, err
 	} else if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "deployment with ID %q not found", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "deployment with ID %q not found", request.GetId())
 	}
 
 	undoRecord, found, err := s.networkPolicies.GetUndoDeploymentRecord(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	} else if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "no undo record stored for deployment %q", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "no undo record stored for deployment %q", request.GetId())
 	}
 	return &v1.GetUndoModificationForDeploymentResponse{
 		UndoRecord: undoRecord.GetUndoRecord(),
@@ -1126,14 +1126,14 @@ func validateNoPolicyDiff(applyPolicy *storage.NetworkPolicy, currPolicy *storag
 
 func (s *serviceImpl) clusterExists(ctx context.Context, clusterID string) error {
 	if clusterID == "" {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "cluster ID must be specified")
+		return errors.Wrap(errox.InvalidArgs, "cluster ID must be specified")
 	}
 	exists, err := s.clusterStore.Exists(ctx, clusterID)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "cluster with ID %q doesn't exist", clusterID)
+		return errors.Wrapf(errox.NotFound, "cluster with ID %q doesn't exist", clusterID)
 	}
 	return nil
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/and"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -122,7 +122,7 @@ func (s *serviceImpl) validateCVEsExist(ctx context.Context, ids ...string) erro
 
 	if len(result) < len(ids) {
 		missingIds := set.NewStringSet(ids...).Difference(search.ResultsToIDSet(result))
-		return errors.Wrapf(errorhelpers.ErrNotFound, "Following CVEs not found: %s", strings.Join(missingIds.AsSlice(), ", "))
+		return errors.Wrapf(errox.NotFound, "Following CVEs not found: %s", strings.Join(missingIds.AsSlice(), ", "))
 	}
 	return nil
 }

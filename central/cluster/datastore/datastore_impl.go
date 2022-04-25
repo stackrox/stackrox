@@ -35,6 +35,7 @@ import (
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -926,7 +927,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 func normalizeCluster(cluster *storage.Cluster) error {
 	if cluster == nil {
-		return errorhelpers.NewErrInvariantViolation("cannot normalize nil cluster object")
+		return errox.NewErrInvariantViolation("cannot normalize nil cluster object")
 	}
 
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
@@ -944,7 +945,7 @@ func validateInput(cluster *storage.Cluster) error {
 // `cluster.* bool` flags remain untouched.
 func addDefaults(cluster *storage.Cluster) error {
 	if cluster == nil {
-		return errorhelpers.NewErrInvariantViolation("cannot enrich nil cluster object")
+		return errox.NewErrInvariantViolation("cannot enrich nil cluster object")
 	}
 	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
 	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
