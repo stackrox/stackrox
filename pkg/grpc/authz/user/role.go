@@ -30,7 +30,7 @@ func (p *roleChecker) Authorized(ctx context.Context, _ string) error {
 
 func (p *roleChecker) checkRole(roleNames []string) error {
 	if len(roleNames) == 0 {
-		return errox.NoValidRole
+		return errox.NotAuthorized
 	}
 
 	for _, roleName := range roleNames {

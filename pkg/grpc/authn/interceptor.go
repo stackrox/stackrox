@@ -33,7 +33,7 @@ func (u contextUpdater) updateContext(ctx context.Context) (context.Context, err
 	if id != nil {
 		// Only service identities can have no roles assigned.
 		if len(id.Roles()) == 0 && id.Service() == nil {
-			return context.WithValue(ctx, identityErrorContextKey{}, errox.GenericNoValidRole()), nil
+			return context.WithValue(ctx, identityErrorContextKey{}, errox.NotAuthorized.CausedBy("no valid role")), nil
 		}
 		return context.WithValue(ctx, identityContextKey{}, id), nil
 	}

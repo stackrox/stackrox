@@ -279,9 +279,10 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}
+
 	userRoles := userInfo.GetRoles()
 	if len(userRoles) == 0 {
-		err := errox.GenericNoValidRole()
+		err := errox.NotAuthorized.CausedBy("no valid role for the user")
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}

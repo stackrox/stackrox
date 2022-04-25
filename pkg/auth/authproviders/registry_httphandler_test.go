@@ -238,8 +238,7 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationRejectsUserWithout
 	redirectURLFragments, _ := url.ParseQuery(redirectURL.Fragment)
 	s.assert.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated for user without role "+
 		"should redirect to the registry redirect URL")
-	callbackError := fmt.Errorf("access for this user is not authorized: %w, please contact your system administrator",
-		errox.NoValidRole)
+	callbackError := errox.NotAuthorized.CausedBy("no valid role for the user")
 	s.assert.Equal(callbackError.Error(), redirectURLFragments.Get("error"),
 		"callback activated for user without role should issue an explicit message")
 }
