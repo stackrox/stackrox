@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.
@@ -17,7 +18,7 @@ func NewV2(storage store.Store, indexer index.Indexer) Searcher {
 	return &searcherImplV2{
 		storage:  storage,
 		indexer:  indexer,
-		searcher: blevesearch.WrapUnsafeSearcherAsSearcher(indexer),
+		searcher: postgres.WithScoping(blevesearch.WrapUnsafeSearcherAsSearcher(indexer)),
 	}
 }
 

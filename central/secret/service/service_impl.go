@@ -11,7 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -62,7 +62,7 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "secret with id '%s' does not exist", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "secret with id '%s' does not exist", request.GetId())
 	}
 
 	psr := search.NewQueryBuilder().
@@ -94,7 +94,7 @@ func (s *serviceImpl) CountSecrets(ctx context.Context, request *v1.RawQuery) (*
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	numSecrets, err := s.secrets.Count(ctx, parsedQuery)
@@ -109,7 +109,7 @@ func (s *serviceImpl) ListSecrets(ctx context.Context, request *v1.RawQuery) (*v
 	// Fill in query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	// Fill in pagination.

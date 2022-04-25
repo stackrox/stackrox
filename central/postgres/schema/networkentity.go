@@ -3,11 +3,18 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	// CreateTableNetworkentityStmt holds the create statement for table `Networkentity`.
+	// CreateTableNetworkentityStmt holds the create statement for table `networkentity`.
 	CreateTableNetworkentityStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists networkentity (
@@ -20,4 +27,16 @@ var (
 		Indexes:  []string{},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// NetworkentitySchema is the go schema for table `networkentity`.
+	NetworkentitySchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("networkentity")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.NetworkEntity)(nil)), "networkentity")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NETWORK_ENTITY, "networkentity", (*storage.NetworkEntity)(nil)))
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

@@ -1,0 +1,82 @@
+# Will be used within roxctl_verification.sh.
+# Contains a Deployment with an unregistered CRD.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: nginx
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+---
+apiVersion: istio.banzaicloud.io/v1beta1
+kind: Istio
+metadata:
+  name: istio-sample
+spec:
+  autoInjectionNamespaces:
+  - default
+  citadel:
+    image: 'docker.io/istio/citadel:1.1.2'
+    replicaCount: 1
+  defaultPodDisruptionBudget:
+    enabled: true
+  galley:
+    image: 'docker.io/istio/galley:1.1.2'
+    replicaCount: 1
+  gateways:
+    egress:
+      maxReplicas: 5
+      minReplicas: 1
+      replicaCount: 1
+      sds:
+        image: node-agent-k8s
+    ingress:
+      maxReplicas: 5
+      minReplicas: 1
+      replicaCount: 1
+      sds:
+        image: node-agent-k8s
+    k8singress: {}
+  imageHub: docker.io/istio
+  imageTag: 1.1.0
+  includeIPRanges: '*'
+  mixer:
+    image: 'docker.io/istio/mixer:1.1.2'
+    maxReplicas: 5
+    minReplicas: 1
+    replicaCount: 1
+  mtls: false
+  nodeAgent:
+    image: 'docker.io/istio/node-agent-k8s:1.1.2'
+  outboundTrafficPolicy:
+    mode: ALLOW_ANY
+  pilot:
+    image: 'docker.io/istio/pilot:1.1.2'
+    maxReplicas: 5
+    minReplicas: 1
+    replicaCount: 1
+    traceSampling: 1
+  proxy:
+    image: 'docker.io/istio/proxyv2:1.1.2'
+  proxyInit:
+    image: 'docker.io/istio/proxy_init:1.1.2'
+  sds: {}
+  sidecarInjector:
+    image: 'docker.io/istio/sidecar_injector:1.1.2'
+    replicaCount: 1
+    rewriteAppHTTPProbe: true
+  tracing:
+    zipkin:
+      address: 'zipkin.istio-system:9411'
+  version: 1.1.2

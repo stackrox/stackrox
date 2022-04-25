@@ -56,13 +56,13 @@ func (s *ImageCvesStoreSuite) TestStore() {
 	cVE := &storage.CVE{}
 	s.NoError(testutils.FullInit(cVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundCVE, exists, err := store.Get(ctx, cVE.GetId(), cVE.GetOperatingSystem())
+	foundCVE, exists, err := store.Get(ctx, cVE.GetId(), cVE.GetCve(), cVE.GetOperatingSystem())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundCVE)
 
 	s.NoError(store.Upsert(ctx, cVE))
-	foundCVE, exists, err = store.Get(ctx, cVE.GetId(), cVE.GetOperatingSystem())
+	foundCVE, exists, err = store.Get(ctx, cVE.GetId(), cVE.GetCve(), cVE.GetOperatingSystem())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(cVE, foundCVE)
@@ -71,18 +71,18 @@ func (s *ImageCvesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(cVECount, 1)
 
-	cVEExists, err := store.Exists(ctx, cVE.GetId(), cVE.GetOperatingSystem())
+	cVEExists, err := store.Exists(ctx, cVE.GetId(), cVE.GetCve(), cVE.GetOperatingSystem())
 	s.NoError(err)
 	s.True(cVEExists)
 	s.NoError(store.Upsert(ctx, cVE))
 
-	foundCVE, exists, err = store.Get(ctx, cVE.GetId(), cVE.GetOperatingSystem())
+	foundCVE, exists, err = store.Get(ctx, cVE.GetId(), cVE.GetCve(), cVE.GetOperatingSystem())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(cVE, foundCVE)
 
-	s.NoError(store.Delete(ctx, cVE.GetId(), cVE.GetOperatingSystem()))
-	foundCVE, exists, err = store.Get(ctx, cVE.GetId(), cVE.GetOperatingSystem())
+	s.NoError(store.Delete(ctx, cVE.GetId(), cVE.GetCve(), cVE.GetOperatingSystem()))
+	foundCVE, exists, err = store.Get(ctx, cVE.GetId(), cVE.GetCve(), cVE.GetOperatingSystem())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundCVE)

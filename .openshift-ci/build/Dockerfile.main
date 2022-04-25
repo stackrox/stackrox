@@ -1,0 +1,4 @@
+FROM ubi-minimal
+
+COPY . .
+RUN ls -la

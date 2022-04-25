@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authz/internal/permissioncheck"
@@ -56,7 +56,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 		{
 			name: "no ID in context => error",
 			ctx:  context.Background(),
-			err:  errorhelpers.ErrNoCredentials,
+			err:  errox.NoCredentials,
 		},
 		{
 			name: "permissions equal access => no error",
@@ -78,7 +78,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 				Resource: nsScopedResource, Access: storage.Access_READ_ACCESS,
 			}},
 			ctx: sac.WithNoAccess(ctx),
-			err: errorhelpers.ErrNotAuthorized,
+			err: errox.NotAuthorized,
 		},
 		{
 			name: "built-in scoped authz check permissions",
@@ -93,7 +93,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
 			ctx: sac.WithNoAccess(ctxWithNoPermissions),
-			err: errorhelpers.ErrNoCredentials,
+			err: errox.NoCredentials,
 		},
 		{
 			name: "plugin SAC check only global permissions",
@@ -117,7 +117,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 				Resource: globalScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
 			ctx: sac.WithNoAccess(sac.SetContextPluginScopedAuthzEnabled(ctx)),
-			err: errorhelpers.ErrNotAuthorized,
+			err: errox.NotAuthorized,
 		},
 		{
 			name: "plugin SAC check only global permissions",

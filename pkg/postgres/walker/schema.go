@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -39,6 +40,8 @@ type Schema struct {
 	// We use `Parents` and `Children` which mean referenced table and referencing table in SQL world,
 	// but in our context it reflects the nesting of proto messages.
 	EmbeddedIn string
+
+	OptionsMap search.OptionsMap
 }
 
 // TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,
@@ -62,6 +65,16 @@ func (s *Schema) FieldsBySearchLabel() map[string]*Field {
 		}
 	}
 	return m
+}
+
+// SetOptionsMap sets options map for the schema.
+func (s *Schema) SetOptionsMap(optionsMap search.OptionsMap) {
+	s.OptionsMap = optionsMap
+	for _, c := range s.Children {
+		if c.EmbeddedIn == s.Table {
+			c.OptionsMap = optionsMap
+		}
+	}
 }
 
 // HasSearchableFields returns true or false if the schema has fields that are searchable
@@ -183,39 +196,78 @@ func (s *Schema) ParentKeys() []Field {
 }
 
 // ParentKeysGroupedByTable returns the keys from the parent schemas that should be defined
-// as foreign keys for the current schema grouped by parent schema.
+// as **foreign keys** for the current schema grouped by parent schema.
 func (s *Schema) ParentKeysGroupedByTable() []TableFieldsGroup {
 	pks := make([]TableFieldsGroup, 0, len(s.Parents))
 	// Find all the local fields that are already defined as foreign keys.
-	localFKs := make(map[foreignKeyRef]*Field)
-	for idx := range s.Fields {
-		f := &s.Fields[idx]
-		if ref := f.Options.Reference; ref != nil {
-			localFKs[foreignKeyRef{
-				TypeName:      strings.ToLower(ref.TypeName),
-				ProtoBufField: strings.ToLower(ref.ProtoBufField),
-			}] = f
-		}
-	}
+	localFKs := s.localFKs()
+
 	for _, parent := range s.Parents {
 		currPks := parent.ResolvedPrimaryKeys()
+		filtered := make([]Field, 0, len(currPks))
 		for idx := range currPks {
 			pk := &currPks[idx]
-			// If the referenced parent field is already an embedded as foriegn key in child, use the child field names.
-			if field, found := localFK(pk, localFKs); found {
-				pk.Name = field.Name
-				pk.Reference = pk.ColumnName
-				pk.ColumnName = field.ColumnName
+			field, found := localFK(pk, localFKs)
+			if !found {
+				tryParentify(pk, parent)
+				filtered = append(filtered, *pk)
 				continue
 			}
-			tryParentify(pk, parent)
+
+			// If the referenced parent field is already embedded in child but without constraint, skip it.
+			if field.Options.Reference != nil && field.Options.Reference.NoConstraint {
+				continue
+			}
+			// If the referenced parent field is already embedded in child, use the child field names.
+			pk.Name = field.Name
+			pk.Reference = pk.ColumnName
+			pk.ColumnName = field.ColumnName
+			pk.Options.Reference = field.Options.Reference
+			filtered = append(filtered, *pk)
 		}
-		pks = append(pks, TableFieldsGroup{Table: parent.Table, Fields: currPks})
+		if len(filtered) > 0 {
+			pks = append(pks, TableFieldsGroup{Table: parent.Table, Fields: filtered})
+		}
 	}
 	return pks
 }
 
-// ForeignKeysReferencesTo returns the foreign keys of the current schema referencing specified schema name.
+// ParentKeysForTable returns the keys from the input parent schema that are referred in
+// the current schema with or without constraint.
+func (s *Schema) ParentKeysForTable(tableName string) []Field {
+	// Find all the local fields that are already defined as foreign keys.
+	localFKs := s.localFKs()
+
+	var parent *Schema
+	for _, p := range s.Parents {
+		if p.Table == tableName {
+			parent = p
+			break
+		}
+	}
+
+	if parent == nil {
+		return nil
+	}
+
+	currPks := parent.ResolvedPrimaryKeys()
+	for idx := range currPks {
+		pk := &currPks[idx]
+		field, found := localFK(pk, localFKs)
+		if !found {
+			tryParentify(pk, parent)
+			continue
+		}
+		// If the referenced parent field is already embedded in child, use the child field names.
+		pk.Name = field.Name
+		pk.Reference = pk.ColumnName
+		pk.ColumnName = field.ColumnName
+		pk.Options.Reference = field.Options.Reference
+	}
+	return currPks
+}
+
+// ForeignKeysReferencesTo returns the foreign keys (with or without constraint) of the current schema referencing specified schema name.
 func (s *Schema) ForeignKeysReferencesTo(tableName string) []Field {
 	if len(s.Parents) == 0 {
 		return nil
@@ -311,6 +363,22 @@ func (s *Schema) LocalPrimaryKeys() []Field {
 	return pks
 }
 
+// ID is the id field in the current schema, if any.
+func (s *Schema) ID() Field {
+	for _, f := range s.Fields {
+		if f.Options.ID {
+			return f
+		}
+	}
+	// If there is only one primary key, that is considered Id column by default even if not specified explicitly.
+	pks := s.LocalPrimaryKeys()
+	if len(pks) == 1 {
+		return pks[0]
+	}
+	log.Errorf("No ID column defined for %s", s.Table)
+	return Field{}
+}
+
 // WithReference adds the specified schema as a reference to this schema and returns it. The referencing receiver
 // schema is not a direct field in proto object of the specified reference.
 func (s *Schema) WithReference(ref *Schema) *Schema {
@@ -342,6 +410,7 @@ type SearchField struct {
 
 // PostgresOptions is the parsed representation of the sql tag on the struct field
 type PostgresOptions struct {
+	ID                     bool
 	Ignored                bool
 	Index                  string
 	PrimaryKey             bool
@@ -354,6 +423,8 @@ type PostgresOptions struct {
 type foreignKeyRef struct {
 	TypeName      string
 	ProtoBufField string
+	// If true, this column (foreign key) depends on a column in other table, but does not have a constraint.
+	NoConstraint bool
 }
 
 // ObjectGetter is wrapper around determining how to represent the variable in the

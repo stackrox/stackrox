@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -215,7 +215,7 @@ func (s *complianceDataStoreWithSACTestSuite) TestEnforceGetLatestRunResults() {
 	_, err := s.dataStore.GetLatestRunResults(s.hasNoneCtx, clusterID, standardID, types.WithMessageStrings)
 
 	// Check results match.
-	s.ErrorIs(err, errorhelpers.ErrNotFound)
+	s.ErrorIs(err, errox.NotFound)
 }
 
 func (s *complianceDataStoreWithSACTestSuite) TestEnforceStoreRunResults() {

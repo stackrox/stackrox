@@ -246,3 +246,25 @@ kubectl delete index-test
 
 Instructions and best practices on how to extend the StackRox CRDs is contained in the separate file
 [EXTENDING_CRDS.md](./EXTENDING_CRDS.md).
+
+## Installing operator via OLM
+
+The following command will install operator to the currently selected kubernetes cluster.
+
+```bash
+ make kuttl deploy-via-olm
+```
+
+If operator image has a `-dirty` suffix then the following command has to be used instead:
+
+```bash
+make kuttle deploy-dirty-tag-via-olm
+```
+
+For upgrading an existing operator:
+
+```bash
+make kuttle upgrade-via-olm
+
+```
+Note ерфе there is a specific command for upgrading `-dirty` suffixed tags `upgrade-dirty-tag-via-olm`

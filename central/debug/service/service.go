@@ -26,7 +26,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -155,7 +155,7 @@ func (s *serviceImpl) GetLogLevel(ctx context.Context, req *v1.GetLogLevelReques
 	logging.ForEachModule(forEachModule, req.GetModules())
 
 	if len(unknownModules) > 0 {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Unknown module(s): %s", strings.Join(unknownModules, ", "))
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unknown module(s): %s", strings.Join(unknownModules, ", "))
 	}
 
 	return resp, nil
@@ -166,7 +166,7 @@ func (s *serviceImpl) SetLogLevel(ctx context.Context, req *v1.LogLevelRequest) 
 	levelStr := req.GetLevel()
 	zapLevel, ok := logging.LevelForLabel(levelStr)
 	if !ok {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Unknown log level %s", levelStr)
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unknown log level %s", levelStr)
 	}
 
 	// If this is a global request, then set the global level and return
@@ -185,7 +185,7 @@ func (s *serviceImpl) SetLogLevel(ctx context.Context, req *v1.LogLevelRequest) 
 	}, req.GetModules())
 
 	if len(unknownModules) > 0 {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "Unknown module(s): %s", strings.Join(unknownModules, ", "))
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unknown module(s): %s", strings.Join(unknownModules, ", "))
 	}
 
 	return &types.Empty{}, nil

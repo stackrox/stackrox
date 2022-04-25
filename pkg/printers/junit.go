@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -143,12 +143,12 @@ func validateJUnitSuiteData(testCaseNames, failedTestCaseNames, failedTestCaseEr
 	amountSkippedTestCases := len(skippedTestCaseNames)
 
 	if amountTestCases < amountFailedTestCases+amountSkippedTestCases {
-		return errorhelpers.NewErrInvariantViolation(fmt.Sprintf("%d failed test cases are greater "+
+		return errox.NewErrInvariantViolation(fmt.Sprintf("%d failed test cases are greater "+
 			"than %d overall test cases", amountTestCases, amountFailedTestCases))
 	}
 
 	if len(failedTestCaseNames) != len(failedTestCaseErrorMessages) {
-		return errorhelpers.NewErrInvariantViolation(fmt.Sprintf("%d failed test cases and %d error "+
+		return errox.NewErrInvariantViolation(fmt.Sprintf("%d failed test cases and %d error "+
 			"messages are not matching", amountFailedTestCases, amountFailedTestCaseErrorMessages))
 	}
 	return nil
@@ -191,7 +191,7 @@ func createFailedTestCaseMap(failedTestCases []string, failedTestCaseErrorMessag
 	failedTestCaseMap := make(map[string]string, len(failedTestCases))
 	for i, name := range failedTestCases {
 		if _, exists := failedTestCaseMap[name]; exists {
-			return nil, errorhelpers.NewErrInvariantViolation(fmt.Sprintf("duplicate failed test "+
+			return nil, errox.NewErrInvariantViolation(fmt.Sprintf("duplicate failed test "+
 				"case %q found", name))
 		}
 		failedTestCaseMap[name] = failedTestCaseErrorMessages[i]

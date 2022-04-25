@@ -34,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
@@ -214,49 +215,74 @@ func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext
 
 	deployment, err := resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, "", "")
 	if err != nil {
-		return nil, errox.InvalidArgs.New("could not convert to deployment from resource").CausedBy(err.Error())
+		return nil, errox.InvalidArgs.New("could not convert to deployment from resource").CausedBy(err)
 	}
 	return s.enrichAndDetect(ctx, enrichmentContext, deployment, policyCategories...)
 }
 
-func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {
+func getObjectsFromYAML(yamlString string) (objects []k8sRuntime.Object, ignoredObjectRefs []string, err error) {
 	reader := yaml.NewYAMLReader(bufio.NewReader(bytes.NewBufferString(yamlString)))
-	var objects []k8sRuntime.Object
 	for {
 		yamlBytes, err := reader.Read()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return nil, errox.InvalidArgs.New("failed to read yaml").CausedBy(err.Error())
+			return nil, nil,
+				errox.InvalidArgs.New("failed to read yaml").CausedBy(err)
 		}
 		obj, _, err := workloadDeserializer.Decode(yamlBytes, nil, nil)
 		if err != nil {
-			return nil, errox.InvalidArgs.New("could not parse yaml").CausedBy(err.Error())
-		}
-		if list, ok := obj.(*coreV1.List); ok {
-			listResources, err := getObjectsFromList(list)
+			// Only return errors if the resource's schema is not registered.
+			if !k8sRuntime.IsNotRegisteredError(err) {
+				return nil, nil,
+					errox.InvalidArgs.New("could not parse yaml").CausedBy(err)
+			}
+			// Save the ignored object, so we can return it to the caller and skip it.
+			ignoredObj, err := getIgnoredObjectRefFromYAML(string(yamlBytes))
 			if err != nil {
-				return nil, err
+				return nil, nil,
+					errox.InvariantViolation.New("could not get ignored object").CausedBy(err)
+			}
+			ignoredObjectRefs = append(ignoredObjectRefs, ignoredObj)
+			continue
+		}
+
+		if list, ok := obj.(*coreV1.List); ok {
+			listResources, ignoredObjs, err := getObjectsFromList(list)
+			if err != nil {
+				return nil, nil, err
 			}
 			objects = append(objects, listResources...)
+			ignoredObjectRefs = append(ignoredObjectRefs, ignoredObjs...)
 		} else {
 			objects = append(objects, obj)
 		}
 	}
-	return objects, nil
+	return objects, ignoredObjectRefs, nil
 }
 
-func getObjectsFromList(list *coreV1.List) ([]k8sRuntime.Object, error) {
+func getObjectsFromList(list *coreV1.List) ([]k8sRuntime.Object, []string, error) {
 	objects := make([]k8sRuntime.Object, 0, len(list.Items))
+	var ignoredObjectsRefs []string
 	for i, item := range list.Items {
 		obj, _, err := workloadDeserializer.Decode(item.Raw, nil, nil)
-		if err != nil {
-			return nil, errox.InvalidArgs.Newf("could not decode item %d in the list", i).CausedBy(err.Error())
+		if err == nil {
+			objects = append(objects, obj)
+			continue
 		}
-		objects = append(objects, obj)
+
+		if !k8sRuntime.IsNotRegisteredError(err) {
+			return nil, nil,
+				errox.InvalidArgs.Newf("could not decode item %d in the list", i).CausedBy(err)
+		}
+		ignoredObjRef, err := getIgnoredObjectRefFromYAML(string(item.Raw))
+		if err != nil {
+			return nil, nil, errox.InvariantViolation.New("could not get ignored object").CausedBy(err)
+		}
+		ignoredObjectsRefs = append(ignoredObjectsRefs, ignoredObjRef)
 	}
-	return objects, nil
+	return objects, ignoredObjectsRefs, nil
 }
 
 // DetectDeployTimeFromYAML runs detection on a deployment.
@@ -265,7 +291,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		return nil, errox.NewErrInvalidArgs("yaml field must be specified in detection request")
 	}
 
-	resources, err := getObjectsFromYAML(req.GetYaml())
+	resources, ignoredObjectRefs, err := getObjectsFromYAML(req.GetYaml())
 	if err != nil {
 		return nil, err
 	}
@@ -281,14 +307,15 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	for _, r := range resources {
 		run, err := s.runDeployTimeDetect(ctx, eCtx, r, req.GetPolicyCategories())
 		if err != nil {
-			return nil, errox.InvalidArgs.New("unable to convert object").CausedBy(err.Error())
+			return nil, errox.InvalidArgs.New("unable to convert object").CausedBy(err)
 		}
 		if run != nil {
 			runs = append(runs, run)
 		}
 	}
 	return &apiV1.DeployDetectionResponse{
-		Runs: runs,
+		Runs:              runs,
+		IgnoredObjectRefs: ignoredObjectRefs,
 	}, nil
 }
 
@@ -365,4 +392,12 @@ func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDet
 			run,
 		},
 	}, nil
+}
+
+func getIgnoredObjectRefFromYAML(yaml string) (string, error) {
+	unstructured, err := k8sutil.UnstructuredFromYAML(yaml)
+	if err != nil {
+		return "", err
+	}
+	return k8sobjects.RefOf(unstructured).String(), nil
 }

@@ -101,7 +101,7 @@ func joinPathRecursive(currSchema, dstSchema *walker.Schema, joins *joins, visit
 		}
 
 		// Since we are going from child to parent, foreign keys in current schema map to primary keys in parent.
-		for _, fk := range currSchema.ForeignKeysReferencesTo(parent.Table) {
+		for _, fk := range currSchema.ParentKeysForTable(parent.Table) {
 			*joins = append(*joins, &join{
 				lhs: &joinPart{
 					table:      currSchema.Table,
@@ -122,7 +122,7 @@ func joinPathRecursive(currSchema, dstSchema *walker.Schema, joins *joins, visit
 		}
 
 		// Since we are going from parent to child, primary keys in current schema map to foreign keys in child.
-		for _, fk := range child.ForeignKeysReferencesTo(currSchema.Table) {
+		for _, fk := range child.ParentKeysForTable(currSchema.Table) {
 			*joins = append(*joins, &join{
 				lhs: &joinPart{
 					table:      currSchema.Table,

@@ -3414,7 +3414,7 @@ jobs:
       name: custom
       resource_class: medium
     environment:
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - LOAD_BALANCER: lb
       - ROX_PLAINTEXT_ENDPOINTS: "8080,grpc@8081"
@@ -3423,6 +3423,7 @@ jobs:
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
       - ROX_VERIFY_IMAGE_SIGNATURE: true
       - ROX_NETPOL_FIELDS: true
+      - ROX_NEW_POLICY_CATEGORIES: true
 
     steps:
       - checkout
@@ -3570,13 +3571,13 @@ jobs:
       name: custom
       resource_class: medium+
     environment:
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - LOAD_BALANCER: lb
       - OUTPUT_FORMAT: helm
       - ROX_SYSTEM_HEALTH_PF: true
       - ROX_POLICIES_PATTERNFLY: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
+      - ROX_NEW_POLICY_CATEGORIES: true
 
     steps:
       - checkout
@@ -3635,13 +3636,14 @@ jobs:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
       - GCP_IMAGE_TYPE: "COS"
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_NEW_POLICY_CATEGORIES: true
 
     steps:
       - run-qa-tests:
@@ -3657,7 +3659,7 @@ jobs:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
       - GCP_IMAGE_TYPE: "COS"
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -3682,7 +3684,7 @@ jobs:
     environment:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: kernel-module
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -3743,7 +3745,7 @@ jobs:
   gke-api-scale-tests:
     executor: custom
     environment:
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - STORAGE: pvc
       - STORAGE_CLASS: faster
@@ -3821,7 +3823,7 @@ jobs:
   gke-postgres-api-scale-tests:
     executor: custom
     environment:
-    - MONITORING_SUPPORT: true
+    - MONITORING_SUPPORT: false
     - SCANNER_SUPPORT: true
     - STORAGE: pvc
     - STORAGE_CLASS: faster
@@ -3891,7 +3893,7 @@ jobs:
     environment:
       - LOCAL_PORT: 8000
       - COLLECTION_METHOD: kernel-module
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
@@ -3934,7 +3936,7 @@ jobs:
       - EKS_AUTOMATION_VERSION: 0.2.17
       - LOCAL_PORT: 8000
       - COLLECTION_METHOD: kernel-module
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - ADMISSION_CONTROLLER: true
@@ -4022,7 +4024,7 @@ jobs:
     environment:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -4058,7 +4060,7 @@ jobs:
     environment:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -4282,7 +4284,7 @@ jobs:
       LOCAL_PORT: 443
       COLLECTION_METHOD: ebpf
       GCP_IMAGE_TYPE: "COS"
-      MONITORING_SUPPORT: "true"
+      MONITORING_SUPPORT: "false"
       SCANNER_SUPPORT: "true"
       ROX_BASELINE_GENERATION_DURATION: 1m
       LOAD_BALANCER: lb
@@ -4631,7 +4633,7 @@ jobs:
     environment:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -4670,7 +4672,7 @@ jobs:
     environment:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -4708,7 +4710,7 @@ jobs:
     environment:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -4753,7 +4755,7 @@ jobs:
     environment:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb

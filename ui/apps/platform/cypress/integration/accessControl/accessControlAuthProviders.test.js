@@ -27,10 +27,10 @@ const h2 = 'Auth providers';
 describe('Access Control Auth providers', () => {
     withAuth();
 
-    function visitAuthProviders() {
+    function visitAuthProviders(saveProviderMock = {}) {
         cy.intercept('GET', authProvidersApi.list).as('GetAuthProviders');
         cy.intercept('GET', mypermissionApi).as('GetMyPermissions');
-        cy.intercept('POST', authProvidersApi.create, {}).as('CreateAuthProvider');
+        cy.intercept('POST', authProvidersApi.create, saveProviderMock).as('CreateAuthProvider');
         cy.visit(authProvidersUrl);
         cy.wait('@GetAuthProviders');
         cy.wait('@GetMyPermissions');
@@ -241,10 +241,26 @@ describe('Access Control Auth providers', () => {
     });
 
     it('add User Certificates', () => {
-        visitAuthProviders();
+        const newProviderName = generateNameWithDate('User Cert Test Provide');
+
+        const mockUserCertResponse = {
+            id: '21b1003e-8f24-447f-a92e-0f8ff4a1274e',
+            name: newProviderName,
+            type: 'userpki',
+            uiEndpoint: 'localhost:3000',
+            enabled: true,
+            config: {
+                keys: '-----BEGIN CERTIFICATE-----\nMIICEjCCAXsCAg36MA0GCSqGSIb3DQEBBQUAMIGbMQswCQYDVQQGEwJKUDEOMAwG\nA1UECBMFVG9reW8xEDAOBgNVBAcTB0NodW8ta3UxETAPBgNVBAoTCEZyYW5rNERE\nMRgwFgYDVQQLEw9XZWJDZXJ0IFN1cHBvcnQxGDAWBgNVBAMTD0ZyYW5rNEREIFdl\nYiBDQTEjMCEGCSqGSIb3DQEJARYUc3VwcG9ydEBmcmFuazRkZC5jb20wHhcNMTIw\nODIyMDUyNjU0WhcNMTcwODIxMDUyNjU0WjBKMQswCQYDVQQGEwJKUDEOMAwGA1UE\nCAwFVG9reW8xETAPBgNVBAoMCEZyYW5rNEREMRgwFgYDVQQDDA93d3cuZXhhbXBs\nZS5jb20wXDANBgkqhkiG9w0BAQEFAANLADBIAkEAm/xmkHmEQrurE/0re/jeFRLl\n8ZPjBop7uLHhnia7lQG/5zDtZIUC3RVpqDSwBuw/NTweGyuP+o8AG98HxqxTBwID\nAQABMA0GCSqGSIb3DQEBBQUAA4GBABS2TLuBeTPmcaTaUW/LCB2NYOy8GMdzR1mx\n8iBIu2H6/E2tiY3RIevV2OW61qY2/XRQg7YPxx3ffeUugX9F4J/iPnnu1zAxxyBy\n2VguKv4SWjRFoRkIfIlHX0qVviMhSlNy2ioFLy7JcPZb+v3ftDGywUqcBiVDoea0\nHn+GmxZA\n-----END CERTIFICATE-----',
+            },
+            loginUrl: '/sso/login/21b1003e-8f24-447f-a92e-0f8ff4a1274e',
+            validated: false,
+            extraUiEndpoints: [],
+            active: false,
+        };
+
+        visitAuthProviders(mockUserCertResponse);
 
         const type = 'User Certificates';
-        const newProviderName = generateNameWithDate('User Cert Test Provide');
 
         cy.get(selectors.list.addButton).click();
         cy.get(`${selectors.list.authProviders.addDropdownItem}:contains("${type}")`).click();
@@ -281,6 +297,7 @@ describe('Access Control Auth providers', () => {
         cy.wait('@GetAuthProviders'); // wait for GET to finish, which means redirect back to list page
         cy.location().should((loc) => {
             expect(loc.pathname).to.eq('/main/access-control/auth-providers');
+            expect(loc.search).to.eq('');
         });
     });
 

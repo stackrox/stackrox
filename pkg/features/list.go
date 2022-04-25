@@ -6,14 +6,8 @@ var (
 	// csvExport enables CSV export of search results.
 	csvExport = registerFeature("Enable CSV export of search results", "ROX_CSV_EXPORT", false)
 
-	// ComplianceInRocksDB switches compliance over to using RocksDB instead of Bolt
-	ComplianceInRocksDB = registerFeature("Switch compliance to using RocksDB", "ROX_COMPLIANCE_IN_ROCKSDB", true)
-
 	// NetworkDetectionBaselineSimulation enables new features related to the baseline simulation part of the network detection experience.
 	NetworkDetectionBaselineSimulation = registerFeature("Enable network detection baseline simulation", "ROX_NETWORK_DETECTION_BASELINE_SIMULATION", true)
-
-	// NetworkDetectionBlockedFlows enables new features related to the blocked flows part of the network detection experience.
-	NetworkDetectionBlockedFlows = registerFeature("Enable blocked network flows experience", "ROX_NETWORK_DETECTION_BLOCKED_FLOWS", false)
 
 	// IntegrationsAsConfig enables loading integrations from config
 	IntegrationsAsConfig = registerFeature("Enable loading integrations from config", "ROX_INTEGRATIONS_AS_CONFIG", false)
@@ -33,9 +27,6 @@ var (
 	// PoliciesPatternFly enables the PatternFly version of Policies. (used in the front-end app only)
 	PoliciesPatternFly = registerFeature("Enable PatternFly version of Policies", "ROX_POLICIES_PATTERNFLY", true)
 
-	// VulnReporting enables scheduled vulnerability reporting workflow, that allows the creation and management of vulnerability reporting configurations.
-	VulnReporting = registerFeature("Enable creation of scheduled vulnerability reports to be sent via email notifier", "ROX_VULN_REPORTING", true)
-
 	// LocalImageScanning enables OpenShift local-image scanning.
 	LocalImageScanning = registerFeature("Enable OpenShift local-image scanning", "ROX_LOCAL_IMAGE_SCANNING", true)
 
@@ -51,4 +42,7 @@ var (
 	// NetworkPolicySystemPolicy enables two system policy fields (Missing (Ingress|Egress) Network Policy) to check deployments
 	// against network policies applied in the secured cluster.
 	NetworkPolicySystemPolicy = registerFeature("Enable NetworkPolicy-related system policy fields", "ROX_NETPOL_FIELDS", false)
+
+	// NewPolicyCategories enables new policy categories as first-class entities.
+	NewPolicyCategories = registerFeature("Enable new policy categories as first-class entities", "ROX_NEW_POLICY_CATEGORIES", false)
 )
