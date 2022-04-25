@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	hasIngressNetworkPolicy = `The deployment {{if .HasIngress}} has{{else}} is missing{{end}} Ingress Network Policy.`
-	hasEgressNetworkPolicy  = `The deployment {{if .HasEgress}} has{{else}} is missing{{end}} Egress Network Policy.`
+	hasIngressNetworkPolicy = `The deployment{{if .HasIngress}} has{{else}} is missing{{end}} Ingress Network Policy.`
+	hasEgressNetworkPolicy  = `The deployment{{if .HasEgress}} has{{else}} is missing{{end}} Egress Network Policy.`
 )
 
 const (
