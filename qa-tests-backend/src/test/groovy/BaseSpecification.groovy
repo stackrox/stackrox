@@ -32,7 +32,6 @@ import util.OnFailure
 
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
-import java.text.SimpleDateFormat
 
 @Slf4j
 @Retry(condition = { Helpers.determineRetry(failure) })
@@ -402,10 +401,8 @@ class BaseSpecification extends Specification {
         return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOBNAME == "race-condition-tests"
     }
 
-    static Void printlnDated(String msg) {
-        def date = new Date()
-        def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-        println "${sdf.format(date)} ${msg}"
+    static void printlnDated(String msg) {
+        log.info(msg)
     }
 }
 

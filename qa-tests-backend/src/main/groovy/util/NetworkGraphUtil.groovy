@@ -90,13 +90,13 @@ class NetworkGraphUtil {
                 if (targetNodeIndex != -1 && it.key != targetNodeIndex) {
                     return []
                 }
-                log.println "Source Id ${currentSourceId} -> edge target key: ${it.key}"
+                log.debug "Source Id ${currentSourceId} -> edge target key: ${it.key}"
                 def targetNode = graph.nodesList.get(it.key)
-                log.println "  -> targetId: ${targetNode.deploymentId}"
+                log.debug "  -> targetId: ${targetNode.deploymentId}"
 
                 def props = it.value.propertiesList
                 props.forEach {
-                    edgeProp -> log.println "    -> edge: ${edgeProp.port} ${edgeProp.protocol} "+
+                    edgeProp -> log.debug "    -> edge: ${edgeProp.port} ${edgeProp.protocol} "+
                             "${edgeProp.lastActiveTimestamp.seconds}.${edgeProp.lastActiveTimestamp.nanos}"
                 }
                 if (props == null || props.empty) {
