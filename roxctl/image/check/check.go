@@ -193,7 +193,7 @@ func (i *imageCheckCommand) checkImage() error {
 
 func (i *imageCheckCommand) printResults(alerts []*storage.Alert) error {
 	// create the alert summary object
-	policySummary := policy.NewPolicySummaryForPrinting(alerts, storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT)
+	policySummary, _ := policy.NewPolicySummaryForPrinting(alerts, storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT)
 	amountBuildBreakingPolicies := policySummary.GetTotalAmountOfBreakingPolicies()
 
 	// TODO: Remove this once the old output format is fully deprecated

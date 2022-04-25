@@ -95,6 +95,5 @@
     "[34;2mLOW[0m": 1,
     "[33mMEDIUM[0m": 3,
     "TOTAL": 6
-  },
-  "NetworkPolicyEncountered": false
+  }
 }

@@ -66,7 +66,7 @@ func checkNetworkPolicyField(p *storage.Policy) bool {
 // all relevant information regarding violated policies, failing policies and a summary of all violated policies
 // by severity
 // NOTE: The returned *Result CAN be passed to json.Marshal
-func NewPolicySummaryForPrinting(alerts []*storage.Alert, forbiddenEnforcementAction storage.EnforcementAction) *Result {
+func NewPolicySummaryForPrinting(alerts []*storage.Alert, forbiddenEnforcementAction storage.EnforcementAction) (*Result, bool) {
 	entityMetadataMap := createEntityMetadataMap(alerts)
 	numOfSeveritiesByEntities := createNumOfSeverityByEntity(entityMetadataMap)
 	numOfSeveritiesAcrossEntities := createNumOfSeverityMap()
@@ -120,10 +120,9 @@ func NewPolicySummaryForPrinting(alerts []*storage.Alert, forbiddenEnforcementAc
 	resultsForEntities := createResultsForEntities(entityMetadataMap, policiesByEntity, numOfSeveritiesByEntities)
 
 	return &Result{
-		Results:                  resultsForEntities,
-		Summary:                  numOfSeveritiesAcrossEntities,
-		NetworkPolicyEncountered: foundNetworkPolicyFields,
-	}
+		Results: resultsForEntities,
+		Summary: numOfSeveritiesAcrossEntities,
+	}, foundNetworkPolicyFields
 }
 
 // createResultsForEntities will create a EntityResult for each entity and add the corresponding violated
@@ -282,9 +281,8 @@ func sortMetadataByEntity(metadata []EntityMetadata) []EntityMetadata {
 
 // Result represents a summary of found violated policies on an entity basis (entity being either an image or a deployment)
 type Result struct {
-	Results                  []EntityResult `json:"results,omitempty"`
-	Summary                  map[string]int `json:"summary,omitempty"`
-	NetworkPolicyEncountered bool
+	Results []EntityResult `json:"results,omitempty"`
+	Summary map[string]int `json:"summary,omitempty"`
 }
 
 // GetTotalAmountOfBreakingPolicies calculates the amount of breaking policies for all EntityResult

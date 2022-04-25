@@ -206,9 +206,9 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 
 	// TODO: Need to refactor this to include additional summary info for non-standardized formats
 	// as well as multiple results for each deployment
-	policySummary := policy.NewPolicySummaryForPrinting(alerts, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT)
+	policySummary, networkPolicyEncountered := policy.NewPolicySummaryForPrinting(alerts, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT)
 
-	if policySummary.NetworkPolicyEncountered {
+	if networkPolicyEncountered {
 		d.env.Logger().WarnfLn("Ingress/Egress Network Policy criteria will not be evaluated")
 	}
 
