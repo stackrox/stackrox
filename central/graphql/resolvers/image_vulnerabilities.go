@@ -2,9 +2,12 @@ package resolvers
 
 import (
 	"context"
+	"time"
 
+	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -14,41 +17,41 @@ func init() {
 	utils.Must(
 		schema.AddType("EmbeddedImageVulnerability", []string{
 			"id: ID!",
-			//	"cve: String!",
-			//	"cvss: Float!",
-			//	"scoreVersion: String!",
-			//	"vectors: EmbeddedVulnerabilityVectors",
-			//	"link: String!",
-			//	"summary: String!",
-			//	"fixedByVersion: String!",
-			//	"isFixable(query: String): Boolean!",
-			//	"lastScanned: Time",
-			//	"createdAt: Time", // Discovered At System
-			//	"discoveredAtImage(query: String): Time",
-			//	"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
-			//	"componentCount(query: String): Int!",
-			//	"images(query: String, pagination: Pagination): [Image!]!",
-			//	"imageCount(query: String): Int!",
-			//	"deployments(query: String, pagination: Pagination): [Deployment!]!",
-			//	"deploymentCount(query: String): Int!",
-			//	"envImpact: Float!",
-			//	"severity: String!",
-			//	"publishedOn: Time",
-			//	"lastModified: Time",
-			//	"impactScore: Float!",
-			//	"vulnerabilityType: String!",
-			//	"vulnerabilityTypes: [String!]!",
-			//	"suppressed: Boolean!",
-			//	"suppressActivation: Time",
-			//	"suppressExpiry: Time",
-			//	"activeState(query: String): ActiveState",
-			//	"vulnerabilityState: String!",
-			//	"effectiveVulnerabilityRequest: VulnerabilityRequest",
+			"cve: String!",
+			"cvss: Float!",
+			"scoreVersion: String!",
+			"vectors: EmbeddedVulnerabilityVectors",
+			"link: String!",
+			"summary: String!",
+			"fixedByVersion: String!",
+			"isFixable(query: String): Boolean!",
+			"lastScanned: Time",
+			"createdAt: Time", // Discovered At System
+			"discoveredAtImage(query: String): Time",
+			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
+			"componentCount(query: String): Int!",
+			"images(query: String, pagination: Pagination): [Image!]!",
+			"imageCount(query: String): Int!",
+			"deployments(query: String, pagination: Pagination): [Deployment!]!",
+			"deploymentCount(query: String): Int!",
+			"envImpact: Float!",
+			"severity: String!",
+			"publishedOn: Time",
+			"lastModified: Time",
+			"impactScore: Float!",
+			"vulnerabilityType: String!",
+			"vulnerabilityTypes: [String!]!",
+			"suppressed: Boolean!",
+			"suppressActivation: Time",
+			"suppressExpiry: Time",
+			"activeState(query: String): ActiveState",
+			"vulnerabilityState: String!",
+			"effectiveVulnerabilityRequest: VulnerabilityRequest",
 		}),
-		//schema.AddQuery("imageVulnerability(id: ID): EmbeddedImageVulnerability"),
+		schema.AddQuery("imageVulnerability(id: ID): EmbeddedImageVulnerability"),
 		schema.AddQuery("imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedImageVulnerability!]!"),
 		schema.AddQuery("imageVulnerabilityCount(query: String): Int!"),
-		//schema.AddExtraResolver("EmbeddedImageVulnerability", `unusedVarSink(query: String): Int`),
+		schema.AddExtraResolver("EmbeddedImageVulnerability", `unusedVarSink(query: String): Int`),
 	)
 }
 
@@ -74,10 +77,9 @@ func init() {
 //	return vulnResolver, nil
 //}
 
-// ImageVulnerabilities resolves a set of vulnerabilities based on a query.
+// ImageVulnerabilities resolves a set of image vulnerabilities based on a query.
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]VulnerabilityResolver, error) {
-	//defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Vulnerabilities")
-	log.Errorf("osward -- ImageVulnerabilities")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
 	if features.PostgresDatastore.Enabled() {
 		// TODO add postgres support
 		return nil, nil
@@ -86,30 +88,36 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		if err != nil {
 			return nil, err
 		}
-		log.Errorf("osward -- baseQuery %s", baseQuery)
+
+		scopeQuery, err := q.AsV1ScopeQueryOrEmpty()
+		if err != nil {
+			return nil, err
+		}
+
+		ctx, err = resolver.AddDistroContext(ctx, baseQuery, scopeQuery)
+		if err != nil {
+			return nil, err
+		}
+
 		newQuery, err := filterToImageVulns(baseQuery)
 		if err != nil {
 			return nil, err
 		}
-		log.Errorf("osward -- newQuery %s", newQuery)
 		return resolver.vulnerabilitiesV2Query(ctx, newQuery)
 	}
 }
 
-// ImageVulnerabilityCount returns count of all clusters across infrastructure
+// ImageVulnerabilityCount returns count of all image vulnerabilities across infrastructure
 func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
-	log.Errorf("osward -- ImageVulnerabilityCount")
-	//defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnerabilityCount")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCount")
 	baseQuery, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
-	log.Errorf("osward -- baseQuery %s", baseQuery)
 	newQuery, err := filterToImageVulns(baseQuery)
 	if err != nil {
 		return 0, err
 	}
-	log.Errorf("osward -- newQuery %s", newQuery)
 	return resolver.vulnerabilityCountV2Query(ctx, newQuery)
 }
 
@@ -120,19 +128,21 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 //	return resolver.vulnCounterV2(ctx, args)
 //}
 
+// filterToImageVulns adds filtering to vulnerability type `image` as a conjunction to the query for use with legacy api
 func filterToImageVulns(baseQuery *v1.Query) (*v1.Query, error) {
-	filterImageQuery := &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchFieldQuery{
-					MatchFieldQuery: &v1.MatchFieldQuery{
-						Field: "CVE Type",
-						Value: "image",
-					},
-				},
-			},
-		},
-	}
+	filterImageQuery := search.NewQueryBuilder().AddExactMatches("CVE Type", "image").ProtoQuery()
+	//	 &v1.Query{
+	//	Query: &v1.Query_BaseQuery{
+	//		BaseQuery: &v1.BaseQuery{
+	//			Query: &v1.BaseQuery_MatchFieldQuery{
+	//				MatchFieldQuery: &v1.MatchFieldQuery{
+	//					Field: "CVE Type",
+	//					Value: "image",
+	//				},
+	//			},
+	//		},
+	//	},
+	//}
 
 	newQuery, err := search.AddAsConjunction(filterImageQuery, baseQuery)
 	if err != nil {
