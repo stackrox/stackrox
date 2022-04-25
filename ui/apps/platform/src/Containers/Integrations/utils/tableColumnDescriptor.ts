@@ -34,24 +34,6 @@ type IntegrationTableColumnDescriptorMap = {
 
 const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
     authProviders: {
-        /*
-        oidc: [
-            { accessor: 'name', Header: 'Name' },
-            { accessor: 'config.issuer', Header: 'Issuer' },
-        ],
-        auth0: [
-            { accessor: 'name', Header: 'Name' },
-            { accessor: 'config.issuer', Header: 'Auth0 Tenant' },
-        ],
-        saml: [
-            { accessor: 'name', Header: 'Name' },
-            { accessor: 'config.idp_issuer', Header: 'Issuer' },
-        ],
-        iap: [
-            { accessor: 'name', Header: 'Name' },
-            { accessor: 'config.audience', Header: 'Audience' },
-        ],
-        */
         clusterInitBundle: [{ accessor: 'name', Header: 'Name' }],
         apitoken: [
             { accessor: 'name', Header: 'Name' },
