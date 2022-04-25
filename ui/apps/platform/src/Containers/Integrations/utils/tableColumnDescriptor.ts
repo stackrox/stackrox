@@ -32,7 +32,7 @@ type IntegrationTableColumnDescriptorMap = {
     signatureIntegrations: Record<SignatureIntegrationType, IntegrationTableColumnDescriptor[]>;
 };
 
-const tableColumnDescriptor: IntegrationTableColumnDescriptorMap = {
+const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
     authProviders: {
         /*
         oidc: [
