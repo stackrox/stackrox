@@ -45,7 +45,7 @@ func getFakePolicyRequest(policyName, fieldName string) *v1.PostPolicyRequest {
 							Negate:          false,
 							Values: []*storage.PolicyValue{
 								{
-									Value: "true",
+									Value: "false",
 								},
 							},
 						},
