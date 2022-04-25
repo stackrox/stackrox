@@ -62,6 +62,10 @@ class SACTest extends BaseSpecification {
 
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 600 : 60
 
+    // Increase the timeout for race-condition tests. By default, we will wait 60 seconds, on race-condition tests
+    // we will wait 600 seconds.
+    static final private Integer WAIT_FOR_RISK_RETRIES = isRaceBuild() ? 300 : 30
+
     def setupSpec() {
         // Make sure we scan the image initially to make reprocessing faster.
         def img = Services.scanImage(TEST_IMAGE)
@@ -81,7 +85,7 @@ class SACTest extends BaseSpecification {
         def deployments = DeploymentService.listDeployments()
         deployments.each { DeploymentOuterClass.ListDeployment dep ->
             try {
-                withRetry(30, 2) {
+                withRetry(WAIT_FOR_RISK_RETRIES, 2) {
                     assert DeploymentService.getDeploymentWithRisk(dep.id).hasRisk()
                 }
             } catch (Exception e) {
