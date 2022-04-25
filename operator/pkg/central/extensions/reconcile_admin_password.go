@@ -194,7 +194,7 @@ func (r *reconcileAdminPasswordExtensionRun) generateHtpasswdSecretData() (types
 func (r *reconcileAdminPasswordExtensionRun) viewPasswordInstructionsMessage() string {
 	return fmt.Sprintf(
 		"A password for the 'admin' user has been automatically generated and stored in the %q entry of the central-htpasswd secret.\n"+
-			"To view the password click the secret reference below or run\n"+
+			"To view the password see the secret reference field or run\n"+
 			`  oc -n %s get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}'`,
 		adminPasswordKey, r.Namespace())
 }
