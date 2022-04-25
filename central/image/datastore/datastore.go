@@ -40,6 +40,7 @@ type DataStore interface {
 	GetImagesBatch(ctx context.Context, shas []string) ([]*storage.Image, error)
 
 	UpsertImage(ctx context.Context, image *storage.Image) error
+	UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error
 
 	DeleteImages(ctx context.Context, ids ...string) error
 	Exists(ctx context.Context, id string) (bool, error)
