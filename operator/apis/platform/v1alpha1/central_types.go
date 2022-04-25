@@ -329,17 +329,9 @@ type AdminPasswordStatus struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=status,order=1,displayName="Admin Credentials Info"
 	Info string `json:"info,omitempty"`
 
-	// Reference contains reference for the admin password
+	// AdminPasswordSecret contains reference for the admin password
 	//+operator-sdk:csv:customresourcedefinitions:type=status,xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret"}
-	Reference string `json:"passwordReference,omitempty"`
-
-	// SecretRef contains secret reference for the admin password
-	//+operator-sdk:csv:customresourcedefinitions:type=status,xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret"}
-	SecretRef string `json:"secretRef,omitempty"`
-
-	// SecretName contains reference for the admin password
-	//+operator-sdk:csv:customresourcedefinitions:type=status,xDescriptors={"urn:alm:descriptor:io.kubernetes:Secret"}
-	SecretName *LocalSecretReference `json:"adminPasswordSecret"`
+	AdminPasswordSecret string `json:"adminPasswordSecret,omitempty"`
 }
 
 // CentralComponentStatus describes status specific to the central component.

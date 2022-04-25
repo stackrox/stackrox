@@ -297,19 +297,9 @@ spec:
         path: productVersion
       - displayName: Central
         path: central
-      - description: SecretName contains reference for the admin password
-        displayName: Secret Name
+      - description: AdminPasswordSecret contains reference for the admin password
+        displayName: Admin Password Secret
         path: central.adminPassword.adminPasswordSecret
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Reference contains reference for the admin password
-        displayName: Reference
-        path: central.adminPassword.passwordReference
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: SecretRef contains secret reference for the admin password
-        displayName: Secret Ref
-        path: central.adminPassword.secretRef
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
       version: v1alpha1
