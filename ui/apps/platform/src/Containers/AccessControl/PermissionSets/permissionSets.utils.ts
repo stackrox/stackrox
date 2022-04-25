@@ -1,5 +1,6 @@
 import { defaultMinimalReadAccessResources } from 'constants/accessControl';
 import { AccessLevel, PermissionsMap, PermissionSet } from 'services/RolesService';
+import { IsDeprecatedResource } from 'types/roleResources';
 
 /*
  * Return a new permission set with default minimal read access.
@@ -90,4 +91,21 @@ export function getWriteAccessCount(resourceToAccess: PermissionsMap): number {
     });
 
     return count;
+}
+
+export function splitDeprecatedResources(
+    resourceToAccess: PermissionsMap
+): [PermissionsMap, PermissionsMap] {
+    const deprecated: PermissionsMap = {};
+    const current: PermissionsMap = {};
+
+    // eslint-disable-next-line no-restricted-syntax
+    for (const r in resourceToAccess) {
+        if (IsDeprecatedResource(r)) {
+            deprecated[r] = resourceToAccess[r];
+        } else {
+            current[r] = resourceToAccess[r];
+        }
+    }
+    return [current, deprecated];
 }
