@@ -17,7 +17,7 @@ func init() {
 	utils.Must(
 		schema.AddType("EmbeddedImageVulnerability", []string{
 			"id: ID!",
-			//"cve: String!",
+			"cve: String!",
 			//	"cvss: Float!",
 			//	"scoreVersion: String!",
 			//	"vectors: EmbeddedVulnerabilityVectors",
