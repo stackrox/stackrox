@@ -102,6 +102,8 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique bool) 
 			// primary key since the owning entity's primary key is what we'd like to use
 			opts.IgnorePrimaryKey = true
 
+		case field == "id":
+			opts.ID = true
 		case field == "pk":
 			// if we have a child object, we don't want to propagate its primary key
 			// an example of this is process_indicator.  It is its own object
@@ -118,6 +120,12 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique bool) 
 				TypeName:      typeName,
 				ProtoBufField: ref,
 			}
+		case field == "no-fk-constraint":
+			// This column depends on a column in other table, but does not have a explicit fk constraint.
+			if opts.Reference == nil {
+				opts.Reference = &foreignKeyRef{}
+			}
+			opts.Reference.NoConstraint = true
 		case field == "":
 		default:
 			// ignore for just right now

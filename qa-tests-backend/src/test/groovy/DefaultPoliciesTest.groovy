@@ -95,7 +95,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             .setCommand(["sleep", "600"]),
         new Deployment()
             .setName(NGINX_1_10)
-            .setImage("docker.io/nginx:1.10")
+            .setImage("quay.io/rhacs-eng/qa:docker-io-nginx-1-10")
             .addLabel("app", "test"),
         new Deployment()
             .setName(GCR_NGINX)

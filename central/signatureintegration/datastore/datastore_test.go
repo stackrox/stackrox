@@ -5,13 +5,18 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
+	policyDataStoreMock "github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	signatureRocksdb "github.com/stackrox/rox/central/signatureintegration/store/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -27,9 +32,10 @@ type signatureDataStoreTestSuite struct {
 	hasWriteCtx context.Context
 	noAccessCtx context.Context
 
-	dataStore DataStore
-	storage   signatureRocksdb.Store
-	rocksie   *rocksdb.RocksDB
+	dataStore         DataStore
+	storage           signatureRocksdb.Store
+	rocksie           *rocksdb.RocksDB
+	policyStorageMock *policyDataStoreMock.MockDataStore
 }
 
 func (s *signatureDataStoreTestSuite) SetupTest() {
@@ -47,7 +53,10 @@ func (s *signatureDataStoreTestSuite) SetupTest() {
 	var err error
 	s.storage, err = signatureRocksdb.New(s.rocksie)
 	s.Require().NoError(err)
-	s.dataStore = New(s.storage)
+
+	s.policyStorageMock = policyDataStoreMock.NewMockDataStore(gomock.NewController(s.T()))
+
+	s.dataStore = New(s.storage, s.policyStorageMock)
 }
 
 func (s *signatureDataStoreTestSuite) TestAddSignatureIntegration() {
@@ -137,6 +146,9 @@ func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegration() {
 	s.NoError(err)
 	s.NotNil(savedIntegration)
 
+	// Set the mock to return empty policy.
+	s.policyStorageMock.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, nil).AnyTimes()
+
 	// 1. Removed integration is not accessible via GetSignatureIntegration
 	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, savedIntegration.GetId())
 	s.NoError(err)
@@ -150,6 +162,51 @@ func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegration() {
 	// 3. Removing non-existent id should return NotFound
 	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, "nonExistentRemoveId")
 	s.ErrorIs(err, errox.NotFound)
+}
+
+func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegrationReferencedByPolicy() {
+	signatureIntegration := newSignatureIntegration("name")
+	savedIntegration, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, signatureIntegration)
+	s.NoError(err)
+	s.NotNil(savedIntegration)
+
+	// 1. Return a policy that will reference the signature integration.
+	s.policyStorageMock.EXPECT().GetAllPolicies(gomock.Any()).Return([]*storage.Policy{{
+		Name: "policy-referencing-integration",
+		PolicySections: []*storage.PolicySection{{
+			PolicyGroups: []*storage.PolicyGroup{{
+				FieldName: search.ImageSignatureVerifiedBy.String(),
+				Values: []*storage.PolicyValue{{
+					Value: savedIntegration.GetId(),
+				}}}}}}}}, nil).MaxTimes(2)
+
+	// 2. Removing the integration should fail due to the existing reference.
+	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, savedIntegration.GetId())
+	s.Error(err)
+	s.ErrorIs(err, errox.ReferencedByAnotherObject)
+
+	// 3. Return an error when retrieving policies.
+	s.policyStorageMock.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, errors.New("some error"))
+
+	// 4. Removing the integration should fail due to an error when retrieving policies.
+	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, savedIntegration.GetId())
+	s.Error(err)
+
+	// 5. Return a policy that does not reference the signature integration.
+	s.policyStorageMock.EXPECT().GetAllPolicies(gomock.Any()).Return([]*storage.Policy{{
+		Name: "policy-referencing-integration",
+		PolicySections: []*storage.PolicySection{{
+			PolicyGroups: []*storage.PolicyGroup{{
+				FieldName: "some other field",
+				Values: []*storage.PolicyValue{{
+					Value: "some other value",
+				}}}}}}}}, nil).MaxTimes(2)
+
+	// 6. Removing the integration should work now and is not accessible via GetSignatureIntegration.
+	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, savedIntegration.GetId())
+	s.NoError(err)
+	_, found, _ := s.dataStore.GetSignatureIntegration(s.hasReadCtx, savedIntegration.GetId())
+	s.False(found)
 }
 
 func (s *signatureDataStoreTestSuite) TestGetAllSignatureIntegrations() {
@@ -209,4 +266,49 @@ func newSignatureIntegration(name string) *storage.SignatureIntegration {
 
 func (s *signatureDataStoreTestSuite) TearDownTest() {
 	rocksdbtest.TearDownRocksDB(s.rocksie)
+}
+
+func TestRemovePoliciesInvisibleToUser(t *testing.T) {
+	cases := map[string]struct {
+		policiesVisibleToUser []*storage.Policy
+		policiesWithReference []string
+		expectedOutput        []string
+	}{
+		"empty policies visible to user": {
+			policiesVisibleToUser: nil,
+			policiesWithReference: []string{"policyA", "policyB"},
+			expectedOutput:        []string{"<hidden>"},
+		},
+		"policies visible to user and policies with references are equal": {
+			policiesVisibleToUser: []*storage.Policy{
+				{Name: "policyA"},
+				{Name: "policyB"},
+			},
+			policiesWithReference: []string{"policyA", "policyB"},
+			expectedOutput:        []string{"policyA", "policyB"},
+		},
+		"policies visible to user are greater than policies with references": {
+			policiesVisibleToUser: []*storage.Policy{
+				{Name: "policyA"},
+				{Name: "policyB"},
+				{Name: "policyC"},
+			},
+			policiesWithReference: []string{"policyA", "policyB"},
+			expectedOutput:        []string{"policyA", "policyB"},
+		},
+		"policies visible to user are less than policies with references": {
+			policiesVisibleToUser: []*storage.Policy{
+				{Name: "policyA"},
+			},
+			policiesWithReference: []string{"policyA", "policyB"},
+			expectedOutput:        []string{"policyA", "<hidden>"},
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			result := removePoliciesInvisibleToUser(c.policiesVisibleToUser, c.policiesWithReference)
+			assert.ElementsMatch(t, c.expectedOutput, result)
+		})
+	}
 }

@@ -4,28 +4,31 @@ package postgres
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 const (
-	baseTable  = "image_component_relation"
-	countStmt  = "SELECT COUNT(*) FROM image_component_relation"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_relation WHERE ImageId = $1 AND ImageComponentId = $2)"
+	baseTable  = "image_component_relations"
+	countStmt  = "SELECT COUNT(*) FROM image_component_relations"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_relations WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3 AND ImageComponentName = $4 AND ImageComponentVersion = $5 AND ImageComponentOperatingSystem = $6)"
 
-	getStmt    = "SELECT serialized FROM image_component_relation WHERE ImageId = $1 AND ImageComponentId = $2"
-	deleteStmt = "DELETE FROM image_component_relation WHERE ImageId = $1 AND ImageComponentId = $2"
-	walkStmt   = "SELECT serialized FROM image_component_relation"
+	getStmt     = "SELECT serialized FROM image_component_relations WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3 AND ImageComponentName = $4 AND ImageComponentVersion = $5 AND ImageComponentOperatingSystem = $6"
+	deleteStmt  = "DELETE FROM image_component_relations WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3 AND ImageComponentName = $4 AND ImageComponentVersion = $5 AND ImageComponentOperatingSystem = $6"
+	walkStmt    = "SELECT serialized FROM image_component_relations"
+	getIDsStmt  = "SELECT Id FROM image_component_relations"
+	getManyStmt = "SELECT serialized FROM image_component_relations WHERE Id = ANY($1::text[])"
+
+	deleteManyStmt = "DELETE FROM image_component_relations WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -36,20 +39,16 @@ const (
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.ImageComponentEdge)(nil)), baseTable).
-		WithReference(walker.Walk(reflect.TypeOf((*storage.Image)(nil)), "images")).
-		WithReference(walker.Walk(reflect.TypeOf((*storage.ImageComponent)(nil)), "image_components"))
-	log = logging.LoggerForModule()
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.ImageComponentRelationsSchema
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, imageId string, imageComponentId string) (bool, error)
-	Get(ctx context.Context, imageId string, imageComponentId string) (*storage.ImageComponentEdge, bool, error)
+	Exists(ctx context.Context, id string, imageId string, imageComponentId string, imageComponentName string, imageComponentVersion string, imageComponentOperatingSystem string) (bool, error)
+	Get(ctx context.Context, id string, imageId string, imageComponentId string, imageComponentName string, imageComponentVersion string, imageComponentOperatingSystem string) (*storage.ImageComponentEdge, bool, error)
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponentEdge, []int, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.ImageComponentEdge) error) error
 
@@ -61,142 +60,11 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableImages(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists images (
-    Id varchar,
-    Name_Registry varchar,
-    Name_Remote varchar,
-    Name_Tag varchar,
-    Name_FullName varchar,
-    Metadata_V1_Created timestamp,
-    Metadata_V1_User varchar,
-    Metadata_V1_Command text[],
-    Metadata_V1_Entrypoint text[],
-    Metadata_V1_Volumes text[],
-    Metadata_V1_Labels jsonb,
-    Scan_ScanTime timestamp,
-    Scan_OperatingSystem varchar,
-    Signature_Fetched timestamp,
-    Components integer,
-    Cves integer,
-    FixableCves integer,
-    LastUpdated timestamp,
-    RiskScore numeric,
-    TopCvss numeric,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableImagesLayers(ctx, db)
-}
-
-func createTableImagesLayers(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists images_Layers (
-    images_Id varchar,
-    idx integer,
-    Instruction varchar,
-    Value varchar,
-    PRIMARY KEY(images_Id, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists imagesLayers_idx on images_Layers using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableImageComponents(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists image_components (
-    Id varchar,
-    Name varchar,
-    Version varchar,
-    Source integer,
-    RiskScore numeric,
-    TopCvss numeric,
-    OperatingSystem varchar,
-    serialized bytea,
-    PRIMARY KEY(Id, Name, Version, OperatingSystem)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableImageComponentRelation(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists image_component_relation (
-    image_components_Name varchar,
-    image_components_Version varchar,
-    image_components_OperatingSystem varchar,
-    Location varchar,
-    ImageId varchar,
-    ImageComponentId varchar,
-    serialized bytea,
-    PRIMARY KEY(image_components_Name, image_components_Version, image_components_OperatingSystem, ImageId, ImageComponentId),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE,
-    CONSTRAINT fk_parent_table_1 FOREIGN KEY (ImageComponentId, image_components_Name, image_components_Version, image_components_OperatingSystem) REFERENCES image_components(Id, Name, Version, OperatingSystem) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableImages(ctx, db)
-	createTableImageComponents(ctx, db)
-	createTableImageComponentRelation(ctx, db)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImagesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentRelationsStmt)
 
 	return &storeImpl{
 		db: db,
@@ -216,10 +84,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, imageId string, imageComponentId string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string, imageId string, imageComponentId string, imageComponentName string, imageComponentVersion string, imageComponentOperatingSystem string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ImageComponentEdge")
 
-	row := s.db.QueryRow(ctx, existsStmt, imageId, imageComponentId)
+	row := s.db.QueryRow(ctx, existsStmt, id, imageId, imageComponentId, imageComponentName, imageComponentVersion, imageComponentOperatingSystem)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -228,7 +96,7 @@ func (s *storeImpl) Exists(ctx context.Context, imageId string, imageComponentId
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, imageId string, imageComponentId string) (*storage.ImageComponentEdge, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string, imageId string, imageComponentId string, imageComponentName string, imageComponentVersion string, imageComponentOperatingSystem string) (*storage.ImageComponentEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageComponentEdge")
 
 	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageComponentEdge")
@@ -237,7 +105,7 @@ func (s *storeImpl) Get(ctx context.Context, imageId string, imageComponentId st
 	}
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, imageId, imageComponentId)
+	row := conn.QueryRow(ctx, getStmt, id, imageId, imageComponentId, imageComponentName, imageComponentVersion, imageComponentOperatingSystem)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -257,6 +125,74 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 		return nil, nil, err
 	}
 	return conn, conn.Release, nil
+}
+
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ImageComponentEdgeIDs")
+
+	rows, err := s.db.Query(ctx, getIDsStmt)
+	if err != nil {
+		return nil, pgutils.ErrNilIfNoRows(err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponentEdge, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageComponentEdge")
+
+	conn, release, err := s.acquireConn(ctx, ops.GetMany, "ImageComponentEdge")
+	if err != nil {
+		return nil, nil, err
+	}
+	defer release()
+
+	rows, err := conn.Query(ctx, getManyStmt, ids)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			missingIndices := make([]int, 0, len(ids))
+			for i := range ids {
+				missingIndices = append(missingIndices, i)
+			}
+			return nil, missingIndices, nil
+		}
+		return nil, nil, err
+	}
+	defer rows.Close()
+	resultsByID := make(map[string]*storage.ImageComponentEdge)
+	for rows.Next() {
+		var data []byte
+		if err := rows.Scan(&data); err != nil {
+			return nil, nil, err
+		}
+		msg := &storage.ImageComponentEdge{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, nil, err
+		}
+		resultsByID[msg.GetId()] = msg
+	}
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.ImageComponentEdge, 0, len(resultsByID))
+	for i, id := range ids {
+		if result, ok := resultsByID[id]; !ok {
+			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
+		}
+	}
+	return elems, missingIndices, nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
@@ -284,13 +220,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ImageComponen
 
 //// Used for testing
 
-func dropTableImageComponentRelation(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_relation CASCADE")
+func dropTableImageComponentRelations(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_relations CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableImageComponentRelation(ctx, db)
+	dropTableImageComponentRelations(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

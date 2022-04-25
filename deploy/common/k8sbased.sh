@@ -221,8 +221,6 @@ function launch_central {
     if [[ "${needs_monitoring}" == "true" ]]; then
         echo "Deploying Monitoring..."
         helm_args=(
-          -f "${COMMON_DIR}/monitoring-values.yaml"
-          --set image="${MONITORING_IMAGE}"
           --set persistence.type="${STORAGE}"
           --set exposure.type="${MONITORING_LOAD_BALANCER}"
         )
@@ -241,8 +239,8 @@ function launch_central {
 
     echo "Deploying Central..."
 
-    ${KUBE_COMMAND} get namespace "${STACKROX_NAMESPACE}" &>/dev/null || \
-      ${KUBE_COMMAND} create namespace "${STACKROX_NAMESPACE}"
+    ${KUBE_COMMAND:-kubectl} get namespace "${STACKROX_NAMESPACE}" &>/dev/null || \
+      ${KUBE_COMMAND:-kubectl} create namespace "${STACKROX_NAMESPACE}"
 
     if [[ -f "$unzip_dir/values-public.yaml" ]]; then
       if [[ -n "${REGISTRY_USERNAME}" ]]; then

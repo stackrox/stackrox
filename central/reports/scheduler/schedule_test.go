@@ -2,24 +2,23 @@ package scheduler
 
 import (
 	"testing"
-	"text/template"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 const (
-	expectedVulnReportEmailTemplateRhacsBrandingWithPlaceholders = `
-	Red Hat Advanced Cluster Security for Kubernetes has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
+	expectedVulnReportEmailTemplateRhacsBranding = `
+	Red Hat Advanced Cluster Security for Kubernetes has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report for all vulnerabilities for December 31, 1999.
 
 	To address these findings, please review the impacted software packages in the container images running within deployments you are responsible for and update them to a version containing the fix, if one is available.`
 
-	expectedVulnReportEmailTemplateStackroxBrandingWithPlaceholders = `
-	StackRox has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
+	expectedVulnReportEmailTemplateStackroxBranding = `
+	StackRox has found vulnerabilities associated with the running container images owned by your organization. Please review the attached vulnerability report for all vulnerabilities for December 31, 1999.
 
 	To address these findings, please review the impacted software packages in the container images running within deployments you are responsible for and update them to a version containing the fix, if one is available.`
 
@@ -28,14 +27,7 @@ const (
 
 	expectedNoVulnsFoundEmailTemplateStackroxBranding = `
 	StackRox has found zero vulnerabilities associated with the running container images owned by your organization.`
-
-	timeStr = `today`
 )
-
-type vulnsAndDate struct {
-	WhichVulns string
-	DateStr    string
-}
 
 var _ suite.SetupAllSuite = (*ScheduleTestSuite)(nil)
 var _ suite.TearDownTestSuite = (*ScheduleTestSuite)(nil)
@@ -47,30 +39,15 @@ func TestSchedule(t *testing.T) {
 type ScheduleTestSuite struct {
 	suite.Suite
 
-	rc                                              *storage.ReportConfiguration
-	envIsolator                                     *envisolator.EnvIsolator
-	expectedVulnReportEmailTemplateRhacsBranding    string
-	expectedVulnReportEmailTemplateStackroxBranding string
+	time        time.Time
+	rc          *storage.ReportConfiguration
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (s *ScheduleTestSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.rc = fixtures.GetValidReportConfiguration()
-
-	data := &vulnsAndDate{
-		WhichVulns: "for all vulnerabilities",
-		DateStr:    timeStr,
-	}
-
-	tmpl, err := template.New("VulnsRHACS").Parse(expectedVulnReportEmailTemplateRhacsBrandingWithPlaceholders)
-	s.NoError(err)
-	s.expectedVulnReportEmailTemplateRhacsBranding, err = templates.ExecuteToString(tmpl, data)
-	s.NoError(err)
-
-	tmpl, err = template.New("VulnsStackrox").Parse(expectedVulnReportEmailTemplateStackroxBrandingWithPlaceholders)
-	s.NoError(err)
-	s.expectedVulnReportEmailTemplateStackroxBranding, err = templates.ExecuteToString(tmpl, data)
-	s.NoError(err)
+	s.time = time.Date(1999, 12, 31, 23, 59, 59, 999, time.Local)
 }
 
 func (s *ScheduleTestSuite) TearDownTest() {
@@ -79,28 +56,25 @@ func (s *ScheduleTestSuite) TearDownTest() {
 
 func (s *ScheduleTestSuite) TestFormatVulnMessage() {
 	tests := map[string]struct {
-		productBranding string
-		vulnReport      string
-		noVulnReport    string
+		vulnReport   string
+		noVulnReport string
 	}{
-		"RHACS branding": {
-			productBranding: "RHACS_BRANDING",
-			vulnReport:      s.expectedVulnReportEmailTemplateRhacsBranding,
-			noVulnReport:    expectedNoVulnsFoundEmailTemplateRhacsBranding,
+		"RHACS_BRANDING": {
+			vulnReport:   expectedVulnReportEmailTemplateRhacsBranding,
+			noVulnReport: expectedNoVulnsFoundEmailTemplateRhacsBranding,
 		},
-		"StackRox branding": {
-			productBranding: "STACKROX_BRANDING",
-			vulnReport:      s.expectedVulnReportEmailTemplateStackroxBranding,
-			noVulnReport:    expectedNoVulnsFoundEmailTemplateStackroxBranding,
+		"STACKROX_BRANDING": {
+			vulnReport:   expectedVulnReportEmailTemplateStackroxBranding,
+			noVulnReport: expectedNoVulnsFoundEmailTemplateStackroxBranding,
 		},
 	}
-	for name, tt := range tests {
-		s.Run(name, func() {
-			s.envIsolator.Setenv(branding.ProductBrandingEnvName, tt.productBranding)
+	for productBranding, tt := range tests {
+		s.Run(productBranding, func() {
+			s.envIsolator.Setenv(branding.ProductBrandingEnvName, productBranding)
 
-			receivedBrandedVulnFound, err := formatMessage(s.rc, vulnReportEmailTemplate, timeStr)
+			receivedBrandedVulnFound, err := formatMessage(s.rc, vulnReportEmailTemplate, s.time)
 			s.NoError(err)
-			receivedBrandedNoVulnFound, err := formatMessage(s.rc, noVulnsFoundEmailTemplate, timeStr)
+			receivedBrandedNoVulnFound, err := formatMessage(s.rc, noVulnsFoundEmailTemplate, s.time)
 			s.NoError(err)
 
 			s.Equal(tt.vulnReport, receivedBrandedVulnFound)

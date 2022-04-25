@@ -4,28 +4,31 @@ package postgres
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 const (
-	baseTable  = "image_component_cve_relation"
-	countStmt  = "SELECT COUNT(*) FROM image_component_cve_relation"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2 AND CveOperatingSystem = $3)"
+	baseTable  = "image_component_cve_relations"
+	countStmt  = "SELECT COUNT(*) FROM image_component_cve_relations"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_cve_relations WHERE Id = $1 AND ImageComponentId = $2 AND ImageComponentName = $3 AND ImageComponentVersion = $4 AND ImageComponentOperatingSystem = $5 AND ImageCveId = $6 AND ImageCve = $7 AND ImageCveOperatingSystem = $8)"
 
-	getStmt    = "SELECT serialized FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2 AND CveOperatingSystem = $3"
-	deleteStmt = "DELETE FROM image_component_cve_relation WHERE ImageComponentId = $1 AND CveId = $2 AND CveOperatingSystem = $3"
-	walkStmt   = "SELECT serialized FROM image_component_cve_relation"
+	getStmt     = "SELECT serialized FROM image_component_cve_relations WHERE Id = $1 AND ImageComponentId = $2 AND ImageComponentName = $3 AND ImageComponentVersion = $4 AND ImageComponentOperatingSystem = $5 AND ImageCveId = $6 AND ImageCve = $7 AND ImageCveOperatingSystem = $8"
+	deleteStmt  = "DELETE FROM image_component_cve_relations WHERE Id = $1 AND ImageComponentId = $2 AND ImageComponentName = $3 AND ImageComponentVersion = $4 AND ImageComponentOperatingSystem = $5 AND ImageCveId = $6 AND ImageCve = $7 AND ImageCveOperatingSystem = $8"
+	walkStmt    = "SELECT serialized FROM image_component_cve_relations"
+	getIDsStmt  = "SELECT Id FROM image_component_cve_relations"
+	getManyStmt = "SELECT serialized FROM image_component_cve_relations WHERE Id = ANY($1::text[])"
+
+	deleteManyStmt = "DELETE FROM image_component_cve_relations WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -36,20 +39,16 @@ const (
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.ComponentCVEEdge)(nil)), baseTable).
-		WithReference(walker.Walk(reflect.TypeOf((*storage.ImageComponent)(nil)), "image_components")).
-		WithReference(walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), "image_cve"))
-	log = logging.LoggerForModule()
+	log    = logging.LoggerForModule()
+	schema = pkgSchema.ImageComponentCveRelationsSchema
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, imageComponentId string, cveId string, cveOperatingSystem string) (bool, error)
-	Get(ctx context.Context, imageComponentId string, cveId string, cveOperatingSystem string) (*storage.ComponentCVEEdge, bool, error)
+	Exists(ctx context.Context, id string, imageComponentId string, imageComponentName string, imageComponentVersion string, imageComponentOperatingSystem string, imageCveId string, imageCve string, imageCveOperatingSystem string) (bool, error)
+	Get(ctx context.Context, id string, imageComponentId string, imageComponentName string, imageComponentVersion string, imageComponentOperatingSystem string, imageCveId string, imageCve string, imageCveOperatingSystem string) (*storage.ComponentCVEEdge, bool, error)
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.ComponentCVEEdge, []int, error)
 
 	Walk(ctx context.Context, fn func(obj *storage.ComponentCVEEdge) error) error
 
@@ -61,103 +60,11 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableImageComponents(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists image_components (
-    Id varchar,
-    Name varchar,
-    Version varchar,
-    Source integer,
-    RiskScore numeric,
-    TopCvss numeric,
-    OperatingSystem varchar,
-    serialized bytea,
-    PRIMARY KEY(Id, Name, Version, OperatingSystem)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableImageCve(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists image_cve (
-    Id varchar,
-    OperatingSystem varchar,
-    Cvss numeric,
-    ImpactScore numeric,
-    PublishedOn timestamp,
-    CreatedAt timestamp,
-    Suppressed bool,
-    SuppressExpiry timestamp,
-    Severity integer,
-    serialized bytea,
-    PRIMARY KEY(Id, OperatingSystem)
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
-func createTableImageComponentCveRelation(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists image_component_cve_relation (
-    image_components_Name varchar,
-    image_components_Version varchar,
-    image_components_OperatingSystem varchar,
-    IsFixable bool,
-    FixedBy varchar,
-    ImageComponentId varchar,
-    CveId varchar,
-    CveOperatingSystem varchar,
-    serialized bytea,
-    PRIMARY KEY(image_components_Name, image_components_Version, image_components_OperatingSystem, ImageComponentId, CveId, CveOperatingSystem),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageComponentId, image_components_Name, image_components_Version, image_components_OperatingSystem) REFERENCES image_components(Id, Name, Version, OperatingSystem) ON DELETE CASCADE,
-    CONSTRAINT fk_parent_table_1 FOREIGN KEY (CveId, CveOperatingSystem) REFERENCES image_cve(Id, OperatingSystem) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-}
-
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableImageComponents(ctx, db)
-	createTableImageCve(ctx, db)
-	createTableImageComponentCveRelation(ctx, db)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCvesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentCveRelationsStmt)
 
 	return &storeImpl{
 		db: db,
@@ -177,10 +84,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, imageComponentId string, cveId string, cveOperatingSystem string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string, imageComponentId string, imageComponentName string, imageComponentVersion string, imageComponentOperatingSystem string, imageCveId string, imageCve string, imageCveOperatingSystem string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ComponentCVEEdge")
 
-	row := s.db.QueryRow(ctx, existsStmt, imageComponentId, cveId, cveOperatingSystem)
+	row := s.db.QueryRow(ctx, existsStmt, id, imageComponentId, imageComponentName, imageComponentVersion, imageComponentOperatingSystem, imageCveId, imageCve, imageCveOperatingSystem)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -189,7 +96,7 @@ func (s *storeImpl) Exists(ctx context.Context, imageComponentId string, cveId s
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, imageComponentId string, cveId string, cveOperatingSystem string) (*storage.ComponentCVEEdge, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string, imageComponentId string, imageComponentName string, imageComponentVersion string, imageComponentOperatingSystem string, imageCveId string, imageCve string, imageCveOperatingSystem string) (*storage.ComponentCVEEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ComponentCVEEdge")
 
 	conn, release, err := s.acquireConn(ctx, ops.Get, "ComponentCVEEdge")
@@ -198,7 +105,7 @@ func (s *storeImpl) Get(ctx context.Context, imageComponentId string, cveId stri
 	}
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, imageComponentId, cveId, cveOperatingSystem)
+	row := conn.QueryRow(ctx, getStmt, id, imageComponentId, imageComponentName, imageComponentVersion, imageComponentOperatingSystem, imageCveId, imageCve, imageCveOperatingSystem)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -218,6 +125,74 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 		return nil, nil, err
 	}
 	return conn, conn.Release, nil
+}
+
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ComponentCVEEdgeIDs")
+
+	rows, err := s.db.Query(ctx, getIDsStmt)
+	if err != nil {
+		return nil, pgutils.ErrNilIfNoRows(err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ComponentCVEEdge, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ComponentCVEEdge")
+
+	conn, release, err := s.acquireConn(ctx, ops.GetMany, "ComponentCVEEdge")
+	if err != nil {
+		return nil, nil, err
+	}
+	defer release()
+
+	rows, err := conn.Query(ctx, getManyStmt, ids)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			missingIndices := make([]int, 0, len(ids))
+			for i := range ids {
+				missingIndices = append(missingIndices, i)
+			}
+			return nil, missingIndices, nil
+		}
+		return nil, nil, err
+	}
+	defer rows.Close()
+	resultsByID := make(map[string]*storage.ComponentCVEEdge)
+	for rows.Next() {
+		var data []byte
+		if err := rows.Scan(&data); err != nil {
+			return nil, nil, err
+		}
+		msg := &storage.ComponentCVEEdge{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, nil, err
+		}
+		resultsByID[msg.GetId()] = msg
+	}
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.ComponentCVEEdge, 0, len(resultsByID))
+	for i, id := range ids {
+		if result, ok := resultsByID[id]; !ok {
+			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
+		}
+	}
+	return elems, missingIndices, nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
@@ -245,13 +220,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ComponentCVEE
 
 //// Used for testing
 
-func dropTableImageComponentCveRelation(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_cve_relation CASCADE")
+func dropTableImageComponentCveRelations(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_cve_relations CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableImageComponentCveRelation(ctx, db)
+	dropTableImageComponentCveRelations(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

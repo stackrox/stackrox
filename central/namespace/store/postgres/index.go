@@ -20,6 +20,7 @@ func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_NAMESPACES, schema)
 }
 
+// NewIndexer returns new indexer for `storage.NamespaceMetadata`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl{
 		db: db,

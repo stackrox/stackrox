@@ -12,15 +12,12 @@ const UNAUTHENTICATED = false;
 
 describe('Authentication', () => {
     const setupAuth = (landingUrl, authStatusValid, authStatusResponse = {}) => {
-        cy.server();
-        cy.route('GET', api.auth.loginAuthProviders, 'fixture:auth/authProviders.json').as(
+        cy.intercept('GET', api.auth.loginAuthProviders, { fixture: 'auth/authProviders.json' }).as(
             'authProviders'
         );
-        cy.route({
-            method: 'GET',
-            url: api.auth.authStatus,
-            status: authStatusValid ? 200 : 401,
-            response: authStatusResponse,
+        cy.intercept('GET', api.auth.authStatus, {
+            statusCode: authStatusValid ? 200 : 401,
+            body: authStatusResponse,
         }).as('authStatus');
 
         cy.visit(landingUrl);
@@ -28,35 +25,30 @@ describe('Authentication', () => {
     };
 
     const stubAPIs = () => {
-        cy.server();
         // Cypress routes have an override behaviour, so defining this first makes it the fallback.
-        cy.route(/.*/, {}).as('everythingElse');
-        cy.route('GET', api.clusters.list, 'fixture:clusters/couple.json').as('clusters');
-        cy.route('GET', api.search.options, 'fixture:search/metadataOptions.json').as(
+        // Replace /.*/ RegExp for route method with '/v1/*' string for intercept method
+        // because it is not limited to XHR, therefore it matches HTML requests too!
+        cy.intercept('/v1/*', { body: {} }).as('everythingElse');
+        cy.intercept('GET', api.clusters.list, { fixture: 'clusters/health.json' }).as('clusters');
+        cy.intercept('GET', api.search.options, { fixture: 'search/metadataOptions.json' }).as(
             'searchOptions'
         );
-        cy.route('GET', api.alerts.countsByCluster, {}).as('countsByCluster');
-        cy.route('GET', api.alerts.countsByCategory, {}).as('countsByCategory');
-        cy.route('GET', api.dashboard.timeseries, {}).as('alertsByTimeseries');
-        cy.route('GET', api.risks.riskyDeployments, {}).as('deployments');
-        cy.route('POST', api.logs, {}).as('logs');
+        cy.intercept('GET', api.alerts.countsByCluster, { body: {} }).as('countsByCluster');
+        cy.intercept('GET', api.alerts.countsByCategory, { body: {} }).as('countsByCategory');
+        cy.intercept('GET', api.dashboard.timeseries, { body: {} }).as('alertsByTimeseries');
+        cy.intercept('GET', api.risks.riskyDeployments, { body: {} }).as('deployments');
+        cy.intercept('POST', api.logs, { body: {} }).as('logs');
     };
 
     it('should redirect user to login page, authenticate and redirect to the requested page', () => {
         stubAPIs();
         setupAuth(dashboardURL, AUTHENTICATED);
-        cy.server();
-        cy.route('GET', api.clusters.list, 'fixture:clusters/couple.json').as('clusters');
-        cy.route('GET', api.search.options, 'fixture:search/metadataOptions.json').as(
-            'searchOptions'
-        );
-        cy.url().should('contain', loginUrl);
+        cy.location('pathname').should('eq', loginUrl);
         cy.get(selectors.providerSelect).should('have.text', 'auth-provider-name');
         cy.get(selectors.loginButton).click(); // stubbed auth provider will simulate redirect with 'my-token'
-        cy.wait('@authStatus').then((xhr) => {
-            expect(xhr.request.headers.Authorization).to.eq('Bearer my-token');
-        });
-        cy.url().should('contain', dashboardURL);
+        // Replace Authorization for route method with authorization for intercept method.
+        cy.wait('@authStatus').its('request.headers.authorization').should('eq', 'Bearer my-token');
+        cy.location('pathname').should('eq', dashboardURL);
     });
 
     it('should allow authenticated user to enter', () => {
@@ -66,7 +58,7 @@ describe('Authentication', () => {
 
         cy.wait('@authStatus');
 
-        cy.url().should('contain', dashboardURL);
+        cy.location('pathname').should('eq', dashboardURL);
     });
 
     it('should logout previously authenticated user with invalid token', () => {
@@ -76,13 +68,13 @@ describe('Authentication', () => {
 
         cy.wait('@authStatus');
 
-        cy.url().should('contain', loginUrl);
+        cy.location('pathname').should('eq', loginUrl);
     });
 
     // TODO: Fix it, see ROX-4983 for more explanation
     it.skip('should request token refresh 30 sec in advance', () => {
         stubAPIs();
-        cy.route('POST', api.auth.tokenRefresh, {}).as('tokenRefresh');
+        cy.intercept('POST', api.auth.tokenRefresh, { body: {} }).as('tokenRefresh');
         localStorage.setItem('access_token', 'my-token'); // authenticated user
 
         const expiryDate = addSeconds(Date.now(), 33); // +3 sec should be enough
@@ -102,15 +94,14 @@ describe('Authentication', () => {
         // turning off for now, because of an issue with Cypress
         // see https://srox.slack.com/archives/C7ERNFL0M/p1596839383218700
         it.skip('should logout user by request', () => {
-            cy.server();
-            cy.route('POST', api.auth.logout, {}).as('logout');
+            cy.intercept('POST', api.auth.logout, { body: {} }).as('logout');
 
             cy.visit(dashboardURL);
 
             cy.get(navSelectors.menuButton).click();
             cy.get(navSelectors.menuList.logoutButton).click();
             cy.wait('@logout');
-            cy.url().should('contain', loginUrl);
+            cy.location('pathname').should('eq', loginUrl);
         });
     });
 });

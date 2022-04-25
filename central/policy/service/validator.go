@@ -11,8 +11,10 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
@@ -41,16 +43,23 @@ func (r *regexpAndDesc) Validate(s string) error {
 }
 
 func newPolicyValidator(notifierStorage notifierDataStore.DataStore) *policyValidator {
-	return &policyValidator{
-		notifierStorage: notifierStorage,
+	pv := &policyValidator{
+		notifierStorage:            notifierStorage,
+		nonEnforceablePolicyFields: make(map[string]struct{}),
 	}
+	if features.NetworkPolicySystemPolicy.Enabled() {
+		pv.nonEnforceablePolicyFields[augmentedobjs.MissingIngressPolicyCustomTag] = struct{}{}
+		pv.nonEnforceablePolicyFields[augmentedobjs.MissingEgressPolicyCustomTag] = struct{}{}
+	}
+	return pv
 }
 
 type validationFunc func(*storage.Policy) error
 
 // policyValidator validates the incoming policy.
 type policyValidator struct {
-	notifierStorage notifierDataStore.DataStore
+	notifierStorage            notifierDataStore.DataStore
+	nonEnforceablePolicyFields map[string]struct{}
 }
 
 func (s *policyValidator) validate(ctx context.Context, policy *storage.Policy, options ...booleanpolicy.ValidateOption) error {
@@ -87,6 +96,7 @@ func (s *policyValidator) internalValidate(policy *storage.Policy, additionalVal
 	errorList.AddError(s.validateExclusions(policy))
 	errorList.AddError(s.validateCapabilities(policy))
 	errorList.AddError(s.validateEventSource(policy))
+	errorList.AddError(s.validateEnforcement(policy))
 
 	for _, validator := range additionalValidators {
 		errorList.AddError(validator(policy))
@@ -376,4 +386,19 @@ func removeEnforcementForLifecycle(policy *storage.Policy, stage storage.Lifecyc
 
 func (s *policyValidator) isAuditEventPolicy(policy *storage.Policy) bool {
 	return policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT
+}
+
+func (s *policyValidator) validateEnforcement(policy *storage.Policy) error {
+	if len(policy.GetEnforcementActions()) > 0 {
+		for _, section := range policy.GetPolicySections() {
+			for _, g := range section.GetPolicyGroups() {
+				if len(s.nonEnforceablePolicyFields) > 0 {
+					if _, ok := s.nonEnforceablePolicyFields[g.GetFieldName()]; ok {
+						return errors.Errorf("enforcement of %s is not allowed", g.GetFieldName())
+					}
+				}
+			}
+		}
+	}
+	return nil
 }

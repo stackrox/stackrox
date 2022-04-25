@@ -1,7 +1,8 @@
+import qs from 'qs';
 import {
     SearchEntry,
     GlobalSearchOption,
-    RestSortOption,
+    ApiSortOption,
     GraphQLSortOption,
     SearchFilter,
 } from 'types/search';
@@ -9,9 +10,9 @@ import {
 /**
  *  Adds a search modifier to the searchOptions
  *
- *  @param {!Object[]} searchOptions an array of search options
- *  @param {!string} modifier a modifier term (ie. 'Cluster:')
- *  @returns {!Object[]} the modified search options
+ *  @param searchOptions an array of search options
+ *  @param modifier a modifier term (ie. 'Cluster:')
+ *  @returns the modified search options
  */
 export function addSearchModifier(
     searchOptions: GlobalSearchOption[],
@@ -24,9 +25,9 @@ export function addSearchModifier(
 /**
  *  Adds a search keyword to the searchOptions
  *
- *  @param {!Object[]} searchOptions an array of search options
- *  @param {!string} keyword a keyword term (ie. 'remote')
- *  @returns {!Object[]} the modified search options
+ *  @param searchOptions an array of search options
+ *  @param keyword a keyword term (ie. 'remote')
+ *  @returns the modified search options
  */
 export function addSearchKeyword(
     searchOptions: GlobalSearchOption[],
@@ -101,14 +102,14 @@ export function convertToRestSearch(workflowSearch: Record<string, string>): Sea
     return restSearch;
 }
 
-export function convertSortToGraphQLFormat({ field, reversed }: RestSortOption): GraphQLSortOption {
+export function convertSortToGraphQLFormat({ field, reversed }: ApiSortOption): GraphQLSortOption {
     return {
         id: field,
         desc: reversed,
     };
 }
 
-export function convertSortToRestFormat(graphqlSort: GraphQLSortOption[]): Partial<RestSortOption> {
+export function convertSortToRestFormat(graphqlSort: GraphQLSortOption[]): Partial<ApiSortOption> {
     return {
         field: graphqlSort[0]?.id,
         reversed: graphqlSort[0]?.desc,
@@ -124,4 +125,17 @@ export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter)
         .filter(([, value]) => value.length !== 0)
         .map(([key, value]) => `${key}:${Array.isArray(value) ? value.join(',') : value}`)
         .join('+');
+}
+
+export function getUrlQueryStringForSearchFilter(
+    searchFilter: SearchFilter,
+    searchPrefix = 'search'
+): string {
+    return qs.stringify(
+        { [searchPrefix]: searchFilter },
+        {
+            arrayFormat: 'repeat',
+            encodeValuesOnly: true,
+        }
+    );
 }

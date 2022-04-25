@@ -108,6 +108,9 @@ func (m *CVEMatcher) IsClusterAffectedByK8sOrIstioCVE(ctx context.Context, clust
 
 // IsClusterAffectedByK8sCVE returns true if cluster is affected by k8s cve
 func (m *CVEMatcher) IsClusterAffectedByK8sCVE(_ context.Context, cluster *storage.Cluster, cve *schema.NVDCVEFeedJSON10DefCVEItem) (bool, error) {
+	if cve.Configurations == nil {
+		return false, nil
+	}
 	clusterVersion := cluster.GetStatus().GetOrchestratorMetadata().GetVersion()
 	for _, node := range cve.Configurations.Nodes {
 		matched, err := m.MatchVersions(node, clusterVersion, converter.K8s)

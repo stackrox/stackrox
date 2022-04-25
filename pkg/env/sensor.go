@@ -16,6 +16,6 @@ var (
 	// This is typically used for Sensor to communicate with a local Scanner-slim's gRPC server.
 	ScannerGRPCEndpoint = RegisterSetting("ROX_SCANNER_GRPC_ENDPOINT", WithDefault("scanner.stackrox.svc:8443"))
 
-	// UseLocalScanner is used to specify if Sensor should attempt to scan images via a local Scanner.
-	UseLocalScanner = RegisterBooleanSetting("ROX_USE_LOCAL_SCANNER", false)
+	// LocalImageScanningEnabled is used to specify if Sensor should attempt to scan images via a local Scanner.
+	LocalImageScanningEnabled = RegisterBooleanSetting("ROX_LOCAL_IMAGE_SCANNING_ENABLED", false)
 )

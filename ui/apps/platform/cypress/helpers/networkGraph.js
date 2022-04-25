@@ -30,9 +30,7 @@ export function clickOnNodeByName(cytoscape, node) {
 }
 
 export function clickOnDeploymentNodeByName(cytoscape, name) {
-    cy.intercept('GET', api.network.deployment).as('getDeployment');
     clickOnNodeByName(cytoscape, { type: 'DEPLOYMENT', name });
-    cy.wait('@getDeployment');
 }
 
 export function mouseOverNodeById(cytoscape, node) {

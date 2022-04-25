@@ -1,11 +1,19 @@
 package pgutils
 
 import (
+	"context"
 	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // ErrNilIfNoRows returns nil if the error is pgx.ErrNoRows
@@ -37,4 +45,22 @@ func NilOrTime(t *types.Timestamp) *time.Time {
 		return nil
 	}
 	return &ts
+}
+
+// CreateTable executes input create statement using the input connection.
+func CreateTable(ctx context.Context, db *pgxpool.Pool, createStmt *postgres.CreateStmts) {
+	_, err := db.Exec(ctx, createStmt.Table)
+	if err != nil {
+		log.Panicf("Error creating table %s: %v", createStmt.Table, err)
+	}
+
+	for _, index := range createStmt.Indexes {
+		if _, err := db.Exec(ctx, index); err != nil {
+			log.Panicf("Error creating index %s: %v", index, err)
+		}
+	}
+
+	for _, child := range createStmt.Children {
+		CreateTable(ctx, db, child)
+	}
 }

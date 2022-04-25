@@ -4,19 +4,17 @@ package postgres
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 const (
@@ -24,9 +22,13 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM image_components"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_components WHERE Id = $1 AND Name = $2 AND Version = $3 AND OperatingSystem = $4)"
 
-	getStmt    = "SELECT serialized FROM image_components WHERE Id = $1 AND Name = $2 AND Version = $3 AND OperatingSystem = $4"
-	deleteStmt = "DELETE FROM image_components WHERE Id = $1 AND Name = $2 AND Version = $3 AND OperatingSystem = $4"
-	walkStmt   = "SELECT serialized FROM image_components"
+	getStmt     = "SELECT serialized FROM image_components WHERE Id = $1 AND Name = $2 AND Version = $3 AND OperatingSystem = $4"
+	deleteStmt  = "DELETE FROM image_components WHERE Id = $1 AND Name = $2 AND Version = $3 AND OperatingSystem = $4"
+	walkStmt    = "SELECT serialized FROM image_components"
+	getIDsStmt  = "SELECT Id FROM image_components"
+	getManyStmt = "SELECT serialized FROM image_components WHERE Id = ANY($1::text[])"
+
+	deleteManyStmt = "DELETE FROM image_components WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -37,13 +39,9 @@ const (
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.ImageComponent)(nil)), baseTable)
 	log    = logging.LoggerForModule()
+	schema = pkgSchema.ImageComponentsSchema
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -52,6 +50,9 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.ImageComponent) error
 	UpsertMany(ctx context.Context, objs []*storage.ImageComponent) error
 	Delete(ctx context.Context, id string, name string, version string, operatingSystem string) error
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponent, []int, error)
+	DeleteMany(ctx context.Context, ids []string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.ImageComponent) error) error
 
@@ -63,33 +64,13 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableImageComponents(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists image_components (
-    Id varchar,
-    Name varchar,
-    Version varchar,
-    Source integer,
-    RiskScore numeric,
-    TopCvss numeric,
-    OperatingSystem varchar,
-    serialized bytea,
-    PRIMARY KEY(Id, Name, Version, OperatingSystem)
-)
-`
+// New returns a new Store instance using the provided sql instance.
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentsStmt)
 
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoImageComponents(ctx context.Context, tx pgx.Tx, obj *storage.ImageComponent) error {
@@ -194,15 +175,6 @@ func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs
 	}
 
 	return err
-}
-
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableImageComponents(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ImageComponent) error {
@@ -338,6 +310,89 @@ func (s *storeImpl) Delete(ctx context.Context, id string, name string, version 
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, id, name, version, operatingSystem); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ImageComponentIDs")
+
+	rows, err := s.db.Query(ctx, getIDsStmt)
+	if err != nil {
+		return nil, pgutils.ErrNilIfNoRows(err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponent, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageComponent")
+
+	conn, release, err := s.acquireConn(ctx, ops.GetMany, "ImageComponent")
+	if err != nil {
+		return nil, nil, err
+	}
+	defer release()
+
+	rows, err := conn.Query(ctx, getManyStmt, ids)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			missingIndices := make([]int, 0, len(ids))
+			for i := range ids {
+				missingIndices = append(missingIndices, i)
+			}
+			return nil, missingIndices, nil
+		}
+		return nil, nil, err
+	}
+	defer rows.Close()
+	resultsByID := make(map[string]*storage.ImageComponent)
+	for rows.Next() {
+		var data []byte
+		if err := rows.Scan(&data); err != nil {
+			return nil, nil, err
+		}
+		msg := &storage.ImageComponent{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, nil, err
+		}
+		resultsByID[msg.GetId()] = msg
+	}
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.ImageComponent, 0, len(resultsByID))
+	for i, id := range ids {
+		if result, ok := resultsByID[id]; !ok {
+			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
+		}
+	}
+	return elems, missingIndices, nil
+}
+
+// Delete removes the specified IDs from the store
+func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ImageComponent")
+
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "ImageComponent")
+	if err != nil {
+		return err
+	}
+	defer release()
+	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil

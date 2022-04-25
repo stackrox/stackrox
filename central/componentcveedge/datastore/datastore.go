@@ -22,7 +22,6 @@ type DataStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.ComponentCVEEdge, bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
-	GetBatch(ctx context.Context, id []string) ([]*storage.ComponentCVEEdge, error)
 }
 
 // New returns a new instance of a DataStore.

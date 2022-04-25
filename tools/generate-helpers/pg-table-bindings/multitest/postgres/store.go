@@ -4,19 +4,17 @@ package postgres
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 const (
@@ -24,9 +22,13 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM multikey"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM multikey WHERE Key1 = $1 AND Key2 = $2)"
 
-	getStmt    = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
-	deleteStmt = "DELETE FROM multikey WHERE Key1 = $1 AND Key2 = $2"
-	walkStmt   = "SELECT serialized FROM multikey"
+	getStmt     = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
+	deleteStmt  = "DELETE FROM multikey WHERE Key1 = $1 AND Key2 = $2"
+	walkStmt    = "SELECT serialized FROM multikey"
+	getIDsStmt  = "SELECT Key1 FROM multikey"
+	getManyStmt = "SELECT serialized FROM multikey WHERE Key1 = ANY($1::text[])"
+
+	deleteManyStmt = "DELETE FROM multikey WHERE Key1 = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -37,13 +39,9 @@ const (
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.TestMultiKeyStruct)(nil)), baseTable)
 	log    = logging.LoggerForModule()
+	schema = pkgSchema.MultikeySchema
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -52,6 +50,9 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.TestMultiKeyStruct) error
 	UpsertMany(ctx context.Context, objs []*storage.TestMultiKeyStruct) error
 	Delete(ctx context.Context, key1 string, key2 string) error
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.TestMultiKeyStruct, []int, error)
+	DeleteMany(ctx context.Context, ids []string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.TestMultiKeyStruct) error) error
 
@@ -63,75 +64,13 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableMultikey(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists multikey (
-    Key1 varchar,
-    Key2 varchar,
-    StringSlice text[],
-    Bool bool,
-    Uint64 integer,
-    Int64 integer,
-    Float numeric,
-    Labels jsonb,
-    Timestamp timestamp,
-    Enum integer,
-    Enums int[],
-    String_ varchar,
-    IntSlice int[],
-    Oneofnested_Nested varchar,
-    serialized bytea,
-    PRIMARY KEY(Key1, Key2)
-)
-`
+// New returns a new Store instance using the provided sql instance.
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableMultikeyStmt)
 
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
-	createTableMultikeyNested(ctx, db)
-}
-
-func createTableMultikeyNested(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists multikey_Nested (
-    multikey_Key1 varchar,
-    multikey_Key2 varchar,
-    idx integer,
-    Nested varchar,
-    IsNested bool,
-    Int64 integer,
-    Nested2_Nested2 varchar,
-    Nested2_IsNested bool,
-    Nested2_Int64 integer,
-    PRIMARY KEY(multikey_Key1, multikey_Key2, idx),
-    CONSTRAINT fk_parent_table_0 FOREIGN KEY (multikey_Key1, multikey_Key2) REFERENCES multikey(Key1, Key2) ON DELETE CASCADE
-)
-`
-
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
-	}
-
-	indexes := []string{
-
-		"create index if not exists multikeyNested_idx on multikey_Nested using btree(idx)",
-	}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoMultikey(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKeyStruct) error {
@@ -388,15 +327,6 @@ func (s *storeImpl) copyFromMultikeyNested(ctx context.Context, tx pgx.Tx, multi
 	return err
 }
 
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableMultikey(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
-}
-
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestMultiKeyStruct) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "TestMultiKeyStruct")
 	if err != nil {
@@ -530,6 +460,89 @@ func (s *storeImpl) Delete(ctx context.Context, key1 string, key2 string) error 
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, key1, key2); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.TestMultiKeyStructIDs")
+
+	rows, err := s.db.Query(ctx, getIDsStmt)
+	if err != nil {
+		return nil, pgutils.ErrNilIfNoRows(err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestMultiKeyStruct, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "TestMultiKeyStruct")
+
+	conn, release, err := s.acquireConn(ctx, ops.GetMany, "TestMultiKeyStruct")
+	if err != nil {
+		return nil, nil, err
+	}
+	defer release()
+
+	rows, err := conn.Query(ctx, getManyStmt, ids)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			missingIndices := make([]int, 0, len(ids))
+			for i := range ids {
+				missingIndices = append(missingIndices, i)
+			}
+			return nil, missingIndices, nil
+		}
+		return nil, nil, err
+	}
+	defer rows.Close()
+	resultsByID := make(map[string]*storage.TestMultiKeyStruct)
+	for rows.Next() {
+		var data []byte
+		if err := rows.Scan(&data); err != nil {
+			return nil, nil, err
+		}
+		msg := &storage.TestMultiKeyStruct{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, nil, err
+		}
+		resultsByID[msg.GetKey1()] = msg
+	}
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.TestMultiKeyStruct, 0, len(resultsByID))
+	for i, id := range ids {
+		if result, ok := resultsByID[id]; !ok {
+			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
+		}
+	}
+	return elems, missingIndices, nil
+}
+
+// Delete removes the specified IDs from the store
+func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "TestMultiKeyStruct")
+
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "TestMultiKeyStruct")
+	if err != nil {
+		return err
+	}
+	defer release()
+	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil

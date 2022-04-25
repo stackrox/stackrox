@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var typeRegistry = make(map[string]string)
@@ -47,12 +48,34 @@ func storageToResource(t string) string {
 	return strings.TrimPrefix(t, "*storage.")
 }
 
-func isGloballyScoped(storageType string) bool {
-	resource := storageToResource(storageType)
+func resourceMetadataFromString(resource string) permissions.ResourceMetadata {
 	for _, resourceMetadata := range resources.ListAllMetadata() {
 		if string(resourceMetadata.Resource) == resource {
-			return resourceMetadata.Scope == permissions.GlobalScope
+			return resourceMetadata
 		}
 	}
-	return false
+	for _, resourceMetadata := range resources.ListAllDisabledMetadata() {
+		if string(resourceMetadata.Resource) == resource {
+			return resourceMetadata
+		}
+	}
+	panic("unknown resource: " + resource)
+}
+
+func clusterGetter(prefix string, schema *walker.Schema) string {
+	for _, f := range schema.Fields {
+		if strings.Contains(f.Search.FieldName, "Cluster ID") {
+			return f.Getter(prefix)
+		}
+	}
+	panic(schema.TypeName + "has no cluster. Is it directly scoped?")
+}
+
+func namespaceGetter(prefix string, schema *walker.Schema) string {
+	for _, f := range schema.Fields {
+		if strings.Contains(f.Search.FieldName, "Namespace") {
+			return f.Getter(prefix)
+		}
+	}
+	panic(schema.TypeName + "has no cluster. Is it directly and namespace scoped?")
 }

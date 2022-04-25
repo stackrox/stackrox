@@ -143,6 +143,11 @@ func (s TranslationTestSuite) TestTranslate() {
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
 			},
 		},
 		"local scanner autosense suppression": {
@@ -152,6 +157,9 @@ func (s TranslationTestSuite) TestTranslate() {
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
 						ClusterName: "test-cluster",
+						Scanner: &platform.LocalScannerComponentSpec{
+							ScannerComponent: platform.LocalScannerComponentDisabled.Pointer(),
+						},
 					},
 				},
 			},
@@ -196,6 +204,11 @@ func (s TranslationTestSuite) TestTranslate() {
 				},
 				"scanner": map[string]interface{}{
 					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
 				},
 			},
 		},
@@ -387,6 +400,9 @@ func (s TranslationTestSuite) TestTranslate() {
 							"operator": "Exists",
 						},
 					},
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
 				},
 				"admissionControl": map[string]interface{}{
 					"dynamic": map[string]interface{}{
@@ -541,6 +557,10 @@ func (s TranslationTestSuite) TestTranslate() {
 				delete(got, "meta")
 			}
 
+			if !features.LocalImageScanning.Enabled() {
+				delete(wantAsValues, "scanner")
+			}
+
 			assert.Equal(t, wantAsValues, got)
 		})
 	}
@@ -558,7 +578,8 @@ func newFakeClientWithInitBundle(t *testing.T) ctrlClient.Client {
 	return testutils.NewFakeClientBuilder(t,
 		createSecret(sensorTLSSecretName),
 		createSecret(collectorTLSSecretName),
-		createSecret(admissionControlTLSSecretName)).Build()
+		createSecret(admissionControlTLSSecretName),
+		testutils.ValidClusterVersion).Build()
 }
 
 func newFakeClientWithInitBundleAndCentral(t *testing.T) ctrlClient.Client {
@@ -566,6 +587,7 @@ func newFakeClientWithInitBundleAndCentral(t *testing.T) ctrlClient.Client {
 		createSecret(sensorTLSSecretName),
 		createSecret(collectorTLSSecretName),
 		createSecret(admissionControlTLSSecretName),
+		testutils.ValidClusterVersion,
 		&platform.Central{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "a-central",

@@ -11,12 +11,12 @@ type detectorImpl struct {
 	policySet detection.PolicySet
 }
 
-// UpsertPolicy adds or updates a policy in the set.
+// PolicySet returns set of policies.
 func (d *detectorImpl) PolicySet() detection.PolicySet {
 	return d.policySet
 }
 
-// Detect runs detection on an deployment, returning any generated alerts.
+// Detect runs detection on a deployment, returning any generated alerts.
 func (d *detectorImpl) Detect(ctx DetectionContext, enhancedDeployment booleanpolicy.EnhancedDeployment, filters ...detection.FilterOption) ([]*storage.Alert, error) {
 	var alerts []*storage.Alert
 	var cacheReceptacle booleanpolicy.CacheReceptacle

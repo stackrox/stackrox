@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/componentcveedge/index"
 	sacFilters "github.com/stackrox/rox/central/componentcveedge/sac"
 	"github.com/stackrox/rox/central/componentcveedge/search"
@@ -10,9 +11,21 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/features"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
+	"github.com/stackrox/rox/pkg/search/postgres"
 )
+
+type componentCVEEdgePks struct {
+	componentID string
+	compName    string
+	compVersion string
+	compOS      string
+	cveID       string
+	cve         string
+	cveOS       string
+}
 
 type datastoreImpl struct {
 	storage       store.Store
@@ -46,7 +59,17 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.Component
 	if err != nil || len(filteredIDs) != 1 {
 		return nil, false, err
 	}
-	edge, found, err := ds.storage.Get(id)
+
+	var pks componentCVEEdgePks
+	if features.PostgresDatastore.Enabled() {
+		pks, err = getPKs(id)
+		if err != nil {
+			return nil, false, err
+		}
+	}
+	// For dackbox, we do not need all the primary keys.
+
+	edge, found, err := ds.storage.Get(ctx, id, pks.componentID, pks.compName, pks.compVersion, pks.compOS, pks.cveID, pks.cve, pks.cveOS)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -58,25 +81,20 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	if err != nil || len(filteredIDs) != 1 {
 		return false, err
 	}
+	var pks componentCVEEdgePks
+	if features.PostgresDatastore.Enabled() {
+		pks, err = getPKs(id)
+		if err != nil {
+			return false, err
+		}
+	}
+	// For dackbox, we do not need all the primary keys.
 
-	found, err := ds.storage.Exists(id)
+	found, err := ds.storage.Exists(ctx, id, pks.componentID, pks.compName, pks.compVersion, pks.compOS, pks.cveID, pks.cve, pks.cveOS)
 	if err != nil || !found {
 		return false, err
 	}
 	return true, nil
-}
-
-func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.ComponentCVEEdge, error) {
-	filteredIDs, err := ds.filterReadable(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-
-	edges, _, err := ds.storage.GetBatch(filteredIDs)
-	if err != nil {
-		return nil, err
-	}
-	return edges, nil
 }
 
 func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]string, error) {
@@ -86,4 +104,21 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 		filteredIDs, err = filtered.ApplySACFilter(graphContext, ids, sacFilters.GetSACFilter())
 	})
 	return filteredIDs, err
+}
+
+func getPKs(id string) (componentCVEEdgePks, error) {
+	parts := postgres.IDToParts(id)
+	if len(parts) != 7 {
+		return componentCVEEdgePks{}, errors.Errorf("unexpected number of primary keys (%v) found for component-cve relation. Expected 7 parts", parts)
+	}
+
+	return componentCVEEdgePks{
+		componentID: parts[0],
+		compName:    parts[1],
+		compVersion: parts[2],
+		compOS:      parts[3],
+		cveID:       parts[4],
+		cve:         parts[5],
+		cveOS:       parts[6],
+	}, nil
 }

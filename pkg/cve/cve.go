@@ -1,6 +1,15 @@
 package cve
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search/postgres"
+)
+
+var (
+	log = logging.LoggerForModule()
+)
 
 var clusterCVETypes = map[storage.CVE_CVEType]struct{}{
 	storage.CVE_ISTIO_CVE:     {},
@@ -41,4 +50,30 @@ func ContainsClusterCVE(types []storage.CVE_CVEType) bool {
 		}
 	}
 	return false
+}
+
+// ID creates a CVE ID from the given cve id (and os if postgres is enabled).
+func ID(cve, os string) string {
+	if features.PostgresDatastore.Enabled() {
+		return postgres.IDFromPks([]string{cve, os})
+	}
+	return cve
+}
+
+// IDToParts returns the parts—cve and operating system—that make up CVE ID.
+func IDToParts(id string) (string, string) {
+	parts := postgres.IDToParts(id)
+	if len(parts) > 2 {
+		log.Errorf("More than 2 parts found in CVE ID: %v", parts)
+		return "", ""
+	}
+
+	switch len(parts) {
+	case 0:
+		return "", ""
+	case 1:
+		return parts[0], ""
+	default:
+		return parts[0], parts[1]
+	}
 }

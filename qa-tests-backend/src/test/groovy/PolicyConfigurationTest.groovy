@@ -15,6 +15,7 @@ import common.Constants
 import objects.Volume
 import io.stackrox.proto.storage.Rbac
 import io.stackrox.proto.storage.NodeOuterClass
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.DryRunResponse
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyFields
 import io.stackrox.proto.storage.PolicyOuterClass.ImageNamePolicy
@@ -111,7 +112,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .setName(DEPLOYMENT_RBAC)
                     .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
                     .setServiceAccountName(SERVICE_ACCOUNT_NAME)
-                    .setImage("nginx:1.15.4-alpine")
+                    .setImage("quay.io/rhacs-eng/qa:nginx-1-15-4-alpine")
                     .setSkipReplicaWait(true),
     ]
 
@@ -254,7 +255,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setImageName(
                                         ImageNamePolicy.newBuilder()
-                                                .setTag("1.7.9")
+                                                .setTag("nginx-1-7-9")
                                                 .build())
                                 .build())
                         .build()                       | DEPLOYMENTNGINX | null
@@ -271,7 +272,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                                 .setImageName(
                                         ImageNamePolicy.newBuilder()
-                                                .setRemote("library/nginx")
+                                                .setRemote("rhacs-eng/qa")
                                                 .build())
                                 .build())
                         .build()                       | DEPLOYMENTNGINX | null
@@ -775,5 +776,32 @@ class PolicyConfigurationTest extends BaseSpecification {
                          .setName("multiple-scope-non-violation")
                          .setNamespace("default")
                          .setImage("nginx:latest"),]
+    }
+
+    @Unroll
+    @Category(BAT)
+    def "Verify dryRun on a disabled policy generates violations for matching deployments"() {
+        when:
+        "Initialize a new disabled policy that will match an existing deployment"
+        Policy policy = Policy.newBuilder()
+                                .setName("TestPrivilegedPolicy")
+                                .setDescription("TestPrivileged")
+                                .setRationale("TestPrivileged")
+                                .addLifecycleStages(LifecycleStage.DEPLOY)
+                                .addCategories("DevOps Best Practices")
+                                .setDisabled(true)
+                                .setSeverityValue(2)
+                                .setFields(PolicyFields.newBuilder()
+                                        .setPrivileged(true))
+                                .build()
+
+        and:
+        "dryRun is called on the policy"
+        DryRunResponse dryRunResponse = PolicyService.dryRunPolicy(policy)
+
+        then:
+        "Verify dryRun response contains alert/s for matching deployments"
+        assert dryRunResponse != null
+        assert dryRunResponse.getAlertsCount() > 0
     }
 }

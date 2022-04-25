@@ -24,12 +24,10 @@ ROX_PRODUCT_BRANDING := STACKROX_BRANDING
 DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
 BUILD_IMAGE_VERSION=$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
 BUILD_IMAGE := $(DEFAULT_IMAGE_REGISTRY)/apollo-ci:$(BUILD_IMAGE_VERSION)
-MONITORING_IMAGE := $(DEFAULT_IMAGE_REGISTRY)/monitoring:$(shell cat MONITORING_VERSION)
 DOCS_IMAGE_BASE := $(DEFAULT_IMAGE_REGISTRY)/docs
 
 ifdef CI
     CI_QUAY_REPO := rhacs-eng
-    MONITORING_IMAGE := quay.io/$(CI_QUAY_REPO)/monitoring:$(shell cat MONITORING_VERSION)
     DOCS_IMAGE_BASE := quay.io/$(CI_QUAY_REPO)/docs
 endif
 
@@ -72,8 +70,7 @@ else
 GOPATH_VOLUME_SRC := $(GOPATH_VOLUME_NAME)
 endif
 
-SSH_AUTH_SOCK_MAGIC_PATH := /run/host-services/ssh-auth.sock
-LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(SSH_AUTH_SOCK_MAGIC_PATH):$(SSH_AUTH_SOCK_MAGIC_PATH) -e SSH_AUTH_SOCK=$(SSH_AUTH_SOCK_MAGIC_PATH) -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated -v $(HOME)/.ssh:/root/.ssh:ro -v $(HOME)/.gitconfig:/root/.gitconfig:ro
+LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated
 GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go
 
 null :=
@@ -146,11 +143,11 @@ ifdef CI
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
 	@echo 'If this fails, run `make style`.'
 	@echo "Running with no tags..."
-	golangci-lint run --timeout 4m0s
+	golangci-lint run --timeout 8m0s
 	@echo "Running with release tags..."
 	@# We use --tests=false because some unit tests don't compile with release tags,
 	@# since they use functions that we don't define in the release build. That's okay.
-	golangci-lint run --timeout 4m0s --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
+	golangci-lint run --timeout 8m0s --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 else
 	golangci-lint run --fix
 	golangci-lint run --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
@@ -327,8 +324,8 @@ build-prep: deps
 
 .PHONY: cli-build
 cli-build: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
-	RACE=0 CGO_ENABLED=0 GOOS=linux $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
 ifdef CI
 	RACE=0 CGO_ENABLED=0 GOOS=windows $(GOBUILD) ./roxctl
 endif
@@ -340,10 +337,10 @@ cli: cli-build
 	chmod u+w $(GOPATH)/bin/roxctl
 
 cli-linux: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=linux $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) ./roxctl
 
 cli-darwin: build-prep
-	RACE=0 CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GOBUILD) ./roxctl
 
 upgrader: bin/$(HOST_OS)/upgrader
 
@@ -457,7 +454,7 @@ go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*postgres/*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
+		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
 		| tee test-output/test.log
 
 .PHONY: shell-unit-tests
@@ -495,17 +492,6 @@ generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
 # image is an alias for main-image
 .PHONY: image
 image: main-image
-
-monitoring/static-bin/%: image/static-bin/%
-	mkdir -p "$(dir $@)"
-	cp -fLp $< $@
-
-.PHONY: monitoring-build-context
-monitoring-build-context: monitoring/static-bin/save-dir-contents monitoring/static-bin/restore-all-dir-contents
-
-.PHONY: monitoring-image
-monitoring-image: monitoring-build-context
-	scripts/ensure_image.sh $(MONITORING_IMAGE) monitoring/Dockerfile monitoring/
 
 .PHONY: all-builds
 all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build
@@ -569,6 +555,8 @@ endif
 	cp bin/linux/upgrader          image/bin/sensor-upgrader
 	cp bin/linux/admission-control image/bin/admission-control
 	cp bin/linux/collection        image/bin/compliance
+	# Workaround to bug in lima: https://github.com/lima-vm/lima/issues/602
+	find image/bin -not -path "*/.*" -type f -exec chmod +x {} \;
 
 
 .PHONY: copy-binaries-to-image-dir

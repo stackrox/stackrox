@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
@@ -294,7 +293,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		templateStr = noVulnsFoundEmailTemplate
 	}
 
-	messageText, err := formatMessage(rc, templateStr, time.Now().Format("January 02, 2006"))
+	messageText, err := formatMessage(rc, templateStr, time.Now())
 	if err != nil {
 		return errors.Wrap(err, "error formatting the report email text")
 	}
@@ -316,11 +315,11 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	return nil
 }
 
-func formatMessage(rc *storage.ReportConfiguration, emailTemplate string, timestr string) (string, error) {
+func formatMessage(rc *storage.ReportConfiguration, emailTemplate string, date time.Time) (string, error) {
 	data := &reportEmailFormat{
 		BrandedProductName: branding.GetProductName(),
 		WhichVulns:         "for all vulnerabilities",
-		DateStr:            timestr,
+		DateStr:            date.Format("January 02, 2006"),
 	}
 	if rc.GetVulnReportFilters().SinceLastReport && rc.GetLastSuccessfulRunTime() != nil {
 		data.WhichVulns = fmt.Sprintf("for new vulnerabilities since %s",
@@ -376,9 +375,6 @@ func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery 
 }
 
 func (s *scheduler) Start() {
-	if !features.VulnReporting.Enabled() {
-		return
-	}
 	go s.runReports()
 }
 

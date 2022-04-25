@@ -4,19 +4,18 @@ package postgres
 
 import (
 	"context"
-	"reflect"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
+	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 const (
@@ -41,13 +40,9 @@ const (
 )
 
 var (
-	schema = walker.Walk(reflect.TypeOf((*storage.IntegrationHealth)(nil)), baseTable)
 	log    = logging.LoggerForModule()
+	schema = pkgSchema.IntegrationhealthSchema
 )
-
-func init() {
-	globaldb.RegisterTable(schema)
-}
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
@@ -70,27 +65,13 @@ type storeImpl struct {
 	db *pgxpool.Pool
 }
 
-func createTableIntegrationhealth(ctx context.Context, db *pgxpool.Pool) {
-	table := `
-create table if not exists integrationhealth (
-    Id varchar,
-    serialized bytea,
-    PRIMARY KEY(Id)
-)
-`
+// New returns a new Store instance using the provided sql instance.
+func New(ctx context.Context, db *pgxpool.Pool) Store {
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableIntegrationhealthStmt)
 
-	_, err := db.Exec(ctx, table)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", table, err)
+	return &storeImpl{
+		db: db,
 	}
-
-	indexes := []string{}
-	for _, index := range indexes {
-		if _, err := db.Exec(ctx, index); err != nil {
-			log.Panicf("Error creating index %s: %v", index, err)
-		}
-	}
-
 }
 
 func insertIntoIntegrationhealth(ctx context.Context, tx pgx.Tx, obj *storage.IntegrationHealth) error {
@@ -177,15 +158,6 @@ func (s *storeImpl) copyFromIntegrationhealth(ctx context.Context, tx pgx.Tx, ob
 	return err
 }
 
-// New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	createTableIntegrationhealth(ctx, db)
-
-	return &storeImpl{
-		db: db,
-	}
-}
-
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.IntegrationHealth) error {
 	conn, release, err := s.acquireConn(ctx, ops.Get, "IntegrationHealth")
 	if err != nil {
@@ -239,11 +211,23 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.IntegrationHeal
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.IntegrationHealth) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "IntegrationHealth")
 
+	if ok, err := permissionCheckerSingleton().UpsertAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.IntegrationHealth) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "IntegrationHealth")
+
+	if ok, err := permissionCheckerSingleton().UpsertManyAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
 
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
@@ -255,6 +239,10 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.IntegrationH
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "IntegrationHealth")
+
+	if ok, err := permissionCheckerSingleton().CountAllowed(ctx); err != nil || !ok {
+		return 0, err
+	}
 
 	row := s.db.QueryRow(ctx, countStmt)
 	var count int
@@ -268,6 +256,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "IntegrationHealth")
 
+	if ok, err := permissionCheckerSingleton().ExistsAllowed(ctx); err != nil || !ok {
+		return false, err
+	}
+
 	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
@@ -279,6 +271,10 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.IntegrationHealth, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "IntegrationHealth")
+
+	if ok, err := permissionCheckerSingleton().GetAllowed(ctx); err != nil || !ok {
+		return nil, false, err
+	}
 
 	conn, release, err := s.acquireConn(ctx, ops.Get, "IntegrationHealth")
 	if err != nil {
@@ -312,6 +308,12 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "IntegrationHealth")
 
+	if ok, err := permissionCheckerSingleton().DeleteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "IntegrationHealth")
 	if err != nil {
 		return err
@@ -327,6 +329,10 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.IntegrationHealthIDs")
+
+	if ok, err := permissionCheckerSingleton().GetIDsAllowed(ctx); err != nil || !ok {
+		return nil, err
+	}
 
 	rows, err := s.db.Query(ctx, getIDsStmt)
 	if err != nil {
@@ -347,6 +353,12 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.IntegrationHealth, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "IntegrationHealth")
+
+	if ok, err := permissionCheckerSingleton().GetManyAllowed(ctx); err != nil {
+		return nil, nil, err
+	} else if !ok {
+		return nil, nil, nil
+	}
 
 	conn, release, err := s.acquireConn(ctx, ops.GetMany, "IntegrationHealth")
 	if err != nil {
@@ -395,6 +407,12 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Integ
 // Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "IntegrationHealth")
+
+	if ok, err := permissionCheckerSingleton().DeleteManyAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
 
 	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "IntegrationHealth")
 	if err != nil {

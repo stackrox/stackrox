@@ -2,7 +2,7 @@ import queryString from 'qs';
 
 import { ReportConfiguration } from 'types/report.proto';
 import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
-import { RestSortOption } from 'services/sortOption';
+import { ApiSortOption } from 'types/search';
 import axios from './instance';
 
 const reportUrl = '/v1/report';
@@ -12,14 +12,14 @@ const reportConfigurationsCountUrl = '/v1/report-configurations-count';
 
 export function fetchReports(
     options: RestSearchOption[] = [],
-    sortOption: RestSortOption,
+    sortOption: ApiSortOption,
     page: number,
     pageSize: number
 ): Promise<ReportConfiguration[]> {
     const offset = page * pageSize;
     const searchOptions: RestSearchOption[] = [...options];
     const query = searchOptionsToQuery(searchOptions);
-    const queryObject: Record<string, string | Record<string, number | string | RestSortOption>> = {
+    const queryObject: Record<string, string | Record<string, number | string | ApiSortOption>> = {
         pagination: {
             offset,
             limit: pageSize,

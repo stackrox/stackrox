@@ -1,4 +1,3 @@
-import * as api from '../../constants/apiEndpoints';
 import { selectors as networkPageSelectors } from '../../constants/NetworkPage';
 import withAuth from '../../helpers/basicAuth';
 import {
@@ -6,7 +5,6 @@ import {
     filterDeployments,
     filterNamespaces,
     selectDeploymentFilter,
-    visitNetworkGraphWithMockedData,
     visitNetworkGraphWithNamespaceFilters,
 } from '../../helpers/networkGraph';
 
@@ -14,17 +12,13 @@ describe('Network Deployment Details', () => {
     withAuth();
 
     it('should open up the Deployments Side Panel when a deployment is clicked', () => {
-        visitNetworkGraphWithMockedData();
+        visitNetworkGraphWithNamespaceFilters('stackrox');
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
-            cy.intercept('GET', api.network.deployment, {
-                fixture: 'network/centralDeployment.json',
-            }).as('centralDeployment');
             clickOnNodeByName(cytoscape, {
                 type: 'DEPLOYMENT',
                 name: 'central',
             });
-            cy.wait('@centralDeployment');
             cy.get(`${networkPageSelectors.networkEntityTabbedOverlay.header}:contains("central")`);
         });
     });

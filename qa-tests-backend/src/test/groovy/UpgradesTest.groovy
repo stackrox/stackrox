@@ -1,6 +1,7 @@
 import com.google.protobuf.util.JsonFormat
 import groovy.io.FileType
 import groups.Upgrade
+import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -188,6 +189,10 @@ class UpgradesTest extends BaseSpecification {
         given:
         "Default policies in code"
 
+        def policiesGuardedByFeatureFlags = [
+                // @TODO(ROX-10249): Remove when policy is no longer guarded by a feature flag
+                "38bf79e7-48bf-4ab1-b72f-38e8ad8b4ec3"
+        ]
         Map<String, PolicyOuterClass.Policy> defaultPolicies = [:]
         def policiesDir = new File(POLICIES_JSON_PATH)
         policiesDir.eachFileRecurse (FileType.FILES) { file ->
@@ -195,18 +200,27 @@ class UpgradesTest extends BaseSpecification {
                 def builder = PolicyOuterClass.Policy.newBuilder()
                 JsonFormat.parser().merge(file.text, builder)
                 def policy = builder.build()
-
-                defaultPolicies[policy.id] = policy
+                if (!policiesGuardedByFeatureFlags.contains(policy.id)) {
+                    defaultPolicies[policy.id] = policy
+                }
             }
         }
 
         when:
         "Upgraded default policies are fetched from central"
-        def upgradedPolicies = PolicyService.getPolicyClient().exportPolicies(
-                PolicyServiceOuterClass.ExportPoliciesRequest.newBuilder().
-                        addAllPolicyIds(defaultPolicies.keySet()).
-                        build()
-        ).getPoliciesList()
+        def upgradedPolicies
+        try {
+            println("Exporting policies: ${defaultPolicies.keySet().join(", ")}")
+            upgradedPolicies = PolicyService.getPolicyClient().exportPolicies(
+                    PolicyServiceOuterClass.ExportPoliciesRequest.newBuilder().
+                            addAllPolicyIds(defaultPolicies.keySet()).
+                            build()
+            ).getPoliciesList()
+        } catch (StatusRuntimeException e) {
+            println "Exception in exportPolicies(): ${e.getStatus()}"
+            println "See central log for more details."
+            throw(e)
+        }
 
         def knownPolicyDifferences = [
                 "2e90874a-3521-44de-85c6-5720f519a701": new KnownPolicyDiffs()

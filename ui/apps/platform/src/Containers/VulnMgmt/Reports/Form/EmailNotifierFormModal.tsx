@@ -65,6 +65,7 @@ function EmailNotifierFormModal({
 
     return (
         <Modal
+            aria-label="Create new email notifier"
             variant={ModalVariant.medium}
             header={header}
             isOpen={isOpen}

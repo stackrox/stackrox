@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -32,30 +34,36 @@ func getDeploymentStore(b *testing.B) *StoreImpl {
 }
 
 func BenchmarkAddDeployment(b *testing.B) {
+	ctx := sac.WithAllAccess(context.Background())
+
 	store := getDeploymentStore(b)
 	deployment := fixtures.GetDeployment()
 	for i := 0; i < b.N; i++ {
-		require.NoError(b, store.UpsertDeployment(deployment))
+		require.NoError(b, store.Upsert(ctx, deployment))
 	}
 }
 
 func BenchmarkGetDeployment(b *testing.B) {
+	ctx := sac.WithAllAccess(context.Background())
+
 	store := getDeploymentStore(b)
 	deployment := fixtures.GetDeployment()
-	require.NoError(b, store.UpsertDeployment(deployment))
+	require.NoError(b, store.Upsert(ctx, deployment))
 	for i := 0; i < b.N; i++ {
-		_, exists, err := store.GetDeployment(deployment.GetId())
+		_, exists, err := store.Get(ctx, deployment.GetId())
 		require.True(b, exists)
 		require.NoError(b, err)
 	}
 }
 
 func BenchmarkListDeployment(b *testing.B) {
+	ctx := sac.WithAllAccess(context.Background())
+
 	store := getDeploymentStore(b)
 	deployment := fixtures.GetDeployment()
-	require.NoError(b, store.UpsertDeployment(deployment))
+	require.NoError(b, store.Upsert(ctx, deployment))
 	for i := 0; i < b.N; i++ {
-		_, exists, err := store.ListDeployment(deployment.GetId())
+		_, exists, err := store.GetListDeployment(ctx, deployment.GetId())
 		require.True(b, exists)
 		require.NoError(b, err)
 	}
