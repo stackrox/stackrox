@@ -109,7 +109,6 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, processIndicator), sac.ErrResourceAccessDenied)
 	s.NoError(store.Upsert(withAccessCtx, processIndicator))
 	s.NoError(store.Upsert(withAccessToClusterCtx, processIndicator))
-	s.NoError(store.Upsert(withAccessToClusterCtx, processIndicator))
 	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.ProcessIndicator{processIndicator}), sac.ErrResourceAccessDenied)
 	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.ProcessIndicator{processIndicator}), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(withAccessCtx, []*storage.ProcessIndicator{processIndicator}))

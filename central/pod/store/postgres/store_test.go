@@ -109,7 +109,6 @@ func (s *PodsStoreSuite) TestStore() {
 	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, pod), sac.ErrResourceAccessDenied)
 	s.NoError(store.Upsert(withAccessCtx, pod))
 	s.NoError(store.Upsert(withAccessToClusterCtx, pod))
-	s.NoError(store.Upsert(withAccessToClusterCtx, pod))
 	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.Pod{pod}), sac.ErrResourceAccessDenied)
 	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.Pod{pod}), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(withAccessCtx, []*storage.Pod{pod}))

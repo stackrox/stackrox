@@ -109,7 +109,6 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, namespaceMetadata), sac.ErrResourceAccessDenied)
 	s.NoError(store.Upsert(withAccessCtx, namespaceMetadata))
 	s.NoError(store.Upsert(withAccessToClusterCtx, namespaceMetadata))
-	s.NoError(store.Upsert(withAccessToClusterCtx, namespaceMetadata))
 	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.NamespaceMetadata{namespaceMetadata}), sac.ErrResourceAccessDenied)
 	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.NamespaceMetadata{namespaceMetadata}), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(withAccessCtx, []*storage.NamespaceMetadata{namespaceMetadata}))

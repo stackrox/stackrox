@@ -77,5 +77,5 @@ func namespaceGetter(prefix string, schema *walker.Schema) string {
 			return f.Getter(prefix)
 		}
 	}
-	panic(schema.TypeName + " has no cluster. Is it directly and namespace scoped?")
+	panic(schema.TypeName + " has no namespace. Is it directly and namespace scoped?")
 }

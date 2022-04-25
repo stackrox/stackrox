@@ -109,7 +109,6 @@ func (s *RolebindingsStoreSuite) TestStore() {
 	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, k8SRoleBinding), sac.ErrResourceAccessDenied)
 	s.NoError(store.Upsert(withAccessCtx, k8SRoleBinding))
 	s.NoError(store.Upsert(withAccessToClusterCtx, k8SRoleBinding))
-	s.NoError(store.Upsert(withAccessToClusterCtx, k8SRoleBinding))
 	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.K8SRoleBinding{k8SRoleBinding}), sac.ErrResourceAccessDenied)
 	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.K8SRoleBinding{k8SRoleBinding}), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(withAccessCtx, []*storage.K8SRoleBinding{k8SRoleBinding}))

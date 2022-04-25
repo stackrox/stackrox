@@ -109,7 +109,6 @@ func (s *SecretsStoreSuite) TestStore() {
 	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, secret), sac.ErrResourceAccessDenied)
 	s.NoError(store.Upsert(withAccessCtx, secret))
 	s.NoError(store.Upsert(withAccessToClusterCtx, secret))
-	s.NoError(store.Upsert(withAccessToClusterCtx, secret))
 	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.Secret{secret}), sac.ErrResourceAccessDenied)
 	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.Secret{secret}), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(withAccessCtx, []*storage.Secret{secret}))

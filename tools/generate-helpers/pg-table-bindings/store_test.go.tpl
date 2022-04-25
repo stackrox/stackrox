@@ -136,7 +136,6 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, {{ $name }}), sac.ErrResourceAccessDenied)
 	s.NoError(store.Upsert(withAccessCtx, {{ $name }}))
 	s.NoError(store.Upsert(withAccessToClusterCtx, {{ $name }}))
-	s.NoError(store.Upsert(withAccessToClusterCtx, {{ $name }}))
 	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*{{.Type}}{ {{ $name }} }), sac.ErrResourceAccessDenied)
 	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*{{.Type}}{ {{ $name }} }), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(withAccessCtx, []*{{.Type}}{ {{ $name }} }))

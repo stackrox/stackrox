@@ -109,7 +109,6 @@ func (s *RiskStoreSuite) TestStore() {
 	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, risk), sac.ErrResourceAccessDenied)
 	s.NoError(store.Upsert(withAccessCtx, risk))
 	s.NoError(store.Upsert(withAccessToClusterCtx, risk))
-	s.NoError(store.Upsert(withAccessToClusterCtx, risk))
 	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.Risk{risk}), sac.ErrResourceAccessDenied)
 	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.Risk{risk}), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(withAccessCtx, []*storage.Risk{risk}))

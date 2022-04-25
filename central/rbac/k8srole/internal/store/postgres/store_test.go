@@ -109,7 +109,6 @@ func (s *K8srolesStoreSuite) TestStore() {
 	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, k8SRole), sac.ErrResourceAccessDenied)
 	s.NoError(store.Upsert(withAccessCtx, k8SRole))
 	s.NoError(store.Upsert(withAccessToClusterCtx, k8SRole))
-	s.NoError(store.Upsert(withAccessToClusterCtx, k8SRole))
 	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.K8SRole{k8SRole}), sac.ErrResourceAccessDenied)
 	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.K8SRole{k8SRole}), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(withAccessCtx, []*storage.K8SRole{k8SRole}))

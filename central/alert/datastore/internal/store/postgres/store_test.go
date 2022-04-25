@@ -109,7 +109,6 @@ func (s *AlertsStoreSuite) TestStore() {
 	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, alert), sac.ErrResourceAccessDenied)
 	s.NoError(store.Upsert(withAccessCtx, alert))
 	s.NoError(store.Upsert(withAccessToClusterCtx, alert))
-	s.NoError(store.Upsert(withAccessToClusterCtx, alert))
 	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.Alert{alert}), sac.ErrResourceAccessDenied)
 	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.Alert{alert}), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(withAccessCtx, []*storage.Alert{alert}))

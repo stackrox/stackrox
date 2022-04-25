@@ -109,7 +109,6 @@ func (s *ServiceaccountsStoreSuite) TestStore() {
 	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, serviceAccount), sac.ErrResourceAccessDenied)
 	s.NoError(store.Upsert(withAccessCtx, serviceAccount))
 	s.NoError(store.Upsert(withAccessToClusterCtx, serviceAccount))
-	s.NoError(store.Upsert(withAccessToClusterCtx, serviceAccount))
 	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.ServiceAccount{serviceAccount}), sac.ErrResourceAccessDenied)
 	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.ServiceAccount{serviceAccount}), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(withAccessCtx, []*storage.ServiceAccount{serviceAccount}))

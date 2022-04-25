@@ -109,7 +109,6 @@ func (s *ProcessbaselinesStoreSuite) TestStore() {
 	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, processBaseline), sac.ErrResourceAccessDenied)
 	s.NoError(store.Upsert(withAccessCtx, processBaseline))
 	s.NoError(store.Upsert(withAccessToClusterCtx, processBaseline))
-	s.NoError(store.Upsert(withAccessToClusterCtx, processBaseline))
 	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.ProcessBaseline{processBaseline}), sac.ErrResourceAccessDenied)
 	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.ProcessBaseline{processBaseline}), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(withAccessCtx, []*storage.ProcessBaseline{processBaseline}))
