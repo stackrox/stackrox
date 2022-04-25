@@ -92,7 +92,7 @@ func (ds *searcherImpl) SearchImageComponents(ctx context.Context, q *v1.Query) 
 	if err != nil {
 		return nil, err
 	}
-	return ds.resultsToSearchResults(results)
+	return ds.resultsToSearchResults(ctx, results)
 }
 
 func (ds *searcherImpl) SearchRawImageComponents(ctx context.Context, q *v1.Query) ([]*storage.ImageComponent, error) {
@@ -106,7 +106,7 @@ func (ds *searcherImpl) searchImageComponents(ctx context.Context, q *v1.Query) 
 	}
 
 	ids := search.ResultsToIDs(results)
-	components, _, err := ds.storage.GetBatch(ids)
+	components, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -127,35 +127,17 @@ func (ds *searcherImpl) getCountResults(ctx context.Context, q *v1.Query) (count
 	return count, err
 }
 
-func (ds *searcherImpl) resultsToImageComponents(results []search.Result) ([]*storage.ImageComponent, []int, error) {
-	return ds.storage.GetBatch(search.ResultsToIDs(results))
+func (ds *searcherImpl) resultsToImageComponents(ctx context.Context, results []search.Result) ([]*storage.ImageComponent, []int, error) {
+	return ds.storage.GetMany(ctx, search.ResultsToIDs(results))
 }
 
-func (ds *searcherImpl) resultsToSearchResults(results []search.Result) ([]*v1.SearchResult, error) {
-	components, missingIndices, err := ds.resultsToImageComponents(results)
+func (ds *searcherImpl) resultsToSearchResults(ctx context.Context, results []search.Result) ([]*v1.SearchResult, error) {
+	components, missingIndices, err := ds.resultsToImageComponents(ctx, results)
 	if err != nil {
 		return nil, err
 	}
 	results = search.RemoveMissingResults(results, missingIndices)
 	return convertMany(components, results), nil
-}
-
-func convertMany(components []*storage.ImageComponent, results []search.Result) []*v1.SearchResult {
-	outputResults := make([]*v1.SearchResult, len(components))
-	for index, sar := range components {
-		outputResults[index] = convertOne(sar, &results[index])
-	}
-	return outputResults
-}
-
-func convertOne(component *storage.ImageComponent, result *search.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGE_COMPONENTS,
-		Id:             component.GetId(),
-		Name:           component.GetName(),
-		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.

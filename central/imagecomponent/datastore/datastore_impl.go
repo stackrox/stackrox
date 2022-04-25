@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/imagecomponent/index"
 	sacFilters "github.com/stackrox/rox/central/imagecomponent/sac"
 	"github.com/stackrox/rox/central/imagecomponent/search"
@@ -13,10 +14,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
+	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 var (
@@ -25,6 +28,12 @@ var (
 	imagesSAC = sac.ForResource(resources.Image)
 	nodesSac  = sac.ForResource(resources.Node)
 )
+
+type imageComponentPks struct {
+	name    string
+	version string
+	os      string
+}
 
 type datastoreImpl struct {
 	storage       store.Store
@@ -64,7 +73,16 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComp
 		return nil, false, err
 	}
 
-	component, found, err := ds.storage.Get(id)
+	var pks imageComponentPks
+	if features.PostgresDatastore.Enabled() {
+		pks, err = getPKs(id)
+		if err != nil {
+			return nil, false, err
+		}
+	}
+	// For dackbox, we do not need all the primary keys.
+
+	component, found, err := ds.storage.Get(ctx, id, pks.name, pks.version, pks.os)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -79,7 +97,16 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, err
 	}
 
-	found, err := ds.storage.Exists(id)
+	var pks imageComponentPks
+	if features.PostgresDatastore.Enabled() {
+		pks, err = getPKs(id)
+		if err != nil {
+			return false, err
+		}
+	}
+	// For dackbox, we do not need all the primary keys.
+
+	found, err := ds.storage.Exists(ctx, id, pks.name, pks.version, pks.os)
 	if err != nil || !found {
 		return false, err
 	}
@@ -92,65 +119,13 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 		return nil, err
 	}
 
-	components, _, err := ds.storage.GetBatch(filteredIDs)
+	components, _, err := ds.storage.GetMany(ctx, filteredIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	ds.updateImageComponentPriority(components...)
 	return components, nil
-}
-
-// UpsertImage dedupes the image with the underlying storage and adds the image to the index.
-func (ds *datastoreImpl) Upsert(ctx context.Context, imagecomponents ...*storage.ImageComponent) error {
-	if len(imagecomponents) == 0 {
-		return nil
-	}
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		if ok, err := nodesSac.WriteAllowed(ctx); err != nil {
-			return err
-		} else if !ok {
-			return sac.ErrResourceAccessDenied
-		}
-	}
-
-	// Update image components with latest risk score
-	for _, component := range imagecomponents {
-		component.RiskScore = ds.imageComponentRanker.GetScoreForID(component.GetId())
-	}
-
-	return ds.storage.Upsert(imagecomponents...)
-}
-
-func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		if ok, err := nodesSac.WriteAllowed(ctx); err != nil {
-			return err
-		} else if !ok {
-			return sac.ErrResourceAccessDenied
-		}
-	}
-
-	if err := ds.storage.Delete(ids...); err != nil {
-		return err
-	}
-
-	deleteRiskCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Risk),
-		))
-
-	for _, id := range ids {
-		if err := ds.risks.RemoveRisk(deleteRiskCtx, id, storage.RiskSubjectType_IMAGE_COMPONENT); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (ds *datastoreImpl) initializeRankers() {
@@ -165,7 +140,17 @@ func (ds *datastoreImpl) initializeRankers() {
 	}
 
 	for _, id := range pkgSearch.ResultsToIDs(results) {
-		component, found, err := ds.storage.Get(id)
+		var pks imageComponentPks
+		if features.PostgresDatastore.Enabled() {
+			pks, err = getPKs(id)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+		}
+		// For dackbox, we do not need all the primary keys.
+
+		component, found, err := ds.storage.Get(readCtx, id, pks.name, pks.version, pks.os)
 		if err != nil {
 			log.Error(err)
 			continue
@@ -189,4 +174,17 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 		filteredIDs, err = filtered.ApplySACFilter(graphContext, ids, sacFilters.GetSACFilter())
 	})
 	return filteredIDs, err
+}
+
+func getPKs(id string) (imageComponentPks, error) {
+	parts := postgres.IDToParts(id)
+	if len(parts) != 3 {
+		return imageComponentPks{}, errors.Errorf("unexpected number of primary keys (%v) found for image component. Expected 3 parts", parts)
+	}
+
+	return imageComponentPks{
+		name:    parts[0],
+		version: parts[1],
+		os:      parts[2],
+	}, nil
 }
