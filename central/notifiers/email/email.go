@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/reports/common"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -280,14 +281,14 @@ func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer
 	msg := message{
 		To:        recipients,
 		From:      from,
-		Subject:   fmt.Sprintf("Red Hat Image Vulnerability Report for %s", time.Now().Format("02-January-2006")),
+		Subject:   fmt.Sprintf("%s Image Vulnerability Report for %s", branding.GetProductNameShort(), time.Now().Format("02-January-2006")),
 		Body:      messageText,
 		EmbedLogo: true,
 	}
 
 	if zippedReportData != nil {
 		msg.Attachments = map[string][]byte{
-			fmt.Sprintf("RHACS_Vulnerability_Report_%s.zip", time.Now().Format("02_January_2006")): zippedReportData.Bytes(),
+			fmt.Sprintf("%s_Vulnerability_Report_%s.zip", branding.GetProductNameShort(), time.Now().Format("02_January_2006")): zippedReportData.Bytes(),
 		}
 	}
 	return e.send(ctx, &msg)
