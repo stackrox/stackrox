@@ -59,9 +59,9 @@ function IntegrationsTable({
     } = useTableSelection<Integration>(integrations);
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const columns = tableColumnDescriptor[source][type].filter(({ featureFlagDependency }) => {
-        if (typeof featureFlagDependency === 'string') {
-            return isFeatureFlagEnabled(featureFlagDependency);
+    const columns = tableColumnDescriptor[source][type].filter((integration) => {
+        if (typeof integration.featureFlagDependency === 'string') {
+            return isFeatureFlagEnabled(integration.featureFlagDependency);
         }
         return true;
     });
