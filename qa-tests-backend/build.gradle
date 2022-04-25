@@ -76,7 +76,7 @@ dependencies {
     implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.11'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.13.2'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.5.3'
-    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.6.1'
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.2.2'
     testImplementation( 'com.athaydes:spock-reports:1.4.0' ) {
         transitive = false
     }
