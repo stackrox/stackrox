@@ -16,7 +16,7 @@ import { TrashIcon } from '@patternfly/react-icons';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormMessage from 'Components/PatternFly/FormMessage';
-import { SignatureIntegration } from 'services/SignatureIntegrationsService';
+import { SignatureIntegration } from 'types/signatureIntegration.proto';
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
 import { IntegrationFormProps } from '../integrationFormTypes';
