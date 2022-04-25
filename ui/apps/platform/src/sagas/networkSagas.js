@@ -76,15 +76,6 @@ function* getNetworkGraphs(clusterId, namespaces, query) {
     }
 }
 
-export function* getNetworkPolicies({ params }) {
-    try {
-        const result = yield call(service.fetchNetworkPolicies, params);
-        yield put(backendNetworkActions.fetchNetworkPolicies.success(result.response, { params }));
-    } catch (error) {
-        yield put(backendNetworkActions.fetchNetworkPolicies.failure(error));
-    }
-}
-
 export function* getActiveNetworkModification() {
     yield put(wizardNetworkActions.setNetworkPolicyModificationName('Active'));
     yield put(wizardNetworkActions.setNetworkPolicyModificationState('REQUEST'));
@@ -285,10 +276,6 @@ function* watchNetworkSearchOptions() {
     yield takeLatest(searchNetworkTypes.SET_SEARCH_OPTIONS, filterNetworkPageBySearch);
 }
 
-function* watchNetworkPoliciesRequest() {
-    yield takeLatest(backendNetworkTypes.FETCH_NETWORK_POLICIES.REQUEST, getNetworkPolicies);
-}
-
 function* watchApplyNetworkPolicyModification() {
     yield takeLatest(
         backendNetworkTypes.APPLY_NETWORK_POLICY_MODIFICATION.REQUEST,
@@ -361,7 +348,6 @@ export default function* network() {
     yield all([
         takeEveryNewlyMatchedLocation(networkPath, loadNetworkPage),
         fork(watchNetworkSearchOptions),
-        fork(watchNetworkPoliciesRequest),
         fork(watchActiveNetworkModification),
         fork(watchUndoNetworkModification),
         fork(watchGenerateNetworkModification),

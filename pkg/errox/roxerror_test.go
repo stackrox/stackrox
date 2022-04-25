@@ -76,4 +76,10 @@ func TestCausedBy(t *testing.T) {
 		err := NotFound.New("lost forever").CausedBy("swallowed by Kraken")
 		assert.ErrorIs(t, err, NotFound)
 	}
+
+	{
+		err := NotFound.New("absolute disaster").CausedByf("out of %v", "sense")
+		assert.Equal(t, "absolute disaster: out of sense", err.Error())
+		assert.ErrorIs(t, err, NotFound)
+	}
 }

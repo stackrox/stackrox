@@ -11,6 +11,8 @@ export const selectors = {
     firstTableRowLink: 'tbody tr:nth(0) a',
     lastTableRow: 'tbody tr:last',
     lastTableRowLink: 'tbody tr:last a',
+    resultsFoundHeader: (number) =>
+        `h2:contains("${number} result${number === 1 ? '' : 's'} found")`,
     actions: {
         btn: 'td.pf-c-table__action button',
         excludeDeploymentBtn: 'button:contains("Exclude deployment")',

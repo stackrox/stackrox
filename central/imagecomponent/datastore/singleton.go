@@ -5,11 +5,13 @@ import (
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
-	globaldb "github.com/stackrox/rox/central/globaldb/dackbox"
+	globalDackbox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
+	"github.com/stackrox/rox/central/imagecomponent/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	"github.com/stackrox/rox/central/imagecomponent/search"
+	"github.com/stackrox/rox/central/imagecomponent/store"
 	"github.com/stackrox/rox/central/imagecomponent/store/dackbox"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
 	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
@@ -28,13 +30,26 @@ var (
 )
 
 func initialize() {
-	storage, err := dackbox.New(globaldb.GetGlobalDackBox(), globaldb.GetKeyFence())
+	var err error
+	var storage store.Store
+	var indexer index.Indexer
+	var searcher search.Searcher
+
+	// TODO: Wire up.
+	// if features.PostgresDatastore.Enabled() {
+	//	storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+	//	indexer = postgres.NewIndexer(globaldb.GetPostgres())
+	//	searcher = search.NewV2(storage, indexer)
+	//}
+
+	storage, err = dackbox.New(globalDackbox.GetGlobalDackBox(), globalDackbox.GetKeyFence())
+	indexer = componentIndexer.New(globalindex.GetGlobalIndex())
 	utils.CrashOnError(err)
 
-	searcher := search.New(storage, globaldb.GetGlobalDackBox(),
+	searcher = search.New(storage, globalDackbox.GetGlobalDackBox(),
 		cveIndexer.New(globalindex.GetGlobalIndex()),
 		componentCVEEdgeIndexer.New(globalindex.GetGlobalIndex()),
-		componentIndexer.New(globalindex.GetGlobalIndex()),
+		indexer,
 		imageComponentEdgeIndexer.New(globalindex.GetGlobalIndex()),
 		imageCVEEdgeIndexer.New(globalindex.GetGlobalIndex()),
 		imageIndexer.New(globalindex.GetGlobalIndex()),
@@ -43,7 +58,7 @@ func initialize() {
 		deploymentIndexer.New(globalindex.GetGlobalIndex(), globalindex.GetProcessIndex()),
 		clusterIndexer.New(globalindex.GetGlobalTmpIndex()))
 
-	ad, err = New(globaldb.GetGlobalDackBox(), storage, componentIndexer.New(globalindex.GetGlobalIndex()), searcher, riskDataStore.Singleton(), ranking.ComponentRanker())
+	ad, err = New(globalDackbox.GetGlobalDackBox(), storage, indexer, searcher, riskDataStore.Singleton(), ranking.ComponentRanker())
 	utils.CrashOnError(err)
 }
 

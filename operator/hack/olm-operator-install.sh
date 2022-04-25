@@ -4,8 +4,18 @@ set -eu -o pipefail
 
 source "$(dirname "$0")/common.sh"
 
+declare allow_dirty_tag=false
+
 function main() {
+  case "$1" in
+  -d | --allow-dirty-tag)
+    allow_dirty_tag=true
+    shift
+    ;;
+  esac
+
   local -r operator_ns="${1:-}"
+
   case $# in
   2)
     local -r index_version="${2:-}"
@@ -16,11 +26,12 @@ function main() {
     local -r operator_version="${3:-}"
     ;;
   *)
-    echo "Usage: $0 <operator_ns> <index-version> [<install-version>]" >&2
+    echo "Usage: $0 [--allow-dirty-tag | -d] <operator_ns> <index-version> [<install-version>]" >&2
     exit 1
     ;;
   esac
 
+  check_version_tag "${operator_version}" "${allow_dirty_tag}"
   create_namespace "${operator_ns}"
   create_pull_secret "${operator_ns}"
   apply_operator_manifests "${operator_ns}" "${index_version}" "${operator_version}"

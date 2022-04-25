@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -327,7 +328,7 @@ func (m *manager) validatePeers(peers []*v1.NetworkBaselinePeerStatus) error {
 		if len(invalidPeerTypes) > 0 {
 			errorList.AddStringf("invalid types for peers: %v", invalidPeerTypes)
 		}
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, errorList.String())
+		return errors.Wrap(errox.InvalidArgs, errorList.String())
 	}
 	return nil
 }
@@ -339,7 +340,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 
 	baseline, found := m.baselinesByDeploymentID[deploymentID]
 	if !found {
-		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "no baseline found for deployment id %q", deploymentID)
+		return errors.Wrapf(errox.InvalidArgs, "no baseline found for deployment id %q", deploymentID)
 	}
 	if err := m.validatePeers(modifyRequest.GetPeers()); err != nil {
 		return err
@@ -507,7 +508,7 @@ type clusterNamespacePair struct {
 func (m *manager) processBaselineLockUpdate(ctx context.Context, deploymentID string, lockBaseline bool) error {
 	baseline, found := m.baselinesByDeploymentID[deploymentID]
 	if !found {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "no baseline with given deployment ID found")
+		return errors.Wrap(errox.InvalidArgs, "no baseline with given deployment ID found")
 	}
 	// Permission check before modifying in-memory data structures
 	if ok, err := networkBaselineSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.ClusterID), sac.NamespaceScopeKey(baseline.Namespace)); err != nil {

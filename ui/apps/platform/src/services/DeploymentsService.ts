@@ -1,5 +1,4 @@
 import queryString from 'qs';
-import { normalize } from 'normalizr';
 
 import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
 import { Deployment, ListDeployment } from 'types/deployment.proto';
@@ -10,7 +9,6 @@ import {
     orchestratorComponentOption,
 } from 'Containers/Navigation/OrchestratorComponentsToggle';
 import axios from './instance';
-import { deployment as deploymentSchema } from './schemas';
 
 const deploymentsUrl = '/v1/deploymentswithprocessinfo';
 const deploymentByIdUrl = '/v1/deployments';
@@ -18,7 +16,7 @@ const deploymentWithRiskUrl = '/v1/deploymentswithrisk';
 const deploymentsCountUrl = '/v1/deploymentscount';
 
 function shouldHideOrchestratorComponents() {
-    // for openshift filterting toggle
+    // for openshift filtering toggle
     return localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY) !== 'true';
 }
 
@@ -108,27 +106,3 @@ type DeploymentWithRisk = {
     deployment: Deployment;
     risk: Risk;
 };
-
-/**
- * Fetches list of registered deployments.
- *
- * TODO: Delete after (its only call in) deploymentSagas has been deleted.
- */
-export function fetchDeploymentsLegacy(options: RestSearchOption[]): Promise<{
-    response: {
-        entities: { deployment: Record<string, ListDeploymentWithProcessInfo> };
-        result: string[];
-    };
-}> {
-    let searchOptions = options;
-    if (shouldHideOrchestratorComponents()) {
-        searchOptions = [...options, ...orchestratorComponentOption];
-    }
-    const query = searchOptionsToQuery(searchOptions);
-    const params = queryString.stringify({ query }, { arrayFormat: 'repeat' });
-    return axios
-        .get<{ deployments: ListDeploymentWithProcessInfo[] }>(`${deploymentsUrl}?${params}`)
-        .then((response) => ({
-            response: normalize(response?.data?.deployments ?? [], [deploymentSchema]),
-        }));
-}

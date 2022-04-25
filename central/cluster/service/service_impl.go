@@ -12,7 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -63,7 +63,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // PostCluster creates a new cluster.
 func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
 	if request.GetId() != "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Id field should be empty when posting a new cluster")
+		return nil, errors.Wrap(errox.InvalidArgs, "Id field should be empty when posting a new cluster")
 	}
 	id, err := s.datastore.AddCluster(ctx, request)
 	if err != nil {
@@ -76,7 +76,7 @@ func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster)
 // PutCluster updates an existing cluster.
 func (s *serviceImpl) PutCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Id must be provided")
+		return nil, errors.Wrap(errox.InvalidArgs, "Id must be provided")
 	}
 	err := s.datastore.UpdateCluster(ctx, request)
 	if err != nil {
@@ -88,7 +88,7 @@ func (s *serviceImpl) PutCluster(ctx context.Context, request *storage.Cluster) 
 // GetCluster returns the specified cluster.
 func (s *serviceImpl) GetCluster(ctx context.Context, request *v1.ResourceByID) (*v1.ClusterResponse, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Id must be provided")
+		return nil, errors.Wrap(errox.InvalidArgs, "Id must be provided")
 	}
 	return s.getCluster(ctx, request.GetId())
 }
@@ -99,7 +99,7 @@ func (s *serviceImpl) getCluster(ctx context.Context, id string) (*v1.ClusterRes
 		return nil, errors.Errorf("Could not get cluster: %s", err)
 	}
 	if !ok {
-		return nil, errors.Wrap(errorhelpers.ErrNotFound, "Not found")
+		return nil, errors.Wrap(errox.NotFound, "Not found")
 	}
 
 	return &v1.ClusterResponse{
@@ -111,7 +111,7 @@ func (s *serviceImpl) getCluster(ctx context.Context, id string) (*v1.ClusterRes
 func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersRequest) (*v1.ClustersList, error) {
 	q, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid query %q: %v", req.GetQuery(), err)
+		return nil, errors.Wrapf(errox.InvalidArgs, "invalid query %q: %v", req.GetQuery(), err)
 	}
 
 	clusters, err := s.datastore.SearchRawClusters(ctx, q)
@@ -126,7 +126,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 // DeleteCluster removes a cluster
 func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Request must have a id")
+		return nil, errors.Wrap(errox.InvalidArgs, "Request must have a id")
 	}
 	if err := s.datastore.RemoveCluster(ctx, request.GetId(), nil); err != nil {
 		return nil, err

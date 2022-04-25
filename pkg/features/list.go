@@ -9,9 +9,6 @@ var (
 	// NetworkDetectionBaselineSimulation enables new features related to the baseline simulation part of the network detection experience.
 	NetworkDetectionBaselineSimulation = registerFeature("Enable network detection baseline simulation", "ROX_NETWORK_DETECTION_BASELINE_SIMULATION", true)
 
-	// NetworkDetectionBlockedFlows enables new features related to the blocked flows part of the network detection experience.
-	NetworkDetectionBlockedFlows = registerFeature("Enable blocked network flows experience", "ROX_NETWORK_DETECTION_BLOCKED_FLOWS", false)
-
 	// IntegrationsAsConfig enables loading integrations from config
 	IntegrationsAsConfig = registerFeature("Enable loading integrations from config", "ROX_INTEGRATIONS_AS_CONFIG", false)
 
@@ -45,4 +42,7 @@ var (
 	// NetworkPolicySystemPolicy enables two system policy fields (Missing (Ingress|Egress) Network Policy) to check deployments
 	// against network policies applied in the secured cluster.
 	NetworkPolicySystemPolicy = registerFeature("Enable NetworkPolicy-related system policy fields", "ROX_NETPOL_FIELDS", false)
+
+	// NewPolicyCategories enables new policy categories as first-class entities.
+	NewPolicyCategories = registerFeature("Enable new policy categories as first-class entities", "ROX_NEW_POLICY_CATEGORIES", false)
 )

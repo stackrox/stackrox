@@ -22,9 +22,13 @@ const (
 	countStmt  = "SELECT COUNT(*) FROM image_cves"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3)"
 
-	getStmt    = "SELECT serialized FROM image_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3"
-	deleteStmt = "DELETE FROM image_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3"
-	walkStmt   = "SELECT serialized FROM image_cves"
+	getStmt     = "SELECT serialized FROM image_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3"
+	deleteStmt  = "DELETE FROM image_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3"
+	walkStmt    = "SELECT serialized FROM image_cves"
+	getIDsStmt  = "SELECT Id FROM image_cves"
+	getManyStmt = "SELECT serialized FROM image_cves WHERE Id = ANY($1::text[])"
+
+	deleteManyStmt = "DELETE FROM image_cves WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -46,6 +50,9 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.CVE) error
 	UpsertMany(ctx context.Context, objs []*storage.CVE) error
 	Delete(ctx context.Context, id string, cve string, operatingSystem string) error
+	GetIDs(ctx context.Context) ([]string, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error)
+	DeleteMany(ctx context.Context, ids []string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.CVE) error) error
 
@@ -318,6 +325,89 @@ func (s *storeImpl) Delete(ctx context.Context, id string, cve string, operating
 	defer release()
 
 	if _, err := conn.Exec(ctx, deleteStmt, id, cve, operatingSystem); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetIDs returns all the IDs for the store
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.CVEIDs")
+
+	rows, err := s.db.Query(ctx, getIDsStmt)
+	if err != nil {
+		return nil, pgutils.ErrNilIfNoRows(err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+// GetMany returns the objects specified by the IDs or the index in the missing indices slice
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "CVE")
+
+	conn, release, err := s.acquireConn(ctx, ops.GetMany, "CVE")
+	if err != nil {
+		return nil, nil, err
+	}
+	defer release()
+
+	rows, err := conn.Query(ctx, getManyStmt, ids)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			missingIndices := make([]int, 0, len(ids))
+			for i := range ids {
+				missingIndices = append(missingIndices, i)
+			}
+			return nil, missingIndices, nil
+		}
+		return nil, nil, err
+	}
+	defer rows.Close()
+	resultsByID := make(map[string]*storage.CVE)
+	for rows.Next() {
+		var data []byte
+		if err := rows.Scan(&data); err != nil {
+			return nil, nil, err
+		}
+		msg := &storage.CVE{}
+		if err := proto.Unmarshal(data, msg); err != nil {
+			return nil, nil, err
+		}
+		resultsByID[msg.GetId()] = msg
+	}
+	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
+	// It is important that the elems are populated in the same order as the input ids
+	// slice, since some calling code relies on that to maintain order.
+	elems := make([]*storage.CVE, 0, len(resultsByID))
+	for i, id := range ids {
+		if result, ok := resultsByID[id]; !ok {
+			missingIndices = append(missingIndices, i)
+		} else {
+			elems = append(elems, result)
+		}
+	}
+	return elems, missingIndices, nil
+}
+
+// Delete removes the specified IDs from the store
+func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "CVE")
+
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "CVE")
+	if err != nil {
+		return err
+	}
+	defer release()
+	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
 		return err
 	}
 	return nil

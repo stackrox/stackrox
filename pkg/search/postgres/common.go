@@ -323,7 +323,6 @@ func compileQueryToPostgres(
 	case *v1.Query_BaseQuery:
 		switch subBQ := q.GetBaseQuery().Query.(type) {
 		case *v1.BaseQuery_DocIdQuery:
-			// TODO: Tackle selection of children.
 			return &pgsearch.QueryEntry{Where: pgsearch.WhereClause{
 				Query:  fmt.Sprintf("%s.id = ANY($$::text[])", schema.Table),
 				Values: []interface{}{subBQ.DocIdQuery.GetIds()},
@@ -407,8 +406,7 @@ func standardizeFieldNamesInQuery(q *v1.Query) {
 	// Lowercase all field names in the query, for standardization.
 	// There are certain places where we operate on the query fields directly as strings,
 	// without access to the options map.
-	// TODO: this could be made cleaner by: a) avoiding the need to pass in optionsMaps by building
-	// them into the schema and b) refactoring the v1.Query object to directly have FieldLabels.
+	// TODO: this could be made cleaner by refactoring the v1.Query object to directly have FieldLabels.
 	searchPkg.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
 		switch bq := bq.Query.(type) {
 		case *v1.BaseQuery_MatchFieldQuery:
@@ -483,7 +481,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 			idParts = append(idParts, valueFromStringPtrInterface(highlightedResults[i]))
 		}
 		result := searchPkg.Result{
-			ID: strings.Join(idParts, "+"), // TODO: figure out what separator to use
+			ID: strings.Join(idParts, IDSeparator), // TODO: figure out what separator to use
 		}
 		if len(query.Select.Fields) > 0 {
 			result.Matches = make(map[string][]string)

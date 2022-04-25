@@ -86,7 +86,7 @@ export const alerts = {
 export const clusters = {
     single: 'v1/clusters/**',
     list: 'v1/clusters',
-    kernelSupportAvailable: '/v1/clusters-env/kernel-support-available',
+    clusterDefaults: '/v1/cluster-defaults',
     zip: 'api/extensions/clusters/zip',
 };
 

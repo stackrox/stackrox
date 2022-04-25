@@ -11,7 +11,7 @@ import (
 	_ "github.com/stackrox/rox/central/notifiers/all"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/secrets"
@@ -97,7 +97,7 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	updateReq := createUpdateNotifierRequest()
 	updateReq.GetNotifier().GetGeneric().Password = "updatePassword"
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateReq)
-	s.EqualError(err, errors.Wrap(errorhelpers.ErrInvalidArgs, "non-zero or unmasked credential field 'Notifier.Notifier_Generic.Generic.Password'").Error())
+	s.EqualError(err, errors.Wrap(errox.InvalidArgs, "non-zero or unmasked credential field 'Notifier.Notifier_Generic.Generic.Password'").Error())
 
 	updateReq.UpdatePassword = true
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateReq)
@@ -112,7 +112,7 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	secrets.ScrubSecretsFromStructWithReplacement(updateDependentReq, secrets.ScrubReplacementStr)
 	updateDependentReq.UpdatePassword = false
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateDependentReq)
-	s.EqualError(err, errors.Wrap(errorhelpers.ErrInvalidArgs, "credentials required to update field 'Notifier.Notifier_Generic.Generic.Endpoint'").Error())
+	s.EqualError(err, errors.Wrap(errox.InvalidArgs, "credentials required to update field 'Notifier.Notifier_Generic.Generic.Endpoint'").Error())
 
 	updateBasic := createUpdateNotifierRequest()
 	updateBasic.GetNotifier().GetGeneric().AuditLoggingEnabled = true
