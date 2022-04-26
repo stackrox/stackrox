@@ -48,8 +48,8 @@ func newPolicyValidator(notifierStorage notifierDataStore.DataStore) *policyVali
 		nonEnforceablePolicyFields: make(map[string]struct{}),
 	}
 	if features.NetworkPolicySystemPolicy.Enabled() {
-		pv.nonEnforceablePolicyFields[augmentedobjs.MissingIngressPolicyCustomTag] = struct{}{}
-		pv.nonEnforceablePolicyFields[augmentedobjs.MissingEgressPolicyCustomTag] = struct{}{}
+		pv.nonEnforceablePolicyFields[augmentedobjs.HasIngressPolicyCustomTag] = struct{}{}
+		pv.nonEnforceablePolicyFields[augmentedobjs.HasEgressPolicyCustomTag] = struct{}{}
 	}
 	return pv
 }

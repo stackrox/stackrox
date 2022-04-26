@@ -812,8 +812,8 @@ func initializeFieldMetadata() FieldMetadata {
 	)
 
 	if features.NetworkPolicySystemPolicy.Enabled() {
-		f.registerFieldMetadata(fieldnames.MissingIngressNetworkPolicy,
-			querybuilders.ForFieldLabel(augmentedobjs.MissingIngressPolicyCustomTag), nil,
+		f.registerFieldMetadata(fieldnames.HasIngressNetworkPolicy,
+			querybuilders.ForFieldLabel(augmentedobjs.HasIngressPolicyCustomTag), nil,
 			func(*validateConfiguration) *regexp.Regexp {
 				return booleanValueRegex
 			},
@@ -821,8 +821,8 @@ func initializeFieldMetadata() FieldMetadata {
 			[]RuntimeFieldType{}, operatorsForbidden,
 		)
 
-		f.registerFieldMetadata(fieldnames.MissingEgressNetworkPolicy,
-			querybuilders.ForFieldLabel(augmentedobjs.MissingEgressPolicyCustomTag), nil,
+		f.registerFieldMetadata(fieldnames.HasEgressNetworkPolicy,
+			querybuilders.ForFieldLabel(augmentedobjs.HasEgressPolicyCustomTag), nil,
 			func(*validateConfiguration) *regexp.Regexp {
 				return booleanValueRegex
 			},
