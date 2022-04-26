@@ -14,6 +14,8 @@ const (
 	DisallowedImageLabelKey         = "disallowedImageLabel"
 	DropCapabilityKey               = "dropCapability"
 	EnvKey                          = "env"
+	HasEgressNetworkPolicyKey       = "hasEgressNetworkPolicy"
+	HasIngressNetworkPolicyKey      = "hasIngressNetworkPolicy"
 	HostIPCKey                      = "hostIPC"
 	HostNetworkKey                  = "hostNetwork"
 	HostPIDKey                      = "hostPID"
@@ -26,8 +28,6 @@ const (
 	ImageUserKey                    = "imageUser"
 	LineKey                         = "line"
 	LivenessProbeDefinedKey         = "livenessProbeDefined"
-	MissingEgressNetworkPolicyKey   = "missingEgressNetworkPolicy"
-	MissingIngressNetworkPolicyKey  = "missingIngressNetworkPolicy"
 	NamespaceKey                    = "namespace"
 	NodePortKey                     = "nodePort"
 	PortKey                         = "port"
@@ -60,6 +60,8 @@ func init() {
 	registerFunc(DisallowedImageLabelKey, disallowedImageLabelPrinter)
 	registerFunc(DropCapabilityKey, dropCapabilityPrinter)
 	registerFunc(EnvKey, envPrinter)
+	registerFunc(HasEgressNetworkPolicyKey, hasEgressNetworkPolicyPrinter)
+	registerFunc(HasIngressNetworkPolicyKey, hasIngressNetworkPolicyPrinter)
 	registerFunc(HostIPCKey, hostIPCPrinter)
 	registerFunc(HostNetworkKey, hostNetworkPrinter)
 	registerFunc(HostPIDKey, hostPIDPrinter)
@@ -72,8 +74,6 @@ func init() {
 	registerFunc(ImageUserKey, imageUserPrinter)
 	registerFunc(LineKey, linePrinter)
 	registerFunc(LivenessProbeDefinedKey, livenessProbeDefinedPrinter)
-	registerFunc(MissingEgressNetworkPolicyKey, missingEgressNetworkPolicyPrinter)
-	registerFunc(MissingIngressNetworkPolicyKey, missingIngressNetworkPolicyPrinter)
 	registerFunc(NamespaceKey, namespacePrinter)
 	registerFunc(NodePortKey, nodePortPrinter)
 	registerFunc(PortKey, portPrinter)
