@@ -59,3 +59,8 @@ export type NotifierIntegrationType =
     | 'teams';
 
 export type SignatureIntegrationType = 'signature';
+
+export type BaseIntegration = {
+    id: string;
+    name: string;
+};

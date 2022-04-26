@@ -1,0 +1,6 @@
+FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.35
+
+COPY stackrox /go/src/github.com/stackrox/stackrox
+WORKDIR /go/src/github.com/stackrox/stackrox
+
+RUN ./.openshift-ci/build/build-main-and-bundle.sh

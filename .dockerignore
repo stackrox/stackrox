@@ -1,5 +1,6 @@
 **/node_modules/
-/.git/
+# TODO(RS-509) - Post rollout this can be reinstated. 
+#/.git/
 /bin/
 /image/bin/
 /linux-gocache/

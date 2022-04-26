@@ -13,10 +13,8 @@ import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-tab
 import isEqual from 'lodash/isEqual';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { integrationsPath } from 'routePaths';
-import {
-    fetchSignatureIntegrations,
-    SignatureIntegration,
-} from 'services/SignatureIntegrationsService';
+import { fetchSignatureIntegrations } from 'services/SignatureIntegrationsService';
+import { SignatureIntegration } from 'types/signatureIntegration.proto';
 import useTableSelection from 'hooks/useTableSelection';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
 import tableColumnDescriptor from 'Containers/Integrations/utils/tableColumnDescriptor';

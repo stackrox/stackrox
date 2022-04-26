@@ -45,7 +45,7 @@ func (s *BrandedTextTestSuite) TestGetBrandedProductName() {
 			productBrandingEnv: "STACKROX_BRANDING",
 			brandedProductName: brandedProductNameStackrox,
 		},
-		// TODO(ROX-10208): Change this to StackRox after changing the default value of ProductBrandingEnvName.
+		// TODO(ROX-10208): Set brandedProductNameShort to brandedProductNameStackrox
 		"Unset env": {
 			productBrandingEnv: "",
 			brandedProductName: brandedProductNameRHACS,
@@ -56,6 +56,34 @@ func (s *BrandedTextTestSuite) TestGetBrandedProductName() {
 			s.envIsolator.Setenv("ROX_PRODUCT_BRANDING", tt.productBrandingEnv)
 			receivedProductName := GetProductName()
 			s.Equal(tt.brandedProductName, receivedProductName)
+		})
+	}
+}
+
+func (s *BrandedTextTestSuite) TestGetBrandedProductNameShort() {
+	tests := map[string]struct {
+		productBrandingEnv      string
+		brandedProductNameShort string
+	}{
+		"RHACS branding": {
+			productBrandingEnv:      "RHACS_BRANDING",
+			brandedProductNameShort: productNameRHACSShort,
+		},
+		"Stackrox branding": {
+			productBrandingEnv:      "STACKROX_BRANDING",
+			brandedProductNameShort: brandedProductNameStackrox,
+		},
+		// TODO(ROX-10208): Set brandedProductNameShort to brandedProductNameStackrox
+		"Unset env": {
+			productBrandingEnv:      "",
+			brandedProductNameShort: productNameRHACSShort,
+		},
+	}
+	for name, tt := range tests {
+		s.Run(name, func() {
+			s.envIsolator.Setenv("ROX_PRODUCT_BRANDING", tt.productBrandingEnv)
+			receivedProductNameShort := GetProductNameShort()
+			s.Equal(tt.brandedProductNameShort, receivedProductNameShort)
 		})
 	}
 }
