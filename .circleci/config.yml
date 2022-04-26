@@ -1641,8 +1641,6 @@ commands:
           name: Create cloud resources
           command: |
             mkdir -p openshift
-            export UID=$(id -u)
-            export GID=$(id -g)
             set +e
             try=0
             max_attempts=2
