@@ -38,17 +38,17 @@ func (np *Finder) GetNetworkPoliciesApplied(deployment *storage.Deployment) *aug
 			hasEgress = hasEgress || policyType == storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE
 			if hasIngress && hasEgress {
 				return &augmentedobjs.NetworkPoliciesApplied{
-					MissingIngressNetworkPolicy: false,
-					MissingEgressNetworkPolicy:  false,
-					Policies:                    policies,
+					HasIngressNetworkPolicy: true,
+					HasEgressNetworkPolicy:  true,
+					Policies:                policies,
 				}
 			}
 		}
 	}
 
 	return &augmentedobjs.NetworkPoliciesApplied{
-		MissingIngressNetworkPolicy: !hasIngress,
-		MissingEgressNetworkPolicy:  !hasEgress,
-		Policies:                    policies,
+		HasIngressNetworkPolicy: hasIngress,
+		HasEgressNetworkPolicy:  hasEgress,
+		Policies:                policies,
 	}
 }

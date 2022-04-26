@@ -4,18 +4,21 @@ package postgres
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 const (
@@ -40,8 +43,9 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.NamespacesSchema
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.NamespacesSchema
+	targetResource = resources.Namespace
 )
 
 type Store interface {
@@ -237,11 +241,37 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NamespaceMetada
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NamespaceMetadata) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NamespaceMetadata")
 
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
+		ClusterID(obj.GetClusterId()).Namespace(obj.GetId())
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NamespaceMetadata) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NamespaceMetadata")
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		var deniedIds []string
+		for _, obj := range objs {
+			subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetId())
+			if ok, err := subScopeChecker.Allowed(ctx); err != nil {
+				return err
+			} else if !ok {
+				deniedIds = append(deniedIds, obj.GetId())
+			}
+		}
+		if len(deniedIds) != 0 {
+			return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying namespaceMetadatas with IDs [%s] was denied", strings.Join(deniedIds, ", "))
+		}
+	}
 
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
@@ -426,25 +456,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NamespaceMeta
 		}
 	}
 	return nil
-}
-
-func isInScope(obj *storage.NamespaceMetadata, eas *effectiveaccessscope.ScopeTree) bool {
-	if eas.State == effectiveaccessscope.Included {
-		return true
-	}
-	if eas.State == effectiveaccessscope.Excluded {
-		return false
-	}
-	clusterId := obj.GetClusterId()
-	cluster := eas.GetClusterByID(clusterId)
-	if cluster.State == effectiveaccessscope.Included {
-		return true
-	}
-	if cluster.State == effectiveaccessscope.Excluded {
-		return false
-	}
-	namespaceName := obj.GetId()
-	return cluster.Namespaces[namespaceName].State == effectiveaccessscope.Included
 }
 
 //// Used for testing

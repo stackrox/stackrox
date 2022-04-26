@@ -1,5 +1,6 @@
 package services
 
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.RbacServiceGrpc
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
@@ -7,6 +8,7 @@ import objects.K8sRole
 import objects.K8sRoleBinding
 import util.Timer
 
+@Slf4j
 class RbacService extends BaseService {
     static getRbacService() {
         return RbacServiceGrpc.newBlockingStub(getChannel())
@@ -22,14 +24,14 @@ class RbacService extends BaseService {
                     Common.ResourceByID.newBuilder().setId(id).build()
             ).role
         } catch (Exception e) {
-            println "Error fetching role: ${e}"
+            log.warn("Error fetching role", e)
         }
     }
 
     static boolean waitForRole(K8sRole role) {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
-            println "Waiting for Role"
+            log.debug "Waiting for Role"
             def roles = getRoles()
             def r = roles.find {
                 it.name == role.name &&
@@ -40,14 +42,14 @@ class RbacService extends BaseService {
                 return true
             }
         }
-        println "Time out for Waiting for Role"
+        log.warn "Time out for Waiting for ${role.name} Role"
         return false
     }
 
     static boolean waitForRoleRemoved(K8sRole role) {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
-            println "Waiting for Role removed"
+            log.debug "Waiting for Role removed"
             def roles = getRoles()
             def r = roles.find {
                 it.name == role.name &&
@@ -57,7 +59,7 @@ class RbacService extends BaseService {
                 return true
             }
         }
-        println "Time out for Waiting for Role removal"
+        log.warn "Time out for Waiting for Role removal"
         return false
     }
 
@@ -72,14 +74,14 @@ class RbacService extends BaseService {
                     Common.ResourceByID.newBuilder().setId(id).build()
             ).binding
         } catch (Exception e) {
-            println "Error fetching role binding: ${e}"
+            log.warn("Error fetching role binding", e)
         }
     }
 
     static boolean waitForRoleBinding(K8sRoleBinding roleBinding) {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
-            println "Waiting for Role Binding"
+            log.debug "Waiting for Role Binding"
             def roleBindings = getRoleBindings()
             def r = roleBindings.find {
                 it.name == roleBinding.name &&
@@ -90,14 +92,14 @@ class RbacService extends BaseService {
                 return true
             }
         }
-        println "Time out for Waiting for Role Binding"
+        log.warn "Time out for Waiting for Role Binding"
         return false
     }
 
     static boolean waitForRoleBindingRemoved(K8sRoleBinding roleBinding) {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
-            println "Waiting for Role Binding removed"
+            log.debug "Waiting for Role Binding removed"
             def roleBindings = getRoleBindings()
             def r = roleBindings.find {
                 it.name == roleBinding.name &&
@@ -107,7 +109,7 @@ class RbacService extends BaseService {
                 return true
             }
         }
-        println "Time out for Waiting for Role Binding removal"
+        log.warn "Time out for Waiting for Role Binding removal"
         return false
     }
 
@@ -121,7 +123,7 @@ class RbacService extends BaseService {
                     Common.ResourceByID.newBuilder().setId(id).build()
             ).subject
         } catch (Exception e) {
-            println "Error fetching subject: ${e}"
+            log.warn("Error fetching subject", e)
         }
     }
 }

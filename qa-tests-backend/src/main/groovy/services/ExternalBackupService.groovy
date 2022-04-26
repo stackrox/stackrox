@@ -1,10 +1,12 @@
 package services
 
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.ExternalBackupServiceGrpc
 import io.stackrox.proto.storage.ExternalBackupOuterClass
 import io.stackrox.proto.storage.ScheduleOuterClass
 import util.Env
 
+@Slf4j
 class ExternalBackupService extends BaseService {
     static getExternalBackupClient() {
         return ExternalBackupServiceGrpc.newBlockingStub(getChannel())
@@ -15,7 +17,7 @@ class ExternalBackupService extends BaseService {
             getExternalBackupClient().testExternalBackup(backup)
             return true
         } catch (Exception e) {
-            println e.toString()
+            log.warn("test external backup failed", e)
             return false
         }
     }

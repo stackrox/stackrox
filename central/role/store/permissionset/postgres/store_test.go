@@ -101,7 +101,6 @@ func (s *PermissionsetsStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(permissionSet, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		permissionSets = append(permissionSets, permissionSet)
 	}
-
 	s.NoError(store.UpsertMany(ctx, permissionSets))
 
 	permissionSetCount, err = store.Count(ctx)
