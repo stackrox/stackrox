@@ -83,3 +83,33 @@ func TestIsCurrentVersion(t *testing.T) {
 		})
 	}
 }
+
+func TestIsSupportedVersion(t *testing.T) {
+	tests := []struct {
+		version     PolicyVersion
+		isSupported bool
+	}{
+		{
+			PolicyVersion{version1_1},
+			true,
+		},
+		{
+			PolicyVersion{version1},
+			false,
+		},
+		{
+			PolicyVersion{legacyVersion},
+			false,
+		},
+		{
+			PolicyVersion{"2.0"},
+			false,
+		},
+	}
+
+	for _, c := range tests {
+		t.Run(c.version.String()+" - "+strconv.FormatBool(c.isSupported), func(t *testing.T) {
+			assert.Equal(t, c.isSupported, IsSupportedVersion(c.version))
+		})
+	}
+}

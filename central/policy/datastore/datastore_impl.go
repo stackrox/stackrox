@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/logging"
 	policiesPkg "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sac"
@@ -137,9 +136,6 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	utils.FillSortHelperFields(policy)
 	// Any policy added after statup must be marked custom policy.
 	markPoliciesAsCustom(policy)
-
-	// Set version
-	policy.PolicyVersion = policyversion.CurrentVersion().String()
 
 	// No need to lock here because nobody can update the policy
 	// until this function returns and they receive the id.

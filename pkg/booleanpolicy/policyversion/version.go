@@ -2,6 +2,7 @@ package policyversion
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -25,6 +26,11 @@ var (
 	// strictly ascending order.
 	versions = [...]string{legacyVersion, version1, version1_1}
 
+	// supportedVersions enumerates all *supported* versions and must be in the
+	// strictly ascending order. supportedVersions is _always_ a subset of versions
+	// but ordering between versions and supportedVersions is not guaranteed
+	supportedVersions = set.NewFrozenStringSet(version1_1)
+
 	// versionRanks maps known versions to their sequence numbers. Note that
 	// the sequence number may vary among different builds.
 	versionRanks = utils.Invert(versions[:]).(map[string]int)
@@ -40,6 +46,19 @@ func CurrentVersion() PolicyVersion {
 // Anything lower will result in unexpected behavior
 func MinimumSupportedVersionForSensor() PolicyVersion {
 	return PolicyVersion{version1_1}
+}
+
+// IsCurrentVersion returns true if the policyVersion is equal to the current latest version
+// Purely a convenient way of using Compare to find if it's equal
+func IsCurrentVersion(policyVersion PolicyVersion) bool {
+	return Compare(policyVersion, CurrentVersion()) == 0
+}
+
+// IsSupportedVersion returns true if the policyVersion is one of the supported versions
+// Purely a convenient way of using Compare to find if it's equal
+func IsSupportedVersion(policyVersion PolicyVersion) bool {
+	stringVer := policyVersion.String()
+	return isKnownPolicyVersion(stringVer) && supportedVersions.Contains(stringVer)
 }
 
 // PolicyVersion wraps string-based policy version and provides comparison
@@ -68,12 +87,6 @@ func Compare(a, b PolicyVersion) int {
 	rankB := versionRanks[b.String()]
 
 	return rankA - rankB
-}
-
-// IsCurrentVersion returns true if the policyVersion is equal to the current latest version
-// Purely a convenient way of using Compare to find if it's equal
-func IsCurrentVersion(policyVersion PolicyVersion) bool {
-	return Compare(policyVersion, CurrentVersion()) == 0
 }
 
 // isKnownPolicyVersion returns true if the supplied string is a known

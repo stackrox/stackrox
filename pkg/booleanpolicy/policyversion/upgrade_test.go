@@ -102,7 +102,7 @@ func TestUpgradePolicyTo(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			err := UpgradePolicyTo(tc.policy, PolicyVersion{tc.targetVersion})
+			err := upgradePolicyTo(tc.policy, PolicyVersion{tc.targetVersion})
 			if tc.expectedError {
 				assert.Error(t, err)
 			} else {

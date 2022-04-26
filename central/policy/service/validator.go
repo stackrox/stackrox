@@ -111,10 +111,9 @@ func (s *policyValidator) validateVersion(policy *storage.Policy) error {
 		return errors.New("policy has invalid version")
 	}
 
-	// As of 70.0 we only support the latest version (1.1). This may in the future be expanded to support more, but for
-	// now it's enough to just check it matches current version
-	if !policyversion.IsCurrentVersion(ver) {
-		return errors.New("only policy with version 1.1 is supported")
+	// As of 70.0 we only support the latest version (1.1).
+	if !policyversion.IsSupportedVersion(ver) {
+		return errors.Errorf("policy version %s is not supported", ver.String())
 	}
 	return nil
 }

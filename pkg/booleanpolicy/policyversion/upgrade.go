@@ -22,10 +22,10 @@ var (
 	upgradersByVersionRank = getUpgradersByVersions(upgraders, versions[:])
 )
 
-// UpgradePolicyTo attempts to upgrade a given policy to the policy in the
+// upgradePolicyTo attempts to upgrade a given policy to the policy in the
 // given target version. Policies in some versions cannot be upgraded (for e.g. one that is already at the latest).
 // The function leaves policy either unchanged or in the upgraded state.
-func UpgradePolicyTo(p *storage.Policy, targetVersion PolicyVersion) error {
+func upgradePolicyTo(p *storage.Policy, targetVersion PolicyVersion) error {
 	currentVersion, err := FromString(p.GetPolicyVersion())
 	if err != nil {
 		return err

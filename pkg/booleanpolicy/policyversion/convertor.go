@@ -14,14 +14,23 @@ func EnsureConvertedToLatest(p *storage.Policy) error {
 	}
 
 	ver, err := FromString(p.GetPolicyVersion())
-	if err != nil || ver.String() == legacyVersion { // Legacy versions (i.e. no version) is no longer supported
+	if err != nil {
 		return errors.New("invalid version")
+	}
+
+	// If a policy is sent with legacyVersion but contains sections, that's okay --
+	// we will use those sections as-is, and infer that it's of the newer version.
+	// Other later validation will check to see if the rest of the policy is formatted correctly.
+	// NOTE: This will be removed soon, and we will prevent anyone from making an API call without version set
+	// This is an intermediate step.
+	if ver.String() == legacyVersion {
+		p.PolicyVersion = version1_1
 	}
 
 	// If it's not the latest version, delegate to the upgrader
 	// CurrentVersion should always be the latest, thus this will always involve an upgrade.
 	if !IsCurrentVersion(ver) {
-		if err := UpgradePolicyTo(p, CurrentVersion()); err != nil {
+		if err := upgradePolicyTo(p, CurrentVersion()); err != nil {
 			return err
 		}
 	}

@@ -38,14 +38,6 @@ func TestCloneAndEnsureConverted(t *testing.T) {
 			hasError: true,
 		},
 		{
-			desc: "legacy version is no longer supported",
-			policy: &storage.Policy{
-				PolicyVersion: legacyVersion,
-			},
-			expected: nil,
-			hasError: true,
-		},
-		{
 			desc:     "Noop when already at current version",
 			policy:   &storage.Policy{PolicyVersion: "100.0"},
 			expected: &storage.Policy{PolicyVersion: "100.0"},
