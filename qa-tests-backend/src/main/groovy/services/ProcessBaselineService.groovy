@@ -1,5 +1,6 @@
 package services
 
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.ProcessBaselineServiceGrpc
 import io.stackrox.proto.storage.ProcessBaselineOuterClass
 import io.stackrox.proto.storage.ProcessBaselineOuterClass.ProcessBaselineKey
@@ -8,6 +9,7 @@ import io.stackrox.proto.api.v1.ProcessBaselineServiceOuterClass.DeleteProcessBa
 import objects.Deployment
 import util.Timer
 
+@Slf4j
 class ProcessBaselineService extends BaseService {
     static getProcessBaselineService() {
         return ProcessBaselineServiceGrpc.newBlockingStub(getChannel())
@@ -31,15 +33,15 @@ class ProcessBaselineService extends BaseService {
         while (t.IsValid()) {
             def baseline = getBaselineProcesses(request)
             if (baseline) {
-                println "SR found process in baseline for the key - " +
+                log.info "SR found process in baseline for the key - " +
                         "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} " +
                             " within ${t.SecondsSince()}s"
                 return baseline
                 }
-            println "SR has not found process in baseline for the key - " +
+            log.debug "SR has not found process in baseline for the key - " +
                     "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} yet"
         }
-        println "SR has not found process in baseline for the key in - " +
+        log.warn "SR has not found process in baseline for the key in - " +
                 "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} " +
                 "${t.SecondsSince()} seconds"
         return null
@@ -88,7 +90,7 @@ class ProcessBaselineService extends BaseService {
 
             return fromUpdate
         } catch (Exception e) {
-            println "Error locking process baselines : ${e}"
+            log.warn("Error locking process baselines ", e)
         }
     }
 
@@ -125,7 +127,7 @@ class ProcessBaselineService extends BaseService {
                 .updateProcessBaselines(requestBuilder.build()).baselinesList
             return updatedLst
         } catch (Exception e) {
-            println "Error updating process baselines: ${e}"
+            log.warn("Error updating process baselines", e)
         }
     }
 
@@ -135,7 +137,7 @@ class ProcessBaselineService extends BaseService {
             return getProcessBaselineService().getProcessBaseline(request)
         }
         catch (Exception e) {
-            println "Error getting  process baselines: ${e}"
+            log.warn("Error getting  process baselines", e)
         }
         return null
     }
@@ -150,10 +152,10 @@ class ProcessBaselineService extends BaseService {
                     return true
                 }
             }
-            println("Did not find baselines for deployment ${deployment.getDeploymentUid()}")
+            log.debug "Did not find baselines for deployment ${deployment.getDeploymentUid()}"
         }
         catch (Exception e) {
-            println "Error waiting for deployment baselines to be created ${e}"
+            log.warn("Error waiting for deployment baselines to be created", e)
         }
         return false
     }
@@ -168,10 +170,10 @@ class ProcessBaselineService extends BaseService {
                     return true
                 }
             }
-            println("Baselines still exist for deployment ${deployment.getDeploymentUid()}")
+            log.debug "Baselines still exist for deployment ${deployment.getDeploymentUid()}"
         }
         catch (Exception e) {
-            println "Error waiting for deployment baselines to be deleted ${e}"
+            log.warn("Error waiting for deployment baselines to be deleted", e)
         }
         return false
     }

@@ -101,7 +101,6 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(simpleAccessScope, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		simpleAccessScopes = append(simpleAccessScopes, simpleAccessScope)
 	}
-
 	s.NoError(store.UpsertMany(ctx, simpleAccessScopes))
 
 	simpleAccessScopeCount, err = store.Count(ctx)

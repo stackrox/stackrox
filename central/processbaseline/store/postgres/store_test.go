@@ -12,6 +12,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -41,7 +42,7 @@ func (s *ProcessbaselinesStoreSuite) TearDownTest() {
 }
 
 func (s *ProcessbaselinesStoreSuite) TestStore() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -61,6 +62,34 @@ func (s *ProcessbaselinesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundProcessBaseline)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+	withAccessToDifferentNsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(processBaseline.GetKey().GetClusterId()),
+			sac.NamespaceScopeKeys("unknown ns"),
+		))
+	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(processBaseline.GetKey().GetClusterId()),
+			sac.NamespaceScopeKeys(processBaseline.GetKey().GetNamespace()),
+		))
+	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(processBaseline.GetKey().GetClusterId()),
+		))
+	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys("unknown cluster"),
+		))
+
 	s.NoError(store.Upsert(ctx, processBaseline))
 	foundProcessBaseline, exists, err = store.Get(ctx, processBaseline.GetId())
 	s.NoError(err)
@@ -75,6 +104,15 @@ func (s *ProcessbaselinesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(processBaselineExists)
 	s.NoError(store.Upsert(ctx, processBaseline))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, processBaseline), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withNoAccessToClusterCtx, processBaseline), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, processBaseline), sac.ErrResourceAccessDenied)
+	s.NoError(store.Upsert(withAccessCtx, processBaseline))
+	s.NoError(store.Upsert(withAccessToClusterCtx, processBaseline))
+	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.ProcessBaseline{processBaseline}), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.ProcessBaseline{processBaseline}), sac.ErrResourceAccessDenied)
+	s.NoError(store.UpsertMany(withAccessCtx, []*storage.ProcessBaseline{processBaseline}))
+	s.NoError(store.UpsertMany(withAccessToClusterCtx, []*storage.ProcessBaseline{processBaseline}))
 
 	foundProcessBaseline, exists, err = store.Get(ctx, processBaseline.GetId())
 	s.NoError(err)
@@ -93,7 +131,7 @@ func (s *ProcessbaselinesStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(processBaseline, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processBaselines = append(processBaselines, processBaseline)
 	}
-
+	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, processBaselines), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(ctx, processBaselines))
 
 	processBaselineCount, err = store.Count(ctx)

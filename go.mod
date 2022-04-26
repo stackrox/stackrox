@@ -8,13 +8,13 @@ require github.com/stackrox/scanner v0.0.0-20220426001230-9ab6777c9581
 
 require (
 	cloud.google.com/go/compute v1.5.0
-	cloud.google.com/go/containeranalysis v0.1.1
+	cloud.google.com/go/containeranalysis v0.3.0
 	cloud.google.com/go/storage v1.22.0
 	github.com/BurntSushi/toml v1.0.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/PagerDuty/go-pagerduty v1.5.0
+	github.com/PagerDuty/go-pagerduty v1.5.1
 	github.com/RoaringBitmap/roaring v0.9.4
 	github.com/VividCortex/ewma v1.2.0
 	github.com/andygrunwald/go-jira v1.15.1
@@ -120,7 +120,7 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gotest.tools v2.2.0+incompatible
-	helm.sh/helm/v3 v3.7.1
+	helm.sh/helm/v3 v3.7.2
 	k8s.io/api v0.22.8
 	k8s.io/apimachinery v0.22.8
 	k8s.io/apiserver v0.22.8

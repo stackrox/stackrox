@@ -8,7 +8,6 @@ import (
 )
 
 // ResourceType of the resource, determined according to resource metadata, schema and join type.
-//go:generate stringer -type=ResourceType
 type ResourceType int
 
 const (
