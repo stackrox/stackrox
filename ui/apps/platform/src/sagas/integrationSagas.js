@@ -5,7 +5,6 @@ import { integrationsPath, networkPath } from 'routePaths';
 import * as service from 'services/IntegrationsService';
 import * as AuthService from 'services/AuthService';
 import * as BackupIntegrationsService from 'services/BackupIntegrationsService';
-import { actions as clusterActions } from 'reducers/clusters';
 import { actions, types } from 'reducers/integrations';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as authActions } from 'reducers/auth';
@@ -19,7 +18,6 @@ const fetchIntegrationsActionMap = {
     imageIntegrations: actions.fetchImageIntegrations.request(),
     signatureIntegrations: actions.fetchSignatureIntegrations.request(),
     notifiers: actions.fetchNotifiers.request(),
-    clusters: clusterActions.fetchClusters.request(),
     apitoken: apiTokenActions.fetchAPITokens.request(),
 };
 
