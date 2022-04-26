@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flex, FlexItem, Text } from '@patternfly/react-core';
+import { capitalize, Flex, FlexItem, Text, Title } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -14,13 +14,13 @@ type GraphLoadErrorStateProps = {
 function GraphLoadErrorState({ error, userMessage }: GraphLoadErrorStateProps) {
     return (
         <Flex className="pf-u-flex-grow-1 pf-u-pt-2xl">
-            <FlexItem grow={{ default: 'grow' }}>
+            <FlexItem className="pf-u-color-100" grow={{ default: 'grow' }}>
                 <EmptyStateTemplate
                     headingLevel="h2"
                     title="An error has prevented the Network Graph from loading."
                     icon={ExclamationCircleIcon}
                 >
-                    <Text className="pf-u-font-weight-bold">{error}</Text>
+                    <Title headingLevel="h3">{capitalize(error)}</Title>
                     <Text className="pf-u-mt-lg">{userMessage}</Text>
                 </EmptyStateTemplate>
             </FlexItem>
