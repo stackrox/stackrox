@@ -6,28 +6,22 @@ import * as yup from 'yup';
 import { ListPolicy } from 'types/policy.proto';
 import {
     MIN_POLICY_NAME_LENGTH,
-    POLICY_DUPE_ACTIONS,
     hasDuplicateIdOnly,
     checkForBlockedSubmit,
+    PolicyImportDuplicateError,
+    PolicyResolution,
 } from './PolicyImport.utils';
 import DuplicatePolicyForm from './DuplicatePolicyForm';
 
 const RESOLUTION = { resolution: '', newName: '' };
 
-type DuplicateErrors = {
-    type: string;
-    incomingName: string;
-    incomingId: string;
-    duplicateName: string;
-};
-
 type ImportPolicyJSONErrorProps = {
     handleCancelModal: () => void;
     startImportPolicies: () => void;
     policies: ListPolicy[];
-    duplicateErrors: DuplicateErrors[];
+    duplicateErrors: PolicyImportDuplicateError[];
     errorMessages: string[];
-    duplicateResolution: { resolution: string; newName: string };
+    duplicateResolution: PolicyResolution;
     setDuplicateResolution: (duplicateResolution) => void;
 };
 
@@ -59,7 +53,7 @@ function ImportPolicyJSONError({
             onSubmit={() => {}}
             validationSchema={yup.object({
                 newName: yup.string().when('resolution', {
-                    is: POLICY_DUPE_ACTIONS.RENAME,
+                    is: 'rename',
                     then: (newNameSchema) =>
                         newNameSchema
                             .trim()

@@ -1,4 +1,5 @@
 import { Policy } from 'types/policy.proto';
+import { ImportPolicyResponse } from 'services/PoliciesService';
 
 export const MIN_POLICY_NAME_LENGTH = 5;
 
@@ -9,20 +10,11 @@ type PolicyImportError = {
     message: string;
 }
 
-type PolicyImportResponse = { 
-    succeeded: boolean; 
-    policy?: {
-        name: string;
-        id: string;
-    }; 
-    errors?: PolicyImportError[];
-}
-
-type PolicyImportErrorListItem = {
+export type PolicyImportDuplicateError = {
     type: string;
     incomingName?: string;
     incomingId?: string;
-    duplicateName: string;
+    duplicateName?: string;
     validationError?: string | null;
     message: string;
 }
@@ -30,18 +22,24 @@ type PolicyImportErrorListItem = {
 /**
  * parsePolicyImportErrors extracts any errors from the array of policies in the import, for ease-of-use in the UI
  */
-export function parsePolicyImportErrors(responses: PolicyImportResponse[]): PolicyImportErrorListItem[][] {
-    const errors = responses.reduce((acc: PolicyImportErrorListItem[][], res) => {
+export function parsePolicyImportErrors(responses: ImportPolicyResponse[]): PolicyImportDuplicateError[][] {
+    const errors = responses.reduce((acc: PolicyImportDuplicateError[][], res) => {
         if (res.errors?.length) {
-            const errorItems = res.errors.reduce((errList: PolicyImportErrorListItem[], err: PolicyImportError) => {
+            const errorItems = res.errors.reduce((errList:PolicyImportDuplicateError[] , err) => {
                 const thisErr = {
                     type: err.type,
                     incomingName: res.policy?.name,
                     incomingId: res.policy?.id,
-                    duplicateName: err.duplicateName,
-                    validationError: err?.validationError || null,
                     message: err.message,
                 };
+
+                if (err.type === 'duplicate_id' || err.type === 'duplicate_name') {
+                    thisErr['duplicateName'] = err.duplicateName
+                }
+
+                if (err.type === 'invalid_policy') {
+                    thisErr['validationError'] =  err.validationError || null
+                }
 
                 return errList.concat(thisErr);
             }, []);
@@ -54,8 +52,8 @@ export function parsePolicyImportErrors(responses: PolicyImportResponse[]): Poli
     return errors;
 }
 
-type PolicyResolution = {
-    resolution: 'rename'| 'overwrite' | 'keepBoth';
+export type PolicyResolution = {
+    resolution: 'rename'| 'overwrite' | 'keepBoth' | null;
     newName: string;
 }
 
@@ -81,7 +79,7 @@ type PolicyErrorMessage = {
 /**
  * stringify any import errors to display to the user
  */
-export function getErrorMessages(policyErrors: PolicyImportErrorListItem[]): PolicyErrorMessage[] {
+export function getErrorMessages(policyErrors: PolicyImportDuplicateError[]): PolicyErrorMessage[] {
     const errorMessages = policyErrors.map((err) => {
         let msg = '';
         switch (err.type) {
@@ -112,7 +110,7 @@ export function getErrorMessages(policyErrors: PolicyImportErrorListItem[]): Pol
 /**
  * modify the import payload to reflect the duplicate resolution chosen by the user
  */
-export function getResolvedPolicies(policies: Policy[], errors: PolicyImportErrorListItem[], duplicateResolution: PolicyResolution): [Policy[], { overwrite?: boolean }] {
+export function getResolvedPolicies(policies: Policy[], errors: PolicyImportDuplicateError[], duplicateResolution: PolicyResolution): [Policy[], { overwrite?: boolean }] {
     const resolvedPolicies = [...policies];
     const metadata = {
         overwrite: false
@@ -142,14 +140,14 @@ export function getResolvedPolicies(policies: Policy[], errors: PolicyImportErro
  *
  * @return  {boolean}              true if the only error is a duplicate policy ID
  */
-export function hasDuplicateIdOnly(importErrors: PolicyImportErrorListItem[]): boolean {
+export function hasDuplicateIdOnly(importErrors: PolicyImportDuplicateError[]): boolean {
     return importErrors?.length === 1 && importErrors[0].type === 'duplicate_id';
 }
 
 /**
  * simple function to abstract the test for only duplicate errors
  */
-export function checkDupeOnlyErrors(importErrors: PolicyImportErrorListItem[][]): boolean {
+export function checkDupeOnlyErrors(importErrors: PolicyImportDuplicateError[][]): boolean {
     return !!(
         importErrors?.length &&
         importErrors.every((policyErrors) => {

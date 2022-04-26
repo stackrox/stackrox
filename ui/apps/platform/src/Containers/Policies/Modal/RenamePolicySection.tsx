@@ -1,11 +1,13 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { FormGroup, Radio, TextInput } from '@patternfly/react-core';
 import { Field } from 'formik';
 
-import { POLICY_DUPE_ACTIONS } from './PolicyImport.utils';
+type RenamePolicySectionProps = {
+    changeRadio: (handler, name, value) => () => void;
+    changeText: (handler, name) => (value) => void;
+};
 
-const RenamePolicySection = ({ changeRadio, changeText }) => {
+const RenamePolicySection = ({ changeRadio, changeText }: RenamePolicySectionProps) => {
     return (
         <div>
             <Field name="resolution">
@@ -15,18 +17,14 @@ const RenamePolicySection = ({ changeRadio, changeText }) => {
                         value="overwrite"
                         label="Rename incoming policy"
                         id="policy-rename-radio"
-                        isChecked={field.value === POLICY_DUPE_ACTIONS.RENAME}
-                        onChange={changeRadio(
-                            field.onChange,
-                            field.name,
-                            POLICY_DUPE_ACTIONS.RENAME
-                        )}
+                        isChecked={field.value === 'rename'}
+                        onChange={changeRadio(field.onChange, field.name, 'rename')}
                     />
                 )}
             </Field>
             <Field name="newName">
                 {({ field, form }) => {
-                    const isDisabled = form.values.resolution !== POLICY_DUPE_ACTIONS.RENAME;
+                    const isDisabled = form.values.resolution !== 'rename';
                     const validated =
                         form.touched.newName && form.errors.newName ? 'error' : 'default';
                     return (
@@ -52,11 +50,6 @@ const RenamePolicySection = ({ changeRadio, changeText }) => {
             </Field>
         </div>
     );
-};
-
-RenamePolicySection.propTypes = {
-    changeRadio: PropTypes.func.isRequired,
-    changeText: PropTypes.func.isRequired,
 };
 
 export default RenamePolicySection;
