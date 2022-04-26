@@ -881,7 +881,8 @@ class PolicyConfigurationTest extends BaseSpecification {
                                 .setSeverityValue(2)
                                 .addPolicySections(PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
                                         PolicyOuterClass.PolicyGroup.newBuilder().setFieldName("Privileged Container")
-                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("true").build())
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().
+                                                        setValue("true").build())
                                                 .build()
                                 ).build())
                                 .build()
