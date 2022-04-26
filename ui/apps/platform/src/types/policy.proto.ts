@@ -23,6 +23,29 @@ export type LifecycleStage = 'DEPLOY' | 'BUILD' | 'RUNTIME';
 
 export type PolicyEventSource = 'NOT_APPLICABLE' | 'DEPLOYMENT_EVENT' | 'AUDIT_LOG_EVENT';
 
+export type BasePolicy = {
+    rationale: string;
+    remediation: string;
+    categories: string[];
+    exclusions: PolicyExclusion[];
+    scope: PolicyScope[];
+    enforcementActions: EnforcementAction[];
+    policyVersion: string;
+    policySections: PolicySection[];
+    mitreAttackVectors: PolicyMitreAttackVector[];
+    readonly criteriaLocked: boolean; // If true, the policy's criteria fields are rendered read-only.
+    readonly mitreVectorsLocked: boolean; // If true, the policy's MITRE ATT&CK fields are rendered read-only.
+} & ListPolicy;
+
+export type ClientPolicy = {
+    excludedImageNames: string[]; // For internal use only.
+    excludedDeploymentScopes: PolicyExcludedDeployment[]; // For internal use only.
+    SORT_name: string; // For internal use only.
+    SORT_lifecycleStage: string; // For internal use only.
+    SORT_enforcement: boolean; // For internal use only.
+    serverPolicySections: PolicySection[]; // For internal use only.
+} & BasePolicy;
+
 export type Policy = {
     rationale: string;
     remediation: string;
