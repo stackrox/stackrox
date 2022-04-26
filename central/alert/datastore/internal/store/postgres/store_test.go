@@ -12,6 +12,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -41,7 +42,7 @@ func (s *AlertsStoreSuite) TearDownTest() {
 }
 
 func (s *AlertsStoreSuite) TestStore() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -61,6 +62,34 @@ func (s *AlertsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundAlert)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+	withAccessToDifferentNsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(alert.GetClusterId()),
+			sac.NamespaceScopeKeys("unknown ns"),
+		))
+	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(alert.GetClusterId()),
+			sac.NamespaceScopeKeys(alert.GetNamespace()),
+		))
+	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(alert.GetClusterId()),
+		))
+	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys("unknown cluster"),
+		))
+
 	s.NoError(store.Upsert(ctx, alert))
 	foundAlert, exists, err = store.Get(ctx, alert.GetId())
 	s.NoError(err)
@@ -75,6 +104,15 @@ func (s *AlertsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(alertExists)
 	s.NoError(store.Upsert(ctx, alert))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, alert), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withNoAccessToClusterCtx, alert), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, alert), sac.ErrResourceAccessDenied)
+	s.NoError(store.Upsert(withAccessCtx, alert))
+	s.NoError(store.Upsert(withAccessToClusterCtx, alert))
+	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.Alert{alert}), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.Alert{alert}), sac.ErrResourceAccessDenied)
+	s.NoError(store.UpsertMany(withAccessCtx, []*storage.Alert{alert}))
+	s.NoError(store.UpsertMany(withAccessToClusterCtx, []*storage.Alert{alert}))
 
 	foundAlert, exists, err = store.Get(ctx, alert.GetId())
 	s.NoError(err)
@@ -93,7 +131,7 @@ func (s *AlertsStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(alert, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		alerts = append(alerts, alert)
 	}
-
+	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, alerts), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(ctx, alerts))
 
 	alertCount, err = store.Count(ctx)

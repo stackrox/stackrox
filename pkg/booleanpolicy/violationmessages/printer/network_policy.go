@@ -4,11 +4,12 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 )
 
 const (
-	missingIngressNetworkPolicy = `The deployment is missing Ingress Network Policy.`
-	missingEgressNetworkPolicy  = `The deployment is missing Egress Network Policy.`
+	hasIngressNetworkPolicy = `The deployment{{if .HasIngress}} has{{else}} is missing{{end}} Ingress Network Policy.`
+	hasEgressNetworkPolicy  = `The deployment{{if .HasEgress}} has{{else}} is missing{{end}} Egress Network Policy.`
 )
 
 const (
@@ -22,12 +23,38 @@ const (
 // This is implemented with place-holder messages for now just to unblock further developments on the evaluation of
 // this policy.
 
-func missingIngressNetworkPolicyPrinter(fieldMap map[string][]string) ([]string, error) {
-	return executeTemplate(missingIngressNetworkPolicy, nil)
+func hasIngressNetworkPolicyPrinter(fieldMap map[string][]string) ([]string, error) {
+	type resultFields struct {
+		HasIngress bool
+	}
+	hasIngress, err := getSingleValueFromFieldMap(fieldnames.HasIngressNetworkPolicy, fieldMap)
+	if err != nil {
+		return []string{}, err
+	}
+	r := resultFields{
+		HasIngress: false,
+	}
+	if hasIngress == "true" {
+		r.HasIngress = true
+	}
+	return executeTemplate(hasIngressNetworkPolicy, r)
 }
 
-func missingEgressNetworkPolicyPrinter(fieldMap map[string][]string) ([]string, error) {
-	return executeTemplate(missingEgressNetworkPolicy, nil)
+func hasEgressNetworkPolicyPrinter(fieldMap map[string][]string) ([]string, error) {
+	type resultFields struct {
+		HasEgress bool
+	}
+	hasEgress, err := getSingleValueFromFieldMap(fieldnames.HasEgressNetworkPolicy, fieldMap)
+	if err != nil {
+		return []string{}, err
+	}
+	r := resultFields{
+		HasEgress: false,
+	}
+	if hasEgress == "true" {
+		r.HasEgress = true
+	}
+	return executeTemplate(hasEgressNetworkPolicy, r)
 }
 
 // EnhanceNetworkPolicyViolations enriches each violation object with Alert_Violation_KeyValueAttrs containing policy-id and policy-name

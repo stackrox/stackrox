@@ -139,7 +139,7 @@
         "@types/react-dom": "^17.0.11",
         "@types/react-redux": "^7.1.20",
         "autoprefixer": "^10.2.5",
-        "cypress": "^9.5.4",
+        "cypress": "^9.6.0",
         "cypress-file-upload": "^5.0.8",
         "eslint": "^7.32.0",
         "eslint-config-airbnb": "^18.2.1",

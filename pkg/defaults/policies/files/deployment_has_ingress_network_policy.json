@@ -131,10 +131,10 @@
       "sectionName": "Alert on missing ingres Network Policy",
       "policyGroups": [
         {
-          "fieldName": "Missing Ingress Network Policy",
+          "fieldName": "Has Ingress Network Policy",
           "values": [
             {
-              "value": "true"
+              "value": "false"
             }
           ]
         }

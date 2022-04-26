@@ -1,30 +1,39 @@
-import React from 'react';
-
-import { defaultColumnClassName } from 'Components/Table';
+import { BaseBackupIntegration } from 'types/externalBackup.proto';
+import { BaseImageIntegration } from 'types/imageIntegration.proto';
+import {
+    AuthPluginType,
+    AuthProviderType,
+    BackupIntegrationType,
+    BaseIntegration,
+    ImageIntegrationType,
+    NotifierIntegrationType,
+    SignatureIntegrationType,
+} from 'types/integration';
+import { SumoLogicNotifierIntegration, SyslogNotifierIntegration } from 'types/notifier.proto';
+import { SignatureIntegration } from 'types/signatureIntegration.proto';
 import { knownBackendFlags } from 'utils/featureFlags';
 
 import { daysOfWeek, timesOfDay } from './integrationUtils';
 
-const classNameWordBreak = `${defaultColumnClassName} word-break`;
+export type AccessorFunction = (integration: BaseIntegration) => string;
 
-const tableColumnDescriptor = Object.freeze({
+export type IntegrationTableColumnDescriptor = {
+    Header: string;
+    accessor: string | AccessorFunction;
+    featureFlagDependency?: string;
+};
+
+type IntegrationTableColumnDescriptorMap = {
+    authPlugins: Record<AuthPluginType, IntegrationTableColumnDescriptor[]>;
+    authProviders: Record<AuthProviderType, IntegrationTableColumnDescriptor[]>;
+    backups: Record<BackupIntegrationType, IntegrationTableColumnDescriptor[]>;
+    imageIntegrations: Record<ImageIntegrationType, IntegrationTableColumnDescriptor[]>;
+    notifiers: Record<NotifierIntegrationType, IntegrationTableColumnDescriptor[]>;
+    signatureIntegrations: Record<SignatureIntegrationType, IntegrationTableColumnDescriptor[]>;
+};
+
+const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
     authProviders: {
-        oidc: [
-            { accessor: 'name', Header: 'Name' },
-            { accessor: 'config.issuer', Header: 'Issuer' },
-        ],
-        auth0: [
-            { accessor: 'name', Header: 'Name' },
-            { accessor: 'config.issuer', Header: 'Auth0 Tenant' },
-        ],
-        saml: [
-            { accessor: 'name', Header: 'Name' },
-            { accessor: 'config.idp_issuer', Header: 'Issuer' },
-        ],
-        iap: [
-            { accessor: 'name', Header: 'Name' },
-            { accessor: 'config.audience', Header: 'Audience' },
-        ],
         clusterInitBundle: [{ accessor: 'name', Header: 'Name' }],
         apitoken: [
             { accessor: 'name', Header: 'Name' },
@@ -42,12 +51,12 @@ const tableColumnDescriptor = Object.freeze({
         ],
         slack: [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'labelDefault', Header: 'Default Webhook', className: classNameWordBreak },
+            { accessor: 'labelDefault', Header: 'Default Webhook' },
             { accessor: 'labelKey', Header: 'Webhook Annotation Key' },
         ],
         teams: [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'labelDefault', Header: 'Default Webhook', className: classNameWordBreak },
+            { accessor: 'labelDefault', Header: 'Default Webhook' },
             { accessor: 'labelKey', Header: 'Webhook Annotation Key' },
         ],
         jira: [
@@ -56,11 +65,6 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'labelKey', Header: 'Project Annotation Key' },
             {
                 accessor: 'jira.url',
-                keyValueFunc: (url) => (
-                    <a href={url} target="_blank" rel="noopener noreferrer">
-                        {url}
-                    </a>
-                ),
                 Header: 'URL',
             },
         ],
@@ -78,11 +82,6 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'name', Header: 'Name' },
             {
                 accessor: 'splunk.httpEndpoint',
-                keyValueFunc: (url) => (
-                    <a href={url} target="_blank" rel="noopener noreferrer">
-                        {url}
-                    </a>
-                ),
                 Header: 'URL',
             },
             { accessor: 'splunk.truncate', Header: 'HEC Truncate Limit' },
@@ -97,7 +96,10 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'sumologic.httpSourceAddress', Header: 'HTTP Collector Source Address' },
             {
                 Header: 'Skip TLS Certificate Verification',
-                accessor: (data) => (data.skipTLSVerify ? 'Yes (Insecure)' : 'No (Secure)'),
+                accessor: (integration) =>
+                    (integration as SumoLogicNotifierIntegration).sumologic.skipTLSVerify
+                        ? 'Yes (Insecure)'
+                        : 'No (Secure)',
             },
         ],
         syslog: [
@@ -105,7 +107,10 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'syslog.tcpConfig.hostname', Header: 'Receiver Host' },
             {
                 Header: 'Skip TLS Certificate Verification',
-                accessor: (data) => (data.skipTLSVerify ? 'Yes (Insecure)' : 'No (Secure)'),
+                accessor: (integration) =>
+                    (integration as SyslogNotifierIntegration).syslog.tcpConfig.skipTlsVerify
+                        ? 'Yes (Insecure)'
+                        : 'No (Secure)',
             },
         ],
     },
@@ -116,7 +121,8 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'docker.username', Header: 'Username' },
             {
                 Header: 'Autogenerated',
-                accessor: (data) => (data.autogenerated ? 'True' : 'False'),
+                accessor: (integration) =>
+                    (integration as BaseImageIntegration).autogenerated ? 'True' : 'False',
             },
         ],
         tenable: [{ accessor: 'name', Header: 'Name' }],
@@ -158,7 +164,8 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'ecr.region', Header: 'Region' },
             {
                 Header: 'Autogenerated',
-                accessor: (data) => (data.autogenerated ? 'True' : 'False'),
+                accessor: (integration) =>
+                    (integration as BaseImageIntegration).autogenerated ? 'True' : 'False',
                 featureFlagDependency: knownBackendFlags.ROX_ECR_AUTO_INTEGRATION,
             },
         ],
@@ -191,8 +198,8 @@ const tableColumnDescriptor = Object.freeze({
         signature: [
             { accessor: 'name', Header: 'Name' },
             {
-                accessor: (data) => {
-                    return data.cosign ? 'Cosign' : '';
+                accessor: (integration) => {
+                    return (integration as SignatureIntegration).cosign ? 'Cosign' : '';
                 },
                 Header: 'Verification methods',
             },
@@ -203,10 +210,9 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'name', Header: 'Name' },
             { accessor: 's3.bucket', Header: 'Bucket' },
             {
-                id: 'schedule',
-                accessor: (data) => {
-                    const { schedule } = data;
-                    if (schedule.weekly) {
+                accessor: (integration) => {
+                    const { schedule } = integration as BaseBackupIntegration;
+                    if (schedule.intervalType === 'WEEKLY') {
                         return `Weekly on ${daysOfWeek[schedule.weekly.day]} @ ${
                             timesOfDay[schedule.hour]
                         } UTC`;
@@ -220,10 +226,9 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'name', Header: 'Name' },
             { accessor: 'gcs.bucket', Header: 'Bucket' },
             {
-                id: 'schedule',
-                accessor: (data) => {
-                    const { schedule } = data;
-                    if (schedule.weekly) {
+                accessor: (integration) => {
+                    const { schedule } = integration as BaseBackupIntegration;
+                    if (schedule.intervalType === 'WEEKLY') {
                         return `Weekly on ${daysOfWeek[schedule.weekly.day]} @ ${
                             timesOfDay[schedule.hour]
                         } UTC`;
@@ -240,6 +245,6 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'endpointConfig.endpoint', Header: 'Endpoint' },
         ],
     },
-});
+};
 
 export default tableColumnDescriptor;

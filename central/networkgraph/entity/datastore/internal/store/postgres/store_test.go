@@ -93,7 +93,6 @@ func (s *NetworkentityStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(networkEntity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkEntitys = append(networkEntitys, networkEntity)
 	}
-
 	s.NoError(store.UpsertMany(ctx, networkEntitys))
 
 	networkEntityCount, err = store.Count(ctx)

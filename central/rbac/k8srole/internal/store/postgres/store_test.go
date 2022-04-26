@@ -12,6 +12,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -41,7 +42,7 @@ func (s *K8srolesStoreSuite) TearDownTest() {
 }
 
 func (s *K8srolesStoreSuite) TestStore() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -61,6 +62,34 @@ func (s *K8srolesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundK8SRole)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+	withAccessToDifferentNsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(k8SRole.GetClusterId()),
+			sac.NamespaceScopeKeys("unknown ns"),
+		))
+	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(k8SRole.GetClusterId()),
+			sac.NamespaceScopeKeys(k8SRole.GetNamespace()),
+		))
+	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(k8SRole.GetClusterId()),
+		))
+	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys("unknown cluster"),
+		))
+
 	s.NoError(store.Upsert(ctx, k8SRole))
 	foundK8SRole, exists, err = store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)
@@ -75,6 +104,15 @@ func (s *K8srolesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(k8SRoleExists)
 	s.NoError(store.Upsert(ctx, k8SRole))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, k8SRole), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withNoAccessToClusterCtx, k8SRole), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, k8SRole), sac.ErrResourceAccessDenied)
+	s.NoError(store.Upsert(withAccessCtx, k8SRole))
+	s.NoError(store.Upsert(withAccessToClusterCtx, k8SRole))
+	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.K8SRole{k8SRole}), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.K8SRole{k8SRole}), sac.ErrResourceAccessDenied)
+	s.NoError(store.UpsertMany(withAccessCtx, []*storage.K8SRole{k8SRole}))
+	s.NoError(store.UpsertMany(withAccessToClusterCtx, []*storage.K8SRole{k8SRole}))
 
 	foundK8SRole, exists, err = store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)
@@ -93,7 +131,7 @@ func (s *K8srolesStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(k8SRole, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		k8SRoles = append(k8SRoles, k8SRole)
 	}
-
+	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, k8SRoles), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(ctx, k8SRoles))
 
 	k8SRoleCount, err = store.Count(ctx)

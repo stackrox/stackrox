@@ -661,3 +661,54 @@ func (b *storeImpl) GetKeysToIndex(_ context.Context) ([]string, error) {
 	// DackBox handles indexing
 	return nil, nil
 }
+
+func (b *storeImpl) UpdateVulnState(_ context.Context, cve string, images []string, state storage.VulnerabilityState) error {
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.UpdateMany, "ImageCVEEdge")
+
+	edgeIDs := getEdgeIDs(cve, images...)
+	graphKeys := gatherKeysForEdge(cve, images...)
+	// Lock nodes in the graph and update the image-cve edge in the db.
+	return b.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(graphKeys...), func() error {
+		dackTxn, err := b.dacky.NewTransaction()
+		if err != nil {
+			return err
+		}
+		defer dackTxn.Discard()
+
+		for _, edgeID := range edgeIDs {
+			msg, err := imageCVEEdgeDackBox.Reader.ReadIn(imageCVEEdgeDackBox.BucketHandler.GetKey(edgeID), dackTxn)
+			if err != nil {
+				return err
+			}
+			if msg == nil {
+				continue
+			}
+			edge := msg.(*storage.ImageCVEEdge)
+			if edge.GetState() == state {
+				continue
+			}
+			edge.State = state
+			if err := imageCVEEdgeDackBox.Upserter.UpsertIn(nil, edge, dackTxn); err != nil {
+				return err
+			}
+		}
+		return dackTxn.Commit()
+	})
+}
+
+func getEdgeIDs(cve string, imageIDs ...string) []string {
+	ids := make([]string, 0, len(imageIDs))
+	for _, imgID := range imageIDs {
+		ids = append(ids, edges.EdgeID{ParentID: imgID, ChildID: cve}.ToString())
+	}
+	return ids
+}
+
+func gatherKeysForEdge(cve string, imageIDs ...string) [][]byte {
+	allKeys := make([][]byte, 0, len(imageIDs)+1)
+	for _, imgID := range imageIDs {
+		allKeys = append(allKeys, imageDackBox.BucketHandler.GetKey(imgID))
+	}
+	allKeys = append(allKeys, cveDackBox.BucketHandler.GetKey(cve))
+	return allKeys
+}

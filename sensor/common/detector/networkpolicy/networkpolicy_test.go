@@ -75,8 +75,8 @@ func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 		"No policies for deployment": {
 			policiesInStore: map[string]*storage.NetworkPolicy{},
 			expectedAugmentedObject: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: true,
-				MissingEgressNetworkPolicy:  true,
+				HasIngressNetworkPolicy: false,
+				HasEgressNetworkPolicy:  false,
 			},
 		},
 		"Ingress Policy": {
@@ -86,8 +86,8 @@ func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 				}),
 			},
 			expectedAugmentedObject: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: false,
-				MissingEgressNetworkPolicy:  true,
+				HasIngressNetworkPolicy: true,
+				HasEgressNetworkPolicy:  false,
 			},
 		},
 		"Egress Policy": {
@@ -97,8 +97,8 @@ func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 				}),
 			},
 			expectedAugmentedObject: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: true,
-				MissingEgressNetworkPolicy:  false,
+				HasIngressNetworkPolicy: false,
+				HasEgressNetworkPolicy:  true,
 			},
 		},
 		"Ingress and Egress on same policy object": {
@@ -109,8 +109,8 @@ func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 				}),
 			},
 			expectedAugmentedObject: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: false,
-				MissingEgressNetworkPolicy:  false,
+				HasIngressNetworkPolicy: true,
+				HasEgressNetworkPolicy:  true,
 			},
 		},
 		"Ingress and Egress on different policy objects": {
@@ -123,8 +123,8 @@ func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 				}),
 			},
 			expectedAugmentedObject: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: false,
-				MissingEgressNetworkPolicy:  false,
+				HasIngressNetworkPolicy: true,
+				HasEgressNetworkPolicy:  true,
 			},
 		},
 		"Both missing if policy is UNSET": {
@@ -134,8 +134,8 @@ func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 				}),
 			},
 			expectedAugmentedObject: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: true,
-				MissingEgressNetworkPolicy:  true,
+				HasIngressNetworkPolicy: false,
+				HasEgressNetworkPolicy:  false,
 			},
 		},
 	}

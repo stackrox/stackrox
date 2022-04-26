@@ -48,8 +48,8 @@ func enhancedDeployment(dep *storage.Deployment, images []*storage.Image) Enhanc
 		Deployment: dep,
 		Images:     images,
 		NetworkPoliciesApplied: &augmentedobjs.NetworkPoliciesApplied{
-			MissingIngressNetworkPolicy: false,
-			MissingEgressNetworkPolicy:  false,
+			HasIngressNetworkPolicy: true,
+			HasEgressNetworkPolicy:  true,
 		},
 	}
 }
@@ -3206,8 +3206,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 	}{
 		"Missing Ingress Network Policy": {
 			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: true,
-				MissingEgressNetworkPolicy:  false,
+				HasIngressNetworkPolicy: false,
+				HasEgressNetworkPolicy:  true,
 			},
 			alerts: []*storage.Alert_Violation{
 				{Message: "The deployment is missing Ingress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
@@ -3215,17 +3215,17 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 		},
 		"Missing Egress Network Policy": {
 			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: false,
-				MissingEgressNetworkPolicy:  true,
+				HasIngressNetworkPolicy: true,
+				HasEgressNetworkPolicy:  false,
 			},
 			alerts: []*storage.Alert_Violation{
 				{Message: "The deployment is missing Egress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
 			},
 		},
-		"Missing both policies": {
+		"Both policies missing": {
 			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: true,
-				MissingEgressNetworkPolicy:  true,
+				HasIngressNetworkPolicy: false,
+				HasEgressNetworkPolicy:  false,
 			},
 			alerts: []*storage.Alert_Violation{
 				{Message: "The deployment is missing Ingress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
@@ -3234,8 +3234,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 		},
 		"No alerts": {
 			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: false,
-				MissingEgressNetworkPolicy:  false,
+				HasIngressNetworkPolicy: true,
+				HasEgressNetworkPolicy:  true,
 			},
 			alerts: []*storage.Alert_Violation(nil),
 		},
@@ -3245,8 +3245,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 		},
 		"Policies attached to augmentedobj": {
 			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: true,
-				MissingEgressNetworkPolicy:  false,
+				HasIngressNetworkPolicy: false,
+				HasEgressNetworkPolicy:  true,
 				Policies: map[string]*storage.NetworkPolicy{
 					"ID1": {Id: "ID1", Name: "policy1"},
 				},
@@ -3271,8 +3271,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 	for name, testCase := range testCases {
 		suite.Run(name, func() {
 			deployment := fixtures.GetDeployment().Clone()
-			missingIngressPolicy := policyWithSingleKeyValue(fieldnames.MissingIngressNetworkPolicy, "true", false)
-			missingEgressPolicy := policyWithSingleKeyValue(fieldnames.MissingEgressNetworkPolicy, "true", false)
+			missingIngressPolicy := policyWithSingleKeyValue(fieldnames.HasIngressNetworkPolicy, "false", false)
+			missingEgressPolicy := policyWithSingleKeyValue(fieldnames.HasEgressNetworkPolicy, "false", false)
 
 			enhanced := enhancedDeploymentWithNetworkPolicies(
 				deployment,
