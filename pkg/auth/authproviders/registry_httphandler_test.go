@@ -17,8 +17,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	perm "github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/role"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
@@ -238,8 +238,7 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationRejectsUserWithout
 	redirectURLFragments, _ := url.ParseQuery(redirectURL.Fragment)
 	s.assert.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated for user without role "+
 		"should redirect to the registry redirect URL")
-	callbackError := errox.NotAuthorized.CausedBy("no valid role for the user")
-	s.assert.Equal(callbackError.Error(), redirectURLFragments.Get("error"),
+	s.assert.Equal(role.ErrNoValidRole.Error(), redirectURLFragments.Get("error"),
 		"callback activated for user without role should issue an explicit message")
 }
 

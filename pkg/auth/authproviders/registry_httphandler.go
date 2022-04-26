@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
+	"github.com/stackrox/rox/pkg/auth/role"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -282,8 +283,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 
 	userRoles := userInfo.GetRoles()
 	if len(userRoles) == 0 {
-		err := errox.NotAuthorized.CausedBy("no valid role for the user")
-		r.error(w, err, typ, clientState, testMode)
+		r.error(w, role.ErrNoValidRole, typ, clientState, testMode)
 		return
 	}
 

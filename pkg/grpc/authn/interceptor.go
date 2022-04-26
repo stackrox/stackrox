@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/stackrox/rox/pkg/auth/role"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -33,7 +34,7 @@ func (u contextUpdater) updateContext(ctx context.Context) (context.Context, err
 	if id != nil {
 		// Only service identities can have no roles assigned.
 		if len(id.Roles()) == 0 && id.Service() == nil {
-			return context.WithValue(ctx, identityErrorContextKey{}, errox.NotAuthorized.CausedBy("no valid role")), nil
+			return context.WithValue(ctx, identityErrorContextKey{}, role.ErrNoValidRole), nil
 		}
 		return context.WithValue(ctx, identityContextKey{}, id), nil
 	}
