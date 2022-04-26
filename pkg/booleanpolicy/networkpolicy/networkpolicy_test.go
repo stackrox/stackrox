@@ -25,13 +25,13 @@ func policy(classificationEnums []storage.NetworkPolicyType) *storage.NetworkPol
 func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 	cases := map[string]struct {
 		policiesInStore map[string]*storage.NetworkPolicy
-		missingIngress  bool
-		missingEgress   bool
+		hasIngres bool
+		hasEgress bool
 	}{
 		"No policies for deployment": {
 			policiesInStore: map[string]*storage.NetworkPolicy{},
-			missingIngress:  true,
-			missingEgress:   true,
+			hasIngres:       false,
+			hasEgress:       false,
 		},
 		"Ingress Policy": {
 			policiesInStore: map[string]*storage.NetworkPolicy{
@@ -39,8 +39,8 @@ func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 					storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE,
 				}),
 			},
-			missingIngress: false,
-			missingEgress:  true,
+			hasIngres: true,
+			hasEgress: false,
 		},
 		"Egress Policy": {
 			policiesInStore: map[string]*storage.NetworkPolicy{
@@ -48,8 +48,8 @@ func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 					storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE,
 				}),
 			},
-			missingIngress: true,
-			missingEgress:  false,
+			hasIngres: false,
+			hasEgress: true,
 		},
 		"Ingress and Egress on same policy object": {
 			policiesInStore: map[string]*storage.NetworkPolicy{
@@ -58,8 +58,8 @@ func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 					storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE,
 				}),
 			},
-			missingIngress: false,
-			missingEgress:  false,
+			hasIngres: true,
+			hasEgress: true,
 		},
 		"Ingress and Egress on different policy objects": {
 			policiesInStore: map[string]*storage.NetworkPolicy{
@@ -70,8 +70,8 @@ func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 					storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE,
 				}),
 			},
-			missingIngress: false,
-			missingEgress:  false,
+			hasIngres: true,
+			hasEgress: true,
 		},
 		"Both missing if policy is UNSET": {
 			policiesInStore: map[string]*storage.NetworkPolicy{
@@ -79,16 +79,16 @@ func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 					storage.NetworkPolicyType_UNSET_NETWORK_POLICY_TYPE,
 				}),
 			},
-			missingIngress: true,
-			missingEgress:  true,
+			hasIngres: false,
+			hasEgress: false,
 		},
 	}
 
 	for name, testCase := range cases {
 		suite.Run(name, func() {
 			aug := GetNetworkPoliciesApplied(testCase.policiesInStore)
-			suite.Equal(testCase.missingIngress, aug.MissingIngressNetworkPolicy)
-			suite.Equal(testCase.missingEgress, aug.MissingEgressNetworkPolicy)
+			suite.Equal(testCase.hasIngres, aug.HasIngressNetworkPolicy)
+			suite.Equal(testCase.hasEgress, aug.HasEgressNetworkPolicy)
 			suite.Len(aug.Policies, len(testCase.policiesInStore))
 		})
 	}

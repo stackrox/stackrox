@@ -39,7 +39,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -412,14 +411,7 @@ func (s *serviceImpl) getNetworkPoliciesForDeployment(ctx context.Context, dep *
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get network policies for clusterId %s on namespace %s", dep.GetClusterId(), dep.GetNamespace())
 	}
-
-	matchedNetworkPolicies := map[string]*storage.NetworkPolicy{}
-	for _, p := range storedPolicies {
-		if labels.MatchLabels(p.GetSpec().GetPodSelector(), dep.GetPodLabels()) {
-			matchedNetworkPolicies[p.GetId()] = p
-		}
-	}
-
+	matchedNetworkPolicies := networkpolicy.FilterForDeployment(storedPolicies, dep)
 	return networkpolicy.GetNetworkPoliciesApplied(matchedNetworkPolicies), nil
 }
 
