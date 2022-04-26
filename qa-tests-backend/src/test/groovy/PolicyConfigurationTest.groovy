@@ -250,8 +250,8 @@ class PolicyConfigurationTest extends BaseSpecification {
                                 PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
                                         PolicyOuterClass.PolicyGroup.newBuilder()
                                                 .setFieldName("Image Tag")
-                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("nginx-1-7-9")
-                                                        .build())
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("nginx-1-7-9").build())
                                                 .build()
                                 ).build()
                         ).build()       | DEPLOYMENTNGINX | null
