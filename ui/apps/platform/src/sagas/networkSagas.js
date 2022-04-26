@@ -91,11 +91,11 @@ function* getNetworkGraphs(clusterId, namespaces, query) {
     );
 
     if (policyGraph && flowGraph) {
-        yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowGraph));
-        yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
         yield put(graphNetworkActions.setNetworkEdgeMap(flowGraph, policyGraph));
         yield put(graphNetworkActions.setNetworkNodeMap(flowGraph, policyGraph));
         yield put(graphNetworkActions.updateNetworkGraphTimestamp(new Date()));
+        yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowGraph));
+        yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
     } else if (policyGraph) {
         yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
     }
