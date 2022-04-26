@@ -93,7 +93,6 @@ func (s *ImageCvesStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(cVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		cVEs = append(cVEs, cVE)
 	}
-
 	s.NoError(store.UpsertMany(ctx, cVEs))
 
 	cVECount, err = store.Count(ctx)

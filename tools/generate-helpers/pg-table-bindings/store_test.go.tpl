@@ -17,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-    {{- if (or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker)) }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) }}
     "github.com/stackrox/rox/pkg/sac"{{- end }}
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -49,7 +49,7 @@ func (s *{{$namePrefix}}StoreSuite) TearDownTest() {
 }
 
 func (s *{{$namePrefix}}StoreSuite) TestStore() {
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped)}}
     ctx := sac.WithAllAccess(context.Background())
     {{- else -}}
     ctx := context.Background()
@@ -74,9 +74,39 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
     {{if not .JoinTable -}}
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped)}}
     withNoAccessCtx := sac.WithNoAccess(ctx)
     {{- end }}
+	{{- if .Obj.IsDirectlyScoped }}
+	withAccessToDifferentNsCtx:= sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys({{ $name | .Obj.GetClusterID }}),
+			sac.NamespaceScopeKeys("unknown ns"),
+	))
+	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys({{ $name | .Obj.GetClusterID }}),
+			{{- if .Obj.IsNamespaceScope }}
+			sac.NamespaceScopeKeys({{ $name | .Obj.GetNamespace }}),
+			{{- end }}
+	))
+	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys({{ $name | .Obj.GetClusterID }}),
+	))
+	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys("unknown cluster"),
+	))
+	{{- end }}
 
 	s.NoError(store.Upsert(ctx, {{$name}}))
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
@@ -98,9 +128,19 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.NoError(err)
 	s.True({{$name}}Exists)
 	s.NoError(store.Upsert(ctx, {{$name}}))
-    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped)}}
 	s.ErrorIs(store.Upsert(withNoAccessCtx, {{$name}}), sac.ErrResourceAccessDenied)
     {{- end }}
+	{{- if (.Obj.IsDirectlyScoped)}}
+	s.ErrorIs(store.Upsert(withNoAccessToClusterCtx, {{ $name }}), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, {{ $name }}), sac.ErrResourceAccessDenied)
+	s.NoError(store.Upsert(withAccessCtx, {{ $name }}))
+	s.NoError(store.Upsert(withAccessToClusterCtx, {{ $name }}))
+	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*{{.Type}}{ {{ $name }} }), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*{{.Type}}{ {{ $name }} }), sac.ErrResourceAccessDenied)
+	s.NoError(store.UpsertMany(withAccessCtx, []*{{.Type}}{ {{ $name }} }))
+	s.NoError(store.UpsertMany(withAccessToClusterCtx, []*{{.Type}}{ {{ $name }} }))
+	{{- end }}
 
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
@@ -124,7 +164,10 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
         {{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
     }
 
-    s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
+	{{- if (.Obj.IsDirectlyScoped)}}
+	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, {{.TrimmedType|lowerCamelCase}}s), sac.ErrResourceAccessDenied)
+	{{- end }}
+	s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
 
     {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
     s.NoError(err)

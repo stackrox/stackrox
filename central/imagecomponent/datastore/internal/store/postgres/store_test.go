@@ -93,7 +93,6 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(imageComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		imageComponents = append(imageComponents, imageComponent)
 	}
-
 	s.NoError(store.UpsertMany(ctx, imageComponents))
 
 	imageComponentCount, err = store.Count(ctx)
