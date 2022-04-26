@@ -5,17 +5,15 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/cve/image/datastore/internal/search"
+	"github.com/stackrox/rox/central/cve/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/cve/index"
-	sacFilters "github.com/stackrox/rox/central/cve/sac"
-	"github.com/stackrox/rox/central/cve/search"
-	"github.com/stackrox/rox/central/cve/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/filtered"
+	pkgPostgres "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -24,16 +22,19 @@ var (
 		sac.ForResource(resources.VulnerabilityManagementRequests),
 		sac.ForResource(resources.VulnerabilityManagementApprovals),
 	)
-	clustersSAC = sac.ForResource(resources.Cluster)
 
 	accessAllCtx = sac.WithAllAccess(context.Background())
 )
 
+type imageCVEPks struct {
+	cve string
+	os  string
+}
+
 type datastoreImpl struct {
-	storage       store.Store
-	indexer       index.Indexer
-	searcher      search.Searcher
-	graphProvider graph.Provider
+	storage  store.Store
+	indexer  index.Indexer
+	searcher search.Searcher
 
 	cveSuppressionLock  sync.RWMutex
 	cveSuppressionCache map[string]suppressionCacheEntry
@@ -68,11 +69,11 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 	return ds.searcher.Search(ctx, q)
 }
 
-func (ds *datastoreImpl) SearchCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+func (ds *datastoreImpl) SearchImageCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	return ds.searcher.SearchCVEs(ctx, q)
 }
 
-func (ds *datastoreImpl) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.CVE, error) {
+func (ds *datastoreImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.CVE, error) {
 	cves, err := ds.searcher.SearchRawCVEs(ctx, q)
 	if err != nil {
 		return nil, err
@@ -88,12 +89,11 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.CVE, bool, error) {
-	filteredIDs, err := ds.filterReadable(ctx, []string{id})
-	if err != nil || len(filteredIDs) != 1 {
+	pks, err := getPKs(id)
+	if err != nil {
 		return nil, false, err
 	}
-
-	cve, found, err := ds.storage.Get(ctx, id)
+	cve, found, err := ds.storage.Get(ctx, id, pks.cve, pks.os)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -101,12 +101,11 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.CVE, bool
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	filteredIDs, err := ds.filterReadable(ctx, []string{id})
-	if err != nil || len(filteredIDs) != 1 {
+	pks, err := getPKs(id)
+	if err != nil {
 		return false, err
 	}
-
-	found, err := ds.storage.Exists(ctx, id)
+	found, err := ds.storage.Exists(ctx, id, pks.cve, pks.os)
 	if err != nil || !found {
 		return false, err
 	}
@@ -114,12 +113,7 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.CVE, error) {
-	filteredIDs, err := ds.filterReadable(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-
-	cves, _, err := ds.storage.GetMany(ctx, filteredIDs)
+	cves, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +145,7 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, d
 		cve.SuppressActivation = start
 		cve.SuppressExpiry = expiry
 	}
-	if err := ds.storage.Upsert(ctx, cves...); err != nil {
+	if err := ds.storage.UpsertMany(ctx, cves); err != nil {
 		return err
 	}
 
@@ -187,9 +181,10 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
 		cve.SuppressActivation = nil
 		cve.SuppressExpiry = nil
 	}
-	if err := ds.storage.Upsert(ctx, cves...); err != nil {
+	if err := ds.storage.UpsertMany(ctx, cves); err != nil {
 		return err
 	}
+
 	ds.cveSuppressionLock.Lock()
 	defer ds.cveSuppressionLock.Unlock()
 	for _, cve := range cves {
@@ -214,38 +209,6 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 	}
 }
 
-func (ds *datastoreImpl) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
-	ds.cveSuppressionLock.RLock()
-	defer ds.cveSuppressionLock.RUnlock()
-	for _, component := range node.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			if entry, ok := ds.cveSuppressionCache[vuln.GetCve()]; ok {
-				vuln.Suppressed = entry.Suppressed
-				vuln.SuppressActivation = entry.SuppressActivation
-				vuln.SuppressExpiry = entry.SuppressExpiry
-			}
-		}
-	}
-}
-
-func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
-	if ok, err := clustersSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	if err := ds.storage.Delete(ctx, ids...); err != nil {
-		return err
-	}
-	ds.cveSuppressionLock.Lock()
-	defer ds.cveSuppressionLock.Unlock()
-	for _, id := range ids {
-		delete(ds.cveSuppressionCache, id)
-	}
-	return nil
-}
-
 func getSuppressExpiry(start *types.Timestamp, duration *types.Duration) (*types.Timestamp, error) {
 	d, err := types.DurationFromProto(duration)
 	if err != nil || d == 0 {
@@ -254,11 +217,14 @@ func getSuppressExpiry(start *types.Timestamp, duration *types.Duration) (*types
 	return &types.Timestamp{Seconds: start.GetSeconds() + int64(d.Seconds())}, nil
 }
 
-func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]string, error) {
-	var filteredIDs []string
-	var err error
-	graph.Context(ctx, ds.graphProvider, func(graphContext context.Context) {
-		filteredIDs, err = filtered.ApplySACFilter(graphContext, ids, sacFilters.GetSACFilter())
-	})
-	return filteredIDs, err
+func getPKs(id string) (imageCVEPks, error) {
+	parts := pkgPostgres.IDToParts(id)
+	if len(parts) != 2 {
+		return imageCVEPks{}, errors.Errorf("unexpected number of primary keys (%v) found for image cves. Expected 2 parts", parts)
+	}
+
+	return imageCVEPks{
+		cve: parts[0],
+		os:  parts[1],
+	}, nil
 }
