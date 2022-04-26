@@ -1640,7 +1640,9 @@ commands:
       - run:
           name: Create cloud resources
           command: |
-            mkdir -m 777 -p openshift
+            mkdir -p openshift
+            export UID=$(id -u)
+            export GID=$(id -g)
             set +e
             try=0
             max_attempts=2
@@ -1648,6 +1650,7 @@ commands:
                 try=$((try + 1))
                 echo "============= Openshift provision try ${try} ============="
                 docker run --rm -t -v "$PWD/openshift:/well-known" \
+                  --user $UID:$GID \
                   -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
                   "gcr.io/stackrox-infra/automation-flavors/openshift-multi:<< parameters.version >>" \
                   create \
