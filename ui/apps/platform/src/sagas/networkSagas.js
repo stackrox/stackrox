@@ -32,14 +32,15 @@ import { filterModes } from 'constants/networkFilterModes';
 function* getFlowGraph(clusterId, namespaces, query, timeWindow, includePorts) {
     let flowGraph;
     try {
-        flowGraph = (yield call(
+        const req = yield call(
             service.fetchNetworkFlowGraph,
             clusterId,
             namespaces,
             query,
             timeWindowToDate(timeWindow),
             includePorts
-        )).response;
+        );
+        flowGraph = req.response;
     } catch (error) {
         yield put(backendNetworkActions.fetchNetworkFlowGraph.failure(error));
     }
@@ -50,14 +51,15 @@ function* getFlowGraph(clusterId, namespaces, query, timeWindow, includePorts) {
 function* getPolicyGraph(clusterId, namespaces, query, modification, includePorts) {
     let policyGraph;
     try {
-        policyGraph = (yield call(
+        const req = yield call(
             service.fetchNetworkPolicyGraph,
             clusterId,
             namespaces,
             query,
             modification,
             includePorts
-        )).response;
+        );
+        policyGraph = req.response;
     } catch (error) {
         // On error, such as when an applied yaml is invalid, attempt to revert to the
         // previous successful policyGraph response
@@ -88,18 +90,14 @@ function* getNetworkGraphs(clusterId, namespaces, query) {
         true
     );
 
-    if (flowGraph) {
-        yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowGraph));
-    }
-
-    if (policyGraph) {
-        yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
-    }
-
     if (policyGraph && flowGraph) {
+        yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowGraph));
+        yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
         yield put(graphNetworkActions.setNetworkEdgeMap(flowGraph, policyGraph));
         yield put(graphNetworkActions.setNetworkNodeMap(flowGraph, policyGraph));
         yield put(graphNetworkActions.updateNetworkGraphTimestamp(new Date()));
+    } else if (policyGraph) {
+        yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
     }
 }
 
