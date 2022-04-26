@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -26,7 +25,7 @@ func initialize() {
 	var storage store.Store
 	var indexer index.Indexer
 
-	if features.PostgresDatastore.Enabled() {
+	if false {
 		storage = store.NewFullStore(postgres.New(context.TODO(), globaldb.GetPostgres()))
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 	} else {
