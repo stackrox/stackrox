@@ -40,12 +40,12 @@ export const nodeScanMessages = {
         header: 'Failed to get scan data.',
         body: 'Failed to get scan data. There may have been an error communicating with the integrated node scanner.',
     },
-    osUnsupported: {
-        header: 'Node OS unsupported.',
-        body: 'The node’s OS is not supported at this time. Please contact ???',
+    unsupported: {
+        header: 'Node unsupported.',
+        body: 'Scanning this node is not supported at this time. Please see the release notes for more information.',
     },
     kernelUnsupported: {
-        header: 'Nodes kernel unsupported.',
-        body: 'The node’s kernel is not supported at this time. Please contact ???',
+        header: 'Node’s kernel unsupported.',
+        body: 'This node’s kernel is not supported at this time.',
     },
 };

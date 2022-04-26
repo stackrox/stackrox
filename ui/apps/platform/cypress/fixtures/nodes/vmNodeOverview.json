@@ -21,7 +21,7 @@
       "topVuln": null,
       "scan": {
         "scanTime": "2022-04-12T15:51:56.591973883Z",
-        "notes": ["OS_UNSUPPORTED"],
+        "notes": ["UNSUPPORTED"],
         "components": [
           {
             "id": "Y3JpLW8:MS4yMC42LTExLnJoYW9zNC43LmdpdDc2ZWEzZDAuZWw4",

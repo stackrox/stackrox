@@ -20,13 +20,13 @@ describe('getNodeScanMessage', () => {
         expect(messageObj).toEqual(nodeScanMessages.missingScanData);
     });
 
-    it('should return an object for osUnsupported when scan notes contain OS_UNSUPPORTED', () => {
+    it('should return an object for osUnsupported when scan notes contain UNSUPPORTED', () => {
         const nodesNotes = [];
-        const scanNotes = ['OS_UNSUPPORTED'];
+        const scanNotes = ['UNSUPPORTED'];
 
         const messageObj = getNodeScanMessage(nodesNotes, scanNotes);
 
-        expect(messageObj).toEqual(nodeScanMessages.osUnsupported);
+        expect(messageObj).toEqual(nodeScanMessages.unsupported);
     });
 
     it('should return an object for kernelUnsupported when scan notes contain KERNEL_UNSUPPORTED', () => {
