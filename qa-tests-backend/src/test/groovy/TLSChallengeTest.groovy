@@ -128,22 +128,22 @@ class TLSChallengeTest extends BaseSpecification {
     }
 
     boolean checkSensorLogs() {
-        def log = ""
+        def logs = ""
         Timer t = new Timer(40, 5)
         while (t.IsValid()) {
             def pod = orchestrator.getPods("stackrox", "sensor").get(0)
-            log = orchestrator.getPodLog("stackrox", pod.metadata.name)
+            logs = orchestrator.getPodLog("stackrox", pod.metadata.name)
 
             // Check if sensor logs contain connection information
-            if (log.contains("Connecting to Central server ${CENTRAL_PROXY_ENDPOINT}")
-                && log.contains("Communication with central started")) {
+            if (logs.contains("Connecting to Central server ${CENTRAL_PROXY_ENDPOINT}")
+                && logs.contains("Communication with central started")) {
                 log.info("Found successful connection logs in sensor pod")
                 return true
             }
         }
 
-        log.info("Could not establish connection to central ${CENTRAL_PROXY_ENDPOINT}")
-        println log
+        log.error("Could not establish connection to central ${CENTRAL_PROXY_ENDPOINT}")
+        println logs
         return false
     }
 
