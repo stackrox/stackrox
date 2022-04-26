@@ -101,7 +101,7 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		return nil, err
 	}
 	if err := verifyNoPrivilegeEscalation(id.Roles(), roles); err != nil {
-		return nil, errox.NotAuthorized.CausedBy(err.Error())
+		return nil, errox.NotAuthorized.CausedBy(err)
 	}
 
 	token, metadata, err := s.backend.IssueRoleToken(ctx, req.GetName(), utils.RoleNames(roles))
