@@ -32,7 +32,6 @@ import util.OnFailure
 
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
-import java.text.SimpleDateFormat
 
 @Slf4j
 @Retry(condition = { Helpers.determineRetry(failure) })
@@ -186,7 +185,7 @@ class BaseSpecification extends Specification {
     }
 
     def setupSpec() {
-        printlnDated("Starting testsuite")
+        log.info("Starting testsuite")
 
         testStartTimeMillis = System.currentTimeMillis()
 
@@ -254,7 +253,7 @@ class BaseSpecification extends Specification {
     }
 
     def setup() {
-        printlnDated("Starting testcase")
+        log.info("Starting testcase")
 
         //Always make sure to revert back to the allAccessToken before each test
         resetAuth()
@@ -270,7 +269,7 @@ class BaseSpecification extends Specification {
     }
 
     def cleanupSpec() {
-        printlnDated("Ending testsuite")
+        log.info("Ending testsuite")
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
@@ -318,7 +317,7 @@ class BaseSpecification extends Specification {
     }
 
     def cleanup() {
-        printlnDated("Ending testcase")
+        log.info("Ending testcase")
 
         Helpers.resetRetryAttempts()
     }
@@ -402,11 +401,6 @@ class BaseSpecification extends Specification {
         return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOBNAME == "race-condition-tests"
     }
 
-    static Void printlnDated(String msg) {
-        def date = new Date()
-        def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-        println "${sdf.format(date)} ${msg}"
-    }
 }
 
 class TestSpecRuntimeException extends RuntimeException {
