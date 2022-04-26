@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 )
 
 // TotalPolicyAmountKey relates to the key within the Policy summary map which yields the total amount of violated
@@ -27,11 +26,6 @@ const (
 	CriticalSeverity
 )
 
-var networkPolicyFields = map[string]struct{}{
-	augmentedobjs.MissingIngressPolicyCustomTag: {},
-	augmentedobjs.MissingEgressPolicyCustomTag:  {},
-}
-
 func (s Severity) String() string {
 	return [...]string{"LOW", "MEDIUM", "HIGH", "CRITICAL"}[s]
 }
@@ -51,28 +45,15 @@ func policySeverityFromString(s string) Severity {
 	}
 }
 
-func checkNetworkPolicyField(p *storage.Policy) bool {
-	for _, section := range p.GetPolicySections() {
-		for _, group := range section.GetPolicyGroups() {
-			if _, ok := networkPolicyFields[group.GetFieldName()]; ok {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // NewPolicySummaryForPrinting creates a Result that shall be used for printing and holds
 // all relevant information regarding violated policies, failing policies and a summary of all violated policies
 // by severity
 // NOTE: The returned *Result CAN be passed to json.Marshal
-func NewPolicySummaryForPrinting(alerts []*storage.Alert, forbiddenEnforcementAction storage.EnforcementAction) (*Result, bool) {
+func NewPolicySummaryForPrinting(alerts []*storage.Alert, forbiddenEnforcementAction storage.EnforcementAction) *Result {
 	entityMetadataMap := createEntityMetadataMap(alerts)
 	numOfSeveritiesByEntities := createNumOfSeverityByEntity(entityMetadataMap)
 	numOfSeveritiesAcrossEntities := createNumOfSeverityMap()
 	policiesByEntity := make(map[string]map[string]*Policy, len(entityMetadataMap))
-
-	foundNetworkPolicyFields := false
 
 	for _, alert := range alerts {
 		entityID := getEntityIDFromAlert(alert)
@@ -92,11 +73,6 @@ func NewPolicySummaryForPrinting(alerts []*storage.Alert, forbiddenEnforcementAc
 			policyJSON.Violation = append(policyJSON.Violation, getAlertViolationsStrings(alert)...)
 			// we can skip here, since we do not want to add the Policy either
 			// to the overall set (duplicate) or to the failing set (duplicate)
-			continue
-		}
-
-		if checkNetworkPolicyField(p) {
-			foundNetworkPolicyFields = true
 			continue
 		}
 
@@ -122,7 +98,7 @@ func NewPolicySummaryForPrinting(alerts []*storage.Alert, forbiddenEnforcementAc
 	return &Result{
 		Results: resultsForEntities,
 		Summary: numOfSeveritiesAcrossEntities,
-	}, foundNetworkPolicyFields
+	}
 }
 
 // createResultsForEntities will create a EntityResult for each entity and add the corresponding violated

@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
@@ -17,6 +18,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/common/report"
+	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/summaries/policy"
 )
 
@@ -203,14 +205,17 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredOb
 	if d.json {
 		return errors.Wrap(report.JSON(d.env.InputOutput().Out, alerts), "could not print JSON report")
 	}
+	if features.NetworkPolicySystemPolicy.Enabled() {
+		networkPolicyEncountered := false
+		alerts, networkPolicyEncountered = util.RemoveAlertsWithNetworkPolicyFields(alerts)
+		if networkPolicyEncountered {
+			d.env.Logger().WarnfLn("Ingress/Egress Network Policy criteria will not be evaluated")
+		}
+	}
 
 	// TODO: Need to refactor this to include additional summary info for non-standardized formats
 	// as well as multiple results for each deployment
-	policySummary, networkPolicyEncountered := policy.NewPolicySummaryForPrinting(alerts, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT)
-
-	if networkPolicyEncountered {
-		d.env.Logger().WarnfLn("Ingress/Egress Network Policy criteria will not be evaluated")
-	}
+	policySummary := policy.NewPolicySummaryForPrinting(alerts, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT)
 
 	if !d.standardizedFormat {
 		printDeploymentPolicySummary(policySummary.Summary, d.env.Logger(), policySummary.GetResultNames()...)

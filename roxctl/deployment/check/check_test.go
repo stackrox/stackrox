@@ -15,7 +15,10 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
@@ -266,6 +269,7 @@ func TestDeploymentCheckCommand(t *testing.T) {
 type deployCheckTestSuite struct {
 	suite.Suite
 	defaultDeploymentCheckCommand deploymentCheckCommand
+	envIsolator                   *envisolator.EnvIsolator
 }
 
 func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.Alert,
@@ -306,6 +310,7 @@ func (d *deployCheckTestSuite) SetupTest() {
 		timeout:            1 * time.Minute,
 		printAllViolations: true,
 	}
+	d.envIsolator = envisolator.NewEnvIsolator(d.T())
 }
 
 func (d *deployCheckTestSuite) TestConstruct() {
@@ -429,6 +434,22 @@ func (d *deployCheckTestSuite) TestCheck_TableOutput() {
 			error:      policy.ErrBreakingPolicies,
 			shouldFail: true,
 		},
+	}
+
+	tablePrinter, err := printer.NewTabularPrinterFactory(defaultDeploymentCheckHeaders,
+		defaultDeploymentCheckJSONPathExpression).CreatePrinter("table")
+	d.Require().NoError(err)
+	d.runOutputTests(cases, tablePrinter, false)
+}
+
+func (d *deployCheckTestSuite) TestCheck_NetworkPolicyFieldTableOutput() {
+	if buildinfo.ReleaseBuild {
+		d.T().Skipf("Skipping this test for release build since the feature flag %s is not enabled", features.NetworkPolicySystemPolicy.EnvVar())
+	}
+	d.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
+	defer d.envIsolator.RestoreAll()
+
+	cases := map[string]outputFormatTest{
 		"should print warning if network policy field is present": {
 			alerts:         testDeploymentAlertsWithNetworkPolicyField,
 			expectedOutput: "testDeploymentAlertsWithNetworkPolicies.txt",
@@ -466,6 +487,21 @@ func (d *deployCheckTestSuite) TestCheck_JSONOutput() {
 			expectedErrOutputColorized: "\x1b[94mINFO:\tIgnored object \"some-namespace/some-name[my.custom.resource/v1, Kind=CRD]\" as its schema was not registered.\n" +
 				"\x1b[0m\x1b[94mINFO:\tIgnored object \"some--other-namespace/some--other-name[my.custom.resource/v1, Kind=CRD]\" as its schema was not registered.\n\x1b[0m",
 		},
+	}
+
+	jsonPrinter, err := printer.NewJSONPrinterFactory(false, false).CreatePrinter("json")
+	d.Require().NoError(err)
+	d.runOutputTests(cases, jsonPrinter, true)
+}
+
+func (d *deployCheckTestSuite) TestCheck_NetWorkPolicyFieldJSONOutput() {
+	if buildinfo.ReleaseBuild {
+		d.T().Skipf("Skipping this test for release build since the feature flag %s is not enabled", features.NetworkPolicySystemPolicy.EnvVar())
+	}
+	d.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
+	defer d.envIsolator.RestoreAll()
+
+	cases := map[string]outputFormatTest{
 		"should print warning if network policy field is present": {
 			alerts:                     testDeploymentAlertsWithNetworkPolicyField,
 			expectedOutput:             "testDeploymentAlertsWithNetworkPolicies.json",
@@ -491,6 +527,22 @@ func (d *deployCheckTestSuite) TestCheck_CSVOutput() {
 			shouldFail:     true,
 			error:          policy.ErrBreakingPolicies,
 		},
+	}
+
+	csvPrinter, err := printer.NewTabularPrinterFactory(defaultDeploymentCheckHeaders,
+		defaultDeploymentCheckJSONPathExpression).CreatePrinter("csv")
+	d.Require().NoError(err)
+	d.runOutputTests(cases, csvPrinter, true)
+}
+
+func (d *deployCheckTestSuite) TestCheck_NetworkPolicyFieldCSVOutput() {
+	if buildinfo.ReleaseBuild {
+		d.T().Skipf("Skipping this test for release build since the feature flag %s is not enabled", features.NetworkPolicySystemPolicy.EnvVar())
+	}
+	d.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
+	defer d.envIsolator.RestoreAll()
+
+	cases := map[string]outputFormatTest{
 		"should print warning if network policy field is present": {
 			alerts:                     testDeploymentAlertsWithNetworkPolicyField,
 			expectedOutput:             "testDeploymentAlertsWithNetworkPolicies.csv",
@@ -517,6 +569,22 @@ func (d *deployCheckTestSuite) TestCheck_JunitOutput() {
 			shouldFail:     true,
 			error:          policy.ErrBreakingPolicies,
 		},
+	}
+
+	csvPrinter, err := printer.NewJUnitPrinterFactory(
+		"deployment-check", defaultJunitJSONPathExpressions).CreatePrinter("junit")
+	d.Require().NoError(err)
+	d.runOutputTests(cases, csvPrinter, true)
+}
+
+func (d *deployCheckTestSuite) TestCheck_NetworkPolicyFieldJunitOutput() {
+	if buildinfo.ReleaseBuild {
+		d.T().Skipf("Skipping this test for release build since the feature flag %s is not enabled", features.NetworkPolicySystemPolicy.EnvVar())
+	}
+	d.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
+	defer d.envIsolator.RestoreAll()
+
+	cases := map[string]outputFormatTest{
 		"should print warning if network policy field is present": {
 			alerts:                     testDeploymentAlertsWithNetworkPolicyField,
 			expectedOutput:             "testDeploymentAlertsWithNetworkPolicies.xml",

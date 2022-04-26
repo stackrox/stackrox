@@ -380,7 +380,7 @@ func TestNewPolicySummaryForPrinting(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			policySummary, _ := NewPolicySummaryForPrinting(c.alerts, storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT)
+			policySummary := NewPolicySummaryForPrinting(c.alerts, storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT)
 			assert.Equal(t, c.expectedOutput, policySummary)
 		})
 	}
