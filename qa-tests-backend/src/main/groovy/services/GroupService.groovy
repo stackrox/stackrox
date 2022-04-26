@@ -1,10 +1,12 @@
 package services
 
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.GroupServiceGrpc
 import io.stackrox.proto.api.v1.GroupServiceOuterClass.GetGroupsRequest
 import io.stackrox.proto.storage.GroupOuterClass.Group
 import io.stackrox.proto.storage.GroupOuterClass.GroupProperties
 
+@Slf4j
 class GroupService extends BaseService {
     static getGroupService() {
         return GroupServiceGrpc.newBlockingStub(getChannel())
@@ -33,7 +35,7 @@ class GroupService extends BaseService {
         try {
             return getGroupService().createGroup(group)
         } catch (Exception e) {
-            println "Error creating new Group: ${e}"
+            log.error("Error creating new Group", e)
         }
     }
 
@@ -41,7 +43,7 @@ class GroupService extends BaseService {
         try {
             return getGroupService().deleteGroup(props)
         } catch (Exception e) {
-            println "Error deleting group: ${e}"
+            log.error("Error deleting group", e)
         }
     }
 

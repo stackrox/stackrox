@@ -1,6 +1,7 @@
 package services
 
 import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.SignatureIntegrationServiceGrpc
@@ -8,6 +9,7 @@ import io.stackrox.proto.storage.SignatureIntegrationOuterClass
 import util.Timer
 
 @CompileStatic
+@Slf4j
 class SignatureIntegrationService extends BaseService {
     static SignatureIntegrationServiceGrpc.SignatureIntegrationServiceBlockingStub getSignatureIntegrationClient() {
         return SignatureIntegrationServiceGrpc.newBlockingStub(getChannel())
@@ -19,15 +21,16 @@ class SignatureIntegrationService extends BaseService {
         while (t.IsValid()) {
             try {
                 createdIntegration = getSignatureIntegrationClient().postSignatureIntegration(integration)
-                println "Signature integration created: ${createdIntegration.getName()}: ${createdIntegration.getId()}"
+                log.debug "Signature integration created: " +
+                        "${createdIntegration.getName()}: ${createdIntegration.getId()}"
                 break
             } catch (Exception e) {
-                println "Unable to create signature integration ${integration.getName()}: ${e.getMessage()}"
+                log.debug("Unable to create signature integration ${integration.getName()}", e)
             }
         }
 
         if (!createdIntegration || !createdIntegration.getId()) {
-            println "Unable to create signature integration"
+            log.error "Unable to create signature integration"
             return ""
         }
 
@@ -42,10 +45,10 @@ class SignatureIntegrationService extends BaseService {
                     return foundIntegration.getId()
                 }
             } catch (Exception e) {
-                println "Unable to find the created signature integration ${integration.getName()}: ${e.message}"
+                log.debug("Unable to find the created signature integration ${integration.getName()}", e)
             }
         }
-        println "Unable to find the created signature integration: ${integration.getName()}"
+        log.error "Unable to find the created signature integration: ${integration.getName()}"
         return ""
     }
 
@@ -53,7 +56,7 @@ class SignatureIntegrationService extends BaseService {
         try {
             getSignatureIntegrationClient().deleteSignatureIntegration(getResourceByID(integrationId))
         } catch (Exception e) {
-            println "Failed to delete signature integration with id ${integrationId}: ${e.message}"
+            log.error("Failed to delete signature integration with id ${integrationId}", e)
             return false
         }
 
@@ -63,9 +66,10 @@ class SignatureIntegrationService extends BaseService {
                 getSignatureIntegrationClient().getSignatureIntegration(getResourceByID(integrationId))
             } catch (StatusRuntimeException e) {
                 if (e.status.code == Status.Code.NOT_FOUND) {
-                    println "Signature integration deleted: ${integrationId}"
+                    log.info "Signature integration deleted: ${integrationId}"
                     return true
                 }
+                log.debug("error getting signature integration", e)
             }
         }
         return false

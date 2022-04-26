@@ -1,5 +1,6 @@
 package objects
 
+import groovy.util.logging.Slf4j
 import javax.mail.Message
 import javax.mail.internet.InternetAddress
 import javax.mail.search.AndTerm
@@ -23,6 +24,7 @@ import util.Timer
 
 import org.junit.AssumptionViolatedException
 
+@Slf4j
 class Notifier {
     NotifierOuterClass.Notifier notifier
 
@@ -89,17 +91,17 @@ class EmailNotifier extends Notifier {
             throw new AssumptionViolatedException("Failed to login to GMAIL service... skipping test!: ", e)
         }
 
-        println "looking for a message with subject containing: ${deployment.name}"
+        log.debug "looking for a message with subject containing: ${deployment.name}"
         Timer t = new Timer(30, 3)
         Message[] notifications = []
         while (!notifications && t.IsValid()) {
-            println "checking for messages..."
+            log.debug "checking for messages..."
             SearchTerm term = new AndTerm(
                     new FromTerm(new InternetAddress(Constants.EMAIL_NOTIFER_SENDER)),
                     new SubjectTerm(deployment.name))
             notifications = mail.searchMessages(term)
-            println notifications*.subject.toString()
-            println "matching messages: ${notifications.size()}"
+            log.debug notifications*.subject.toString()
+            log.debug "matching messages: ${notifications.size()}"
         }
         assert notifications.length > 0 // Should be "== 1" - ROX-4542
         assert notifications.find {
@@ -131,13 +133,13 @@ class EmailNotifier extends Notifier {
         }
         Message[] notifications = []
         while (!notifications && t.IsValid()) {
-            println "checking for messages..."
+            log.debug "checking for messages..."
             SearchTerm term = new AndTerm(
                     new FromTerm(new InternetAddress(Constants.EMAIL_NOTIFER_SENDER)),
                     new SubjectTerm("New network policy YAML for cluster"))
             notifications = mail.searchMessages(term)
-            println notifications*.subject.toString()
-            println "matching messages: ${notifications.size()}"
+            log.debug notifications*.subject.toString()
+            log.debug "matching messages: ${notifications.size()}"
         }
         assert notifications.length > 0 // Should be "== 1" - ROX-4542
         assert notifications.find { containsNoWhitespace(it.content.toString(), yaml) }
@@ -201,6 +203,7 @@ class TeamsNotifier extends Notifier {
     }
 }
 
+@Slf4j
 class PagerDutyNotifier extends Notifier {
     private final baseURL = "https://api.pagerduty.com/incidents"
     private final pagerdutyURL =
@@ -219,7 +222,7 @@ class PagerDutyNotifier extends Notifier {
         assert newIncidents != null
         assert newIncidents.incidents[0].description.contains(policy.description)
         incidentID = newIncidents.incidents[0].id
-        println "new pagerduty incident ID: ${incidentID}"
+        log.debug "new pagerduty incident ID: ${incidentID}"
 
         incidentWatcherIndex = getLatestPagerDutyIncident().incidents[0].incident_number
     }
@@ -227,14 +230,14 @@ class PagerDutyNotifier extends Notifier {
     void validateViolationResolution() {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
-            println "Waiting for PagerDuty alert resolution"
+            log.debug "Waiting for PagerDuty alert resolution"
             def response = getIncident(incidentID)
             if (response.incident.status == "resolved") {
                 incidentID = null
                 return
             }
         }
-        println "PagerDuty alert ${incidentID} was not resolved by StackRox"
+        log.debug "PagerDuty alert ${incidentID} was not resolved by StackRox"
         assert incidentID == null
     }
 
@@ -265,8 +268,8 @@ class PagerDutyNotifier extends Notifier {
             os.write(input, 0, input.length)
             con.getInputStream()
         } catch (Exception e) {
-            println "Error resolving PagerDuty incident: ${e}"
-            println "This error will be ignored" // it is not product related
+            log.error( "Error resolving PagerDuty incident. " +
+                    "This error will be ignored it is not product related", e)
         }
     }
 
@@ -285,7 +288,7 @@ class PagerDutyNotifier extends Notifier {
             def jsonSlurper = new JsonSlurper()
             return jsonSlurper.parseText(con.getInputStream().getText())
         } catch (Exception e) {
-            println "Error getting PagerDuty incidents"
+            log.warn "Error getting PagerDuty incidents"
             throw e
         }
     }
@@ -301,7 +304,7 @@ class PagerDutyNotifier extends Notifier {
             def jsonSlurper = new JsonSlurper()
             return jsonSlurper.parseText(con.getInputStream().getText())
         } catch (Exception e) {
-            println "Error getting PagerDuty incidents"
+            log.warn "Error getting PagerDuty incidents"
             throw e
         }
     }
@@ -309,7 +312,7 @@ class PagerDutyNotifier extends Notifier {
     private waitForPagerDutyUpdate(int preNum) {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
-            println "Waiting for PagerDuty Update"
+            log.debug "Waiting for PagerDuty Update"
             def object = getLatestPagerDutyIncident()
             int curNum = object.incidents[0].incident_number
 
@@ -317,11 +320,12 @@ class PagerDutyNotifier extends Notifier {
                 return object
             }
         }
-        println "Time out for Waiting for PagerDuty Update"
+        log.debug "Time out for Waiting for PagerDuty Update"
         return null
     }
 }
 
+@Slf4j
 class SplunkNotifier extends Notifier {
     def splunkPort
 
@@ -331,7 +335,7 @@ class SplunkNotifier extends Notifier {
     }
 
     def createNotifier() {
-        println "validating splunk deployment is ready to accept events before creating notifier..."
+        log.debug "validating splunk deployment is ready to accept events before creating notifier..."
         withRetry(20, 2) {
             SplunkUtil.createSearch(splunkPort)
         }
@@ -349,6 +353,7 @@ class SplunkNotifier extends Notifier {
     }
 }
 
+@Slf4j
 class SyslogNotifier extends Notifier {
     def splunkPort // Syslog isn't inherently tied to Splunk, we're just going to test with Splunk
 
@@ -358,7 +363,7 @@ class SyslogNotifier extends Notifier {
     }
 
     def createNotifier() {
-        println "validating splunk deployment is ready to accept events before creating syslog notifier..."
+        log.debug "validating splunk deployment is ready to accept events before creating syslog notifier..."
         withRetry(20, 2) {
             SplunkUtil.createSearch(splunkPort)
         }

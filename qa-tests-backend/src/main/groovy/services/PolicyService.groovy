@@ -1,11 +1,13 @@
 package services
 
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceGrpc
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.PolicyOuterClass
 
+@Slf4j
 class PolicyService extends BaseService {
     static getPolicyClient() {
         return PolicyServiceGrpc.newBlockingStub(getChannel())
@@ -30,7 +32,7 @@ class PolicyService extends BaseService {
                             build()
             ).getId()
         } catch (Exception e) {
-            println e.toString()
+            log.error("error creating new policy", e)
         }
 
         return policyID
@@ -44,7 +46,7 @@ class PolicyService extends BaseService {
                             .build()
             )
         } catch (Exception e) {
-            println e.toString()
+            log.error("error deleting policy", e)
         }
     }
 
@@ -57,7 +59,7 @@ class PolicyService extends BaseService {
             getPolicyClient().patchPolicy(pr).newBuilder().build()
         }
         catch (Exception e) {
-            println e.toString()
+            log.error("error patching policy", e)
         }
     }
 }
