@@ -56,7 +56,7 @@ class SignatureIntegrationService extends BaseService {
         try {
             getSignatureIntegrationClient().deleteSignatureIntegration(getResourceByID(integrationId))
         } catch (Exception e) {
-            log.debug "Failed to delete signature integration with id ${integrationId}: ${e.message}"
+            log.error("Failed to delete signature integration with id ${integrationId}", e)
             return false
         }
 
