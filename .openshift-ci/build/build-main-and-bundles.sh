@@ -87,7 +87,7 @@ create_main_bundle_and_scripts() {
 }
 
 create_central_db_bundle() {
-    "$ROOT/image/rhel/create-bundle.sh" image/postgres image/postgres "true"
+    "$ROOT/image/postgres/create-bundle.sh" image/postgres image/postgres "true"
 }
 
 cleanup_image() {
