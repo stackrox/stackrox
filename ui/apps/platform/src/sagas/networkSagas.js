@@ -78,8 +78,15 @@ function* getNetworkGraphs(clusterId, namespaces, query) {
     const timeWindow = yield select(selectors.getNetworkActivityTimeWindow);
     const modification = yield select(selectors.getNetworkPolicyModification);
 
-    const flowGraph = yield getFlowGraph(clusterId, namespaces, query, timeWindow, true);
-    const policyGraph = yield getPolicyGraph(clusterId, namespaces, query, modification, true);
+    const flowGraph = yield call(getFlowGraph, clusterId, namespaces, query, timeWindow, true);
+    const policyGraph = yield call(
+        getPolicyGraph,
+        clusterId,
+        namespaces,
+        query,
+        modification,
+        true
+    );
 
     if (flowGraph) {
         yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowGraph));
