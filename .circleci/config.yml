@@ -1640,8 +1640,7 @@ commands:
       - run:
           name: Create cloud resources
           command: |
-            mkdir -p openshift
-            chmod 777 openshift
+            mkdir -m 777 -p openshift
             set +e
             try=0
             max_attempts=2
