@@ -21,6 +21,8 @@ import (
 type ProcessbaselinesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestProcessbaselinesStore(t *testing.T) {
@@ -35,24 +37,30 @@ func (s *ProcessbaselinesStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *ProcessbaselinesStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *ProcessbaselinesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *ProcessbaselinesStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *ProcessbaselinesStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	processBaseline := &storage.ProcessBaseline{}
 	s.NoError(testutils.FullInit(processBaseline, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -98,7 +106,7 @@ func (s *ProcessbaselinesStoreSuite) TestStore() {
 
 	processBaselineCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(processBaselineCount, 1)
+	s.Equal(1, processBaselineCount)
 
 	processBaselineExists, err := store.Exists(ctx, processBaseline.GetId())
 	s.NoError(err)
@@ -136,5 +144,5 @@ func (s *ProcessbaselinesStoreSuite) TestStore() {
 
 	processBaselineCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(processBaselineCount, 200)
+	s.Equal(200, processBaselineCount)
 }

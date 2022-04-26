@@ -21,6 +21,8 @@ import (
 type K8srolesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestK8srolesStore(t *testing.T) {
@@ -35,24 +37,30 @@ func (s *K8srolesStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *K8srolesStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *K8srolesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *K8srolesStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *K8srolesStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	k8SRole := &storage.K8SRole{}
 	s.NoError(testutils.FullInit(k8SRole, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -98,7 +106,7 @@ func (s *K8srolesStoreSuite) TestStore() {
 
 	k8SRoleCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(k8SRoleCount, 1)
+	s.Equal(1, k8SRoleCount)
 
 	k8SRoleExists, err := store.Exists(ctx, k8SRole.GetId())
 	s.NoError(err)
@@ -136,5 +144,5 @@ func (s *K8srolesStoreSuite) TestStore() {
 
 	k8SRoleCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(k8SRoleCount, 200)
+	s.Equal(200, k8SRoleCount)
 }

@@ -21,6 +21,8 @@ import (
 type ProcessIndicatorsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestProcessIndicatorsStore(t *testing.T) {
@@ -35,24 +37,30 @@ func (s *ProcessIndicatorsStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *ProcessIndicatorsStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *ProcessIndicatorsStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *ProcessIndicatorsStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	processIndicator := &storage.ProcessIndicator{}
 	s.NoError(testutils.FullInit(processIndicator, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -98,7 +106,7 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 
 	processIndicatorCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(processIndicatorCount, 1)
+	s.Equal(1, processIndicatorCount)
 
 	processIndicatorExists, err := store.Exists(ctx, processIndicator.GetId())
 	s.NoError(err)
@@ -136,5 +144,5 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 
 	processIndicatorCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(processIndicatorCount, 200)
+	s.Equal(200, processIndicatorCount)
 }

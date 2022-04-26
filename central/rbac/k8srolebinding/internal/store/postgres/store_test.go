@@ -21,6 +21,8 @@ import (
 type RolebindingsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestRolebindingsStore(t *testing.T) {
@@ -35,24 +37,30 @@ func (s *RolebindingsStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *RolebindingsStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *RolebindingsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *RolebindingsStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *RolebindingsStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	k8SRoleBinding := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(k8SRoleBinding, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -98,7 +106,7 @@ func (s *RolebindingsStoreSuite) TestStore() {
 
 	k8SRoleBindingCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(k8SRoleBindingCount, 1)
+	s.Equal(1, k8SRoleBindingCount)
 
 	k8SRoleBindingExists, err := store.Exists(ctx, k8SRoleBinding.GetId())
 	s.NoError(err)
@@ -136,5 +144,5 @@ func (s *RolebindingsStoreSuite) TestStore() {
 
 	k8SRoleBindingCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(k8SRoleBindingCount, 200)
+	s.Equal(200, k8SRoleBindingCount)
 }

@@ -21,6 +21,8 @@ import (
 type RiskStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestRiskStore(t *testing.T) {
@@ -35,24 +37,30 @@ func (s *RiskStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *RiskStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *RiskStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *RiskStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *RiskStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	risk := &storage.Risk{}
 	s.NoError(testutils.FullInit(risk, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -98,7 +106,7 @@ func (s *RiskStoreSuite) TestStore() {
 
 	riskCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(riskCount, 1)
+	s.Equal(1, riskCount)
 
 	riskExists, err := store.Exists(ctx, risk.GetId())
 	s.NoError(err)
@@ -136,5 +144,5 @@ func (s *RiskStoreSuite) TestStore() {
 
 	riskCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(riskCount, 200)
+	s.Equal(200, riskCount)
 }

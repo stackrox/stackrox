@@ -21,6 +21,8 @@ import (
 type NamespacesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestNamespacesStore(t *testing.T) {
@@ -35,24 +37,30 @@ func (s *NamespacesStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *NamespacesStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *NamespacesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *NamespacesStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *NamespacesStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	namespaceMetadata := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(namespaceMetadata, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -98,7 +106,7 @@ func (s *NamespacesStoreSuite) TestStore() {
 
 	namespaceMetadataCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(namespaceMetadataCount, 1)
+	s.Equal(1, namespaceMetadataCount)
 
 	namespaceMetadataExists, err := store.Exists(ctx, namespaceMetadata.GetId())
 	s.NoError(err)
@@ -136,5 +144,5 @@ func (s *NamespacesStoreSuite) TestStore() {
 
 	namespaceMetadataCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(namespaceMetadataCount, 200)
+	s.Equal(200, namespaceMetadataCount)
 }

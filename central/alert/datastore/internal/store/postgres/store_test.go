@@ -21,6 +21,8 @@ import (
 type AlertsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestAlertsStore(t *testing.T) {
@@ -35,24 +37,30 @@ func (s *AlertsStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *AlertsStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *AlertsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *AlertsStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *AlertsStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	alert := &storage.Alert{}
 	s.NoError(testutils.FullInit(alert, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -98,7 +106,7 @@ func (s *AlertsStoreSuite) TestStore() {
 
 	alertCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(alertCount, 1)
+	s.Equal(1, alertCount)
 
 	alertExists, err := store.Exists(ctx, alert.GetId())
 	s.NoError(err)
@@ -136,5 +144,5 @@ func (s *AlertsStoreSuite) TestStore() {
 
 	alertCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(alertCount, 200)
+	s.Equal(200, alertCount)
 }
