@@ -1658,7 +1658,7 @@ commands:
                     --dns-project=stackrox-ci \
                     --dns-zone=openshift-ci-rox-systems \
                     --zone=us-central1-a \
-                    2>&1 | scripts/ci/monitor-output.sh 60 && chmod -R 777 openshift
+                    2>&1 | scripts/ci/monitor-output.sh 60 && sudo chmod -R +r openshift
                 rc=$?
                 if [[ ${rc} == 0 ]]; then
                     echo "============= Openshift provision succeeded ============="
