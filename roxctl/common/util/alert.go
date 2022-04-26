@@ -21,6 +21,7 @@ func checkNetworkPolicyField(p *storage.Policy) bool {
 	return false
 }
 
+// RemoveAlertsWithNetworkPolicyFields removes alerts that contain Policy with NetworkPolicy Fields
 func RemoveAlertsWithNetworkPolicyFields(alerts []*storage.Alert) ([]*storage.Alert, bool) {
 	newAlerts := []*storage.Alert{}
 	foundNetworkPolicy := false
