@@ -76,10 +76,10 @@ func validate(cbr *cobra.Command, args []string) error {
 		return cbr.Usage()
 	}
 	if len(args) > 1 {
-		return errors.WithMessagef(errox.InvalidArgs, "too many positional arguments (%d given)", len(args))
+		return errox.InvalidArgs.Newf("too many positional arguments (%d given)", len(args))
 	}
 	if file, _ := cbr.Flags().GetString("file"); file != "" {
-		return errors.WithMessage(errox.InvalidArgs, "legacy --file flag must not be used in conjunction with a positional argument")
+		return errox.InvalidArgs.New("legacy --file flag must not be used in conjunction with a positional argument")
 	}
 	return nil
 }
@@ -97,7 +97,7 @@ func (cmd *centralDbRestoreCommand) construct(cbr *cobra.Command, args []string)
 
 func (cmd *centralDbRestoreCommand) validate() error {
 	if cmd.file == "" {
-		return errors.WithMessage(errox.InvalidArgs, "file to restore from must be specified")
+		return errox.InvalidArgs.New("file to restore from must be specified")
 	}
 	return nil
 }

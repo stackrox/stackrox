@@ -48,10 +48,10 @@ func (cmd *scannerGenerateCommand) validate() error {
 			}
 		}
 
-		return errox.InvalidArgs.CausedBy(fmt.Sprintf(
+		return errox.InvalidArgs.Newf(
 			"unsupported Istio version %q used for argument %q. Use one of the following: [%s]",
 			cmd.apiParams.IstioVersion, "--"+istioSupportArg, strings.Join(istioutils.ListKnownIstioVersions(), "|"),
-		))
+		)
 	}
 
 	return nil

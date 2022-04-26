@@ -108,7 +108,7 @@ func (suite *helmDeriveLocalValuesTestSuite) TestValidate() {
 		"should fail if both output and outputDir are empty": {
 			shouldFail: true,
 			error:      errox.InvalidArgs,
-			errorString: `invalid arguments: no output file specified using either "--output" or "--output-dir".
+			errorString: `no output file specified using either "--output" or "--output-dir".
 If the derived Helm configuration should really be written to stdout, please use "--output=-"`,
 		},
 		"should fail if both output and outputDir given": {
@@ -116,7 +116,7 @@ If the derived Helm configuration should really be written to stdout, please use
 			outputDir:   "path_to_folder",
 			shouldFail:  true,
 			error:       errox.InvalidArgs,
-			errorString: `invalid arguments: specify either "--output" or "--output-dir" but not both`,
+			errorString: `specify either "--output" or "--output-dir" but not both`,
 		},
 	}
 
