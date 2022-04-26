@@ -132,7 +132,7 @@ class Helpers {
             proc.waitFor()
 
             if (proc.exitValue() != 0) {
-                log.warn "Failed to scan the image.\nStderr: $serr\nExit: ${proc.exitValue()}"
+                log.warn "Failed to scan the image. Exit: ${proc.exitValue()}\nStderr: $serr"
             }
         }
         catch (Exception e) {
@@ -145,6 +145,6 @@ class Helpers {
         def proc = cmd.execute(null, new File(".."))
         proc.consumeProcessOutput(sout, serr)
         proc.waitFor()
-        log.debug "Ran: ${cmd}\nStdout: $sout\nStderr: $serr\nExit: ${proc.exitValue()}"
+        log.debug "Ran: ${cmd}\nExit: ${proc.exitValue()}\nStdout: $sout\nStderr: $serr"
     }
 }
