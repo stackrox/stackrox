@@ -25,8 +25,8 @@ func policy(classificationEnums []storage.NetworkPolicyType) *storage.NetworkPol
 func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 	cases := map[string]struct {
 		policiesInStore map[string]*storage.NetworkPolicy
-		hasIngres bool
-		hasEgress bool
+		hasIngres       bool
+		hasEgress       bool
 	}{
 		"No policies for deployment": {
 			policiesInStore: map[string]*storage.NetworkPolicy{},
