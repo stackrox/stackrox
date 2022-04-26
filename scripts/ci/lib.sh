@@ -433,10 +433,36 @@ openshift_ci_mods() {
     BASH_ENV=$(mktemp)
     export BASH_ENV
 
+    # These are not set in the binary_build_commands or image build envs.
+    export CI=true
+    export OPENSHIFT_CI=true
+
     # For gradle
-    info "HOME ${HOME:-}"
     export GRADLE_USER_HOME="${HOME}"
-    info "GRADLE_USER_HOME ${GRADLE_USER_HOME:-}"
+}
+
+validate_expected_go_version() {
+    info "Validating the expected go version against what was used to build roxctl"
+
+    roxctl_go_version="$(roxctl version --json | jq '.GoVersion' -r)"
+    expected_go_version="$(cat EXPECTED_GO_VERSION)"
+    if [[ "${roxctl_go_version}" != "${expected_go_version}" ]]; then
+        echo "Got unexpected go version ${roxctl_go_version} (wanted ${expected_go_version})"
+        exit 1
+    fi
+
+    # Ensure that the Go version is up-to-date in go.mod as well.
+    # Note that the patch version is not specified in go.mod.
+    [[ "${expected_go_version}" =~ ^go(1\.[0-9]{2})(\.[0-9]+)?$ ]]
+    go_version="${BASH_REMATCH[1]}"
+
+    # TODO(ROX-8056): temporarily suspend the following check. The source needs to be go1.16 compatible
+    # due to OSBS build constraints, but we don't want everyone to revert their local toolchain
+    # to that.
+    go_version="1.16" # hardcode. To be removed once the above is fixed.
+
+    go mod edit -go "${go_version}"
+    git diff --exit-code -- go.mod
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

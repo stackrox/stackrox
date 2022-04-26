@@ -1,7 +1,0 @@
-FROM bin
-
-COPY stackrox /go/src/github.com/stackrox/stackrox
-WORKDIR /go/src/github.com/stackrox/stackrox
-RUN ls -la
-RUN mkdir /output
-RUN make tag > /output/pre-build-go-binaries-tag
