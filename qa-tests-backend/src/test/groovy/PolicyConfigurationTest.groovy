@@ -250,7 +250,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                 PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
                                         PolicyOuterClass.PolicyGroup.newBuilder()
                                                 .setFieldName("Image Tag")
-                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("1.7.9")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("nginx-1-7-9")
                                                         .build())
                                                 .build()
                                 ).build()
@@ -270,7 +270,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                         PolicyOuterClass.PolicyGroup.newBuilder()
                                                 .setFieldName("Image Remote")
                                                 .addValues(PolicyOuterClass.PolicyValue.newBuilder()
-                                                        .setValue("library/nginx")
+                                                        .setValue("rhacs-eng/qa")
                                                         .build()).build()
                                 ).build()
                         ).build()  | DEPLOYMENTNGINX | null
