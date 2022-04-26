@@ -102,6 +102,7 @@ func (s *SinglekeyStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(testSingleKeyStruct, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testSingleKeyStructs = append(testSingleKeyStructs, testSingleKeyStruct)
 	}
+
 	s.NoError(store.UpsertMany(ctx, testSingleKeyStructs))
 
 	testSingleKeyStructCount, err = store.Count(ctx)

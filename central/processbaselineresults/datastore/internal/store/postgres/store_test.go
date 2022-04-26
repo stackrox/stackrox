@@ -102,6 +102,7 @@ func (s *ProcesswhitelistresultsStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(processBaselineResults, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		processBaselineResultss = append(processBaselineResultss, processBaselineResults)
 	}
+
 	s.NoError(store.UpsertMany(ctx, processBaselineResultss))
 
 	processBaselineResultsCount, err = store.Count(ctx)

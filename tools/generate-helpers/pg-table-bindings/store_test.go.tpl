@@ -81,36 +81,6 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
     {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped)}}
     withNoAccessCtx := sac.WithNoAccess(ctx)
     {{- end }}
-	{{- if .Obj.IsDirectlyScoped }}
-	withAccessToDifferentNsCtx:= sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys({{ $name | .Obj.GetClusterID }}),
-			sac.NamespaceScopeKeys("unknown ns"),
-	))
-	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys({{ $name | .Obj.GetClusterID }}),
-			{{- if .Obj.IsNamespaceScope }}
-			sac.NamespaceScopeKeys({{ $name | .Obj.GetNamespace }}),
-			{{- end }}
-	))
-	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys({{ $name | .Obj.GetClusterID }}),
-	))
-	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(targetResource),
-				sac.ClusterScopeKeys("unknown cluster"),
-	))
-	{{- end }}
 
 	s.NoError(store.Upsert(ctx, {{$name}}))
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
@@ -135,16 +105,6 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
     {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped)}}
 	s.ErrorIs(store.Upsert(withNoAccessCtx, {{$name}}), sac.ErrResourceAccessDenied)
     {{- end }}
-	{{- if (.Obj.IsDirectlyScoped)}}
-	s.ErrorIs(store.Upsert(withNoAccessToClusterCtx, {{ $name }}), sac.ErrResourceAccessDenied)
-	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, {{ $name }}), sac.ErrResourceAccessDenied)
-	s.NoError(store.Upsert(withAccessCtx, {{ $name }}))
-	s.NoError(store.Upsert(withAccessToClusterCtx, {{ $name }}))
-	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*{{.Type}}{ {{ $name }} }), sac.ErrResourceAccessDenied)
-	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*{{.Type}}{ {{ $name }} }), sac.ErrResourceAccessDenied)
-	s.NoError(store.UpsertMany(withAccessCtx, []*{{.Type}}{ {{ $name }} }))
-	s.NoError(store.UpsertMany(withAccessToClusterCtx, []*{{.Type}}{ {{ $name }} }))
-	{{- end }}
 
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{template "paramList" $}})
 	s.NoError(err)
@@ -168,9 +128,6 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
         {{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
     }
 
-	{{- if (.Obj.IsDirectlyScoped)}}
-	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, {{.TrimmedType|lowerCamelCase}}s), sac.ErrResourceAccessDenied)
-	{{- end }}
 	s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
 
     {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
@@ -179,3 +136,58 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
     {{- end }}
 }
 
+{{- if .Obj.IsDirectlyScoped }}
+func (s *{{$namePrefix}}StoreSuite) TestSAC() {
+	obj := &{{.Type}}{}
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	withNoAccessCtx := sac.WithNoAccess(context.Background())
+	withAccessToDifferentNsCtx:= sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys({{ "obj" | .Obj.GetClusterID }}),
+			sac.NamespaceScopeKeys("unknown ns"),
+	))
+	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys({{ "obj" | .Obj.GetClusterID }}),
+			{{- if .Obj.IsNamespaceScope }}
+			sac.NamespaceScopeKeys({{ "obj" | .Obj.GetNamespace }}),
+			{{- end }}
+	))
+	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys({{ "obj" | .Obj.GetClusterID }}),
+	))
+	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys("unknown cluster"),
+	))
+
+	store := s.store
+
+	for ctx, expectedErr := range map[context.Context]error{
+		withAllAccessCtx: nil,
+		withNoAccessCtx: sac.ErrResourceAccessDenied,
+		withNoAccessToClusterCtx: sac.ErrResourceAccessDenied,
+		withAccessToDifferentNsCtx: sac.ErrResourceAccessDenied,
+		withAccessCtx: nil,
+		withAccessToClusterCtx: nil,
+	} {
+		s.T().Run("Upsert", func(t *testing.T) {
+			assert.ErrorIs(t, store.Upsert(ctx, obj), expectedErr)
+		})
+		s.T().Run("UpsertMany", func(t *testing.T) {
+			assert.ErrorIs(t, store.UpsertMany(ctx, []*{{.Type}}{obj}), expectedErr)
+		})
+	}
+}
+{{ end }}

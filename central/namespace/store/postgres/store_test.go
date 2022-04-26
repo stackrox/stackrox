@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -71,32 +72,6 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.Nil(foundNamespaceMetadata)
 
 	withNoAccessCtx := sac.WithNoAccess(ctx)
-	withAccessToDifferentNsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(namespaceMetadata.GetClusterId()),
-			sac.NamespaceScopeKeys("unknown ns"),
-		))
-	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(namespaceMetadata.GetClusterId()),
-			sac.NamespaceScopeKeys(namespaceMetadata.GetId()),
-		))
-	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(namespaceMetadata.GetClusterId()),
-		))
-	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys("unknown cluster"),
-		))
 
 	s.NoError(store.Upsert(ctx, namespaceMetadata))
 	foundNamespaceMetadata, exists, err = store.Get(ctx, namespaceMetadata.GetId())
@@ -113,14 +88,6 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.True(namespaceMetadataExists)
 	s.NoError(store.Upsert(ctx, namespaceMetadata))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, namespaceMetadata), sac.ErrResourceAccessDenied)
-	s.ErrorIs(store.Upsert(withNoAccessToClusterCtx, namespaceMetadata), sac.ErrResourceAccessDenied)
-	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, namespaceMetadata), sac.ErrResourceAccessDenied)
-	s.NoError(store.Upsert(withAccessCtx, namespaceMetadata))
-	s.NoError(store.Upsert(withAccessToClusterCtx, namespaceMetadata))
-	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.NamespaceMetadata{namespaceMetadata}), sac.ErrResourceAccessDenied)
-	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.NamespaceMetadata{namespaceMetadata}), sac.ErrResourceAccessDenied)
-	s.NoError(store.UpsertMany(withAccessCtx, []*storage.NamespaceMetadata{namespaceMetadata}))
-	s.NoError(store.UpsertMany(withAccessToClusterCtx, []*storage.NamespaceMetadata{namespaceMetadata}))
 
 	foundNamespaceMetadata, exists, err = store.Get(ctx, namespaceMetadata.GetId())
 	s.NoError(err)
@@ -139,10 +106,61 @@ func (s *NamespacesStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(namespaceMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		namespaceMetadatas = append(namespaceMetadatas, namespaceMetadata)
 	}
-	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, namespaceMetadatas), sac.ErrResourceAccessDenied)
+
 	s.NoError(store.UpsertMany(ctx, namespaceMetadatas))
 
 	namespaceMetadataCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, namespaceMetadataCount)
+}
+func (s *NamespacesStoreSuite) TestSAC() {
+	obj := &storage.NamespaceMetadata{}
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	withNoAccessCtx := sac.WithNoAccess(context.Background())
+	withAccessToDifferentNsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(obj.GetClusterId()),
+			sac.NamespaceScopeKeys("unknown ns"),
+		))
+	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(obj.GetClusterId()),
+			sac.NamespaceScopeKeys(obj.GetId()),
+		))
+	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(obj.GetClusterId()),
+		))
+	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys("unknown cluster"),
+		))
+
+	store := s.store
+
+	for ctx, expectedErr := range map[context.Context]error{
+		withAllAccessCtx:           nil,
+		withNoAccessCtx:            sac.ErrResourceAccessDenied,
+		withNoAccessToClusterCtx:   sac.ErrResourceAccessDenied,
+		withAccessToDifferentNsCtx: sac.ErrResourceAccessDenied,
+		withAccessCtx:              nil,
+		withAccessToClusterCtx:     nil,
+	} {
+		s.T().Run("Upsert", func(t *testing.T) {
+			assert.ErrorIs(t, store.Upsert(ctx, obj), expectedErr)
+		})
+		s.T().Run("UpsertMany", func(t *testing.T) {
+			assert.ErrorIs(t, store.UpsertMany(ctx, []*storage.NamespaceMetadata{obj}), expectedErr)
+		})
+	}
 }

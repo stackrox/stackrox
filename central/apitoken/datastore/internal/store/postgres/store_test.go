@@ -109,6 +109,7 @@ func (s *ApitokensStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(tokenMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		tokenMetadatas = append(tokenMetadatas, tokenMetadata)
 	}
+
 	s.NoError(store.UpsertMany(ctx, tokenMetadatas))
 
 	tokenMetadataCount, err = store.Count(ctx)

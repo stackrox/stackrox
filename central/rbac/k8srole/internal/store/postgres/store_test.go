@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -71,32 +72,6 @@ func (s *K8srolesStoreSuite) TestStore() {
 	s.Nil(foundK8SRole)
 
 	withNoAccessCtx := sac.WithNoAccess(ctx)
-	withAccessToDifferentNsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(k8SRole.GetClusterId()),
-			sac.NamespaceScopeKeys("unknown ns"),
-		))
-	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(k8SRole.GetClusterId()),
-			sac.NamespaceScopeKeys(k8SRole.GetNamespace()),
-		))
-	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(k8SRole.GetClusterId()),
-		))
-	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys("unknown cluster"),
-		))
 
 	s.NoError(store.Upsert(ctx, k8SRole))
 	foundK8SRole, exists, err = store.Get(ctx, k8SRole.GetId())
@@ -113,14 +88,6 @@ func (s *K8srolesStoreSuite) TestStore() {
 	s.True(k8SRoleExists)
 	s.NoError(store.Upsert(ctx, k8SRole))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, k8SRole), sac.ErrResourceAccessDenied)
-	s.ErrorIs(store.Upsert(withNoAccessToClusterCtx, k8SRole), sac.ErrResourceAccessDenied)
-	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, k8SRole), sac.ErrResourceAccessDenied)
-	s.NoError(store.Upsert(withAccessCtx, k8SRole))
-	s.NoError(store.Upsert(withAccessToClusterCtx, k8SRole))
-	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.K8SRole{k8SRole}), sac.ErrResourceAccessDenied)
-	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.K8SRole{k8SRole}), sac.ErrResourceAccessDenied)
-	s.NoError(store.UpsertMany(withAccessCtx, []*storage.K8SRole{k8SRole}))
-	s.NoError(store.UpsertMany(withAccessToClusterCtx, []*storage.K8SRole{k8SRole}))
 
 	foundK8SRole, exists, err = store.Get(ctx, k8SRole.GetId())
 	s.NoError(err)
@@ -139,10 +106,61 @@ func (s *K8srolesStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(k8SRole, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		k8SRoles = append(k8SRoles, k8SRole)
 	}
-	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, k8SRoles), sac.ErrResourceAccessDenied)
+
 	s.NoError(store.UpsertMany(ctx, k8SRoles))
 
 	k8SRoleCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, k8SRoleCount)
+}
+func (s *K8srolesStoreSuite) TestSAC() {
+	obj := &storage.K8SRole{}
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	withNoAccessCtx := sac.WithNoAccess(context.Background())
+	withAccessToDifferentNsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(obj.GetClusterId()),
+			sac.NamespaceScopeKeys("unknown ns"),
+		))
+	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(obj.GetClusterId()),
+			sac.NamespaceScopeKeys(obj.GetNamespace()),
+		))
+	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(obj.GetClusterId()),
+		))
+	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys("unknown cluster"),
+		))
+
+	store := s.store
+
+	for ctx, expectedErr := range map[context.Context]error{
+		withAllAccessCtx:           nil,
+		withNoAccessCtx:            sac.ErrResourceAccessDenied,
+		withNoAccessToClusterCtx:   sac.ErrResourceAccessDenied,
+		withAccessToDifferentNsCtx: sac.ErrResourceAccessDenied,
+		withAccessCtx:              nil,
+		withAccessToClusterCtx:     nil,
+	} {
+		s.T().Run("Upsert", func(t *testing.T) {
+			assert.ErrorIs(t, store.Upsert(ctx, obj), expectedErr)
+		})
+		s.T().Run("UpsertMany", func(t *testing.T) {
+			assert.ErrorIs(t, store.UpsertMany(ctx, []*storage.K8SRole{obj}), expectedErr)
+		})
+	}
 }

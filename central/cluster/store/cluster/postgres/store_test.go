@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -71,31 +72,6 @@ func (s *ClustersStoreSuite) TestStore() {
 	s.Nil(foundCluster)
 
 	withNoAccessCtx := sac.WithNoAccess(ctx)
-	withAccessToDifferentNsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(cluster.GetId()),
-			sac.NamespaceScopeKeys("unknown ns"),
-		))
-	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(cluster.GetId()),
-		))
-	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(cluster.GetId()),
-		))
-	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys("unknown cluster"),
-		))
 
 	s.NoError(store.Upsert(ctx, cluster))
 	foundCluster, exists, err = store.Get(ctx, cluster.GetId())
@@ -112,14 +88,6 @@ func (s *ClustersStoreSuite) TestStore() {
 	s.True(clusterExists)
 	s.NoError(store.Upsert(ctx, cluster))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, cluster), sac.ErrResourceAccessDenied)
-	s.ErrorIs(store.Upsert(withNoAccessToClusterCtx, cluster), sac.ErrResourceAccessDenied)
-	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, cluster), sac.ErrResourceAccessDenied)
-	s.NoError(store.Upsert(withAccessCtx, cluster))
-	s.NoError(store.Upsert(withAccessToClusterCtx, cluster))
-	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.Cluster{cluster}), sac.ErrResourceAccessDenied)
-	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.Cluster{cluster}), sac.ErrResourceAccessDenied)
-	s.NoError(store.UpsertMany(withAccessCtx, []*storage.Cluster{cluster}))
-	s.NoError(store.UpsertMany(withAccessToClusterCtx, []*storage.Cluster{cluster}))
 
 	foundCluster, exists, err = store.Get(ctx, cluster.GetId())
 	s.NoError(err)
@@ -138,10 +106,60 @@ func (s *ClustersStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(cluster, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		clusters = append(clusters, cluster)
 	}
-	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, clusters), sac.ErrResourceAccessDenied)
+
 	s.NoError(store.UpsertMany(ctx, clusters))
 
 	clusterCount, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, clusterCount)
+}
+func (s *ClustersStoreSuite) TestSAC() {
+	obj := &storage.Cluster{}
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	withNoAccessCtx := sac.WithNoAccess(context.Background())
+	withAccessToDifferentNsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(obj.GetId()),
+			sac.NamespaceScopeKeys("unknown ns"),
+		))
+	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(obj.GetId()),
+		))
+	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(obj.GetId()),
+		))
+	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys("unknown cluster"),
+		))
+
+	store := s.store
+
+	for ctx, expectedErr := range map[context.Context]error{
+		withAllAccessCtx:           nil,
+		withNoAccessCtx:            sac.ErrResourceAccessDenied,
+		withNoAccessToClusterCtx:   sac.ErrResourceAccessDenied,
+		withAccessToDifferentNsCtx: sac.ErrResourceAccessDenied,
+		withAccessCtx:              nil,
+		withAccessToClusterCtx:     nil,
+	} {
+		s.T().Run("Upsert", func(t *testing.T) {
+			assert.ErrorIs(t, store.Upsert(ctx, obj), expectedErr)
+		})
+		s.T().Run("UpsertMany", func(t *testing.T) {
+			assert.ErrorIs(t, store.UpsertMany(ctx, []*storage.Cluster{obj}), expectedErr)
+		})
+	}
 }

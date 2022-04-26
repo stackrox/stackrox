@@ -109,6 +109,7 @@ func (s *PolicyStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(policy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		policys = append(policys, policy)
 	}
+
 	s.NoError(store.UpsertMany(ctx, policys))
 
 	policyCount, err = store.Count(ctx)
