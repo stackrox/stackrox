@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 )
@@ -30,7 +30,7 @@ func (p *roleChecker) Authorized(ctx context.Context, _ string) error {
 
 func (p *roleChecker) checkRole(roleNames []string) error {
 	if len(roleNames) == 0 {
-		return errorhelpers.ErrNoValidRole
+		return errox.NoValidRole
 	}
 
 	for _, roleName := range roleNames {
@@ -39,5 +39,5 @@ func (p *roleChecker) checkRole(roleNames []string) error {
 		}
 	}
 
-	return errorhelpers.NewErrNotAuthorized(fmt.Sprintf("role %q is required", p.roleName))
+	return errox.NewErrNotAuthorized(fmt.Sprintf("role %q is required", p.roleName))
 }

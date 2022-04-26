@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -65,9 +64,6 @@ func (m *managerImpl) RunReport(ctx context.Context, reportConfig *storage.Repor
 }
 
 func (m *managerImpl) Start() {
-	if !features.VulnReporting.Enabled() {
-		return
-	}
 	m.scheduler.Start()
 }
 

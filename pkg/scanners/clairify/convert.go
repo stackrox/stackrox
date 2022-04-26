@@ -83,8 +83,8 @@ func convertNodeNotes(v1Notes []v1.NodeNote) []storage.NodeScan_Note {
 	notes := make([]storage.NodeScan_Note, 0, len(v1Notes))
 	for _, note := range v1Notes {
 		switch note {
-		case v1.NodeNote_NODE_OS_UNSUPPORTED:
-			notes = append(notes, storage.NodeScan_OS_UNSUPPORTED)
+		case v1.NodeNote_NODE_UNSUPPORTED:
+			notes = append(notes, storage.NodeScan_UNSUPPORTED)
 		case v1.NodeNote_NODE_KERNEL_UNSUPPORTED:
 			notes = append(notes, storage.NodeScan_KERNEL_UNSUPPORTED)
 		default:

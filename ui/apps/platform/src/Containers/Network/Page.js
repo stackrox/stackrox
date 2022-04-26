@@ -89,7 +89,11 @@ function NetworkPage({ closeSidePanel, setDialogueStage, setNetworkModification 
     const dispatch = useDispatch();
 
     useEffect(() => {
-        if (!deploymentId || !isInitialRender) {
+        if (!isInitialRender) {
+            return;
+        }
+        setIsInitialRender(false);
+        if (!deploymentId) {
             return;
         }
         // If the page is visited with a deployment id, we need to enable that deployment's
@@ -103,7 +107,6 @@ function NetworkPage({ closeSidePanel, setDialogueStage, setNetworkModification 
                 dispatch(graphActions.setSelectedNamespaceFilters(newFilters));
             }
         });
-        setIsInitialRender(false);
     }, [dispatch, deploymentId, selectedClusterId, selectedNamespaceFilters, isInitialRender]);
 
     const clusterName = clusters.find((c) => c.id === selectedClusterId)?.name;

@@ -1,7 +1,8 @@
+import qs from 'qs';
 import {
     SearchEntry,
     GlobalSearchOption,
-    RestSortOption,
+    ApiSortOption,
     GraphQLSortOption,
     SearchFilter,
 } from 'types/search';
@@ -101,14 +102,14 @@ export function convertToRestSearch(workflowSearch: Record<string, string>): Sea
     return restSearch;
 }
 
-export function convertSortToGraphQLFormat({ field, reversed }: RestSortOption): GraphQLSortOption {
+export function convertSortToGraphQLFormat({ field, reversed }: ApiSortOption): GraphQLSortOption {
     return {
         id: field,
         desc: reversed,
     };
 }
 
-export function convertSortToRestFormat(graphqlSort: GraphQLSortOption[]): Partial<RestSortOption> {
+export function convertSortToRestFormat(graphqlSort: GraphQLSortOption[]): Partial<ApiSortOption> {
     return {
         field: graphqlSort[0]?.id,
         reversed: graphqlSort[0]?.desc,
@@ -124,4 +125,17 @@ export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter)
         .filter(([, value]) => value.length !== 0)
         .map(([key, value]) => `${key}:${Array.isArray(value) ? value.join(',') : value}`)
         .join('+');
+}
+
+export function getUrlQueryStringForSearchFilter(
+    searchFilter: SearchFilter,
+    searchPrefix = 'search'
+): string {
+    return qs.stringify(
+        { [searchPrefix]: searchFilter },
+        {
+            arrayFormat: 'repeat',
+            encodeValuesOnly: true,
+        }
+    );
 }

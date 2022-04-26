@@ -45,7 +45,7 @@ func getFakePolicyRequest(policyName, fieldName string) *v1.PostPolicyRequest {
 							Negate:          false,
 							Values: []*storage.PolicyValue{
 								{
-									Value: "true",
+									Value: "false",
 								},
 							},
 						},
@@ -126,12 +126,12 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 	}{
 		"Should have ingress": {
 			policyName:        "[Automated] Should have ingress policy",
-			policyField:       "Missing Ingress Network Policy",
+			policyField:       "Has Ingress Network Policy",
 			networkPolicyFile: "testdata/allow-ingress-netpol.yaml",
 		},
 		"Should have egress": {
 			policyName:        "[Automated] Should have egress policy",
-			policyField:       "Missing Egress Network Policy",
+			policyField:       "Has Egress Network Policy",
 			networkPolicyFile: "testdata/allow-egress-netpol.yaml",
 		},
 	}

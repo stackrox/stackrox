@@ -5,6 +5,7 @@ source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
 
+shopt -s nullglob
 for cred in /tmp/secret/**/[A-Z]*; do
     export "$(basename "$cred")"="$(cat "$cred")"
 done
@@ -36,6 +37,6 @@ case "$ci_job" in
     *)
         # For ease of initial integration this function does not fail when the
         # job is unknown.
-        info "nothing to see here"
+        info "nothing to see here: ${ci_job}"
         exit 0
 esac

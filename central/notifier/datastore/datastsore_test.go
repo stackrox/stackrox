@@ -47,7 +47,7 @@ func (s *notifierDataStoreTestSuite) SetupTest() {
 	s.dataStore = New(s.storage)
 }
 
-func (s *notifierDataStoreTestSuite) TeardownTest() {
+func (s *notifierDataStoreTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 

@@ -1,7 +1,7 @@
 {{- $ := . }}
 {{- $pks := .Schema.LocalPrimaryKeys }}
 
-{{- $singlePK := dict.nil }}
+{{- $singlePK := false }}
 {{- if eq (len $pks) 1 }}
 {{ $singlePK = index $pks 0 }}
 {{- end }}

@@ -41,12 +41,6 @@ if [[ -z "${SCANNER_DB_IMAGE}" ]]; then
 fi
 echo "StackRox scanner image set to $SCANNER_IMAGE"
 
-export MONITORING_IMAGE="${MONITORING_IMAGE:-}"
-if [[ -z "${MONITORING_IMAGE}" ]]; then
-  MONITORING_IMAGE="stackrox/monitoring:$(cat "$(git rev-parse --show-toplevel)/MONITORING_VERSION")"
-fi
-echo "StackRox monitoring image set to $MONITORING_IMAGE"
-
 function curl_central() {
 	cmd=(curl -k)
 	local admin_user="${ROX_ADMIN_USER:-admin}"

@@ -76,7 +76,7 @@ message TestMultiKeyStruct {
     ENUM1 = 1;
     ENUM2 = 2;
   }
-  string key1                  = 1 [(gogoproto.moretags) = 'sql:"pk" search:"Test Key"'];
+  string key1                  = 1 [(gogoproto.moretags) = 'sql:"pk,id" search:"Test Key"'];
   string key2                  = 2 [(gogoproto.moretags) = 'sql:"pk"'];
 
   repeated string string_slice = 3 [(gogoproto.moretags) = 'search:"Test String Slice"'];

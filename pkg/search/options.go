@@ -44,6 +44,7 @@ var (
 	Severity       = newFieldLabel("Severity")
 	Disabled       = newFieldLabel("Disabled")
 
+	CVEID              = newFieldLabel("CVE ID")
 	CVE                = newFieldLabel("CVE")
 	CVECount           = newFieldLabel("CVE Count")
 	CVEType            = newFieldLabel("CVE Type")

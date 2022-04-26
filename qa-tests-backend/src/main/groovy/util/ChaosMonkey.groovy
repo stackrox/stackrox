@@ -1,12 +1,14 @@
 package util
 
 import common.Constants
+import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.api.model.Pod
 import orchestratormanager.OrchestratorMain
 
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 
+@Slf4j
 class ChaosMonkey {
     def stopFlag = new AtomicBoolean()
     def lock = new ReentrantLock()
@@ -80,7 +82,7 @@ class ChaosMonkey {
                 }
             }
         }
-        println "ChaosMonkey: All admission control pod replicas ready"
+        log.info "ChaosMonkey: All admission control pod replicas ready"
     }
 }
 

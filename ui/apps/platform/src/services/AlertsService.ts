@@ -2,10 +2,9 @@ import queryString from 'qs';
 
 import { Alert, ListAlert } from 'Containers/Violations/types/violationTypes';
 
-import { SearchFilter } from 'types/search';
+import { ApiSortOption, SearchFilter } from 'types/search';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import axios from './instance';
-import { RestSortOption } from './sortOption';
 
 const baseUrl = '/v1/alerts';
 const baseCountUrl = '/v1/alertscount';
@@ -47,7 +46,7 @@ type AlertsByTimeseriesFilters = {
  */
 export function fetchAlertsByTimeseries(
     filters: AlertsByTimeseriesFilters
-): Promise<{ response: { clusters: ClusterAlert[] } }> {
+): Promise<ClusterAlert[]> {
     const params = queryString.stringify(filters);
 
     // set higher timeout for this call to handle known backend scale issues with dashboard
@@ -55,9 +54,7 @@ export function fetchAlertsByTimeseries(
         .get<{ clusters: ClusterAlert[] }>(`${baseUrl}/summary/timeseries?${params}`, {
             timeout: 59999,
         })
-        .then((response) => ({
-            response: response.data,
-        }));
+        .then((response) => response.data.clusters);
 }
 
 export type AlertCountBySeverity = {
@@ -78,17 +75,13 @@ type SummaryAlertCountsFilters = {
 /*
  * Fetch severity counts.
  */
-export function fetchSummaryAlertCounts(
-    filters: SummaryAlertCountsFilters
-): Promise<{ response: { groups: AlertGroup[] } }> {
+export function fetchSummaryAlertCounts(filters: SummaryAlertCountsFilters): Promise<AlertGroup[]> {
     const params = queryString.stringify(filters);
 
     // set higher timeout for this call to handle known backend scale issues with dashboard
     return axios
         .get<{ groups: AlertGroup[] }>(`${baseUrl}/summary/counts?${params}`, { timeout: 59999 })
-        .then((response) => ({
-            response: response.data,
-        }));
+        .then((response) => response.data.groups);
 }
 
 /*
@@ -96,7 +89,7 @@ export function fetchSummaryAlertCounts(
  */
 export function fetchAlerts(
     searchFilter: SearchFilter,
-    sortOption: RestSortOption,
+    sortOption: ApiSortOption,
     page: number,
     pageSize: number
 ): Promise<ListAlert[]> {

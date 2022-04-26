@@ -4,7 +4,6 @@ import { PageSection } from '@patternfly/react-core';
 
 import {
     mainPath,
-    notFoundPath,
     dashboardPath,
     networkPath,
     violationsPath,
@@ -57,7 +56,7 @@ const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/V
 // TODO: rename this to AsyncPoliciesPage after we remove the old deprecated policies code
 // Jira issue to track: https://issues.redhat.com/browse/ROX-9450
 const AsyncPoliciesPagePatternFly = asyncComponent(
-    () => import('Containers/Policies/PatternFly/PoliciesPage')
+    () => import('Containers/Policies/PoliciesPage')
 );
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
@@ -90,7 +89,6 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled(
         knownBackendFlags.ROX_SYSTEM_HEALTH_PF
     );
-    const isVulnReportingEnabled = isFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
 
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
 
@@ -102,7 +100,8 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
         >
             <ErrorBoundary>
                 <Switch>
-                    <Route path={notFoundPath} component={NotFoundPage} />
+                    <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
+                    <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={dashboardPath} component={AsyncDashboardPage} />
                     <Route path={networkPath} component={AsyncNetworkPage} />
                     <Route path={violationsPath} component={AsyncViolationsPage} />
@@ -114,7 +113,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={apidocsPath} component={AsyncApiDocsPage} />
                     <Route path={userBasePath} component={AsyncUserPage} />
                     <Route path={systemConfigPath} component={AsyncSystemConfigPage} />
-                    {isVulnReportingEnabled && hasVulnerabilityReportsPermission && (
+                    {hasVulnerabilityReportsPermission && (
                         <Route path={vulnManagementReportsPath} component={AsyncVulnMgmtReports} />
                     )}
                     <Route
@@ -131,8 +130,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     {isSystemHealthPatternFlyEnabled && (
                         <Route path={systemHealthPathPF} component={AsyncSystemHealthPagePF} />
                     )}
-                    <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
-                    <Route path={mainPath} render={() => <Redirect to={notFoundPath} />} />
+                    <Route component={NotFoundPage} />
                 </Switch>
             </ErrorBoundary>
         </div>

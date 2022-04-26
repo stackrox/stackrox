@@ -3,11 +3,18 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	// CreateTableImagesStmt holds the create statement for table `Images`.
+	// CreateTableImagesStmt holds the create statement for table `images`.
 	CreateTableImagesStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists images (
@@ -55,4 +62,16 @@ var (
 			},
 		},
 	}
+
+	// ImagesSchema is the go schema for table `images`.
+	ImagesSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("images")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.Image)(nil)), "images")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGES, "images", (*storage.Image)(nil)))
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

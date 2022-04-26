@@ -3,11 +3,18 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	// CreateTableImageCveRelationsStmt holds the create statement for table `ImageCveRelations`.
+	// CreateTableImageCveRelationsStmt holds the create statement for table `image_cve_relations`.
 	CreateTableImageCveRelationsStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists image_cve_relations (
@@ -16,12 +23,28 @@ var (
                    State integer,
                    ImageId varchar,
                    ImageCveId varchar,
+                   ImageCve varchar,
+                   ImageCveOperatingSystem varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, ImageId, ImageCveId),
+                   PRIMARY KEY(Id, ImageId, ImageCveId, ImageCve, ImageCveOperatingSystem),
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE
                )
                `,
 		Indexes:  []string{},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// ImageCveRelationsSchema is the go schema for table `image_cve_relations`.
+	ImageCveRelationsSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("image_cve_relations")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.ImageCVEEdge)(nil)), "image_cve_relations").
+			WithReference(ImagesSchema).
+			WithReference(ImageCvesSchema)
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_VULN_EDGE, "image_cve_relations", (*storage.ImageCVEEdge)(nil)))
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

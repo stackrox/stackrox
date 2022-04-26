@@ -224,6 +224,20 @@ func (mr *MockDataStoreMockRecorder) SearchRawImages(ctx, q interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImages", reflect.TypeOf((*MockDataStore)(nil).SearchRawImages), ctx, q)
 }
 
+// UpdateVulnerabilityState mocks base method.
+func (m *MockDataStore) UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateVulnerabilityState", ctx, cve, images, state)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateVulnerabilityState indicates an expected call of UpdateVulnerabilityState.
+func (mr *MockDataStoreMockRecorder) UpdateVulnerabilityState(ctx, cve, images, state interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilityState", reflect.TypeOf((*MockDataStore)(nil).UpdateVulnerabilityState), ctx, cve, images, state)
+}
+
 // UpsertImage mocks base method.
 func (m *MockDataStore) UpsertImage(ctx context.Context, image *storage.Image) error {
 	m.ctrl.T.Helper()

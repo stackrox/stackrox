@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
-import { Route, Switch, Redirect } from 'react-router-dom';
+import { Route, Switch } from 'react-router-dom';
 
-import { mainPath, loginPath, testLoginResultsPath, authResponsePrefix } from 'routePaths';
+import { loginPath, testLoginResultsPath, authResponsePrefix } from 'routePaths';
 import LoadingSection from 'Components/PatternFly/LoadingSection';
 import AuthenticatedRoutes from 'Containers/MainPage/AuthenticatedRoutes';
 import LoginPage from 'Containers/Login/LoginPage';
@@ -15,11 +15,10 @@ function AppPage(): ReactElement {
             <AppPageTitle />
             <AppPageFavicon />
             <Switch>
-                <Route path={mainPath} component={AuthenticatedRoutes} />
                 <Route path={loginPath} component={LoginPage} />
                 <Route path={testLoginResultsPath} component={TestLoginResultsPage} />
                 <Route path={authResponsePrefix} component={LoadingSection} />
-                <Route path="/" render={() => <Redirect to={mainPath} />} />
+                <Route component={AuthenticatedRoutes} />
             </Switch>
         </>
     );

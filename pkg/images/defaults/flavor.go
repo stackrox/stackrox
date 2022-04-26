@@ -42,6 +42,11 @@ var (
 			isAllowedInReleaseBuild: true,
 			constructorFunc:         RHACSReleaseImageFlavor,
 		},
+		{
+			imageFlavorName:         ImageFlavorNameOpenSourceRelease,
+			isAllowedInReleaseBuild: true,
+			constructorFunc:         OpenSourceReleaseImageFlavor,
+		},
 	}
 
 	// imageFlavorMap contains allImageFlavors keyed by ImageFlavorName.
@@ -182,6 +187,39 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 
 		ChartRepo: ChartRepo{
 			URL: "https://mirror.openshift.com/pub/rhacs/charts",
+		},
+		ImagePullSecrets: ImagePullSecrets{
+			AllowNone: true,
+		},
+		Versions: v,
+	}
+}
+
+// OpenSourceReleaseImageFlavor returns image values for `opensource` flavor.
+func OpenSourceReleaseImageFlavor() ImageFlavor {
+	v := version.GetAllVersionsUnified()
+	return ImageFlavor{
+		MainRegistry:       "quay.io/stackrox-io",
+		MainImageName:      "main",
+		MainImageTag:       v.MainVersion,
+		CentralDBImageTag:  v.MainVersion,
+		CentralDBImageName: "central-db",
+
+		CollectorRegistry:      "quay.io/stackrox-io",
+		CollectorImageName:     "collector",
+		CollectorImageTag:      v.CollectorVersion,
+		CollectorSlimImageName: "collector-slim",
+		CollectorSlimImageTag:  v.CollectorVersion,
+
+		ScannerImageName:       "scanner",
+		ScannerSlimImageName:   "scanner-slim",
+		ScannerImageTag:        v.ScannerVersion,
+		ScannerDBImageName:     "scanner-db",
+		ScannerDBSlimImageName: "scanner-db-slim",
+
+		ChartRepo: ChartRepo{
+			// TODO(ROX-10079): establish a place where open source users will be able to download Helm charts.
+			URL: "https://charts.stackrox.io",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,

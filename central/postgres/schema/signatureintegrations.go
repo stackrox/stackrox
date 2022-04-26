@@ -3,11 +3,16 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var (
-	// CreateTableSignatureintegrationsStmt holds the create statement for table `Signatureintegrations`.
+	// CreateTableSignatureintegrationsStmt holds the create statement for table `signatureintegrations`.
 	CreateTableSignatureintegrationsStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists signatureintegrations (
@@ -19,4 +24,15 @@ var (
 		Indexes:  []string{},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// SignatureintegrationsSchema is the go schema for table `signatureintegrations`.
+	SignatureintegrationsSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("signatureintegrations")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.SignatureIntegration)(nil)), "signatureintegrations")
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

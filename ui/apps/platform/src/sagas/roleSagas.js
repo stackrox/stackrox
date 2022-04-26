@@ -61,15 +61,6 @@ function* selectRole(action) {
     }
 }
 
-function* fetchResources() {
-    try {
-        const result = yield call(service.fetchResources);
-        yield put(actions.fetchResources.success(result.response));
-    } catch (error) {
-        Raven.captureException(error);
-    }
-}
-
 function* watchSaveRole() {
     yield takeLatest(types.SAVE_ROLE, saveRole);
 }
@@ -82,10 +73,6 @@ function* watchSelectRole() {
     yield takeLatest(types.SELECTED_ROLE, selectRole);
 }
 
-function* watchFetchResources() {
-    yield takeLatest(types.FETCH_RESOURCES.REQUEST, fetchResources);
-}
-
 export default function* integrations() {
     yield all([
         takeEveryNewlyMatchedLocation(accessControlPath, getRoles),
@@ -93,6 +80,5 @@ export default function* integrations() {
         fork(watchSaveRole),
         fork(watchDeleteRole),
         fork(watchSelectRole),
-        fork(watchFetchResources),
     ]);
 }

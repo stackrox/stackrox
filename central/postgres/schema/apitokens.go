@@ -3,11 +3,16 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var (
-	// CreateTableApitokensStmt holds the create statement for table `Apitokens`.
+	// CreateTableApitokensStmt holds the create statement for table `apitokens`.
 	CreateTableApitokensStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists apitokens (
@@ -19,4 +24,15 @@ var (
 		Indexes:  []string{},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// ApitokensSchema is the go schema for table `apitokens`.
+	ApitokensSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("apitokens")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.TokenMetadata)(nil)), "apitokens")
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

@@ -3,6 +3,7 @@ package util
 import static com.jayway.restassured.RestAssured.given
 
 import groovy.transform.TupleConstructor
+import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.client.LocalPortForward
 import objects.Deployment
 import objects.Service
@@ -18,6 +19,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.jayway.restassured.response.Response
 
+@Slf4j
 class SplunkUtil {
     public static final String SPLUNK_ADMIN_PASSWORD = "helloworld"
     private static final Gson GSON = new GsonBuilder().create()
@@ -127,13 +129,13 @@ class SplunkUtil {
                     .post("https://127.0.0.1:${port}/services/search/jobs")
         }
 
-        println response?.asString() //printout the response for debugging purposes
+        log.debug response?.asString()
         def searchId = GSON.fromJson(response?.asString(), SplunkSearch)?.sid
         if (searchId == null) {
-            println "Failed to generate new search. SearchId is null..."
+            log.debug "Failed to generate new search. SearchId is null..."
             throw new AssumptionViolatedException("Failed to create new Splunk search!")
         } else {
-            println "New Search created: ${searchId}"
+            log.debug "New Search created: ${searchId}"
             return searchId
         }
     }
@@ -175,7 +177,7 @@ class SplunkUtil {
 
             splunkPortForward = orchestrator.createPortForward(8089, deployment)
         } catch (Exception e) {
-            println("Something bad happened (${e.message}), will run cleanup before failing")
+            log.info("Something bad happened, will run cleanup before failing", e)
             if (syslogSvc) {
                 orchestrator.deleteService(syslogSvc.name, syslogSvc.namespace)
             }

@@ -55,8 +55,7 @@ export const general = {
 };
 
 export const search = {
-    globalSearchWithResults: '/v1/search?query=Cluster:remote',
-    globalSearchWithNoResults: '/v1/search?query=Cluster:',
+    results: '/v1/search?query=*',
     options: '/v1/search/metadata/options*',
     autocomplete: 'v1/search/autocomplete*',
     autocompleteBySearch: (searchObj, category) =>
@@ -87,7 +86,7 @@ export const alerts = {
 export const clusters = {
     single: 'v1/clusters/**',
     list: 'v1/clusters',
-    kernelSupportAvailable: '/v1/clusters-env/kernel-support-available',
+    clusterDefaults: '/v1/cluster-defaults',
     zip: 'api/extensions/clusters/zip',
 };
 

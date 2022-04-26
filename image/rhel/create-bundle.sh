@@ -44,8 +44,10 @@ OUTPUT_DIR="$4"
 
 OUTPUT_BUNDLE="${OUTPUT_DIR}/bundle.tar.gz"
 
-# Verify image exists
-image_exists "${DATA_IMAGE}"
+# Verify images exist
+if [[ "${DATA_IMAGE}" != "local" ]]; then
+  image_exists "${DATA_IMAGE}"
+fi
 
 # Create tmp directory with stackrox directory structure
 bundle_root="$(mktemp -d)"
@@ -90,16 +92,21 @@ mkdir -p "${bundle_root}/go/bin"
 if [[ "$DEBUG_BUILD" == "yes" ]]; then
   if [[ "$OSTYPE" != "linux-gnu"* ]]; then
     GOBIN= GOOS=linux GOARCH=amd64 GOPATH="${bundle_root}/go" go install github.com/go-delve/delve/cmd/dlv@latest
-    mv $bundle_root/go/bin/linux_amd64/dlv $bundle_root/go/bin/dlv
-    rm -r $bundle_root/go/bin/linux_amd64
+    mv "$bundle_root"/go/bin/linux_amd64/dlv "$bundle_root"/go/bin/dlv
+    rm -r "$bundle_root"/go/bin/linux_amd64
   else
     GOBIN="${bundle_root}/go/bin" go install github.com/go-delve/delve/cmd/dlv@latest
   fi
 fi
 
-# Extract data from data container image
-extract_from_image "${DATA_IMAGE}" "/stackrox-data" "${bundle_root}/stackrox/static-data/"
-extract_from_image "${BUILDER_IMAGE}" "/usr/local/bin/ldb" "${bundle_root}/usr/local/bin/ldb"
+if [[ "${DATA_IMAGE}" != "local" ]]; then
+  # Extract data from data container image
+  extract_from_image "${DATA_IMAGE}" "/stackrox-data" "${bundle_root}/stackrox/static-data/"
+  extract_from_image "${BUILDER_IMAGE}" "/usr/local/bin/ldb" "${bundle_root}/usr/local/bin/ldb"
+else
+  cp -a "/stackrox-data" "${bundle_root}/stackrox/static-data/"
+  cp "/usr/local/bin/ldb" "${bundle_root}/usr/local/bin/ldb"
+fi
 
 # Install all the required compression packages for RocksDB to compile
 rpm_base_url="http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages"

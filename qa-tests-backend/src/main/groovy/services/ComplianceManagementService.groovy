@@ -1,6 +1,7 @@
 package services
 
 import com.google.protobuf.Timestamp
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.ComplianceManagementServiceGrpc
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.AddComplianceRunScheduleRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunSelection
@@ -13,6 +14,7 @@ import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.UpdateComp
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRun
 import io.stackrox.proto.storage.ComplianceManagement.ComplianceRunSchedule
 
+@Slf4j
 class ComplianceManagementService extends BaseService {
     static getComplianceManagementClient() {
         return ComplianceManagementServiceGrpc.newBlockingStub(getChannel())
@@ -29,14 +31,14 @@ class ComplianceManagementService extends BaseService {
                     TriggerComplianceRunsRequest.newBuilder().setSelection(selection).build()
             ).startedRunsList
         } catch (Exception e) {
-            println "Error triggering compliance runs: ${e}"
+            log.error("Error triggering compliance runs", e)
         }
     }
 
     static Map<String, String> triggerComplianceRunsAndWait(String standardId = null, String clusterId = null) {
         List<ComplianceRun> complianceRuns = triggerComplianceRuns(standardId, clusterId)
-        println "triggered ${standardId ?: "all"} compliance run${standardId ? "" : "s"}"
-        println "waiting for the run${standardId ? "" : "s"} to finish..."
+        log.debug "triggered ${standardId ?: "all"} compliance run${standardId ? "" : "s"}"
+        log.debug "waiting for the run${standardId ? "" : "s"} to finish..."
         Long startTime = System.currentTimeMillis()
         while (complianceRuns.any { it.state != ComplianceRun.State.FINISHED } &&
                 (System.currentTimeMillis() - startTime) < 300000) {
@@ -44,7 +46,7 @@ class ComplianceManagementService extends BaseService {
             complianceRuns = getRunStatuses(complianceRuns*.id).runsList
         }
         assert !complianceRuns.any { it.state != ComplianceRun.State.FINISHED }
-        println "Compliance run${standardId ? "" : "s"} took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.debug "Compliance run${standardId ? "" : "s"} took ${(System.currentTimeMillis() - startTime) / 1000}s"
         return complianceRuns.collectEntries { [(it.standardId) : it.id] }
     }
 
@@ -85,7 +87,7 @@ class ComplianceManagementService extends BaseService {
                     ).build()
             ).addedSchedule
         } catch (Exception e) {
-            println "Error adding a compliance schedule: ${e}"
+            log.error("Error adding a compliance schedule", e)
         }
     }
 
@@ -108,7 +110,7 @@ class ComplianceManagementService extends BaseService {
                     ).build()
             ).updatedSchedule
         } catch (Exception e) {
-            println "Error updating a compliance schedule: ${e}"
+            log.error("Error updating a compliance schedule", e)
         }
     }
 
@@ -120,7 +122,7 @@ class ComplianceManagementService extends BaseService {
                             .build()
             )
         } catch (Exception e) {
-            println "Error deleting compliance schedule: ${e}"
+            log.error("Error deleting compliance schedule", e)
         }
     }
 }

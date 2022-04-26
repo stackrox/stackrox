@@ -1,5 +1,8 @@
 package orchestratormanager
 
+import groovy.util.logging.Slf4j
+
+@Slf4j
 class OrchestratorCommon {
     static final COMMAND_EXEC_TIMEOUT = 30000
 
@@ -8,7 +11,7 @@ class OrchestratorCommon {
         def stdErr = new StringBuffer()
 
         if (print) {
-            println ">>> RUNNING COMMAND: ${cmd.join(" ")}"
+            log.debug ">>> RUNNING COMMAND: ${cmd.join(" ")}"
         }
 
         def process = cmd.execute(envVariables, null)
@@ -16,17 +19,17 @@ class OrchestratorCommon {
         process.waitForOrKill(COMMAND_EXEC_TIMEOUT)
 
         if (process.exitValue() == 143) {
-            println "runCommand killed due to timeout (${COMMAND_EXEC_TIMEOUT} ms)"
+            log.warn "runCommand killed due to timeout (${COMMAND_EXEC_TIMEOUT} ms)"
         }
 
         if (print) {
             if (stdOut.toString().trim() != "") {
-                println "Standard Output: ${stdOut.toString().trim()}"
+                log.debug "Standard Output: ${stdOut.toString().trim()}"
             }
             if (stdErr.toString().trim() != "") {
-                println "Standard Error: ${stdErr.toString().trim()}"
+                log.debug "Standard Error: ${stdErr.toString().trim()}"
             }
-            println "Exit Value: ${process.exitValue()}"
+            log.debug "Exit Value: ${process.exitValue()}"
         }
 
         return new CommandResults(exitValue: process.exitValue(),
