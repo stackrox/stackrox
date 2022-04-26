@@ -129,7 +129,7 @@ class SplunkUtil {
                     .post("https://127.0.0.1:${port}/services/search/jobs")
         }
 
-        log.debug response?.asString() //printout the response for debugging purposes
+        log.debug response?.asString()
         def searchId = GSON.fromJson(response?.asString(), SplunkSearch)?.sid
         if (searchId == null) {
             log.debug "Failed to generate new search. SearchId is null..."
