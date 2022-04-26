@@ -93,7 +93,6 @@ func (s *NetworkbaselineStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(networkBaseline, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkBaselines = append(networkBaselines, networkBaseline)
 	}
-
 	s.NoError(store.UpsertMany(ctx, networkBaselines))
 
 	networkBaselineCount, err = store.Count(ctx)

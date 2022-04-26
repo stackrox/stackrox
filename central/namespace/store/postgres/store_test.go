@@ -12,6 +12,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -41,7 +42,7 @@ func (s *NamespacesStoreSuite) TearDownTest() {
 }
 
 func (s *NamespacesStoreSuite) TestStore() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -61,6 +62,34 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundNamespaceMetadata)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+	withAccessToDifferentNsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(namespaceMetadata.GetClusterId()),
+			sac.NamespaceScopeKeys("unknown ns"),
+		))
+	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(namespaceMetadata.GetClusterId()),
+			sac.NamespaceScopeKeys(namespaceMetadata.GetId()),
+		))
+	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(namespaceMetadata.GetClusterId()),
+		))
+	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys("unknown cluster"),
+		))
+
 	s.NoError(store.Upsert(ctx, namespaceMetadata))
 	foundNamespaceMetadata, exists, err = store.Get(ctx, namespaceMetadata.GetId())
 	s.NoError(err)
@@ -75,6 +104,15 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(namespaceMetadataExists)
 	s.NoError(store.Upsert(ctx, namespaceMetadata))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, namespaceMetadata), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withNoAccessToClusterCtx, namespaceMetadata), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, namespaceMetadata), sac.ErrResourceAccessDenied)
+	s.NoError(store.Upsert(withAccessCtx, namespaceMetadata))
+	s.NoError(store.Upsert(withAccessToClusterCtx, namespaceMetadata))
+	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.NamespaceMetadata{namespaceMetadata}), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.NamespaceMetadata{namespaceMetadata}), sac.ErrResourceAccessDenied)
+	s.NoError(store.UpsertMany(withAccessCtx, []*storage.NamespaceMetadata{namespaceMetadata}))
+	s.NoError(store.UpsertMany(withAccessToClusterCtx, []*storage.NamespaceMetadata{namespaceMetadata}))
 
 	foundNamespaceMetadata, exists, err = store.Get(ctx, namespaceMetadata.GetId())
 	s.NoError(err)
@@ -93,7 +131,7 @@ func (s *NamespacesStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(namespaceMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		namespaceMetadatas = append(namespaceMetadatas, namespaceMetadata)
 	}
-
+	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, namespaceMetadatas), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(ctx, namespaceMetadatas))
 
 	namespaceMetadataCount, err = store.Count(ctx)

@@ -101,7 +101,6 @@ func (s *SignatureintegrationsStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(signatureIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		signatureIntegrations = append(signatureIntegrations, signatureIntegration)
 	}
-
 	s.NoError(store.UpsertMany(ctx, signatureIntegrations))
 
 	signatureIntegrationCount, err = store.Count(ctx)

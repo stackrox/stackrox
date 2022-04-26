@@ -101,7 +101,6 @@ func (s *WatchedimagesStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(watchedImage, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		watchedImages = append(watchedImages, watchedImage)
 	}
-
 	s.NoError(store.UpsertMany(ctx, watchedImages))
 
 	watchedImageCount, err = store.Count(ctx)

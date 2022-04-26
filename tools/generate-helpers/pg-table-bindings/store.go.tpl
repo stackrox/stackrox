@@ -68,7 +68,7 @@ const (
 var (
     log = logging.LoggerForModule()
     schema = {{ template "schemaVar" .Schema}}
-    {{ if .Obj.IsGloballyScoped -}}
+    {{ if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) -}}
     targetResource = resources.{{.Type | storageToResource}}
     {{- end }}
 )
@@ -345,12 +345,20 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     }
     {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
+    {{- else if and (.Obj.IsDirectlyScoped) (.Obj.IsClusterScope) }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}.
+        ClusterID({{ "obj" | .Obj.GetClusterID }})
+    {{- else if and (.Obj.IsDirectlyScoped) (.Obj.IsNamespaceScope) }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}.
+        ClusterID({{ "obj" | .Obj.GetClusterID }}).Namespace({{ "obj" | .Obj.GetNamespace }})
+    {{- end }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- end}}
+    {{- end }}
 
     return s.upsert(ctx, obj)
 }
@@ -371,7 +379,29 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- end}}
+    {{- else if .Obj.IsDirectlyScoped -}}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
+    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        var deniedIds []string
+        for _, obj := range objs {
+            {{- if .Obj.IsClusterScope }}
+            subScopeChecker := scopeChecker.ClusterID({{ "obj" | .Obj.GetClusterID }})
+            {{- else if .Obj.IsNamespaceScope }}
+            subScopeChecker := scopeChecker.ClusterID({{ "obj" | .Obj.GetClusterID }}).Namespace({{ "obj" | .Obj.GetNamespace }})
+            {{- end }}
+            if ok, err := subScopeChecker.Allowed(ctx); err != nil {
+                return err
+            } else if !ok {
+                deniedIds = append(deniedIds, obj.GetId())
+            }
+        }
+        if len(deniedIds) != 0 {
+            return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying {{ .TrimmedType|lowerCamelCase }}s with IDs [%s] was denied", strings.Join(deniedIds, ", "))
+        }
+    }
+    {{- end }}
 
     if len(objs) < batchAfter {
         return s.upsert(ctx, objs...)
@@ -660,31 +690,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 	}
 	return nil
 }
-
-{{ if .Obj.IsDirectlyScoped }}
-    func isInScope(obj *{{.Type}}, eas *effectiveaccessscope.ScopeTree) bool {
-    if eas.State == effectiveaccessscope.Included {
-        return true
-    }
-    if eas.State == effectiveaccessscope.Excluded {
-        return false
-    }
-    clusterId := {{ "obj" | .Obj.GetClusterID }}
-    cluster := eas.GetClusterByID(clusterId)
-    {{ if .Obj.IsClusterScope -}}
-    return cluster.State == effectiveaccessscope.Included
-    {{  else -}}
-    if cluster.State == effectiveaccessscope.Included {
-        return true
-    }
-    if cluster.State == effectiveaccessscope.Excluded {
-        return false
-    }
-    namespaceName := {{ "obj" | .Obj.GetNamespace }}
-    return cluster.Namespaces[namespaceName].State == effectiveaccessscope.Included
-    {{- end }}
-}
-{{ end -}}
 
 //// Used for testing
 {{- define "dropTableFunctionName"}}dropTable{{.Table | upperCamelCase}}{{end}}

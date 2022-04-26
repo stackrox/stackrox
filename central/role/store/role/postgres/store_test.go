@@ -101,7 +101,6 @@ func (s *RolesStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(role, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		roles = append(roles, role)
 	}
-
 	s.NoError(store.UpsertMany(ctx, roles))
 
 	roleCount, err = store.Count(ctx)
