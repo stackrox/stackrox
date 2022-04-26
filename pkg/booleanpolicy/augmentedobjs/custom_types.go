@@ -13,8 +13,8 @@ const (
 	EnvironmentVarCustomTag            = "Environment Variable"
 	ImageScanCustomTag                 = "Image Scan"
 	ImageSignatureVerifiedCustomTag    = "Image Signature Verified By"
-	MissingIngressPolicyCustomTag      = "Missing Ingress Network Policy"
-	MissingEgressPolicyCustomTag       = "Missing Egress Network Policy"
+	HasIngressPolicyCustomTag          = "Has Ingress Network Policy"
+	HasEgressPolicyCustomTag           = "Has Egress Network Policy"
 	NotInNetworkBaselineCustomTag      = "Not In Network Baseline"
 	NotInProcessBaselineCustomTag      = "Not In Baseline"
 	KubernetesAPIVerbCustomTag         = "Kubernetes API Verb"
@@ -47,9 +47,9 @@ type impersonatedEventResult struct {
 
 // NetworkPoliciesApplied holds the intermediate information about Network Policy presence in a cluster.
 type NetworkPoliciesApplied struct {
-	MissingIngressNetworkPolicy bool `policy:"Missing Ingress Network Policy"`
-	MissingEgressNetworkPolicy  bool `policy:"Missing Egress Network Policy"`
-	Policies                    map[string]*storage.NetworkPolicy
+	HasIngressNetworkPolicy bool `policy:"Has Ingress Network Policy"`
+	HasEgressNetworkPolicy  bool `policy:"Has Egress Network Policy"`
+	Policies                map[string]*storage.NetworkPolicy
 }
 
 // NetworkFlowDetails captures information about a particular network flow.

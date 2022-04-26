@@ -168,12 +168,12 @@ func (s *PolicyValidatorTestSuite) TestValidateDescription() {
 	policy = &storage.Policy{
 		Description: `This policy is the stop when an image is terrible and will cause us to lose lots-o-dough. Why? Cause Money!
 			Oh, and I almost forgot that this is also to help the good people of nowhere-ville get back on their
-			feet after that tornado ripped their town to shreds and left them nothing but pineapple and gum.  It was the It was 
-			the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the 
-			epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was 
-			the spring of hope, it was the winter of despair, we had everything before us, we had nothing before us, we were all 
-			going direct to Heaven, we were all going direct the other way--in short, the period was so far like the present 
-			period that some of its noisiest authorities insisted on its being received, for good or for evil, in the superlative 
+			feet after that tornado ripped their town to shreds and left them nothing but pineapple and gum.  It was the It was
+			the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the
+			epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was
+			the spring of hope, it was the winter of despair, we had everything before us, we had nothing before us, we were all
+			going direct to Heaven, we were all going direct the other way--in short, the period was so far like the present
+			period that some of its noisiest authorities insisted on its being received, for good or for evil, in the superlative
 			degree of comparison only.`,
 	}
 	err = s.validator.validateDescription(policy)
@@ -735,14 +735,14 @@ func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
 					{
 						PolicyGroups: []*storage.PolicyGroup{
 							{
-								FieldName: augmentedobjs.MissingEgressPolicyCustomTag,
+								FieldName: augmentedobjs.HasEgressPolicyCustomTag,
 							},
 						},
 					},
 				},
 			},
 			featureFlag:   true,
-			expectedError: fmt.Sprintf("enforcement of %s is not allowed", augmentedobjs.MissingEgressPolicyCustomTag),
+			expectedError: fmt.Sprintf("enforcement of %s is not allowed", augmentedobjs.HasEgressPolicyCustomTag),
 		},
 		"Missing Ingress Policy Field": {
 			policy: &storage.Policy{
@@ -753,14 +753,14 @@ func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
 					{
 						PolicyGroups: []*storage.PolicyGroup{
 							{
-								FieldName: augmentedobjs.MissingIngressPolicyCustomTag,
+								FieldName: augmentedobjs.HasIngressPolicyCustomTag,
 							},
 						},
 					},
 				},
 			},
 			featureFlag:   true,
-			expectedError: fmt.Sprintf("enforcement of %s is not allowed", augmentedobjs.MissingIngressPolicyCustomTag),
+			expectedError: fmt.Sprintf("enforcement of %s is not allowed", augmentedobjs.HasIngressPolicyCustomTag),
 		},
 		"Enforceable Policy Field": {
 			policy: &storage.Policy{

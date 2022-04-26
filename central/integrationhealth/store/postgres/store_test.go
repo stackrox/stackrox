@@ -101,7 +101,6 @@ func (s *IntegrationhealthStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(integrationHealth, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		integrationHealths = append(integrationHealths, integrationHealth)
 	}
-
 	s.NoError(store.UpsertMany(ctx, integrationHealths))
 
 	integrationHealthCount, err = store.Count(ctx)

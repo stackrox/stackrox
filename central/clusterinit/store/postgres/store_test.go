@@ -101,7 +101,6 @@ func (s *ClusterinitbundlesStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(initBundleMeta, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		initBundleMetas = append(initBundleMetas, initBundleMeta)
 	}
-
 	s.NoError(store.UpsertMany(ctx, initBundleMetas))
 
 	initBundleMetaCount, err = store.Count(ctx)

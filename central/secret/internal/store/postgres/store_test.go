@@ -12,6 +12,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -41,7 +42,7 @@ func (s *SecretsStoreSuite) TearDownTest() {
 }
 
 func (s *SecretsStoreSuite) TestStore() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -61,6 +62,34 @@ func (s *SecretsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundSecret)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+	withAccessToDifferentNsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(secret.GetClusterId()),
+			sac.NamespaceScopeKeys("unknown ns"),
+		))
+	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(secret.GetClusterId()),
+			sac.NamespaceScopeKeys(secret.GetNamespace()),
+		))
+	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys(secret.GetClusterId()),
+		))
+	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(targetResource),
+			sac.ClusterScopeKeys("unknown cluster"),
+		))
+
 	s.NoError(store.Upsert(ctx, secret))
 	foundSecret, exists, err = store.Get(ctx, secret.GetId())
 	s.NoError(err)
@@ -75,6 +104,15 @@ func (s *SecretsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(secretExists)
 	s.NoError(store.Upsert(ctx, secret))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, secret), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withNoAccessToClusterCtx, secret), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, secret), sac.ErrResourceAccessDenied)
+	s.NoError(store.Upsert(withAccessCtx, secret))
+	s.NoError(store.Upsert(withAccessToClusterCtx, secret))
+	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.Secret{secret}), sac.ErrResourceAccessDenied)
+	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.Secret{secret}), sac.ErrResourceAccessDenied)
+	s.NoError(store.UpsertMany(withAccessCtx, []*storage.Secret{secret}))
+	s.NoError(store.UpsertMany(withAccessToClusterCtx, []*storage.Secret{secret}))
 
 	foundSecret, exists, err = store.Get(ctx, secret.GetId())
 	s.NoError(err)
@@ -93,7 +131,7 @@ func (s *SecretsStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(secret, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		secrets = append(secrets, secret)
 	}
-
+	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, secrets), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(ctx, secrets))
 
 	secretCount, err = store.Count(ctx)
