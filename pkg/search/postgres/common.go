@@ -218,9 +218,8 @@ func entriesFromQueries(
 	return entries, nil
 }
 
-func collectFields(q *v1.Query) set.StringSet {
+func collectFields(q *v1.Query, collectedFields *set.StringSet) {
 	var queries []*v1.Query
-	collectedFields := set.NewStringSet()
 	switch sub := q.GetQuery().(type) {
 	case *v1.Query_BaseQuery:
 		switch subBQ := q.GetBaseQuery().Query.(type) {
@@ -245,26 +244,34 @@ func collectFields(q *v1.Query) set.StringSet {
 	}
 
 	for _, query := range queries {
-		collectedFields.AddAll(collectFields(query).AsSlice()...)
+		collectFields(query, collectedFields)
 	}
 	for _, sortOption := range q.GetPagination().GetSortOptions() {
 		collectedFields.Add(sortOption.GetField())
 	}
-	return collectedFields
 }
 
 func getTableFieldsForQuery(schema *walker.Schema, q *v1.Query) map[string]*walker.Field {
-	return getDBFieldsForSearchFields(schema, collectFields(q))
+	collectedFields := set.NewStringSet()
+	collectFields(q, &collectedFields)
+	return getDBFieldsForSearchFields(schema, collectedFields)
 }
 
-func getDBFieldsForSearchFields(schema *walker.Schema, searchFields set.StringSet) map[string]*walker.Field {
+type fieldAndTableMetadataForQuery struct {
+	reachableFieldsByLabel map[string]*walker.Field
+}
+
+func getDBFieldsForSearchFields(schema *walker.Schema, searchFields set.StringSet) fieldAndTableMetadataForQuery {
+	out := &fieldAndTableMetadataForQuery{
+		reachableFieldsByLabel: make(map[string]*walker.Field),
+	}
 	reachableFields := make(map[string]*walker.Field)
 	schemaQ := []*walker.Schema{schema}
-	recursiveSearchForFields(&schemaQ, searchFields, reachableFields, set.NewStringSet())
+	recursiveSearchForFields(&schemaQ, searchFields, out, set.NewStringSet())
 	return reachableFields
 }
 
-func recursiveSearchForFields(schemaQ *[]*walker.Schema, searchFields set.StringSet, reachableFields map[string]*walker.Field, visitedTables set.StringSet) {
+func recursiveSearchForFields(schemaQ *[]*walker.Schema, searchFields set.StringSet, fieldAndTableMetadata *fieldAndTableMetadataForQuery, visitedTables set.StringSet) {
 	if len(*schemaQ) == 0 || len(searchFields) == 0 {
 		return
 	}
@@ -279,7 +286,7 @@ func recursiveSearchForFields(schemaQ *[]*walker.Schema, searchFields set.String
 		field := f
 		lowerCaseName := strings.ToLower(f.Search.FieldName)
 		if searchFields.Remove(lowerCaseName) {
-			reachableFields[lowerCaseName] = &field
+			fieldAndTableMetadata.reachableFieldsByLabel[lowerCaseName] = &field
 		}
 	}
 
@@ -302,7 +309,7 @@ func recursiveSearchForFields(schemaQ *[]*walker.Schema, searchFields set.String
 			*schemaQ = append(*schemaQ, c)
 		}
 	}
-	recursiveSearchForFields(schemaQ, searchFields, reachableFields, visitedTables)
+	recursiveSearchForFields(schemaQ, searchFields, fieldAndTableMetadata, visitedTables)
 }
 
 func withJoinClause(queryEntry *pgsearch.QueryEntry, dbField *walker.Field, joinMap map[string]string) {
