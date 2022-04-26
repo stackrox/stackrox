@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
@@ -14,8 +15,11 @@ import (
 	"github.com/stackrox/rox/migrator/runner"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -90,6 +94,22 @@ func upgrade(conf *config.Config) error {
 		return errors.Wrap(err, "failed to open rocksdb")
 	}
 
+	var postgresDB *gorm.DB
+	if features.PostgresDatastore.Enabled() {
+		dbPasswordFile := "/run/secrets/stackrox.io/db-password/password"
+		password, err := os.ReadFile(dbPasswordFile)
+		if err != nil {
+			log.WriteToStderrf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
+			return err
+		}
+		source := fmt.Sprintf("%s password=%s", conf.CentralDB.Source, password)
+		postgresDB, err = gorm.Open(postgres.Open(source), &gorm.Config{
+			CreateBatchSize: 1000})
+		if err != nil {
+			return errors.Wrap(err, "failed to open postgres db")
+		}
+	}
+
 	defer func() {
 		if err := boltDB.Close(); err != nil {
 			log.WriteToStderrf("Error closing DB: %v", err)
@@ -99,8 +119,9 @@ func upgrade(conf *config.Config) error {
 		}
 	}()
 	err = runner.Run(&types.Databases{
-		BoltDB:  boltDB,
-		RocksDB: rocksdb,
+		BoltDB:     boltDB,
+		RocksDB:    rocksdb,
+		PostgresDB: postgresDB,
 	})
 	if err != nil {
 		return errors.Wrap(err, "migrations failed")
