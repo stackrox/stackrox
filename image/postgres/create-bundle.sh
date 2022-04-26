@@ -36,7 +36,7 @@ pg_rhel_version="8.5"
 
 if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
     dnf install -y "${postgres_repo_url}"
-    postgres_minor="$(dnf list -y "postgresql${postgres_major}-devel.x86_64" | tail -n 1 | awk '{print $2}')"
+    postgres_minor="$(dnf list -y "postgresql${postgres_major}-devel.x86_64" | tail -n 1 | awk '{print $2}').x86_64"
     echo "PG minor version: ${postgres_minor}"
 else
     build_dir="$(mktemp -d)"
