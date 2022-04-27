@@ -115,11 +115,11 @@ func (r *reconcileAdminPasswordExtensionRun) updateStatus(status *platform.Centr
 	if status.Central.AdminPassword == nil {
 		status.Central.AdminPassword = &platform.AdminPasswordStatus{}
 	}
-	if r.infoUpdate == status.Central.AdminPassword.Info && r.passwordSecretName == *status.Central.AdminPassword.SecretReference {
+	if r.infoUpdate == status.Central.AdminPassword.Info && r.passwordSecretName == status.Central.AdminPassword.SecretReference {
 		return false
 	}
 
-	status.Central.AdminPassword.SecretReference = &r.passwordSecretName
+	status.Central.AdminPassword.SecretReference = r.passwordSecretName
 	status.Central.AdminPassword.Info = r.infoUpdate
 	return true
 }
