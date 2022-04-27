@@ -25,7 +25,7 @@ function ClusterStatusPill({ healthStatus }: ClusterStatusPillProps): ReactEleme
                 <AdmissionControlStatus healthStatus={healthStatus} isList />
             </div>
             {localScannerHealthStatus !== 'UNINITIALIZED' && (
-                <div className="inline pl-2 pr-3 w-full whitespace-nowrap">
+                <div className="inline border-l pl-2 pr-3 w-full whitespace-nowrap">
                     <ScannerStatus healthStatus={healthStatus} isList />
                 </div>
             )}
