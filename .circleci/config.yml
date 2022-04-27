@@ -1502,7 +1502,7 @@ commands:
           command: |
             if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
               export CLUSTER=OPENSHIFT
-              oc apply -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
+              oc get scc qatest-anyuid || oc create -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
             else
               export CLUSTER=K8S
             fi
