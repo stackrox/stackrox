@@ -7,7 +7,7 @@ GRADLE := ./gradlew
 ## Style ##
 ###########
 .PHONY: style
-style:
+style: compile
 	@echo "+ $@"
 	@$(GRADLE) --continue codenarcMain codenarcTest ; \
 	STATUS=$$? ; \
@@ -15,6 +15,11 @@ style:
 	    cat build/reports/codenarc/main.txt build/reports/codenarc/test.txt >&2 2>/dev/null ; \
 	fi ; \
 	exit $$STATUS
+
+.PHONY: compile
+compile:
+	@echo "+ $@"
+	@$(GRADLE) assemble testClasses
 
 .PHONY: style-fix
 style-fix:
