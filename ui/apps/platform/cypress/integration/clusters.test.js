@@ -18,7 +18,6 @@ describe('Clusters page', () => {
     describe('smoke tests', () => {
         it('should be linked in the Platform Configuration menu', () => {
             visitClustersFromLeftNav();
-            cy.get(selectors.header).contains('Clusters');
         });
 
         it('should have a toggle control for the auto-upgrade setting', () => {
