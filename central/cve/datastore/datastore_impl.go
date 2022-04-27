@@ -93,7 +93,7 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.CVE, bool
 		return nil, false, err
 	}
 
-	cve, found, err := ds.storage.Get(id)
+	cve, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -106,7 +106,7 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, err
 	}
 
-	found, err := ds.storage.Exists(id)
+	found, err := ds.storage.Exists(ctx, id)
 	if err != nil || !found {
 		return false, err
 	}
@@ -119,7 +119,7 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 		return nil, err
 	}
 
-	cves, _, err := ds.storage.GetBatch(filteredIDs)
+	cves, _, err := ds.storage.GetMany(ctx, filteredIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, d
 		return err
 	}
 
-	cves, _, err := ds.storage.GetBatch(ids)
+	cves, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, d
 		cve.SuppressActivation = start
 		cve.SuppressExpiry = expiry
 	}
-	if err := ds.storage.Upsert(cves...); err != nil {
+	if err := ds.storage.Upsert(ctx, cves...); err != nil {
 		return err
 	}
 
@@ -177,7 +177,7 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	cves, _, err := ds.storage.GetBatch(ids)
+	cves, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
 		cve.SuppressActivation = nil
 		cve.SuppressExpiry = nil
 	}
-	if err := ds.storage.Upsert(cves...); err != nil {
+	if err := ds.storage.Upsert(ctx, cves...); err != nil {
 		return err
 	}
 	ds.cveSuppressionLock.Lock()
@@ -235,7 +235,7 @@ func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := ds.storage.Delete(ids...); err != nil {
+	if err := ds.storage.Delete(ctx, ids...); err != nil {
 		return err
 	}
 	ds.cveSuppressionLock.Lock()

@@ -1,6 +1,7 @@
 package dackbox
 
 import (
+	"context"
 	"testing"
 
 	"github.com/gogo/protobuf/types"
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
@@ -51,6 +53,8 @@ func (suite *NodeStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *NodeStoreTestSuite) TestNodes() {
+	ctx := sac.WithAllAccess(context.Background())
+
 	nodes := []*storage.Node{
 		{
 			Id:         "id1",
@@ -131,10 +135,10 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	}
 
 	// Check that the CVEs were written with the correct timestamp.
-	vuln, _, err := suite.cveStorage.Get("cve1")
+	vuln, _, err := suite.cveStorage.Get(ctx, "cve1")
 	suite.NoError(err)
 	suite.Equal(nodes[0].GetLastUpdated(), vuln.GetCreatedAt())
-	vuln, _, err = suite.cveStorage.Get("cve2")
+	vuln, _, err = suite.cveStorage.Get(ctx, "cve2")
 	suite.NoError(err)
 	suite.Equal(nodes[0].GetLastUpdated(), vuln.GetCreatedAt())
 
@@ -245,7 +249,7 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	suite.Equal(0, count)
 
 	// Check that the CVEs are removed.
-	count, err = suite.cveStorage.Count()
+	count, err = suite.cveStorage.Count(ctx)
 	suite.NoError(err)
 	suite.Equal(0, count)
 

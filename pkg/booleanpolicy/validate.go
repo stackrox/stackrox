@@ -1,6 +1,7 @@
 package booleanpolicy
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -48,8 +49,8 @@ func Validate(p *storage.Policy, options ...ValidateOption) error {
 	}
 
 	errorList := errorhelpers.NewErrorList("policy validation")
-	if !policyversion.IsBooleanPolicy(p) {
-		errorList.AddStringf("invalid version for boolean policy (got %q)", p.GetPolicyVersion())
+	if err := validateBooleanPolicyVersion(p); err != nil {
+		errorList.AddErrors(err)
 	}
 	if p.GetName() == "" {
 		errorList.AddString("no name specified")
@@ -70,6 +71,20 @@ func Validate(p *storage.Policy, options ...ValidateOption) error {
 	}
 
 	return errorList.ToError()
+}
+
+func validateBooleanPolicyVersion(policy *storage.Policy) error {
+	ver, err := policyversion.FromString(policy.GetPolicyVersion())
+	if err != nil {
+		return errors.New("policy has invalid version")
+	}
+
+	// As of 70.0 we only support the latest version (1.1). This may in the future be expanded to support more, but for
+	// now it's enough to just check it matches current version
+	if !policyversion.IsCurrentVersion(ver) {
+		return errors.New("only policy with version 1.1 is supported")
+	}
+	return nil
 }
 
 // validatePolicySection validates the format of a policy section

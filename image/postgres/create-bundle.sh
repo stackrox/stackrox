@@ -10,6 +10,8 @@ die() {
 
 INPUT_ROOT="$1"
 OUTPUT_DIR="$2"
+# Install the PG repo natively if true (versus using a container)
+NATIVE_PG_INSTALL="${3:-false}"
 
 [[ -n "$INPUT_ROOT" && -n "$OUTPUT_DIR" ]] \
     || die "Usage: $0 <input-root-dir> <output-dir>"
@@ -32,14 +34,20 @@ postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x
 postgres_major="14"
 pg_rhel_version="8.5"
 
-build_dir="$(mktemp -d)"
-docker build -q -t postgres-minor-image "${build_dir}" -f - <<EOF
+if [[ "${NATIVE_PG_INSTALL}" == "true" ]]; then
+    dnf install -y "${postgres_repo_url}"
+    postgres_minor="$(dnf list -y "postgresql${postgres_major}-devel.x86_64" | tail -n 1 | awk '{print $2}').x86_64"
+    echo "PG minor version: ${postgres_minor}"
+else
+    build_dir="$(mktemp -d)"
+    docker build -q -t postgres-minor-image "${build_dir}" -f - <<EOF
 FROM registry.access.redhat.com/ubi8/ubi:${pg_rhel_version}
 RUN dnf install -y "${postgres_repo_url}"
 ENTRYPOINT dnf list -y postgresql${postgres_major}-server.x86_64 | tail -n 1 | awk '{print \$2}'
 EOF
-postgres_minor="$(docker run --rm postgres-minor-image).x86_64"
-rm -rf "${build_dir}"
+    postgres_minor="$(docker run --rm postgres-minor-image).x86_64"
+    rm -rf "${build_dir}"
+fi
 
 # =============================================================================
 
@@ -78,4 +86,3 @@ sha512sum --check "${OUTPUT_BUNDLE}.sha512"
 
 # Clean up after success
 rm -r "${bundle_root}"
-
