@@ -71,8 +71,8 @@ make_stackrox_data() {
     cp image/docs/api/v1/swagger.json /stackrox-data/docs/api/v1/swagger.json
 }
 
-create_bundle_and_scripts() {
-    info "Creating bundle.tar.gz"
+create_main_bundle_and_scripts() {
+    info "Creating main bundle.tar.gz"
 
     if [[ -z "${DEBUG_BUILD:-}" ]]; then
         if [[ "$(git rev-parse --abbrev-ref HEAD)" =~ "-debug" ]]; then
@@ -84,6 +84,10 @@ create_bundle_and_scripts() {
 
     DEBUG_BUILD="${DEBUG_BUILD}" \
        "$ROOT/image/rhel/create-bundle.sh" image "local" "local" image/rhel
+}
+
+create_central_db_bundle() {
+    "$ROOT/image/postgres/create-bundle.sh" image/postgres image/postgres "true"
 }
 
 cleanup_image() {
@@ -113,7 +117,7 @@ cleanup_image() {
     mv roxctl-linux image/bin/
 }
 
-build() {
+build_main_and_bundles() {
     # TODO(RS-509) Submodules are not initialized in migration but they should
     # be in the 'src' delivered by OSCI in the final env so this can then be removed.
     git submodule update --init
@@ -137,9 +141,10 @@ build() {
 
     make_stackrox_data
 
-    create_bundle_and_scripts
+    create_main_bundle_and_scripts
+    create_central_db_bundle
 
     cleanup_image
 }
 
-build
+build_main_and_bundles
