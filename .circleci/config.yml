@@ -92,12 +92,15 @@ saveGoLintCache: &saveGoLintCache
     - /home/circleci/.cache/golangci-lint
     - /go/pkg/mod
 
-goModCacheKey: &goModCacheKey 'rox-go-pkg-mod-v3-{{ checksum "go.sum" }}'
 restoreGoModCache: &restoreGoModCache
   restore_cache:
     name: Restore Go module cache
     keys:
-      - *goModCacheKey
+      - rox-go-pkg-mod-v3-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-{{ .Revision }}
+      - rox-go-pkg-mod-v3-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-
+      - rox-go-pkg-mod-v3-{{ .Environment.CIRCLE_JOB }}-master-
+      - rox-go-pkg-mod-v3-{{ .Environment.CIRCLE_JOB }}-
+      - rox-go-pkg-mod-v3-
 
 goModTidy: &goModTidy
   run:
@@ -108,7 +111,7 @@ goModTidy: &goModTidy
 saveGoModCache: &saveGoModCache
   save_cache:
     name: Saving Go module cache
-    key: *goModCacheKey
+    key: rox-go-pkg-mod-v3-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-{{ .Revision }}
     paths:
       - /go/pkg/mod
 
