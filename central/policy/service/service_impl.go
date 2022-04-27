@@ -412,7 +412,7 @@ func (s *serviceImpl) getNetworkPoliciesForDeployment(ctx context.Context, dep *
 		return nil, errors.Wrapf(err, "failed to get network policies for clusterId %s on namespace %s", dep.GetClusterId(), dep.GetNamespace())
 	}
 	matchedNetworkPolicies := networkpolicy.FilterForDeployment(storedPolicies, dep)
-	return networkpolicy.GetNetworkPoliciesApplied(matchedNetworkPolicies), nil
+	return networkpolicy.GenerateNetworkPoliciesAppliedObj(matchedNetworkPolicies), nil
 }
 
 func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx concurrency.ErrorWaitable, request *storage.Policy) (*v1.DryRunResponse, error) {

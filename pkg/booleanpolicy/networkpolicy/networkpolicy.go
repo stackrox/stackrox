@@ -6,9 +6,9 @@ import (
 	"github.com/stackrox/rox/pkg/labels"
 )
 
-// GetNetworkPoliciesApplied creates an augmentedobj.NetworkPoliciesApplied object
+// GenerateNetworkPoliciesAppliedObj creates an augmentedobj.NetworkPoliciesApplied object
 // based on a provided map of network policies.
-func GetNetworkPoliciesApplied(networkPolicies map[string]*storage.NetworkPolicy) *augmentedobjs.NetworkPoliciesApplied {
+func GenerateNetworkPoliciesAppliedObj(networkPolicies map[string]*storage.NetworkPolicy) *augmentedobjs.NetworkPoliciesApplied {
 	var hasIngress, hasEgress bool
 	for _, policy := range networkPolicies {
 		for _, policyType := range policy.GetSpec().GetPolicyTypes() {

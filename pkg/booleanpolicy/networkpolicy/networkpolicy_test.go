@@ -86,7 +86,7 @@ func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
 
 	for name, testCase := range cases {
 		suite.Run(name, func() {
-			aug := GetNetworkPoliciesApplied(testCase.policiesInStore)
+			aug := GenerateNetworkPoliciesAppliedObj(testCase.policiesInStore)
 			suite.Equal(testCase.hasIngres, aug.HasIngressNetworkPolicy)
 			suite.Equal(testCase.hasEgress, aug.HasEgressNetworkPolicy)
 			suite.Len(aug.Policies, len(testCase.policiesInStore))

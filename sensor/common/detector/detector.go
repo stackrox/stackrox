@@ -415,7 +415,7 @@ func (d *detectorImpl) getNetworkPoliciesApplied(deployment *storage.Deployment)
 		return nil
 	}
 	networkPolicies := d.networkPolicyStore.Find(deployment.GetNamespace(), deployment.GetLabels())
-	return networkpolicy.GetNetworkPoliciesApplied(networkPolicies)
+	return networkpolicy.GenerateNetworkPoliciesAppliedObj(networkPolicies)
 }
 
 func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, action central.ResourceAction) {
