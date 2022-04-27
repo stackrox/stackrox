@@ -7,7 +7,6 @@ import useFetchReport from 'hooks/useFetchReport';
 import usePermissions from 'hooks/usePermissions';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getQueryObject } from 'utils/queryStringUtils';
-import { VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
 import VulnMgmtReportDetail from './Detail/VulnMgmtReportDetail';
 import VulnMgmtEditReportPage from './Detail/VulnMgmtEditReportPage';
 
@@ -22,7 +21,7 @@ function VulnMgmtReportPage(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
 
-    const queryObject = getQueryObject<VulnMgmtReportQueryObject>(search);
+    const queryObject = getQueryObject(search);
     const { action } = queryObject;
     const { reportId } = useParams();
 
