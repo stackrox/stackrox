@@ -225,6 +225,7 @@ func (s *Schema) ParentKeysGroupedByTable() []TableFieldsGroup {
 			pk.Options.Reference = field.Options.Reference
 			filtered = append(filtered, *pk)
 		}
+
 		if len(filtered) > 0 {
 			pks = append(pks, TableFieldsGroup{Table: parent.Table, Fields: filtered})
 		}
@@ -341,13 +342,47 @@ func (s *Schema) ResolvedPrimaryKeys() []Field {
 		localPKSet.Add(pk.ColumnName)
 	}
 
+	localFKs := s.localFKs()
+
 	var pks []Field
-	// If the resolved primary key is already present as local primary key, do not add it.
-	for _, pk := range s.ParentKeys() {
-		if localPKSet.Add(pk.ColumnName) {
-			pks = append(pks, pk)
+	for _, parent := range s.Parents {
+		// If the current schema is not embedded in the parent schema then it's pks should not be resolved as pks in
+		// current schema.
+		if s.EmbeddedIn != parent.Table {
+			continue
+		}
+
+		currPks := parent.ResolvedPrimaryKeys()
+		filtered := make([]Field, 0, len(currPks))
+		for idx := range currPks {
+			pk := &currPks[idx]
+			field, found := localFK(pk, localFKs)
+			if !found {
+				tryParentify(pk, parent)
+				filtered = append(filtered, *pk)
+				continue
+			}
+
+			// If the referenced parent field is already embedded in child but without constraint, skip it.
+			if field.Options.Reference != nil && field.Options.Reference.NoConstraint {
+				continue
+			}
+			// If the referenced parent field is already embedded in child, use the child field names.
+			pk.Name = field.Name
+			pk.Reference = pk.ColumnName
+			pk.ColumnName = field.ColumnName
+			pk.Options.Reference = field.Options.Reference
+			filtered = append(filtered, *pk)
+		}
+		
+		for _, filteredPK := range filtered {
+			// If the resolved primary key is already present as local primary key, do not add it.
+			if localPKSet.Add(filteredPK.ColumnName) {
+				pks = append(pks, filteredPK)
+			}
 		}
 	}
+
 	pks = append(pks, localPKS...)
 	return pks
 }
