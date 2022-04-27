@@ -102,7 +102,7 @@ func upgrade(conf *config.Config) error {
 			log.WriteToStderrf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
 			return err
 		}
-		source := fmt.Sprintf("%s password=%s", conf.CentralDB.Source, password)
+		source := fmt.Sprintf("host=central-db.stackrox.svc sslmode=require port=5432 database=postgres user=postgres statement_timeout=600000 password=%s", password)
 		postgresDB, err = gorm.Open(postgres.Open(source), &gorm.Config{
 			CreateBatchSize: 1000})
 		if err != nil {
