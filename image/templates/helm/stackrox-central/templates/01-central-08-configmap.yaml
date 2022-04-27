@@ -19,8 +19,7 @@ data:
         port=5432
         database=postgres
         user=postgres
-        sslmode={{- if eq .Release.Namespace "stackrox" }}verify-full{{- else }}verify-ca{{- end }}
-        sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
+        sslmode=prefer
         statement_timeout=600000
         pool_min_conns=1
         pool_max_conns=90

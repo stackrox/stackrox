@@ -4,13 +4,15 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
+	"gorm.io/gorm"
 )
 
 // Databases encapsulates all the different databases we are using
 // This struct helps avoid adding a new parameter when we switch DBs
 type Databases struct {
-	BoltDB  *bolt.DB
-	RocksDB *gorocksdb.DB
+	BoltDB     *bolt.DB
+	RocksDB    *gorocksdb.DB
+	PostgresDB *gorm.DB
 }
 
 // A Migration represents a migration.
