@@ -18,7 +18,6 @@ var (
 	CreateTableDeploymentsStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists deployments (
-                   images_Id varchar,
                    Id varchar,
                    Name varchar,
                    Type varchar,
@@ -38,8 +37,7 @@ var (
                    RiskScore numeric,
                    ProcessTags text[],
                    serialized bytea,
-                   PRIMARY KEY(images_Id, Id),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
+                   PRIMARY KEY(Id)
                )
                `,
 		Indexes: []string{},
@@ -47,7 +45,6 @@ var (
 			&postgres.CreateStmts{
 				Table: `
                create table if not exists deployments_Containers (
-                   images_Id varchar,
                    deployments_Id varchar,
                    idx integer,
                    Image_Id varchar,
@@ -63,8 +60,8 @@ var (
                    Resources_CpuCoresLimit numeric,
                    Resources_MemoryMbRequest numeric,
                    Resources_MemoryMbLimit numeric,
-                   PRIMARY KEY(images_Id, deployments_Id, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id, deployments_Id) REFERENCES deployments(images_Id, Id) ON DELETE CASCADE
+                   PRIMARY KEY(deployments_Id, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id) REFERENCES deployments(Id) ON DELETE CASCADE
                )
                `,
 				Indexes: []string{
@@ -74,15 +71,14 @@ var (
 					&postgres.CreateStmts{
 						Table: `
                create table if not exists deployments_Containers_Env (
-                   images_Id varchar,
                    deployments_Id varchar,
                    deployments_Containers_idx integer,
                    idx integer,
                    Key varchar,
                    Value varchar,
                    EnvVarSource integer,
-                   PRIMARY KEY(images_Id, deployments_Id, deployments_Containers_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id, deployments_Id, deployments_Containers_idx) REFERENCES deployments_Containers(images_Id, deployments_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(deployments_Id, deployments_Containers_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_Containers_idx) REFERENCES deployments_Containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
@@ -93,7 +89,6 @@ var (
 					&postgres.CreateStmts{
 						Table: `
                create table if not exists deployments_Containers_Volumes (
-                   images_Id varchar,
                    deployments_Id varchar,
                    deployments_Containers_idx integer,
                    idx integer,
@@ -102,8 +97,8 @@ var (
                    Destination varchar,
                    ReadOnly bool,
                    Type varchar,
-                   PRIMARY KEY(images_Id, deployments_Id, deployments_Containers_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id, deployments_Id, deployments_Containers_idx) REFERENCES deployments_Containers(images_Id, deployments_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(deployments_Id, deployments_Containers_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_Containers_idx) REFERENCES deployments_Containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
@@ -114,14 +109,13 @@ var (
 					&postgres.CreateStmts{
 						Table: `
                create table if not exists deployments_Containers_Secrets (
-                   images_Id varchar,
                    deployments_Id varchar,
                    deployments_Containers_idx integer,
                    idx integer,
                    Name varchar,
                    Path varchar,
-                   PRIMARY KEY(images_Id, deployments_Id, deployments_Containers_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id, deployments_Id, deployments_Containers_idx) REFERENCES deployments_Containers(images_Id, deployments_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(deployments_Id, deployments_Containers_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_Containers_idx) REFERENCES deployments_Containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
@@ -134,14 +128,13 @@ var (
 			&postgres.CreateStmts{
 				Table: `
                create table if not exists deployments_Ports (
-                   images_Id varchar,
                    deployments_Id varchar,
                    idx integer,
                    ContainerPort integer,
                    Protocol varchar,
                    Exposure integer,
-                   PRIMARY KEY(images_Id, deployments_Id, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id, deployments_Id) REFERENCES deployments(images_Id, Id) ON DELETE CASCADE
+                   PRIMARY KEY(deployments_Id, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id) REFERENCES deployments(Id) ON DELETE CASCADE
                )
                `,
 				Indexes: []string{
@@ -151,7 +144,6 @@ var (
 					&postgres.CreateStmts{
 						Table: `
                create table if not exists deployments_Ports_ExposureInfos (
-                   images_Id varchar,
                    deployments_Id varchar,
                    deployments_Ports_idx integer,
                    idx integer,
@@ -161,8 +153,8 @@ var (
                    NodePort integer,
                    ExternalIps text[],
                    ExternalHostnames text[],
-                   PRIMARY KEY(images_Id, deployments_Id, deployments_Ports_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id, deployments_Id, deployments_Ports_idx) REFERENCES deployments_Ports(images_Id, deployments_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(deployments_Id, deployments_Ports_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_Ports_idx) REFERENCES deployments_Ports(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
@@ -181,8 +173,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments").
-			WithReference(ImagesSchema)
+		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployments", (*storage.Deployment)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
