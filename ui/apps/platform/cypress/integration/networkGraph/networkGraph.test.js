@@ -92,5 +92,6 @@ describe('Network Graph Search', () => {
         cy.wait('@networkGraph');
 
         cy.get(networkPageSelectors.errorOverlay.heading).should('not.exist');
+        cy.get(networkPageSelectors.cytoscapeContainer);
     });
 });
