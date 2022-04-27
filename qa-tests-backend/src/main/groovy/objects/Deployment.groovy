@@ -2,9 +2,11 @@ package objects
 
 import common.Constants
 import groovy.transform.AutoClone
+import groovy.util.logging.Slf4j
 import orchestratormanager.OrchestratorType
 
 @AutoClone
+@Slf4j
 class Deployment {
     String name
     String namespace = Constants.ORCHESTRATOR_NAMESPACE
@@ -81,7 +83,7 @@ class Deployment {
                 (imageName =~ /^docker.io.*/ ||
                  !(imageName =~ /^[a-z]+\./))) {
             String nameAsTag = imageName.replaceAll(~"[./:]", "-")
-            System.err.println """\
+            log.warn """\
                 WARNING: ${imageName} may be subject to rate limiting.
                 Consider making a duplicate at quay.io/rhacs-eng/qa:${nameAsTag}
                 e.g. (needs write access - ask @eng-staff)

@@ -16,7 +16,7 @@ import SelectSingle from 'Components/SelectSingle';
 
 export type ApprovedDeferralsSearchFilterProps = {
     searchFilter: SearchFilter;
-    setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
+    setSearchFilter: (newFilter: SearchFilter) => void;
 };
 
 function ApprovedDeferralsSearchFilter({

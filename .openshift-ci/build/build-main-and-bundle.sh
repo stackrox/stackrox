@@ -94,6 +94,9 @@ cleanup_image() {
 
     info "Reducing the image size"
 
+    # Save for image/roxctl.Dockerfile
+    cp image/bin/roxctl-linux .
+
     set +e
     rm -rf /go/{bin,pkg}
     rm -rf /root/{.cache,.npm}
@@ -104,6 +107,10 @@ cleanup_image() {
     rm -rf image/{THIRD_PARTY_NOTICES,bin,ui}
     rm -rf ui/build ui/node_modules ui/**/node_modules
     set -e
+
+    # Restore for image/roxctl.Dockerfile
+    mkdir -p image/bin
+    mv roxctl-linux image/bin/
 }
 
 build() {

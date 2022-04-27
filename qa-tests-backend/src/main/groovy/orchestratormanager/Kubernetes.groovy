@@ -2288,10 +2288,11 @@ class Kubernetes implements OrchestratorMain {
         return false
     }
 
+    @Slf4j
     private static class SystemOutCallback implements InputStreamPumper.Writable {
         @Override
         void write(byte[] b, int off, int len) throws IOException {
-            log.print(new String(b))
+            log.debug(new String(b))
         }
     }
 

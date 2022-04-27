@@ -35,7 +35,7 @@ export type ApprovedFalsePositivesTableProps = {
     isLoading: boolean;
     itemCount: number;
     searchFilter: SearchFilter;
-    setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
+    setSearchFilter: (newFilter: SearchFilter) => void;
 } & UsePaginationResult;
 
 function ApprovedFalsePositivesTable({
