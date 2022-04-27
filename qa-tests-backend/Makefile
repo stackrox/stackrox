@@ -17,7 +17,7 @@ style: compile
 	exit $$STATUS
 
 .PHONY: compile
-compile:
+compile: proto-generated-srcs
 	@echo "+ $@"
 	@$(GRADLE) assemble testClasses
 
@@ -39,57 +39,57 @@ clean-generated-srcs:
 	git clean -xdf build/generated
 
 .PHONY: test
-test: proto-generated-srcs
+test: compile
 	@echo "+ $@"
 	$(GRADLE) test -Dgroups=-Upgrade,-SensorBounce,-SensorBounceNext
 
 .PHONY: bat-test
-bat-test: proto-generated-srcs
+bat-test: compile
 	@echo "+ $@"
 	$(GRADLE) test -Dgroups=BAT
 
 .PHONY: smoke-test
-smoke-test: proto-generated-srcs
+smoke-test: compile
 	@echo "+ $@"
 	$(GRADLE) test -Dgroups=SMOKE
 
 .PHONY: runtime-test
-runtime-test: proto-generated-srcs
+runtime-test: compile
 	@echo "+ $@"
 	$(GRADLE) test -Dgroups=RUNTIME
 
 .PHONY: enforcement-test
-enforcement-test: proto-generated-srcs
+enforcement-test: compile
 	@echo "+ $@"
 	$(GRADLE) test -Dgroups=PolicyEnforcement
 
 .PHONY: integration-test
-integration-test: proto-generated-srcs
+integration-test: compile
 	@echo "+ $@"
 	$(GRADLE) test -Dgroups=Integration
 
 .PHONY: networkpolicy-simulator-test
-networkpolicy-simulator-test: proto-generated-srcs
+networkpolicy-simulator-test: compile
 	@echo "+ $@"
 	$(GRADLE) test -Dgroups=NetworkPolicySimulation
 
 .PHONY: non-bat-test
-non-bat-test: proto-generated-srcs
+non-bat-test: compile
 	@echo "+ $@"
 	$(GRADLE) test -Dgroups=-BAT,-Upgrade,-SensorBounce,-SensorBounceNext
 
 .PHONY: upgrade-test
-upgrade-test: proto-generated-srcs
+upgrade-test: compile
 	@echo "+ $@"
 	$(GRADLE) test -Dgroups=Upgrade
 
 .PHONY: graphql-test
-graphql-test: proto-generated-srcs
+graphql-test: compile
 	@echo "+ $@"
 	$(GRADLE) test -Dgroups=GraphQL
 
 .PHONY: sensor-bounce-test
-sensor-bounce-test: proto-generated-srcs
+sensor-bounce-test: compile
 	@echo "+ $@"
 	$(GRADLE) test -Dgroups=SensorBounce
 	$(GRADLE) test -Dgroups=SensorBounceNext
