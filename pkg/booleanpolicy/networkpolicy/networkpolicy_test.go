@@ -1,6 +1,7 @@
 package networkpolicy
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -20,6 +21,74 @@ func policy(classificationEnums []storage.NetworkPolicyType) *storage.NetworkPol
 	netpol.Spec = new(storage.NetworkPolicySpec)
 	netpol.Spec.PolicyTypes = classificationEnums
 	return netpol
+}
+
+func (suite *NetworkPolicySuite) Test_FilterForDeployment() {
+	cases := map[string]struct {
+		deploymentLabels        map[string]string
+		netpolSelectors         []map[string]string
+		expectedPoliciesMatched int
+	}{
+		"Match: one NW policy with one label": {
+			deploymentLabels: map[string]string{"app": "central"},
+			netpolSelectors: []map[string]string{
+				{"app": "central"},
+			},
+			expectedPoliciesMatched: 1,
+		},
+		"Match: one NW policy with two labels": {
+			deploymentLabels: map[string]string{"app": "central", "env": "prod"},
+			netpolSelectors: []map[string]string{
+				{"app": "central", "env": "prod"},
+			},
+			expectedPoliciesMatched: 1,
+		},
+		"One Match: two NW policies with one label": {
+			deploymentLabels: map[string]string{"app": "central", "env": "prod"},
+			netpolSelectors: []map[string]string{
+				{"app": "central"},
+				{"app": "sensor"},
+			},
+			expectedPoliciesMatched: 1,
+		},
+		"Two Matches: two NW policies with one label": {
+			deploymentLabels: map[string]string{"app": "central", "env": "prod"},
+			netpolSelectors: []map[string]string{
+				{"app": "central"},
+				{"env": "prod"},
+			},
+			expectedPoliciesMatched: 2,
+		},
+		"No Match: one NW with two labels": {
+			deploymentLabels: map[string]string{"app": "central", "env": "prod"},
+			netpolSelectors: []map[string]string{
+				{"app": "central", "env": "dev"},
+			},
+			expectedPoliciesMatched: 0,
+		},
+		"No Match: one NW policy with different labels": {
+			deploymentLabels: map[string]string{"app": "central"},
+			netpolSelectors: []map[string]string{
+				{"app": "sensor"},
+			},
+			expectedPoliciesMatched: 0,
+		},
+	}
+
+	for name, testCase := range cases {
+		suite.Run(name, func() {
+			var policies []*storage.NetworkPolicy
+			for idx, sel := range testCase.netpolSelectors {
+				p := policy([]storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE})
+				p.Spec.PodSelector = &storage.LabelSelector{MatchLabels: sel}
+				p.Id = strconv.Itoa(idx)
+				policies = append(policies, p)
+			}
+
+			dep := &storage.Deployment{PodLabels: testCase.deploymentLabels}
+			suite.Len(FilterForDeployment(policies, dep), testCase.expectedPoliciesMatched)
+		})
+	}
 }
 
 func (suite *NetworkPolicySuite) Test_GetNetworkPoliciesApplied() {
