@@ -208,7 +208,7 @@ func (s *Sensor) Start() {
 
 	for _, component := range s.components {
 		if err := component.Start(); err != nil {
-			log.Panicf("Sensor component %T failed to start: %v", component, err)
+			_ = utils.Should(errors.Wrapf(err, "sensor component %T failed to start", component))
 		}
 	}
 
