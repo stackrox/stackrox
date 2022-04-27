@@ -17,7 +17,7 @@ import { SortOption } from 'types/table';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useInterval from 'hooks/useInterval';
-import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import tableColumnDescriptor from './violationTableColumnDescriptors';
@@ -112,7 +112,7 @@ function ViolationsTablePage(): ReactElement {
                 }
                 setCurrentPageAlerts([]);
                 setAlertCount(0);
-                const parsedMessage = checkForPermissionErrorMessage(error);
+                const parsedMessage = getAxiosErrorMessage(error);
                 setCurrentPageAlertsErrorMessage(parsedMessage);
             });
 
