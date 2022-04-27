@@ -1,6 +1,8 @@
 package policyversion
 
 import (
+	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -14,7 +16,7 @@ import (
 // doing so. If it is impossible to downgrade from the new version, add an
 // exception here.
 func TestNoDowngraderLeftBehind(t *testing.T) {
-	noDowngradersFromVersions := set.NewStringSet(legacyVersion, version1)
+	noDowngradersFromVersions := set.NewStringSet(legacyVersion, version1, version1_1)
 
 	for idx := range versions {
 		if noDowngradersFromVersions.Contains(versions[idx]) {
@@ -25,100 +27,89 @@ func TestNoDowngraderLeftBehind(t *testing.T) {
 	}
 }
 
+func SetupDowngradersForTest(_ *testing.T) {
+	simpleDowngrader := func(policy *storage.Policy) {
+		v, _ := strconv.ParseFloat(policy.PolicyVersion, 64)
+		policy.PolicyVersion = fmt.Sprintf("%.1f", v-1.0)
+	}
+
+	// Always set the top three versions to the test versions
+	// We know that versions will always have at least three versions so that's a safe number
+	ver := 100.0
+	for i := len(versions) - 1; i > len(versions)-4; i-- {
+		stringVer := fmt.Sprintf("%.1f", ver)
+
+		versions[i] = stringVer
+		versionRanks[stringVer] = i
+		downgraders[stringVer] = simpleDowngrader
+		downgradersByVersionRank[i] = downgraders[stringVer]
+		ver--
+	}
+}
+
 func TestDowngradePolicyTo(t *testing.T) {
-	type downgradePolicyGoodTestCase struct {
-		desc          string
-		policy        *storage.Policy
-		targetVersion string
-		expected      *storage.Policy
-	}
+	origVersions := versions
+	SetupDowngradersForTest(t)
+	defer func() {
+		versions = origVersions
+		downgradersByVersionRank = organizeByVersionRank(downgraders, versions[:])
+	}()
 
-	type downgradePolicyBadTestCase struct {
-		desc          string
-		policy        *storage.Policy
-		targetVersion string
-	}
-
-	exclusions := []*storage.Exclusion{
+	cases := []struct {
+		desc            string
+		policy          *storage.Policy
+		targetVersion   string
+		expectedError   bool
+		expectedVersion string
+	}{
 		{
-			Name: "abcd",
+			"Downgrade from 99 to 98",
+			&storage.Policy{
+				PolicyVersion: "99.0",
+			},
+			"98.0",
+			false,
+			"98.0",
+		},
+		{
+			"Downgrade from 99 to 99 should be no-op",
+			&storage.Policy{
+				PolicyVersion: "99.0",
+			},
+			"99.0",
+			false,
+			"99.0",
+		},
+		{
+			"Downgrade from 99 to an newer version should be error",
+			&storage.Policy{
+				PolicyVersion: "99.0",
+			},
+			"100.0",
+			true,
+			"99.0",
+		},
+		{
+			"Downgrade from a non-existent version should be error",
+			&storage.Policy{
+				PolicyVersion: "199.0",
+			},
+			"98.0",
+			true,
+			"199.0",
 		},
 	}
 
-	testCasesGood := []downgradePolicyGoodTestCase{
-		{
-			"Downgrade from version 1.1 to 1.1",
-			&storage.Policy{
-				PolicyVersion: version1_1,
-				Exclusions:    exclusions,
-			},
-			version1_1,
-			&storage.Policy{
-				PolicyVersion: version1_1,
-				Exclusions:    exclusions,
-			},
-		},
-		{
-			"Downgrade from version 1.1 to 1",
-			&storage.Policy{
-				PolicyVersion: version1_1,
-				Exclusions:    exclusions,
-			},
-			version1,
-			&storage.Policy{
-				PolicyVersion: version1,
-				Whitelists:    exclusions,
-			},
-		},
-		{
-			"Downgrade from version 1 to 1",
-			&storage.Policy{
-				PolicyVersion: version1,
-				Whitelists:    exclusions,
-			},
-			version1,
-			&storage.Policy{
-				PolicyVersion: version1,
-				Whitelists:    exclusions,
-			},
-		},
-	}
-
-	for _, tc := range testCasesGood {
+	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			err := DowngradePolicyTo(tc.policy, PolicyVersion{tc.targetVersion})
-			assert.NoError(t, err)
-			assert.Equal(t, tc.expected, tc.policy)
-		})
-	}
+			if tc.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tc.expectedVersion, tc.policy.GetPolicyVersion())
 
-	testCasesBad := []downgradePolicyBadTestCase{
-		{
-			"No downgrade from version 1.1 to legacy",
-			&storage.Policy{
-				PolicyVersion: version1_1,
-			},
-			legacyVersion,
-		},
-		{
-			"No downgrade from an unknown version",
-			&storage.Policy{
-				PolicyVersion: "unknown",
-			},
-			version1,
-		},
-		{
-			"No downgrade to a newer version",
-			&storage.Policy{
-				PolicyVersion: version1,
-			},
-			version1_1,
-		},
-	}
-
-	for _, tc := range testCasesBad {
-		t.Run(tc.desc, func(t *testing.T) {
-			assert.Error(t, DowngradePolicyTo(tc.policy, PolicyVersion{tc.targetVersion}))
 		})
 	}
 }

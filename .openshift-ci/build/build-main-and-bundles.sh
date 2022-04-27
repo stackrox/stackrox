@@ -71,8 +71,8 @@ make_stackrox_data() {
     cp image/docs/api/v1/swagger.json /stackrox-data/docs/api/v1/swagger.json
 }
 
-create_bundle_and_scripts() {
-    info "Creating bundle.tar.gz"
+create_main_bundle_and_scripts() {
+    info "Creating main bundle.tar.gz"
 
     if [[ -z "${DEBUG_BUILD:-}" ]]; then
         if [[ "$(git rev-parse --abbrev-ref HEAD)" =~ "-debug" ]]; then
@@ -86,6 +86,10 @@ create_bundle_and_scripts() {
        "$ROOT/image/rhel/create-bundle.sh" image "local" "local" image/rhel
 }
 
+create_central_db_bundle() {
+    "$ROOT/image/postgres/create-bundle.sh" image/postgres image/postgres "true"
+}
+
 cleanup_image() {
     if [[ -z "${OPENSHIFT_BUILD_NAME:-}" ]]; then
         info "This is not an OpenShift build, will not reduce the image"
@@ -93,6 +97,9 @@ cleanup_image() {
     fi
 
     info "Reducing the image size"
+
+    # Save for image/roxctl.Dockerfile
+    cp image/bin/roxctl-linux .
 
     set +e
     rm -rf /go/{bin,pkg}
@@ -104,9 +111,13 @@ cleanup_image() {
     rm -rf image/{THIRD_PARTY_NOTICES,bin,ui}
     rm -rf ui/build ui/node_modules ui/**/node_modules
     set -e
+
+    # Restore for image/roxctl.Dockerfile
+    mkdir -p image/bin
+    mv roxctl-linux image/bin/
 }
 
-build() {
+build_main_and_bundles() {
     # TODO(RS-509) Submodules are not initialized in migration but they should
     # be in the 'src' delivered by OSCI in the final env so this can then be removed.
     git submodule update --init
@@ -130,9 +141,10 @@ build() {
 
     make_stackrox_data
 
-    create_bundle_and_scripts
+    create_main_bundle_and_scripts
+    create_central_db_bundle
 
     cleanup_image
 }
 
-build
+build_main_and_bundles

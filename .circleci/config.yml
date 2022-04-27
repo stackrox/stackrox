@@ -1502,7 +1502,7 @@ commands:
           command: |
             if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
               export CLUSTER=OPENSHIFT
-              oc apply -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
+              oc get scc qatest-anyuid || oc create -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
             else
               export CLUSTER=K8S
             fi
@@ -1640,7 +1640,7 @@ commands:
       - run:
           name: Create cloud resources
           command: |
-            mkdir -p openshift
+            mkdir -m 777 -p openshift
             set +e
             try=0
             max_attempts=2
@@ -1658,7 +1658,7 @@ commands:
                     --dns-project=stackrox-ci \
                     --dns-zone=openshift-ci-rox-systems \
                     --zone=us-central1-a \
-                    2>&1 | scripts/ci/monitor-output.sh 60
+                    2>&1 | scripts/ci/monitor-output.sh 60 && sudo chmod -R +r openshift
                 rc=$?
                 if [[ ${rc} == 0 ]]; then
                     echo "============= Openshift provision succeeded ============="

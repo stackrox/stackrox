@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/admissioncontrol"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -52,11 +53,22 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 		Description: "test deploy time policy",
 		Rationale:   "test deploy time policy",
 		Categories:  []string{"test"},
-		Fields: &storage.PolicyFields{
-			ImageName: &storage.ImageNamePolicy{
-				Tag: "admctrl-policy-test-tag",
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ImageTag,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "admctrl-policy-test-tag",
+							},
+						},
+					},
+				},
 			},
 		},
+		PolicyVersion:      "1.1",
 		Severity:           storage.Severity_HIGH_SEVERITY,
 		LifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},

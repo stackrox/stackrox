@@ -159,10 +159,10 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	}
 
 	// Check that the CVEs were written with the correct timestamp.
-	vuln, _, err := suite.cveStorage.Get("cve1")
+	vuln, _, err := suite.cveStorage.Get(allAccessCtx, "cve1")
 	suite.NoError(err)
 	suite.Equal(images[0].GetLastUpdated(), vuln.GetCreatedAt())
-	vuln, _, err = suite.cveStorage.Get("cve2")
+	vuln, _, err = suite.cveStorage.Get(allAccessCtx, "cve2")
 	suite.NoError(err)
 	suite.Equal(images[0].GetLastUpdated(), vuln.GetCreatedAt())
 
@@ -295,7 +295,7 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	suite.Equal(0, count)
 
 	// Check that the CVEs are removed.
-	count, err = suite.cveStorage.Count()
+	count, err = suite.cveStorage.Count(allAccessCtx)
 	suite.NoError(err)
 	suite.Equal(0, count)
 

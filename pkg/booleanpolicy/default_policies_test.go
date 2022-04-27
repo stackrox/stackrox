@@ -1827,16 +1827,25 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 
 func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {
 	for _, p := range suite.defaultPolicies {
-		if policyUtils.AppliesAtRunTime(p) && p.GetFields().GetProcessPolicy() != nil {
-			processPolicy := p.GetFields().GetProcessPolicy()
-			if processPolicy.GetName() != "" {
-				regexp.MustCompile(processPolicy.GetName())
-			}
-			if processPolicy.GetArgs() != "" {
-				regexp.MustCompile(processPolicy.GetArgs())
-			}
-			if processPolicy.GetAncestor() != "" {
-				regexp.MustCompile(processPolicy.GetAncestor())
+		if policyUtils.AppliesAtRunTime(p) {
+			checkRegexCompiles(p.GetPolicySections(), fieldnames.ProcessName)
+			checkRegexCompiles(p.GetPolicySections(), fieldnames.ProcessArguments)
+			checkRegexCompiles(p.GetPolicySections(), fieldnames.ProcessAncestor)
+		}
+	}
+}
+
+func checkRegexCompiles(sections []*storage.PolicySection, fieldname string) {
+	for _, s := range sections {
+		for _, g := range s.GetPolicyGroups() {
+			if g.GetFieldName() == fieldname {
+				if policyVals := g.GetValues(); len(policyVals) > 0 {
+					for _, policyVal := range policyVals {
+						if v := policyVal.GetValue(); v != "" {
+							regexp.MustCompile(v)
+						}
+					}
+				}
 			}
 		}
 	}

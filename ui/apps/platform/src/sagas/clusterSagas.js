@@ -3,8 +3,6 @@ import { delay } from 'redux-saga';
 import { getFormValues } from 'redux-form';
 import Raven from 'raven-js';
 
-import { integrationsPath, dashboardPath, compliancePath, policiesPath } from 'routePaths';
-import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import * as service from 'services/ClustersService';
 import { actions, types, wizardPages, clusterFormId } from 'reducers/clusters';
 import { actions as notificationActions } from 'reducers/notifications';
@@ -68,13 +66,6 @@ function* downloadClusterYaml() {
     }
 }
 
-function* watchLocation() {
-    const effects = [dashboardPath, integrationsPath, policiesPath, compliancePath].map((path) =>
-        takeEveryNewlyMatchedLocation(path, getClusters)
-    );
-    yield all(effects);
-}
-
 function* watchFetchRequest() {
     yield takeLatest(types.FETCH_CLUSTERS.REQUEST, getClusters);
 }
@@ -122,7 +113,6 @@ function* watchWizard() {
 
 export default function* clusters() {
     yield all([
-        fork(watchLocation),
         fork(watchFetchRequest),
         fork(watchDeleteRequest),
         fork(watchWizard),

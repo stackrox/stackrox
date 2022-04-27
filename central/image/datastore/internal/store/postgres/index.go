@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	mappings "github.com/stackrox/rox/central/image/mappings"
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -33,13 +32,13 @@ type indexerImpl struct {
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Image")
 
-	return postgres.RunCountRequest(v1.SearchCategory_IMAGES, q, b.db, mappings.OptionsMap)
+	return postgres.RunCountRequest(v1.SearchCategory_IMAGES, q, b.db)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Image")
 
-	return postgres.RunSearchRequest(v1.SearchCategory_IMAGES, q, b.db, mappings.OptionsMap)
+	return postgres.RunSearchRequest(v1.SearchCategory_IMAGES, q, b.db)
 }
 
 //// Stubs for satisfying interfaces

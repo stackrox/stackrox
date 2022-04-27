@@ -14,6 +14,9 @@ const networkEntityTabbedOverlay = '[data-testid="network-entity-tabbed-overlay"
 
 export const selectors = {
     cytoscapeContainer: '#cytoscapeContainer',
+    networkGraphHeading: 'h1:contains("Network Graph")',
+    emptyStateSubheading:
+        '.pf-c-empty-state h2:contains("Please select at least one namespace from your cluster")',
     simulatorSuccessMessage: 'div[data-testid="message-body"]:contains("Policies processed")',
     panels: networkPanels,
     legend: {

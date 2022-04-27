@@ -67,6 +67,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 				require.NotNil(t, status.Central)
 				require.NotNil(t, status.Central.AdminPassword)
 				assert.Contains(t, status.Central.AdminPassword.Info, "A password for the 'admin' user has been automatically generated and stored")
+				assert.Contains(t, *status.Central.AdminPassword.SecretReference, "central-htpasswd")
 			},
 		},
 		"If a central-htpasswd secret with a password exists, no password should be generated": {
@@ -75,6 +76,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 				require.NotNil(t, status.Central)
 				require.NotNil(t, status.Central.AdminPassword)
 				assert.Contains(t, status.Central.AdminPassword.Info, "A user-defined central-htpasswd secret was found, containing htpasswd-encoded credentials.")
+				assert.Contains(t, *status.Central.AdminPassword.SecretReference, htpasswdWithSomePassword.Name)
 			},
 		},
 		"If a central-htpasswd secret with no password exists, no password should be generated and the user should be informed that basic auth is disabled": {
@@ -83,6 +85,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 				require.NotNil(t, status.Central)
 				require.NotNil(t, status.Central.AdminPassword)
 				assert.Contains(t, status.Central.AdminPassword.Info, "Login with username/password has been disabled")
+				assert.Empty(t, status.Central.AdminPassword.SecretReference)
 			},
 		},
 		"If a secret with a plaintext password is referenced, a central-htpasswd secret should be created accordingly": {
@@ -103,6 +106,12 @@ func TestReconcileAdminPassword(t *testing.T) {
 					assert.True(t, hf.Check(basic.DefaultUsername, "foobarbaz"))
 				},
 			},
+			VerifyStatus: func(t *testing.T, status *platform.CentralStatus) {
+				require.NotNil(t, status.Central)
+				require.NotNil(t, status.Central.AdminPassword)
+				assert.Contains(t, status.Central.AdminPassword.Info, "The admin password is configured to match")
+				assert.Contains(t, *status.Central.AdminPassword.SecretReference, "my-password")
+			},
 		},
 		"If a secret is referenced and password generation is disabled create central-htpasswd": {
 			Spec: platform.CentralSpec{
@@ -119,6 +128,12 @@ func TestReconcileAdminPassword(t *testing.T) {
 					require.NotNil(t, data)
 				},
 			},
+			VerifyStatus: func(t *testing.T, status *platform.CentralStatus) {
+				require.NotNil(t, status.Central)
+				require.NotNil(t, status.Central.AdminPassword)
+				assert.Contains(t, status.Central.AdminPassword.Info, "The admin password is configured to match")
+				assert.Contains(t, *status.Central.AdminPassword.SecretReference, "my-password")
+			},
 		},
 		"If password generation is disabled no secret should be created": {
 			Spec: platform.CentralSpec{
@@ -131,6 +146,7 @@ func TestReconcileAdminPassword(t *testing.T) {
 				require.NotNil(t, status.Central)
 				require.NotNil(t, status.Central.AdminPassword)
 				assert.Equal(t, status.Central.AdminPassword.Info, "Password generation has been disabled, if you want to enable it set spec.central.adminPasswordGenerationDisabled to false.")
+				assert.Empty(t, status.Central.AdminPassword.SecretReference)
 			},
 		},
 	}

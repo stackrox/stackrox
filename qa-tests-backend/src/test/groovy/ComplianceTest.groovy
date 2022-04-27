@@ -2,19 +2,16 @@ import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceCon
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandard
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
-
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-
 import com.google.protobuf.util.Timestamps
 import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
-
 import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunScheduleInfo
@@ -28,7 +25,8 @@ import io.stackrox.proto.storage.Compliance.ComplianceState
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.NodeOuterClass.Node
 import io.stackrox.proto.storage.PolicyOuterClass
-
+import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
+import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import common.Constants
 import groups.BAT
 import groups.SensorBounceNext
@@ -869,7 +867,7 @@ class ComplianceTest extends BaseSpecification {
                 missingControls.add(control)
             }
         }
-        assert missingControls*.id.size() == 0
+        assert missingControls.size() == 0
 
         cleanup:
         "remove deployment"
@@ -927,6 +925,7 @@ class ComplianceTest extends BaseSpecification {
                 "90-Day Image Age",
                 "Latest tag",
                 "Ubuntu Package Manager Execution",
+                "Environment Variable Contains Secret",
         ]
         Map<String, List<PolicyOuterClass.EnforcementAction>> priorEnforcement = [:]
 
@@ -950,6 +949,11 @@ class ComplianceTest extends BaseSpecification {
             def prior = Services.updatePolicyEnforcement(policyName, enforcements)
             priorEnforcement.put(policyName, prior)
         }
+        def policyGroup = PolicyGroup.newBuilder()
+                .setFieldName("Environment Variable")
+                .setBooleanOperator(PolicyOuterClass.BooleanOperator.AND)
+        policyGroup.addAllValues([PolicyValue.newBuilder().setValue(".*SECRET.*=.*").build()])
+
         def policyId = PolicyService.createNewPolicy(PolicyOuterClass.Policy.newBuilder()
                 .setName("XYZ Compliance Secrets")
                 .setDescription("Test Secrets in Compliance")
@@ -959,11 +963,8 @@ class ComplianceTest extends BaseSpecification {
                 .addCategories("Image Assurance")
                 .setDisabled(false)
                 .setSeverityValue(2)
-                .setFields(PolicyOuterClass.PolicyFields.newBuilder()
-                        .setEnv(PolicyOuterClass.KeyValuePolicy.newBuilder()
-                                .setKey(".*SECRET.*")
-                                .setValue(".*"))
-                        .build())
+                .addPolicySections(
+                        PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build())
                 .build())
 
         when:
@@ -988,7 +989,7 @@ class ComplianceTest extends BaseSpecification {
                 missingControls.add(control)
             }
         }
-        assert missingControls*.id.size() == 0
+        assert missingControls.size() == 0
 
         cleanup:
         "undo policy changes"

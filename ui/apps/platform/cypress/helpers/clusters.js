@@ -1,35 +1,32 @@
 import * as api from '../constants/apiEndpoints';
-import { clustersUrl } from '../constants/ClustersPage';
-import { url as dashboardUrl } from '../constants/DashboardPage';
-import navigation from '../selectors/navigation';
+import { clustersUrl, selectors } from '../constants/ClustersPage';
+
+import { visitFromLeftNavExpandable } from './nav';
+import { visit } from './visit';
 
 // Navigation
 
 export function visitClustersFromLeftNav() {
-    cy.intercept('POST', api.graphql(api.general.graphqlOps.summaryCounts)).as('getSummaryCounts');
-    cy.visit(dashboardUrl);
-    cy.wait('@getSummaryCounts');
-
     cy.intercept('GET', api.clusters.list).as('getClusters');
-    cy.get(navigation.navExpandablePlatformConfiguration).click();
-    cy.get(
-        `${navigation.navExpandablePlatformConfiguration} + ${navigation.nestedNavLinks}:contains("Clusters")`
-    ).click();
+    visitFromLeftNavExpandable('Platform Configuration', 'Clusters');
     cy.wait('@getClusters');
+    cy.get(selectors.clustersListHeading).contains('Clusters');
 }
 
 export function visitClusters() {
     cy.intercept('GET', api.clusters.list).as('getClusters');
-    cy.visit(clustersUrl);
+    visit(clustersUrl);
     cy.wait('@getClusters');
+    cy.get(selectors.clustersListHeading).contains('Clusters');
 }
 
 export function visitClustersWithFixture(fixturePath) {
     cy.intercept('GET', api.clusters.list, {
         fixture: fixturePath,
     }).as('getClusters');
-    cy.visit(clustersUrl);
+    visit(clustersUrl);
     cy.wait('@getClusters');
+    cy.get(selectors.clustersListHeading).contains('Clusters');
 }
 
 export function visitClustersWithFixtureMetadataDatetime(fixturePath, metadata, datetimeISOString) {
@@ -57,8 +54,9 @@ export function visitClusterByNameWithFixture(clusterName, fixturePath) {
             body: { cluster },
         }).as('getCluster');
 
-        cy.visit(`${clustersUrl}/${cluster.id}`);
+        visit(`${clustersUrl}/${cluster.id}`);
         cy.wait(['@getClusters', '@getCluster']);
+        cy.get(selectors.clusterSidePanelHeading).contains(clusterName);
     });
 }
 
@@ -85,7 +83,8 @@ export function visitClusterByNameWithFixtureMetadataDatetime(
         const currentDatetime = new Date(datetimeISOString);
         cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
 
-        cy.visit(`${clustersUrl}/${cluster.id}`);
+        visit(`${clustersUrl}/${cluster.id}`);
         cy.wait(['@getClusters', '@getCluster', '@getMetadata']);
+        cy.get(selectors.clusterSidePanelHeading).contains(clusterName);
     });
 }

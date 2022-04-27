@@ -5,7 +5,8 @@ export const clustersUrl = '/main/clusters';
 export const selectors = {
     configure: 'ul.pf-c-nav__list li button:contains("Platform Configuration")',
     navLink: 'ul.pf-c-nav__list li a.pf-c-nav__link:contains("Clusters")',
-    header: '[data-testid="header-text"]',
+    clustersListHeading: 'h1:contains("Clusters")',
+    clusterSidePanelHeading: '[data-testid="clusters-side-panel-header"]',
     autoUpgradeInput: '[id="enableAutoUpgrade"]',
     clusters: scopeSelectors('[data-testid="clusters-table"]', {
         // Ignore the first checkbox column and last delete column.
