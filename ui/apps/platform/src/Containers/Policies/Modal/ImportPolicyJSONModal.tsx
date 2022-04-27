@@ -8,7 +8,7 @@ import {
     getResolvedPolicies,
     getErrorMessages,
     checkDupeOnlyErrors,
-    PolicyImportDuplicateError,
+    PolicyImportError,
     PolicyResolution,
 } from './PolicyImport.utils';
 import ImportPolicyJSONSuccess from './ImportPolicyJSONSuccess';
@@ -31,7 +31,7 @@ function ImportPolicyJSONModal({
     fetchPoliciesWithQuery,
 }: ImportPolicyJSONModalProps): ReactElement {
     const [policies, setPolicies] = useState<Policy[]>([]);
-    const [duplicateErrors, setDuplicateErrors] = useState<PolicyImportDuplicateError[]>([]);
+    const [duplicateErrors, setDuplicateErrors] = useState<PolicyImportError[]>([]);
     const [duplicateResolution, setDuplicateResolution] = useState<PolicyResolution>(RESOLUTION);
     const [modalType, setModalType] = useState<ImportPolicyJSONModalType>('upload');
     const [errorMessages, setErrorMessages] = useState<string[]>([]);

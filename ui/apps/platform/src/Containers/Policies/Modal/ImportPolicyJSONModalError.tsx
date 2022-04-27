@@ -3,12 +3,12 @@ import { Button, ModalBoxBody, ModalBoxFooter, Alert } from '@patternfly/react-c
 import { Formik } from 'formik';
 import * as yup from 'yup';
 
-import { ListPolicy } from 'types/policy.proto';
+import { Policy } from 'types/policy.proto';
 import {
     MIN_POLICY_NAME_LENGTH,
     hasDuplicateIdOnly,
     checkForBlockedSubmit,
-    PolicyImportDuplicateError,
+    PolicyImportError,
     PolicyResolution,
 } from './PolicyImport.utils';
 import DuplicatePolicyForm from './DuplicatePolicyForm';
@@ -18,8 +18,8 @@ const RESOLUTION = { resolution: '', newName: '' };
 type ImportPolicyJSONErrorProps = {
     handleCancelModal: () => void;
     startImportPolicies: () => void;
-    policies: ListPolicy[];
-    duplicateErrors: PolicyImportDuplicateError[];
+    policies: Policy[];
+    duplicateErrors: PolicyImportError[];
     errorMessages: string[];
     duplicateResolution: PolicyResolution;
     setDuplicateResolution: (duplicateResolution) => void;
