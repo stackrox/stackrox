@@ -424,7 +424,7 @@ func standardizeFieldNamesInQuery(q *v1.Query) {
 }
 
 // RunSearchRequest executes a request again the database
-func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, _ searchPkg.OptionsMap) (searchResults []searchPkg.Result, err error) {
+func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) (searchResults []searchPkg.Result, err error) {
 	var query *query
 	// Add this to be safe and convert panics to errors,
 	// since we do a lot of casting and other operations that could potentially panic in this code.
@@ -501,7 +501,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool,
 }
 
 // RunCountRequest executes a request for just the count against the database
-func RunCountRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool, _ searchPkg.OptionsMap) (int, error) {
+func RunCountRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) (int, error) {
 	query, err := standardizeQueryAndPopulatePath(q, mapping.GetTableFromCategory(category), COUNT)
 	if err != nil || query == nil {
 		return 0, err
