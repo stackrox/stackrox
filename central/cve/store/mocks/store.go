@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,24 +36,24 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // Count mocks base method.
-func (m *MockStore) Count() (int, error) {
+func (m *MockStore) Count(ctx context.Context) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count")
+	ret := m.ctrl.Call(m, "Count", ctx)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockStoreMockRecorder) Count() *gomock.Call {
+func (mr *MockStoreMockRecorder) Count(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), ctx)
 }
 
 // Delete mocks base method.
-func (m *MockStore) Delete(ids ...string) error {
+func (m *MockStore) Delete(ctx context.Context, ids ...string) error {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{}
+	varargs := []interface{}{ctx}
 	for _, a := range ids {
 		varargs = append(varargs, a)
 	}
@@ -62,30 +63,31 @@ func (m *MockStore) Delete(ids ...string) error {
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockStoreMockRecorder) Delete(ids ...interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Delete(ctx interface{}, ids ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), ids...)
+	varargs := append([]interface{}{ctx}, ids...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), varargs...)
 }
 
 // Exists mocks base method.
-func (m *MockStore) Exists(id string) (bool, error) {
+func (m *MockStore) Exists(ctx context.Context, id string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Exists", id)
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Exists indicates an expected call of Exists.
-func (mr *MockStoreMockRecorder) Exists(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), ctx, id)
 }
 
 // Get mocks base method.
-func (m *MockStore) Get(id string) (*storage.CVE, bool, error) {
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.CVE, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", id)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*storage.CVE)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -93,46 +95,31 @@ func (m *MockStore) Get(id string) (*storage.CVE, bool, error) {
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockStoreMockRecorder) Get(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
-// GetAll mocks base method.
-func (m *MockStore) GetAll() ([]*storage.CVE, error) {
+// GetMany mocks base method.
+func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll")
-	ret0, _ := ret[0].([]*storage.CVE)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAll indicates an expected call of GetAll.
-func (mr *MockStoreMockRecorder) GetAll() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockStore)(nil).GetAll))
-}
-
-// GetBatch mocks base method.
-func (m *MockStore) GetBatch(ids []string) ([]*storage.CVE, []int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBatch", ids)
+	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
 	ret0, _ := ret[0].([]*storage.CVE)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// GetBatch indicates an expected call of GetBatch.
-func (mr *MockStoreMockRecorder) GetBatch(ids interface{}) *gomock.Call {
+// GetMany indicates an expected call of GetMany.
+func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockStore)(nil).GetBatch), ids)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
 }
 
 // Upsert mocks base method.
-func (m *MockStore) Upsert(cves ...*storage.CVE) error {
+func (m *MockStore) Upsert(ctx context.Context, cves ...*storage.CVE) error {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{}
+	varargs := []interface{}{ctx}
 	for _, a := range cves {
 		varargs = append(varargs, a)
 	}
@@ -142,7 +129,8 @@ func (m *MockStore) Upsert(cves ...*storage.CVE) error {
 }
 
 // Upsert indicates an expected call of Upsert.
-func (mr *MockStoreMockRecorder) Upsert(cves ...interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Upsert(ctx interface{}, cves ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), cves...)
+	varargs := append([]interface{}{ctx}, cves...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), varargs...)
 }

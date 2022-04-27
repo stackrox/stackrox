@@ -70,7 +70,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetAuthProvider retrieves the authProvider based on the id passed
 func (s *serviceImpl) GetAuthProvider(_ context.Context, request *v1.GetAuthProviderRequest) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
-		return nil, errox.InvalidArgs.CausedBy("auth provider id is required")
+		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
 	authProvider := s.registry.GetProvider(request.GetId())
 	if authProvider == nil {
@@ -161,10 +161,10 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 		return nil, errox.InvalidArgs.CausedBy("no auth provider name specified")
 	}
 	if providerReq.GetId() != "" {
-		return nil, errox.InvalidArgs.CausedBy("auth provider id must be empty")
+		return nil, errox.InvalidArgs.CausedBy("auth provider id is not empty")
 	}
 	if providerReq.GetLoginUrl() != "" {
-		return nil, errox.InvalidArgs.CausedBy("auth provider loginUrl field must be empty")
+		return nil, errox.InvalidArgs.CausedBy("auth provider loginUrl field is not empty")
 	}
 
 	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq), authproviders.WithValidateCallback(datastore.Singleton()))
@@ -176,7 +176,7 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 
 func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.AuthProvider) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
-		return nil, errox.InvalidArgs.CausedBy("auth provider id must not be empty")
+		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
 
 	provider := s.registry.GetProvider(request.GetId())
@@ -205,7 +205,7 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 
 func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.UpdateAuthProviderRequest) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
-		return nil, errox.InvalidArgs.CausedBy("auth provider id must not be empty")
+		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
 
 	var options []authproviders.ProviderOption
@@ -225,7 +225,7 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 // DeleteAuthProvider deletes an auth provider from the system
 func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, errox.InvalidArgs.CausedBy("auth provider id is required")
+		return nil, errox.InvalidArgs.CausedBy("auth provider id is empty")
 	}
 
 	// Get auth provider.
