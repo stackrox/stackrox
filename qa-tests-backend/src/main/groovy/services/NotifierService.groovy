@@ -10,7 +10,9 @@ import util.Env
 
 @Slf4j
 class NotifierService extends BaseService {
-    private static final PAGERDUTY_API_KEY = "fix-me-ROX-7589-and-this-should-be-secret"
+    // FIXME(ROX-7589): this should be secret
+    // private static final PAGERDUTY_API_KEY = Env.mustGetPagerdutyApiKey()
+    private static final String PAGERDUTY_API_KEY = null
 
     // SLACK_MAIN_WEBHOOK is the webhook URL for #slack-test
     public static final SLACK_MAIN_WEBHOOK = Env.mustGetSlackMainWebhook()
