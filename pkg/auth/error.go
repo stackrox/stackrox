@@ -1,4 +1,4 @@
-package role
+package auth
 
 import "github.com/stackrox/rox/pkg/errox"
 
