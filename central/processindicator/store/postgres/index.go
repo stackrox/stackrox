@@ -11,7 +11,6 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
-	mappings "github.com/stackrox/rox/pkg/search/options/processindicators"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
@@ -34,13 +33,13 @@ type indexerImpl struct {
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ProcessIndicator")
 
-	return postgres.RunCountRequest(v1.SearchCategory_PROCESS_INDICATORS, q, b.db, mappings.OptionsMap)
+	return postgres.RunCountRequest(v1.SearchCategory_PROCESS_INDICATORS, q, b.db)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ProcessIndicator")
 
-	return postgres.RunSearchRequest(v1.SearchCategory_PROCESS_INDICATORS, q, b.db, mappings.OptionsMap)
+	return postgres.RunSearchRequest(v1.SearchCategory_PROCESS_INDICATORS, q, b.db)
 }
 
 //// Stubs for satisfying interfaces
