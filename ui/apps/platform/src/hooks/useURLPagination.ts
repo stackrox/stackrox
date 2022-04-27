@@ -11,7 +11,7 @@ type UseURLPaginationResult = {
 function safeNumber(val: unknown, defaultVal: number) {
     const parsed = Number(val);
 
-    return Number.isNaN(parsed) ? defaultVal : parsed;
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : defaultVal;
 }
 
 function useURLPagination(defaultPerPage: number): UseURLPaginationResult {
