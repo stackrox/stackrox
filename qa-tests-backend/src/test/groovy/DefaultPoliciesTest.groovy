@@ -228,7 +228,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     @Category(BAT)
     @Retry(count = 0)
-    @IgnoreIf({ Env.CI_TAG == null || !Env.CI_TAG.contains("nightly") })
+    // @IgnoreIf({ Env.CI_TAG == null || !Env.CI_TAG.contains("nightly") })
     def "Notifier for StackRox images with fixable vulns"() {
         when:
         "Verify policies are not violated within the stackrox namespace"
