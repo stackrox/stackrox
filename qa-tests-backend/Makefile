@@ -17,7 +17,7 @@ style: compile
 	exit $$STATUS
 
 .PHONY: compile
-compile: proto-generated-srcs
+compile: build/generated
 	@echo "+ $@"
 	@$(GRADLE) assemble testClasses
 
@@ -27,11 +27,16 @@ style-fix:
 	@scripts/fix_lint.py .
 
 .PHONY: proto-generated-srcs
-proto-generated-srcs:
+proto-generated-srcs: build/generated
+
+build/generated: src/main/proto
 	@echo "+ $@"
+	$(GRADLE) generateProto generateTestProto
+
+src/main/proto: ../proto
+	@echo "+ migrate protos"
 	-rm -r src/main/proto
 	@scripts/migrate_protos.sh
-	$(GRADLE) generateProto generateTestProto
 
 .PHONY: clean-generated-srcs
 clean-generated-srcs:
