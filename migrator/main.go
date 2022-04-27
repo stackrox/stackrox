@@ -103,6 +103,7 @@ func upgrade(conf *config.Config) error {
 			return err
 		}
 		source := fmt.Sprintf("host=central-db.stackrox.svc sslmode=require port=5432 database=postgres user=postgres statement_timeout=600000 password=%s", password)
+		log.WriteToStderrf(source)
 		postgresDB, err = gorm.Open(postgres.Open(source), &gorm.Config{
 			CreateBatchSize: 1000})
 		if err != nil {
