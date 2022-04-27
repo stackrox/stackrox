@@ -31,6 +31,11 @@ var (
 	// but ordering between versions and supportedVersions is not guaranteed
 	supportedVersions = set.NewFrozenStringSet(version1_1)
 
+	// minimumSupportedVersion returns the minimum policy version that is supported.
+	// This is calculated and cached separately so that supportedVersions doesn't
+	// need to be converted to slice for every comparison.
+	minimumSupportedVersion = supportedVersions.AsSlice()[0]
+
 	// versionRanks maps known versions to their sequence numbers. Note that
 	// the sequence number may vary among different builds.
 	versionRanks = utils.Invert(versions[:]).(map[string]int)
@@ -42,10 +47,10 @@ func CurrentVersion() PolicyVersion {
 	return PolicyVersion{versions[len(versions)-1]}
 }
 
-// MinimumSupportedVersionForSensor returns the minimum policy version that sensor can support
-// Anything lower will result in unexpected behavior
-func MinimumSupportedVersionForSensor() PolicyVersion {
-	return PolicyVersion{version1_1}
+// MinimumSupportedVersion returns the minimum policy version that is supported.
+// Anything lower will result in unexpected behavior.
+func MinimumSupportedVersion() PolicyVersion {
+	return PolicyVersion{minimumSupportedVersion}
 }
 
 // IsCurrentVersion returns true if the policyVersion is equal to the current latest version

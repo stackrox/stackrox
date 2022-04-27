@@ -11,6 +11,10 @@ func TestLatestVersion(t *testing.T) {
 	assert.Equal(t, CurrentVersion().String(), versions[len(versions)-1])
 }
 
+func TestMinimumSupportedVersion(t *testing.T) {
+	assert.Equal(t, MinimumSupportedVersion().String(), supportedVersions.AsSlice()[0])
+}
+
 // versions in versions are sorted from old to new.
 func TestVersionsOrderStrictlyAscending(t *testing.T) {
 	policyVersions := make([]PolicyVersion, 0, len(versions))
