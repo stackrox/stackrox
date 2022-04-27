@@ -2,7 +2,7 @@ import static org.junit.Assume.assumeFalse
 
 import groups.GraphQL
 import objects.Deployment
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 import services.GraphQLService
 import spock.lang.Shared
 import spock.lang.Unroll
