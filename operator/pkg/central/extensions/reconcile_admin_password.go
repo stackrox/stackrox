@@ -119,7 +119,7 @@ func (r *reconcileAdminPasswordExtensionRun) updateStatus(status *platform.Centr
 		return false
 	}
 
-        secretNameCopy := r.passwordSecretName
+	secretNameCopy := r.passwordSecretName
 	status.Central.AdminPassword.SecretReference = &secretNameCopy
 	status.Central.AdminPassword.Info = r.infoUpdate
 	return true
