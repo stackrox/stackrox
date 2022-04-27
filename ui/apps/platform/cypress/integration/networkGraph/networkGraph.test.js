@@ -74,7 +74,7 @@ describe('Network Graph Search', () => {
         visitNetworkGraph();
 
         // Stub out an error response from the server
-        const error = 'number of deployments (220) exceeds maximum allowed for Network Graph: 200';
+        const error = 'Number of deployments (220) exceeds maximum allowed for Network Graph: 200';
         cy.intercept('GET', api.network.networkGraph, {
             statusCode: 500,
             body: { error, message: error },
