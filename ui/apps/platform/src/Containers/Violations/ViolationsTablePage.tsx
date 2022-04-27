@@ -16,14 +16,13 @@ import useURLSort from 'hooks/useURLSort';
 import { SortOption } from 'types/table';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
+import useInterval from 'hooks/useInterval';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import tableColumnDescriptor from './violationTableColumnDescriptors';
 
 import './ViolationsTablePage.css';
-
-const runAfter5Seconds = (fn: () => void) => setTimeout(fn, 5000);
 
 const searchCategory = SEARCH_CATEGORIES.ALERTS;
 
@@ -84,6 +83,11 @@ function ViolationsTablePage(): ReactElement {
         }
     }, [alertCount, perPage, setPage]);
 
+    // We will update the poll epoch after 5 seconds to force a refresh of the alert data
+    useInterval(() => {
+        setPollEpoch(pollEpoch + 1);
+    }, 5000);
+
     // When any of the deps to this effect change, we want to reload the alerts and count.
     useEffect(() => {
         const { request: alertRequest, cancel: cancelAlertRequest } = fetchAlerts(
@@ -112,12 +116,7 @@ function ViolationsTablePage(): ReactElement {
                 setCurrentPageAlertsErrorMessage(parsedMessage);
             });
 
-        const timeoutId = runAfter5Seconds(() => {
-            setPollEpoch(pollEpoch + 1);
-        });
-
         return () => {
-            clearTimeout(timeoutId);
             cancelAlertRequest();
             cancelCountRequest();
         };
