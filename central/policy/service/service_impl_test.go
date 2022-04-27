@@ -212,15 +212,31 @@ func (s *PolicyServiceTestSuite) TestDryRunRuntime() {
 		Severity:        storage.Severity_LOW_SEVERITY,
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 		Categories:      []string{"test"},
-		Fields: &storage.PolicyFields{
-			ProcessPolicy: &storage.ProcessPolicy{
-				Name: "apt-get",
-			},
-			SetPrivileged: &storage.PolicyFields_Privileged{
-				Privileged: true,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ProcessName,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "apt-get",
+							},
+						},
+					},
+					{
+						FieldName: fieldnames.PrivilegedContainer,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "true",
+							},
+						},
+					},
+				},
 			},
 		},
-		EventSource: storage.EventSource_DEPLOYMENT_EVENT,
+		EventSource:   storage.EventSource_DEPLOYMENT_EVENT,
+		PolicyVersion: policyversion.CurrentVersion().String(),
 	}
 	resp, err := s.tested.DryRunPolicy(ctx, runtimePolicy)
 	s.Nil(err)
@@ -229,7 +245,7 @@ func (s *PolicyServiceTestSuite) TestDryRunRuntime() {
 
 func (s *PolicyServiceTestSuite) TestImportPolicy() {
 	mockID := "1"
-	mockName := "legacy policy"
+	mockName := "current version policy"
 	mockSeverity := storage.Severity_LOW_SEVERITY
 	mockLCStages := []storage.LifecycleStage{storage.LifecycleStage_RUNTIME}
 	mockCategories := []string{"test"}
@@ -239,15 +255,31 @@ func (s *PolicyServiceTestSuite) TestImportPolicy() {
 		Severity:        mockSeverity,
 		LifecycleStages: mockLCStages,
 		Categories:      mockCategories,
-		Fields: &storage.PolicyFields{
-			ProcessPolicy: &storage.ProcessPolicy{
-				Name: "apt-get",
-			},
-			SetPrivileged: &storage.PolicyFields_Privileged{
-				Privileged: true,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ProcessName,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "apt-get",
+							},
+						},
+					},
+					{
+						FieldName: fieldnames.PrivilegedContainer,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "true",
+							},
+						},
+					},
+				},
 			},
 		},
-		EventSource: storage.EventSource_DEPLOYMENT_EVENT,
+		PolicyVersion: policyversion.CurrentVersion().String(),
+		EventSource:   storage.EventSource_DEPLOYMENT_EVENT,
 	}
 
 	ctx := context.Background()
@@ -272,88 +304,7 @@ func (s *PolicyServiceTestSuite) TestImportPolicy() {
 	s.Require().Len(resp.GetResponses(), 1)
 	policyResp := resp.GetResponses()[0]
 	resultPolicy := policyResp.GetPolicy()
-	s.Equal(importedPolicy.GetFields(), resultPolicy.GetFields())
 	s.Equal(importedPolicy.GetPolicySections(), resultPolicy.GetPolicySections())
-}
-
-func (s *PolicyServiceTestSuite) TestImportAndUpgradePolicy() {
-	mockID := "1"
-	mockName := "legacy policy"
-	mockSeverity := storage.Severity_LOW_SEVERITY
-	mockLCStages := []storage.LifecycleStage{storage.LifecycleStage_RUNTIME}
-	mockCategories := []string{"test"}
-
-	importedPolicy := &storage.Policy{
-		Id:              mockID,
-		Name:            mockName,
-		Severity:        mockSeverity,
-		LifecycleStages: mockLCStages,
-		Categories:      mockCategories,
-		Fields: &storage.PolicyFields{
-			ProcessPolicy: &storage.ProcessPolicy{
-				Name: "apt-get",
-			},
-			SetPrivileged: &storage.PolicyFields_Privileged{
-				Privileged: true,
-			},
-		},
-		EventSource: storage.EventSource_DEPLOYMENT_EVENT,
-	}
-	importRespPolicy := &storage.Policy{
-		Id:              mockID,
-		Name:            mockName,
-		Severity:        mockSeverity,
-		LifecycleStages: mockLCStages,
-		Categories:      mockCategories,
-		PolicyVersion:   policyversion.CurrentVersion().String(),
-		PolicySections: []*storage.PolicySection{
-			{
-				PolicyGroups: []*storage.PolicyGroup{
-					{
-						FieldName: "Privileged Container",
-						Values: []*storage.PolicyValue{
-							{
-								Value: "true",
-							},
-						},
-					},
-					{
-						FieldName: "Process Name",
-						Values: []*storage.PolicyValue{
-							{
-								Value: "apt-get",
-							},
-						},
-					},
-				},
-			},
-		},
-		EventSource: storage.EventSource_DEPLOYMENT_EVENT,
-	}
-	ctx := context.Background()
-	mockImportResp := []*v1.ImportPolicyResponse{
-		{
-			Succeeded: true,
-			Policy:    importRespPolicy,
-			Errors:    nil,
-		},
-	}
-
-	s.policies.EXPECT().ImportPolicies(ctx, []*storage.Policy{importRespPolicy}, false).Return(mockImportResp, true, nil)
-	s.mockBuildTimePolicies.EXPECT().RemovePolicy(importRespPolicy.GetId())
-	s.mockLifecycleManager.EXPECT().UpsertPolicy(importRespPolicy).Return(nil)
-	s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, nil)
-	s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast(gomock.Any())
-	resp, err := s.tested.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
-		Policies: []*storage.Policy{importedPolicy},
-	})
-	s.NoError(err)
-	s.True(resp.AllSucceeded)
-	s.Require().Len(resp.GetResponses(), 1)
-	policyResp := resp.GetResponses()[0]
-	resultPolicy := policyResp.GetPolicy()
-	s.Equal(importRespPolicy.GetFields(), resultPolicy.GetFields())
-	s.Equal(importRespPolicy.GetPolicySections(), resultPolicy.GetPolicySections())
 }
 
 func (s *PolicyServiceTestSuite) testScopes(query string, mockClusters []*storage.Cluster, expectedScopes ...*storage.Scope) {

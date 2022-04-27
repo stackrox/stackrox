@@ -187,11 +187,11 @@ func TestWithFakeJira(t *testing.T) {
 	testAlert := &storage.Alert{
 		Id: "myAlertID",
 		Policy: &storage.Policy{
-			Id:          "myPolicyID",
-			Name:        "myPolicy",
-			Description: "Fake policy",
-			Fields:      &storage.PolicyFields{},
-			Severity:    storage.Severity_HIGH_SEVERITY,
+			Id:             "myPolicyID",
+			Name:           "myPolicy",
+			Description:    "Fake policy",
+			PolicySections: []*storage.PolicySection{},
+			Severity:       storage.Severity_HIGH_SEVERITY,
 		},
 		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
 			Name: "myDeployment",

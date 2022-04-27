@@ -247,9 +247,6 @@ class UpgradesTest extends BaseSpecification {
             assert Float.parseFloat(policy.policyVersion) >= 1.0
 
             def builder = PolicyOuterClass.Policy.newBuilder(policy)
-            if (policy.hasFields()) {
-                builder.clearFields() // fields is ignored so clear it out
-            }
 
             // All default policies are expected to have the following flags set to true.
             // Therefore, move to target by adding the known diff.

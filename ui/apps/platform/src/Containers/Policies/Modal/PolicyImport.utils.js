@@ -141,7 +141,7 @@ export function hasDuplicateIdOnly(importErrors) {
 export function checkDupeOnlyErrors(importErrors) {
     return (
         importErrors?.length &&
-        importErrors.find((policyErrors) => {
+        importErrors.every((policyErrors) => {
             const hasInvalidPolicy = policyErrors.some((err) => err.type === 'invalid_policy');
             const hasDupeErrors = policyErrors.some((err) => err.type.includes('dup'));
 

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
@@ -104,15 +105,21 @@ func (s *policyValidator) internalValidate(policy *storage.Policy, additionalVal
 	return errorList.ToError()
 }
 
-func (s *policyValidator) validateName(policy *storage.Policy) error {
-	return nameValidator.Validate(policy.GetName())
-}
-
 func (s *policyValidator) validateVersion(policy *storage.Policy) error {
-	if !policyversion.IsBooleanPolicy(policy) {
-		return errors.New("policy not converted to boolean policy")
+	ver, err := policyversion.FromString(policy.GetPolicyVersion())
+	if err != nil {
+		return errors.New("policy has invalid version")
+	}
+
+	// As of 70.0 we only support the latest version (1.1).
+	if !policyversion.IsSupportedVersion(ver) {
+		return errors.Errorf("policy version %s is not supported", ver.String())
 	}
 	return nil
+}
+
+func (s *policyValidator) validateName(policy *storage.Policy) error {
+	return nameValidator.Validate(policy.GetName())
 }
 
 func (s *policyValidator) validateDescription(policy *storage.Policy) error {
@@ -198,15 +205,27 @@ func (s *policyValidator) validateSeverity(policy *storage.Policy) error {
 	return nil
 }
 
+func (s *policyValidator) getCaps(policy *storage.Policy, capsTypes string) []*storage.PolicyValue {
+	capsValues := make([]*storage.PolicyValue, 0)
+	for _, section := range policy.GetPolicySections() {
+		for _, group := range section.GetPolicyGroups() {
+			if group.GetFieldName() == capsTypes {
+				capsValues = append(capsValues, group.Values...)
+			}
+		}
+	}
+	return capsValues
+}
+
 func (s *policyValidator) validateCapabilities(policy *storage.Policy) error {
 	set := mapset.NewSet()
-	for _, s := range policy.GetFields().GetAddCapabilities() {
-		set.Add(s)
+	for _, s := range s.getCaps(policy, fieldnames.AddCaps) {
+		set.Add(s.Value)
 	}
 	var duplicates []string
-	for _, s := range policy.GetFields().GetDropCapabilities() {
-		if set.Contains(s) {
-			duplicates = append(duplicates, s)
+	for _, s := range s.getCaps(policy, fieldnames.DropCaps) {
+		if set.Contains(s.Value) {
+			duplicates = append(duplicates, s.Value)
 		}
 	}
 	if len(duplicates) != 0 {
@@ -252,10 +271,6 @@ func (s *policyValidator) validateScopes(policy *storage.Policy) error {
 }
 
 func (s *policyValidator) validateExclusions(policy *storage.Policy) error {
-	if len(policy.GetWhitelists()) > 0 {
-		return errors.New("whitelists not converted to exclusions")
-	}
-
 	for _, exclusion := range policy.GetExclusions() {
 		if err := s.validateExclusion(policy, exclusion); err != nil {
 			return err

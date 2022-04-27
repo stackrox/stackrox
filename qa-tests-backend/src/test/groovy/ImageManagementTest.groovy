@@ -153,8 +153,13 @@ class ImageManagementTest extends BaseSpecification {
                 .addLifecycleStages(LifecycleStage.BUILD)
                 .addCategories("Testing")
                 .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
-                .setFields(
-                        PolicyOuterClass.PolicyFields.newBuilder().setCve("CVE-2019-14697").build()
+                .addPolicySections(
+                        PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                PolicyOuterClass.PolicyGroup.newBuilder()
+                                        .setFieldName("CVE")
+                                        .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("CVE-2019-14697")
+                                                .build()).build()
+                        ).build()
                 ).build()
         policy = PolicyService.policyClient.postPolicy(
                 PolicyServiceOuterClass.PostPolicyRequest.newBuilder()
