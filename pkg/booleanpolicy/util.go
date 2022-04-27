@@ -2,7 +2,13 @@ package booleanpolicy
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 )
+
+var networkPolicyFields = map[string]struct{}{
+	augmentedobjs.HasEgressPolicyCustomTag:  {},
+	augmentedobjs.HasIngressPolicyCustomTag: {},
+}
 
 // ContainsOneOf returns whether the policy contains at least one group with a field of specified type.
 func ContainsOneOf(policy *storage.Policy, fieldType RuntimeFieldType) bool {
@@ -117,4 +123,16 @@ func FilterPolicySections(policy *storage.Policy, pred func(section *storage.Pol
 		}
 	}
 	return cloned
+}
+
+// ContainsNetworkPolicyFields returns false if the policy groups do not contain NetworkPolicy fields
+func ContainsNetworkPolicyFields(policy *storage.Policy) bool {
+	for _, section := range policy.GetPolicySections() {
+		for _, group := range section.GetPolicyGroups() {
+			if _, ok := networkPolicyFields[group.GetFieldName()]; ok {
+				return true
+			}
+		}
+	}
+	return false
 }

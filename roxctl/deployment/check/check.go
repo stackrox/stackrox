@@ -78,6 +78,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	objectPrinterFactory.AddFlags(c)
 
 	c.Flags().StringVarP(&deploymentCheckCmd.file, "file", "f", "", "yaml file to send to Central to evaluate policies against")
+	c.Flags().StringVarP(&deploymentCheckCmd.clusterID, "cluster", "", "", "cluster ID to send to Central to evaluate policies against")
 	c.Flags().BoolVar(&deploymentCheckCmd.json, "json", false, "output policy results as json.")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
 	c.Flags().IntVarP(&deploymentCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
@@ -97,6 +98,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 type deploymentCheckCommand struct {
 	// properties bound to cobra flags
 	file               string
+	clusterID          string
 	json               bool
 	retryDelay         int
 	retryCount         int
@@ -158,18 +160,18 @@ func (d *deploymentCheckCommand) checkDeployment() error {
 		return errors.Wrapf(err, "could not read deployment file: %q", d.file)
 	}
 
-	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(string(deploymentFileContents))
+	alerts, ignoredObjRefs, warnings, err := d.getAlertsAndIgnoredObjectRefs(string(deploymentFileContents))
 	if err != nil {
 		return errors.Wrap(retry.MakeRetryable(err), "retrieving alerts from central")
 	}
 
-	return d.printResults(alerts, ignoredObjRefs)
+	return d.printResults(alerts, ignoredObjRefs, warnings)
 }
 
-func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml string) ([]*storage.Alert, []string, error) {
+func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml string) ([]*storage.Alert, []string, map[string]struct{}, error) {
 	conn, err := d.env.GRPCConnection()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not establish gRPC connection to central")
+		return nil, nil, nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 	defer utils.IgnoreError(conn.Close)
 
@@ -180,24 +182,35 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 	response, err := svc.DetectDeployTimeFromYAML(ctx, &v1.DeployYAMLDetectionRequest{
 		Yaml:             deploymentYaml,
 		PolicyCategories: d.policyCategories,
+		ClusterId:        d.clusterID,
 	})
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not check deploy-time alerts")
+		return nil, nil, nil, errors.Wrap(err, "could not check deploy-time alerts")
 	}
 
 	var alerts []*storage.Alert
+	warnings := make(map[string]struct{})
 	for _, r := range response.GetRuns() {
 		alerts = append(alerts, r.GetAlerts()...)
+		for _, w := range r.GetWarnings() {
+			if _, ok := warnings[w]; !ok {
+				warnings[w] = struct{}{}
+			}
+		}
 	}
-	return alerts, response.GetIgnoredObjectRefs(), nil
+	return alerts, response.GetIgnoredObjectRefs(), warnings, nil
 }
 
-func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredObjectRefs []string) error {
+func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredObjectRefs []string, warnings map[string]struct{}) error {
 	// Print all ignored objects whose schema was not registered, i.e. CRDs. We don't need to take standardizedFormat
 	// into account since we will print to os.StdErr by default. We shall do this at the beginning, since we also
 	// want this to be visible to the old output format.
 	for _, ignoredObjRef := range ignoredObjectRefs {
 		d.env.Logger().InfofLn("Ignored object %q as its schema was not registered.", ignoredObjRef)
+	}
+
+	for warning := range warnings {
+		d.env.Logger().WarnfLn(warning)
 	}
 
 	if d.json {

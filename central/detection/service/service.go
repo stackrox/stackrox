@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	networkPoliciesDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/risk/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -27,10 +28,11 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(clusters clusterDatastore.DataStore, imageEnricher enricher.ImageEnricher, imageDatastore imageDatastore.DataStore, riskManager manager.Manager,
+func New(clusters clusterDatastore.DataStore, networkPolicies networkPoliciesDS.DataStore, imageEnricher enricher.ImageEnricher, imageDatastore imageDatastore.DataStore, riskManager manager.Manager,
 	cveDatastore cveDataStore.DataStore, deploymentEnricher enrichment.Enricher, buildTimeDetector buildTimeDetection.Detector, notifications processor.Processor, detector deploytime.Detector, policySet detection.PolicySet) Service {
 	return &serviceImpl{
 		clusters:           clusters,
+		networkPolicies:    networkPolicies,
 		imageEnricher:      imageEnricher,
 		imageDatastore:     imageDatastore,
 		cveDatastore:       cveDatastore,

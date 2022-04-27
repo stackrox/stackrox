@@ -242,6 +242,12 @@
           "items": {
             "$ref": "#/definitions/storageAlert"
           }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -1854,6 +1860,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "clusterId": {
+          "type": "string"
         }
       }
     }

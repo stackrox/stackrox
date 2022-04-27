@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	networkPoliciesDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
@@ -23,6 +24,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/errox"
@@ -83,6 +85,7 @@ type serviceImpl struct {
 	deploymentEnricher enrichment.Enricher
 	buildTimeDetector  buildtime.Detector
 	clusters           clusterDatastore.DataStore
+	networkPolicies    networkPoliciesDS.DataStore
 
 	notifications processor.Processor
 
@@ -169,6 +172,49 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}, nil
 }
 
+func (s *serviceImpl) getNetworkPoliciesForDeployment(ctx context.Context, deployment *storage.Deployment) (*augmentedobjs.NetworkPoliciesApplied, error) {
+	if deployment.GetClusterId() == "" {
+		return nil, nil
+	}
+	// storedPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, deployment.GetClusterId(), deployment.GetNamespace())
+	_, err := s.networkPolicies.GetNetworkPolicies(ctx, deployment.GetClusterId(), deployment.GetNamespace())
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get network policies for clusterId %s, on namespace %s", deployment.GetClusterId(), deployment.GetNamespace())
+	}
+	// TODO (ROX-10069): Create proper aubmentedobj after ROX-10248 is merged
+	return &augmentedobjs.NetworkPoliciesApplied{
+		HasEgressNetworkPolicy:  false,
+		HasIngressNetworkPolicy: false,
+		Policies:                nil,
+	}, nil
+}
+
+func (s *serviceImpl) checkNetworkPolicyFields(deployment *storage.Deployment, filters ...detection.FilterOption) (bool, error) {
+	hasNetworkPolicyFields := false
+	err := s.detector.PolicySet().ForEach(func(compiled detection.CompiledPolicy) error {
+		policy := compiled.Policy()
+		if policy.GetDisabled() {
+			return nil
+		}
+		for _, filter := range filters {
+			if !filter(policy) {
+				return nil
+			}
+		}
+
+		if !compiled.AppliesTo(deployment) {
+			return nil
+		}
+
+		hasNetworkPolicyFields = booleanpolicy.ContainsNetworkPolicyFields(policy)
+		return nil
+	})
+	if err != nil {
+		return hasNetworkPolicyFields, err
+	}
+	return hasNetworkPolicyFields, nil
+}
+
 func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment, policyCategories ...string) (*apiV1.DeployDetectionResponse_Run, error) {
 	images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(ctx, enrichmentContext, deployment)
 	if err != nil {
@@ -189,11 +235,28 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		EnforcementOnly: enrichmentContext.EnforcementOnly,
 	}
 
+	np, err := s.getNetworkPoliciesForDeployment(ctx, deployment)
+	if err != nil {
+		return nil, err
+	}
+
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
-	alerts, err := s.detector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
-		Deployment: deployment,
-		Images:     images,
-	}, filter)
+	enhancedDeployment := booleanpolicy.EnhancedDeployment{
+		Deployment:             deployment,
+		Images:                 images,
+		NetworkPoliciesApplied: np,
+	}
+
+	var warnings []string
+	hasNetworkPolicyFields, err := s.checkNetworkPolicyFields(deployment)
+	if err != nil {
+		return nil, err
+	}
+	if np == nil && hasNetworkPolicyFields {
+		warnings = append(warnings, "Ingress/Egress Network Policy criteria will not be evaluated")
+	}
+
+	alerts, err := s.detector.Detect(detectionCtx, enhancedDeployment, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -202,18 +265,19 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		return nil, errors.Errorf("allowed categories %v did not match any policy categories", unusedCategories)
 	}
 	return &apiV1.DeployDetectionResponse_Run{
-		Name:   deployment.GetName(),
-		Type:   deployment.GetType(),
-		Alerts: alerts,
+		Name:     deployment.GetName(),
+		Type:     deployment.GetType(),
+		Alerts:   alerts,
+		Warnings: warnings,
 	}, nil
 }
 
-func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, obj k8sRuntime.Object, policyCategories []string) (*apiV1.DeployDetectionResponse_Run, error) {
+func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, obj k8sRuntime.Object, policyCategories []string, clusterID string) (*apiV1.DeployDetectionResponse_Run, error) {
 	if !kubernetes.IsDeploymentResource(obj.GetObjectKind().GroupVersionKind().Kind) {
 		return nil, nil
 	}
 
-	deployment, err := resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, "", "")
+	deployment, err := resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, clusterID, "")
 	if err != nil {
 		return nil, errox.InvalidArgs.New("could not convert to deployment from resource").CausedBy(err)
 	}
@@ -305,7 +369,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {
-		run, err := s.runDeployTimeDetect(ctx, eCtx, r, req.GetPolicyCategories())
+		run, err := s.runDeployTimeDetect(ctx, eCtx, r, req.GetPolicyCategories(), req.GetClusterId())
 		if err != nil {
 			return nil, errox.InvalidArgs.New("unable to convert object").CausedBy(err)
 		}
