@@ -99,7 +99,7 @@ function go_build_file() {
 function invoke_go_build() {
   local gcflags=()
   if [[ "$DEBUG_BUILD" == "yes" ]]; then
-    gcflags+=(-gcflags "all=-N -l")
+    gcflags+=(-gcflags "all=-N -l -m")
   fi
   invoke_go build -trimpath "${gcflags[@]}" "$@"
 }
