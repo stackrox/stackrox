@@ -27,7 +27,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-10217: Remove format validation from the URL field of the generic webhook integration form
 - ROX-9435: Updated dryrun API to generate preview violations for disabled policies
 - Support for security policies that do not have a policyVersion or have versions prior to 1.1 will be removed. If you have externally stored older policies, they cannot be imported.
-- ROX-10021: RHCOS node support is dropped until major improvements are made in ROX-8944 (full host scanning).
+- ROX-10021: RHCOS node support is dropped until major improvements are made in ROX-8944.
 
 ## [69.1]
 
