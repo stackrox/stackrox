@@ -388,6 +388,9 @@ func (s *Schema) WithReference(ref *Schema) *Schema {
 			return s
 		}
 	}
+	for _, c := range s.Children {
+		
+	}
 	s.Parents = append(s.Parents, ref)
 	ref.Children = append(ref.Children, s)
 	return s

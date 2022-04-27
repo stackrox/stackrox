@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_SearchCategory_DEPLOYMENTS, schema)
+	mapping.RegisterCategoryToTable(v1.SearchCategory_DEPLOYMENTS, schema)
 }
 
 // NewIndexer returns new indexer for `storage.Deployment`.
@@ -33,13 +33,13 @@ type indexerImpl struct {
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Deployment")
 
-	return postgres.RunCountRequest(v1.SearchCategory_SearchCategory_DEPLOYMENTS, q, b.db)
+	return postgres.RunCountRequest(v1.SearchCategory_DEPLOYMENTS, q, b.db)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Deployment")
 
-	return postgres.RunSearchRequest(v1.SearchCategory_SearchCategory_DEPLOYMENTS, q, b.db)
+	return postgres.RunSearchRequest(v1.SearchCategory_DEPLOYMENTS, q, b.db)
 }
 
 //// Stubs for satisfying interfaces
