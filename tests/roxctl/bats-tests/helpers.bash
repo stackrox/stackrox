@@ -302,7 +302,7 @@ run_invalid_flavor_value_test() {
 
   run "$roxctl_bin" central generate "$orch" "${extra_params[@]}" pvc --output-dir "$(mktemp -d -u)"
   assert_failure
-  assert_output --regexp "invalid arguments: '--image-defaults': unexpected value .*, allowed values are \[.*\]"
+  assert_output --regexp "invalid command option: '--image-defaults': unexpected value .*, allowed values are \[.*\]"
 }
 
 # run_with_debug_flag_test copies chart bundle content into a temporary folder, modifies it, and executes a given command with the debug flag
