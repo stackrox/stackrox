@@ -578,9 +578,22 @@
         "topCvss": {
           "type": "number",
           "format": "float"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageNodeNote"
+          }
         }
       },
-      "title": "Node represents information about a node in the cluster.\nnext available tag: 27"
+      "title": "Node represents information about a node in the cluster.\nnext available tag: 28"
+    },
+    "storageNodeNote": {
+      "type": "string",
+      "enum": [
+        "MISSING_SCAN_DATA"
+      ],
+      "default": "MISSING_SCAN_DATA"
     },
     "storageNodeScan": {
       "type": "object",
@@ -597,8 +610,24 @@
           "items": {
             "$ref": "#/definitions/storageEmbeddedNodeScanComponent"
           }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageNodeScanNote"
+          }
         }
-      }
+      },
+      "title": "Next tag: 5"
+    },
+    "storageNodeScanNote": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "UNSUPPORTED",
+        "KERNEL_UNSUPPORTED"
+      ],
+      "default": "UNSET"
     },
     "storageTaint": {
       "type": "object",

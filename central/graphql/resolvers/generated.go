@@ -847,6 +847,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"labels: [Label!]!",
 		"lastUpdated: Time",
 		"name: String!",
+		"notes: [Node_Note!]!",
 		"operatingSystem: String!",
 		"osImage: String!",
 		"priority: Int!",
@@ -855,9 +856,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"taints: [Taint]!",
 	}))
 	utils.Must(builder.AddType("NodeScan", []string{
+		"notes: [NodeScan_Note!]!",
 		"operatingSystem: String!",
 		"scanTime: Time",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Note(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Node_Note(0)))
 	utils.Must(builder.AddType("Notifier", []string{
 		"awsSecurityHub: AWSSecurityHub",
 		"cscc: CSCC",
@@ -7828,6 +7832,11 @@ func (resolver *nodeResolver) Name(ctx context.Context) string {
 	return value
 }
 
+func (resolver *nodeResolver) Notes(ctx context.Context) []string {
+	value := resolver.data.GetNotes()
+	return stringSlice(value)
+}
+
 func (resolver *nodeResolver) OperatingSystem(ctx context.Context) string {
 	value := resolver.data.GetOperatingSystem()
 	return value
@@ -7882,6 +7891,11 @@ func (resolver *Resolver) wrapNodeScans(values []*storage.NodeScan, err error) (
 	return output, nil
 }
 
+func (resolver *nodeScanResolver) Notes(ctx context.Context) []string {
+	value := resolver.data.GetNotes()
+	return stringSlice(value)
+}
+
 func (resolver *nodeScanResolver) OperatingSystem(ctx context.Context) string {
 	value := resolver.data.GetOperatingSystem()
 	return value
@@ -7890,6 +7904,42 @@ func (resolver *nodeScanResolver) OperatingSystem(ctx context.Context) string {
 func (resolver *nodeScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScanTime()
 	return timestamp(value)
+}
+
+func toNodeScan_Note(value *string) storage.NodeScan_Note {
+	if value != nil {
+		return storage.NodeScan_Note(storage.NodeScan_Note_value[*value])
+	}
+	return storage.NodeScan_Note(0)
+}
+
+func toNodeScan_Notes(values *[]string) []storage.NodeScan_Note {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.NodeScan_Note, len(*values))
+	for i, v := range *values {
+		output[i] = toNodeScan_Note(&v)
+	}
+	return output
+}
+
+func toNode_Note(value *string) storage.Node_Note {
+	if value != nil {
+		return storage.Node_Note(storage.Node_Note_value[*value])
+	}
+	return storage.Node_Note(0)
+}
+
+func toNode_Notes(values *[]string) []storage.Node_Note {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Node_Note, len(*values))
+	for i, v := range *values {
+		output[i] = toNode_Note(&v)
+	}
+	return output
 }
 
 type notifierResolver struct {
