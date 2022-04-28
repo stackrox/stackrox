@@ -16,7 +16,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddType("EmbeddedImageVulnerability", []string{
+		schema.AddType("ImageVulnerability", []string{
 			"id: ID!",
 			"cve: String!",
 			"cvss: Float!",
@@ -40,19 +40,17 @@ func init() {
 			"publishedOn: Time",
 			"lastModified: Time",
 			"impactScore: Float!",
-			"vulnerabilityType: String!",
-			"vulnerabilityTypes: [String!]!",
 			"suppressed: Boolean!",
 			"suppressActivation: Time",
 			"suppressExpiry: Time",
 			"activeState(query: String): ActiveState",
 			"vulnerabilityState: String!",
 			"effectiveVulnerabilityRequest: VulnerabilityRequest",
+			"unusedVarSink(query: String): Int",
 		}),
-		schema.AddQuery("imageVulnerability(id: ID): EmbeddedImageVulnerability"),
-		schema.AddQuery("imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedImageVulnerability!]!"),
+		schema.AddQuery("imageVulnerability(id: ID): ImageVulnerability"),
+		schema.AddQuery("imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!"),
 		schema.AddQuery("imageVulnerabilityCount(query: String): Int!"),
-		schema.AddExtraResolver("EmbeddedImageVulnerability", `unusedVarSink(query: String): Int`),
 	)
 }
 
@@ -70,8 +68,7 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
 	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(q.String(),
-			search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_IMAGE_CVE.String()).Query())
+		query := withImageTypeFiltering(q.String())
 		return resolver.vulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
 	}
 	// TODO add postgres support
@@ -82,8 +79,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCount")
 	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(),
-			search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_IMAGE_CVE.String()).Query())
+		query := withImageTypeFiltering(args.String())
 		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
 	}
 	// TODO add postgres support
@@ -94,10 +90,15 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 func (resolver *Resolver) ImageVulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnCounter")
 	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(),
-			search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_IMAGE_CVE.String()).Query())
+		query := withImageTypeFiltering(args.String())
 		return resolver.vulnCounterV2(ctx, RawQuery{Query: &query})
 	}
 	// TODO add postgres support
 	return nil, errors.New("Resolver ImageVulnCounter does not support postgres yet")
+}
+
+// withImageTypeFiltering adds a conjunction as a raw query to filter vuln type by image
+func withImageTypeFiltering(q string) string {
+	return search.AddRawQueriesAsConjunction(q,
+		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_IMAGE_CVE.String()).Query())
 }
