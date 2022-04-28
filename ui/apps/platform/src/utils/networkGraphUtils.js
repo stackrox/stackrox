@@ -1268,3 +1268,24 @@ export function getIsNodeHoverable(type) {
         type === nodeTypes.CIDR_BLOCK
     );
 }
+
+/**
+ * Attempt to get a more descriptive error message based on the text of the server
+ * response, otherwise return a standard error message.
+ *
+ * @param {string} serverError The error message sent from the server.
+ * @param {string=} defaultMessage A default message to use as a fallback for non-specific error cases.
+ *
+ * @returns {string} The user facing error message to display.
+ */
+export function getErrorMessageFromServerResponse(
+    serverError,
+    defaultMessage = 'Please refresh the page. If this problem continues, please contact support.'
+) {
+    // Attempt to detect scale issues from the server error. This typically occurs when filters
+    // are selected that create a graph too large for the backend to calculate efficiently.
+    if (serverError.includes('exceeds maximum')) {
+        return 'To reload the graph, try updating the filters at the top of the page.';
+    }
+    return defaultMessage;
+}

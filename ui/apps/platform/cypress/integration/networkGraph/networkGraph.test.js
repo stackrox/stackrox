@@ -1,3 +1,4 @@
+import * as api from '../../constants/apiEndpoints';
 import { selectors as networkPageSelectors } from '../../constants/NetworkPage';
 import withAuth from '../../helpers/basicAuth';
 import {
@@ -5,6 +6,8 @@ import {
     filterDeployments,
     filterNamespaces,
     selectDeploymentFilter,
+    selectNamespaceFilters,
+    visitNetworkGraph,
     visitNetworkGraphWithNamespaceFilters,
 } from '../../helpers/networkGraph';
 
@@ -65,5 +68,30 @@ describe('Network Graph Search', () => {
             });
             expect(minDeps).to.include.members(['central', 'scanner', 'sensor']);
         });
+    });
+
+    it('should render an error message when the server fails to return a successful response', () => {
+        visitNetworkGraph();
+
+        // Stub out an error response from the server
+        const error =
+            'Number of deployments (2200) exceeds maximum allowed for Network Graph: 2000';
+        cy.intercept('GET', api.network.networkGraph, {
+            statusCode: 500,
+            body: { error, message: error },
+        }).as('networkGraph');
+        selectNamespaceFilters('stackrox', 'kube-system');
+        cy.wait('@networkGraph');
+
+        cy.get(networkPageSelectors.errorOverlay.heading);
+        cy.get(networkPageSelectors.errorOverlay.message(error));
+
+        // Ignore previously stubbed error response and allow the request to respond normally
+        cy.intercept('GET', api.network.networkGraph, (req) => req.continue()).as('networkGraph');
+        selectNamespaceFilters('kube-system');
+        cy.wait('@networkGraph');
+
+        cy.get(networkPageSelectors.errorOverlay.heading).should('not.exist');
+        cy.get(networkPageSelectors.cytoscapeContainer);
     });
 });
