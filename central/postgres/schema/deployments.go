@@ -37,7 +37,8 @@ var (
                    RiskScore numeric,
                    ProcessTags text[],
                    serialized bytea,
-                   PRIMARY KEY(Id)
+                   PRIMARY KEY(Id),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (NamespaceId) REFERENCES namespaces(Id) ON DELETE CASCADE
                )
                `,
 		Indexes: []string{},
@@ -174,7 +175,8 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments").
-			WithReference(ImagesSchema)
+			WithReference(ImagesSchema).
+			WithReference(NamespacesSchema)
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployments", (*storage.Deployment)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema

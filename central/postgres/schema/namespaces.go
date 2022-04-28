@@ -38,8 +38,7 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NamespaceMetadata)(nil)), "namespaces").
-			WithReference(ClustersSchema)
+		schema = walker.Walk(reflect.TypeOf((*storage.NamespaceMetadata)(nil)), "namespaces")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NAMESPACES, "namespaces", (*storage.NamespaceMetadata)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
