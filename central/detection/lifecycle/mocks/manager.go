@@ -90,6 +90,18 @@ func (mr *MockManagerMockRecorder) IndicatorAdded(indicator interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndicatorAdded", reflect.TypeOf((*MockManager)(nil).IndicatorAdded), indicator)
 }
 
+// RemoveDeploymentFromObservation mocks base method.
+func (m *MockManager) RemoveDeploymentFromObservation(deploymentID string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RemoveDeploymentFromObservation", deploymentID)
+}
+
+// RemoveDeploymentFromObservation indicates an expected call of RemoveDeploymentFromObservation.
+func (mr *MockManagerMockRecorder) RemoveDeploymentFromObservation(deploymentID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveDeploymentFromObservation", reflect.TypeOf((*MockManager)(nil).RemoveDeploymentFromObservation), deploymentID)
+}
+
 // RemovePolicy mocks base method.
 func (m *MockManager) RemovePolicy(policyID string) error {
 	m.ctrl.T.Helper()

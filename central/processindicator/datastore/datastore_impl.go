@@ -148,6 +148,24 @@ func (ds *datastoreImpl) GetProcessIndicator(ctx context.Context, id string) (*s
 	return indicator, true, nil
 }
 
+func (ds *datastoreImpl) GetProcessIndicators(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, bool, error) {
+	indicators, _, err := ds.storage.GetMany(ctx, ids)
+	if err != nil || len(indicators) == 0 {
+		return nil, false, err
+	}
+
+	var allowedIndicators []*storage.ProcessIndicator
+	for _, indicator := range indicators {
+		if ok, err := checkReadAccess(ctx, indicator); !ok || err != nil {
+			continue
+		}
+
+		allowedIndicators = append(allowedIndicators, indicator)
+	}
+
+	return allowedIndicators, len(allowedIndicators) != 0, nil
+}
+
 func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ...*storage.ProcessIndicator) error {
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err

@@ -52,7 +52,7 @@ message DeleteProcessBaselinesResponse {
 
 // `ProcessBaselineService` APIs can be used to manage process baselines.
 service ProcessBaselineService {
-    // `GetProcessBaselineById` returns the single
+    // `GetProcessBaseline` returns the single
     // process baseline referenced by the given ID.
     rpc GetProcessBaseline (GetProcessBaselineRequest) returns (storage.ProcessBaseline) {
         option (google.api.http) = {
@@ -60,7 +60,15 @@ service ProcessBaselineService {
             };
     }
 
-    // `AddToProcessBaselines` adds a list of process
+    // `GetLoadProcessBaseline` returns the single
+    // process baseline referenced by the given ID.
+    rpc GetLoadProcessBaseline (GetProcessBaselineRequest) returns (storage.ProcessBaseline) {
+        option (google.api.http) = {
+            get: "/v1/processbaselines/lazy/key"
+        };
+    }
+
+    // `UpdateProcessBaselines` adds a list of process
     // names to each of a list of process baselines.
     rpc UpdateProcessBaselines (UpdateProcessBaselinesRequest) returns (UpdateProcessBaselinesResponse) {
         option (google.api.http) = {

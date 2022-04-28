@@ -5,6 +5,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/detection/lifecycle"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
@@ -27,6 +29,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.ProcessWhitelist)): {
 			"/v1.ProcessBaselineService/GetProcessBaseline",
+			"/v1.ProcessBaselineService/GetLoadProcessBaseline",
 		},
 		user.With(permissions.Modify(resources.ProcessWhitelist)): {
 			"/v1.ProcessBaselineService/UpdateProcessBaselines",
@@ -40,6 +43,8 @@ type serviceImpl struct {
 	dataStore         datastore.DataStore
 	reprocessor       reprocessor.Loop
 	connectionManager connection.Manager
+	deployments       deploymentStore.DataStore
+	lifecycleManager  lifecycle.Manager
 }
 
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
@@ -72,10 +77,37 @@ func (s *serviceImpl) GetProcessBaseline(ctx context.Context, request *v1.GetPro
 	}
 	baseline, exists, err := s.dataStore.GetProcessBaseline(ctx, request.GetKey())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(errox.NotFound, "No process baseline with key %+v found", request.GetKey())
 	}
 	if !exists {
 		return nil, errors.Wrapf(errox.NotFound, "No process baseline with key %+v found", request.GetKey())
+	}
+	return baseline, nil
+}
+
+func (s *serviceImpl) GetLoadProcessBaseline(ctx context.Context, request *v1.GetProcessBaselineRequest) (*storage.ProcessBaseline, error) {
+	if err := validateKeyNotEmpty(request.GetKey()); err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	baseline, exists, err := s.dataStore.GetProcessBaseline(ctx, request.GetKey())
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		// Make sure the deployment still exists before we try to build a baseline.
+		_, deploymentExists, err := s.deployments.GetDeployment(ctx, request.GetKey().GetDeploymentId())
+		if err != nil {
+			return nil, err
+		}
+		if !deploymentExists {
+			return nil, errors.Wrapf(errox.NotFound, "deployment with id '%s' does not exist", request.GetKey().GetDeploymentId())
+		}
+
+		// Build an unlocked baseline
+		baseline, err = s.dataStore.CreateUnlockedProcessBaseline(ctx, request.GetKey())
+		if err != nil || baseline == nil {
+			return nil, errors.Wrapf(errox.NotFound, "No process baseline with key %+v found", request.GetKey())
+		}
 	}
 	return baseline, nil
 }
@@ -173,9 +205,26 @@ func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.De
 		return response, nil
 	}
 
-	if err := s.dataStore.RemoveProcessBaselinesByIDs(ctx, search.ResultsToIDs(results)); err != nil {
-		return nil, err
+	// go through list of IDs returned from the search results; clear the baseline and remove deployments from observation.
+	for _, r := range results {
+		key, _ := datastore.IDToKey(r.ID)
+
+		// make sure the deployment still exists, if not that process will take care fo the baseline
+		_, exists, err := s.deployments.GetDeployment(ctx, key.GetDeploymentId())
+
+		if exists && err == nil {
+			// Clear the contents of the baseline
+			_, err := s.dataStore.ClearProcessBaseline(ctx, key)
+			if err != nil {
+				log.Errorf("Error clearing process baseline for %q: %v", key, err)
+				continue
+			}
+
+			// Remove the deployment from observation so everything forward is processed as a risk
+			s.lifecycleManager.RemoveDeploymentFromObservation(key.GetDeploymentId())
+		}
 	}
+
 	return response, nil
 }
 
