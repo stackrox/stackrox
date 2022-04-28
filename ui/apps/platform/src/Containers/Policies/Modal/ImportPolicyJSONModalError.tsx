@@ -44,6 +44,7 @@ function ImportPolicyJSONError({
         setDuplicateResolution({ ...duplicateResolution, [key]: value });
     }
 
+    const duplicateErrorsOnly = duplicateErrors.length > 0;
     const showKeepBothPolicies = hasDuplicateIdOnly(duplicateErrors);
     const isBlocked = checkForBlockedSubmit({
         numPolicies: policies?.length ?? 0,
@@ -73,7 +74,11 @@ function ImportPolicyJSONError({
                 <ModalBoxBody>
                     Address the errors below to continue importing policies
                     <Alert
-                        title="Policies already exist"
+                        title={
+                            duplicateErrorsOnly
+                                ? 'Policies already exist'
+                                : 'Errors trying to import policies'
+                        }
                         variant="danger"
                         className="pf-u-mt-md"
                         isInline
@@ -85,7 +90,7 @@ function ImportPolicyJSONError({
                                 </li>
                             ))}
                         </ul>
-                        {duplicateErrors && (
+                        {duplicateErrorsOnly && (
                             <DuplicatePolicyForm
                                 updateResolution={updateResolution}
                                 showKeepBothPolicies={showKeepBothPolicies}
@@ -94,14 +99,16 @@ function ImportPolicyJSONError({
                     </Alert>
                 </ModalBoxBody>
                 <ModalBoxFooter>
-                    <Button
-                        key="import"
-                        variant="primary"
-                        onClick={startImportPolicies}
-                        isDisabled={isBlocked}
-                    >
-                        Resume import
-                    </Button>
+                    {duplicateErrorsOnly && (
+                        <Button
+                            key="import"
+                            variant="primary"
+                            onClick={startImportPolicies}
+                            isDisabled={isBlocked}
+                        >
+                            Resume import
+                        </Button>
+                    )}
                     <Button key="cancel" variant="link" onClick={handleCancelModal}>
                         Cancel
                     </Button>

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
 	"text/template"
 
 	// Embed is used to import the template files
@@ -20,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/tools/generate-helpers/common/packagenames"
 	"golang.org/x/tools/imports"
 )
 
@@ -57,7 +55,6 @@ type properties struct {
 	ObjectPathName string
 	Singular       string
 	WriteOptions   bool
-	OptionsPath    string
 
 	PermissionChecker string
 
@@ -106,7 +103,6 @@ func main() {
 	utils.Must(c.MarkFlagRequired("table"))
 
 	c.Flags().StringVar(&props.Singular, "singular", "", "the singular name of the object")
-	c.Flags().StringVar(&props.OptionsPath, "options-path", "/index/mappings", "path to write out the options to")
 	c.Flags().StringVar(&props.SearchCategory, "search-category", "", "the search category to index under")
 	c.Flags().StringVar(&props.PermissionChecker, "permission-checker", "", "the permission checker that should be used")
 	c.Flags().StringSliceVar(&props.Refs, "references", []string{}, "additional foreign key references as <table_name:type>")
@@ -135,7 +131,6 @@ func main() {
 			"Table":             props.Table,
 			"Schema":            schema,
 			"SearchCategory":    fmt.Sprintf("SearchCategory_%s", props.SearchCategory),
-			"OptionsPath":       path.Join(packagenames.Rox, props.OptionsPath),
 			"JoinTable":         props.JoinTable,
 			"PermissionChecker": props.PermissionChecker,
 			"Obj": object{

@@ -17,6 +17,7 @@ import (
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -906,20 +907,41 @@ func getPolicies() []*storage.Policy {
 			Name:       "latest1",
 			Severity:   storage.Severity_LOW_SEVERITY,
 			Categories: []string{"Image Assurance", "Privileges Capabilities"},
-			Fields: &storage.PolicyFields{
-				ImageName: &storage.ImageNamePolicy{
-					Tag: "latest1",
+			PolicySections: []*storage.PolicySection{
+				{
+					SectionName: "section-1",
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.ImageTag,
+							Values: []*storage.PolicyValue{
+								{
+									Value: "latest1",
+								},
+							},
+						},
+					},
 				},
 			},
+			PolicyVersion: "1.1",
 		},
 		{
 			Id:         "policy2",
 			Name:       "latest2",
 			Severity:   storage.Severity_LOW_SEVERITY,
 			Categories: []string{"Image Assurance", "Privileges Capabilities"},
-			Fields: &storage.PolicyFields{
-				ImageName: &storage.ImageNamePolicy{
-					Tag: "latest2",
+			PolicySections: []*storage.PolicySection{
+				{
+					SectionName: "section-1",
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.ImageTag,
+							Values: []*storage.PolicyValue{
+								{
+									Value: "latest2",
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -928,11 +950,22 @@ func getPolicies() []*storage.Policy {
 			Name:       "latest3",
 			Severity:   storage.Severity_LOW_SEVERITY,
 			Categories: []string{"Image Assurance", "Privileges Capabilities"},
-			Fields: &storage.PolicyFields{
-				ImageName: &storage.ImageNamePolicy{
-					Tag: "latest3",
+			PolicySections: []*storage.PolicySection{
+				{
+					SectionName: "section-1",
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.ImageTag,
+							Values: []*storage.PolicyValue{
+								{
+									Value: "latest3",
+								},
+							},
+						},
+					},
 				},
 			},
+			PolicyVersion: "1.1",
 		},
 	}
 }

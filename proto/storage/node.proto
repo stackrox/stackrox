@@ -13,7 +13,7 @@ import "gogoproto/gogo.proto";
 package storage;
 
 // Node represents information about a node in the cluster.
-// next available tag: 27
+// next available tag: 28
 message Node {
     // A unique ID identifying this node.
     string id                              = 1 [(gogoproto.moretags) = "search:\"Node ID,store\""];
@@ -62,12 +62,25 @@ message Node {
     oneof set_top_cvss {
         float top_cvss                     = 24 [(gogoproto.moretags) = "search:\"Node Top CVSS,store\""];
     }
+
+    enum Note {
+        MISSING_SCAN_DATA = 0;
+    }
+    repeated Note notes                    = 27;
 }
 
+// Next tag: 5
 message NodeScan {
     google.protobuf.Timestamp          scan_time        = 1 [(gogoproto.moretags) = "search:\"Node Scan Time,store\""];
     string                             operating_system = 3;
     repeated EmbeddedNodeScanComponent components       = 2;
+
+    enum Note {
+        UNSET              = 0;
+        UNSUPPORTED        = 1;
+        KERNEL_UNSUPPORTED = 2;
+    }
+    repeated Note                      notes            = 4;
 }
 
 message EmbeddedNodeScanComponent {

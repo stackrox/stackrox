@@ -210,7 +210,7 @@ func createUniquePolicy(t *testing.T, service v1.PolicyServiceClient) *storage.P
 	return newUniquePolicy
 }
 
-func validateExclusionOrScopeOrNotiferRemoved(t *testing.T, importResp *v1.ImportPoliciesResponse, expectedPolicy *storage.Policy) {
+func validateExclusionOrScopeOrNotifierRemoved(t *testing.T, importResp *v1.ImportPoliciesResponse, expectedPolicy *storage.Policy) {
 	require.NotNil(t, importResp)
 	require.True(t, importResp.GetAllSucceeded())
 	require.NotNil(t, importResp.GetResponses())
@@ -325,7 +325,9 @@ func verifyImportInvalidFails(t *testing.T) {
 	conn := testutils.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
-	badPolicy := &storage.Policy{}
+	badPolicy := &storage.Policy{
+		PolicyVersion: "1.1",
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
 		Policies: []*storage.Policy{badPolicy},
@@ -481,7 +483,7 @@ func verifyNotifiersRemoved(t *testing.T) {
 	policy.Notifiers = nil
 	// All imported policies are treated as custom policies.
 	markPolicyAsCustom(policy)
-	validateExclusionOrScopeOrNotiferRemoved(t, importResp, policy)
+	validateExclusionOrScopeOrNotifierRemoved(t, importResp, policy)
 }
 
 func verifyExclusionsRemoved(t *testing.T) {
@@ -515,7 +517,7 @@ func verifyExclusionsRemoved(t *testing.T) {
 	policy.Exclusions = nil
 	// All imported policies are treated as custom policies.
 	markPolicyAsCustom(policy)
-	validateExclusionOrScopeOrNotiferRemoved(t, importResp, policy)
+	validateExclusionOrScopeOrNotifierRemoved(t, importResp, policy)
 }
 
 func verifyScopesRemoved(t *testing.T) {
@@ -545,7 +547,7 @@ func verifyScopesRemoved(t *testing.T) {
 	policy.Scope = nil
 	// All imported policies are treated as custom policies.
 	markPolicyAsCustom(policy)
-	validateExclusionOrScopeOrNotiferRemoved(t, importResp, policy)
+	validateExclusionOrScopeOrNotifierRemoved(t, importResp, policy)
 }
 
 func verifyOverwriteNameSucceeds(t *testing.T) {

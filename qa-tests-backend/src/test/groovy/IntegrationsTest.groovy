@@ -1,7 +1,7 @@
 import java.util.concurrent.TimeUnit
 
 import io.grpc.StatusRuntimeException
-import org.apache.commons.lang.RandomStringUtils
+import org.apache.commons.lang3.RandomStringUtils
 
 import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass

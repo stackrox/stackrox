@@ -4,10 +4,10 @@ go 1.16
 
 // CAVEAT: This introduces a circular dependency. If you change this line, you MUST change the "exclude"
 // directive at the bottom of the file as well.
-require github.com/stackrox/scanner v0.0.0-20220408151911-460993206ee4
+require github.com/stackrox/scanner v0.0.0-20220426001230-9ab6777c9581
 
 require (
-	cloud.google.com/go/compute v1.5.0
+	cloud.google.com/go/compute v1.6.1
 	cloud.google.com/go/containeranalysis v0.3.0
 	cloud.google.com/go/storage v1.22.0
 	github.com/BurntSushi/toml v1.0.0
@@ -21,17 +21,13 @@ require (
 	github.com/antihax/optional v1.0.0
 	github.com/aws/aws-sdk-go v1.42.43
 	github.com/blevesearch/bleve v1.0.14
-	github.com/blevesearch/blevex v1.0.0 // indirect
-	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
-	github.com/blevesearch/segment v0.9.0 // indirect
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
-	github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e
+	github.com/cloudflare/cfssl v1.6.1
 	github.com/containers/image/v5 v5.20.0
 	github.com/coreos/go-oidc/v3 v3.1.0
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/couchbase/moss v0.1.0 // indirect
-	github.com/couchbase/vellum v1.0.2 // indirect
 	github.com/dave/jennifer v1.5.0
 	github.com/deckarep/golang-set v1.8.0
 	github.com/dexidp/dex v0.0.0-20210917061239-f0186ff2651e
@@ -39,13 +35,12 @@ require (
 	github.com/docker/docker v20.10.13+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
-	github.com/facebookincubator/flog v0.0.0-20190930132826-d2511d0ce33c // indirect
 	github.com/facebookincubator/nvdtools v0.1.4
 	github.com/fatih/color v1.13.0
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v0.4.0
-	github.com/godbus/dbus/v5 v5.0.4
+	github.com/godbus/dbus/v5 v5.1.0
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt/v4 v4.4.1
@@ -65,7 +60,7 @@ require (
 	github.com/hashicorp/go-version v1.4.0
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/heroku/docker-registry-client v0.0.0
-	github.com/jackc/pgtype v1.10.0
+	github.com/jackc/pgtype v1.11.0
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/joelanford/helm-operator v0.0.7
 	github.com/joshdk/go-junit v0.0.0-20210226021600-6145f504ca0d
@@ -101,7 +96,6 @@ require (
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
 	github.com/stackrox/helmtest v0.0.0-20220118100812-1ad97c4de347
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5
-	github.com/steveyen/gtreap v0.1.0 // indirect
 	github.com/stretchr/testify v1.7.1
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/tidwall/gjson v1.14.1
@@ -111,15 +105,15 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.20.0
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
-	golang.org/x/net v0.0.0-20220325170049-de3da57026de
-	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
+	golang.org/x/net v0.0.0-20220412020605-290c469a71a5
+	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20220328115105-d36c6a25d886
+	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad
 	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11
 	golang.org/x/tools v0.1.8
 	golang.stackrox.io/grpc-http1 v0.2.4
-	google.golang.org/api v0.74.0
-	google.golang.org/genproto v0.0.0-20220405205423-9d709892a2bf
+	google.golang.org/api v0.75.0
+	google.golang.org/genproto v0.0.0-20220421151946-72621c1f0bd3
 	google.golang.org/grpc v1.45.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5

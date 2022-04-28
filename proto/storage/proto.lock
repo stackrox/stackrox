@@ -3762,7 +3762,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "search:\"CVE ID,hidden\"sql:\"pk,id\""
                   }
                 ]
               },
@@ -6685,7 +6685,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Component ID,store,hidden\"sql:\"pk\""
+                    "value": "search:\"Component ID,store,hidden\"sql:\"pk,id\""
                   }
                 ]
               },
@@ -8057,7 +8057,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster ID,hidden,store\\\""
+                    "value": "search:\"Cluster ID,hidden,store\"sql:\"fk(Cluster:id),no-fk-constraint\""
                   }
                 ]
               },
@@ -10164,17 +10164,6 @@
                 ]
               },
               {
-                "id": 8,
-                "name": "fields",
-                "type": "PolicyFields",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"-\""
-                  }
-                ]
-              },
-              {
                 "id": 9,
                 "name": "lifecycle_stages",
                 "type": "LifecycleStage",
@@ -10190,18 +10179,6 @@
                 "id": 22,
                 "name": "event_source",
                 "type": "EventSource"
-              },
-              {
-                "id": 10,
-                "name": "whitelists",
-                "type": "Exclusion",
-                "is_repeated": true,
-                "options": [
-                  {
-                    "name": "deprecated",
-                    "value": "true"
-                  }
-                ]
               },
               {
                 "id": 21,
@@ -10320,6 +10297,10 @@
                 "name": "is_default",
                 "type": "bool"
               }
+            ],
+            "reserved_ids": [
+              8,
+              10
             ],
             "messages": [
               {
@@ -10458,176 +10439,6 @@
                 "name": "is_default",
                 "type": "bool"
               }
-            ]
-          },
-          {
-            "name": "PolicyFields",
-            "fields": [
-              {
-                "id": 1,
-                "name": "image_name",
-                "type": "ImageNamePolicy"
-              },
-              {
-                "id": 2,
-                "name": "image_age_days",
-                "type": "int64"
-              },
-              {
-                "id": 3,
-                "name": "line_rule",
-                "type": "DockerfileLineRuleField"
-              },
-              {
-                "id": 4,
-                "name": "cvss",
-                "type": "NumericalPolicy"
-              },
-              {
-                "id": 5,
-                "name": "cve",
-                "type": "string"
-              },
-              {
-                "id": 6,
-                "name": "component",
-                "type": "Component"
-              },
-              {
-                "id": 7,
-                "name": "scan_age_days",
-                "type": "int64"
-              },
-              {
-                "id": 8,
-                "name": "no_scan_exists",
-                "type": "bool"
-              },
-              {
-                "id": 9,
-                "name": "env",
-                "type": "KeyValuePolicy"
-              },
-              {
-                "id": 10,
-                "name": "command",
-                "type": "string"
-              },
-              {
-                "id": 11,
-                "name": "args",
-                "type": "string"
-              },
-              {
-                "id": 12,
-                "name": "directory",
-                "type": "string"
-              },
-              {
-                "id": 13,
-                "name": "user",
-                "type": "string"
-              },
-              {
-                "id": 14,
-                "name": "volume_policy",
-                "type": "VolumePolicy"
-              },
-              {
-                "id": 15,
-                "name": "port_policy",
-                "type": "PortPolicy"
-              },
-              {
-                "id": 16,
-                "name": "required_label",
-                "type": "KeyValuePolicy"
-              },
-              {
-                "id": 17,
-                "name": "required_annotation",
-                "type": "KeyValuePolicy"
-              },
-              {
-                "id": 24,
-                "name": "disallowed_annotation",
-                "type": "KeyValuePolicy"
-              },
-              {
-                "id": 18,
-                "name": "privileged",
-                "type": "bool"
-              },
-              {
-                "id": 19,
-                "name": "drop_capabilities",
-                "type": "string",
-                "is_repeated": true
-              },
-              {
-                "id": 20,
-                "name": "add_capabilities",
-                "type": "string",
-                "is_repeated": true
-              },
-              {
-                "id": 21,
-                "name": "container_resource_policy",
-                "type": "ResourcePolicy"
-              },
-              {
-                "id": 23,
-                "name": "process_policy",
-                "type": "ProcessPolicy"
-              },
-              {
-                "id": 25,
-                "name": "read_only_root_fs",
-                "type": "bool"
-              },
-              {
-                "id": 26,
-                "name": "fixed_by",
-                "type": "string"
-              },
-              {
-                "id": 27,
-                "name": "port_exposure_policy",
-                "type": "PortExposurePolicy"
-              },
-              {
-                "id": 28,
-                "name": "permission_policy",
-                "type": "PermissionPolicy"
-              },
-              {
-                "id": 29,
-                "name": "host_mount_policy",
-                "type": "HostMountPolicy"
-              },
-              {
-                "id": 30,
-                "name": "whitelist_enabled",
-                "type": "bool"
-              },
-              {
-                "id": 31,
-                "name": "required_image_label",
-                "type": "KeyValuePolicy"
-              },
-              {
-                "id": 32,
-                "name": "disallowed_image_label",
-                "type": "KeyValuePolicy"
-              },
-              {
-                "id": 33,
-                "name": "image_signature_verified_by",
-                "type": "string"
-              }
-            ],
-            "reserved_ids": [
-              22
             ]
           },
           {
@@ -11842,7 +11653,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,id\""
                   }
                 ]
               },
@@ -11929,7 +11740,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,id\""
                   }
                 ]
               },
@@ -12001,7 +11812,7 @@
               },
               {
                 "id": 8,
-                "name": "cve_id",
+                "name": "image_cve_id",
                 "type": "string",
                 "options": [
                   {
@@ -12012,7 +11823,7 @@
               },
               {
                 "id": 9,
-                "name": "image_cve_cve",
+                "name": "image_cve",
                 "type": "string",
                 "options": [
                   {
@@ -12044,7 +11855,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,id\""
                   }
                 ]
               },
@@ -12094,7 +11905,7 @@
               },
               {
                 "id": 6,
-                "name": "image_cve_cve",
+                "name": "image_cve",
                 "type": "string",
                 "options": [
                   {
@@ -14216,7 +14027,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\"search:\"Test Key\""
+                    "value": "sql:\"pk,id\"search:\"Test Key\""
                   }
                 ]
               },

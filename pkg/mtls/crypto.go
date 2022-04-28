@@ -256,7 +256,7 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCe
 	}
 
 	csr := &cfcsr.CertificateRequest{
-		KeyRequest:   cfcsr.NewBasicKeyRequest(),
+		KeyRequest:   cfcsr.NewKeyRequest(),
 		SerialNumber: serial.String(),
 	}
 	csrBytes, keyBytes, err := cfcsr.ParseRequest(csr)
