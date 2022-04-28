@@ -32,7 +32,6 @@ import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { knownBackendFlags } from 'utils/featureFlags';
 
 function NotFoundPage(): ReactElement {
     return (
@@ -86,9 +85,7 @@ type BodyProps = {
 function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement {
     const { isDarkMode } = useTheme();
 
-    const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled(
-        knownBackendFlags.ROX_SYSTEM_HEALTH_PF
-    );
+    const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled('ROX_SYSTEM_HEALTH_PF');
 
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
 
