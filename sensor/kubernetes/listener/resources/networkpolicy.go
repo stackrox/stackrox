@@ -58,13 +58,12 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 }
 
 func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) selectorWrapper {
-	var sel selectorWrapper
+	newsel := createSelector(np.GetSpec().GetPodSelector().GetMatchLabels(), true)
 	if oldNp != nil {
-		sel = createSelector(oldNp.GetSpec().GetPodSelector().GetMatchLabels(), true)
-	} else {
-		sel = createSelector(nil, false)
+		oldsel := createSelector(oldNp.GetSpec().GetPodSelector().GetMatchLabels(), true)
+		return or(oldsel, newsel)
 	}
-	return or(sel, createSelector(np.GetSpec().GetPodSelector().GetMatchLabels(), true))
+	return newsel
 }
 
 func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sw selectorWrapper) {
