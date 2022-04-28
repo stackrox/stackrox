@@ -69,5 +69,4 @@ func (s *ImageComponentRelationsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundImageComponentEdge)
-
 }

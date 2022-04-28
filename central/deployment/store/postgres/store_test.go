@@ -71,6 +71,7 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundDeployment)
+<<<<<<< HEAD
 
 	withNoAccessCtx := sac.WithNoAccess(ctx)
 
@@ -193,4 +194,6 @@ func getSACContexts(obj *storage.Deployment) map[string]context.Context {
 				sac.ClusterScopeKeys("unknown cluster"),
 			)),
 	}
+=======
+>>>>>>> 8480ffc25 (avoid overwrites, skip upsert store test  for explicit refs)
 }

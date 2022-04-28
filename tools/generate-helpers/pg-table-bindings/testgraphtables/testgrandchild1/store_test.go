@@ -69,6 +69,7 @@ func (s *Testgrandchild1StoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestGrandChild1)
+<<<<<<< HEAD
 
 	s.NoError(store.Upsert(ctx, testGrandChild1))
 	foundTestGrandChild1, exists, err = store.Get(ctx, testGrandChild1.GetId())
@@ -108,4 +109,6 @@ func (s *Testgrandchild1StoreSuite) TestStore() {
 	testGrandChild1Count, err = store.Count(ctx)
 	s.NoError(err)
 	s.Equal(200, testGrandChild1Count)
+=======
+>>>>>>> 8480ffc25 (avoid overwrites, skip upsert store test  for explicit refs)
 }

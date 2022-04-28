@@ -213,12 +213,21 @@ func generateSchemaRecursive(schema *walker.Schema, refs []*walker.Schema, visit
 		templateMap["SearchCategory"] = fmt.Sprintf("v1.SearchCategory_%s", searchCategory)
 	}
 
+	// Always generate the current schema.
 	if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(pkgPath, schema.Table)); err != nil {
 		return err
 	}
 
 	// No top-level schema has a parent unless attached synthetically.
 	for _, parent := range schema.ReferencedSchema {
+		// Code generation may happen in isolation. Therefore, in the current schema, we generate referenced schema.
+		// If the referenced schema is already generated, then prefer the gen of that proto over
+		// other protos generating it.
+		absFilePath := getSchemaFileName(pkgPath, parent.Table)
+		_, err := os.Stat(absFilePath)
+		if err == nil || os.IsExist(err) {
+			continue
+		}
 		if err := generateSchemaRecursive(parent, []*walker.Schema{}, visited, pkgPath); err != nil {
 			return err
 		}
@@ -227,6 +236,14 @@ func generateSchemaRecursive(schema *walker.Schema, refs []*walker.Schema, visit
 	for _, child := range schema.ReferencingSchema {
 		// If child is the embedded one, it has already been generated in the file above.
 		if child.EmbeddedIn == schema.Table {
+			continue
+		}
+		// Code generation may happen in isolation. Therefore, in the current schema, we generate referencing schema.
+		// If the referencing schema is already generated, then prefer the gen from that proto over
+		// other protos generating it.
+		absFilePath := getSchemaFileName(pkgPath, child.Table)
+		_, err := os.Stat(absFilePath)
+		if err == nil || os.IsExist(err) {
 			continue
 		}
 		if err := generateSchemaRecursive(child, []*walker.Schema{}, visited, pkgPath); err != nil {

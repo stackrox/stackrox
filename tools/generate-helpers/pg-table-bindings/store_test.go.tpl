@@ -78,6 +78,10 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
+    {{- /* Check for referenced schema */ -}}
+    {{- /* No top-level has a parent unless attached synthetically. Such connections require upserting objects into the referenced tables for adhere to referential constraint. However, our project package structure does not allow to do so. Hence, skip the upsert/delete tests. */ -}}
+    {{- if eq (len .Schema.ReferencedSchema) 0 }}
+
     {{if not .JoinTable -}}
     {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped)}}
     withNoAccessCtx := sac.WithNoAccess(ctx)
@@ -135,6 +139,10 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
     s.NoError(err)
     s.Equal(200, {{.TrimmedType|lowerCamelCase}}Count)
     {{- end }}
+
+
+    {{- end }}
+    {{- /* End of the referenced schema check */ -}}
 }
 
 {{ if .Obj.IsDirectlyScoped -}}

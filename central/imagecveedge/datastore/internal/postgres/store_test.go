@@ -69,5 +69,4 @@ func (s *ImageCveRelationsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundImageCVEEdge)
-
 }
