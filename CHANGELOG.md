@@ -28,6 +28,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-9435: Updated dryrun API to generate preview violations for disabled policies
 - Support for security policies that do not have a policyVersion or have versions prior to 1.1 will be removed. If you have externally stored older policies, they cannot be imported.
 - ROX-10021: RHCOS node support is dropped until major improvements are made in ROX-8944.
+- ROX-8533: Show Cluster Health Info if Scanner is running on a secured cluster
 
 ## [69.1]
 
