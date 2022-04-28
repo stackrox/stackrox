@@ -137,7 +137,7 @@ func (ss *serviceStore) getMatchingServicesWithRoutes(namespace string, labels m
 	ss.lock.RLock()
 	defer ss.lock.RUnlock()
 	for _, entry := range ss.services[namespace] {
-		if entry.selector.matches(labelSet, uint(len(labels))) {
+		if entry.selectorWrapper.matches(labelSet, uint(len(labels))) {
 			svcWithRoutes := serviceWithRoutes{
 				serviceWrap: entry,
 				routes:      ss.routesByServiceMetadata[namespace][entry.Name],

@@ -36,15 +36,14 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 		if oldNp, ok := old.(*networkingV1.NetworkPolicy); ok && oldNp != nil {
 			roxOldNetpol = networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: oldNp}.ToRoxNetworkPolicy()
 		}
-		sel := h.getSelector(roxNetpol, roxOldNetpol)
+		sw := h.getSelector(roxNetpol, roxOldNetpol)
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			h.netpolStore.Delete(roxNetpol.GetId(), roxNetpol.GetNamespace())
 		} else {
 			h.netpolStore.Upsert(roxNetpol)
 		}
 
-		// TODO(ROX-10066): continue refactoring here
-		h.updateDeploymentsFromStore(roxNetpol, sel.getSelector())
+		h.updateDeploymentsFromStore(roxNetpol, sw)
 	}
 
 	return []*central.SensorEvent{
@@ -68,8 +67,8 @@ func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) 
 	return or(sel, matcherOrEverything(np.GetSpec().GetPodSelector().GetMatchLabels()))
 }
 
-func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sel selector) {
-	deployments := h.deploymentStore.getMatchingDeployments(np.GetNamespace(), sel)
+func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sw selectorWrapper) {
+	deployments := h.deploymentStore.getMatchingDeployments(np.GetNamespace(), sw)
 	idsRequireReprocessing := make([]string, 0, len(deployments))
 	for _, deploymentWrap := range deployments {
 		idsRequireReprocessing = append(idsRequireReprocessing, deploymentWrap.GetId())

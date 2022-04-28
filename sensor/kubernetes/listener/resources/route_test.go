@@ -54,11 +54,11 @@ type mockPortExposureReconciler struct {
 	orderedCalls []call
 }
 
-func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(namespace string, sel selector) []*central.SensorEvent {
+func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(namespace string, sw selectorWrapper) []*central.SensorEvent {
 	m.orderedCalls = append(m.orderedCalls,
 		call{
 			"UpdateExposuresForMatchingDeployments",
-			[]interface{}{namespace, sel},
+			[]interface{}{namespace, sw},
 		})
 	return nil
 }

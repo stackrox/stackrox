@@ -65,7 +65,7 @@ func (ds *DeploymentStore) getDeploymentsByIDs(namespace string, idSet set.Strin
 	return deployments
 }
 
-func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector) (matching []*deploymentWrap) {
+func (ds *DeploymentStore) getMatchingDeployments(namespace string, sw selectorWrapper) (matching []*deploymentWrap) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -80,7 +80,7 @@ func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector
 			continue
 		}
 
-		if sel.Matches(labels.Set(wrap.PodLabels)) {
+		if sw.matches(labels.Set(wrap.PodLabels), uint(len(wrap.PodLabels))) {
 			matching = append(matching, wrap)
 		}
 	}
