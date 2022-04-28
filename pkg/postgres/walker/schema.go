@@ -394,21 +394,6 @@ func (s *Schema) WithReference(ref *Schema) *Schema {
 		}
 	}
 
-	// The foreign key may not be on the top-level table. Therefore, go through all the children to find where it resides.
-	for _, c := range s.Children {
-		added := set.NewStringSet()
-		for _, f := range c.Fields {
-			if f.Options.Reference != nil && f.Options.Reference.TypeName == ref.TypeName {
-				if !added.Add(ref.Table) {
-					continue
-				}
-
-				s.Parents = append(s.Parents, ref)
-				ref.Children = append(ref.Children, s)
-			}
-		}
-	}
-
 	added := set.NewStringSet()
 	for _, f := range s.Fields {
 		if f.Options.Reference != nil && f.Options.Reference.TypeName == ref.TypeName {
@@ -418,6 +403,11 @@ func (s *Schema) WithReference(ref *Schema) *Schema {
 			s.Parents = append(s.Parents, ref)
 			ref.Children = append(ref.Children, s)
 		}
+	}
+
+	// The foreign key may not be on the top-level table. Therefore, go through all the children to find where it resides.
+	for _, c := range s.Children {
+		return c.WithReference(ref)
 	}
 	return s
 }

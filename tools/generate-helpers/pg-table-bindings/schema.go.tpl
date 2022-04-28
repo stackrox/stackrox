@@ -56,10 +56,8 @@ var (
         schema = walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}")
         {{- /* Attach reference schemas, if provided. */ -}}
         {{- $schema := .Schema }}
-        {{- range $idx, $ref := $schema.Parents}}
-            {{- if ne $ref.Table $schema.EmbeddedIn -}}.
-                WithReference({{template "schemaVar" $ref}})
-            {{- end }}
+        {{- range $idx, $ref := .Refs}}.
+            WithReference({{template "schemaVar" $ref}})
         {{- end }}
         {{- if .SearchCategory }}
             {{- $ty := .Schema.Type }}

@@ -122,7 +122,7 @@ func main() {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
 
-		compileFKArgAndAttachToSchema(schema, props.Refs)
+		refs := compileFKArgAndAttachToSchema(schema, props.Refs)
 
 		permissionCheckerEnabled := props.PermissionChecker != ""
 		templateMap := map[string]interface{}{
@@ -141,7 +141,7 @@ func main() {
 			},
 		}
 
-		if err := generateSchema(schema); err != nil {
+		if err := generateSchema(schema, refs); err != nil {
 			return err
 		}
 		if props.SchemaOnly {
@@ -173,11 +173,11 @@ func main() {
 	}
 }
 
-func generateSchema(s *walker.Schema) error {
-	return generateSchemaRecursive(s, set.NewStringSet(), schema.SchemaGenFS)
+func generateSchema(s *walker.Schema, refs []*walker.Schema) error {
+	return generateSchemaRecursive(s, refs, set.NewStringSet(), schema.SchemaGenFS)
 }
 
-func generateSchemaRecursive(schema *walker.Schema, visited set.StringSet, pkgPath string) error {
+func generateSchemaRecursive(schema *walker.Schema, refs []*walker.Schema, visited set.StringSet, pkgPath string) error {
 	if !visited.Add(schema.Table) {
 		return nil
 	}
@@ -185,7 +185,9 @@ func generateSchemaRecursive(schema *walker.Schema, visited set.StringSet, pkgPa
 	templateMap := map[string]interface{}{
 		"Schema":         schema,
 		"SearchCategory": "",
+		"Refs":           refs,
 	}
+
 	searchCategory, ok := typeToSearchCategoryMap[stringutils.GetAfter(schema.Type, ".")]
 	if ok {
 		templateMap["SearchCategory"] = fmt.Sprintf("v1.SearchCategory_%s", searchCategory)
@@ -197,7 +199,7 @@ func generateSchemaRecursive(schema *walker.Schema, visited set.StringSet, pkgPa
 
 	// No top-level schema has a parent unless attached synthetically.
 	for _, parent := range schema.Parents {
-		if err := generateSchemaRecursive(parent, visited, pkgPath); err != nil {
+		if err := generateSchemaRecursive(parent, []*walker.Schema{}, visited, pkgPath); err != nil {
 			return err
 		}
 	}
@@ -207,7 +209,7 @@ func generateSchemaRecursive(schema *walker.Schema, visited set.StringSet, pkgPa
 		if child.EmbeddedIn == schema.Table {
 			continue
 		}
-		if err := generateSchemaRecursive(child, visited, pkgPath); err != nil {
+		if err := generateSchemaRecursive(child, []*walker.Schema{}, visited, pkgPath); err != nil {
 			return err
 		}
 	}
