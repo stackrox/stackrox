@@ -1,10 +1,13 @@
 package m97tom98
 
 import (
+	"fmt"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/gorm/models"
+	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/tecbot/gorocksdb"
@@ -30,31 +33,29 @@ var (
 func moveIntegrationHealths(rocksDB *gorocksdb.DB, postgresDB *gorm.DB) error {
 	it := rocksDB.NewIterator(gorocksdb.NewDefaultReadOptions())
 	defer it.Close()
-	tx := postgresDB.Session(&gorm.Session{})
-	if !tx.Migrator().HasTable(postgresTable) {
-		if err := tx.Migrator().CreateTable(postgresTable); err != nil {
-			return err
-		}
+	db := postgresDB.Table(models.IntegrationHealthTableName)
+	err := db.AutoMigrate(&models.IntegrationHealth{})
+	if err != nil {
+		log.WriteToStderrf("failed to auto migrate %v", err)
+		return err
 	}
-	var ihs []*storage.IntegrationHealth
 	var conv []*models.IntegrationHealth
 	for it.Seek(rocksdbBucket); it.ValidForPrefix(rocksdbBucket); it.Next() {
 		r := &storage.IntegrationHealth{}
 		if err := proto.Unmarshal(it.Value().Data(), r); err != nil {
 			return errors.Wrapf(err, "Failed to unmarshal integration health data for key %v", it.Key().Data())
 		}
-		ihs = append(ihs, r)
 		conv = append(conv, &models.IntegrationHealth{
 			Id:         r.GetId(),
 			Serialized: it.Value().Data(),
 		})
 	}
-	postgresDB.AutoMigrate(&models.IntegrationHealth{})
 
-	postgresDB.Table(models.IntegrationHealthTableName).Model(&models.IntegrationHealth{}).CreateInBatches(conv, 5000)
-	if err := tx.Commit().Error; err != nil {
+	log.WriteToStderr(fmt.Sprintf("converted %d integration health", len(conv)))
+	tx := db.Model(&models.IntegrationHealth{}).CreateInBatches(conv, 5000)
+	if tx.Error != nil {
 		tx.Rollback()
-		return err
+		return tx.Error
 	}
 	return nil
 }

@@ -1,12 +1,17 @@
 package m98tom99
 
 import (
+	"fmt"
+
 	"github.com/gogo/protobuf/proto"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/gorm/models"
+	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/tecbot/gorocksdb"
 	"gorm.io/gorm"
 )
@@ -30,23 +35,18 @@ var (
 func moveAlerts(rocksDB *gorocksdb.DB, postgresDB *gorm.DB) error {
 	it := rocksDB.NewIterator(gorocksdb.NewDefaultReadOptions())
 	defer it.Close()
-	tx := postgresDB.Session(&gorm.Session{})
-	if !tx.Migrator().HasTable(postgresTable) {
-		if err := tx.Migrator().CreateTable(postgresTable); err != nil {
-			return err
-		}
-	}
 
-	postgresDB.AutoMigrate(&models.IntegrationHealth{})
-	var ihs []*storage.Alert
+	db := postgresDB.Table(models.AlertsTableName)
+	if err := db.AutoMigrate(&models.Alert{}); err != nil {
+		log.WriteToStderrf("failed to auto migrate alerts %v", err)
+		return err
+	}
 	var conv []*models.Alert
 	for it.Seek(rocksdbBucket); it.ValidForPrefix(rocksdbBucket); it.Next() {
 		r := &storage.Alert{}
 		if err := proto.Unmarshal(it.Value().Data(), r); err != nil {
 			return errors.Wrapf(err, "Failed to unmarshal alert data for key %v", it.Key().Data())
 		}
-		ihs = append(ihs, r)
-
 		conv = append(conv, &models.Alert{
 			Id:         r.GetId(),
 			Serialized: it.Value().Data(),
@@ -55,11 +55,11 @@ func moveAlerts(rocksDB *gorocksdb.DB, postgresDB *gorm.DB) error {
 			PolicyName:               r.GetPolicy().GetName(),
 			PolicyDescription:        r.GetPolicy().GetDescription(),
 			PolicyDisabled:           r.GetPolicy().GetDisabled(),
-			PolicyCategories:         r.GetPolicy().GetCategories(),
-			PolicyLifecycleStages:    r.GetPolicy().GetLifecycleStages(),
+			PolicyCategories:         pq.Array(r.GetPolicy().GetCategories()).(*pq.StringArray),
+			PolicyLifecycleStages:    pq.Array(pgutils.ConvertEnumSliceToIntArray(r.GetPolicy().GetLifecycleStages())).(*pq.Int32Array),
 			PolicySeverity:           r.GetPolicy().GetSeverity(),
-			PolicyEnforcementActions: r.GetPolicy().GetEnforcementActions(),
-			PolicyLastUpdated:        r.GetPolicy().GetLastUpdated(),
+			PolicyEnforcementActions: pq.Array(pgutils.ConvertEnumSliceToIntArray(r.GetPolicy().GetEnforcementActions())).(*pq.Int32Array),
+			PolicyLastUpdated:        pgutils.NilOrTime(r.GetPolicy().GetLastUpdated()),
 			PolicySORTName:           r.GetPolicy().GetSORTName(),
 			PolicySORTLifecycleStage: r.GetPolicy().GetSORTLifecycleStage(),
 			PolicySORTEnforcement:    r.GetPolicy().GetSORTEnforcement(),
@@ -88,16 +88,17 @@ func moveAlerts(rocksDB *gorocksdb.DB, postgresDB *gorm.DB) error {
 			ResourceName:         r.GetResource().GetName(),
 
 			EnforcementAction: r.GetEnforcement().GetAction(),
-			Time:              r.GetTime(),
+			Time:              pgutils.NilOrTime(r.GetTime()),
 			State:             r.GetState(),
-			Tags:              r.GetTags(),
+			Tags:              pq.Array(r.GetTags()).(*pq.StringArray),
 		})
 	}
 
-	postgresDB.Table(models.IntegrationHealthTableName).Model(&models.IntegrationHealth{}).CreateInBatches(conv, 5000)
-	if err := tx.Commit().Error; err != nil {
+	log.WriteToStderr(fmt.Sprintf("converted %d alerts", len(conv)))
+	tx := postgresDB.Table(models.AlertsTableName).Model(&models.Alert{}).CreateInBatches(conv, 5000)
+	if tx.Error != nil {
 		tx.Rollback()
-		return err
+		return tx.Error
 	}
 	return nil
 }

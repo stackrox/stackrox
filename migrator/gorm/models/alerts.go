@@ -1,7 +1,9 @@
 package models
 
 import (
-	"github.com/gogo/protobuf/types"
+	"time"
+
+	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -71,25 +73,22 @@ type Alerts struct {
 }
 */
 
-type Resource struct {
-}
-
 type Alert struct {
 	Id         string `gorm:"type:varchar;primarykey"`
 	Serialized []byte `gorm:"type:bytea"`
 
-	PolicyId                 string                      `gorm:"type:varchar;column:policy_id"`
-	PolicyName               string                      `gorm:"type:varchar;column:policy_name"`
-	PolicyDescription        string                      `gorm:"type:varchar;column:policy_description"`
-	PolicyDisabled           bool                        `gorm:"column:policy_disabled"`
-	PolicyCategories         []string                    `gorm:"type:text[];column:policy_categories"`
-	PolicyLifecycleStages    []storage.LifecycleStage    `gorm:"type:integer[];column:policy_lifecyclestages"`
-	PolicySeverity           storage.Severity            `gorm:"type:integer;column:policy_severity"`
-	PolicyEnforcementActions []storage.EnforcementAction `gorm:"type:integer[];column:policy_enforcementactions"`
-	PolicyLastUpdated        *types.Timestamp            `gorm:"type:timestamp;column:policy_lastupdated"`
-	PolicySORTName           string                      `gorm:"type:varchar;column:policy_sortname"`
-	PolicySORTLifecycleStage string                      `gorm:"type:varchar;column:policy_sortlifecyclestage"`
-	PolicySORTEnforcement    bool                        `gorm:"column:policy_sortenforcement"`
+	PolicyId                 string           `gorm:"type:varchar;column:policy_id"`
+	PolicyName               string           `gorm:"type:varchar;column:policy_name"`
+	PolicyDescription        string           `gorm:"type:varchar;column:policy_description"`
+	PolicyDisabled           bool             `gorm:"column:policy_disabled"`
+	PolicyCategories         *pq.StringArray  `gorm:"type:text[];column:policy_categories"`
+	PolicyLifecycleStages    *pq.Int32Array   `gorm:"type:integer[];column:policy_lifecyclestages"`
+	PolicySeverity           storage.Severity `gorm:"type:integer;column:policy_severity"`
+	PolicyEnforcementActions *pq.Int32Array   `gorm:"type:integer[];column:policy_enforcementactions"`
+	PolicyLastUpdated        *time.Time       `gorm:"type:timestamp;column:policy_lastupdated"`
+	PolicySORTName           string           `gorm:"type:varchar;column:policy_sortname"`
+	PolicySORTLifecycleStage string           `gorm:"type:varchar;column:policy_sortlifecyclestage"`
+	PolicySORTEnforcement    bool             `gorm:"column:policy_sortenforcement"`
 
 	LifecycleStage storage.LifecycleStage `gorm:"type:integer;column:lifecyclestage;index:alerts_lifecyclestage,type:btree"`
 	ClusterId      string                 `gorm:"type:varchar;column:clusterid"`
@@ -115,7 +114,7 @@ type Alert struct {
 	ResourceName         string                              `gorm:"type:varchar"`
 
 	EnforcementAction storage.EnforcementAction `gorm:"type:integer"`
-	Time              *types.Timestamp          `gorm:"type:timestamp"`
+	Time              *time.Time                `gorm:"type:timestamp"`
 	State             storage.ViolationState    `gorm:"type:integer;index:alerts_state,type:btree"`
-	Tags              []string                  `gorm:"type:text[]"`
+	Tags              *pq.StringArray           `gorm:"type:text[]"`
 }
