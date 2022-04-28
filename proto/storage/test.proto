@@ -173,7 +173,7 @@ message TestParent1 {
 
 
    message Child1Ref {
-     string child_id = 1 [(gogoproto.moretags) = 'search:"Test Child1 ID sql:"fk(TestChild1:id),no-fk-constraint"'];
+     string child_id = 1 [(gogoproto.moretags) = 'search:"Test Child1 ID" sql:"fk(TestChild1:id),no-fk-constraint"'];
    }
 
    repeated Child1Ref children = 3;
