@@ -31,11 +31,6 @@ var (
 	// been provided. The request can not be processed.
 	NoCredentials = makeSentinel("credentials not found")
 
-	// NoValidRole indicates that though user credentials have been provided,
-	// they do not specify a valid role. This usually happens because of
-	// misconfigured access control. The effect is similar to NoCredentials.
-	NoValidRole = makeSentinel("no valid role")
-
 	// NotAuthorized indicates that valid credentials have been provided but are
 	// insufficient for processing the request.
 	NotAuthorized = makeSentinel("not authorized")
@@ -46,9 +41,3 @@ var (
 
 	// When adding a new error please update the translators in this package (gRPC, etc.).
 )
-
-// GenericNoValidRole wraps NoValidRole with a generic error message.
-func GenericNoValidRole() error {
-	return NoValidRole.New("access for this user is not authorized: no valid role," +
-		" please contact your system administrator")
-}
