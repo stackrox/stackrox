@@ -6,6 +6,7 @@ import (
 	"go/scanner"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -138,12 +139,18 @@ func main() {
 		refs := compileFKArgAndAttachToSchema(schema, props.Refs)
 
 		permissionCheckerEnabled := props.PermissionChecker != ""
+		var searchCategory string
+		if asInt, err := strconv.Atoi(props.SearchCategory); err == nil {
+			searchCategory = fmt.Sprintf("SearchCategory(%d)", asInt)
+		} else {
+			searchCategory = fmt.Sprintf("SearchCategory_%s", props.SearchCategory)
+		}
 		templateMap := map[string]interface{}{
 			"Type":              props.Type,
 			"TrimmedType":       stringutils.GetAfter(props.Type, "."),
 			"Table":             props.Table,
 			"Schema":            schema,
-			"SearchCategory":    fmt.Sprintf("SearchCategory_%s", props.SearchCategory),
+			"SearchCategory":    searchCategory,
 			"JoinTable":         props.JoinTable,
 			"PermissionChecker": props.PermissionChecker,
 			"Obj": object{
