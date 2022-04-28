@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 
+SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+source "$SCRIPTS_ROOT/scripts/lib.sh"
+
 set -euo pipefail
 
 # A library of CI related reusable bash functions
 
-set +u
-SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-set -u
-
-source "$SCRIPTS_ROOT/scripts/lib.sh"
 
 # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
 RELEASE_RC_TAG_BASH_REGEX='^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
