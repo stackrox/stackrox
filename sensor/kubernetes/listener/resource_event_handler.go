@@ -1,6 +1,8 @@
 package listener
 
 import (
+	"time"
+
 	osAppsExtVersions "github.com/openshift/client-go/apps/informers/externalversions"
 	osConfigExtVersions "github.com/openshift/client-go/config/informers/externalversions"
 	osRouteExtVersions "github.com/openshift/client-go/route/informers/externalversions"
@@ -22,8 +24,13 @@ import (
 )
 
 func (k *listenerImpl) handleAllEvents() {
+	var resyncingPeriod = 1 * time.Minute
+
 	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), noResyncPeriod)
-	resyncingSif := informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncingPeriod)
+	// TODO(ROX-10638): rename resyncingSif into sth else once we get rid of resyncing
+	// used to use resyncingPeriod instead of noResyncPeriod
+	// resyncingSif := informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncingPeriod)
+	resyncingSif := sif
 
 	// Create informer factories for needed orchestrators.
 	var osAppsFactory osAppsExtVersions.SharedInformerFactory
