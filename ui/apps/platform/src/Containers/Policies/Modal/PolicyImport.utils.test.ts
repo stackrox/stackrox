@@ -1,4 +1,5 @@
 // system under test (SUT)
+import { ImportPoliciesResponse, ImportPolicyError } from 'services/PoliciesService';
 import {
     parsePolicyImportErrors,
     isDuplicateResolved,
@@ -6,13 +7,11 @@ import {
     getErrorMessages,
     hasDuplicateIdOnly,
     checkForBlockedSubmit,
-    PolicyImportError,
     PolicyResolutionType,
     PolicyImportErrorDuplicateName,
     PolicyImportErrorDuplicateId,
     PolicyImportErrorInvalidPolicy,
-} from '@stackrox/platform-app/src/Containers/Policies/Modal/PolicyImport.utils';
-import { ImportPoliciesResponse, ImportPolicyError } from '@stackrox/platform-app/src/services/PoliciesService';
+} from './PolicyImport.utils';
 
 describe('PolicyImport.utils', () => {
     describe('parsePolicyImportErrors', () => {
@@ -29,12 +28,15 @@ describe('PolicyImport.utils', () => {
             const response = getPolicy(errors);
 
             const errorList = parsePolicyImportErrors(response.responses);
-            const duplicateName = response.responses[0].errors[0].type === 'duplicate_name' ? response.responses[0].errors[0].duplicateName : null;
+            const duplicateName =
+                response.responses[0].errors[0].type === 'duplicate_name'
+                    ? response.responses[0].errors[0].duplicateName
+                    : null;
 
             expect(errorList).toEqual([
                 [
                     {
-                        duplicateName: duplicateName,
+                        duplicateName,
                         type: 'duplicate_name',
                         message: 'Could not add policy due to name validation',
                     },
@@ -47,12 +49,15 @@ describe('PolicyImport.utils', () => {
             const response = getPolicy(errors);
 
             const errorList = parsePolicyImportErrors(response.responses);
-            const duplicateName = response.responses[0].errors[0].type === 'duplicate_id' ? response.responses[0].errors[0].duplicateName : null;
+            const duplicateName =
+                response.responses[0].errors[0].type === 'duplicate_id'
+                    ? response.responses[0].errors[0].duplicateName
+                    : null;
 
             expect(errorList).toEqual([
                 [
                     {
-                        duplicateName: duplicateName,
+                        duplicateName,
                         incomingId: response.responses[0].policy.id,
                         incomingName: response.responses[0].policy.name,
                         type: 'duplicate_id',
@@ -68,17 +73,20 @@ describe('PolicyImport.utils', () => {
             const response = getPolicy(errors);
 
             const errorList = parsePolicyImportErrors(response.responses);
-            const duplicateName = response.responses[0].errors[0].type === 'duplicate_name' ? response.responses[0].errors[0].duplicateName : null;
+            const duplicateName =
+                response.responses[0].errors[0].type === 'duplicate_name'
+                    ? response.responses[0].errors[0].duplicateName
+                    : null;
 
             expect(errorList).toEqual([
                 [
                     {
-                        duplicateName: duplicateName,
+                        duplicateName,
                         type: 'duplicate_name',
                         message: 'Could not add policy due to name validation',
                     },
                     {
-                        duplicateName: duplicateName,
+                        duplicateName,
                         incomingId: response.responses[0].policy.id,
                         incomingName: response.responses[0].policy.name,
                         type: 'duplicate_id',
@@ -116,7 +124,10 @@ describe('PolicyImport.utils', () => {
         });
 
         it('should return true if rename is chosen, and name is minimum length', () => {
-            const resolutionObj = { resolution: 'rename' as PolicyResolutionType, newName: '12345' };
+            const resolutionObj = {
+                resolution: 'rename' as PolicyResolutionType,
+                newName: '12345',
+            };
 
             const isResolved = isDuplicateResolved(resolutionObj);
 
@@ -258,7 +269,10 @@ describe('PolicyImport.utils', () => {
                     type: 'duplicate_name',
                 } as PolicyImportErrorDuplicateName,
             ];
-            const duplicateResolution = { resolution: 'overwrite' as PolicyResolutionType, newName: '' };
+            const duplicateResolution = {
+                resolution: 'overwrite' as PolicyResolutionType,
+                newName: '',
+            };
 
             const [resolvedPolicies, metadata] = getResolvedPolicies(
                 policies,
@@ -341,7 +355,12 @@ describe('PolicyImport.utils', () => {
         });
 
         it('should return false if there is only a duplicate name error', () => {
-            const errors = [{ type: 'duplicate_name', message: 'Really strict policy' } as PolicyImportErrorDuplicateName];
+            const errors = [
+                {
+                    type: 'duplicate_name',
+                    message: 'Really strict policy',
+                } as PolicyImportErrorDuplicateName,
+            ];
 
             const onlyDupeId = hasDuplicateIdOnly(errors);
 
@@ -485,7 +504,7 @@ describe('PolicyImport.utils', () => {
     });
 });
 
-function getPolicy(errors: { id?: boolean; name?: boolean; } = {}): ImportPoliciesResponse {
+function getPolicy(errors: { id?: boolean; name?: boolean } = {}): ImportPoliciesResponse {
     const errorResponse = [] as ImportPolicyError[];
     if (errors.name) {
         errorResponse.push({
