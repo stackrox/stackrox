@@ -56,7 +56,7 @@ func CheckAccess(ctx context.Context, access storage.Access) error {
 		sac.AccessModeScopeKey(access), sac.ResourceScopeKey(resources.ServiceIdentity.GetResource())}
 	apiTokenScopes := [][]sac.ScopeKey{
 		{sac.AccessModeScopeKey(access), sac.ResourceScopeKey(resources.APIToken.GetResource())},
-		{sac.AccessModeScopeKey(access), sac.ResourceScopeKey(resources.Integration.GetResource())},
+		{sac.AccessModeScopeKey(access), sac.ResourceScopeKey(resources.Integrations.GetResource())},
 	}
 
 	svcIdentityAllowed, err := sac.GlobalAccessScopeChecker(ctx).Allowed(ctx, serviceIdentityScope...)

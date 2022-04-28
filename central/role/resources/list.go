@@ -38,8 +38,8 @@ var (
 	Detection            = newResourceMetadata("Detection", permissions.GlobalScope)
 	Image                = newResourceMetadata("Image", permissions.NamespaceScope)
 	ImageComponent       = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
-	// Integration is the new  resource grouping all integration resources.
-	Integration                      = newResourceMetadata("Integration", permissions.GlobalScope)
+	// Integrations is the new  resource grouping all integration resources.
+	Integrations                     = newResourceMetadata("Integrations", permissions.GlobalScope)
 	Indicator                        = newResourceMetadata("Indicator", permissions.NamespaceScope)
 	K8sRole                          = newResourceMetadata("K8sRole", permissions.NamespaceScope)
 	K8sRoleBinding                   = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
@@ -60,13 +60,13 @@ var (
 
 	// Deprecated: AllComments is deprecated, use Administration.
 	AllComments = newResourceMetadata("AllComments", permissions.GlobalScope)
-	// Deprecated: APIToken is deprecated, use Integration.
+	// Deprecated: APIToken is deprecated, use Integrations.
 	APIToken = newResourceMetadata("APIToken", permissions.GlobalScope)
 	// Deprecated: AuthPlugin is deprecated, use Access.
 	AuthPlugin = newResourceMetadata("AuthPlugin", permissions.GlobalScope)
 	// Deprecated: AuthProvider is deprecated, use Access.
 	AuthProvider = newResourceMetadata("AuthProvider", permissions.GlobalScope)
-	// Deprecated: BackupPlugins is deprecated, use Integration.
+	// Deprecated: BackupPlugins is deprecated, use Integrations.
 	BackupPlugins = newResourceMetadata("BackupPlugins", permissions.GlobalScope)
 	// Deprecated: ComplianceRuns is deprecated, use Compliance.
 	ComplianceRuns = newResourceMetadata("ComplianceRuns", permissions.ClusterScope)
@@ -78,7 +78,7 @@ var (
 	DebugLogs = newResourceMetadata("DebugLogs", permissions.GlobalScope)
 	// Deprecated: Group is deprecated, use Access.
 	Group = newResourceMetadata("Group", permissions.GlobalScope)
-	// Deprecated: ImageIntegration is deprecated, use Integration.
+	// Deprecated: ImageIntegration is deprecated, use Integrations.
 	ImageIntegration = newResourceMetadata("ImageIntegration", permissions.GlobalScope)
 	// Deprecated: Licenses is deprecated, use Access.
 	Licenses = newResourceMetadata("Licenses", permissions.GlobalScope)
@@ -86,7 +86,7 @@ var (
 	NetworkBaseline = newResourceMetadata("NetworkBaseline", permissions.NamespaceScope)
 	// Deprecated: NetworkGraphConfig is deprecated, use Administration.
 	NetworkGraphConfig = newResourceMetadata("NetworkGraphConfig", permissions.GlobalScope)
-	// Deprecated: Notifier is deprecated, use Integration.
+	// Deprecated: Notifier is deprecated, use Integrations.
 	Notifier = newResourceMetadata("Notifier", permissions.GlobalScope)
 	// Deprecated: ProbeUpload is deprecated, use Administration.
 	ProbeUpload = newResourceMetadata("ProbeUpload", permissions.GlobalScope)
@@ -104,7 +104,7 @@ var (
 	SensorUpgradeConfig = newResourceMetadata("SensorUpgradeConfig", permissions.GlobalScope)
 	// Deprecated: ServiceIdentity is deprecated, use Administration.
 	ServiceIdentity = newResourceMetadata("ServiceIdentity", permissions.GlobalScope)
-	// Deprecated: SignatureIntegration is deprecated, use Integration.
+	// Deprecated: SignatureIntegration is deprecated, use Integrations.
 	SignatureIntegration = newResourceMetadataWithFeatureFlag("SignatureIntegration", permissions.GlobalScope, features.ImageSignatureVerification)
 	// Deprecated: User is deprecated, use Access.
 	User = newResourceMetadata("User", permissions.GlobalScope)
@@ -218,3 +218,8 @@ func MetadataForResource(res permissions.Resource) (permissions.ResourceMetadata
 	}
 	return md, found
 }
+
+/*
+Resource replacements -> how would this be best?
+permission.ResourceMetadata is the sole single struct used (and we should keep it this way).
+*/

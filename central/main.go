@@ -581,7 +581,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route: "/api/docs/swagger",
 			// TODO(ROX-XXXX): Fully deprecated fine grained resources in favor of grouped resources.
 			Authorizer: user.Any(user.With(permissions.View(resources.APIToken)),
-				user.With(permissions.View(resources.Integration))),
+				user.With(permissions.View(resources.Integrations))),
 			ServerHandler: docs.Swagger(),
 			Compression:   true,
 		},

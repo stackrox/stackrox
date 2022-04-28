@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	apiTokenSAC = sac.ForResources(sac.ForResource(resources.APIToken), sac.ForResource(resources.Integration))
+	apiTokenSAC = sac.ForResources(sac.ForResource(resources.APIToken), sac.ForResource(resources.Integrations))
 )
 
 type datastoreImpl struct {
