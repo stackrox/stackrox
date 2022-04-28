@@ -160,3 +160,76 @@ func TestReconcileAdminPassword(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateStatus(t *testing.T) {
+	secretName := "secret name"
+	secretInfo := "some info"
+
+	cases := map[string]struct {
+		status       *platform.CentralStatus
+		reconcileRun *reconcileAdminPasswordExtensionRun
+		shouldReturn bool
+	}{
+		"should return false if both Info and SecretReference are up-to-date": {
+			status: &platform.CentralStatus{
+				Central: &platform.CentralComponentStatus{
+					AdminPassword: &platform.AdminPasswordStatus{
+						Info:            secretInfo,
+						SecretReference: &secretName,
+					},
+				},
+			},
+			reconcileRun: &reconcileAdminPasswordExtensionRun{
+				infoUpdate:         secretInfo,
+				passwordSecretName: secretName,
+			},
+			shouldReturn: false,
+		},
+		"should return true if Info is not equal to infoUpdate": {
+			status: &platform.CentralStatus{
+				Central: &platform.CentralComponentStatus{
+					AdminPassword: &platform.AdminPasswordStatus{
+						Info: "some info",
+					},
+				},
+			},
+			reconcileRun: &reconcileAdminPasswordExtensionRun{
+				infoUpdate: "other info",
+			},
+			shouldReturn: true,
+		},
+		"should return true if SecretReference is not equal to passwordSecretName": {
+			status: &platform.CentralStatus{
+				Central: &platform.CentralComponentStatus{
+					AdminPassword: &platform.AdminPasswordStatus{
+						Info:            secretInfo,
+						SecretReference: &secretName,
+					},
+				},
+			},
+			reconcileRun: &reconcileAdminPasswordExtensionRun{
+				infoUpdate:         secretInfo,
+				passwordSecretName: "other secret name",
+			},
+			shouldReturn: true,
+		},
+		"should return false if status is empty": {
+			status:       &platform.CentralStatus{},
+			reconcileRun: &reconcileAdminPasswordExtensionRun{},
+			shouldReturn: false,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			result := c.reconcileRun.updateStatus(c.status)
+			assert.Equal(t, c.shouldReturn, result)
+			assert.Equal(t, c.status.Central.AdminPassword.Info, c.reconcileRun.infoUpdate)
+			if c.status.Central.AdminPassword.SecretReference != nil {
+				assert.Equal(t, *c.status.Central.AdminPassword.SecretReference, c.reconcileRun.passwordSecretName)
+			}
+		})
+	}
+
+}
