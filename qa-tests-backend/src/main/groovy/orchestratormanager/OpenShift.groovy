@@ -36,6 +36,7 @@ class OpenShift extends Kubernetes {
         try {
             oClient.projectrequests().create(projectRequest)
             log.debug "Created namespace ${ns}"
+            provisionDefaultServiceAccount(ns)
         } catch (KubernetesClientException kce) {
             if (kce.code != 409) {
                 throw kce
