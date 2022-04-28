@@ -484,6 +484,7 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 			if features.NetworkPolicySystemPolicy.Enabled() {
 				matched, err = s.getNetworkPoliciesForDeployment(ctx, deployment)
 				if err != nil {
+					log.Errorf("failed to fetch network policies for deployment: %s", err.Error())
 					return
 				}
 			}
