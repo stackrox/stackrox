@@ -112,7 +112,7 @@ pgutils.CreateTable(ctx, db, {{template "createTableStmtVar" $schema}})
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
     {{- /* No top-level has a parent unless attached synthetically. Therefore, start at the referenced tables, if any, so that create of current table succeeds. */ -}}
-    {{- range $idx, $parent := .Schema.Parents }}
+    {{- range $idx, $parent := .Schema.ReferencedSchema }}
     {{- template "createTable"  $parent}}
     {{- end }}
     {{- template "createTable" .Schema}}
@@ -151,11 +151,11 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
         return err
     }
 
-    {{if $schema.Children}}
+    {{if $schema.ReferencingSchema}}
     var query string
     {{end}}
 
-    {{range $idx, $child := $schema.Children}}
+    {{range $idx, $child := $schema.ReferencingSchema}}
     for childIdx, child := range obj.{{$child.ObjectGetter}} {
         if err := {{ template "insertFunctionName" $child }}(ctx, tx, child{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIdx); err != nil {
             return err
@@ -172,7 +172,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
     return nil
 }
 
-{{range $idx, $child := $schema.Children}}{{ template "insertObject" dict "schema" $child "joinTable" false }}{{end}}
+{{range $idx, $child := $schema.ReferencingSchema}}{{ template "insertObject" dict "schema" $child "joinTable" false }}{{end}}
 {{- end}}
 
 {{- if not .JoinTable }}
@@ -259,13 +259,13 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         }
     }
 
-    {{if $schema.Children}}
+    {{if $schema.ReferencingSchema}}
     {{if not $schema.EmbeddedIn }}
     for _, obj := range objs {
     {{else}}
     for idx, obj := range objs {
     {{end}}
-        {{range $idx, $child := $schema.Children}}
+        {{range $idx, $child := $schema.ReferencingSchema}}
         if err = s.{{ template "copyFunctionName" $child }}(ctx, tx{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
             return err
         }
@@ -275,7 +275,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
     return err
 }
-{{range $idx, $child := $schema.Children}}{{ template "copyObject" $child }}{{end}}
+{{range $idx, $child := $schema.ReferencingSchema}}{{ template "copyObject" $child }}{{end}}
 {{- end}}
 
 {{- if not .JoinTable }}
@@ -697,10 +697,10 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 {{- $schema := . }}
 func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *pgxpool.Pool) {
     _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{$schema.Table}} CASCADE")
-    {{range $idx, $child := $schema.Children}}{{ template "dropTableFunctionName" $child }}(ctx, db)
+    {{range $idx, $child := $schema.ReferencingSchema}}{{ template "dropTableFunctionName" $child }}(ctx, db)
     {{end}}
 }
-{{range $idx, $child := $schema.Children}}{{ template "dropTable" $child }}{{end}}
+{{range $idx, $child := $schema.ReferencingSchema}}{{ template "dropTable" $child }}{{end}}
 {{- end}}
 
 {{template "dropTable" .Schema}}
