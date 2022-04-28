@@ -10,7 +10,7 @@ COPY Makefile ./
 RUN npm install -g npm@8.1.4 && npm install -g yarn@1.22.17
 RUN make
 
-FROM registry.access.redhat.com/ubi8/nginx-118:1-46
+FROM registry.access.redhat.com/ubi8/nginx-120:latest
 
 # Delete unnecessary things from the content directory.
 RUN find . -mindepth 1 -delete
