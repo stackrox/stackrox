@@ -16,7 +16,7 @@ func (s serviceType) AuthorizeByIdentity(id authn.Identity) error {
 		return errox.NoCredentials
 	}
 	if svc.GetType() != storage.ServiceType(s) {
-		return errox.NewErrNotAuthorized("service source type not allowed")
+		return errox.NotAuthorized.CausedBy("service source type not allowed")
 	}
 	return nil
 }

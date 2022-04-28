@@ -143,12 +143,12 @@ func validateJUnitSuiteData(testCaseNames, failedTestCaseNames, failedTestCaseEr
 	amountSkippedTestCases := len(skippedTestCaseNames)
 
 	if amountTestCases < amountFailedTestCases+amountSkippedTestCases {
-		return errox.NewErrInvariantViolation(fmt.Sprintf("%d failed test cases are greater "+
+		return errox.InvariantViolation.CausedBy(fmt.Sprintf("%d failed test cases are greater "+
 			"than %d overall test cases", amountTestCases, amountFailedTestCases))
 	}
 
 	if len(failedTestCaseNames) != len(failedTestCaseErrorMessages) {
-		return errox.NewErrInvariantViolation(fmt.Sprintf("%d failed test cases and %d error "+
+		return errox.InvariantViolation.CausedBy(fmt.Sprintf("%d failed test cases and %d error "+
 			"messages are not matching", amountFailedTestCases, amountFailedTestCaseErrorMessages))
 	}
 	return nil
@@ -191,7 +191,7 @@ func createFailedTestCaseMap(failedTestCases []string, failedTestCaseErrorMessag
 	failedTestCaseMap := make(map[string]string, len(failedTestCases))
 	for i, name := range failedTestCases {
 		if _, exists := failedTestCaseMap[name]; exists {
-			return nil, errox.NewErrInvariantViolation(fmt.Sprintf("duplicate failed test "+
+			return nil, errox.InvariantViolation.CausedBy(fmt.Sprintf("duplicate failed test "+
 				"case %q found", name))
 		}
 		failedTestCaseMap[name] = failedTestCaseErrorMessages[i]

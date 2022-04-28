@@ -853,7 +853,7 @@ func (s *serviceImpl) PolicyFromSearch(ctx context.Context, request *v1.PolicyFr
 func (s *serviceImpl) parsePolicy(ctx context.Context, searchString string) (*storage.Policy, []search.FieldLabel, bool, error) {
 	// Handle empty input query case.
 	if len(searchString) == 0 {
-		return nil, nil, false, errox.NewErrInvalidArgs("can not generate a policy from an empty query")
+		return nil, nil, false, errox.InvalidArgs.CausedBy("can not generate a policy from an empty query")
 	}
 	// Have a filled query, parse it.
 	fieldMap, err := getFieldMapFromQueryString(searchString)

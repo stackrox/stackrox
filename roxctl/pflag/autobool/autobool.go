@@ -36,7 +36,7 @@ func (v Value) Set(s string) error {
 	// Then check for booleans.
 	b, err := strconv.ParseBool(s)
 	if err != nil {
-		return errox.NewErrInvalidArgs(err.Error())
+		return errox.InvalidArgs.CausedBy(err.Error())
 	}
 
 	*v.bp = &b

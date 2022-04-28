@@ -129,7 +129,7 @@ func (d *deploymentCheckCommand) Construct(args []string, cmd *cobra.Command, f 
 
 func (d *deploymentCheckCommand) Validate() error {
 	if _, err := os.Open(d.file); err != nil {
-		return errors.Wrap(errox.NewErrInvalidArgs(err.Error()), "validating command")
+		return errors.Wrap(errox.InvalidArgs.CausedBy(err.Error()), "validating command")
 	}
 
 	return nil

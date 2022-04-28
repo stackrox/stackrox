@@ -234,10 +234,10 @@ func createECRClient(conf *storage.ECRConfig) (*awsECR.ECR, error) {
 
 	if conf.GetUseAssumeRole() {
 		if endpoint != "" {
-			return nil, errox.NewErrInvalidArgs("AssumeRole and Endpoint cannot both be enabled")
+			return nil, errox.InvalidArgs.CausedBy("AssumeRole and Endpoint cannot both be enabled")
 		}
 		if conf.GetAssumeRoleId() == "" {
-			return nil, errox.NewErrInvalidArgs("AssumeRole ID is required to use AssumeRole")
+			return nil, errox.InvalidArgs.CausedBy("AssumeRole ID is required to use AssumeRole")
 		}
 
 		roleToAssumeArn := fmt.Sprintf("arn:aws:iam::%s:role/%s", conf.RegistryId, conf.AssumeRoleId)

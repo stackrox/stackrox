@@ -1075,7 +1075,7 @@ func compileValidateYaml(simulationYaml string) ([]*storage.NetworkPolicy, error
 	// Check that all resulting policies have namespaces.
 	for _, policy := range policies {
 		if policy.GetNamespace() == "" {
-			return nil, errox.NewErrInvalidArgs("yamls tested against must apply to a namespace")
+			return nil, errox.InvalidArgs.CausedBy("yamls tested against must apply to a namespace")
 		}
 	}
 
