@@ -122,7 +122,11 @@ build_main_and_bundles() {
     # be in the 'src' delivered by OSCI in the final env so this can then be removed.
     git submodule update --init
 
+    "$ROOT/status.sh" || true
+
     openshift_ci_mods
+
+    "$ROOT/status.sh" || true
 
     background_build_ui
     build_cli
