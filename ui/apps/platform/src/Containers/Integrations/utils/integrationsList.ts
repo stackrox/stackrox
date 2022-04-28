@@ -25,14 +25,14 @@ import pagerduty from 'images/pagerduty.svg';
 import tenable from 'images/tenable.svg';
 import signature from 'images/signature.svg';
 
-// Adding an integration tile behind a feature flag
-// To add a new integration, uncomment the following import
+/*
+ * To add an integration tile behind a feature flag:
+ * 1. Add to string union type in types/featureFlag.ts file.
+ * 2. Add the following property to the integration descriptor:
+ *    featureFlagDependency: 'ROX_WHATEVER',
+ */
 
-// import { knownBackendFlags } from 'utils/featureFlags';
-
-// and then add the following property to the new tiles object definition in the list below:
-//     featureFlagDependency: knownBackendFlags.ROX_<flag_constant>,
-
+import { FeatureFlagEnvVar } from 'types/featureFlag';
 import {
     AuthPluginType,
     AuthProviderType,
@@ -93,7 +93,7 @@ export type BaseIntegrationDescriptor = {
     type: string;
     label: string;
     image: string;
-    featureFlagDependency?: string;
+    featureFlagDependency?: FeatureFlagEnvVar;
 };
 
 type IntegrationDescriptorMap = {

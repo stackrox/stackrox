@@ -2,6 +2,7 @@ import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
+import { FeatureFlagEnvVar } from 'types/featureFlag';
 import { FeatureFlag } from 'types/featureFlagService.proto';
 
 const featureFlagsSelector = createStructuredSelector<{
@@ -12,17 +13,17 @@ const featureFlagsSelector = createStructuredSelector<{
     isLoadingFeatureFlags: selectors.getIsLoadingFeatureFlags,
 });
 
-export type IsFeatureFlagEnabled = (envVar: string) => boolean;
+export type IsFeatureFlagEnabled = (envVar: FeatureFlagEnvVar) => boolean;
 
-type UseFeatureFlags = {
+type UseFeatureFlagsResult = {
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
     isLoadingFeatureFlags: boolean;
 };
 
-function useFeatureFlags(): UseFeatureFlags {
+function useFeatureFlags(): UseFeatureFlagsResult {
     const { featureFlags, isLoadingFeatureFlags } = useSelector(featureFlagsSelector);
 
-    function isFeatureFlagEnabled(envVar: string): boolean {
+    function isFeatureFlagEnabled(envVar: FeatureFlagEnvVar): boolean {
         const featureFlag = featureFlags.find((flag) => flag.envVar === envVar);
         if (!featureFlag) {
             if (process.env.NODE_ENV === 'development') {
