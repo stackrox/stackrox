@@ -198,13 +198,13 @@ func generateSchemaRecursive(schema *walker.Schema, refs []*walker.Schema, visit
 	}
 
 	// No top-level schema has a parent unless attached synthetically.
-	for _, parent := range schema.Parents {
+	for _, parent := range schema.ReferencedSchema {
 		if err := generateSchemaRecursive(parent, []*walker.Schema{}, visited, pkgPath); err != nil {
 			return err
 		}
 	}
 
-	for _, child := range schema.Children {
+	for _, child := range schema.ReferencingSchema {
 		// If child is the embedded one, it has already been generated in the file above.
 		if child.EmbeddedIn == schema.Table {
 			continue

@@ -122,7 +122,7 @@ func insertIntoDeployments(ctx context.Context, tx pgx.Tx, obj *storage.Deployme
 		}
 	}
 
-	query = "delete from deployments_Containers where deployments_Id = $1 AND Image_Id = $2 AND idx >= $3"
+	query = "delete from deployments_Containers where deployments_Id = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetContainers()))
 	if err != nil {
 		return err
@@ -141,7 +141,7 @@ func insertIntoDeployments(ctx context.Context, tx pgx.Tx, obj *storage.Deployme
 	return nil
 }
 
-func insertIntoDeploymentsContainers(ctx context.Context, tx pgx.Tx, obj *storage.Container, deployments_Id string, Id string, idx int) error {
+func insertIntoDeploymentsContainers(ctx context.Context, tx pgx.Tx, obj *storage.Container, deployments_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
@@ -171,35 +171,35 @@ func insertIntoDeploymentsContainers(ctx context.Context, tx pgx.Tx, obj *storag
 	var query string
 
 	for childIdx, child := range obj.GetConfig().GetEnv() {
-		if err := insertIntoDeploymentsContainersEnv(ctx, tx, child, deployments_Id, Id, idx, childIdx); err != nil {
+		if err := insertIntoDeploymentsContainersEnv(ctx, tx, child, deployments_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from deployments_Containers_Env where deployments_Id = $1 AND deployments_Containers_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, deployments_Id, Id, idx, len(obj.GetConfig().GetEnv()))
+	_, err = tx.Exec(ctx, query, deployments_Id, idx, len(obj.GetConfig().GetEnv()))
 	if err != nil {
 		return err
 	}
 	for childIdx, child := range obj.GetVolumes() {
-		if err := insertIntoDeploymentsContainersVolumes(ctx, tx, child, deployments_Id, Id, idx, childIdx); err != nil {
+		if err := insertIntoDeploymentsContainersVolumes(ctx, tx, child, deployments_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from deployments_Containers_Volumes where deployments_Id = $1 AND deployments_Containers_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, deployments_Id, Id, idx, len(obj.GetVolumes()))
+	_, err = tx.Exec(ctx, query, deployments_Id, idx, len(obj.GetVolumes()))
 	if err != nil {
 		return err
 	}
 	for childIdx, child := range obj.GetSecrets() {
-		if err := insertIntoDeploymentsContainersSecrets(ctx, tx, child, deployments_Id, Id, idx, childIdx); err != nil {
+		if err := insertIntoDeploymentsContainersSecrets(ctx, tx, child, deployments_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
 	query = "delete from deployments_Containers_Secrets where deployments_Id = $1 AND deployments_Containers_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, deployments_Id, Id, idx, len(obj.GetSecrets()))
+	_, err = tx.Exec(ctx, query, deployments_Id, idx, len(obj.GetSecrets()))
 	if err != nil {
 		return err
 	}
@@ -467,7 +467,7 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx pgx.Tx, objs ...
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx pgx.Tx, deployments_Id string, Id string, objs ...*storage.Container) error {
+func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx pgx.Tx, deployments_Id string, objs ...*storage.Container) error {
 
 	inputRows := [][]interface{}{}
 
@@ -561,13 +561,13 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx pgx.Tx
 
 	for idx, obj := range objs {
 
-		if err = s.copyFromDeploymentsContainersEnv(ctx, tx, deployments_Id, Id, idx, obj.GetConfig().GetEnv()...); err != nil {
+		if err = s.copyFromDeploymentsContainersEnv(ctx, tx, deployments_Id, idx, obj.GetConfig().GetEnv()...); err != nil {
 			return err
 		}
-		if err = s.copyFromDeploymentsContainersVolumes(ctx, tx, deployments_Id, Id, idx, obj.GetVolumes()...); err != nil {
+		if err = s.copyFromDeploymentsContainersVolumes(ctx, tx, deployments_Id, idx, obj.GetVolumes()...); err != nil {
 			return err
 		}
-		if err = s.copyFromDeploymentsContainersSecrets(ctx, tx, deployments_Id, Id, idx, obj.GetSecrets()...); err != nil {
+		if err = s.copyFromDeploymentsContainersSecrets(ctx, tx, deployments_Id, idx, obj.GetSecrets()...); err != nil {
 			return err
 		}
 	}

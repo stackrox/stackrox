@@ -61,8 +61,7 @@ var (
                    Resources_MemoryMbRequest numeric,
                    Resources_MemoryMbLimit numeric,
                    PRIMARY KEY(deployments_Id, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id) REFERENCES deployments(Id) ON DELETE CASCADE,
-                   CONSTRAINT fk_parent_table_1 FOREIGN KEY (Image_Id) REFERENCES images(Id) ON DELETE CASCADE
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id) REFERENCES deployments(Id) ON DELETE CASCADE
                )
                `,
 				Indexes: []string{
