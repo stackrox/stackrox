@@ -5109,13 +5109,9 @@ workflows:
             - ui-unit-tests
 
       - scan-images-in-quay:
+          <<: *runOnlyOnReleaseCandidateBuilds
           context:
           - quay-rhacs-eng-readonly
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore: /.*/
           requires:
             - build-stackrox
             - build-rhacs
