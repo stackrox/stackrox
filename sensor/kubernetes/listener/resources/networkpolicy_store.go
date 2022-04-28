@@ -122,8 +122,8 @@ func (n *networkPolicyStoreImpl) updateStateMetric() {
 // Delete removes network policy from the store
 func (n *networkPolicyStoreImpl) Delete(ID, ns string) {
 	n.lock.Lock()
-	defer n.updateStateMetric()
 	defer n.lock.Unlock()
+	defer n.updateStateMetric()
 	if policies, nsFound := n.data[ns]; nsFound {
 		if policy, policyFound := policies[ID]; policyFound {
 			metrics.ObserveNetworkPolicyStoreEvent("delete", ns, len(policy.GetSpec().GetPodSelector().GetMatchLabels()))
@@ -138,8 +138,8 @@ func (n *networkPolicyStoreImpl) Delete(ID, ns string) {
 // Upsert adds or updates network policy based on the namespace and ID
 func (n *networkPolicyStoreImpl) Upsert(np *storage.NetworkPolicy) {
 	n.lock.Lock()
-	defer n.updateStateMetric()
 	defer n.lock.Unlock()
+	defer n.updateStateMetric()
 
 	if _, nsFound := n.data[np.GetNamespace()]; !nsFound {
 		n.data[np.GetNamespace()] = make(map[string]*storage.NetworkPolicy)
