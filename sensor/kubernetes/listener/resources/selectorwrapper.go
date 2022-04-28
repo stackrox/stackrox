@@ -6,14 +6,18 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-// selectorWrapper holds a selector and information allowing for additional checks before matching
+// SelectorWrapper holds a selector and information allowing for additional checks before matching
 type selectorWrapper struct {
 	selector  selector
 	numLabels uint
 	matchNil  bool
 }
 
-func (s *selectorWrapper) Matches(labels labels.Labels, numLabels uint) bool {
+func (s *selectorWrapper) getSelector() selector {
+	return s.selector
+}
+
+func (s *selectorWrapper) matches(labels labels.Labels, numLabels uint) bool {
 	if s.numLabels > numLabels {
 		return false
 	}
@@ -43,7 +47,7 @@ func (d selectorDisjunction) Matches(labels labels.Labels) bool {
 	return false
 }
 
-// or returns the logical or of the given selectorWrappers.
+// or returns the logical or of the given SelectorWrappers.
 func or(sels ...selectorWrapper) selectorWrapper {
 	var selWrapper = selectorWrapper{nil, math.MaxUint, false}
 	var selectors selectorDisjunction
@@ -63,9 +67,9 @@ func or(sels ...selectorWrapper) selectorWrapper {
 	return selWrapper
 }
 
-// CreateSelector returns a selectorWrapper for the given map of labels; matchNil determines whether
+// CreateSelector returns a SelectorWrapper for the given map of labels; matchNil determines whether
 // an empty set of labels matches everything or nothing.
-func CreateSelector(labelsMap map[string]string, matchNil bool) selectorWrapper {
+func createSelector(labelsMap map[string]string, matchNil bool) selectorWrapper {
 	var selWrapper selectorWrapper
 	selWrapper.numLabels = uint(len(labelsMap))
 	if matchNil {
@@ -81,17 +85,16 @@ func CreateSelector(labelsMap map[string]string, matchNil bool) selectorWrapper 
 	}
 	selWrapper.selector = labels.SelectorFromSet(labels.Set(labelsMap))
 	return selWrapper
-
 }
 
 // SelectorFromMap converts the given map to a selector. It correctly translates a `nil` map to a `nothing` collector,
 // as is, e.g., used for headless services.
-func SelectorFromMap(labelsMap map[string]string) selectorWrapper {
-	return CreateSelector(labelsMap, false)
+func selectorFromMap(labelsMap map[string]string) selectorWrapper {
+	return createSelector(labelsMap, false)
 }
 
 // MatcherOrEverything converts the given map to a selector. If the map is `nil` or empty it will translate to `everything`
 // selector. This is needed in cases like Network Policies where an empty PodSelector matches everything in the namespace.
-func MatcherOrEverything(labelsMap map[string]string) selectorWrapper {
-	return CreateSelector(labelsMap, true)
+func matcherOrEverything(labelsMap map[string]string) selectorWrapper {
+	return createSelector(labelsMap, true)
 }

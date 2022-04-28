@@ -14,7 +14,7 @@ type endpointManager interface {
 	OnDeploymentRemove(deployment *deploymentWrap)
 
 	OnServiceCreate(svc *serviceWrap)
-	OnServiceUpdateOrRemove(namespace string, sel selector)
+	OnServiceUpdateOrRemove(namespace string, sel selectorWrapper)
 
 	OnNodeCreate(node *nodeWrap)
 	OnNodeUpdateOrRemove()
@@ -191,7 +191,8 @@ func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWr
 
 func (m *endpointManagerImpl) OnServiceCreate(svc *serviceWrap) {
 	updates := make(map[string]*clusterentities.EntityData)
-	for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
+	// TODO(ROX-10066): continue refactoring here
+	for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector.getSelector()) {
 		update := &clusterentities.EntityData{}
 		m.addEndpointDataForService(deployment, svc, update)
 		updates[deployment.GetId()] = update
@@ -200,9 +201,10 @@ func (m *endpointManagerImpl) OnServiceCreate(svc *serviceWrap) {
 	m.entityStore.Apply(updates, true)
 }
 
-func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sel selector) {
+func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sel selectorWrapper) {
 	updates := make(map[string]*clusterentities.EntityData)
-	for _, deployment := range m.deploymentStore.getMatchingDeployments(namespace, sel) {
+	// TODO(ROX-10066): continue refactoring here
+	for _, deployment := range m.deploymentStore.getMatchingDeployments(namespace, sel.getSelector()) {
 		updates[deployment.GetId()] = m.endpointDataForDeployment(deployment)
 	}
 
@@ -216,7 +218,8 @@ func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
 
 	updates := make(map[string]*clusterentities.EntityData)
 	for _, svc := range m.serviceStore.NodePortServicesSnapshot() {
-		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
+		// TODO(ROX-10066): continue refactoring here
+		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector.getSelector()) {
 			update, ok := updates[deployment.GetId()]
 			if !ok {
 				update = &clusterentities.EntityData{}
@@ -237,7 +240,8 @@ func (m *endpointManagerImpl) OnNodeUpdateOrRemove() {
 	affectedDeployments := make(map[*deploymentWrap]struct{})
 
 	for _, svc := range m.serviceStore.NodePortServicesSnapshot() {
-		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
+		// TODO(ROX-10066): continue refactoring here
+		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector.getSelector()) {
 			affectedDeployments[deployment] = struct{}{}
 		}
 	}

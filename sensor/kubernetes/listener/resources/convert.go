@@ -343,12 +343,12 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 }
 
 func (w *deploymentWrap) getLabelSelector(spec reflect.Value) (*metav1.LabelSelector, error) {
-	s := spec.FieldByName("Selector")
+	s := spec.FieldByName("selector")
 	if !doesFieldExist(s) {
 		return nil, nil
 	}
 
-	// Selector is of map type for replication controller
+	// selector is of map type for replication controller
 	if labelMap, ok := s.Interface().(map[string]string); ok {
 		return &metav1.LabelSelector{
 			MatchLabels: labelMap,
@@ -461,7 +461,7 @@ func (w *deploymentWrap) updatePortExposureFromServices(svcs ...serviceWithRoute
 }
 
 func (w *deploymentWrap) updatePortExposure(svc serviceWithRoutes) {
-	if svc.selector.Matches(labels.Set(w.PodLabels)) {
+	if svc.selector.matches(labels.Set(w.PodLabels), uint(len(w.PodLabels))) {
 		return
 	}
 

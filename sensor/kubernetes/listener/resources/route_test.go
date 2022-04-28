@@ -12,8 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func getSelector(svc *v1.Service) selector {
-	return SelectorFromMap(svc.Spec.Selector)
+func getSelector(svc *v1.Service) selectorWrapper {
+	return selectorFromMap(svc.Spec.Selector)
 }
 
 func getTestService(name, namespace string) *v1.Service {
@@ -85,7 +85,7 @@ func (m *mockEndpointManager) OnDeploymentRemove(*deploymentWrap) {
 func (m *mockEndpointManager) OnServiceCreate(*serviceWrap) {
 }
 
-func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, selector) {
+func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, selectorWrapper) {
 }
 
 func (m *mockEndpointManager) OnNodeCreate(*nodeWrap) {
@@ -191,11 +191,13 @@ func (suite *RouteAndServiceDispatcherTestSuite) TestManyRoutesMatchingAndDeleti
 		// After the creating of testRoute2Svc2
 		{
 			"UpdateExposuresForMatchingDeployments",
+			// TODO(ROX-10066): continue refactoring here
 			[]interface{}{"test-ns", getSelector(testSvc2)},
 		},
 		// After the deletion of testRoute1Svc2
 		{
 			"UpdateExposuresForMatchingDeployments",
+			// TODO(ROX-10066): continue refactoring here
 			[]interface{}{"test-ns", getSelector(testSvc2)},
 		},
 	}, suite.mockReconciler.orderedCalls)

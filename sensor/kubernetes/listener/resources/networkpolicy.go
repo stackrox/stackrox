@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/store"
 	networkingV1 "k8s.io/api/networking/v1"
-	"k8s.io/apimachinery/pkg/labels"
 )
 
 // networkPolicyDispatcher handles network policy resource events.
@@ -44,7 +43,8 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 			h.netpolStore.Upsert(roxNetpol)
 		}
 
-		h.updateDeploymentsFromStore(roxNetpol, sel)
+		// TODO(ROX-10066): continue refactoring here
+		h.updateDeploymentsFromStore(roxNetpol, sel.getSelector())
 	}
 
 	return []*central.SensorEvent{
@@ -58,14 +58,14 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 	}
 }
 
-func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) selector {
-	var sel selector
+func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) selectorWrapper {
+	var sel selectorWrapper
 	if oldNp != nil {
-		sel = MatcherOrEverything(oldNp.GetSpec().GetPodSelector().GetMatchLabels())
+		sel = matcherOrEverything(oldNp.GetSpec().GetPodSelector().GetMatchLabels())
 	} else {
-		sel = labels.Nothing()
+		sel = selectorFromMap(nil)
 	}
-	return or(sel, MatcherOrEverything(np.GetSpec().GetPodSelector().GetMatchLabels()))
+	return or(sel, matcherOrEverything(np.GetSpec().GetPodSelector().GetMatchLabels()))
 }
 
 func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sel selector) {

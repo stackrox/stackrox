@@ -11,7 +11,7 @@ import (
 
 /* Matching labels using selectors
 
-Selector is a set of labels (map[string]string) that is used for matching the labels.
+selector is a set of labels (map[string]string) that is used for matching the labels.
 Labels are also represented as set (map[string]string) but they are passive in the matching process.
 Note that selectors.Match(labels) != labels.Match(selectors)
 

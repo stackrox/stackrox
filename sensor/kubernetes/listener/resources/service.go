@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -16,13 +15,13 @@ type serviceWithRoutes struct {
 
 type serviceWrap struct {
 	*v1.Service
-	selector labels.Selector
+	selector selectorWrapper
 }
 
 func wrapService(svc *v1.Service) *serviceWrap {
 	return &serviceWrap{
 		Service:  svc,
-		selector: SelectorFromMap(svc.Spec.Selector),
+		selector: selectorFromMap(svc.Spec.Selector),
 	}
 }
 
@@ -141,7 +140,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
 	}
-	var sel selector
+	var sel selectorWrapper
 	oldWrap := sh.serviceStore.getService(svc.Namespace, svc.Name)
 	if oldWrap != nil {
 		sel = oldWrap.selector
@@ -149,7 +148,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	if action == central.ResourceAction_UPDATE_RESOURCE {
 		newWrap := wrapService(svc)
 		sh.serviceStore.addOrUpdateService(newWrap)
-		if sel != nil {
+		if sel.getSelector() != nil {
 			sel = or(sel, newWrap.selector)
 		} else {
 			sel = newWrap.selector
@@ -157,11 +156,12 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	} else if action == central.ResourceAction_REMOVE_RESOURCE {
 		sh.serviceStore.removeService(svc)
 	}
+	// TODO(ROX-10066) continue refactor
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
 
-func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector) []*central.SensorEvent {
-	events := sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sel)
+func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selectorWrapper) []*central.SensorEvent {
+	events := sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sel.getSelector())
 	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
 	return events
 }

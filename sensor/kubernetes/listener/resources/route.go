@@ -41,5 +41,6 @@ func (r *routeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resour
 	if existingService == nil {
 		return nil
 	}
-	return r.portExposureReconciler.UpdateExposuresForMatchingDeployments(existingService.Namespace, existingService.selector)
+	// TODO(ROX-10066): continue refactoring here
+	return r.portExposureReconciler.UpdateExposuresForMatchingDeployments(existingService.Namespace, existingService.selector.getSelector())
 }

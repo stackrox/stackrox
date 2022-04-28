@@ -39,7 +39,8 @@ func (p *portExposureReconcilerImpl) UpdateExposuresForMatchingDeployments(names
 
 func (p *portExposureReconcilerImpl) UpdateExposureOnServiceCreate(svc serviceWithRoutes) []*central.SensorEvent {
 	var events []*central.SensorEvent
-	for _, deploymentWrap := range p.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
+	// TODO(ROX-10066): continue refactoring here
+	for _, deploymentWrap := range p.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector.getSelector()) {
 		cloned := deploymentWrap.Clone()
 		cloned.updatePortExposure(svc)
 		p.deploymentStore.addOrUpdateDeployment(cloned)
