@@ -343,7 +343,7 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 }
 
 func (w *deploymentWrap) getLabelSelector(spec reflect.Value) (*metav1.LabelSelector, error) {
-	s := spec.FieldByName("selector")
+	s := spec.FieldByName("Selector")
 	if !doesFieldExist(s) {
 		return nil, nil
 	}
