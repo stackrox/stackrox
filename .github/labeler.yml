@@ -37,3 +37,5 @@ ci-postgres-tests:
 - tools/generate-helpers/pg-table-bindings-wrapper
 ci-upgrade-tests:
 - pkg/defaults/policies/**/*
+ci-openshift-4-operator-tests:
+- operator/**/*
