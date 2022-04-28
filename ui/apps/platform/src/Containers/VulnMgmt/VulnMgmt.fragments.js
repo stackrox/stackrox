@@ -165,8 +165,10 @@ export const NODE_LIST_FRAGMENT = gql`
             cvss
             scoreVersion
         }
+        notes
         scan {
             scanTime
+            notes
         }
         osImage
         containerRuntimeVersion

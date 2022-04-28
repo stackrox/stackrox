@@ -1,12 +1,10 @@
 import React, { ReactElement } from 'react';
 import { Message } from '@stackrox/ui-components';
 
-import getImageScanMessages from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScanMessages';
+import { ScanMessage } from 'messages/vulnMgmt.messages';
 
-function ScanDataMessage({ imageNotes = [], scanNotes = [] }): ReactElement | null {
-    const imageScanMessages = getImageScanMessages(imageNotes || [], scanNotes || []);
-
-    return Object.keys(imageScanMessages).length > 0 ? (
+function ScanDataMessage({ header = '', body = '' }: ScanMessage): ReactElement | null {
+    return header?.length > 0 || body?.length > 0 ? (
         <div className="px-4 pt-4">
             <Message type="error">
                 <div className="w-full">
@@ -14,9 +12,9 @@ function ScanDataMessage({ imageNotes = [], scanNotes = [] }): ReactElement | nu
                         <h2 className="mb-1 font-700 tracking-wide uppercase">
                             CVE Data May Be Inaccurate
                         </h2>
-                        <span>{imageScanMessages.header}</span>
+                        <span>{header}</span>
                     </header>
-                    <p>{imageScanMessages.body}</p>
+                    <p>{body}</p>
                 </div>
             </Message>
         </div>

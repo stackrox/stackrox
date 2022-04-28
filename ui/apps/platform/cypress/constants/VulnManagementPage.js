@@ -14,6 +14,7 @@ export const url = {
         namespaces: `${baseURL}/namespaces`,
         deployments: `${baseURL}/deployments`,
         images: `${baseURL}/images`,
+        nodes: `${baseURL}/nodes`,
         components: `${baseURL}/components`,
         cves: `${baseURL}/cves`,
         image: `${baseURL}/image`,
@@ -23,6 +24,7 @@ export const url = {
     },
     sidepanel: {
         image: `${baseURL}/images?workflowState[0][t]=IMAGE&workflowState[0][i]=sha256:02382353821b12c21b062c59184e227e001079bb13ebd01f9d3270ba0fcbf1e4`,
+        node: `${baseURL}/nodes?workflowState[0][t]=NODE&workflowState[0][i]=065fe8cb-d9af-4516-a91e-3941e9db58ca`,
     },
     reporting: {
         list: `${baseURL}/reports`,

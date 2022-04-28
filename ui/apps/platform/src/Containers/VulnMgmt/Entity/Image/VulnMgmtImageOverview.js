@@ -8,6 +8,8 @@ import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import CVETable from 'Containers/Images/CVETable';
+import ScanDataMessage from 'Containers/VulnMgmt/Components/ScanDataMessage';
+import getImageScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScanMessage';
 import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
@@ -19,7 +21,6 @@ import useTabs from 'hooks/patternfly/useTabs';
 import DeferredCVEs from 'Containers/VulnMgmt/RiskAcceptance/DeferredCVEs';
 import ObservedCVEs from 'Containers/VulnMgmt/RiskAcceptance/ObservedCVEs';
 import FalsePositiveCVEs from 'Containers/VulnMgmt/RiskAcceptance/FalsePositiveCVEs';
-import ScanDataMessage from './ScanDataMessage';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
@@ -118,10 +119,12 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const currentEntity = { [entityTypes.IMAGE]: data.id };
     const newEntityContext = { ...entityContext, ...currentEntity };
 
+    const scanMessage = getImageScanMessage(notes || [], scan?.notes || []);
+
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
-                <ScanDataMessage imagesNotes={notes} scanNotes={scan?.notes} />
+                <ScanDataMessage header={scanMessage.header} body={scanMessage.body} />
                 <CollapsibleSection title="Image Summary">
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
