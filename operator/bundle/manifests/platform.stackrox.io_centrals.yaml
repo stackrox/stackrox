@@ -642,10 +642,6 @@ spec:
                     description: AdminPassword stores information related to the auto-generated
                       admin password.
                     properties:
-                      adminPasswordSecretReference:
-                        description: AdminPasswordSecretReference contains reference
-                          for the admin password
-                        type: string
                       info:
                         description: Info stores information on how to obtain the
                           admin password.
