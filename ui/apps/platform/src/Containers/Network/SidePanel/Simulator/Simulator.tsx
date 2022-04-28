@@ -61,7 +61,7 @@ function Simulator({
 }
 
 const mapStateToProps = createStructuredSelector({
-    errorMessage: selectors.getNetworkErrorMessage,
+    errorMessage: selectors.getNetworkPolicyErrorMessage,
     modificationState: selectors.getNetworkPolicyModificationState,
     policyGraphState: selectors.getNetworkPolicyGraphState,
 });
