@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -28,12 +29,12 @@ func (u contextUpdater) updateContext(ctx context.Context) (context.Context, err
 			log.Warnf("Cannot extract identity: %v", err)
 		}
 		// Ignore id value if error is not nil.
-		return context.WithValue(ctx, identityErrorContextKey{}, errox.NewErrNoCredentials(err.Error())), nil
+		return context.WithValue(ctx, identityErrorContextKey{}, errox.NoCredentials.CausedBy(err.Error())), nil
 	}
 	if id != nil {
 		// Only service identities can have no roles assigned.
 		if len(id.Roles()) == 0 && id.Service() == nil {
-			return context.WithValue(ctx, identityErrorContextKey{}, errox.GenericNoValidRole()), nil
+			return context.WithValue(ctx, identityErrorContextKey{}, auth.ErrNoValidRole), nil
 		}
 		return context.WithValue(ctx, identityContextKey{}, id), nil
 	}

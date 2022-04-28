@@ -38,10 +38,24 @@ const nodeUpdatesEpoch = (state = null, action) => {
     return state;
 };
 
-const networkErrorMessage = (state = '', action) => {
+const networkPolicyErrorMessage = (state = '', action) => {
     if (action.type === types.FETCH_NETWORK_POLICY_GRAPH.FAILURE) {
         const { message } = action.error.response.data;
         return message;
+    }
+    if (action.type === types.FETCH_NETWORK_POLICY_GRAPH.SUCCESS) {
+        return '';
+    }
+    return state;
+};
+
+const networkFlowErrorMessage = (state = '', action) => {
+    if (action.type === types.FETCH_NETWORK_FLOW_GRAPH.FAILURE) {
+        const { message } = action.error.response.data;
+        return message;
+    }
+    if (action.type === types.FETCH_NETWORK_FLOW_GRAPH.SUCCESS) {
+        return '';
     }
     return state;
 };
@@ -91,7 +105,8 @@ const networkPolicyApplicationState = (state = 'INITIAL', action) => {
 const reducer = combineReducers({
     networkPolicyGraph,
     nodeUpdatesEpoch,
-    networkErrorMessage,
+    networkPolicyErrorMessage,
+    networkFlowErrorMessage,
     networkPolicyGraphState,
     networkFlowGraphState,
     networkPolicyApplicationState,
@@ -101,7 +116,8 @@ const reducer = combineReducers({
 
 const getNetworkPolicyGraph = (state) => state.networkPolicyGraph;
 const getNodeUpdatesEpoch = (state) => state.nodeUpdatesEpoch;
-const getNetworkErrorMessage = (state) => state.networkErrorMessage;
+const getNetworkPolicyErrorMessage = (state) => state.networkPolicyErrorMessage;
+const getNetworkFlowErrorMessage = (state) => state.networkFlowErrorMessage;
 const getNetworkPolicyGraphState = (state) => state.networkPolicyGraphState;
 const getNetworkFlowGraphState = (state) => state.networkFlowGraphState;
 const getNetworkPolicyApplicationState = (state) => state.networkPolicyApplicationState;
@@ -109,7 +125,8 @@ const getNetworkPolicyApplicationState = (state) => state.networkPolicyApplicati
 export const selectors = {
     getNetworkPolicyGraph,
     getNodeUpdatesEpoch,
-    getNetworkErrorMessage,
+    getNetworkPolicyErrorMessage,
+    getNetworkFlowErrorMessage,
     getNetworkPolicyGraphState,
     getNetworkFlowGraphState,
     getNetworkPolicyApplicationState,

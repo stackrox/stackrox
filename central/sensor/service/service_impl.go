@@ -70,7 +70,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 	svc := identity.Service()
 	if svc == nil || svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
-		return errox.NewErrNotAuthorized("only sensor may access this API")
+		return errox.NotAuthorized.CausedBy("only sensor may access this API")
 	}
 
 	sensorHello, sensorSupportsHello, err := receiveSensorHello(server)

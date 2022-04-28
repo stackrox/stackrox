@@ -25,8 +25,6 @@ func RoxErrorToGRPCCode(err error) codes.Code {
 		return codes.Internal
 	case errors.Is(err, errox.NoCredentials):
 		return codes.Unauthenticated
-	case errors.Is(err, errox.NoValidRole):
-		return codes.Unauthenticated
 	case errors.Is(err, errox.NotAuthorized):
 		return codes.PermissionDenied
 	case errors.Is(err, errox.NoAuthzConfigured):

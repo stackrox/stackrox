@@ -29,6 +29,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Support for security policies that do not have a policyVersion or have versions prior to 1.1 will be removed. If you have externally stored older policies, they cannot be imported.
 - ROX-10021: RHCOS node support is dropped until major improvements are made in ROX-8944.
   - The UI shows the node scanning notes in the same manner as image scanning notes.
+- ROX-10097: Updated the base for the docs image from `nginx-118:1-46` to `nginx-120:latest`.
 
 ## [69.1]
 

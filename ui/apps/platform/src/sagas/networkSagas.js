@@ -29,50 +29,75 @@ import timeWindowToDate from 'utils/timeWindows';
 import queryService from 'utils/queryService';
 import { filterModes } from 'constants/networkFilterModes';
 
-// get generators
+function* getFlowGraph(clusterId, namespaces, query, timeWindow, includePorts) {
+    let flowGraph;
+    try {
+        const req = yield call(
+            service.fetchNetworkFlowGraph,
+            clusterId,
+            namespaces,
+            query,
+            timeWindowToDate(timeWindow),
+            includePorts
+        );
+        flowGraph = req.response;
+    } catch (error) {
+        yield put(backendNetworkActions.fetchNetworkFlowGraph.failure(error));
+    }
+
+    return flowGraph;
+}
+
+function* getPolicyGraph(clusterId, namespaces, query, modification, includePorts) {
+    let policyGraph;
+    try {
+        const req = yield call(
+            service.fetchNetworkPolicyGraph,
+            clusterId,
+            namespaces,
+            query,
+            modification,
+            includePorts
+        );
+        policyGraph = req.response;
+    } catch (error) {
+        // On error, such as when an applied yaml is invalid, attempt to revert to the
+        // previous successful policyGraph response
+        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(notificationActions.removeOldestNotification());
+        policyGraph = yield select(selectors.getNetworkPolicyGraph);
+    }
+
+    return policyGraph;
+}
+
 function* getNetworkGraphs(clusterId, namespaces, query) {
     // Do not query the backend for network graph updates if no namespace is selected
     if (!namespaces.length) {
         return;
     }
 
-    try {
-        const timeWindow = yield select(selectors.getNetworkActivityTimeWindow);
-        const modification = yield select(selectors.getNetworkPolicyModification);
+    const timeWindow = yield select(selectors.getNetworkActivityTimeWindow);
+    const modification = yield select(selectors.getNetworkPolicyModification);
 
-        const includePorts = true;
+    const flowGraph = yield call(getFlowGraph, clusterId, namespaces, query, timeWindow, true);
+    const policyGraph = yield call(
+        getPolicyGraph,
+        clusterId,
+        namespaces,
+        query,
+        modification,
+        true
+    );
 
-        const [{ response: flowGraph }, { response: policyGraph }] = yield all([
-            call(
-                service.fetchNetworkFlowGraph,
-                clusterId,
-                namespaces,
-                query,
-                timeWindowToDate(timeWindow),
-                includePorts
-            ),
-            call(
-                service.fetchNetworkPolicyGraph,
-                clusterId,
-                namespaces,
-                query,
-                modification,
-                includePorts
-            ),
-        ]);
+    if (policyGraph && flowGraph) {
         yield put(graphNetworkActions.setNetworkEdgeMap(flowGraph, policyGraph));
         yield put(graphNetworkActions.setNetworkNodeMap(flowGraph, policyGraph));
         yield put(graphNetworkActions.updateNetworkGraphTimestamp(new Date()));
-        yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
         yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowGraph));
-    } catch (error) {
-        yield put(notificationActions.addNotification(error.response.data.error));
-        yield put(notificationActions.removeOldestNotification());
-        // if network flow graph fails
-        const policyGraph = yield select(selectors.getNetworkPolicyGraph);
-        if (policyGraph) {
-            yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
-        }
+        yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
+    } else if (policyGraph) {
+        yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
     }
 }
 

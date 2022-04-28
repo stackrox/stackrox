@@ -67,4 +67,9 @@ export const selectors = {
         namespaceSelect: '.namespace-select > button',
         filterSelect: search.multiSelectInput,
     }),
+    errorOverlay: {
+        heading: 'h2:contains("An error has prevented the Network Graph from loading")',
+        message: (messageText) =>
+            `${selectors.errorOverlay.heading} + div *:contains("${messageText}")`,
+    },
 };

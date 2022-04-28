@@ -56,7 +56,7 @@ func getFieldMap(query string) map[FieldLabel][]string {
 func ParseFieldMap(query string) (map[FieldLabel][]string, error) {
 	fieldMap := getFieldMap(query)
 	if len(fieldMap) == 0 {
-		return nil, errox.NewErrInvalidArgs("after parsing, query is empty")
+		return nil, errox.InvalidArgs.CausedBy("after parsing, query is empty")
 	}
 	return fieldMap, nil
 }

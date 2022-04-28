@@ -929,7 +929,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 func normalizeCluster(cluster *storage.Cluster) error {
 	if cluster == nil {
-		return errox.NewErrInvariantViolation("cannot normalize nil cluster object")
+		return errox.InvariantViolation.CausedBy("cannot normalize nil cluster object")
 	}
 
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
@@ -947,7 +947,7 @@ func validateInput(cluster *storage.Cluster) error {
 // `cluster.* bool` flags remain untouched.
 func addDefaults(cluster *storage.Cluster) error {
 	if cluster == nil {
-		return errox.NewErrInvariantViolation("cannot enrich nil cluster object")
+		return errox.InvariantViolation.CausedBy("cannot enrich nil cluster object")
 	}
 	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
 	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {

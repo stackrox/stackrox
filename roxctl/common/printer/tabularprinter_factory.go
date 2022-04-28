@@ -126,7 +126,7 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 // if it is not possible
 func (t *TabularPrinterFactory) validate() error {
 	if t.NoHeader && t.HeaderAsComment {
-		return errox.NewErrInvalidArgs("cannot specify both --no-header as well as " +
+		return errox.InvalidArgs.CausedBy("cannot specify both --no-header as well as " +
 			"--headers-as-comment flags. Choose only one of them")
 	}
 	headers := set.NewStringSet(t.Headers...)
