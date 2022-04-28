@@ -24,9 +24,6 @@ if [[ "$#" -lt 1 ]]; then
     die "usage: dispatch <ci-job> [<...other parameters...>]"
 fi
 
-# Avoid tag change during test
-make tag > CI_TAG
-
 ci_job="$1"
 shift
 
