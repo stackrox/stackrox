@@ -6,6 +6,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -113,54 +114,83 @@ func (s *PodsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, podCount)
 }
-func (s *PodsStoreSuite) TestSAC() {
+
+func (s *PodsStoreSuite) TestSACUpsert() {
 	obj := &storage.Pod{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	withAllAccessCtx := sac.WithAllAccess(context.Background())
-	withNoAccessCtx := sac.WithNoAccess(context.Background())
-	withAccessToDifferentNsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(obj.GetClusterId()),
-			sac.NamespaceScopeKeys("unknown ns"),
-		))
-	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(obj.GetClusterId()),
-			sac.NamespaceScopeKeys(obj.GetNamespace()),
-		))
-	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(obj.GetClusterId()),
-		))
-	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys("unknown cluster"),
-		))
-
-	store := s.store
-
-	for ctx, expectedErr := range map[context.Context]error{
-		withAllAccessCtx:           nil,
-		withNoAccessCtx:            sac.ErrResourceAccessDenied,
-		withNoAccessToClusterCtx:   sac.ErrResourceAccessDenied,
-		withAccessToDifferentNsCtx: sac.ErrResourceAccessDenied,
-		withAccessCtx:              nil,
-		withAccessToClusterCtx:     nil,
+	ctxs := getSACContexts(obj)
+	for name, expectedErr := range map[string]error{
+		withAllAccess:           nil,
+		withNoAccess:            sac.ErrResourceAccessDenied,
+		withNoAccessToCluster:   sac.ErrResourceAccessDenied,
+		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
+		withAccess:              nil,
+		withAccessToCluster:     nil,
 	} {
-		s.T().Run("Upsert", func(t *testing.T) {
-			assert.ErrorIs(t, store.Upsert(ctx, obj), expectedErr)
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			assert.ErrorIs(t, s.store.Upsert(ctxs[name], obj), expectedErr)
 		})
-		s.T().Run("UpsertMany", func(t *testing.T) {
-			assert.ErrorIs(t, store.UpsertMany(ctx, []*storage.Pod{obj}), expectedErr)
+	}
+}
+
+func (s *PodsStoreSuite) TestSACUpsertMany() {
+	obj := &storage.Pod{}
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	ctxs := getSACContexts(obj)
+	for name, expectedErr := range map[string]error{
+		withAllAccess:           nil,
+		withNoAccess:            sac.ErrResourceAccessDenied,
+		withNoAccessToCluster:   sac.ErrResourceAccessDenied,
+		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
+		withAccess:              nil,
+		withAccessToCluster:     nil,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			assert.ErrorIs(t, s.store.UpsertMany(ctxs[name], []*storage.Pod{obj}), expectedErr)
 		})
+	}
+}
+
+const (
+	withAllAccess           = "AllAccess"
+	withNoAccess            = "NoAccess"
+	withAccessToDifferentNs = "AccessToDifferentNs"
+	withAccess              = "Access"
+	withAccessToCluster     = "AccessToCluster"
+	withNoAccessToCluster   = "NoAccessToCluster"
+)
+
+func getSACContexts(obj *storage.Pod) map[string]context.Context {
+	return map[string]context.Context{
+		withAllAccess: sac.WithAllAccess(context.Background()),
+		withNoAccess:  sac.WithNoAccess(context.Background()),
+		withAccessToDifferentNs: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetClusterId()),
+				sac.NamespaceScopeKeys("unknown ns"),
+			)),
+		withAccess: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetClusterId()),
+				sac.NamespaceScopeKeys(obj.GetNamespace()),
+			)),
+		withAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetClusterId()),
+			)),
+		withNoAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys("unknown cluster"),
+			)),
 	}
 }
