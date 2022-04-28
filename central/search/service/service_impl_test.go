@@ -221,9 +221,11 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 }
 
 func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+
 	// Create Policy Searcher
 	policyStore := policyStoreMocks.NewMockStore(s.mockCtrl)
-	policyStore.EXPECT().GetAllPolicies()
+	policyStore.EXPECT().GetAll(gomock.Any())
 	idx, err := globalindex.MemOnlyIndex()
 	s.NoError(err)
 	policyIndexer := policyIndex.New(idx)
@@ -248,7 +250,6 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	results, err := service.autocomplete(ctx, fmt.Sprintf("%s:", search.Severity), []v1.SearchCategory{v1.SearchCategory_POLICIES})
 	s.NoError(err)
 	s.Equal([]string{fixtures.GetPolicy().GetSeverity().String()}, results)

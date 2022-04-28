@@ -59,7 +59,7 @@ func (ds *searcherImpl) searchPolicies(ctx context.Context, q *v1.Query) ([]*sto
 	var policies []*storage.Policy
 	var newResults []search.Result
 	for _, result := range results {
-		policy, exists, err := ds.storage.GetPolicy(result.ID)
+		policy, exists, err := ds.storage.Get(ctx, result.ID)
 		if err != nil {
 			return nil, nil, err
 		}
