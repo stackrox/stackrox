@@ -9,16 +9,10 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-<<<<<<< HEAD
-	storage "github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/sac"
-=======
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
->>>>>>> 66e90c798 (Wire up deployments into Postgres)
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -48,11 +42,7 @@ func (s *DeploymentsStoreSuite) TearDownTest() {
 }
 
 func (s *DeploymentsStoreSuite) TestStore() {
-<<<<<<< HEAD
 	ctx := sac.WithAllAccess(context.Background())
-=======
-	ctx := context.Background()
->>>>>>> 66e90c798 (Wire up deployments into Postgres)
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
@@ -72,7 +62,6 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundDeployment)
 
-<<<<<<< HEAD
 	withNoAccessCtx := sac.WithNoAccess(ctx)
 	withAccessToDifferentNsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -101,8 +90,6 @@ func (s *DeploymentsStoreSuite) TestStore() {
 			sac.ClusterScopeKeys("unknown cluster"),
 		))
 
-=======
->>>>>>> 66e90c798 (Wire up deployments into Postgres)
 	s.NoError(store.Upsert(ctx, deployment))
 	foundDeployment, exists, err = store.Get(ctx, deployment.GetId())
 	s.NoError(err)
@@ -117,7 +104,6 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(deploymentExists)
 	s.NoError(store.Upsert(ctx, deployment))
-<<<<<<< HEAD
 	s.ErrorIs(store.Upsert(withNoAccessCtx, deployment), sac.ErrResourceAccessDenied)
 	s.ErrorIs(store.Upsert(withNoAccessToClusterCtx, deployment), sac.ErrResourceAccessDenied)
 	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, deployment), sac.ErrResourceAccessDenied)
@@ -127,8 +113,6 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.Deployment{deployment}), sac.ErrResourceAccessDenied)
 	s.NoError(store.UpsertMany(withAccessCtx, []*storage.Deployment{deployment}))
 	s.NoError(store.UpsertMany(withAccessToClusterCtx, []*storage.Deployment{deployment}))
-=======
->>>>>>> 66e90c798 (Wire up deployments into Postgres)
 
 	foundDeployment, exists, err = store.Get(ctx, deployment.GetId())
 	s.NoError(err)
@@ -147,11 +131,7 @@ func (s *DeploymentsStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(deployment, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		deployments = append(deployments, deployment)
 	}
-<<<<<<< HEAD
 	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, deployments), sac.ErrResourceAccessDenied)
-=======
-
->>>>>>> 66e90c798 (Wire up deployments into Postgres)
 	s.NoError(store.UpsertMany(ctx, deployments))
 
 	deploymentCount, err = store.Count(ctx)

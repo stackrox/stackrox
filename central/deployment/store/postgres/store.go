@@ -4,36 +4,21 @@ package postgres
 
 import (
 	"context"
-<<<<<<< HEAD
 	"strings"
-=======
-	"reflect"
->>>>>>> 66e90c798 (Wire up deployments into Postgres)
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-<<<<<<< HEAD
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/role/resources"
-=======
-	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/metrics"
-	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
->>>>>>> 66e90c798 (Wire up deployments into Postgres)
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-<<<<<<< HEAD
 	"github.com/stackrox/rox/pkg/sac"
-=======
-	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
->>>>>>> 66e90c798 (Wire up deployments into Postgres)
 )
 
 const (
@@ -58,22 +43,9 @@ const (
 )
 
 var (
-<<<<<<< HEAD
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.DeploymentsSchema
 	targetResource = resources.Deployment
-=======
-	log    = logging.LoggerForModule()
-	schema = func() *walker.Schema {
-		schema := globaldb.GetSchemaForTable(baseTable)
-		if schema != nil {
-			return schema
-		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), baseTable)
-		globaldb.RegisterTable(schema)
-		return schema
-	}()
->>>>>>> 66e90c798 (Wire up deployments into Postgres)
 )
 
 type Store interface {
@@ -970,7 +942,6 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Deployment) err
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Deployment) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Deployment")
 
-<<<<<<< HEAD
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
 		ClusterID(obj.GetClusterId()).Namespace(obj.GetNamespace())
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
@@ -979,15 +950,12 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Deployment) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-=======
->>>>>>> 66e90c798 (Wire up deployments into Postgres)
 	return s.upsert(ctx, obj)
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Deployment) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "Deployment")
 
-<<<<<<< HEAD
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
@@ -1006,8 +974,6 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Deployment) 
 		}
 	}
 
-=======
->>>>>>> 66e90c798 (Wire up deployments into Postgres)
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
 	} else {
@@ -1193,28 +1159,6 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Deployment) e
 	return nil
 }
 
-<<<<<<< HEAD
-=======
-func isInScope(obj *storage.Deployment, eas *effectiveaccessscope.ScopeTree) bool {
-	if eas.State == effectiveaccessscope.Included {
-		return true
-	}
-	if eas.State == effectiveaccessscope.Excluded {
-		return false
-	}
-	clusterId := obj.GetClusterId()
-	cluster := eas.GetClusterByID(clusterId)
-	if cluster.State == effectiveaccessscope.Included {
-		return true
-	}
-	if cluster.State == effectiveaccessscope.Excluded {
-		return false
-	}
-	namespaceName := obj.GetNamespace()
-	return cluster.Namespaces[namespaceName].State == effectiveaccessscope.Included
-}
-
->>>>>>> 66e90c798 (Wire up deployments into Postgres)
 //// Used for testing
 
 func dropTableDeployments(ctx context.Context, db *pgxpool.Pool) {
