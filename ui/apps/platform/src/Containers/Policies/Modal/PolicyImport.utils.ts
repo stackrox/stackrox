@@ -3,19 +3,19 @@ import { ImportPolicyResponse } from 'services/PoliciesService';
 
 export const MIN_POLICY_NAME_LENGTH = 5;
 
-type PolicyImportErrorDuplicateName = {
+export type PolicyImportErrorDuplicateName = {
     type: 'duplicate_name';
     duplicateName: string;
 } & PolicyImportErrorBase;
 
-type PolicyImportErrorDuplicateId = {
+export type PolicyImportErrorDuplicateId = {
     type: 'duplicate_id';
     duplicateName: string;
     incomingName: string;
     incomingId: string;
 } & PolicyImportErrorBase;
 
-type PolicyImportErrorInvalidPolicy = {
+export type PolicyImportErrorInvalidPolicy = {
     type: 'invalid_policy';
     validationError: string;
 } & PolicyImportErrorBase;
@@ -69,8 +69,10 @@ export function parsePolicyImportErrors(responses: ImportPolicyResponse[]): Poli
     return errors;
 }
 
+export type PolicyResolutionType = 'rename' | 'overwrite' | 'keepBoth';
+
 export type PolicyResolution = {
-    resolution: 'rename' | 'overwrite' | 'keepBoth' | null;
+    resolution: PolicyResolutionType | null;
     newName: string;
 };
 
