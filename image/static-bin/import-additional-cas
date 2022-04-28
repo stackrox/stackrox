@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+# The function copies everything that could be found under the path provided in
+# the first argument, ignoring files starting with '..' which are created by
+# kubernetes secret volume mount process.
 copy_existing () {
     src=$1
     if [ -d "$src" ] && [ "$(ls -A -I "..*" "$src")" ]; then
@@ -12,6 +15,8 @@ copy_existing () {
 }
 
 copy_existing /usr/local/share/ca-certificates
+
+# Copy the custom trusted CA bundles injected by the Openshift Network Operator.
 copy_existing /etc/pki/injected-ca-trust
 
-update-ca-trust
+update-ca-trust extract
