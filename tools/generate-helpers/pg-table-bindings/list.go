@@ -32,6 +32,16 @@ func init() {
 		// Tests
 		&storage.TestMultiKeyStruct{}:  resources.Namespace,
 		&storage.TestSingleKeyStruct{}: resources.Namespace,
+		&storage.TestGrandparent{}:     resources.Namespace,
+		&storage.TestParent1{}:         resources.Namespace,
+		&storage.TestChild1{}:          resources.Namespace,
+		&storage.TestGrandChild1{}:     resources.Namespace,
+		&storage.TestGGrandChild1{}:    resources.Namespace,
+		&storage.TestG2GrandChild1{}:   resources.Namespace,
+		&storage.TestG3GrandChild1{}:   resources.Namespace,
+		&storage.TestParent2{}:         resources.Namespace,
+		&storage.TestChild2{}:          resources.Namespace,
+		&storage.TestParent3{}:         resources.Namespace,
 	} {
 		typeRegistry[fmt.Sprintf("%T", s)] = string(r.GetResource())
 	}
