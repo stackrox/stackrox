@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -30,7 +31,7 @@ func (p *roleChecker) Authorized(ctx context.Context, _ string) error {
 
 func (p *roleChecker) checkRole(roleNames []string) error {
 	if len(roleNames) == 0 {
-		return errox.NoValidRole
+		return auth.ErrNoValidRole
 	}
 
 	for _, roleName := range roleNames {
