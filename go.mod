@@ -21,6 +21,8 @@ require (
 	github.com/antihax/optional v1.0.0
 	github.com/aws/aws-sdk-go v1.42.43
 	github.com/blevesearch/bleve v1.0.14
+	github.com/bugsnag/bugsnag-go v1.5.3 // indirect
+	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
 	github.com/cloudflare/cfssl v1.6.1
@@ -38,8 +40,9 @@ require (
 	github.com/facebookincubator/nvdtools v0.1.4
 	github.com/fatih/color v1.13.0
 	github.com/fullsailor/pkcs7 v0.0.0
+	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logr/logr v0.4.0
+	github.com/go-logr/logr v1.2.0
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2
@@ -64,11 +67,13 @@ require (
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/joelanford/helm-operator v0.0.7
 	github.com/joshdk/go-junit v0.0.0-20210226021600-6145f504ca0d
+	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kisielk/sqlstruct v0.0.0-20210630145711-dae28ed37023 // indirect
 	github.com/machinebox/graphql v0.2.2
 	github.com/magiconair/properties v1.8.6
 	github.com/mailru/easyjson v0.7.7
 	github.com/matryer/is v1.4.0 // indirect
+	github.com/mattn/go-sqlite3 v1.14.10 // indirect
 	github.com/mauricelam/genny v0.0.0-20190320071652-0800202903e5
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure v1.1.0
@@ -79,7 +84,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.3-0.20211202193544-a5463b7f9c84
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
 	github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
-	github.com/operator-framework/operator-sdk v0.19.4
+	github.com/operator-framework/operator-lib v0.10.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/client_model v0.2.0
@@ -101,6 +106,9 @@ require (
 	github.com/tidwall/gjson v1.14.1
 	github.com/tkuchiki/go-timezone v0.2.2
 	github.com/vbauerster/mpb/v4 v4.12.2
+	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
+	github.com/yvasiyarov/gorelic v0.0.7 // indirect
+	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.20.0
@@ -110,7 +118,7 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad
 	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11
-	golang.org/x/tools v0.1.8
+	golang.org/x/tools v0.1.9
 	golang.stackrox.io/grpc-http1 v0.2.4
 	google.golang.org/api v0.75.0
 	google.golang.org/genproto v0.0.0-20220421151946-72621c1f0bd3
@@ -121,14 +129,15 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.2
-	k8s.io/api v0.22.9
-	k8s.io/apimachinery v0.22.9
-	k8s.io/apiserver v0.22.9
-	k8s.io/client-go v0.22.9
-	k8s.io/kubectl v0.22.8
+	k8s.io/api v0.23.1
+	k8s.io/apiextensions-apiserver v0.23.1 // indirect
+	k8s.io/apimachinery v0.23.1
+	k8s.io/apiserver v0.23.1
+	k8s.io/client-go v0.23.1
+	k8s.io/kubectl v0.23.1
 	k8s.io/kubelet v0.22.9
 	k8s.io/utils v0.0.0-20211208161948-7d6a63dca704
-	sigs.k8s.io/controller-runtime v0.10.3
+	sigs.k8s.io/controller-runtime v0.11.0
 	sigs.k8s.io/yaml v1.3.0
 )
 
