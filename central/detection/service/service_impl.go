@@ -126,7 +126,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		}
 	}
 	if image.GetName() == nil {
-		return nil, errox.NewErrInvalidArgs("image or image_name must be specified")
+		return nil, errox.InvalidArgs.CausedBy("image or image_name must be specified")
 	}
 	// This is a workaround for those who post the full image, but don't fill in fullname
 	if name := image.GetName(); name != nil && name.GetFullName() == "" {
@@ -288,7 +288,7 @@ func getObjectsFromList(list *coreV1.List) ([]k8sRuntime.Object, []string, error
 // DetectDeployTimeFromYAML runs detection on a deployment.
 func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.DeployYAMLDetectionRequest) (*apiV1.DeployDetectionResponse, error) {
 	if req.GetYaml() == "" {
-		return nil, errox.NewErrInvalidArgs("yaml field must be specified in detection request")
+		return nil, errox.InvalidArgs.CausedBy("yaml field must be specified in detection request")
 	}
 
 	resources, ignoredObjectRefs, err := getObjectsFromYAML(req.GetYaml())
@@ -347,7 +347,7 @@ func (s *serviceImpl) populateDeploymentWithClusterInfo(ctx context.Context, clu
 // DetectDeployTime runs detection on a deployment.
 func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDetectionRequest) (*apiV1.DeployDetectionResponse, error) {
 	if req.GetDeployment() == nil {
-		return nil, errox.NewErrInvalidArgs("deployment must be passed to deploy time detection")
+		return nil, errox.InvalidArgs.CausedBy("deployment must be passed to deploy time detection")
 	}
 	if err := s.populateDeploymentWithClusterInfo(ctx, req.GetClusterId(), req.GetDeployment()); err != nil {
 		return nil, err

@@ -80,7 +80,7 @@ linters-settings:
   wrapcheck:
     ignoreSigRegexps:
       - utils\.Should
-      - errox\.New.*
+      - errox\..+\.CausedBy(f)?
       - retry\.MakeRetryable
       - policy\.NewErr.*
 

@@ -221,7 +221,7 @@ func TestPanicOnInvariantViolationStreamInterceptor(t *testing.T) {
 		},
 		"Error is ErrInvariantViolation -> panic": {
 			handler: func(srv interface{}, stream grpc.ServerStream) error {
-				return errox.NewErrInvariantViolation("some explanation")
+				return errox.InvariantViolation.CausedBy("some explanation")
 			},
 			err:    nil,
 			panics: true,

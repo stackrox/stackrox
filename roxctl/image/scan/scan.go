@@ -113,7 +113,7 @@ func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command, f *print
 	i.timeout = flags.Timeout(cmd)
 
 	if err := imageUtils.IsValidImageString(i.image); err != nil {
-		return errox.NewErrInvalidArgs(err.Error())
+		return errox.InvalidArgs.CausedBy(err.Error())
 	}
 
 	// There is a case where cobra is not printing the deprecation warning to stderr, when a deprecated flag is not
@@ -141,7 +141,7 @@ func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command, f *print
 // provided values
 func (i *imageScanCommand) Validate() error {
 	if i.image == "" {
-		return errox.NewErrInvalidArgs("no image name specified via the -i or --image flag")
+		return errox.InvalidArgs.CausedBy("no image name specified via the -i or --image flag")
 	}
 
 	// Only verify the legacy output format if no printer is constructed, thus the new output format is not used

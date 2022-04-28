@@ -39,5 +39,5 @@ func (p *roleChecker) checkRole(roleNames []string) error {
 		}
 	}
 
-	return errox.NewErrNotAuthorized(fmt.Sprintf("role %q is required", p.roleName))
+	return errox.NotAuthorized.CausedBy(fmt.Sprintf("role %q is required", p.roleName))
 }

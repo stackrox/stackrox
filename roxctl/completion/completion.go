@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	errInvalidArgs = errox.NewErrInvalidArgs("use one of the following: [bash|zsh|fish|powershell]")
+	errInvalidArgs = errox.InvalidArgs.CausedBy("use one of the following: [bash|zsh|fish|powershell]")
 )
 
 const (

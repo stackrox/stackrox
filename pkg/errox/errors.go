@@ -52,23 +52,3 @@ func GenericNoValidRole() error {
 	return NoValidRole.New("access for this user is not authorized: no valid role," +
 		" please contact your system administrator")
 }
-
-// NewErrNotAuthorized wraps NotAuthorized into an explanation.
-func NewErrNotAuthorized(explanation string) error {
-	return NotAuthorized.CausedBy(explanation)
-}
-
-// NewErrNoCredentials wraps NoCredentials into an explanation.
-func NewErrNoCredentials(explanation string) error {
-	return NoCredentials.CausedBy(explanation)
-}
-
-// NewErrInvariantViolation wraps InvariantViolation into an explanation.
-func NewErrInvariantViolation(explanation string) error {
-	return InvariantViolation.CausedBy(explanation)
-}
-
-// NewErrInvalidArgs wraps InvalidArgs into an explanation.
-func NewErrInvalidArgs(explanation string) error {
-	return InvalidArgs.CausedBy(explanation)
-}

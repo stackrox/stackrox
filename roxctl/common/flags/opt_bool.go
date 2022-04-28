@@ -27,7 +27,7 @@ func (v optBool) Set(strVal string) error {
 	}
 	b, err := strconv.ParseBool(strVal)
 	if err != nil {
-		return errox.NewErrInvalidArgs(err.Error())
+		return errox.InvalidArgs.CausedBy(err.Error())
 	}
 	*v.boolp = &b
 	return nil
