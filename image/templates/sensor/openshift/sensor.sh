@@ -13,7 +13,7 @@ else
     count="$(${KUBE_COMMAND} api-resources | grep "securitycontextconstraints" -c || true)"
     if [[ "${count}" -eq 0 ]]; then
        echo >&2 "Detected an attempt to deploy a cluster bundle designed to be deployed on OpenShift, \\
-        on a vanilla Kubernetes cluster. Please regenerate the cluster bundle using cluster type `k8s` and redeploy. \\
+        on a vanilla Kubernetes cluster. Please regenerate the cluster bundle using cluster type 'k8s' and redeploy. \\
         If you think this message is in error, and would like to continue deploying the cluster bundle, please rerun \\
         the script using 'SKIP_ORCHESTRATOR_CHECK=true ./sensor.sh'"
         exit 1
