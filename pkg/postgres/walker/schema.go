@@ -342,47 +342,17 @@ func (s *Schema) ResolvedPrimaryKeys() []Field {
 		localPKSet.Add(pk.ColumnName)
 	}
 
-	localFKs := s.localFKs()
-
 	var pks []Field
-	for _, parent := range s.Parents {
-		// If the current schema is not embedded in the parent schema then it's pks should not be resolved as pks in
-		// current schema.
-		if s.EmbeddedIn != parent.Table {
+	for _, pk := range s.ParentKeys() {
+		// If the parent key is an explicitly set reference, it should not be the primary key in the current table.
+		if pk.Options.Reference != nil {
 			continue
 		}
-
-		currPks := parent.ResolvedPrimaryKeys()
-		filtered := make([]Field, 0, len(currPks))
-		for idx := range currPks {
-			pk := &currPks[idx]
-			field, found := localFK(pk, localFKs)
-			if !found {
-				tryParentify(pk, parent)
-				filtered = append(filtered, *pk)
-				continue
-			}
-
-			// If the referenced parent field is already embedded in child but without constraint, skip it.
-			if field.Options.Reference != nil && field.Options.Reference.NoConstraint {
-				continue
-			}
-			// If the referenced parent field is already embedded in child, use the child field names.
-			pk.Name = field.Name
-			pk.Reference = pk.ColumnName
-			pk.ColumnName = field.ColumnName
-			pk.Options.Reference = field.Options.Reference
-			filtered = append(filtered, *pk)
-		}
-		
-		for _, filteredPK := range filtered {
-			// If the resolved primary key is already present as local primary key, do not add it.
-			if localPKSet.Add(filteredPK.ColumnName) {
-				pks = append(pks, filteredPK)
-			}
+		// If the resolved primary key is already present as local primary key, do not add it.
+		if localPKSet.Add(pk.ColumnName) {
+			pks = append(pks, pk)
 		}
 	}
-
 	pks = append(pks, localPKS...)
 	return pks
 }
@@ -426,16 +396,25 @@ func (s *Schema) WithReference(ref *Schema) *Schema {
 
 	// The foreign key may not be on the top-level table. Therefore, go through all the children to find where it resides.
 	for _, c := range s.Children {
+		added := set.NewStringSet()
 		for _, f := range c.Fields {
 			if f.Options.Reference != nil && f.Options.Reference.TypeName == ref.TypeName {
+				if !added.Add(ref.Table) {
+					continue
+				}
+
 				s.Parents = append(s.Parents, ref)
 				ref.Children = append(ref.Children, s)
 			}
 		}
 	}
 
+	added := set.NewStringSet()
 	for _, f := range s.Fields {
 		if f.Options.Reference != nil && f.Options.Reference.TypeName == ref.TypeName {
+			if !added.Add(ref.Table) {
+				continue
+			}
 			s.Parents = append(s.Parents, ref)
 			ref.Children = append(ref.Children, s)
 		}
