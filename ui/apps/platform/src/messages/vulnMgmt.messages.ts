@@ -1,4 +1,4 @@
-export type ScanMessages = {
+export type ScanMessage = {
     header?: string;
     body?: string;
 };
@@ -32,5 +32,20 @@ export const imageScanMessages = {
     certifiedRHELUnavailable: {
         header: 'Image out of scope for Red Hat Vulnerability Scanner Certification.',
         body: 'The scan results are not certified, as the base RHEL image is out of scope for certification. Please consider updating the base image.',
+    },
+};
+
+export const nodeScanMessages = {
+    missingScanData: {
+        header: 'Failed to get scan data.',
+        body: 'Failed to get scan data. There may have been an error communicating with the integrated node scanner.',
+    },
+    unsupported: {
+        header: 'Node unsupported.',
+        body: 'Scanning this node is not supported at this time. Please see the release notes for more information.',
+    },
+    kernelUnsupported: {
+        header: 'Node’s kernel unsupported.',
+        body: 'This node’s kernel is not supported at this time.',
     },
 };

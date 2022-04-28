@@ -54,8 +54,10 @@ const VulmMgmtNode = ({
                     value
                 }
                 vulnCount
+                notes
                 scan {
                     scanTime
+                    notes
                     components {
                         id
                         priority
