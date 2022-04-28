@@ -11,11 +11,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/booleanpolicy/networkpolicy"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
@@ -24,7 +26,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/detector/baseline"
 	networkBaselineEval "github.com/stackrox/rox/sensor/common/detector/networkbaseline"
-	"github.com/stackrox/rox/sensor/common/detector/networkpolicy"
 	"github.com/stackrox/rox/sensor/common/detector/unified"
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
@@ -79,7 +80,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		serializerStopper: concurrency.NewStopper(),
 		alertStopSig:      concurrency.NewSignal(),
 
-		networkpolicyFinder: networkpolicy.NewFinder(networkPolicyStore),
+		networkPolicyStore: networkPolicyStore,
 	}
 }
 
@@ -115,7 +116,7 @@ type detectorImpl struct {
 
 	admissionCacheNeedsFlush bool
 
-	networkpolicyFinder *networkpolicy.Finder
+	networkPolicyStore store.NetworkPolicyStore
 }
 
 func (d *detectorImpl) Start() error {
@@ -407,6 +408,16 @@ func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
 	}
 }
 
+func (d *detectorImpl) getNetworkPoliciesApplied(deployment *storage.Deployment) *augmentedobjs.NetworkPoliciesApplied {
+	if !features.NetworkPolicySystemPolicy.Enabled() {
+		// If feature flag is disabled we simply don't do the calculation.
+		// It is fine (from the Matcher perspective) to use nil augmented objects
+		return nil
+	}
+	networkPolicies := d.networkPolicyStore.Find(deployment.GetNamespace(), deployment.GetLabels())
+	return networkpolicy.GenerateNetworkPoliciesAppliedObj(networkPolicies)
+}
+
 func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, action central.ResourceAction) {
 	switch action {
 	case central.ResourceAction_REMOVE_RESOURCE:
@@ -428,7 +439,7 @@ func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, a
 	case central.ResourceAction_CREATE_RESOURCE:
 		d.deduper.addDeployment(deployment)
 		d.markDeploymentForProcessing(deployment.GetId())
-		go d.enricher.blockingScan(deployment, d.networkpolicyFinder.GetNetworkPoliciesApplied(deployment), action)
+		go d.enricher.blockingScan(deployment, d.getNetworkPoliciesApplied(deployment), action)
 	case central.ResourceAction_UPDATE_RESOURCE:
 		// Check if the deployment has changes that require detection, which is more expensive than hashing
 		// If not, then just return
@@ -436,7 +447,7 @@ func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, a
 			return
 		}
 		d.markDeploymentForProcessing(deployment.GetId())
-		go d.enricher.blockingScan(deployment, d.networkpolicyFinder.GetNetworkPoliciesApplied(deployment), action)
+		go d.enricher.blockingScan(deployment, d.getNetworkPoliciesApplied(deployment), action)
 	}
 }
 

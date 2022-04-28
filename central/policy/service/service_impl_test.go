@@ -80,6 +80,7 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 		s.clusters,
 		nil,
 		nil,
+		nil,
 		s.mitreVectorStore,
 		nil,
 		&testDeploymentMatcher{s.mockBuildTimePolicies},
