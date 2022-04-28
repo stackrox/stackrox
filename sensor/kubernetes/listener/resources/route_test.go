@@ -13,7 +13,7 @@ import (
 )
 
 func getSelectorWrapper(svc *v1.Service) selectorWrapper {
-	return selectorFromMap(svc.Spec.Selector)
+	return createSelector(svc.Spec.Selector, false)
 }
 
 func getTestService(name, namespace string) *v1.Service {

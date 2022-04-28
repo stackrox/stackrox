@@ -89,12 +89,12 @@ func createSelector(labelsMap map[string]string, matchNil bool) selectorWrapper 
 
 // SelectorFromMap converts the given map to a selector. It correctly translates a `nil` map to a `nothing` collector,
 // as is, e.g., used for headless services.
-func selectorFromMap(labelsMap map[string]string) selectorWrapper {
-	return createSelector(labelsMap, false)
-}
+//func selectorFromMap(labelsMap map[string]string) selectorWrapper {
+//	return createSelector(labelsMap, false)
+//}
 
 // MatcherOrEverything converts the given map to a selector. If the map is `nil` or empty it will translate to `everything`
 // selector. This is needed in cases like Network Policies where an empty PodSelector matches everything in the namespace.
-func matcherOrEverything(labelsMap map[string]string) selectorWrapper {
-	return createSelector(labelsMap, true)
-}
+//func matcherOrEverything(labelsMap map[string]string) selectorWrapper {
+//	return createSelector(labelsMap, true)
+//}
