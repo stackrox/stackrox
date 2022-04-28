@@ -16,7 +16,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddType("EmbeddedNodeVulnerability", []string{
+		schema.AddType("NodeVulnerability", []string{
 			"id: ID!",
 			"cve: String!",
 			"cvss: Float!",
@@ -37,8 +37,6 @@ func init() {
 			"publishedOn: Time",
 			"lastModified: Time",
 			"impactScore: Float!",
-			"vulnerabilityType: String!",
-			"vulnerabilityTypes: [String!]!",
 			"suppressed: Boolean!",
 			"suppressActivation: Time",
 			"suppressExpiry: Time",
@@ -46,10 +44,10 @@ func init() {
 			"vulnerabilityState: String!",
 			"effectiveVulnerabilityRequest: VulnerabilityRequest",
 		}),
-		schema.AddQuery("nodeVulnerability(id: ID): EmbeddedNodeVulnerability"),
-		schema.AddQuery("nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedNodeVulnerability!]!"),
+		schema.AddQuery("nodeVulnerability(id: ID): NodeVulnerability"),
+		schema.AddQuery("nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!"),
 		schema.AddQuery("nodeVulnerabilityCount(query: String): Int!"),
-		schema.AddExtraResolver("EmbeddedNodeVulnerability", `unusedVarSink(query: String): Int`),
+		schema.AddExtraResolver("NodeVulnerability", `unusedVarSink(query: String): Int`),
 	)
 }
 
@@ -67,8 +65,7 @@ func (resolver *Resolver) NodeVulnerability(ctx context.Context, args IDQuery) (
 func (resolver *Resolver) NodeVulnerabilities(ctx context.Context, q PaginatedQuery) ([]VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilities")
 	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(q.String(),
-			search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_NODE_CVE.String()).Query())
+		query := withNodeTypeFiltering(q.String())
 		return resolver.vulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
 	}
 	// TODO : Add postgres support
@@ -79,8 +76,7 @@ func (resolver *Resolver) NodeVulnerabilities(ctx context.Context, q PaginatedQu
 func (resolver *Resolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilityCount")
 	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(),
-			search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_NODE_CVE.String()).Query())
+		query := withNodeTypeFiltering(args.String())
 		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
@@ -91,10 +87,15 @@ func (resolver *Resolver) NodeVulnerabilityCount(ctx context.Context, args RawQu
 func (resolver *Resolver) NodeVulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnCounter")
 	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(),
-			search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_NODE_CVE.String()).Query())
+		query := withNodeTypeFiltering(args.String())
 		return resolver.vulnCounterV2(ctx, RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Resolver NodeVulnCounter does not support postgres yet")
+}
+
+// withNodeTypeFiltering adds a conjunction as a raw query to filter vulns by CVEType Node
+func withNodeTypeFiltering(q string) string {
+	return search.AddRawQueriesAsConjunction(q,
+		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_NODE_CVE.String()).Query())
 }
