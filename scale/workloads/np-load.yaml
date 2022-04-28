@@ -1,3 +1,6 @@
+# There are two deployment workloads on purpose.
+# One is created with random labels.
+# The other one matches the labels of the Network Policies.
 deploymentWorkload:
 - deploymentType: Deployment
   lifecycleDuration: 30m0s

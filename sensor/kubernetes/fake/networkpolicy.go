@@ -82,9 +82,7 @@ func (w *WorkloadManager) manageNetworkPolicyLifecycle(ctx context.Context, reso
 	npNextUpdate := calculateDurationWithJitter(resources.workload.UpdateInterval)
 
 	np := resources.networkPolicy
-
 	stopSig := concurrency.NewSignal()
-
 	npClient := w.client.Kubernetes().NetworkingV1().NetworkPolicies(np.Namespace)
 
 	for {
