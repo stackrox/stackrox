@@ -221,6 +221,7 @@ func TestUpdateStatus(t *testing.T) {
 	}
 
 	for name, c := range cases {
+		c := c
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			result := c.reconcileRun.updateStatus(c.status)
