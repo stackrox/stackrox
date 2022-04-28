@@ -30,6 +30,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-10021: RHCOS node support is dropped until major improvements are made in ROX-8944.
   - The UI shows the node scanning notes in the same manner as image scanning notes.
 - ROX-10097: Updated the base for the docs image from `nginx-118:1-46` to `nginx-120:latest`.
+- ROX-10666: `FROM` option has been deprecated from `Disallowed Dockerfile line` policy field and will be removed in a future release. Any policies containing `Disallowed dockerfile line` policy field with `FROM` option must be updated to remove those policy sections. For more information, please refer "Known Issues" section in Red-Hat ACS 3.69 release notes.
 
 ## [69.1]
 
