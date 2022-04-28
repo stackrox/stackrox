@@ -49,16 +49,16 @@ func ObserveTimeSpentInExponentialBackoff(t time.Duration) {
 
 // ObserveNetworkPolicyStoreState observes the metric.
 func ObserveNetworkPolicyStoreState(ns string, num int) {
-	networkPoliciesStored.WithLabelValues("K8sNamespace", ns).Set(float64(num))
+	networkPoliciesStored.With(prometheus.Labels{"K8sNamespace": ns}).Set(float64(num))
 }
 
 // ObserveNetworkPolicyStoreEvent observes the metric.
 func ObserveNetworkPolicyStoreEvent(event, namespace string, numSelectors int) {
-	networkPoliciesStoreEvents.WithLabelValues(
-		"updateEvent", event,
-		"K8sNamespace", namespace,
-		"NumSelectors", fmt.Sprintf("%d", numSelectors),
-	).Inc()
+	networkPoliciesStoreEvents.With(prometheus.Labels{
+		"updateEvent":  event,
+		"K8sNamespace": namespace,
+		"NumSelectors": fmt.Sprintf("%d", numSelectors),
+	}).Inc()
 }
 
 func init() {
