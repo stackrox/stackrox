@@ -297,12 +297,6 @@ spec:
         path: productVersion
       - displayName: Central
         path: central
-      - description: AdminPasswordSecretReference contains reference for the admin
-          password
-        displayName: Admin Password Secret Reference
-        path: central.adminPassword.adminPasswordSecretReference
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:Secret
       version: v1alpha1
     - description: SecuredCluster is the configuration template for the secured cluster
         services. These include Sensor, which is responsible for the connection to
