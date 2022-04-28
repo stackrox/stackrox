@@ -140,24 +140,23 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
 	}
-	var sel selectorWrapper
+	var sw selectorWrapper
 	oldWrap := sh.serviceStore.getService(svc.Namespace, svc.Name)
 	if oldWrap != nil {
-		sel = oldWrap.selectorWrapper
+		sw = oldWrap.selectorWrapper
 	}
 	if action == central.ResourceAction_UPDATE_RESOURCE {
 		newWrap := wrapService(svc)
 		sh.serviceStore.addOrUpdateService(newWrap)
-		if sel.getSelector() != nil {
-			sel = or(sel, newWrap.selectorWrapper)
+		if sw.getSelector() != nil {
+			sw = or(sw, newWrap.selectorWrapper)
 		} else {
-			sel = newWrap.selectorWrapper
+			sw = newWrap.selectorWrapper
 		}
 	} else if action == central.ResourceAction_REMOVE_RESOURCE {
 		sh.serviceStore.removeService(svc)
 	}
-	// TODO(ROX-10066) continue refactor
-	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
+	return sh.updateDeploymentsFromStore(svc.Namespace, sw)
 }
 
 func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sw selectorWrapper) []*central.SensorEvent {
