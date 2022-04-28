@@ -9,6 +9,6 @@ var (
 
 	// ErrDeprecatedFlag is error factory for commands with deprecated flags.
 	ErrDeprecatedFlag = func(oldFlag, newFlag string) errox.Error {
-		return errox.InvalidArgs.Newf("Specified deprecated flag %q and new flag %q at the same time", oldFlag, newFlag)
+		return errox.InvalidArgs.Newf("specified deprecated flag %q and new flag %q at the same time", oldFlag, newFlag)
 	}
 )
