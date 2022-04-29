@@ -21,6 +21,8 @@ import (
 type SimpleaccessscopesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestSimpleaccessscopesStore(t *testing.T) {
@@ -35,24 +37,30 @@ func (s *SimpleaccessscopesStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *SimpleaccessscopesStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *SimpleaccessscopesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *SimpleaccessscopesStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *SimpleaccessscopesStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	simpleAccessScope := &storage.SimpleAccessScope{}
 	s.NoError(testutils.FullInit(simpleAccessScope, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -72,7 +80,7 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 
 	simpleAccessScopeCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(simpleAccessScopeCount, 1)
+	s.Equal(1, simpleAccessScopeCount)
 	simpleAccessScopeCount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
 	s.Zero(simpleAccessScopeCount)
@@ -101,9 +109,10 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(simpleAccessScope, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		simpleAccessScopes = append(simpleAccessScopes, simpleAccessScope)
 	}
+
 	s.NoError(store.UpsertMany(ctx, simpleAccessScopes))
 
 	simpleAccessScopeCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(simpleAccessScopeCount, 200)
+	s.Equal(200, simpleAccessScopeCount)
 }

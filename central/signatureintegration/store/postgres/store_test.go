@@ -21,6 +21,8 @@ import (
 type SignatureintegrationsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestSignatureintegrationsStore(t *testing.T) {
@@ -35,24 +37,30 @@ func (s *SignatureintegrationsStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *SignatureintegrationsStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *SignatureintegrationsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *SignatureintegrationsStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *SignatureintegrationsStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	signatureIntegration := &storage.SignatureIntegration{}
 	s.NoError(testutils.FullInit(signatureIntegration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -72,7 +80,7 @@ func (s *SignatureintegrationsStoreSuite) TestStore() {
 
 	signatureIntegrationCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(signatureIntegrationCount, 1)
+	s.Equal(1, signatureIntegrationCount)
 	signatureIntegrationCount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
 	s.Zero(signatureIntegrationCount)
@@ -101,9 +109,10 @@ func (s *SignatureintegrationsStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(signatureIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		signatureIntegrations = append(signatureIntegrations, signatureIntegration)
 	}
+
 	s.NoError(store.UpsertMany(ctx, signatureIntegrations))
 
 	signatureIntegrationCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(signatureIntegrationCount, 200)
+	s.Equal(200, signatureIntegrationCount)
 }

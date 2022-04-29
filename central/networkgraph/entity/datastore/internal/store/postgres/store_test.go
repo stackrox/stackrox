@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -20,6 +21,8 @@ import (
 type NetworkentityStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestNetworkentityStore(t *testing.T) {
@@ -34,24 +37,30 @@ func (s *NetworkentityStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *NetworkentityStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *NetworkentityStoreSuite) TestStore() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *NetworkentityStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *NetworkentityStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	networkEntity := &storage.NetworkEntity{}
 	s.NoError(testutils.FullInit(networkEntity, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -69,7 +78,7 @@ func (s *NetworkentityStoreSuite) TestStore() {
 
 	networkEntityCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(networkEntityCount, 1)
+	s.Equal(1, networkEntityCount)
 
 	networkEntityExists, err := store.Exists(ctx, networkEntity.GetInfo().GetId())
 	s.NoError(err)
@@ -93,9 +102,10 @@ func (s *NetworkentityStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(networkEntity, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkEntitys = append(networkEntitys, networkEntity)
 	}
+
 	s.NoError(store.UpsertMany(ctx, networkEntitys))
 
 	networkEntityCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(networkEntityCount, 200)
+	s.Equal(200, networkEntityCount)
 }

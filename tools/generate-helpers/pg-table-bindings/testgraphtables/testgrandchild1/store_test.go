@@ -12,6 +12,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -20,6 +21,8 @@ import (
 type Testgrandchild1StoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestTestgrandchild1Store(t *testing.T) {
@@ -34,24 +37,30 @@ func (s *Testgrandchild1StoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *Testgrandchild1StoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *Testgrandchild1StoreSuite) TestStore() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *Testgrandchild1StoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *Testgrandchild1StoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	testGrandChild1 := &storage.TestGrandChild1{}
 	s.NoError(testutils.FullInit(testGrandChild1, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -69,7 +78,7 @@ func (s *Testgrandchild1StoreSuite) TestStore() {
 
 	testGrandChild1Count, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(testGrandChild1Count, 1)
+	s.Equal(1, testGrandChild1Count)
 
 	testGrandChild1Exists, err := store.Exists(ctx, testGrandChild1.GetId())
 	s.NoError(err)
@@ -93,9 +102,10 @@ func (s *Testgrandchild1StoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(testGrandChild1, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testGrandChild1s = append(testGrandChild1s, testGrandChild1)
 	}
+
 	s.NoError(store.UpsertMany(ctx, testGrandChild1s))
 
 	testGrandChild1Count, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(testGrandChild1Count, 200)
+	s.Equal(200, testGrandChild1Count)
 }
