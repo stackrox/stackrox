@@ -116,6 +116,7 @@ func (s *ServiceaccountsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, serviceAccountCount)
 }
+
 func (s *ServiceaccountsStoreSuite) TestSACUpsert() {
 	obj := &storage.ServiceAccount{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))

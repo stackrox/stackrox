@@ -142,6 +142,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 
 {{- if eq (len (.Schema.RelationshipsToDefineAsForeignKeys)) 0 }}
 {{- if .Obj.IsDirectlyScoped }}
+
 func (s *{{$namePrefix}}StoreSuite) TestSACUpsert() {
 	obj := &{{.Type}}{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))

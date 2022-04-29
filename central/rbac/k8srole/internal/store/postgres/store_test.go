@@ -116,6 +116,7 @@ func (s *K8srolesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, k8SRoleCount)
 }
+
 func (s *K8srolesStoreSuite) TestSACUpsert() {
 	obj := &storage.K8SRole{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))

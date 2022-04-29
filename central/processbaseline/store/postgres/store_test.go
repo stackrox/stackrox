@@ -116,6 +116,7 @@ func (s *ProcessbaselinesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, processBaselineCount)
 }
+
 func (s *ProcessbaselinesStoreSuite) TestSACUpsert() {
 	obj := &storage.ProcessBaseline{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))

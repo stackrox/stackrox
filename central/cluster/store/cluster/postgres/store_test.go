@@ -116,6 +116,7 @@ func (s *ClustersStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, clusterCount)
 }
+
 func (s *ClustersStoreSuite) TestSACUpsert() {
 	obj := &storage.Cluster{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))

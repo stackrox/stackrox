@@ -116,6 +116,7 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, processIndicatorCount)
 }
+
 func (s *ProcessIndicatorsStoreSuite) TestSACUpsert() {
 	obj := &storage.ProcessIndicator{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))

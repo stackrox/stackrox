@@ -116,6 +116,7 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, deploymentCount)
 }
+
 func (s *DeploymentsStoreSuite) TestSACUpsert() {
 	obj := &storage.Deployment{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))

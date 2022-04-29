@@ -116,6 +116,7 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, namespaceMetadataCount)
 }
+
 func (s *NamespacesStoreSuite) TestSACUpsert() {
 	obj := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))

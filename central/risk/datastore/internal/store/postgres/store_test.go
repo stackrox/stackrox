@@ -116,6 +116,7 @@ func (s *RiskStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, riskCount)
 }
+
 func (s *RiskStoreSuite) TestSACUpsert() {
 	obj := &storage.Risk{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))

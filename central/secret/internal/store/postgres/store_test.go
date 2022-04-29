@@ -116,6 +116,7 @@ func (s *SecretsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, secretCount)
 }
+
 func (s *SecretsStoreSuite) TestSACUpsert() {
 	obj := &storage.Secret{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))

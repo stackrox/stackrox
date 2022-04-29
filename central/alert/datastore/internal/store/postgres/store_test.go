@@ -116,6 +116,7 @@ func (s *AlertsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, alertCount)
 }
+
 func (s *AlertsStoreSuite) TestSACUpsert() {
 	obj := &storage.Alert{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))

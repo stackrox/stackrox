@@ -116,6 +116,7 @@ func (s *RolebindingsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, k8SRoleBindingCount)
 }
+
 func (s *RolebindingsStoreSuite) TestSACUpsert() {
 	obj := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
