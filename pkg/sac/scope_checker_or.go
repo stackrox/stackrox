@@ -21,6 +21,13 @@ func NewOrScopeChecker(scopeCheckers ...ScopeChecker) ScopeChecker {
 	}
 }
 
+func (s orScopeChecker) Core() ScopeCheckerCore {
+	if len(s.scopeCheckers) != 0 {
+		return s.scopeCheckers[0].Core()
+	}
+	return nil
+}
+
 func (s orScopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
 	for i := range s.scopeCheckers {
 		s.scopeCheckers[i] = s.scopeCheckers[i].SubScopeChecker(keys...)
