@@ -74,3 +74,21 @@ updates:
     open-pull-requests-limit: 1
     reviewers:
     - "stackrox/backend-dep-updaters"
+
+  - package-ecosystem: 'docker'
+    directory: 'image/rhel'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+
+  - package-ecosystem: 'docker'
+    directory: 'image/postgres'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    reviewers:
+    - "stackrox/backend-dep-updaters"
