@@ -457,7 +457,7 @@ parameters:
     default: ""
 
 orbs:
-  win: circleci/windows@2.2.0
+  win: circleci/windows@4.1
   ci-artifacts: stackrox/ci-artifacts-orb@0.1.1
 
 executors:
