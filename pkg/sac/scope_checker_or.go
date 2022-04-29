@@ -69,8 +69,10 @@ func (s orScopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (
 			allowedErrs = multierror.Append(allowedErrs, err)
 		}
 	}
-
-	return false, allowedErrs
+	if allowedErrs != nil {
+		return false, allowedErrs
+	}
+	return false, nil
 }
 
 func (s orScopeChecker) TryAnyAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult {
@@ -97,8 +99,10 @@ func (s orScopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeK
 			anyAllowedErrs = multierror.Append(anyAllowedErrs, err)
 		}
 	}
-
-	return false, anyAllowedErrs
+	if anyAllowedErrs != nil {
+		return false, anyAllowedErrs
+	}
+	return false, nil
 }
 
 func (s orScopeChecker) TryAllAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult {
@@ -114,7 +118,7 @@ func (s orScopeChecker) TryAllAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResu
 }
 
 func (s orScopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeKey) (bool, error) {
-	var anyAllowedErrs *multierror.Error
+	var allAllowedErrs *multierror.Error
 	for _, checker := range s.scopeCheckers {
 		allowed, err := checker.AllAllowed(ctx, subScopeKeyss)
 		// Short-circuit on the first allowed check result.
@@ -122,11 +126,13 @@ func (s orScopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeK
 			return allowed, nil
 		}
 		if err != nil {
-			anyAllowedErrs = multierror.Append(anyAllowedErrs, err)
+			allAllowedErrs = multierror.Append(allAllowedErrs, err)
 		}
 	}
-
-	return false, anyAllowedErrs
+	if allAllowedErrs != nil {
+		return false, allAllowedErrs
+	}
+	return false, nil
 }
 
 func (s orScopeChecker) ForClusterScopedObject(obj ClusterScopedObject) ScopeChecker {
