@@ -43,15 +43,15 @@ func init() {
 			"activeState(query: String): ActiveState",
 			"vulnerabilityState: String!",
 			"effectiveVulnerabilityRequest: VulnerabilityRequest",
+			"unusedVarSink(query: String): Int",
 		}),
 		schema.AddQuery("nodeVulnerability(id: ID): NodeVulnerability"),
 		schema.AddQuery("nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!"),
 		schema.AddQuery("nodeVulnerabilityCount(query: String): Int!"),
-		schema.AddExtraResolver("NodeVulnerability", `unusedVarSink(query: String): Int`),
 	)
 }
 
-// NodeVulnerability resolves a single vulnerability based on an id (the CVE value).
+// NodeVulnerability resolves a single vulnerability based on an id
 func (resolver *Resolver) NodeVulnerability(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerability")
 	if !features.PostgresDatastore.Enabled() {
