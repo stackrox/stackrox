@@ -145,6 +145,9 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
     {{- /* End of the referenced schema check */ -}}
 }
 
+{{/* Check for referenced schema */}}
+{{/* No top-level has a parent unless attached synthetically. Such connections require upserting objects into the referenced tables for adhere to referential constraint. However, our project package structure does not allow to do so. Hence, skip the upsert/delete tests. */}}
+{{if eq (len .Schema.ReferencedSchema) 0 -}}
 {{ if .Obj.IsDirectlyScoped -}}
 func (s *{{$namePrefix}}StoreSuite) TestSACUpsert() {
 	obj := &{{.Type}}{}
@@ -228,3 +231,5 @@ func getSACContexts(obj *{{.Type}}) map[string]context.Context {
 	}
 }
 {{ end }}
+{{- end }}
+{{- /* End of the referenced schema check */ -}}
