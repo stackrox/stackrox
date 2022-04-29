@@ -23,7 +23,8 @@ export type LifecycleStage = 'DEPLOY' | 'BUILD' | 'RUNTIME';
 
 export type PolicyEventSource = 'NOT_APPLICABLE' | 'DEPLOYMENT_EVENT' | 'AUDIT_LOG_EVENT';
 
-export type BasePolicy = {
+// the policy object we get from the API
+export type ServerPolicy = {
     rationale: string;
     remediation: string;
     categories: string[];
@@ -37,6 +38,7 @@ export type BasePolicy = {
     readonly mitreVectorsLocked: boolean; // If true, the policy's MITRE ATT&CK fields are rendered read-only.
 } & ListPolicy;
 
+// the policy object we use client side for ease of form manipulation
 export type ClientPolicy = {
     excludedImageNames: string[]; // For internal use only.
     excludedDeploymentScopes: PolicyExcludedDeployment[]; // For internal use only.
@@ -44,7 +46,7 @@ export type ClientPolicy = {
     SORT_lifecycleStage: string; // For internal use only.
     SORT_enforcement: boolean; // For internal use only.
     serverPolicySections: PolicySection[]; // For internal use only.
-} & BasePolicy;
+} & ServerPolicy;
 
 export type Policy = {
     rationale: string;
