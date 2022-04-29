@@ -3,6 +3,7 @@ package resources
 import (
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/store"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -112,11 +113,21 @@ func (n *networkPolicyStoreImpl) All() map[string]*storage.NetworkPolicy {
 	return result
 }
 
+func (n *networkPolicyStoreImpl) updateStateMetric() {
+	for ns, m := range n.data {
+		metrics.ObserveNetworkPolicyStoreState(ns, len(m))
+	}
+}
+
 // Delete removes network policy from the store
 func (n *networkPolicyStoreImpl) Delete(ID, ns string) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
-	if _, nsFound := n.data[ns]; nsFound {
+	defer n.updateStateMetric()
+	if policies, nsFound := n.data[ns]; nsFound {
+		if policy, policyFound := policies[ID]; policyFound {
+			metrics.ObserveNetworkPolicyStoreEvent("delete", ns, len(policy.GetSpec().GetPodSelector().GetMatchLabels()))
+		}
 		delete(n.data[ns], ID)
 		if len(n.data[ns]) == 0 {
 			delete(n.data, ns)
@@ -128,10 +139,16 @@ func (n *networkPolicyStoreImpl) Delete(ID, ns string) {
 func (n *networkPolicyStoreImpl) Upsert(np *storage.NetworkPolicy) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
+	defer n.updateStateMetric()
 
 	if _, nsFound := n.data[np.GetNamespace()]; !nsFound {
 		n.data[np.GetNamespace()] = make(map[string]*storage.NetworkPolicy)
 	}
+	event := "add"
+	if _, exists := n.data[np.GetNamespace()][np.GetId()]; exists {
+		event = "update"
+	}
+	metrics.ObserveNetworkPolicyStoreEvent(event, np.GetNamespace(), len(np.GetSpec().GetPodSelector().GetMatchLabels()))
 	n.data[np.GetNamespace()][np.GetId()] = np
 }
 
