@@ -25,7 +25,7 @@ export const selectors = {
         medSeveritySector: `g.recharts-pie-sector path[fill="${severityColorMap.MEDIUM_SEVERITY}"]`,
         legendItem: `span.recharts-legend-item-text`,
         legendLink: '[data-testid="CIS Docker v1.2.0"]',
-        noResultsMessage: '[data-testid="results-message"]',
+        resultsMessage: '[data-testid="results-message"]',
     }),
     timeseries: 'svg.recharts-surface',
     searchInput: '.react-select__input > input',

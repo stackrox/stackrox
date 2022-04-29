@@ -200,7 +200,7 @@ describe('Dashboard page', () => {
         visitMainDashboard();
         cy.wait('@getAlertsCountsByCluster');
 
-        cy.get(selectors.chart.noResultsMessage).should(
+        cy.get(selectors.chart.resultsMessage).should(
             'have.text',
             'No data available. Please ensure your cluster is properly configured.'
         );
