@@ -290,7 +290,7 @@ message ClusterHealthStatus {
 
     HealthStatusLabel         overall_health_status             = 4 [(gogoproto.moretags) = "search:\"Cluster Status,store\""];
     HealthStatusLabel         admission_control_health_status   = 7 [(gogoproto.moretags) = "search:\"Admission Control Status,store\""];
-    HealthStatusLabel         local_scanner_health_status       = 11 [(gogoproto.moretags) = "search:\"Local Scanner Status,store\""];
+    HealthStatusLabel         local_scanner_health_status       = 11 [(gogoproto.moretags) = "search:\"Scanner Status,store\""];
 
     // For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
     // this timestamp will be updated by central pipeline when message is processed
@@ -298,6 +298,8 @@ message ClusterHealthStatus {
 
     // To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
     bool                      health_info_complete                  = 6;
+
+    // Note that the tags are out of order. The next tag number is 12.
 }
 
 // CollectorHealthInfo carries data about collector deployment but does not include collector health status derived from this data.
@@ -343,7 +345,6 @@ message AdmissionControlHealthInfo {
 
     // Collection of errors that occurred while trying to obtain admission control health info.
     repeated string status_errors = 3;
-
 }
 
 // LocalScannerHealthInfo carries data about local scanner deployment but does not include local scanner health status
@@ -356,19 +357,18 @@ message LocalScannerHealthInfo {
     // a certain field, it will be absent (instead of having the default value).
 
     oneof total_desired_analyzer_pods_opt {
-        int32  total_desired_analyzer_pods = 1;
+        int32 total_desired_analyzer_pods = 1;
     }
     oneof total_ready_analyzer_pods_opt {
-        int32  total_ready_analyzer_pods = 2;
+        int32 total_ready_analyzer_pods = 2;
     }
     oneof total_desired_db_pods_opt {
         int32 total_desired_db_pods = 3;
     }
     oneof total_ready_db_pods_opt {
-        int32  total_ready_db_pods = 4;
+        int32 total_ready_db_pods = 4;
     }
 
     // Collection of errors that occurred while trying to obtain local scanner health info.
     repeated string status_errors = 5;
-
 }

@@ -30,7 +30,7 @@ const (
 	admissionControlContainerName  = "admission-control"
 
 	localScannerDeploymentName   = "scanner"
-	localScannerDbDeploymentName = "scanner-db"
+	localScannerDBDeploymentName = "scanner-db"
 )
 
 var (
@@ -167,12 +167,12 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.LocalScannerHealthInfo {
 	if !env.LocalImageScanningEnabled.BooleanSetting() {
 		return nil
 	}
-	result := storage.LocalScannerHealthInfo{}
+	var result storage.LocalScannerHealthInfo
 	// Local Scanner deployment is looked up in the same namespace as Sensor because that is how they should be deployed.
 	localScanner, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), localScannerDeploymentName, metav1.GetOptions{})
 	if err != nil {
-		err = errors.Wrap(err, fmt.Sprintf("unable to find local scanner deployments in namespace %q", u.namespace))
-		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner deployments in namespace %q: %v", u.namespace, err))
+		err = errors.Wrap(err, fmt.Sprintf("unable to find local scanner deployment in namespace %q", u.namespace))
+		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner deployment in namespace %q: %v", u.namespace, err))
 	} else {
 		result.TotalDesiredAnalyzerPodsOpt = &storage.LocalScannerHealthInfo_TotalDesiredAnalyzerPods{
 			TotalDesiredAnalyzerPods: localScanner.Status.Replicas,
@@ -181,16 +181,16 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.LocalScannerHealthInfo {
 			TotalReadyAnalyzerPods: localScanner.Status.ReadyReplicas,
 		}
 	}
-	localScannerDb, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), localScannerDbDeploymentName, metav1.GetOptions{})
+	localScannerDB, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), localScannerDBDeploymentName, metav1.GetOptions{})
 	if err != nil {
-		err = errors.Wrap(err, fmt.Sprintf("unable to find local scanner DB deployments in namespace %q", u.namespace))
-		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner DB deployments in namespace %q: %v", u.namespace, err))
+		err = errors.Wrap(err, fmt.Sprintf("unable to find local scanner DB deployment in namespace %q", u.namespace))
+		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner DB deployment in namespace %q: %v", u.namespace, err))
 	} else {
 		result.TotalDesiredDbPodsOpt = &storage.LocalScannerHealthInfo_TotalDesiredDbPods{
-			TotalDesiredDbPods: localScannerDb.Status.Replicas,
+			TotalDesiredDbPods: localScannerDB.Status.Replicas,
 		}
 		result.TotalReadyDbPodsOpt = &storage.LocalScannerHealthInfo_TotalReadyDbPods{
-			TotalReadyDbPods: localScannerDb.Status.ReadyReplicas,
+			TotalReadyDbPods: localScannerDB.Status.ReadyReplicas,
 		}
 	}
 

@@ -34,7 +34,7 @@ var (
 	SensorStatus           = newFieldLabel("Sensor Status")
 	CollectorStatus        = newFieldLabel("Collector Status")
 	AdmissionControlStatus = newFieldLabel("Admission Control Status")
-	LocalScannerStatus     = newFieldLabel("Local Scanner Status")
+	LocalScannerStatus     = newFieldLabel("Scanner Status")
 
 	PolicyID       = newFieldLabel("Policy ID")
 	Enforcement    = newFieldLabel("Enforcement")
