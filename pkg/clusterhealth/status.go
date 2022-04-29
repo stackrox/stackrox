@@ -115,7 +115,7 @@ func PopulateAdmissionControlStatus(admissionControlHealthInfo *storage.Admissio
 
 // PopulateLocalScannerStatus returns local scanner status based on fraction of total desired pods that
 // have not failed to register with sensor.
-func PopulateLocalScannerStatus(localScannerHealthInfo *storage.LocalScannerHealthInfo) storage.ClusterHealthStatus_HealthStatusLabel {
+func PopulateLocalScannerStatus(localScannerHealthInfo *storage.ScannerHealthInfo) storage.ClusterHealthStatus_HealthStatusLabel {
 	if localScannerHealthInfo == nil {
 		return storage.ClusterHealthStatus_UNINITIALIZED
 	}

@@ -75,14 +75,14 @@ func (u *updaterImpl) run() {
 		case <-ticker.C:
 			collectorHealthInfo := u.getCollectorInfo()
 			admissionControlHealthInfo := u.getAdmissionControlInfo()
-			localScannerHealthInfo := u.getLocalScannerInfo()
+			scannerHealthInfo := u.getLocalScannerInfo()
 			select {
 			case u.updates <- &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_ClusterHealthInfo{
 					ClusterHealthInfo: &central.RawClusterHealthInfo{
 						CollectorHealthInfo:        collectorHealthInfo,
 						AdmissionControlHealthInfo: admissionControlHealthInfo,
-						LocalScannerHealthInfo:     localScannerHealthInfo,
+						ScannerHealthInfo:          scannerHealthInfo,
 					},
 				},
 			}:
@@ -163,21 +163,21 @@ func (u *updaterImpl) getAdmissionControlInfo() *storage.AdmissionControlHealthI
 	return &result
 }
 
-func (u *updaterImpl) getLocalScannerInfo() *storage.LocalScannerHealthInfo {
+func (u *updaterImpl) getLocalScannerInfo() *storage.ScannerHealthInfo {
 	if !env.LocalImageScanningEnabled.BooleanSetting() {
 		return nil
 	}
-	var result storage.LocalScannerHealthInfo
+	var result storage.ScannerHealthInfo
 	// Local Scanner deployment is looked up in the same namespace as Sensor because that is how they should be deployed.
 	localScanner, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), localScannerDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		err = errors.Wrap(err, fmt.Sprintf("unable to find local scanner deployment in namespace %q", u.namespace))
 		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner deployment in namespace %q: %v", u.namespace, err))
 	} else {
-		result.TotalDesiredAnalyzerPodsOpt = &storage.LocalScannerHealthInfo_TotalDesiredAnalyzerPods{
+		result.TotalDesiredAnalyzerPodsOpt = &storage.ScannerHealthInfo_TotalDesiredAnalyzerPods{
 			TotalDesiredAnalyzerPods: localScanner.Status.Replicas,
 		}
-		result.TotalReadyAnalyzerPodsOpt = &storage.LocalScannerHealthInfo_TotalReadyAnalyzerPods{
+		result.TotalReadyAnalyzerPodsOpt = &storage.ScannerHealthInfo_TotalReadyAnalyzerPods{
 			TotalReadyAnalyzerPods: localScanner.Status.ReadyReplicas,
 		}
 	}
@@ -186,10 +186,10 @@ func (u *updaterImpl) getLocalScannerInfo() *storage.LocalScannerHealthInfo {
 		err = errors.Wrap(err, fmt.Sprintf("unable to find local scanner DB deployment in namespace %q", u.namespace))
 		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find local scanner DB deployment in namespace %q: %v", u.namespace, err))
 	} else {
-		result.TotalDesiredDbPodsOpt = &storage.LocalScannerHealthInfo_TotalDesiredDbPods{
+		result.TotalDesiredDbPodsOpt = &storage.ScannerHealthInfo_TotalDesiredDbPods{
 			TotalDesiredDbPods: localScannerDB.Status.Replicas,
 		}
-		result.TotalReadyDbPodsOpt = &storage.LocalScannerHealthInfo_TotalReadyDbPods{
+		result.TotalReadyDbPodsOpt = &storage.ScannerHealthInfo_TotalReadyDbPods{
 			TotalReadyDbPods: localScannerDB.Status.ReadyReplicas,
 		}
 	}

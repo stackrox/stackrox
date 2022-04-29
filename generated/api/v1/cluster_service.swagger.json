@@ -508,8 +508,9 @@
         "admissionControlHealthInfo": {
           "$ref": "#/definitions/storageAdmissionControlHealthInfo"
         },
-        "localScannerHealthInfo": {
-          "$ref": "#/definitions/storageLocalScannerHealthInfo"
+        "scannerHealthInfo": {
+          "$ref": "#/definitions/storageScannerHealthInfo",
+          "description": "scanner_health_info is filled when the scanner is deployed on a secured cluster (so called \"local scanner\").\nPlease do not confuse this with the default scanner deployment on a central cluster."
         },
         "sensorHealthStatus": {
           "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel",
@@ -673,35 +674,6 @@
         }
       }
     },
-    "storageLocalScannerHealthInfo": {
-      "type": "object",
-      "properties": {
-        "totalDesiredAnalyzerPods": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "totalReadyAnalyzerPods": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "totalDesiredDbPods": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "totalReadyDbPods": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "statusErrors": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Collection of errors that occurred while trying to obtain local scanner health info."
-        }
-      },
-      "description": "LocalScannerHealthInfo carries data about local scanner deployment but does not include local scanner health status\nderived from this data.\nAggregated local scanner health status is not included because it is derived in central and not in the component that\nfirst reports LocalScannerHealthInfo (sensor)."
-    },
     "storageManagerType": {
       "type": "string",
       "enum": [
@@ -755,6 +727,35 @@
           "type": "boolean"
         }
       }
+    },
+    "storageScannerHealthInfo": {
+      "type": "object",
+      "properties": {
+        "totalDesiredAnalyzerPods": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalReadyAnalyzerPods": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalDesiredDbPods": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalReadyDbPods": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "statusErrors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Collection of errors that occurred while trying to obtain scanner health info."
+        }
+      },
+      "description": "ScannerHealthInfo carries data about scanner deployment but does not include scanner health status\nderived from this data.\nAggregated scanner health status is not included because it is derived in central and not in the component that\nfirst reports ScannerHealthInfo (sensor)."
     },
     "storageSensorDeploymentIdentification": {
       "type": "object",
