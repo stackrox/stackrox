@@ -7,4 +7,5 @@ export function visitMainDashboard() {
     cy.intercept('GET', api.risks.riskyDeployments).as('riskyDeployments');
     visit(url);
     cy.wait('@riskyDeployments');
+    cy.get('h1:contains("Dashboard")');
 }
