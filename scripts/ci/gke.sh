@@ -76,11 +76,13 @@ create_cluster() {
     if is_OPENSHIFT_CI; then
         require_environment "JOB_NAME"
         require_environment "BUILD_ID"
+
         local job_name_limit50=${JOB_NAME:0:50}
         job_name_limit50=${job_name_limit50/%-/x}  # replace trailing - with x
         local job_name_limit63=${JOB_NAME:0:50}
         job_name_limit63=${job_name_limit63/%-/x}  # replace trailing - with x
         local build_id_limit63=${BUILD_ID:0:63}
+        build_id_limit63=${build_id_limit63/%-/x}  # replace trailing - with x
 
         tags="${tags},stackrox-ci-$job_name_limit50"
         labels="${labels},stackrox-ci-job=$job_name_limit63,stackrox-ci-build-id=$build_id_limit63"
@@ -88,11 +90,13 @@ create_cluster() {
     elif is_CIRCLECI; then
         require_environment "CIRCLE_JOB"
         require_environment "CIRCLE_WORKFLOW_ID"
+
         local circle_job_limit50=${CIRCLE_JOB:0:50}
         circle_job_limit50=${circle_job_limit50/%-/x}  # replace trailing - with x
         local circle_job_limit63=${CIRCLE_JOB:0:63}
         circle_job_limit63=${circle_job_limit63/%-/x}  # replace trailing - with x
         local circle_workflow_id_limit63=${CIRCLE_WORKFLOW_ID:0:63}
+        circle_workflow_id_limit63=${circle_workflow_id_limit63/%-/x}  # replace trailing - with x
 
         tags="${tags},stackrox-ci-$circle_job_limit50"
         labels="${labels},stackrox-ci-job=$circle_job_limit63,stackrox-ci-workflow=$circle_workflow_id_limit63"
