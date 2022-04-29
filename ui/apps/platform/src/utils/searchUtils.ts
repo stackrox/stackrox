@@ -107,6 +107,16 @@ export function searchOptionsToSearchFilter(searchOptions: SearchEntry[]): Searc
     return searchFilter;
 }
 
+/**
+ * Determines whether or not a SearchFilter contains a valid value for
+ * all keys. A valid value is either a non-empty string or non-empty array.
+ */
+export function isCompleteSearchFilter(searchFilter: SearchFilter) {
+    return Object.values(searchFilter).every(
+        (o) => Boolean(o) && (!Array.isArray(o) || o.length > 0)
+    );
+}
+
 /*
  * Return request query string for search filter. Omit filter criterion:
  * If option does not have value.

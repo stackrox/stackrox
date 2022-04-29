@@ -17,20 +17,6 @@ const getNetworkSearchActions = getSearchActions('network');
 
 const networkSearchActions = { ...getNetworkSearchActions };
 
-// Network search should not show the following categories
-const searchOptionExclusions = [
-    'Cluster:',
-    'Namespace:',
-    'Namespace ID:',
-    'Orchestrator Component:',
-];
-const filterSearchOptions = (options) =>
-    options.filter((obj) => !searchOptionExclusions.includes(obj.value));
-networkSearchActions.setNetworkSearchModifiers = (options) =>
-    getNetworkSearchActions.setNetworkSearchModifiers(filterSearchOptions(options));
-networkSearchActions.setNetworkSearchSuggestions = (options) =>
-    getNetworkSearchActions.setNetworkSearchSuggestions(filterSearchOptions(options));
-
 // Actions
 //---------
 
