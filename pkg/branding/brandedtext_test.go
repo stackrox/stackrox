@@ -45,10 +45,9 @@ func (s *BrandedTextTestSuite) TestGetBrandedProductName() {
 			productBrandingEnv: "STACKROX_BRANDING",
 			brandedProductName: brandedProductNameStackrox,
 		},
-		// TODO(ROX-10208): Set brandedProductNameShort to brandedProductNameStackrox
 		"Unset env": {
 			productBrandingEnv: "",
-			brandedProductName: brandedProductNameRHACS,
+			brandedProductName: brandedProductNameStackrox,
 		},
 	}
 	for name, tt := range tests {
@@ -73,10 +72,9 @@ func (s *BrandedTextTestSuite) TestGetBrandedProductNameShort() {
 			productBrandingEnv:      "STACKROX_BRANDING",
 			brandedProductNameShort: brandedProductNameStackrox,
 		},
-		// TODO(ROX-10208): Set brandedProductNameShort to brandedProductNameStackrox
 		"Unset env": {
 			productBrandingEnv:      "",
-			brandedProductNameShort: productNameRHACSShort,
+			brandedProductNameShort: brandedProductNameStackrox,
 		},
 	}
 	for name, tt := range tests {
