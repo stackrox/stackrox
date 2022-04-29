@@ -297,21 +297,28 @@ func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Polic
 	if overwrite {
 		err = ds.importOverwrite(ctx, policy, policyNameIDMap)
 	} else {
-		existingPolicy, exists, storeErr := ds.storage.Get(ctx, policy.GetId())
-		if storeErr != nil {
-			result.Errors = getImportErrorsFromError(storeErr)
-			return result
-		}
 		importErrors := make([]*v1.ImportPolicyError, 0)
-		if exists {
-			importErrors = append(result.Errors, &v1.ImportPolicyError{
-				Message: fmt.Sprintf("policy with id '%s' already exists, unable to import policy", policy.GetId()),
-				Type:    policiesPkg.ErrImportDuplicateID,
-				Metadata: &v1.ImportPolicyError_DuplicateName{
-					DuplicateName: existingPolicy.GetName(),
-				},
-			})
+
+		if policy.GetId() != "" {
+			existingPolicy, exists, storeErr := ds.storage.Get(ctx, policy.GetId())
+			if storeErr != nil {
+				result.Errors = getImportErrorsFromError(storeErr)
+				return result
+			}
+			if exists {
+				importErrors = append(result.Errors, &v1.ImportPolicyError{
+					Message: fmt.Sprintf("policy with id '%s' already exists, unable to import policy", policy.GetId()),
+					Type:    policiesPkg.ErrImportDuplicateID,
+					Metadata: &v1.ImportPolicyError_DuplicateName{
+						DuplicateName: existingPolicy.GetName(),
+					},
+				})
+			}
+		} else {
+			// generate id here since upsert no longer generates id
+			policy.Id = uuid.NewV4().String()
 		}
+
 		if ds.policyNameIsNotUnique(policyNameIDMap, policy.GetName()) {
 			importErrors = append(importErrors, &v1.ImportPolicyError{
 				Message: fmt.Sprintf("policy with name '%s' already exists, unable to import policy", policy.GetName()),
