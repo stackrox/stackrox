@@ -454,7 +454,8 @@ func (s *storeImpl) copyFromDeployments(ctx context.Context, tx pgx.Tx, objs ...
 		}
 	}
 
-	for _, obj := range objs {
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
 		if err = s.copyFromDeploymentsContainers(ctx, tx, obj.GetId(), obj.GetContainers()...); err != nil {
 			return err
@@ -560,6 +561,7 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx pgx.Tx
 	}
 
 	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
 		if err = s.copyFromDeploymentsContainersEnv(ctx, tx, deployments_Id, idx, obj.GetConfig().GetEnv()...); err != nil {
 			return err
@@ -809,6 +811,7 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx pgx.Tx, dep
 	}
 
 	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
 		if err = s.copyFromDeploymentsPortsExposureInfos(ctx, tx, deployments_Id, idx, obj.GetExposureInfos()...); err != nil {
 			return err

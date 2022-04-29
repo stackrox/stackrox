@@ -248,7 +248,8 @@ func (s *storeImpl) copyFromSecrets(ctx context.Context, tx pgx.Tx, objs ...*sto
 		}
 	}
 
-	for _, obj := range objs {
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
 		if err = s.copyFromSecretsFiles(ctx, tx, obj.GetId(), obj.GetFiles()...); err != nil {
 			return err
@@ -307,6 +308,7 @@ func (s *storeImpl) copyFromSecretsFiles(ctx context.Context, tx pgx.Tx, secrets
 	}
 
 	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
 		if err = s.copyFromSecretsFilesRegistries(ctx, tx, secrets_Id, idx, obj.GetImagePullSecret().GetRegistries()...); err != nil {
 			return err

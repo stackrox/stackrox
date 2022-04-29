@@ -6,9 +6,11 @@ import (
 	"reflect"
 
 	"github.com/stackrox/rox/central/globaldb"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -33,6 +35,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestG3GrandChild1)(nil)), "testg3grandchild1")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory(67), "testg3grandchild1", (*storage.TestG3GrandChild1)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

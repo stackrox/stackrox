@@ -231,7 +231,8 @@ func (s *storeImpl) copyFromRolebindings(ctx context.Context, tx pgx.Tx, objs ..
 		}
 	}
 
-	for _, obj := range objs {
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
 		if err = s.copyFromRolebindingsSubjects(ctx, tx, obj.GetId(), obj.GetSubjects()...); err != nil {
 			return err

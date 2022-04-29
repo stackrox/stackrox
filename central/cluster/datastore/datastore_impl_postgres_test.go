@@ -64,6 +64,9 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
 	s.NoError(err)
 	s.db = pool
 
+	nsPostgres.Destroy(s.ctx, s.db)
+	clusterPostgres.Destroy(s.ctx, s.db)
+
 	ds, err := namespace.New(nsPostgres.New(s.ctx, s.db), nil, nsPostgres.NewIndexer(s.db), nil, ranking.NamespaceRanker(), nil)
 	s.NoError(err)
 	s.nsDatastore = ds
@@ -81,8 +84,6 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) TearDownSuite() {
-	nsPostgres.Destroy(s.ctx, s.db)
-	clusterPostgres.Destroy(s.ctx, s.db)
 	s.db.Close()
 	s.mockCtrl.Finish()
 	s.envIsolator.RestoreAll()

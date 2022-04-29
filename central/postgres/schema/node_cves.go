@@ -43,7 +43,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), "node_cves")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_VULNERABILITIES, "node_cves", (*storage.CVE)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_VULNERABILITIES, "node_cves", (*storage.CVE)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

@@ -196,7 +196,8 @@ func (s *storeImpl) copyFromTestparent1(ctx context.Context, tx pgx.Tx, objs ...
 		}
 	}
 
-	for _, obj := range objs {
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
 		if err = s.copyFromTestparent1Children(ctx, tx, obj.GetId(), obj.GetChildren()...); err != nil {
 			return err

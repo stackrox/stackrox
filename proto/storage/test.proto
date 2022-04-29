@@ -191,7 +191,7 @@ message TestChild1 {
 message TestGrandChild1 {
   string id        = 1 [(gogoproto.moretags) = 'search:"Test Grandchild1 ID" sql:"pk"'];
   string parent_id = 2 [(gogoproto.moretags) = 'search:"Test Child1 ID" sql:"fk(TestChild1:id)"'];
-  string child_id  = 3 [(gogoproto.moretags) = 'search:"Test GGrandchild1 ID" sql:"fk(TestGGranchild1:id),no-fk-constraint"'];
+  string child_id  = 3 [(gogoproto.moretags) = 'search:"Test GGrandchild1 ID" sql:"fk(TestGGrandChild1:id),no-fk-constraint"'];
 
   string val = 4 [(gogoproto.moretags) = 'search:"Test Grandchild1 Val"'];
 }
@@ -205,7 +205,7 @@ message TestGGrandChild1 {
 message TestG2GrandChild1 {
   string id        = 1 [(gogoproto.moretags) = 'search:"Test G2Grandchild1 ID" sql:"pk"'];
   string parent_id = 2 [(gogoproto.moretags) = 'search:"Test GGrandchild1 ID" sql:"fk(TestGGrandChild1:id)"'];
-  string child_id  = 3 [(gogoproto.moretags) = 'search:"Test G3Grandchild1 ID" sql:"fk(TestG3GrandChil1:id),no-fk-constraint"'];
+  string child_id  = 3 [(gogoproto.moretags) = 'search:"Test G3Grandchild1 ID" sql:"fk(TestG3GrandChild1:id),no-fk-constraint"'];
 
   string val = 4 [(gogoproto.moretags) = 'search:"Test G2Grandchild1 Val"'];
 }
