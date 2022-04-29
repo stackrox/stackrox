@@ -58,3 +58,30 @@ func (s *BrandedTextTestSuite) TestGetBrandedProductName() {
 		})
 	}
 }
+
+func (s *BrandedTextTestSuite) TestGetBrandedProductNameShort() {
+	tests := map[string]struct {
+		productBrandingEnv      string
+		brandedProductNameShort string
+	}{
+		"RHACS branding": {
+			productBrandingEnv:      "RHACS_BRANDING",
+			brandedProductNameShort: productNameRHACSShort,
+		},
+		"Stackrox branding": {
+			productBrandingEnv:      "STACKROX_BRANDING",
+			brandedProductNameShort: brandedProductNameStackrox,
+		},
+		"Unset env": {
+			productBrandingEnv:      "",
+			brandedProductNameShort: brandedProductNameStackrox,
+		},
+	}
+	for name, tt := range tests {
+		s.Run(name, func() {
+			s.envIsolator.Setenv("ROX_PRODUCT_BRANDING", tt.productBrandingEnv)
+			receivedProductNameShort := GetProductNameShort()
+			s.Equal(tt.brandedProductNameShort, receivedProductNameShort)
+		})
+	}
+}
