@@ -16,12 +16,14 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-    "github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -79,7 +81,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
-    {{if not .JoinTable -}}
+    {{if and (not .JoinTable) (eq (len .Schema.RelationshipsToDefineAsForeignKeys) 0) -}}
     {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped)}}
     withNoAccessCtx := sac.WithNoAccess(ctx)
     {{- end }}
@@ -138,7 +140,8 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
     {{- end }}
 }
 
-{{ if .Obj.IsDirectlyScoped -}}
+{{- if eq (len (.Schema.RelationshipsToDefineAsForeignKeys)) 0 }}
+{{- if .Obj.IsDirectlyScoped }}
 func (s *{{$namePrefix}}StoreSuite) TestSACUpsert() {
 	obj := &{{.Type}}{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -221,3 +224,4 @@ func getSACContexts(obj *{{.Type}}) map[string]context.Context {
 	}
 }
 {{ end }}
+{{- end }}

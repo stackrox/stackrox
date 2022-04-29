@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	storage "github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -116,7 +116,6 @@ func (s *SecretsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(200, secretCount)
 }
-
 func (s *SecretsStoreSuite) TestSACUpsert() {
 	obj := &storage.Secret{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))

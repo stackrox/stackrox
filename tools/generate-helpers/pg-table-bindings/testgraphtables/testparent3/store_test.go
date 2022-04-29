@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	storage "github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -72,42 +72,4 @@ func (s *Testparent3StoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundTestParent3)
 
-	s.NoError(store.Upsert(ctx, testParent3))
-	foundTestParent3, exists, err = store.Get(ctx, testParent3.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(testParent3, foundTestParent3)
-
-	testParent3Count, err := store.Count(ctx)
-	s.NoError(err)
-	s.Equal(1, testParent3Count)
-
-	testParent3Exists, err := store.Exists(ctx, testParent3.GetId())
-	s.NoError(err)
-	s.True(testParent3Exists)
-	s.NoError(store.Upsert(ctx, testParent3))
-
-	foundTestParent3, exists, err = store.Get(ctx, testParent3.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(testParent3, foundTestParent3)
-
-	s.NoError(store.Delete(ctx, testParent3.GetId()))
-	foundTestParent3, exists, err = store.Get(ctx, testParent3.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundTestParent3)
-
-	var testParent3s []*storage.TestParent3
-	for i := 0; i < 200; i++ {
-		testParent3 := &storage.TestParent3{}
-		s.NoError(testutils.FullInit(testParent3, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		testParent3s = append(testParent3s, testParent3)
-	}
-
-	s.NoError(store.UpsertMany(ctx, testParent3s))
-
-	testParent3Count, err = store.Count(ctx)
-	s.NoError(err)
-	s.Equal(200, testParent3Count)
 }
