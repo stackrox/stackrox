@@ -124,8 +124,7 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 func (i *localScannerTLSIssuerImpl) abortStart(err error) error {
 	log.Errorf("local scanner TLS issuer start aborted due to error: %s", err)
 	i.Stop(err)
-	// This component should never stop Sensor.
-	return nil
+	return err
 }
 
 func (i *localScannerTLSIssuerImpl) Stop(_ error) {
