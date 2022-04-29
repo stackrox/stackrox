@@ -292,7 +292,7 @@ message ClusterHealthStatus {
 
     HealthStatusLabel         overall_health_status             = 4 [(gogoproto.moretags) = "search:\"Cluster Status,store\""];
     HealthStatusLabel         admission_control_health_status   = 7 [(gogoproto.moretags) = "search:\"Admission Control Status,store\""];
-    HealthStatusLabel         scanner_health_status       = 11 [(gogoproto.moretags) = "search:\"Scanner Status,store\""];
+    HealthStatusLabel         scanner_health_status             = 11 [(gogoproto.moretags) = "search:\"Scanner Status,store\""];
 
     // For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
     // this timestamp will be updated by central pipeline when message is processed
