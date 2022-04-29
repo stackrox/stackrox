@@ -1,12 +1,16 @@
 // system under test (SUT)
+import { ImportPoliciesResponse, ImportPolicyError } from 'services/PoliciesService';
 import {
-    POLICY_DUPE_ACTIONS,
     parsePolicyImportErrors,
     isDuplicateResolved,
     getResolvedPolicies,
     getErrorMessages,
     hasDuplicateIdOnly,
     checkForBlockedSubmit,
+    PolicyResolutionType,
+    PolicyImportErrorDuplicateName,
+    PolicyImportErrorDuplicateId,
+    PolicyImportErrorInvalidPolicy,
 } from './PolicyImport.utils';
 
 describe('PolicyImport.utils', () => {
@@ -24,16 +28,17 @@ describe('PolicyImport.utils', () => {
             const response = getPolicy(errors);
 
             const errorList = parsePolicyImportErrors(response.responses);
+            const duplicateName =
+                response.responses[0].errors[0].type === 'duplicate_name'
+                    ? response.responses[0].errors[0].duplicateName
+                    : null;
 
             expect(errorList).toEqual([
                 [
                     {
-                        duplicateName: response.responses[0].errors[0].duplicateName,
-                        incomingId: response.responses[0].policy.id,
-                        incomingName: response.responses[0].policy.name,
+                        duplicateName,
                         type: 'duplicate_name',
                         message: 'Could not add policy due to name validation',
-                        validationError: null,
                     },
                 ],
             ]);
@@ -44,17 +49,20 @@ describe('PolicyImport.utils', () => {
             const response = getPolicy(errors);
 
             const errorList = parsePolicyImportErrors(response.responses);
+            const duplicateName =
+                response.responses[0].errors[0].type === 'duplicate_id'
+                    ? response.responses[0].errors[0].duplicateName
+                    : null;
 
             expect(errorList).toEqual([
                 [
                     {
-                        duplicateName: response.responses[0].errors[0].duplicateName,
+                        duplicateName,
                         incomingId: response.responses[0].policy.id,
                         incomingName: response.responses[0].policy.name,
                         type: 'duplicate_id',
                         message:
                             'Policy Fixable CVSS >= 9 (f09f8da1-6111-4ca0-8f49-294a76c65117) cannot be added because it already exists',
-                        validationError: null,
                     },
                 ],
             ]);
@@ -65,25 +73,25 @@ describe('PolicyImport.utils', () => {
             const response = getPolicy(errors);
 
             const errorList = parsePolicyImportErrors(response.responses);
+            const duplicateName =
+                response.responses[0].errors[0].type === 'duplicate_name'
+                    ? response.responses[0].errors[0].duplicateName
+                    : null;
 
             expect(errorList).toEqual([
                 [
                     {
-                        duplicateName: response.responses[0].errors[0].duplicateName,
-                        incomingId: response.responses[0].policy.id,
-                        incomingName: response.responses[0].policy.name,
+                        duplicateName,
                         type: 'duplicate_name',
                         message: 'Could not add policy due to name validation',
-                        validationError: null,
                     },
                     {
-                        duplicateName: response.responses[0].errors[0].duplicateName,
+                        duplicateName,
                         incomingId: response.responses[0].policy.id,
                         incomingName: response.responses[0].policy.name,
                         type: 'duplicate_id',
                         message:
                             'Policy Fixable CVSS >= 9 (f09f8da1-6111-4ca0-8f49-294a76c65117) cannot be added because it already exists',
-                        validationError: null,
                     },
                 ],
             ]);
@@ -92,7 +100,7 @@ describe('PolicyImport.utils', () => {
 
     describe('isDuplicateResolved', () => {
         it('should return false for a pristine (yet-to-be-resolved) object', () => {
-            const resolutionObj = { resolution: '', newName: '' };
+            const resolutionObj = { resolution: null, newName: '' };
 
             const isResolved = isDuplicateResolved(resolutionObj);
 
@@ -100,7 +108,7 @@ describe('PolicyImport.utils', () => {
         });
 
         it('should return false if rename is chosen, but name is empty', () => {
-            const resolutionObj = { resolution: POLICY_DUPE_ACTIONS.RENAME, newName: '' };
+            const resolutionObj = { resolution: 'rename' as PolicyResolutionType, newName: '' };
 
             const isResolved = isDuplicateResolved(resolutionObj);
 
@@ -108,7 +116,7 @@ describe('PolicyImport.utils', () => {
         });
 
         it('should return false if rename is chosen, but name is too short', () => {
-            const resolutionObj = { resolution: POLICY_DUPE_ACTIONS.RENAME, newName: '1234' };
+            const resolutionObj = { resolution: 'rename' as PolicyResolutionType, newName: '1234' };
 
             const isResolved = isDuplicateResolved(resolutionObj);
 
@@ -116,7 +124,10 @@ describe('PolicyImport.utils', () => {
         });
 
         it('should return true if rename is chosen, and name is minimum length', () => {
-            const resolutionObj = { resolution: POLICY_DUPE_ACTIONS.RENAME, newName: '12345' };
+            const resolutionObj = {
+                resolution: 'rename' as PolicyResolutionType,
+                newName: '12345',
+            };
 
             const isResolved = isDuplicateResolved(resolutionObj);
 
@@ -124,7 +135,7 @@ describe('PolicyImport.utils', () => {
         });
 
         it('should return true if overwrite is chosen', () => {
-            const resolutionObj = { resolution: POLICY_DUPE_ACTIONS.OVERWRITE, newName: '' };
+            const resolutionObj = { resolution: 'overwrite' as PolicyResolutionType, newName: '' };
 
             const isResolved = isDuplicateResolved(resolutionObj);
 
@@ -148,7 +159,8 @@ describe('PolicyImport.utils', () => {
                     incomingId: '1234-5678-9012-3456',
                     incomingName: 'A policy name',
                     type: 'duplicate_name',
-                },
+                    message: '',
+                } as PolicyImportErrorDuplicateName,
             ];
 
             const errStr = getErrorMessages(policyErrors);
@@ -168,7 +180,8 @@ describe('PolicyImport.utils', () => {
                     incomingId: '1234-5678-9012-3456',
                     incomingName: 'A policy name',
                     type: 'duplicate_id',
-                },
+                    message: '',
+                } as PolicyImportErrorDuplicateId,
             ];
 
             const errStr = getErrorMessages(policyErrors);
@@ -185,16 +198,14 @@ describe('PolicyImport.utils', () => {
             const policyErrors = [
                 {
                     duplicateName: 'A policy name',
-                    incomingId: '9876-5432-1098-7654',
-                    incomingName: 'A policy name',
                     type: 'duplicate_name',
-                },
+                } as PolicyImportErrorDuplicateName,
                 {
                     duplicateName: 'Another policy name',
                     incomingId: '1234-5678-9012-3456',
                     incomingName: 'A policy name',
                     type: 'duplicate_id',
-                },
+                } as PolicyImportErrorDuplicateId,
             ];
 
             const errStr = getErrorMessages(policyErrors);
@@ -214,13 +225,11 @@ describe('PolicyImport.utils', () => {
         it('should return a message for invalid policy error', () => {
             const policyErrors = [
                 {
-                    incomingId: '1234-5678-9012-3456',
-                    incomingName: 'A policy name',
                     type: 'invalid_policy',
                     message: 'Invalid policy',
                     validationError:
                         'policy invalid error: error validating lifecycle stage error: deploy time policy cannot contain runtime fields',
-                },
+                } as PolicyImportErrorInvalidPolicy,
             ];
 
             const errStr = getErrorMessages(policyErrors);
@@ -238,8 +247,8 @@ describe('PolicyImport.utils', () => {
         it('should just return the policies array as-is if there are no errors', () => {
             const response = getPolicy();
             const policies = [response.responses[0].policy];
-            const errors = null;
-            const duplicateResolution = null;
+            const errors = [];
+            const duplicateResolution = { resolution: null, newName: '' };
 
             const [resolvedPolicies, metadata] = getResolvedPolicies(
                 policies,
@@ -248,7 +257,7 @@ describe('PolicyImport.utils', () => {
             );
 
             expect(resolvedPolicies).toEqual(policies);
-            expect(metadata).toEqual({});
+            expect(metadata).toEqual({ overwrite: false });
         });
 
         it('should return metadata object with overwrite, if errors are present and overwrite is selected', () => {
@@ -257,12 +266,13 @@ describe('PolicyImport.utils', () => {
             const errors = [
                 {
                     duplicateName: 'A policy name',
-                    incomingId: '9876-5432-1098-7654',
-                    incomingName: 'A policy name',
                     type: 'duplicate_name',
-                },
+                } as PolicyImportErrorDuplicateName,
             ];
-            const duplicateResolution = { resolution: POLICY_DUPE_ACTIONS.OVERWRITE, newName: '' };
+            const duplicateResolution = {
+                resolution: 'overwrite' as PolicyResolutionType,
+                newName: '',
+            };
 
             const [resolvedPolicies, metadata] = getResolvedPolicies(
                 policies,
@@ -282,13 +292,11 @@ describe('PolicyImport.utils', () => {
             const errors = [
                 {
                     duplicateName: 'A policy name',
-                    incomingId: '9876-5432-1098-7654',
-                    incomingName: 'A policy name',
                     type: 'duplicate_name',
-                },
+                } as PolicyImportErrorDuplicateName,
             ];
             const duplicateResolution = {
-                resolution: POLICY_DUPE_ACTIONS.RENAME,
+                resolution: 'rename' as PolicyResolutionType,
                 newName: coolNewName,
             };
 
@@ -300,7 +308,7 @@ describe('PolicyImport.utils', () => {
 
             expect(resolvedPolicies[0].name).toEqual(coolNewName);
             expect(resolvedPolicies[0].id).toEqual(policies[0].id);
-            expect(metadata).toEqual({});
+            expect(metadata).toEqual({ overwrite: false });
         });
 
         it('should return metadata object with rename, if name AND ID errors present and rename is selected', () => {
@@ -311,19 +319,17 @@ describe('PolicyImport.utils', () => {
             const errors = [
                 {
                     duplicateName: 'A policy name',
-                    incomingId: '9876-5432-1098-7654',
-                    incomingName: 'A policy name',
                     type: 'duplicate_name',
-                },
+                } as PolicyImportErrorDuplicateName,
                 {
                     duplicateName: 'Another policy name',
                     incomingId: '1234-5678-9012-3456',
                     incomingName: 'A policy name',
                     type: 'duplicate_id',
-                },
+                } as PolicyImportErrorDuplicateId,
             ];
             const duplicateResolution = {
-                resolution: POLICY_DUPE_ACTIONS.RENAME,
+                resolution: 'rename' as PolicyResolutionType,
                 newName: coolNewName,
             };
 
@@ -335,7 +341,7 @@ describe('PolicyImport.utils', () => {
 
             expect(resolvedPolicies[0].name).toEqual(coolNewName);
             expect(resolvedPolicies[0].id).toEqual('');
-            expect(metadata).toEqual({});
+            expect(metadata).toEqual({ overwrite: false });
         });
     });
 
@@ -349,7 +355,12 @@ describe('PolicyImport.utils', () => {
         });
 
         it('should return false if there is only a duplicate name error', () => {
-            const errors = [{ type: 'duplicate name', value: 'Really strict policy' }];
+            const errors = [
+                {
+                    type: 'duplicate_name',
+                    message: 'Really strict policy',
+                } as PolicyImportErrorDuplicateName,
+            ];
 
             const onlyDupeId = hasDuplicateIdOnly(errors);
 
@@ -363,7 +374,7 @@ describe('PolicyImport.utils', () => {
                     incomingId: '1234-5678-9012-3456',
                     incomingName: 'A policy name',
                     type: 'duplicate_id',
-                },
+                } as PolicyImportErrorDuplicateId,
             ];
 
             const onlyDupeId = hasDuplicateIdOnly(errors);
@@ -375,16 +386,14 @@ describe('PolicyImport.utils', () => {
             const errors = [
                 {
                     duplicateName: 'A policy name',
-                    incomingId: '9876-5432-1098-7654',
-                    incomingName: 'A policy name',
                     type: 'duplicate_name',
-                },
+                } as PolicyImportErrorDuplicateName,
                 {
                     duplicateName: 'Another policy name',
                     incomingId: '1234-5678-9012-3456',
                     incomingName: 'A policy name',
                     type: 'duplicate_id',
-                },
+                } as PolicyImportErrorDuplicateId,
             ];
 
             const onlyDupeId = hasDuplicateIdOnly(errors);
@@ -396,13 +405,13 @@ describe('PolicyImport.utils', () => {
     describe('checkForBlockedSubmit', () => {
         it('should return true if no policies selected yet', () => {
             const policies = [];
-            const messageObj = null;
+            const messageObj = { message: '', type: '' };
             const duplicateErrors = null;
-            const duplicateResolution = { resolution: '', newName: '' };
+            const duplicateResolution = { resolution: null, newName: '' };
 
             const isBlocked = checkForBlockedSubmit({
                 numPolicies: policies?.length || 0,
-                messageType: messageObj?.type,
+                messageType: messageObj.type,
                 hasDuplicateErrors: !!duplicateErrors,
                 duplicateResolution,
             });
@@ -412,9 +421,9 @@ describe('PolicyImport.utils', () => {
 
         it('should return false if nothing blocks policy submission', () => {
             const policies = [{ name: 'Snafu' }];
-            const messageObj = null;
+            const messageObj = { message: '', type: '' };
             const duplicateErrors = null;
-            const duplicateResolution = { resolution: '', newName: '' };
+            const duplicateResolution = { resolution: null, newName: '' };
 
             const isBlocked = checkForBlockedSubmit({
                 numPolicies: policies?.length || 0,
@@ -430,7 +439,7 @@ describe('PolicyImport.utils', () => {
             const policies = [{ name: 'Snafu' }];
             const messageObj = { type: 'info' };
             const duplicateErrors = null;
-            const duplicateResolution = { resolution: '', newName: '' };
+            const duplicateResolution = { resolution: null, newName: '' };
 
             const isBlocked = checkForBlockedSubmit({
                 numPolicies: policies?.length || 0,
@@ -446,7 +455,7 @@ describe('PolicyImport.utils', () => {
             const policies = [{ name: 'Snafu' }];
             const messageObj = { type: 'error' };
             const duplicateErrors = null;
-            const duplicateResolution = { resolution: '', newName: '' };
+            const duplicateResolution = { resolution: null, newName: '' };
 
             const isBlocked = checkForBlockedSubmit({
                 numPolicies: policies?.length || 0,
@@ -462,7 +471,7 @@ describe('PolicyImport.utils', () => {
             const policies = [{ name: 'CVE >= 7' }];
             const messageObj = { type: 'error' };
             const duplicateErrors = [{ dupeName: 'CVE >= 7' }];
-            const duplicateResolution = { resolution: '', newName: '' };
+            const duplicateResolution = { resolution: null, newName: '' };
 
             const isBlocked = checkForBlockedSubmit({
                 numPolicies: policies?.length || 0,
@@ -479,7 +488,7 @@ describe('PolicyImport.utils', () => {
             const messageObj = { type: 'error' };
             const duplicateErrors = [{ dupeName: 'CVE >= 7' }];
             const duplicateResolution = {
-                resolution: POLICY_DUPE_ACTIONS.OVERWRITE,
+                resolution: 'overwrite' as PolicyResolutionType,
                 newName: '',
             };
 
@@ -495,8 +504,8 @@ describe('PolicyImport.utils', () => {
     });
 });
 
-function getPolicy(errors = {}) {
-    const errorResponse = [];
+function getPolicy(errors: { id?: boolean; name?: boolean } = {}): ImportPoliciesResponse {
+    const errorResponse = [] as ImportPolicyError[];
     if (errors.name) {
         errorResponse.push({
             message: 'Could not add policy due to name validation',
@@ -528,36 +537,6 @@ function getPolicy(errors = {}) {
                         'Use your package manager to update to a fixed version in future builds or speak with your security team to mitigate the vulnerabilities.',
                     disabled: false,
                     categories: ['Vulnerability Management'],
-                    fields: {
-                        imageName: null,
-                        lineRule: null,
-                        cvss: {
-                            op: 'GREATER_THAN_OR_EQUALS',
-                            value: 9,
-                        },
-                        cve: '',
-                        component: null,
-                        env: null,
-                        command: '',
-                        args: '',
-                        directory: '',
-                        user: '',
-                        volumePolicy: null,
-                        portPolicy: null,
-                        requiredLabel: null,
-                        requiredAnnotation: null,
-                        disallowedAnnotation: null,
-                        dropCapabilities: [],
-                        addCapabilities: [],
-                        containerResourcePolicy: null,
-                        processPolicy: null,
-                        fixedBy: '.*',
-                        portExposurePolicy: null,
-                        permissionPolicy: null,
-                        hostMountPolicy: null,
-                        requiredImageLabel: null,
-                        disallowedImageLabel: null,
-                    },
                     lifecycleStages: ['BUILD', 'DEPLOY'],
                     exclusions: [],
                     scope: [],
@@ -565,11 +544,19 @@ function getPolicy(errors = {}) {
                     enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
                     notifiers: [],
                     lastUpdated: null,
-                    SORTName: 'Fixable CVSS >= 9',
-                    SORTLifecycleStage: 'BUILD,DEPLOY',
-                    SORTEnforcement: true,
+                    SORT_name: 'Fixable CVSS >= 9',
+                    SORT_lifecycleStage: 'BUILD,DEPLOY',
+                    SORT_enforcement: true,
                     policyVersion: '',
                     policySections: [],
+                    mitreAttackVectors: [],
+                    excludedImageNames: [],
+                    excludedDeploymentScopes: [],
+                    isDefault: true,
+                    serverPolicySections: [],
+                    criteriaLocked: false,
+                    mitreVectorsLocked: false,
+                    eventSource: 'NOT_APPLICABLE',
                 },
                 errors: errorResponse,
             },
