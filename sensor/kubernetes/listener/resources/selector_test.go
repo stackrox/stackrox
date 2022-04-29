@@ -31,7 +31,7 @@ type SelectorWrapperTestSuite struct {
 }
 
 type mockSelector struct {
-	internalSelector selector
+	internalSelector internalSelector
 	testSuite        *SelectorWrapperTestSuite
 }
 
@@ -115,7 +115,7 @@ func (s *SelectorWrapperTestSuite) TestLabelMatching() {
 			selectorWrap := createSelector(tt.givenSelectorLabels, tt.matchEmptySelector)
 			s.injectMockSelector(&selectorWrap)
 
-			receivedMatch := selectorWrap.matches(labels.Set(tt.givenMatchingLabels), uint(len(tt.givenMatchingLabels)))
+			receivedMatch := selectorWrap.Matches(labelWrapper{labels.Set(tt.givenMatchingLabels), uint(len(tt.givenMatchingLabels))})
 			receivedSelectorMatchesFunctionCalled := s.hasMatchesBeenCalled
 
 			s.Equal(tt.expectedMatch, receivedMatch)

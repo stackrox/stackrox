@@ -6,19 +6,57 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
+// labelWithLen is label.Labels with added Len() function
+type labelsWithLen interface {
+	Has(label string) (exists bool)
+	Get(label string) (value string)
+	Len() uint
+}
+
+// selector is a restricted version of selectorWrapper
+type selector interface {
+	Matches(labelsWithLen) bool
+}
+
+// internalSelector is a restricted version of labels.Selector
+type internalSelector interface {
+	Matches(labels.Labels) bool
+}
+
+type labelWrapper struct {
+	labels    labels.Labels
+	numLabels uint
+}
+
+func (l labelWrapper) Has(label string) bool {
+	return l.labels.Has(label)
+}
+
+func (l labelWrapper) Get(label string) string {
+	return l.labels.Get(label)
+}
+
+func (l labelWrapper) Len() uint {
+	return l.numLabels
+}
+
+type restrictedSelector struct {
+	selector labels.Selector
+}
+
+func (r restrictedSelector) Matches(labels labels.Labels) bool {
+	return r.selector.Matches(labels)
+}
+
 // SelectorWrapper holds a selector and information allowing for additional checks before matching
 type selectorWrapper struct {
-	selector  selector
+	selector  internalSelector
 	numLabels uint
 	matchNil  bool
 }
 
-func (s *selectorWrapper) getSelector() selector {
-	return s.selector
-}
-
-func (s *selectorWrapper) matches(labels labels.Labels, numLabels uint) bool {
-	if s.numLabels > numLabels {
+func (s *selectorWrapper) Matches(labels labelsWithLen) bool {
+	if s.numLabels > labels.Len() {
 		return false
 	}
 	if s.numLabels == 0 {
@@ -27,13 +65,8 @@ func (s *selectorWrapper) matches(labels labels.Labels, numLabels uint) bool {
 	return s.selector.Matches(labels)
 }
 
-// selector is a restricted version of labels.Selector
-type selector interface {
-	Matches(labels.Labels) bool
-}
-
 // selectorDisjunction is the disjunction (logical or) of a list of selectors.
-type selectorDisjunction []selector
+type selectorDisjunction []internalSelector
 
 func (d selectorDisjunction) Matches(labels labels.Labels) bool {
 	for _, sel := range d {
@@ -72,14 +105,14 @@ func createSelector(labelsMap map[string]string, matchNil bool) selectorWrapper 
 	if matchNil {
 		selWrapper.matchNil = true
 		if selWrapper.numLabels == 0 {
-			selWrapper.selector = labels.Everything()
+			selWrapper.selector = restrictedSelector{labels.Everything()}
 		}
 	} else {
 		selWrapper.matchNil = false
 		if selWrapper.numLabels == 0 {
-			selWrapper.selector = labels.Nothing()
+			selWrapper.selector = restrictedSelector{labels.Nothing()}
 		}
 	}
-	selWrapper.selector = labels.SelectorFromSet(labels.Set(labelsMap))
+	selWrapper.selector = restrictedSelector{labels.SelectorFromSet(labels.Set(labelsMap))}
 	return selWrapper
 }

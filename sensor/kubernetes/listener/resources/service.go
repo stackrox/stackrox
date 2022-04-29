@@ -148,7 +148,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	if action == central.ResourceAction_UPDATE_RESOURCE {
 		newWrap := wrapService(svc)
 		sh.serviceStore.addOrUpdateService(newWrap)
-		if sw.getSelector() != nil {
+		if sw.selector != nil {
 			sw = or(sw, newWrap.selectorWrapper)
 		} else {
 			sw = newWrap.selectorWrapper
