@@ -11,7 +11,7 @@ type ClusterStatusPillProps = {
 };
 
 function ClusterStatusPill({ healthStatus }: ClusterStatusPillProps): ReactElement {
-    const localScannerHealthStatus = healthStatus?.localScannerHealthStatus || 'UNINITIALIZED';
+    const scannerHealthStatus = healthStatus?.scannerHealthStatus || 'UNINITIALIZED';
 
     return (
         <div className="border inline rounded-full decoration-clone leading-looser text-sm py-1">
@@ -24,7 +24,7 @@ function ClusterStatusPill({ healthStatus }: ClusterStatusPillProps): ReactEleme
             <div className="inline pl-2 pr-3 w-full whitespace-nowrap">
                 <AdmissionControlStatus healthStatus={healthStatus} isList />
             </div>
-            {localScannerHealthStatus !== 'UNINITIALIZED' && (
+            {scannerHealthStatus !== 'UNINITIALIZED' && (
                 <div className="inline border-l pl-2 pr-3 w-full whitespace-nowrap">
                     <ScannerStatus healthStatus={healthStatus} isList />
                 </div>

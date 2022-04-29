@@ -88,8 +88,8 @@ const ClusterSummary = ({ healthStatus, status, centralVersion, clusterId }) => 
                                     <AdmissionControlStatus healthStatus={healthStatus} />
                                 </td>
                             </tr>
-                            {healthStatus?.localScannerHealthStatus &&
-                                healthStatus?.localScannerHealthStatus !== 'UNINITIALIZED' && (
+                            {healthStatus?.scannerHealthStatus &&
+                                healthStatus?.scannerHealthStatus !== 'UNINITIALIZED' && (
                                     <tr className={trClass} key="Scanner">
                                         <th className={thClass} scope="row">
                                             Scanner
@@ -141,7 +141,7 @@ ClusterSummary.propTypes = {
         sensorHealthStatus: PropTypes.string,
         collectorHealthStatus: PropTypes.string,
         admissionControlHealthStatus: PropTypes.string,
-        localScannerHealthStatus: PropTypes.string,
+        scannerHealthStatus: PropTypes.string,
         overallHealthStatus: PropTypes.string,
         lastContact: PropTypes.string, // ISO 8601
         healthInfoComplete: PropTypes.bool,

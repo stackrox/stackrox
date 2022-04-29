@@ -263,9 +263,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"healthInfoComplete: Boolean!",
 		"id: ID!",
 		"lastContact: Time",
-		"localScannerHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 		"overallHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 		"scannerHealthInfo: ScannerHealthInfo",
+		"scannerHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 		"sensorHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterHealthStatus_HealthStatusLabel(0)))
@@ -3306,11 +3306,6 @@ func (resolver *clusterHealthStatusResolver) LastContact(ctx context.Context) (*
 	return timestamp(value)
 }
 
-func (resolver *clusterHealthStatusResolver) LocalScannerHealthStatus(ctx context.Context) string {
-	value := resolver.data.GetLocalScannerHealthStatus()
-	return value.String()
-}
-
 func (resolver *clusterHealthStatusResolver) OverallHealthStatus(ctx context.Context) string {
 	value := resolver.data.GetOverallHealthStatus()
 	return value.String()
@@ -3319,6 +3314,11 @@ func (resolver *clusterHealthStatusResolver) OverallHealthStatus(ctx context.Con
 func (resolver *clusterHealthStatusResolver) ScannerHealthInfo(ctx context.Context) (*scannerHealthInfoResolver, error) {
 	value := resolver.data.GetScannerHealthInfo()
 	return resolver.root.wrapScannerHealthInfo(value, true, nil)
+}
+
+func (resolver *clusterHealthStatusResolver) ScannerHealthStatus(ctx context.Context) string {
+	value := resolver.data.GetScannerHealthStatus()
+	return value.String()
 }
 
 func (resolver *clusterHealthStatusResolver) SensorHealthStatus(ctx context.Context) string {

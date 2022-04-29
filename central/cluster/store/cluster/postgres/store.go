@@ -94,11 +94,11 @@ func insertIntoClusters(ctx context.Context, tx pgx.Tx, obj *storage.Cluster) er
 		obj.GetHealthStatus().GetCollectorHealthStatus(),
 		obj.GetHealthStatus().GetOverallHealthStatus(),
 		obj.GetHealthStatus().GetAdmissionControlHealthStatus(),
-		obj.GetHealthStatus().GetLocalScannerHealthStatus(),
+		obj.GetHealthStatus().GetScannerHealthStatus(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO clusters (Id, Name, Labels, HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus, HealthStatus_LocalScannerHealthStatus, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, HealthStatus_SensorHealthStatus = EXCLUDED.HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus = EXCLUDED.HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus = EXCLUDED.HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus = EXCLUDED.HealthStatus_AdmissionControlHealthStatus, HealthStatus_LocalScannerHealthStatus = EXCLUDED.HealthStatus_LocalScannerHealthStatus, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO clusters (Id, Name, Labels, HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus, HealthStatus_ScannerHealthStatus, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, HealthStatus_SensorHealthStatus = EXCLUDED.HealthStatus_SensorHealthStatus, HealthStatus_CollectorHealthStatus = EXCLUDED.HealthStatus_CollectorHealthStatus, HealthStatus_OverallHealthStatus = EXCLUDED.HealthStatus_OverallHealthStatus, HealthStatus_AdmissionControlHealthStatus = EXCLUDED.HealthStatus_AdmissionControlHealthStatus, HealthStatus_ScannerHealthStatus = EXCLUDED.HealthStatus_ScannerHealthStatus, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -133,7 +133,7 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 
 		"healthstatus_admissioncontrolhealthstatus",
 
-		"healthstatus_localscannerhealthstatus",
+		"healthstatus_scannerhealthstatus",
 
 		"serialized",
 	}
@@ -163,7 +163,7 @@ func (s *storeImpl) copyFromClusters(ctx context.Context, tx pgx.Tx, objs ...*st
 
 			obj.GetHealthStatus().GetAdmissionControlHealthStatus(),
 
-			obj.GetHealthStatus().GetLocalScannerHealthStatus(),
+			obj.GetHealthStatus().GetScannerHealthStatus(),
 
 			serialized,
 		})

@@ -8,7 +8,7 @@ const tdClassName = 'p-0 text-right';
 const tdErrorsClassName = 'font-600 pb-0 pl-0 pr-1 pt-2 text-left'; // pt for gap above errors
 
 type ScannerStatusTotalsProps = {
-    localScannerHealthInfo: {
+    scannerHealthInfo: {
         totalDesiredAnalyzerPods: number;
         totalReadyAnalyzerPods: number;
         totalDesiredDbPods: number;
@@ -26,17 +26,17 @@ const resolveDbHealthStatus = (desiredPods: number, readyPods: number) => {
     return healthStatusLabels[readyPods ? 'HEALTHY' : 'UNHEALTHY'];
 };
 
-const ScannerStatusTotals = ({ localScannerHealthInfo }: ScannerStatusTotalsProps) => {
+const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) => {
     const {
         totalDesiredAnalyzerPods,
         totalReadyAnalyzerPods,
         totalDesiredDbPods,
         totalReadyDbPods,
         statusErrors,
-    } = localScannerHealthInfo;
+    } = scannerHealthInfo;
 
     return (
-        <table data-testid="localScannerHealthInfo">
+        <table data-testid="scannerHealthInfo">
             <tbody>
                 <tr className={trClassName} key="totalReadyPods">
                     <th className={thClassName} scope="row">

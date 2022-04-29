@@ -24,8 +24,8 @@ export type ClusterHealthStatus = {
         totalRegisteredNodes: number;
         statusErrors: string[];
     };
-    localScannerHealthStatus?: ClusterHealthItemStatus;
-    localScannerHealthInfo?: {
+    scannerHealthStatus?: ClusterHealthItemStatus;
+    scannerHealthInfo?: {
         totalDesiredAnalyzerPods: number;
         totalReadyAnalyzerPods: number;
         totalDesiredDbPods: number;

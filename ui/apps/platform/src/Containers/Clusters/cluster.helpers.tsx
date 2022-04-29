@@ -184,7 +184,7 @@ export const delayedAdmissionControlStatusStyle = {
     fgColor: 'text-base-700',
 };
 
-// Special case for Local Scanner when Sensor is UNHEALTHY or DELAYED.
+// Special case for Scanner when Sensor is UNHEALTHY or DELAYED.
 export const delayedScannerStatusStyle = {
     Icon: InfoCircleIcon,
     bgColor: 'bg-base-200',

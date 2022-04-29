@@ -3,7 +3,7 @@ import React from 'react';
 import { DetailedTooltipOverlay, Tooltip } from '@stackrox/ui-components';
 import { ClusterHealthStatus } from '../../clusterTypes';
 import {
-    delayedCollectorStatusStyle,
+    delayedScannerStatusStyle,
     healthStatusStyles,
     isDelayedSensorHealthStatus,
 } from '../../cluster.helpers';
@@ -26,20 +26,20 @@ type ScannerStatusProps = {
 };
 
 const ScannerStatus = ({ healthStatus, isList = false }: ScannerStatusProps) => {
-    if (!healthStatus?.localScannerHealthStatus) {
-        return <HealthStatusNotApplicable testId="localScannerStatus" isList={isList} />;
+    if (!healthStatus?.scannerHealthStatus) {
+        return <HealthStatusNotApplicable testId="scannerStatus" isList={isList} />;
     }
     const {
-        localScannerHealthStatus,
-        localScannerHealthInfo,
+        scannerHealthStatus,
+        scannerHealthInfo,
         healthInfoComplete,
         sensorHealthStatus,
         lastContact,
     } = healthStatus;
     const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
     const { Icon, fgColor } = isDelayed
-        ? delayedCollectorStatusStyle
-        : healthStatusStyles[localScannerHealthStatus];
+        ? delayedScannerStatusStyle
+        : healthStatusStyles[scannerHealthStatus];
     const icon = <Icon className={`${isList ? 'inline' : ''} h-4 w-4`} />;
     const currentDatetime = new Date();
 
@@ -48,7 +48,7 @@ const ScannerStatus = ({ healthStatus, isList = false }: ScannerStatusProps) => 
             isDelayed={isDelayed}
             delayedText={getDistanceStrictAsPhrase(lastContact, currentDatetime)}
             clusterHealthItem="scanner"
-            clusterHealthItemStatus={localScannerHealthStatus}
+            clusterHealthItemStatus={scannerHealthStatus}
             isList={isList}
         />
     );
@@ -59,10 +59,8 @@ const ScannerStatus = ({ healthStatus, isList = false }: ScannerStatusProps) => 
         </HealthStatus>
     );
 
-    if (localScannerHealthInfo) {
-        const scannerTotalsElement = (
-            <ScannerStatusTotals localScannerHealthInfo={localScannerHealthInfo} />
-        );
+    if (scannerHealthInfo) {
+        const scannerTotalsElement = <ScannerStatusTotals scannerHealthInfo={scannerHealthInfo} />;
         const infoElement = healthInfoComplete ? (
             scannerTotalsElement
         ) : (
@@ -92,7 +90,7 @@ const ScannerStatus = ({ healthStatus, isList = false }: ScannerStatusProps) => 
         );
     }
 
-    if (localScannerHealthStatus === 'UNAVAILABLE') {
+    if (scannerHealthStatus === 'UNAVAILABLE') {
         return (
             <ScannerUnavailableStatus
                 isList={isList}

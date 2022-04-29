@@ -1010,7 +1010,7 @@
         "admissionControlHealthStatus": {
           "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel"
         },
-        "localScannerHealthStatus": {
+        "scannerHealthStatus": {
           "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel"
         },
         "lastContact": {

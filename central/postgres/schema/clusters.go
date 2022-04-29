@@ -25,7 +25,7 @@ var (
                    HealthStatus_CollectorHealthStatus integer,
                    HealthStatus_OverallHealthStatus integer,
                    HealthStatus_AdmissionControlHealthStatus integer,
-                   HealthStatus_LocalScannerHealthStatus integer,
+                   HealthStatus_ScannerHealthStatus integer,
                    serialized bytea,
                    PRIMARY KEY(Id)
                )

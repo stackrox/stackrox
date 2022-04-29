@@ -59,7 +59,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		SensorHealthStatus:           storage.ClusterHealthStatus_HEALTHY,
 		CollectorHealthStatus:        clusterhealth.PopulateCollectorStatus(cInfo),
 		AdmissionControlHealthStatus: clusterhealth.PopulateAdmissionControlStatus(aInfo),
-		LocalScannerHealthStatus:     clusterhealth.PopulateLocalScannerStatus(sInfo),
+		ScannerHealthStatus:          clusterhealth.PopulateLocalScannerStatus(sInfo),
 		LastContact:                  timestamp.Now().GogoProtobuf(),
 		// When sensor health monitoring is revised update the sensor capability
 		HealthInfoComplete: conn != nil && conn.HasCapability(centralsensor.HealthMonitoringCap),
