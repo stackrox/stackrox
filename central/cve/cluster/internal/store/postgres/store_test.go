@@ -18,18 +18,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type NodeCvesStoreSuite struct {
+type ClusterCvesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestNodeCvesStore(t *testing.T) {
-	suite.Run(t, new(NodeCvesStoreSuite))
+func TestClusterCvesStore(t *testing.T) {
+	suite.Run(t, new(ClusterCvesStoreSuite))
 }
 
-func (s *NodeCvesStoreSuite) SetupTest() {
+func (s *ClusterCvesStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -52,62 +52,62 @@ func (s *NodeCvesStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *NodeCvesStoreSuite) TearDownTest() {
+func (s *ClusterCvesStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *NodeCvesStoreSuite) TestStore() {
+func (s *ClusterCvesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
 
-	cVE := &storage.CVE{}
-	s.NoError(testutils.FullInit(cVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	clusterCVE := &storage.ClusterCVE{}
+	s.NoError(testutils.FullInit(clusterCVE, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundCVE, exists, err := store.Get(ctx, cVE.GetId(), cVE.GetCve(), cVE.GetOperatingSystem())
+	foundClusterCVE, exists, err := store.Get(ctx, clusterCVE.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundCVE)
+	s.Nil(foundClusterCVE)
 
-	s.NoError(store.Upsert(ctx, cVE))
-	foundCVE, exists, err = store.Get(ctx, cVE.GetId(), cVE.GetCve(), cVE.GetOperatingSystem())
+	s.NoError(store.Upsert(ctx, clusterCVE))
+	foundClusterCVE, exists, err = store.Get(ctx, clusterCVE.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(cVE, foundCVE)
+	s.Equal(clusterCVE, foundClusterCVE)
 
-	cVECount, err := store.Count(ctx)
+	clusterCVECount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(1, cVECount)
+	s.Equal(1, clusterCVECount)
 
-	cVEExists, err := store.Exists(ctx, cVE.GetId(), cVE.GetCve(), cVE.GetOperatingSystem())
+	clusterCVEExists, err := store.Exists(ctx, clusterCVE.GetId())
 	s.NoError(err)
-	s.True(cVEExists)
-	s.NoError(store.Upsert(ctx, cVE))
+	s.True(clusterCVEExists)
+	s.NoError(store.Upsert(ctx, clusterCVE))
 
-	foundCVE, exists, err = store.Get(ctx, cVE.GetId(), cVE.GetCve(), cVE.GetOperatingSystem())
+	foundClusterCVE, exists, err = store.Get(ctx, clusterCVE.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(cVE, foundCVE)
+	s.Equal(clusterCVE, foundClusterCVE)
 
-	s.NoError(store.Delete(ctx, cVE.GetId(), cVE.GetCve(), cVE.GetOperatingSystem()))
-	foundCVE, exists, err = store.Get(ctx, cVE.GetId(), cVE.GetCve(), cVE.GetOperatingSystem())
+	s.NoError(store.Delete(ctx, clusterCVE.GetId()))
+	foundClusterCVE, exists, err = store.Get(ctx, clusterCVE.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundCVE)
+	s.Nil(foundClusterCVE)
 
-	var cVEs []*storage.CVE
+	var clusterCVEs []*storage.ClusterCVE
 	for i := 0; i < 200; i++ {
-		cVE := &storage.CVE{}
-		s.NoError(testutils.FullInit(cVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		cVEs = append(cVEs, cVE)
+		clusterCVE := &storage.ClusterCVE{}
+		s.NoError(testutils.FullInit(clusterCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		clusterCVEs = append(clusterCVEs, clusterCVE)
 	}
 
-	s.NoError(store.UpsertMany(ctx, cVEs))
+	s.NoError(store.UpsertMany(ctx, clusterCVEs))
 
-	cVECount, err = store.Count(ctx)
+	clusterCVECount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, cVECount)
+	s.Equal(200, clusterCVECount)
 }

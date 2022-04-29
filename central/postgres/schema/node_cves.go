@@ -21,15 +21,15 @@ var (
                    Id varchar,
                    Cve varchar,
                    OperatingSystem varchar,
+                   Severity integer,
                    Cvss numeric,
                    ImpactScore numeric,
                    PublishedOn timestamp,
                    CreatedAt timestamp,
                    Suppressed bool,
                    SuppressExpiry timestamp,
-                   Severity integer,
                    serialized bytea,
-                   PRIMARY KEY(Id, Cve, OperatingSystem)
+                   PRIMARY KEY(Id)
                )
                `,
 		Indexes:  []string{},
@@ -42,8 +42,13 @@ var (
 		if schema != nil {
 			return schema
 		}
+<<<<<<< HEAD
 		schema = walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), "node_cves")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_VULNERABILITIES, "node_cves", (*storage.CVE)(nil)))
+=======
+		schema = walker.Walk(reflect.TypeOf((*storage.NodeCVE)(nil)), "node_cves")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_CVES, "node_cves", (*storage.NodeCVE)(nil)))
+>>>>>>> 7566b66f9 (Cluster and Node cve postgres stores)
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

@@ -20,16 +20,15 @@ var (
                create table if not exists cluster_cves (
                    Id varchar,
                    Cve varchar,
-                   OperatingSystem varchar,
                    Cvss numeric,
                    ImpactScore numeric,
                    PublishedOn timestamp,
                    CreatedAt timestamp,
+                   Severity integer,
                    Suppressed bool,
                    SuppressExpiry timestamp,
-                   Severity integer,
                    serialized bytea,
-                   PRIMARY KEY(Id, Cve, OperatingSystem)
+                   PRIMARY KEY(Id)
                )
                `,
 		Indexes:  []string{},
@@ -42,8 +41,13 @@ var (
 		if schema != nil {
 			return schema
 		}
+<<<<<<< HEAD
 		schema = walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), "cluster_cves")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTER_VULNERABILITIES, "cluster_cves", (*storage.CVE)(nil)))
+=======
+		schema = walker.Walk(reflect.TypeOf((*storage.ClusterCVE)(nil)), "cluster_cves")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTER_CVES, "cluster_cves", (*storage.ClusterCVE)(nil)))
+>>>>>>> 7566b66f9 (Cluster and Node cve postgres stores)
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

@@ -56,6 +56,29 @@ var (
 	ImpactScore        = newFieldLabel("Impact Score")
 	VulnerabilityState = newFieldLabel("Vulnerability State")
 
+	// Node CVE search fields
+	NodeCVEID              = newFieldLabel("Node CVE ID")
+	NodeCVE                = newFieldLabel("Node CVE")
+	NodeCVEOperatingSystem = newFieldLabel("Node CVE Operating System")
+	NodeCVESeverity        = newFieldLabel("Node CVE Severity")
+	NodeCVECVSS            = newFieldLabel("Node CVE CVSS")
+	NodeCVEImpactScore     = newFieldLabel("Node CVE Impact Score")
+	NodeCVEPublishedOn     = newFieldLabel("Node CVE Published On")
+	NodeCVECreatedTime     = newFieldLabel("Node CVE Created Time")
+	NodeCVESnoozed         = newFieldLabel("Node CVE Snoozed")
+	NodeCVESnoozeExpiry    = newFieldLabel("Node CVE Snooze Expiry")
+
+	// Cluster CVE search fields
+	ClusterCVEID           = newFieldLabel("Cluster CVE ID")
+	ClusterCVE             = newFieldLabel("Cluster CVE")
+	ClusterCVESeverity     = newFieldLabel("Cluster CVE Severity")
+	ClusterCVECVSS         = newFieldLabel("Cluster CVE CVSS")
+	ClusterCVEImpactScore  = newFieldLabel("Cluster CVE Impact Score")
+	ClusterCVEPublishedOn  = newFieldLabel("Cluster CVE Published On")
+	ClusterCVECreatedTime  = newFieldLabel("Cluster CVE Created Time")
+	ClusterCVESnoozed      = newFieldLabel("Cluster CVE Snoozed")
+	ClusterCVESnoozeExpiry = newFieldLabel("Cluster CVE Snooze Expiry")
+
 	Component                     = newFieldLabel("Component")
 	ComponentID                   = newFieldLabel("Component ID")
 	ComponentCount                = newFieldLabel("Component Count")

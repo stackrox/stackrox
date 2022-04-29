@@ -20,10 +20,10 @@ import (
 const (
 	baseTable  = "node_cves"
 	countStmt  = "SELECT COUNT(*) FROM node_cves"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_cves WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM node_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3"
-	deleteStmt  = "DELETE FROM node_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3"
+	getStmt     = "SELECT serialized FROM node_cves WHERE Id = $1"
+	deleteStmt  = "DELETE FROM node_cves WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM node_cves"
 	getIDsStmt  = "SELECT Id FROM node_cves"
 	getManyStmt = "SELECT serialized FROM node_cves WHERE Id = ANY($1::text[])"
@@ -45,16 +45,16 @@ var (
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string, cve string, operatingSystem string) (bool, error)
-	Get(ctx context.Context, id string, cve string, operatingSystem string) (*storage.CVE, bool, error)
-	Upsert(ctx context.Context, obj *storage.CVE) error
-	UpsertMany(ctx context.Context, objs []*storage.CVE) error
-	Delete(ctx context.Context, id string, cve string, operatingSystem string) error
+	Exists(ctx context.Context, id string) (bool, error)
+	Get(ctx context.Context, id string) (*storage.NodeCVE, bool, error)
+	Upsert(ctx context.Context, obj *storage.NodeCVE) error
+	UpsertMany(ctx context.Context, objs []*storage.NodeCVE) error
+	Delete(ctx context.Context, id string) error
 	GetIDs(ctx context.Context) ([]string, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.NodeCVE, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
 
-	Walk(ctx context.Context, fn func(obj *storage.CVE) error) error
+	Walk(ctx context.Context, fn func(obj *storage.NodeCVE) error) error
 
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
@@ -73,7 +73,7 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 	}
 }
 
-func insertIntoNodeCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error {
+func insertIntoNodeCves(ctx context.Context, tx pgx.Tx, obj *storage.NodeCVE) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -85,17 +85,17 @@ func insertIntoNodeCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error 
 		obj.GetId(),
 		obj.GetCve(),
 		obj.GetOperatingSystem(),
+		obj.GetSeverity(),
 		obj.GetCvss(),
 		obj.GetImpactScore(),
 		pgutils.NilOrTime(obj.GetPublishedOn()),
 		pgutils.NilOrTime(obj.GetCreatedAt()),
 		obj.GetSuppressed(),
 		pgutils.NilOrTime(obj.GetSuppressExpiry()),
-		obj.GetSeverity(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO node_cves (Id, Cve, OperatingSystem, Cvss, ImpactScore, PublishedOn, CreatedAt, Suppressed, SuppressExpiry, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id, Cve, OperatingSystem) DO UPDATE SET Id = EXCLUDED.Id, Cve = EXCLUDED.Cve, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, ImpactScore = EXCLUDED.ImpactScore, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, Suppressed = EXCLUDED.Suppressed, SuppressExpiry = EXCLUDED.SuppressExpiry, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO node_cves (Id, Cve, OperatingSystem, Severity, Cvss, ImpactScore, PublishedOn, CreatedAt, Suppressed, SuppressExpiry, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Cve = EXCLUDED.Cve, OperatingSystem = EXCLUDED.OperatingSystem, Severity = EXCLUDED.Severity, Cvss = EXCLUDED.Cvss, ImpactScore = EXCLUDED.ImpactScore, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, Suppressed = EXCLUDED.Suppressed, SuppressExpiry = EXCLUDED.SuppressExpiry, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -104,11 +104,15 @@ func insertIntoNodeCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error 
 	return nil
 }
 
-func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*storage.CVE) error {
+func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeCVE) error {
 
 	inputRows := [][]interface{}{}
 
 	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
 
 	copyCols := []string{
 
@@ -117,6 +121,8 @@ func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*st
 		"cve",
 
 		"operatingsystem",
+
+		"severity",
 
 		"cvss",
 
@@ -129,8 +135,6 @@ func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*st
 		"suppressed",
 
 		"suppressexpiry",
-
-		"severity",
 
 		"serialized",
 	}
@@ -152,6 +156,8 @@ func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*st
 
 			obj.GetOperatingSystem(),
 
+			obj.GetSeverity(),
+
 			obj.GetCvss(),
 
 			obj.GetImpactScore(),
@@ -164,19 +170,23 @@ func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*st
 
 			pgutils.NilOrTime(obj.GetSuppressExpiry()),
 
-			obj.GetSeverity(),
-
 			serialized,
 		})
 
-		if _, err := tx.Exec(ctx, deleteStmt, obj.GetId(), obj.GetCve(), obj.GetOperatingSystem()); err != nil {
-			return err
-		}
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"node_cves"}, copyCols, pgx.CopyFromRows(inputRows))
 
@@ -192,8 +202,8 @@ func (s *storeImpl) copyFromNodeCves(ctx context.Context, tx pgx.Tx, objs ...*st
 	return err
 }
 
-func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.CVE) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "CVE")
+func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NodeCVE) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NodeCVE")
 	if err != nil {
 		return err
 	}
@@ -216,8 +226,8 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.CVE) error {
 	return nil
 }
 
-func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.CVE) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "CVE")
+func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NodeCVE) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NodeCVE")
 	if err != nil {
 		return err
 	}
@@ -242,14 +252,14 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.CVE) error {
 	return nil
 }
 
-func (s *storeImpl) Upsert(ctx context.Context, obj *storage.CVE) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "CVE")
+func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NodeCVE) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NodeCVE")
 
 	return s.upsert(ctx, obj)
 }
 
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.CVE) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "CVE")
+func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NodeCVE) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "NodeCVE")
 
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
@@ -260,7 +270,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.CVE) error {
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "CVE")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "NodeCVE")
 
 	row := s.db.QueryRow(ctx, countStmt)
 	var count int
@@ -271,10 +281,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string, cve string, operatingSystem string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "CVE")
+func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NodeCVE")
 
-	row := s.db.QueryRow(ctx, existsStmt, id, cve, operatingSystem)
+	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -283,22 +293,22 @@ func (s *storeImpl) Exists(ctx context.Context, id string, cve string, operating
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string, cve string, operatingSystem string) (*storage.CVE, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "CVE")
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.NodeCVE, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeCVE")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "CVE")
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NodeCVE")
 	if err != nil {
 		return nil, false, err
 	}
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, id, cve, operatingSystem)
+	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.CVE
+	var msg storage.NodeCVE
 	if err := proto.Unmarshal(data, &msg); err != nil {
 		return nil, false, err
 	}
@@ -315,16 +325,16 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, id string, cve string, operatingSystem string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "CVE")
+func (s *storeImpl) Delete(ctx context.Context, id string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NodeCVE")
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "CVE")
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "NodeCVE")
 	if err != nil {
 		return err
 	}
 	defer release()
 
-	if _, err := conn.Exec(ctx, deleteStmt, id, cve, operatingSystem); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}
 	return nil
@@ -332,7 +342,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string, cve string, operating
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.CVEIDs")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.NodeCVEIDs")
 
 	rows, err := s.db.Query(ctx, getIDsStmt)
 	if err != nil {
@@ -351,10 +361,10 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "CVE")
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.NodeCVE, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeCVE")
 
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "CVE")
+	conn, release, err := s.acquireConn(ctx, ops.GetMany, "NodeCVE")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -372,13 +382,13 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.CVE, 
 		return nil, nil, err
 	}
 	defer rows.Close()
-	resultsByID := make(map[string]*storage.CVE)
+	resultsByID := make(map[string]*storage.NodeCVE)
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, nil, err
 		}
-		msg := &storage.CVE{}
+		msg := &storage.NodeCVE{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
 		}
@@ -387,7 +397,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.CVE, 
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
 	// It is important that the elems are populated in the same order as the input ids
 	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.CVE, 0, len(resultsByID))
+	elems := make([]*storage.NodeCVE, 0, len(resultsByID))
 	for i, id := range ids {
 		if result, ok := resultsByID[id]; !ok {
 			missingIndices = append(missingIndices, i)
@@ -400,9 +410,9 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.CVE, 
 
 // Delete removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "CVE")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NodeCVE")
 
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "CVE")
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "NodeCVE")
 	if err != nil {
 		return err
 	}
@@ -414,7 +424,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.CVE) error) error {
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NodeCVE) error) error {
 	rows, err := s.db.Query(ctx, walkStmt)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
@@ -425,7 +435,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.CVE) error) e
 		if err := rows.Scan(&data); err != nil {
 			return err
 		}
-		var msg storage.CVE
+		var msg storage.NodeCVE
 		if err := proto.Unmarshal(data, &msg); err != nil {
 			return err
 		}

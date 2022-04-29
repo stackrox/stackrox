@@ -8,6 +8,17 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
+enum CVSSScoreVersion {
+    V2              = 0; // No unset for automatic backwards compatibility
+    V3              = 1;
+    UNKNOWN_VERSION = 2;
+}
+
+message CVEReference {
+    string          URI  = 1;
+    repeated string tags = 2;
+}
+
 // VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed.
 enum VulnerabilityState {
     OBSERVED       = 0; // [Default state]
@@ -86,6 +97,58 @@ message CVE {
 
     map<string, DistroSpecific> distro_specifics    = 19 [(gogoproto.moretags) = 'sql:"-"'];
     VulnerabilitySeverity       severity            = 20 [(gogoproto.moretags) = "search:\"Severity\""];
+}
+
+message NodeCVE {
+    string                    id                    = 1 [(gogoproto.moretags) = 'search:"Node CVE ID,hidden" sql:"pk,id"'];
+    string                    cve                   = 2 [(gogoproto.moretags) = 'search:"Node CVE,store"'];
+    string                    operating_system      = 3 [(gogoproto.moretags) = 'search:"Node CVE Operating System,store"'];
+    VulnerabilitySeverity     severity              = 4 [(gogoproto.moretags) = 'search:"Node CVE Severity"'];
+    float                     cvss                  = 5 [(gogoproto.moretags) = 'search:"Node CVE CVSS,store"'];
+    float                     impact_score          = 6 [(gogoproto.moretags) = 'search:"Node CVE Impact Score"'];
+
+    string                    summary               = 7;
+    string                    link                  = 8;
+    // This indicates the timestamp when the cve was first published in the cve feeds.
+    google.protobuf.Timestamp published_on          = 9 [(gogoproto.moretags) = 'search:"Node CVE Published On"'];
+    // Time when the CVE was first seen in the system.
+    google.protobuf.Timestamp created_at            = 10 [(gogoproto.moretags) = 'search:"Node CVE Created Time"'];
+    google.protobuf.Timestamp last_modified         = 11;
+    repeated CVEReference     references            = 12;
+
+    CVSSScoreVersion          score_version         = 13;
+    CVSSV2                    cvss_v2               = 14;
+    CVSSV3                    cvss_v3               = 15;
+
+    bool                      suppressed            = 16 [(gogoproto.moretags) = 'search:"Node CVE Snoozed"'];
+    google.protobuf.Timestamp suppress_activation   = 17;
+    google.protobuf.Timestamp suppress_expiry       = 18 [(gogoproto.moretags) = 'search:"Node CVE Snooze Expiry,hidden"'];
+}
+
+message ClusterCVE {
+    string                    id                    = 1 [(gogoproto.moretags) = 'search:"Cluster CVE ID,hidden" sql:"pk,id"'];
+    string                    cve                   = 2 [(gogoproto.moretags) = 'search:"Cluster CVE,store"'];
+    float                     cvss                  = 3 [(gogoproto.moretags) = 'search:"Cluster CVE CVSS,store"'];
+    float                     impact_score          = 4 [(gogoproto.moretags) = 'search:"Cluster CVE Impact Score"'];
+
+    string                    summary               = 5;
+    string                    link                  = 6;
+    // This indicates the timestamp when the cve was first published in the cve feeds.
+    google.protobuf.Timestamp published_on          = 7 [(gogoproto.moretags) = 'search:"Cluster CVE Published On"'];
+    // Time when the CVE was first seen in the system.
+    google.protobuf.Timestamp created_at            = 8 [(gogoproto.moretags) = 'search:"Cluster CVE Created Time"'];
+    google.protobuf.Timestamp last_modified         = 9;
+    repeated CVEReference     references            = 10;
+
+    CVSSScoreVersion          score_version         = 11;
+    CVSSV2                    cvss_v2               = 12;
+    CVSSV3                    cvss_v3               = 13;
+
+    VulnerabilitySeverity     severity              = 14 [(gogoproto.moretags) = 'search:"Cluster CVE Severity"'];
+
+    bool                      suppressed            = 15 [(gogoproto.moretags) = 'search:"Cluster CVE Snoozed"'];
+    google.protobuf.Timestamp suppress_activation   = 16;
+    google.protobuf.Timestamp suppress_expiry       = 17 [(gogoproto.moretags) ='search:"Cluster CVE Snooze Expiry,hidden"'];
 }
 
 message CVSSV2 {
