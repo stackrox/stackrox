@@ -79,7 +79,7 @@ create_cluster() {
 
         local job_name_limit50=${JOB_NAME:0:50}
         job_name_limit50=${job_name_limit50/%-/x}  # replace trailing - with x
-        local job_name_limit63=${JOB_NAME:0:50}
+        local job_name_limit63=${JOB_NAME:0:63}
         job_name_limit63=${job_name_limit63/%-/x}  # replace trailing - with x
         local build_id_limit63=${BUILD_ID:0:63}
         build_id_limit63=${build_id_limit63/%-/x}  # replace trailing - with x
