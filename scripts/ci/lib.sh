@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 
+SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+source "$SCRIPTS_ROOT/scripts/lib.sh"
+
 set -euo pipefail
 
 # A library of CI related reusable bash functions
 
-set +u
-SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-set -u
-
-source "$SCRIPTS_ROOT/scripts/lib.sh"
 
 # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
 RELEASE_RC_TAG_BASH_REGEX='^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
@@ -143,6 +141,10 @@ push_main_image_set() {
     local brand="$2"
 
     local main_image_set=("main" "roxctl" "central-db")
+    if is_OPENSHIFT_CI; then
+        local main_image_srcs=("$MAIN_IMAGE" "$ROXCTL_IMAGE" "$CENTRAL_DB_IMAGE")
+        oc registry login
+    fi
 
     _push_main_image_set() {
         local registry="$1"
@@ -160,6 +162,17 @@ push_main_image_set() {
 
         for image in "${main_image_set[@]}"; do
             docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${remote_tag}"
+        done
+    }
+
+    _mirror_main_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        local idx=0
+        for image in "${main_image_set[@]}"; do
+            oc image mirror "${main_image_srcs[$idx]}" "${registry}/${image}:${tag}"
+            (( idx++ )) || true
         done
     }
 
@@ -187,11 +200,19 @@ push_main_image_set() {
     local tag
     tag="$(make --quiet tag)"
     for registry in "${destination_registries[@]}"; do
-        _tag_main_image_set "$tag" "$registry" "$tag"
-        _push_main_image_set "$registry" "$tag"
+        if is_OPENSHIFT_CI; then
+            _mirror_main_image_set "$registry" "$tag"
+        else
+            _tag_main_image_set "$tag" "$registry" "$tag"
+            _push_main_image_set "$registry" "$tag"
+        fi
         if [[ "$branch" == "master" ]]; then
-            _tag_main_image_set "$tag" "$registry" "latest"
-            _push_main_image_set "$registry" "latest"
+            if is_OPENSHIFT_CI; then
+                _mirror_main_image_set "$registry" "latest"
+            else
+                _tag_main_image_set "$tag" "$registry" "latest"
+                _push_main_image_set "$registry" "latest"
+            fi
         fi
     done
 }
