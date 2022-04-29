@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+source "$ROOT/scripts/lib.sh"
+
 set -euo pipefail
 
-die() {
-  echo >&2 "$@"
-  exit 1
-}
-
 [[ "$#" == 1 ]] || die "Usage: $0 <image>"
+
+[[ "${OPENSHIFT_CI:-false}" == "false" ]] || { die "Not supported in OpenShift CI"; }
 
 image="$1"
 

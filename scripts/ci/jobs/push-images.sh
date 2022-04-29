@@ -12,6 +12,16 @@ push_images() {
 
     [[ "${OPENSHIFT_CI:-false}" == "true" ]] || { die "Only supported in OpenShift CI"; }
 
+    local brand="$1"
+    local branch
+    branch=$(get_pr_details | jq -r '.head.ref')
+    if [[ "$branch" == "null" ]]; then
+        branch="master"
+    fi
+
+    oc registry login
+
+    push_main_image_set "$branch" "$brand"
 }
 
-push_images
+push_images "STACKROX_BRANDING"
