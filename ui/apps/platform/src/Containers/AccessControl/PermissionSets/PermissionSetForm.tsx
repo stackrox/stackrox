@@ -23,7 +23,6 @@ import { PermissionSet } from 'services/RolesService';
 import { AccessControlQueryAction } from '../accessControlPaths';
 
 import PermissionsTable from './PermissionsTable';
-import { splitDeprecatedResources } from './permissionSets.utils';
 
 export type PermissionSetFormProps = {
     isActionable: boolean;
@@ -113,8 +112,6 @@ function PermissionSetForm({
     const nameErrorMessage = values.name.length !== 0 && errors.name ? errors.name : '';
     const nameValidatedState = nameErrorMessage ? 'error' : 'default';
 
-    const [resources, deprecatedResources] = splitDeprecatedResources(values.resourceToAccess);
-
     return (
         <Form id="permission-set-form">
             <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
@@ -194,19 +191,9 @@ function PermissionSetForm({
             )}
             <FormGroup label="Permissions" fieldId="permissions" isRequired>
                 <PermissionsTable
-                    resourceToAccess={resources}
+                    resourceToAccess={values.resourceToAccess}
                     setResourceValue={setResourceValue}
                     isDisabled={isViewing}
-                />
-            </FormGroup>
-            <FormGroup
-                fieldId="deprecated-permissions"
-                label="Deprecated Permissions derived from above. Do not set them directly. They will be removed in a future release."
-            >
-                <PermissionsTable
-                    resourceToAccess={deprecatedResources}
-                    setResourceValue={setResourceValue}
-                    isDisabled
                 />
             </FormGroup>
             {hasAction && (

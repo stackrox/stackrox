@@ -24,7 +24,7 @@ export type ResourceName =
     | 'ImageComponent'
     | 'ImageIntegration'
     | 'Indicator'
-    | 'Integration'
+    | 'Integrations'
     | 'K8sRole'
     | 'K8sRoleBinding'
     | 'K8sSubject'

@@ -39,7 +39,7 @@ const resourceDescriptions: Record<ResourceName, string> = {
     ImageIntegration:
         'Read: List image registry integrations. Write: Add, edit, or delete image registry integrations.',
     Indicator: 'Read: View process activity in deployments. Write: N/A',
-    Integration:
+    Integrations:
         'Read: View integrations and their configuration. This includes backup, registry, image signature and notification systems. Write: Add, modify, delete integrations and their configuration.',
     K8sRole:
         'Read: View roles for Kubernetes role-based access control in secured clusters. Write: N/A',
