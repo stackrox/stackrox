@@ -172,7 +172,7 @@ push_main_image_set() {
         local idx=0
         for image in "${main_image_set[@]}"; do
             oc image mirror "${main_image_srcs[$idx]}" "${registry}/${image}:${tag}"
-            (( idx++ ))
+            (( idx++ )) || true
         done
     }
 
@@ -196,8 +196,6 @@ push_main_image_set() {
     else
         die "$brand is not a supported brand"
     fi
-
-    set -x
 
     local tag
     tag="$(make --quiet tag)"
