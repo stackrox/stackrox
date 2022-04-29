@@ -2,25 +2,20 @@ import React, { ReactElement, useState } from 'react';
 import { Modal, ModalVariant } from '@patternfly/react-core';
 
 import { importPolicies } from 'services/PoliciesService';
-import { ListPolicy } from 'types/policy.proto';
+import { Policy } from 'types/policy.proto';
 import {
     parsePolicyImportErrors,
     getResolvedPolicies,
     getErrorMessages,
     checkDupeOnlyErrors,
+    PolicyImportError,
+    PolicyResolution,
 } from './PolicyImport.utils';
 import ImportPolicyJSONSuccess from './ImportPolicyJSONSuccess';
 import ImportPolicyJSONModalError from './ImportPolicyJSONModalError';
 import ImportPolicyJSONUpload from './ImportPolicyJSONUpload';
 
-const RESOLUTION = { resolution: '', newName: '' };
-
-type DuplicateErrors = {
-    type: string;
-    incomingName: string;
-    incomingId: string;
-    duplicateName: string;
-};
+const RESOLUTION = { resolution: null, newName: '' };
 
 type ImportPolicyJSONModalType = 'upload' | 'success' | 'error';
 
@@ -35,9 +30,9 @@ function ImportPolicyJSONModal({
     isOpen,
     fetchPoliciesWithQuery,
 }: ImportPolicyJSONModalProps): ReactElement {
-    const [policies, setPolicies] = useState<ListPolicy[]>([]);
-    const [duplicateErrors, setDuplicateErrors] = useState<DuplicateErrors[]>([]);
-    const [duplicateResolution, setDuplicateResolution] = useState(RESOLUTION);
+    const [policies, setPolicies] = useState<Policy[]>([]);
+    const [duplicateErrors, setDuplicateErrors] = useState<PolicyImportError[]>([]);
+    const [duplicateResolution, setDuplicateResolution] = useState<PolicyResolution>(RESOLUTION);
     const [modalType, setModalType] = useState<ImportPolicyJSONModalType>('upload');
     const [errorMessages, setErrorMessages] = useState<string[]>([]);
 
@@ -66,9 +61,7 @@ function ImportPolicyJSONModal({
                     if (onlyHasDupeErrors) {
                         setDuplicateErrors(errors[0]);
                     }
-                    const errorMessageArray = getErrorMessages(errors[0]).map(
-                        ({ msg }) => msg as string
-                    );
+                    const errorMessageArray = getErrorMessages(errors[0]).map(({ msg }) => msg);
                     setErrorMessages(errorMessageArray);
                     setModalType('error');
                 }
