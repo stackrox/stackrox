@@ -21,6 +21,8 @@ import (
 type ClusterinitbundlesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestClusterinitbundlesStore(t *testing.T) {
@@ -35,24 +37,30 @@ func (s *ClusterinitbundlesStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *ClusterinitbundlesStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *ClusterinitbundlesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *ClusterinitbundlesStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *ClusterinitbundlesStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	initBundleMeta := &storage.InitBundleMeta{}
 	s.NoError(testutils.FullInit(initBundleMeta, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -72,7 +80,7 @@ func (s *ClusterinitbundlesStoreSuite) TestStore() {
 
 	initBundleMetaCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(initBundleMetaCount, 1)
+	s.Equal(1, initBundleMetaCount)
 	initBundleMetaCount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
 	s.Zero(initBundleMetaCount)
@@ -101,9 +109,10 @@ func (s *ClusterinitbundlesStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(initBundleMeta, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		initBundleMetas = append(initBundleMetas, initBundleMeta)
 	}
+
 	s.NoError(store.UpsertMany(ctx, initBundleMetas))
 
 	initBundleMetaCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(initBundleMetaCount, 200)
+	s.Equal(200, initBundleMetaCount)
 }

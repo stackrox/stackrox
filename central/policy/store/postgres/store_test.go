@@ -21,6 +21,8 @@ import (
 type PolicyStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestPolicyStore(t *testing.T) {
@@ -35,24 +37,30 @@ func (s *PolicyStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *PolicyStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *PolicyStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *PolicyStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *PolicyStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	policy := &storage.Policy{}
 	s.NoError(testutils.FullInit(policy, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -72,7 +80,7 @@ func (s *PolicyStoreSuite) TestStore() {
 
 	policyCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(policyCount, 1)
+	s.Equal(1, policyCount)
 	policyCount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
 	s.Zero(policyCount)
@@ -101,9 +109,10 @@ func (s *PolicyStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(policy, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		policys = append(policys, policy)
 	}
+
 	s.NoError(store.UpsertMany(ctx, policys))
 
 	policyCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(policyCount, 200)
+	s.Equal(200, policyCount)
 }

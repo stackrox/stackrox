@@ -6,6 +6,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -15,12 +16,15 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type SecretsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestSecretsStore(t *testing.T) {
@@ -35,24 +39,30 @@ func (s *SecretsStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *SecretsStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *SecretsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *SecretsStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *SecretsStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	secret := &storage.Secret{}
 	s.NoError(testutils.FullInit(secret, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -63,32 +73,6 @@ func (s *SecretsStoreSuite) TestStore() {
 	s.Nil(foundSecret)
 
 	withNoAccessCtx := sac.WithNoAccess(ctx)
-	withAccessToDifferentNsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(secret.GetClusterId()),
-			sac.NamespaceScopeKeys("unknown ns"),
-		))
-	withAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(secret.GetClusterId()),
-			sac.NamespaceScopeKeys(secret.GetNamespace()),
-		))
-	withAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys(secret.GetClusterId()),
-		))
-	withNoAccessToClusterCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(targetResource),
-			sac.ClusterScopeKeys("unknown cluster"),
-		))
 
 	s.NoError(store.Upsert(ctx, secret))
 	foundSecret, exists, err = store.Get(ctx, secret.GetId())
@@ -98,21 +82,13 @@ func (s *SecretsStoreSuite) TestStore() {
 
 	secretCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(secretCount, 1)
+	s.Equal(1, secretCount)
 
 	secretExists, err := store.Exists(ctx, secret.GetId())
 	s.NoError(err)
 	s.True(secretExists)
 	s.NoError(store.Upsert(ctx, secret))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, secret), sac.ErrResourceAccessDenied)
-	s.ErrorIs(store.Upsert(withNoAccessToClusterCtx, secret), sac.ErrResourceAccessDenied)
-	s.ErrorIs(store.Upsert(withAccessToDifferentNsCtx, secret), sac.ErrResourceAccessDenied)
-	s.NoError(store.Upsert(withAccessCtx, secret))
-	s.NoError(store.Upsert(withAccessToClusterCtx, secret))
-	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, []*storage.Secret{secret}), sac.ErrResourceAccessDenied)
-	s.ErrorIs(store.UpsertMany(withNoAccessToClusterCtx, []*storage.Secret{secret}), sac.ErrResourceAccessDenied)
-	s.NoError(store.UpsertMany(withAccessCtx, []*storage.Secret{secret}))
-	s.NoError(store.UpsertMany(withAccessToClusterCtx, []*storage.Secret{secret}))
 
 	foundSecret, exists, err = store.Get(ctx, secret.GetId())
 	s.NoError(err)
@@ -131,10 +107,90 @@ func (s *SecretsStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(secret, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		secrets = append(secrets, secret)
 	}
-	s.ErrorIs(store.UpsertMany(withAccessToDifferentNsCtx, secrets), sac.ErrResourceAccessDenied)
+
 	s.NoError(store.UpsertMany(ctx, secrets))
 
 	secretCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(secretCount, 200)
+	s.Equal(200, secretCount)
+}
+
+func (s *SecretsStoreSuite) TestSACUpsert() {
+	obj := &storage.Secret{}
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	ctxs := getSACContexts(obj)
+	for name, expectedErr := range map[string]error{
+		withAllAccess:           nil,
+		withNoAccess:            sac.ErrResourceAccessDenied,
+		withNoAccessToCluster:   sac.ErrResourceAccessDenied,
+		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
+		withAccess:              nil,
+		withAccessToCluster:     nil,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			assert.ErrorIs(t, s.store.Upsert(ctxs[name], obj), expectedErr)
+		})
+	}
+}
+
+func (s *SecretsStoreSuite) TestSACUpsertMany() {
+	obj := &storage.Secret{}
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	ctxs := getSACContexts(obj)
+	for name, expectedErr := range map[string]error{
+		withAllAccess:           nil,
+		withNoAccess:            sac.ErrResourceAccessDenied,
+		withNoAccessToCluster:   sac.ErrResourceAccessDenied,
+		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
+		withAccess:              nil,
+		withAccessToCluster:     nil,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			assert.ErrorIs(t, s.store.UpsertMany(ctxs[name], []*storage.Secret{obj}), expectedErr)
+		})
+	}
+}
+
+const (
+	withAllAccess           = "AllAccess"
+	withNoAccess            = "NoAccess"
+	withAccessToDifferentNs = "AccessToDifferentNs"
+	withAccess              = "Access"
+	withAccessToCluster     = "AccessToCluster"
+	withNoAccessToCluster   = "NoAccessToCluster"
+)
+
+func getSACContexts(obj *storage.Secret) map[string]context.Context {
+	return map[string]context.Context{
+		withAllAccess: sac.WithAllAccess(context.Background()),
+		withNoAccess:  sac.WithNoAccess(context.Background()),
+		withAccessToDifferentNs: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetClusterId()),
+				sac.NamespaceScopeKeys("unknown ns"),
+			)),
+		withAccess: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetClusterId()),
+				sac.NamespaceScopeKeys(obj.GetNamespace()),
+			)),
+		withAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetClusterId()),
+			)),
+		withNoAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys("unknown cluster"),
+			)),
+	}
 }

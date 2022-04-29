@@ -21,6 +21,8 @@ import (
 type IntegrationhealthStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestIntegrationhealthStore(t *testing.T) {
@@ -35,24 +37,30 @@ func (s *IntegrationhealthStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *IntegrationhealthStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *IntegrationhealthStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *IntegrationhealthStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *IntegrationhealthStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	integrationHealth := &storage.IntegrationHealth{}
 	s.NoError(testutils.FullInit(integrationHealth, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -72,7 +80,7 @@ func (s *IntegrationhealthStoreSuite) TestStore() {
 
 	integrationHealthCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(integrationHealthCount, 1)
+	s.Equal(1, integrationHealthCount)
 	integrationHealthCount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
 	s.Zero(integrationHealthCount)
@@ -101,9 +109,10 @@ func (s *IntegrationhealthStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(integrationHealth, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		integrationHealths = append(integrationHealths, integrationHealth)
 	}
+
 	s.NoError(store.UpsertMany(ctx, integrationHealths))
 
 	integrationHealthCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(integrationHealthCount, 200)
+	s.Equal(200, integrationHealthCount)
 }

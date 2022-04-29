@@ -21,6 +21,8 @@ import (
 type PermissionsetsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestPermissionsetsStore(t *testing.T) {
@@ -35,24 +37,30 @@ func (s *PermissionsetsStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *PermissionsetsStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *PermissionsetsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *PermissionsetsStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *PermissionsetsStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	permissionSet := &storage.PermissionSet{}
 	s.NoError(testutils.FullInit(permissionSet, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -72,7 +80,7 @@ func (s *PermissionsetsStoreSuite) TestStore() {
 
 	permissionSetCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(permissionSetCount, 1)
+	s.Equal(1, permissionSetCount)
 	permissionSetCount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
 	s.Zero(permissionSetCount)
@@ -101,9 +109,10 @@ func (s *PermissionsetsStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(permissionSet, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		permissionSets = append(permissionSets, permissionSet)
 	}
+
 	s.NoError(store.UpsertMany(ctx, permissionSets))
 
 	permissionSetCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(permissionSetCount, 200)
+	s.Equal(200, permissionSetCount)
 }
