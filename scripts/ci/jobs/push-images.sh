@@ -7,7 +7,11 @@ set -euo pipefail
 
 push_images() {
     info "Will push images built in CI"
+
     env | grep IMAGE
+
+    [[ "${OPENSHIFT_CI:-false}" == "true" ]] || { die "Only supported in OpenShift CI"; }
+
 }
 
 push_images
