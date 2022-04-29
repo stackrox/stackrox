@@ -2,6 +2,7 @@ import queryString from 'qs';
 import { SearchCategory } from 'constants/searchOptions';
 import { SearchEntry } from 'types/search';
 import axios from './instance';
+import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 
 const baseUrl = '/v1/search';
 const autoCompleteURL = `${baseUrl}/autocomplete`;
@@ -32,10 +33,16 @@ export function fetchOptions(query = '') {
 /*
  * Get search options for category.
  */
-export function getSearchOptionsForCategory(searchCategory: SearchCategory) {
-    return axios
-        .get<OptionResponse>(`${baseUrl}/metadata/options?categories=${searchCategory}`)
-        .then((response) => response?.data?.options ?? []);
+export function getSearchOptionsForCategory(
+    searchCategory: SearchCategory
+): CancellableRequest<string[]> {
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .get<OptionResponse>(`${baseUrl}/metadata/options?categories=${searchCategory}`, {
+                signal,
+            })
+            .then((response) => response?.data?.options ?? [])
+    );
 }
 
 /**
