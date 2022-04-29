@@ -14,7 +14,12 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { addSearchModifier, addSearchKeyword } from 'utils/searchUtils';
+import {
+    addSearchModifier,
+    addSearchKeyword,
+    getUrlQueryStringForSearchFilter,
+    searchOptionsToSearchFilter,
+} from 'utils/searchUtils';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { GlobalSearchOption } from 'types/search';
@@ -195,18 +200,40 @@ function SearchResults({
         setGlobalSearchCategory(selectedTab.category);
     }
 
+    const amendSearchOptions = (searchCategory: string, category: string, name: string) => {
+        let searchOptions = [...globalSearchOptions];
+        if (name) {
+            searchOptions = addSearchModifier(
+                searchOptions,
+                `${mapping[searchCategory].name as string}:`
+            );
+            searchOptions = addSearchKeyword(searchOptions, name);
+        }
+        return searchOptions;
+    };
+
     const onLinkHandler =
         (searchCategory: string, category: string, toURL: string, name: string) => () => {
-            let searchOptions = globalSearchOptions.slice();
-            if (name) {
-                searchOptions = addSearchModifier(
-                    searchOptions,
-                    `${mapping[searchCategory].name as string}:`
-                );
-                searchOptions = addSearchKeyword(searchOptions, name);
-            }
+            const searchOptions = amendSearchOptions(searchCategory, category, name);
             passthroughGlobalSearchOptions(searchOptions, category);
             onClose(toURL);
+        };
+
+    const onFilterLinkHandler =
+        (searchCategory: string, category: string, toURL: string, name: string) => () => {
+            const searchOptions = amendSearchOptions(searchCategory, category, name);
+            passthroughGlobalSearchOptions(searchOptions, category);
+            const searchFilter = searchOptionsToSearchFilter(searchOptions);
+            let queryString = '';
+            // TODO Once Violations, Risk, and Network Graph are all using URL Search Params this can be simplified
+            if (category === 'ALERTS' || category === 'DEPLOYMENTS') {
+                queryString = getUrlQueryStringForSearchFilter(searchFilter);
+            } else if (category === 'NETWORK') {
+                // Do nothing, until Network Graph moves from Redux to URL Params
+            } else {
+                // This should never happen, the only three "filter on" pages are the ones listed above
+            }
+            onClose(`${toURL}?${queryString}`);
         };
 
     const contents = sortedRows.length ? (
@@ -314,7 +341,7 @@ function SearchResults({
                                                 <RelatedLink
                                                     data-testid="filter-on-label-chip"
                                                     id={id}
-                                                    onClick={onLinkHandler(
+                                                    onClick={onFilterLinkHandler(
                                                         category,
                                                         filterOnMapping[item],
                                                         getLink(item),
