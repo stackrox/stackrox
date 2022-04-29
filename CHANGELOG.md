@@ -36,7 +36,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - For questions about this change, please contact the Red Hat support team at support@redhat.com.
 - ROX-10018: The policy `OpenShift: Kubeadmin Secret Accessed` will not trigger for the default OpenShift `oauth-apiserver-sa` service account as that is an expected access pattern for the apiserver on OpenShift.
 
->>>>>>> Stashed changes
 ## [69.1]
 
 - A version of Scanner and ScannerDB will be installed in each OpenShift cluster to support images stored in the OpenShift Internal Image Registry.
