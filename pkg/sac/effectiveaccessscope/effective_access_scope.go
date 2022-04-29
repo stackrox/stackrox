@@ -308,6 +308,12 @@ func (root *ScopeTree) Merge(tree *ScopeTree) {
 	if root.Clusters == nil {
 		root.Clusters = map[string]*clustersScopeSubTree{}
 	}
+	if len(tree.clusterIDToName) > 0 && root.clusterIDToName == nil {
+		root.clusterIDToName = make(map[string]string)
+	}
+	for clusterID, clusterName := range tree.clusterIDToName {
+		root.clusterIDToName[clusterID] = clusterName
+	}
 	for key, cluster := range tree.Clusters {
 		rootCluster := root.Clusters[key]
 		if rootCluster == nil || cluster.State == Included {
