@@ -348,7 +348,7 @@ func (w *deploymentWrap) getLabelSelector(spec reflect.Value) (*metav1.LabelSele
 		return nil, nil
 	}
 
-	// selector is of map type for replication controller
+	// Selector is of map type for replication controller
 	if labelMap, ok := s.Interface().(map[string]string); ok {
 		return &metav1.LabelSelector{
 			MatchLabels: labelMap,
