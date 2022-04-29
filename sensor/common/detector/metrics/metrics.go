@@ -20,7 +20,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "num_network_policies_in_store",
-		Help:      "Number of network policies (per namespace) currently stored in the in-memory store in sensor.",
+		Help:      "Number of network policies (per namespace) currently stored in the sensor's memory.",
 	},
 		[]string{
 			// Which namespace the network policy belongs to
@@ -30,7 +30,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "events_network_policy_store_total",
-		Help:      "Events affecting the state of network policy currently stored in the in-memory store in sensor.",
+		Help:      "Events affecting the state of network policies currently stored in the sensor's memory.",
 	},
 		[]string{
 			// What event caused an update of the metric value
