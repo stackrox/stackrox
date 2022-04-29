@@ -197,6 +197,8 @@ push_main_image_set() {
         die "$brand is not a supported brand"
     fi
 
+    set -x
+
     local tag
     tag="$(make --quiet tag)"
     for registry in "${destination_registries[@]}"; do
