@@ -71,49 +71,6 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundDeployment)
-<<<<<<< HEAD
-
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
-	s.NoError(store.Upsert(ctx, deployment))
-	foundDeployment, exists, err = store.Get(ctx, deployment.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(deployment, foundDeployment)
-
-	deploymentCount, err := store.Count(ctx)
-	s.NoError(err)
-	s.Equal(1, deploymentCount)
-
-	deploymentExists, err := store.Exists(ctx, deployment.GetId())
-	s.NoError(err)
-	s.True(deploymentExists)
-	s.NoError(store.Upsert(ctx, deployment))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, deployment), sac.ErrResourceAccessDenied)
-
-	foundDeployment, exists, err = store.Get(ctx, deployment.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(deployment, foundDeployment)
-
-	s.NoError(store.Delete(ctx, deployment.GetId()))
-	foundDeployment, exists, err = store.Get(ctx, deployment.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundDeployment)
-
-	var deployments []*storage.Deployment
-	for i := 0; i < 200; i++ {
-		deployment := &storage.Deployment{}
-		s.NoError(testutils.FullInit(deployment, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		deployments = append(deployments, deployment)
-	}
-
-	s.NoError(store.UpsertMany(ctx, deployments))
-
-	deploymentCount, err = store.Count(ctx)
-	s.NoError(err)
-	s.Equal(200, deploymentCount)
 }
 
 func (s *DeploymentsStoreSuite) TestSACUpsert() {
@@ -194,6 +151,4 @@ func getSACContexts(obj *storage.Deployment) map[string]context.Context {
 				sac.ClusterScopeKeys("unknown cluster"),
 			)),
 	}
-=======
->>>>>>> 8480ffc25 (avoid overwrites, skip upsert store test  for explicit refs)
 }

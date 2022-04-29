@@ -69,46 +69,4 @@ func (s *Testgrandchild1StoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestGrandChild1)
-<<<<<<< HEAD
-
-	s.NoError(store.Upsert(ctx, testGrandChild1))
-	foundTestGrandChild1, exists, err = store.Get(ctx, testGrandChild1.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(testGrandChild1, foundTestGrandChild1)
-
-	testGrandChild1Count, err := store.Count(ctx)
-	s.NoError(err)
-	s.Equal(1, testGrandChild1Count)
-
-	testGrandChild1Exists, err := store.Exists(ctx, testGrandChild1.GetId())
-	s.NoError(err)
-	s.True(testGrandChild1Exists)
-	s.NoError(store.Upsert(ctx, testGrandChild1))
-
-	foundTestGrandChild1, exists, err = store.Get(ctx, testGrandChild1.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(testGrandChild1, foundTestGrandChild1)
-
-	s.NoError(store.Delete(ctx, testGrandChild1.GetId()))
-	foundTestGrandChild1, exists, err = store.Get(ctx, testGrandChild1.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundTestGrandChild1)
-
-	var testGrandChild1s []*storage.TestGrandChild1
-	for i := 0; i < 200; i++ {
-		testGrandChild1 := &storage.TestGrandChild1{}
-		s.NoError(testutils.FullInit(testGrandChild1, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		testGrandChild1s = append(testGrandChild1s, testGrandChild1)
-	}
-
-	s.NoError(store.UpsertMany(ctx, testGrandChild1s))
-
-	testGrandChild1Count, err = store.Count(ctx)
-	s.NoError(err)
-	s.Equal(200, testGrandChild1Count)
-=======
->>>>>>> 8480ffc25 (avoid overwrites, skip upsert store test  for explicit refs)
 }

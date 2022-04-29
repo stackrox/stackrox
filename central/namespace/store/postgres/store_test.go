@@ -71,49 +71,6 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNamespaceMetadata)
-<<<<<<< HEAD
-
-	withNoAccessCtx := sac.WithNoAccess(ctx)
-
-	s.NoError(store.Upsert(ctx, namespaceMetadata))
-	foundNamespaceMetadata, exists, err = store.Get(ctx, namespaceMetadata.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(namespaceMetadata, foundNamespaceMetadata)
-
-	namespaceMetadataCount, err := store.Count(ctx)
-	s.NoError(err)
-	s.Equal(1, namespaceMetadataCount)
-
-	namespaceMetadataExists, err := store.Exists(ctx, namespaceMetadata.GetId())
-	s.NoError(err)
-	s.True(namespaceMetadataExists)
-	s.NoError(store.Upsert(ctx, namespaceMetadata))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, namespaceMetadata), sac.ErrResourceAccessDenied)
-
-	foundNamespaceMetadata, exists, err = store.Get(ctx, namespaceMetadata.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(namespaceMetadata, foundNamespaceMetadata)
-
-	s.NoError(store.Delete(ctx, namespaceMetadata.GetId()))
-	foundNamespaceMetadata, exists, err = store.Get(ctx, namespaceMetadata.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundNamespaceMetadata)
-
-	var namespaceMetadatas []*storage.NamespaceMetadata
-	for i := 0; i < 200; i++ {
-		namespaceMetadata := &storage.NamespaceMetadata{}
-		s.NoError(testutils.FullInit(namespaceMetadata, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		namespaceMetadatas = append(namespaceMetadatas, namespaceMetadata)
-	}
-
-	s.NoError(store.UpsertMany(ctx, namespaceMetadatas))
-
-	namespaceMetadataCount, err = store.Count(ctx)
-	s.NoError(err)
-	s.Equal(200, namespaceMetadataCount)
 }
 
 func (s *NamespacesStoreSuite) TestSACUpsert() {
@@ -194,6 +151,4 @@ func getSACContexts(obj *storage.NamespaceMetadata) map[string]context.Context {
 				sac.ClusterScopeKeys("unknown cluster"),
 			)),
 	}
-=======
->>>>>>> 8480ffc25 (avoid overwrites, skip upsert store test  for explicit refs)
 }

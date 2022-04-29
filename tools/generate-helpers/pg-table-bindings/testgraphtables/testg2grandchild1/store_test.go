@@ -69,46 +69,4 @@ func (s *Testg2grandchild1StoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundTestG2GrandChild1)
-<<<<<<< HEAD
-
-	s.NoError(store.Upsert(ctx, testG2GrandChild1))
-	foundTestG2GrandChild1, exists, err = store.Get(ctx, testG2GrandChild1.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(testG2GrandChild1, foundTestG2GrandChild1)
-
-	testG2GrandChild1Count, err := store.Count(ctx)
-	s.NoError(err)
-	s.Equal(1, testG2GrandChild1Count)
-
-	testG2GrandChild1Exists, err := store.Exists(ctx, testG2GrandChild1.GetId())
-	s.NoError(err)
-	s.True(testG2GrandChild1Exists)
-	s.NoError(store.Upsert(ctx, testG2GrandChild1))
-
-	foundTestG2GrandChild1, exists, err = store.Get(ctx, testG2GrandChild1.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(testG2GrandChild1, foundTestG2GrandChild1)
-
-	s.NoError(store.Delete(ctx, testG2GrandChild1.GetId()))
-	foundTestG2GrandChild1, exists, err = store.Get(ctx, testG2GrandChild1.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundTestG2GrandChild1)
-
-	var testG2GrandChild1s []*storage.TestG2GrandChild1
-	for i := 0; i < 200; i++ {
-		testG2GrandChild1 := &storage.TestG2GrandChild1{}
-		s.NoError(testutils.FullInit(testG2GrandChild1, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		testG2GrandChild1s = append(testG2GrandChild1s, testG2GrandChild1)
-	}
-
-	s.NoError(store.UpsertMany(ctx, testG2GrandChild1s))
-
-	testG2GrandChild1Count, err = store.Count(ctx)
-	s.NoError(err)
-	s.Equal(200, testG2GrandChild1Count)
-=======
->>>>>>> 8480ffc25 (avoid overwrites, skip upsert store test  for explicit refs)
 }
