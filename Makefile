@@ -20,6 +20,7 @@ endif
 # 3. Otherwise set it to "development_build" by default, e.g. for developers running the Makefile locally.
 ROX_IMAGE_FLAVOR ?= $(shell if [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then echo "stackrox.io"; else echo "development_build"; fi)
 
+ROX_PRODUCT_BRANDING ?= STACKROX_BRANDING
 DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
 BUILD_IMAGE_VERSION=$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
 BUILD_IMAGE := $(DEFAULT_IMAGE_REGISTRY)/apollo-ci:$(BUILD_IMAGE_VERSION)
@@ -508,6 +509,7 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image $(CU
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
+		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
 		--file image/rhel/Dockerfile \
 		--label version=$(TAG) \
 		--label release=$(TAG) \

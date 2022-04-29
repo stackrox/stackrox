@@ -942,7 +942,7 @@ commands:
 
       - run:
           name: Build main image
-          command: make docker-build-main-image
+          command: make docker-build-main-image ROX_PRODUCT_BRANDING="<< parameters.branding >>"
 
       - run:
           name: Check debugger presence in the main image
