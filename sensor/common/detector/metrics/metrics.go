@@ -24,7 +24,7 @@ var (
 	},
 		[]string{
 			// Which namespace the network policy belongs to
-			"K8sNamespace",
+			"k8sNamespace",
 		})
 	networkPoliciesStoreEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -34,11 +34,11 @@ var (
 	},
 		[]string{
 			// What event caused an update of the metric value
-			"updateEvent",
+			"event",
 			// Namespace of the network policy that triggered the metric update
-			"K8sNamespace",
+			"k8sNamespace",
 			// Number of selector terms on the network policy that triggered the metric update
-			"NumSelectors",
+			"numSelectors",
 		})
 )
 
@@ -49,15 +49,15 @@ func ObserveTimeSpentInExponentialBackoff(t time.Duration) {
 
 // ObserveNetworkPolicyStoreState observes the metric.
 func ObserveNetworkPolicyStoreState(ns string, num int) {
-	networkPoliciesStored.With(prometheus.Labels{"K8sNamespace": ns}).Set(float64(num))
+	networkPoliciesStored.With(prometheus.Labels{"k8sNamespace": ns}).Set(float64(num))
 }
 
 // ObserveNetworkPolicyStoreEvent observes the metric.
 func ObserveNetworkPolicyStoreEvent(event, namespace string, numSelectors int) {
 	networkPoliciesStoreEvents.With(prometheus.Labels{
-		"updateEvent":  event,
-		"K8sNamespace": namespace,
-		"NumSelectors": fmt.Sprintf("%d", numSelectors),
+		"event":        event,
+		"k8sNamespace": namespace,
+		"numSelectors": fmt.Sprintf("%d", numSelectors),
 	}).Inc()
 }
 
