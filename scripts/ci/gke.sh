@@ -67,29 +67,42 @@ assign_env_variables() {
 
 create_cluster() {
     info "Creating a GKE cluster"
-
     ensure_CI
-
     require_environment "CLUSTER_NAME"
 
     local tags="stackrox-ci"
     local labels="stackrox-ci=true"
+
     if is_OPENSHIFT_CI; then
         require_environment "JOB_NAME"
         require_environment "BUILD_ID"
-        tags="${tags},stackrox-ci-${JOB_NAME:0:50}"
-        labels="${labels},stackrox-ci-job=${JOB_NAME:0:63},stackrox-ci-build-id=${BUILD_ID:0:63}"
+        local job_name_limit50=${JOB_NAME:0:50}
+        job_name_limit50=${job_name_limit50/%-/x}  # replace trailing - with x
+        local job_name_limit63=${JOB_NAME:0:50}
+        job_name_limit63=${job_name_limit63/%-/x}  # replace trailing - with x
+        local build_id_limit63=${BUILD_ID:0:63}
+
+        tags="${tags},stackrox-ci-$job_name_limit50"
+        labels="${labels},stackrox-ci-job=$job_name_limit63,stackrox-ci-build-id=$build_id_limit63"
+
     elif is_CIRCLECI; then
         require_environment "CIRCLE_JOB"
         require_environment "CIRCLE_WORKFLOW_ID"
-        tags="${tags},stackrox-ci-${CIRCLE_JOB:0:50}"
-        labels="${labels},stackrox-ci-job=${CIRCLE_JOB:0:63},stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID:0:63}"
+        local circle_job_limit50=${CIRCLE_JOB:0:50}
+        circle_job_limit50=${circle_job_limit50/%-/x}  # replace trailing - with x
+        local circle_job_limit63=${CIRCLE_JOB:0:63}
+        circle_job_limit63=${circle_job_limit63/%-/x}  # replace trailing - with x
+        local circle_workflow_id_limit63=${CIRCLE_WORKFLOW_ID:0:63}
+
+        tags="${tags},stackrox-ci-$circle_job_limit50"
+        labels="${labels},stackrox-ci-job=$circle_job_limit63,stackrox-ci-workflow=$circle_workflow_id_limit63"
+
     else
         die "Support is missing for this CI environment"
     fi
-    # lowercase
-    tags="${tags,,}"
-    labels="${labels,,}"
+
+    tags="${tags,,}"  # lowercase
+    labels="${labels,,}"  # lowercase
 
     ### Network Sizing ###
     # The overall subnetwork ("--create-subnetwork") is used for nodes.
