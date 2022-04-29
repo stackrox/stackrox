@@ -40,7 +40,6 @@ var (
 	ImageComponent       = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
 	// Integrations is the new  resource grouping all integration resources.
 	Integrations                     = newResourceMetadata("Integrations", permissions.GlobalScope)
-	Indicator                        = newResourceMetadata("Indicator", permissions.NamespaceScope)
 	K8sRole                          = newResourceMetadata("K8sRole", permissions.NamespaceScope)
 	K8sRoleBinding                   = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
 	K8sSubject                       = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
@@ -51,63 +50,87 @@ var (
 	Policy                           = newResourceMetadata("Policy", permissions.GlobalScope)
 	Secret                           = newResourceMetadata("Secret", permissions.NamespaceScope)
 	ServiceAccount                   = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
-	VulnerabilityManagementApprovals = newResourceMetadata("VulnerabilityManagementApprovals", permissions.GlobalScope)
-	VulnerabilityManagementRequests  = newResourceMetadata("VulnerabilityManagementRequests", permissions.GlobalScope)
-	VulnerabilityReports             = newResourceMetadata("VulnerabilityReports", permissions.GlobalScope)
-	WatchedImage                     = newResourceMetadata("WatchedImage", permissions.GlobalScope)
+	VulnerabilityManagementApprovals = newResourceMetadata("VulnerabilityManagementApprovals",
+		permissions.GlobalScope)
+	VulnerabilityManagementRequests = newResourceMetadata("VulnerabilityManagementRequests",
+		permissions.GlobalScope)
+	VulnerabilityReports = newResourceMetadata("VulnerabilityReports", permissions.GlobalScope)
+	WatchedImage         = newResourceMetadata("WatchedImage", permissions.GlobalScope)
 
 	// Deprecated resources.
 
 	// Deprecated: AllComments is deprecated, use Administration.
-	AllComments = newResourceMetadata("AllComments", permissions.GlobalScope)
+	AllComments = newResourceMetadataWithReplacingResourceMetadata("AllComments", permissions.GlobalScope,
+		Administration)
 	// Deprecated: APIToken is deprecated, use Integrations.
-	APIToken = newResourceMetadata("APIToken", permissions.GlobalScope)
+	APIToken = newResourceMetadataWithReplacingResourceMetadata("APIToken", permissions.GlobalScope, Integrations)
 	// Deprecated: AuthPlugin is deprecated, use Access.
-	AuthPlugin = newResourceMetadata("AuthPlugin", permissions.GlobalScope)
+	AuthPlugin = newResourceMetadataWithReplacingResourceMetadata("AuthPlugin", permissions.GlobalScope, Access)
 	// Deprecated: AuthProvider is deprecated, use Access.
-	AuthProvider = newResourceMetadata("AuthProvider", permissions.GlobalScope)
+	AuthProvider = newResourceMetadataWithReplacingResourceMetadata("AuthProvider", permissions.GlobalScope,
+		Access)
 	// Deprecated: BackupPlugins is deprecated, use Integrations.
-	BackupPlugins = newResourceMetadata("BackupPlugins", permissions.GlobalScope)
+	BackupPlugins = newResourceMetadataWithReplacingResourceMetadata("BackupPlugins", permissions.GlobalScope,
+		Integrations)
 	// Deprecated: ComplianceRuns is deprecated, use Compliance.
-	ComplianceRuns = newResourceMetadata("ComplianceRuns", permissions.ClusterScope)
+	ComplianceRuns = newResourceMetadataWithReplacingResourceMetadata("ComplianceRuns", permissions.ClusterScope,
+		Compliance)
 	// Deprecated: ComplianceRunSchedule is deprecated, use Administration.
-	ComplianceRunSchedule = newResourceMetadata("ComplianceRunSchedule", permissions.GlobalScope)
+	ComplianceRunSchedule = newResourceMetadataWithReplacingResourceMetadata("ComplianceRunSchedule",
+		permissions.GlobalScope, Administration)
 	// Deprecated: Config is deprecated, use Administration.
-	Config = newResourceMetadata("Config", permissions.GlobalScope)
+	Config = newResourceMetadataWithReplacingResourceMetadata("Config", permissions.GlobalScope,
+		Administration)
 	// Deprecated: DebugLogs is deprecated, use Administration.
-	DebugLogs = newResourceMetadata("DebugLogs", permissions.GlobalScope)
+	DebugLogs = newResourceMetadataWithReplacingResourceMetadata("DebugLogs", permissions.GlobalScope,
+		Administration)
 	// Deprecated: Group is deprecated, use Access.
-	Group = newResourceMetadata("Group", permissions.GlobalScope)
+	Group = newResourceMetadataWithReplacingResourceMetadata("Group", permissions.GlobalScope, Access)
 	// Deprecated: ImageIntegration is deprecated, use Integrations.
-	ImageIntegration = newResourceMetadata("ImageIntegration", permissions.GlobalScope)
+	ImageIntegration = newResourceMetadataWithReplacingResourceMetadata("ImageIntegration",
+		permissions.GlobalScope, Integrations)
+	// Deprecated: Indicator is deprecated, use DeploymentExtensions.
+	Indicator = newResourceMetadataWithReplacingResourceMetadata("Indicator", permissions.NamespaceScope,
+		DeploymentExtensions)
 	// Deprecated: Licenses is deprecated, use Access.
-	Licenses = newResourceMetadata("Licenses", permissions.GlobalScope)
+	Licenses = newResourceMetadataWithReplacingResourceMetadata("Licenses", permissions.GlobalScope, Access)
 	// Deprecated: NetworkBaseline is deprecated, use DeploymentExtensions.
-	NetworkBaseline = newResourceMetadata("NetworkBaseline", permissions.NamespaceScope)
+	NetworkBaseline = newResourceMetadataWithReplacingResourceMetadata("NetworkBaseline",
+		permissions.NamespaceScope, DeploymentExtensions)
 	// Deprecated: NetworkGraphConfig is deprecated, use Administration.
-	NetworkGraphConfig = newResourceMetadata("NetworkGraphConfig", permissions.GlobalScope)
+	NetworkGraphConfig = newResourceMetadataWithReplacingResourceMetadata("NetworkGraphConfig",
+		permissions.GlobalScope, Administration)
 	// Deprecated: Notifier is deprecated, use Integrations.
-	Notifier = newResourceMetadata("Notifier", permissions.GlobalScope)
+	Notifier = newResourceMetadataWithReplacingResourceMetadata("Notifier", permissions.GlobalScope,
+		Integrations)
 	// Deprecated: ProbeUpload is deprecated, use Administration.
-	ProbeUpload = newResourceMetadata("ProbeUpload", permissions.GlobalScope)
+	ProbeUpload = newResourceMetadataWithReplacingResourceMetadata("ProbeUpload", permissions.GlobalScope,
+		Administration)
 	// Deprecated: ProcessWhitelist is deprecated, use DeploymentExtensions.
-	ProcessWhitelist = newResourceMetadata("ProcessWhitelist", permissions.NamespaceScope)
+	ProcessWhitelist = newResourceMetadataWithReplacingResourceMetadata("ProcessWhitelist",
+		permissions.NamespaceScope, DeploymentExtensions)
 	// Deprecated: Risk is deprecated, use DeploymentExtensions.
-	Risk = newResourceMetadata("Risk", permissions.NamespaceScope)
+	Risk = newResourceMetadataWithReplacingResourceMetadata("Risk", permissions.NamespaceScope,
+		DeploymentExtensions)
 	// Deprecated: Role is deprecated, use Access.
-	Role = newResourceMetadata("Role", permissions.GlobalScope)
+	Role = newResourceMetadataWithReplacingResourceMetadata("Role", permissions.GlobalScope, Access)
 	// Deprecated: ScannerBundle is deprecated, use Administration.
-	ScannerBundle = newResourceMetadata("ScannerBundle", permissions.GlobalScope)
+	ScannerBundle = newResourceMetadataWithReplacingResourceMetadata("ScannerBundle",
+		permissions.GlobalScope, Administration)
 	// Deprecated: ScannerDefinitions is deprecated, use Administration.
-	ScannerDefinitions = newResourceMetadata("ScannerDefinitions", permissions.GlobalScope)
+	ScannerDefinitions = newResourceMetadataWithReplacingResourceMetadata("ScannerDefinitions",
+		permissions.GlobalScope, Administration)
 	// Deprecated: SensorUpgradeConfig is deprecated, use Administration.
-	SensorUpgradeConfig = newResourceMetadata("SensorUpgradeConfig", permissions.GlobalScope)
+	SensorUpgradeConfig = newResourceMetadataWithReplacingResourceMetadata("SensorUpgradeConfig",
+		permissions.GlobalScope, Administration)
 	// Deprecated: ServiceIdentity is deprecated, use Administration.
-	ServiceIdentity = newResourceMetadata("ServiceIdentity", permissions.GlobalScope)
+	ServiceIdentity = newResourceMetadataWithReplacingResourceMetadata("ServiceIdentity",
+		permissions.GlobalScope, Administration)
 	// Deprecated: SignatureIntegration is deprecated, use Integrations.
-	SignatureIntegration = newResourceMetadataWithFeatureFlag("SignatureIntegration", permissions.GlobalScope, features.ImageSignatureVerification)
+	SignatureIntegration = newResourceMetadataWithFeatureFlagAndReplacingResource("SignatureIntegration",
+		permissions.GlobalScope, Integrations, features.ImageSignatureVerification)
 	// Deprecated: User is deprecated, use Access.
-	User = newResourceMetadata("User", permissions.GlobalScope)
+	User = newResourceMetadataWithReplacingResourceMetadata("User", permissions.GlobalScope, Access)
 
 	// Internal Resources.
 	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
@@ -125,10 +148,23 @@ func newResourceMetadata(name permissions.Resource, scope permissions.ResourceSc
 	return md
 }
 
-func newResourceMetadataWithFeatureFlag(name permissions.Resource, scope permissions.ResourceScope, flag features.FeatureFlag) permissions.ResourceMetadata {
+func newResourceMetadataWithReplacingResourceMetadata(name permissions.Resource, scope permissions.ResourceScope,
+	replacingResourceMD permissions.ResourceMetadata) permissions.ResourceMetadata {
 	md := permissions.ResourceMetadata{
-		Resource: name,
-		Scope:    scope,
+		Resource:          name,
+		Scope:             scope,
+		ReplacingResource: &replacingResourceMD,
+	}
+	resourceToMetadata[name] = md
+	return md
+}
+
+func newResourceMetadataWithFeatureFlagAndReplacingResource(name permissions.Resource, scope permissions.ResourceScope,
+	replacingResourceMD permissions.ResourceMetadata, flag features.FeatureFlag) permissions.ResourceMetadata {
+	md := permissions.ResourceMetadata{
+		Resource:          name,
+		Scope:             scope,
+		ReplacingResource: &replacingResourceMD,
 	}
 	if flag.Enabled() {
 		resourceToMetadata[name] = md
@@ -138,7 +174,8 @@ func newResourceMetadataWithFeatureFlag(name permissions.Resource, scope permiss
 	return md
 }
 
-func newInternalResourceMetadata(name permissions.Resource, scope permissions.ResourceScope) permissions.ResourceMetadata {
+func newInternalResourceMetadata(name permissions.Resource,
+	scope permissions.ResourceScope) permissions.ResourceMetadata {
 	return permissions.ResourceMetadata{
 		Resource: name,
 		Scope:    scope,
@@ -218,8 +255,3 @@ func MetadataForResource(res permissions.Resource) (permissions.ResourceMetadata
 	}
 	return md, found
 }
-
-/*
-Resource replacements -> how would this be best?
-permission.ResourceMetadata is the sole single struct used (and we should keep it this way).
-*/

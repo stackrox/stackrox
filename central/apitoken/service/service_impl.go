@@ -24,6 +24,7 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		// TODO(dhaus): Check what's up with the user.Any, whether resource replacement can be done there as well in a simpler way.
 		user.Any(
 			user.With(permissions.View(resources.APIToken)),
 			user.With(permissions.View(resources.Integrations)),
