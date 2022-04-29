@@ -34,7 +34,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-10270: The `RenamePolicyCategory` and `DeletePolicyCategory` methods in the
 `v1/policycategories` endpoint have been deprecated, and will be removed in future releases. 
   - For questions about this change, please contact the Red Hat support team at support@redhat.com.
-- ROX-10018: The policy `OpenShift: Kubeadmin Secret Accessed` will not trigger for the default OpenShift `oauth-apiserver-sa` service account as that is an expected access pattern for the apiserver on OpenShift.
+- ROX-10018: The policy `OpenShift: Kubeadmin Secret Accessed` will no longer trigger if the request was from the default OpenShift `oauth-apiserver-sa` service account, because this is an expected access pattern for the OpenShift apiserver.
 
 ## [69.1]
 
