@@ -6,13 +6,21 @@ Common test run patterns
 
 from datetime import datetime
 from clusters import NullCluster
+from pre_tests import NullPreTest
 from ci_tests import NullTest
 from posts import NullPost
 
 
 class ClusterTestRunner:
-    def __init__(self, cluster=NullCluster(), test=NullTest(), post=NullPost()):
+    def __init__(
+        self,
+        cluster=NullCluster(),
+        pre_test=NullPreTest(),
+        test=NullTest(),
+        post=NullPost(),
+    ):
         self.cluster = cluster
+        self.pre_test = pre_test
         self.test = test
         self.post = post
 
@@ -25,6 +33,14 @@ class ClusterTestRunner:
         except Exception as err:
             self.log_significant_event("provision failed")
             hold = err
+        if hold is None:
+            try:
+                self.log_significant_event("About to run pre test")
+                self.pre_test.run()
+                self.log_significant_event("pre test completed")
+            except Exception as err:
+                self.log_significant_event("pre test failed")
+                hold = err
         if hold is None:
             try:
                 self.log_significant_event("About to run test")
