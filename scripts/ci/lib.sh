@@ -284,7 +284,7 @@ poll_for_opensource_images() {
     _image_exists() {
         info "Checking for $1"
         local url="https://quay.io/v2/stackrox-io/$1/manifests/$tag"
-        curl --head --fail "$url"
+        curl -sS --head --fail "$url"
     }
 
     while true; do
