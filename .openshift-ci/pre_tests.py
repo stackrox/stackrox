@@ -22,7 +22,7 @@ class PreSystemTests:
             [
                 "scripts/ci/lib.sh",
                 "poll_for_opensource_images",
-                PreSystemTests.POLL_TIMEOUT,
+                str(PreSystemTests.POLL_TIMEOUT),
             ],
             check=True,
             timeout=PreSystemTests.POLL_TIMEOUT * 1.2,
