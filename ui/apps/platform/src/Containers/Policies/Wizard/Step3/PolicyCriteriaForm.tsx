@@ -5,14 +5,11 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useFormikContext } from 'formik';
 
 import { Policy } from 'types/policy.proto';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import {
-    networkPolicyFieldDescriptors,
     policyConfigurationDescriptor,
-    networkDetectionDescriptor,
     auditLogDescriptor,
     Descriptor,
-    imageSigningCriteriaDescriptor,
 } from './policyCriteriaDescriptors';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
 import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
@@ -25,6 +22,7 @@ function PolicyCriteriaForm() {
     const [descriptor, setDescriptor] = React.useState<Descriptor[]>([]);
     const { values, setFieldValue } = useFormikContext<Policy>();
     const { criteriaLocked } = values;
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     function addNewPolicySection() {
         if (values.policySections.length < MAX_POLICY_SECTIONS) {
@@ -38,20 +36,20 @@ function PolicyCriteriaForm() {
         }
     }
 
-    const isImageSigningEnabled = useFeatureFlagEnabled('ROX_VERIFY_IMAGE_SIGNATURE');
-    const isNetworkPolicyFieldsEnabled = useFeatureFlagEnabled('ROX_NETPOL_FIELDS');
     React.useEffect(() => {
-        if (values.eventSource === 'AUDIT_LOG_EVENT') {
-            setDescriptor(auditLogDescriptor);
-        } else {
-            setDescriptor([
-                ...policyConfigurationDescriptor,
-                ...networkDetectionDescriptor,
-                ...(isImageSigningEnabled ? [imageSigningCriteriaDescriptor] : []),
-                ...(isNetworkPolicyFieldsEnabled ? networkPolicyFieldDescriptors : []),
-            ]);
-        }
-    }, [values.eventSource, isImageSigningEnabled, isNetworkPolicyFieldsEnabled]);
+        const unfilteredDescriptors =
+            values.eventSource === 'AUDIT_LOG_EVENT'
+                ? auditLogDescriptor
+                : policyConfigurationDescriptor;
+        setDescriptor(
+            unfilteredDescriptors.filter((unfilteredDescriptor) => {
+                if (typeof unfilteredDescriptor.featureFlagDependency === 'string') {
+                    return isFeatureFlagEnabled(unfilteredDescriptor.featureFlagDependency);
+                }
+                return true;
+            })
+        );
+    }, [values.eventSource, isFeatureFlagEnabled]);
 
     const headingElements = (
         <>
