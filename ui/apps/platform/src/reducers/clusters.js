@@ -4,26 +4,18 @@ import isEqual from 'lodash/isEqual';
 import pick from 'lodash/pick';
 
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
-import {
-    types as searchTypes,
-    getActions as getSearchActions,
-    reducers as searchReducers,
-    getSelectors as getSearchSelectors,
-} from 'reducers/pageSearch';
 import mergeEntitiesById from 'utils/mergeEntitiesById';
 
 // Action types
 
 export const types = {
     FETCH_CLUSTERS: createFetchingActionTypes('clusters/FETCH_CLUSTERS'),
-    ...searchTypes('clusters'),
 };
 
 // Actions
 
 export const actions = {
     fetchClusters: createFetchingActions(types.FETCH_CLUSTERS),
-    ...getSearchActions('clusters'),
 };
 
 // Reducers
@@ -43,7 +35,6 @@ const byId = (state = {}, { type, response }) => {
 
 const reducer = combineReducers({
     byId,
-    ...searchReducers('clusters'),
 });
 
 export default reducer;
@@ -56,5 +47,4 @@ const getClusters = createSelector([getClustersById], (clusters) => Object.value
 export const selectors = {
     getClustersById,
     getClusters,
-    ...getSearchSelectors('clusters'),
 };
