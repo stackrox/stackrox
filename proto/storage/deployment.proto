@@ -21,7 +21,7 @@ message Deployment {
     uint64 hash                                = 26 [(gogoproto.moretags) = "hash:\"ignore\""];
     string type                                = 4 [(gogoproto.moretags) = "search:\"Deployment Type\""];
     string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
-    string namespace_id                        = 23 [(gogoproto.moretags) = "search:\"Namespace ID\""];
+    string namespace_id                        = 23 [(gogoproto.moretags) = 'search:"Namespace ID" sql:"fk(NamespaceMetadata:id)"'];
     bool orchestrator_component                = 33 [(gogoproto.moretags) = "search:\"Orchestrator Component\""];
     int64 replicas                             = 6 [(gogoproto.moretags) = "policy:\"Replicas\""];
     // TODO(ROX-6895): "Label" search term is ambiguous.

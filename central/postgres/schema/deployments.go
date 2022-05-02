@@ -176,7 +176,8 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Image": ImagesSchema,
+			"storage.Image":             ImagesSchema,
+			"storage.NamespaceMetadata": NamespacesSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
