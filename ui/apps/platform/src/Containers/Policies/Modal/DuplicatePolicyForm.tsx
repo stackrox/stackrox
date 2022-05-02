@@ -2,7 +2,6 @@ import React, { useCallback, ReactElement } from 'react';
 import { Form, Radio } from '@patternfly/react-core';
 import { Field } from 'formik';
 
-import { POLICY_DUPE_ACTIONS } from './PolicyImport.utils';
 import RenamePolicySection from './RenamePolicySection';
 import KeepBothSection from './KeepBothSection';
 
@@ -48,12 +47,8 @@ function DuplicatePolicyForm({
                         value="overwrite"
                         label="Overwrite existing policy"
                         id="policy-overwrite-radio-1"
-                        isChecked={field.value === POLICY_DUPE_ACTIONS.OVERWRITE}
-                        onChange={changeRadio(
-                            field.onChange,
-                            field.name,
-                            POLICY_DUPE_ACTIONS.OVERWRITE
-                        )}
+                        isChecked={field.value === 'overwrite'}
+                        onChange={changeRadio(field.onChange, field.name, 'overwrite')}
                     />
                 )}
             </Field>

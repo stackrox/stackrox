@@ -21,6 +21,8 @@ import (
 type ReportconfigsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestReportconfigsStore(t *testing.T) {
@@ -35,24 +37,30 @@ func (s *ReportconfigsStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *ReportconfigsStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *ReportconfigsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *ReportconfigsStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *ReportconfigsStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	reportConfiguration := &storage.ReportConfiguration{}
 	s.NoError(testutils.FullInit(reportConfiguration, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -72,7 +80,7 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 
 	reportConfigurationCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(reportConfigurationCount, 1)
+	s.Equal(1, reportConfigurationCount)
 	reportConfigurationCount, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
 	s.Zero(reportConfigurationCount)
@@ -101,9 +109,10 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 		s.NoError(testutils.FullInit(reportConfiguration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		reportConfigurations = append(reportConfigurations, reportConfiguration)
 	}
+
 	s.NoError(store.UpsertMany(ctx, reportConfigurations))
 
 	reportConfigurationCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(reportConfigurationCount, 200)
+	s.Equal(200, reportConfigurationCount)
 }

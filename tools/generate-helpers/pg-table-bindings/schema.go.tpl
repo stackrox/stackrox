@@ -23,7 +23,7 @@ import (
                    {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}},
                {{- end}}
                    PRIMARY KEY({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys }})
-               {{- range $idx, $pksGrps := $schema.ParentKeysGroupedByTable -}},
+               {{- range $idx, $pksGrps := $schema.ReferenceKeysGroupedByTable -}},
                    CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumns" $pksGrps.Fields}}) REFERENCES {{$pksGrps.Table}}({{template "commandSeparatedRefs" $pksGrps.Fields}}) ON DELETE CASCADE
                {{- end}}
                )
@@ -34,7 +34,7 @@ import (
                    {{- end}}
                    },
     Children: []*postgres.CreateStmts{
-     {{- range $idx, $child := $schema.Children }}
+     {{- range $idx, $child := $schema.ReferencingSchema }}
             {{- if eq $child.EmbeddedIn $schema.Table }}
                 {{- template "createTableStmt" $child }},
             {{- end }}
@@ -56,10 +56,8 @@ var (
         schema = walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}")
         {{- /* Attach reference schemas, if provided. */ -}}
         {{- $schema := .Schema }}
-        {{- range $idx, $ref := $schema.Parents}}
-            {{- if ne $ref.Table $schema.EmbeddedIn -}}.
-                WithReference({{template "schemaVar" $ref}})
-            {{- end }}
+        {{- range $idx, $ref := .Refs}}.
+            WithReference({{template "schemaVar" $ref}})
         {{- end }}
         {{- if .SearchCategory }}
             {{- $ty := .Schema.Type }}

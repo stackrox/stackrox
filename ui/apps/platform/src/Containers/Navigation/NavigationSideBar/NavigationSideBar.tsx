@@ -4,8 +4,6 @@ import { Nav, NavList, NavExpandable, PageSidebar } from '@patternfly/react-core
 
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
-// The following import is for feature flags in isFeatureFlagEnabled function calls.
-// import { knownBackendFlags } from 'utils/featureFlags';
 
 import {
     basePathToLabelMap,

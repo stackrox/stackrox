@@ -19,7 +19,7 @@ require (
 	github.com/VividCortex/ewma v1.2.0
 	github.com/andygrunwald/go-jira v1.15.1
 	github.com/antihax/optional v1.0.0
-	github.com/aws/aws-sdk-go v1.42.43
+	github.com/aws/aws-sdk-go v1.44.2
 	github.com/blevesearch/bleve v1.0.14
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
@@ -32,7 +32,7 @@ require (
 	github.com/deckarep/golang-set v1.8.0
 	github.com/dexidp/dex v0.0.0-20210917061239-f0186ff2651e
 	github.com/docker/distribution v2.8.1+incompatible
-	github.com/docker/docker v20.10.13+incompatible
+	github.com/docker/docker v20.10.14+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
 	github.com/facebookincubator/nvdtools v0.1.4
@@ -114,7 +114,7 @@ require (
 	golang.stackrox.io/grpc-http1 v0.2.4
 	google.golang.org/api v0.75.0
 	google.golang.org/genproto v0.0.0-20220421151946-72621c1f0bd3
-	google.golang.org/grpc v1.45.0
+	google.golang.org/grpc v1.46.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
@@ -126,7 +126,7 @@ require (
 	k8s.io/apiserver v0.22.9
 	k8s.io/client-go v0.22.9
 	k8s.io/kubectl v0.22.8
-	k8s.io/kubelet v0.22.8
+	k8s.io/kubelet v0.22.9
 	k8s.io/utils v0.0.0-20211208161948-7d6a63dca704
 	sigs.k8s.io/controller-runtime v0.10.3
 	sigs.k8s.io/yaml v1.3.0

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { connect, useDispatch, useSelector } from 'react-redux';
 import { useRouteMatch } from 'react-router-dom';
-import { createSelector, createStructuredSelector } from 'reselect';
+import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
 import useLocalStorage from 'hooks/useLocalStorage';
@@ -18,8 +18,10 @@ import Graph from 'Containers/Network/Graph/Graph';
 import SidePanel from 'Containers/Network/SidePanel/SidePanel';
 import SimulationFrame from 'Components/SimulationFrame';
 import { fetchDeployment } from 'services/DeploymentsService';
+import { getErrorMessageFromServerResponse } from 'utils/networkGraphUtils';
 import Header from './Header/Header';
 import NoSelectedNamespace from './NoSelectedNamespace';
+import GraphLoadErrorState from './GraphLoadErrorState';
 
 function GraphFrame() {
     const [showNamespaceFlows, setShowNamespaceFlows] = useLocalStorage(
@@ -74,7 +76,13 @@ const networkPageContentSelector = createStructuredSelector({
     selectedNamespaceFilters: selectors.getSelectedNamespaceFilters,
 });
 
-function NetworkPage({ closeSidePanel, setDialogueStage, setNetworkModification }) {
+function NetworkPage({
+    getNetworkFlowGraphState,
+    serverErrorMessage,
+    closeSidePanel,
+    setDialogueStage,
+    setNetworkModification,
+}) {
     const { isNetworkSimulationOn } = useNetworkPolicySimulation();
     const { isBaselineSimulationOn } = useNetworkBaselineSimulation();
     const isSimulationOn = isNetworkSimulationOn || isBaselineSimulationOn;
@@ -120,20 +128,28 @@ function NetworkPage({ closeSidePanel, setDialogueStage, setNetworkModification 
         };
     }, [closeSidePanel, setDialogueStage, setNetworkModification]);
 
-    const isGraphDisabled = selectedNamespaceFilters.length === 0;
+    const hasNoSelectedNamespace = selectedNamespaceFilters.length === 0;
+    const hasGraphLoadError = getNetworkFlowGraphState === 'ERROR';
+
+    let content;
+    if (hasNoSelectedNamespace) {
+        content = <NoSelectedNamespace clusterName={clusterName} />;
+    } else if (hasGraphLoadError) {
+        const userMessage = getErrorMessageFromServerResponse(serverErrorMessage);
+        content = <GraphLoadErrorState error={serverErrorMessage} userMessage={userMessage} />;
+    } else {
+        content = <GraphFrame />;
+    }
 
     return (
         <>
-            <Header isGraphDisabled={isGraphDisabled} isSimulationOn={isSimulationOn} />
+            <Header
+                isGraphDisabled={hasNoSelectedNamespace || hasGraphLoadError}
+                isSimulationOn={isSimulationOn}
+            />
             <section className="flex flex-1 h-full w-full">
                 <div className="flex flex-1 flex-col w-full overflow-hidden">
-                    <div className="flex flex-1 flex-col relative">
-                        {isGraphDisabled ? (
-                            <NoSelectedNamespace clusterName={clusterName} />
-                        ) : (
-                            <GraphFrame />
-                        )}
-                    </div>
+                    <div className="flex flex-1 flex-col relative">{content}</div>
                 </div>
                 <Dialogue />
             </section>
@@ -141,13 +157,9 @@ function NetworkPage({ closeSidePanel, setDialogueStage, setNetworkModification 
     );
 }
 
-const isViewFiltered = createSelector(
-    [selectors.getNetworkSearchOptions],
-    (searchOptions) => searchOptions.length !== 0
-);
-
 const mapStateToProps = createStructuredSelector({
-    isViewFiltered,
+    getNetworkFlowGraphState: selectors.getNetworkFlowGraphState,
+    serverErrorMessage: selectors.getNetworkFlowErrorMessage,
 });
 
 const mapDispatchToProps = {

@@ -823,6 +823,11 @@ func TestMergeScopeTree(t *testing.T) {
 			name: "merge namespaces and clusters",
 			a: &ScopeTree{
 				State: Partial,
+				clusterIDToName: map[string]string{
+					"clusterid.earth":    "Earth",
+					"clusterid.arrakis":  "Arrakis",
+					"clusterid.notfound": "Not Found",
+				},
 				Clusters: map[string]*clustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
@@ -842,6 +847,10 @@ func TestMergeScopeTree(t *testing.T) {
 			},
 			b: &ScopeTree{
 				State: Partial,
+				clusterIDToName: map[string]string{
+					"clusterid.earth":   "Earth",
+					"clusterid.arrakis": "Arrakis",
+				},
 				Clusters: map[string]*clustersScopeSubTree{
 					"Earth": {
 						State: Partial,
@@ -860,6 +869,11 @@ func TestMergeScopeTree(t *testing.T) {
 			},
 			c: &ScopeTree{
 				State: Partial,
+				clusterIDToName: map[string]string{
+					"clusterid.earth":    "Earth",
+					"clusterid.arrakis":  "Arrakis",
+					"clusterid.notfound": "Not Found",
+				},
 				Clusters: map[string]*clustersScopeSubTree{
 					"Arrakis": {
 						State: Partial,
@@ -879,6 +893,10 @@ func TestMergeScopeTree(t *testing.T) {
 			name: "short circuit when cluster is included",
 			a: &ScopeTree{
 				State: Partial,
+				clusterIDToName: map[string]string{
+					"clusterid.earth":   "Earth",
+					"clusterid.arrakis": "Arrakis",
+				},
 				Clusters: map[string]*clustersScopeSubTree{
 					"Earth": {
 						State: Included,
@@ -896,6 +914,11 @@ func TestMergeScopeTree(t *testing.T) {
 			},
 			b: &ScopeTree{
 				State: Partial,
+				clusterIDToName: map[string]string{
+					"clusterid.earth":    "Earth",
+					"clusterid.arrakis":  "Arrakis",
+					"clusterid.notfound": "Not Found",
+				},
 				Clusters: map[string]*clustersScopeSubTree{
 					"Earth": {
 						State: Excluded,
@@ -915,6 +938,11 @@ func TestMergeScopeTree(t *testing.T) {
 			},
 			c: &ScopeTree{
 				State: Partial,
+				clusterIDToName: map[string]string{
+					"clusterid.earth":    "Earth",
+					"clusterid.arrakis":  "Arrakis",
+					"clusterid.notfound": "Not Found",
+				},
 				Clusters: map[string]*clustersScopeSubTree{
 					"Arrakis": {
 						State: Partial,
@@ -930,6 +958,10 @@ func TestMergeScopeTree(t *testing.T) {
 			a:    DenyAllEffectiveAccessScope(),
 			b: &ScopeTree{
 				State: Partial,
+				clusterIDToName: map[string]string{
+					"clusterid.earth":   "Earth",
+					"clusterid.arrakis": "Arrakis",
+				},
 				Clusters: map[string]*clustersScopeSubTree{
 					"Earth": {
 						State: Partial,
@@ -948,6 +980,10 @@ func TestMergeScopeTree(t *testing.T) {
 			},
 			c: &ScopeTree{
 				State: Partial,
+				clusterIDToName: map[string]string{
+					"clusterid.earth":   "Earth",
+					"clusterid.arrakis": "Arrakis",
+				},
 				Clusters: map[string]*clustersScopeSubTree{
 					"Earth": {
 						State: Partial,
@@ -969,6 +1005,9 @@ func TestMergeScopeTree(t *testing.T) {
 			a:    DenyAllEffectiveAccessScope(),
 			b: &ScopeTree{
 				State: Partial,
+				clusterIDToName: map[string]string{
+					"clusterid.earth": "Earth",
+				},
 				Clusters: map[string]*clustersScopeSubTree{
 					"Earth": {
 						State: Included,
@@ -977,6 +1016,9 @@ func TestMergeScopeTree(t *testing.T) {
 			},
 			c: &ScopeTree{
 				State: Partial,
+				clusterIDToName: map[string]string{
+					"clusterid.earth": "Earth",
+				},
 				Clusters: map[string]*clustersScopeSubTree{
 					"Earth": {
 						State: Included,
@@ -1003,6 +1045,9 @@ func TestMergeScopeTree(t *testing.T) {
 			},
 			b: &ScopeTree{
 				State: Partial,
+				clusterIDToName: map[string]string{
+					"clusterid.earth": "Earth",
+				},
 				Clusters: map[string]*clustersScopeSubTree{
 					"Earth": {
 						State: Included,
@@ -1011,6 +1056,9 @@ func TestMergeScopeTree(t *testing.T) {
 			},
 			c: &ScopeTree{
 				State: Partial,
+				clusterIDToName: map[string]string{
+					"clusterid.earth": "Earth",
+				},
 				Clusters: map[string]*clustersScopeSubTree{
 					"Earth": {
 						State: Included,

@@ -81,10 +81,9 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
         });
     }
 
+    const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
+    const restSearch = convertToRestSearch(filteredSearch || {});
     useDeepCompareEffect(() => {
-        const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
-        const restSearch = convertToRestSearch(filteredSearch || {});
-
         if (restSearch.length) {
             setIsViewFiltered(true);
         } else {
@@ -92,7 +91,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
         }
 
         refreshClusterList(restSearch);
-    }, [pageSearch, searchOptions, pollingCount]);
+    }, [restSearch, pollingCount]);
 
     // use a custom hook to set up polling, thanks Dan Abramov and Rob Stark
     useInterval(() => {

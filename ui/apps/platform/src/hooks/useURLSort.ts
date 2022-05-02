@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import useURLParameter from 'hooks/useURLParameter';
 import { SortDirection, SortOption, ThProps } from 'types/table';
 import { ApiSortOption } from 'types/search';
+import { isParsedQs } from 'utils/queryStringUtils';
 
 export type GetSortParams = (field: string) => ThProps['sort'] | undefined;
 
@@ -22,16 +23,23 @@ function tableSortOption(field: string, direction: SortDirection): ApiSortOption
     };
 }
 
-function useURLSort({ sortFields, defaultSortOption }: UseTableSortProps): UseTableSortResult {
-    const [sortOption, setSortOption] = useURLParameter<SortOption>(
-        'sortOption',
-        defaultSortOption
-    );
+function isDirection(val: unknown): val is 'asc' | 'desc' {
+    return val === 'asc' || val === 'desc';
+}
 
-    // get the sort option values from the URL, if available
+function useURLSort({ sortFields, defaultSortOption }: UseTableSortProps): UseTableSortResult {
+    const [sortOption, setSortOption] = useURLParameter('sortOption', defaultSortOption);
+
+    // get the parsed sort option values from the URL, if available
     // otherwise, use the default sort option values
-    const activeSortField = sortOption?.field || defaultSortOption.field;
-    const activeSortDirection = sortOption?.direction || defaultSortOption.direction;
+    const activeSortField =
+        isParsedQs(sortOption) && typeof sortOption?.field === 'string'
+            ? sortOption.field
+            : defaultSortOption.field;
+    const activeSortDirection =
+        isParsedQs(sortOption) && isDirection(sortOption?.direction)
+            ? sortOption.direction
+            : defaultSortOption.direction;
 
     const internalSortResultOption = useRef<ApiSortOption>(
         tableSortOption(activeSortField, activeSortDirection)
