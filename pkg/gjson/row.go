@@ -2,7 +2,6 @@ package gjson
 
 import (
 	"encoding/json"
-	"fmt"
 	"sort"
 	"strings"
 
@@ -22,7 +21,7 @@ type RowMapper struct {
 func NewRowMapper(jsonObj interface{}, multiPathExpression string) (*RowMapper, error) {
 	bytes, err := json.Marshal(jsonObj)
 	if err != nil {
-		return nil, errox.InvariantViolation.CausedBy(err.Error())
+		return nil, errox.InvariantViolation.CausedBy(err)
 	}
 
 	result, err := getResultFromBytes(bytes, multiPathExpression)
@@ -112,9 +111,9 @@ func getRowsFromColumns(columns [][]string) [][]string {
 
 // jaggedArrayError helper to create an errox.InvariantViolation with an explanation about a jagged array being found
 func jaggedArrayError(maxAmount, violatedAmount, arrayIndex int) error {
-	return errox.InvariantViolation.CausedBy(fmt.Sprintf("jagged array found: yielded values within "+
+	return errox.InvariantViolation.CausedByf("jagged array found: yielded values within "+
 		"each array are not matching; expected each array to hold %d elements but found an array with %d elements "+
-		"at array index %d", maxAmount, violatedAmount, arrayIndex+1))
+		"at array index %d", maxAmount, violatedAmount, arrayIndex+1)
 }
 
 // columnTree is responsible for providing columns and their values in a tree structure.

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/pflag/autobool"
@@ -33,8 +34,6 @@ Please use --admission-controller-listen-on-creates instead to suppress this war
 
 	warningDeprecatedAdmControllerEnableSet = `The --admission-controller-enabled flag has been deprecated and will be removed in future versions of roxctl.
 Please use --admission-controller-enforce-on-creates instead to suppress this warning text and avoid breakages in the future.`
-
-	errorDeprecatedFlag = "Specified deprecated flag %s and new flag %s at the same time"
 
 	mainImageRepository = "main-image-repository"
 	slimCollector       = "slim-collector"
@@ -73,7 +72,7 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	// Migration process for renaming "--create-admission-controller" parameter to "--admission-controller-listen-on-creates".
 	// Can be removed in a future release.
 	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed && cmd.PersistentFlags().Lookup("admission-controller-listen-on-creates").Changed {
-		return errox.InvalidArgs.Newf(errorDeprecatedFlag, "--create-admission-controller", "--admission-controller-listen-on-creates")
+		return common.ErrDeprecatedFlag("--create-admission-controller", "--admission-controller-listen-on-creates")
 	}
 	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed {
 		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerCreateSet)
@@ -82,7 +81,7 @@ func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	// Migration process for renaming "--admission-controller-enabled" parameter to "--admission-controller-enforce-on-creates".
 	// Can be removed in a future release.
 	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed && cmd.PersistentFlags().Lookup("admission-controller-enforce-on-creates").Changed {
-		return errox.InvalidArgs.Newf(errorDeprecatedFlag, "--admission-controller-enabled", "--admission-controller-enforce-on-creates")
+		return common.ErrDeprecatedFlag("--admission-controller-enabled", "--admission-controller-enforce-on-creates")
 	}
 	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed {
 		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerEnableSet)

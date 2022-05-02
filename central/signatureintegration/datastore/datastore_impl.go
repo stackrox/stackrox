@@ -67,7 +67,7 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 	}
 	integration.Id = GenerateSignatureIntegrationID()
 	if err := ValidateSignatureIntegration(integration); err != nil {
-		return nil, errox.InvalidArgs.CausedBy(err.Error())
+		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
 	// Protect against TOCTOU race condition.
@@ -93,7 +93,7 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 		return false, err
 	}
 	if err := ValidateSignatureIntegration(integration); err != nil {
-		return false, errox.InvalidArgs.CausedBy(err.Error())
+		return false, errox.InvalidArgs.CausedBy(err)
 	}
 
 	// Protect against TOCTOU race condition.

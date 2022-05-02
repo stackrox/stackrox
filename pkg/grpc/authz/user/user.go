@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -81,7 +80,7 @@ func (p *permissionChecker) checkPermissions(rolePerms map[string]storage.Access
 	}
 	for _, requiredPerm := range p.requiredPermissions {
 		if !evaluateAgainstPermissions(rolePerms, requiredPerm) {
-			return errox.NotAuthorized.CausedBy(fmt.Sprintf("%q for %q", requiredPerm.Access, requiredPerm.Resource))
+			return errox.NotAuthorized.CausedByf("%q for %q", requiredPerm.Access, requiredPerm.Resource)
 		}
 	}
 	return nil

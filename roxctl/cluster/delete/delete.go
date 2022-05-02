@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
@@ -52,7 +53,7 @@ func (cmd *clusterDeleteCommand) Construct(args []string, cbr *cobra.Command) er
 
 func (cmd *clusterDeleteCommand) Validate() error {
 	if cmd.name == "" {
-		return errox.InvalidArgs
+		return common.ErrInvalidCommandOption
 	}
 	return nil
 }
