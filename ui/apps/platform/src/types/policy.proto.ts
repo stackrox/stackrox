@@ -23,8 +23,7 @@ export type LifecycleStage = 'DEPLOY' | 'BUILD' | 'RUNTIME';
 
 export type PolicyEventSource = 'NOT_APPLICABLE' | 'DEPLOYMENT_EVENT' | 'AUDIT_LOG_EVENT';
 
-// the policy object we get from the API
-export type ServerPolicy = {
+type BasePolicy = {
     rationale: string;
     remediation: string;
     categories: string[];
@@ -32,7 +31,6 @@ export type ServerPolicy = {
     scope: PolicyScope[];
     enforcementActions: EnforcementAction[];
     policyVersion: string;
-    policySections: PolicySection[];
     mitreAttackVectors: PolicyMitreAttackVector[];
     readonly criteriaLocked: boolean; // If true, the policy's criteria fields are rendered read-only.
     readonly mitreVectorsLocked: boolean; // If true, the policy's MITRE ATT&CK fields are rendered read-only.
@@ -46,27 +44,12 @@ export type ClientPolicy = {
     SORT_lifecycleStage: string; // For internal use only.
     SORT_enforcement: boolean; // For internal use only.
     serverPolicySections: PolicySection[]; // For internal use only.
-} & ServerPolicy;
+    policySections: ClientPolicySection[]; // value strings converted into objects
+} & BasePolicy;
 
 export type Policy = {
-    rationale: string;
-    remediation: string;
-    categories: string[];
-    exclusions: PolicyExclusion[];
-    scope: PolicyScope[];
-    enforcementActions: EnforcementAction[];
-    excludedImageNames: string[]; // For internal use only.
-    excludedDeploymentScopes: PolicyExcludedDeployment[]; // For internal use only.
-    SORT_name: string; // For internal use only.
-    SORT_lifecycleStage: string; // For internal use only.
-    SORT_enforcement: boolean; // For internal use only.
-    policyVersion: string;
-    serverPolicySections: PolicySection[]; // For internal use only.
-    policySections: PolicySection[];
-    mitreAttackVectors: PolicyMitreAttackVector[];
-    readonly criteriaLocked: boolean; // If true, the policy's criteria fields are rendered read-only.
-    readonly mitreVectorsLocked: boolean; // If true, the policy's MITRE ATT&CK fields are rendered read-only.
-} & ListPolicy;
+    policySections: PolicySection[]; // values are strings
+} & BasePolicy;
 
 export type PolicyExclusion = PolicyDeploymentExclusion | PolicyImageExclusion;
 
@@ -125,10 +108,16 @@ export type PolicySection = {
     policyGroups: PolicyGroup[];
 };
 
-export type ValueObj = {
-    source?: string;
-    key?: string;
-    value?: string;
+type ClientPolicySection = {
+    sectionName: string;
+    policyGroups: ClientPolicyGroup[];
+};
+
+type ClientPolicyGroup = {
+    fieldName: string;
+    booleanOperator: PolicyBooleanOperator;
+    negate: boolean;
+    values: ClientPolicyValue[];
 };
 
 export type PolicyGroup = {
@@ -141,7 +130,17 @@ export type PolicyGroup = {
 export type PolicyBooleanOperator = 'OR' | 'AND';
 
 export type PolicyValue = {
-    value?: string | ValueObj;
+    value: string;
+};
+
+export type ValueObj = {
+    source?: string;
+    key?: string;
+    value?: string;
+};
+
+export type ClientPolicyValue = {
+    value?: ValueObj;
     arrayValue?: string[];
 };
 
