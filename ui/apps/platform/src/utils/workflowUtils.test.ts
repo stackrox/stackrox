@@ -1,6 +1,6 @@
 import entityTypes from 'constants/entityTypes';
 
-import { getEntityState } from '../test-utils/workflowUtils';
+import { getEntityState } from 'test-utils/workflowUtils';
 
 // system under test (SUT)
 import { createOptions, getOption, shouldUseOriginalCase } from './workflowUtils';
