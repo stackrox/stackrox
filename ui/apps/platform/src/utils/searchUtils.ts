@@ -129,7 +129,7 @@ export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter)
 
 export function getUrlQueryStringForSearchFilter(
     searchFilter: SearchFilter,
-    searchPrefix = 'search'
+    searchPrefix = 's'
 ): string {
     return qs.stringify(
         { [searchPrefix]: searchFilter },

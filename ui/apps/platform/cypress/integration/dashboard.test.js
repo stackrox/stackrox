@@ -98,7 +98,7 @@ describe('Dashboard page', () => {
             cy.wrap(lowSeverityTile).click();
 
             cy.location('pathname').should('eq', violationsUrl);
-            cy.location('search').should('eq', '?search[Severity]=LOW_SEVERITY');
+            cy.location('search').should('eq', '?s[Severity]=LOW_SEVERITY');
             cy.get(violationsSelectors.resultsFoundHeader(lowSeverityCount));
         });
     });
