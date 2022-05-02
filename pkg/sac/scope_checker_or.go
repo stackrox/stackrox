@@ -49,12 +49,15 @@ func (s orScopeChecker) PerformChecks(ctx context.Context) error {
 }
 
 func (s orScopeChecker) TryAllowed(subScopeKeys ...ScopeKey) TryAllowedResult {
+	result := Deny
 	for _, checker := range s.scopeCheckers {
 		if res := checker.TryAllowed(subScopeKeys...); res == Allow {
 			return res
+		} else if res == Unknown {
+			result = Unknown
 		}
 	}
-	return Deny
+	return result
 }
 
 func (s orScopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (bool, error) {
@@ -62,11 +65,10 @@ func (s orScopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (
 	for _, checker := range s.scopeCheckers {
 		allowed, err := checker.Allowed(ctx, subScopeKeys...)
 		// Short-circuit on the first allowed check result.
-		if allowed {
-			return allowed, nil
-		}
 		if err != nil {
 			allowedErrs = multierror.Append(allowedErrs, err)
+		} else if allowed {
+			return allowed, nil
 		}
 	}
 	if allowedErrs != nil {
@@ -92,11 +94,10 @@ func (s orScopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeK
 	for _, checker := range s.scopeCheckers {
 		allowed, err := checker.AnyAllowed(ctx, subScopeKeyss)
 		// Short-circuit on the first allowed check result.
-		if allowed {
-			return allowed, nil
-		}
 		if err != nil {
 			anyAllowedErrs = multierror.Append(anyAllowedErrs, err)
+		} else if allowed {
+			return allowed, nil
 		}
 	}
 	if anyAllowedErrs != nil {
@@ -122,11 +123,10 @@ func (s orScopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeK
 	for _, checker := range s.scopeCheckers {
 		allowed, err := checker.AllAllowed(ctx, subScopeKeyss)
 		// Short-circuit on the first allowed check result.
-		if allowed {
-			return allowed, nil
-		}
 		if err != nil {
 			allAllowedErrs = multierror.Append(allAllowedErrs, err)
+		} else if allowed {
+			return allowed, nil
 		}
 	}
 	if allAllowedErrs != nil {
@@ -182,11 +182,10 @@ func (s orScopeChecker) Check(ctx context.Context, pred ScopePredicate) (bool, e
 	var checkErrs *multierror.Error
 	for _, checker := range s.scopeCheckers {
 		allowed, err := checker.Check(ctx, pred)
-		if allowed {
-			return allowed, nil
-		}
 		if err != nil {
 			checkErrs = multierror.Append(checkErrs, err)
+		} else if allowed {
+			return allowed, nil
 		}
 	}
 
@@ -199,12 +198,10 @@ func (s orScopeChecker) EffectiveAccessScope(
 	var root = effectiveaccessscope.DenyAllEffectiveAccessScope()
 	for _, checker := range s.scopeCheckers {
 		eas, err := checker.EffectiveAccessScope(resource)
-		if eas != nil {
-			root.Merge(eas)
-			continue
-		}
 		if err != nil {
 			effectiveAccessScopeErrs = multierror.Append(effectiveAccessScopeErrs, err)
+		} else if eas != nil {
+			root.Merge(eas)
 		}
 	}
 	if effectiveAccessScopeErrs != nil {
