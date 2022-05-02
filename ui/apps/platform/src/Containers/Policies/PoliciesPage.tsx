@@ -18,9 +18,9 @@ function PoliciesPage() {
      *
      * Examples of urls for PolicyTablePage:
      * /main/policies
-     * /main/policies?search[Lifecycle Stage]=BUILD
-     * /main/policies?search[Lifecycle Stage]=BUILD&search[Lifecycle State]=DEPLOY
-     * /main/policies?search[Lifecycle State]=RUNTIME&search[Severity]=CRITICAL_SEVERITY
+     * /main/policies?s[Lifecycle Stage]=BUILD
+     * /main/policies?s[Lifecycle Stage]=BUILD&s[Lifecycle State]=DEPLOY
+     * /main/policies?s[Lifecycle State]=RUNTIME&s[Severity]=CRITICAL_SEVERITY
      */
     const location = useLocation();
     const { search } = location;
