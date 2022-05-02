@@ -38,7 +38,8 @@ var (
                    RiskScore numeric,
                    ProcessTags text[],
                    serialized bytea,
-                   PRIMARY KEY(Id)
+                   PRIMARY KEY(Id),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (NamespaceId) REFERENCES namespaces(Id) ON DELETE CASCADE
                )
                `,
 		Indexes: []string{},
@@ -176,7 +177,8 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Image": ImagesSchema,
+			"storage.Image":             ImagesSchema,
+			"storage.NamespaceMetadata": NamespacesSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
