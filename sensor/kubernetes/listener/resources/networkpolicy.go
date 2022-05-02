@@ -57,7 +57,7 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 	}
 }
 
-func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) selectorWrapper {
+func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) selectorWrap {
 	newsel := createSelector(np.GetSpec().GetPodSelector().GetMatchLabels(), true)
 	if oldNp != nil {
 		oldsel := createSelector(oldNp.GetSpec().GetPodSelector().GetMatchLabels(), true)
@@ -66,7 +66,7 @@ func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) 
 	return newsel
 }
 
-func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sw selectorWrapper) {
+func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sw selectorWrap) {
 	deployments := h.deploymentStore.getMatchingDeployments(np.GetNamespace(), sw)
 	idsRequireReprocessing := make([]string, 0, len(deployments))
 	for _, deploymentWrap := range deployments {

@@ -40,7 +40,7 @@ func (m mockSelector) Matches(labels labels.Labels) bool {
 	return m.internalSelector.Matches(labels)
 }
 
-func (s *SelectorWrapperTestSuite) injectMockSelector(wrapper *selectorWrapper) {
+func (s *SelectorWrapperTestSuite) injectMockSelector(wrapper *selectorWrap) {
 	wrapper.selector = mockSelector{wrapper.selector, s}
 }
 
@@ -115,7 +115,7 @@ func (s *SelectorWrapperTestSuite) TestLabelMatching() {
 			selectorWrap := createSelector(tt.givenSelectorLabels, tt.matchEmptySelector)
 			s.injectMockSelector(&selectorWrap)
 
-			receivedMatch := selectorWrap.Matches(labelWrapper{labels.Set(tt.givenMatchingLabels), uint(len(tt.givenMatchingLabels))})
+			receivedMatch := selectorWrap.Matches(labelWithLenImpl{labels.Set(tt.givenMatchingLabels), uint(len(tt.givenMatchingLabels))})
 			receivedSelectorMatchesFunctionCalled := s.hasMatchesBeenCalled
 
 			s.Equal(tt.expectedMatch, receivedMatch)
@@ -178,7 +178,7 @@ func (s *SelectorWrapperTestSuite) TestLabelMatchingWithDisjunctions() {
 	for name, tt := range tests {
 		s.Run(name, func() {
 			s.hasMatchesBeenCalled = false
-			var selectorWrappers []selectorWrapper
+			var selectorWrappers []selectorWrap
 			for i := 0; i < len(tt.givenSelectorLabels); i++ {
 				selectorWrappers = append(selectorWrappers, createSelector(tt.givenSelectorLabels[i], tt.matchEmptySelector[i]))
 			}
@@ -186,7 +186,7 @@ func (s *SelectorWrapperTestSuite) TestLabelMatchingWithDisjunctions() {
 			selectorWrap := or(selectorWrappers...)
 			s.injectMockSelector(&selectorWrap)
 
-			receivedMatch := selectorWrap.Matches(labelWrapper{labels.Set(tt.givenMatchingLabels), uint(len(tt.givenMatchingLabels))})
+			receivedMatch := selectorWrap.Matches(labelWithLenImpl{labels.Set(tt.givenMatchingLabels), uint(len(tt.givenMatchingLabels))})
 			receivedSelectorMatchesFunctionCalled := s.hasMatchesBeenCalled
 
 			s.Equal(tt.expectedMatch, receivedMatch)

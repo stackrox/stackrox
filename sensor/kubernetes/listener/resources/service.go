@@ -15,7 +15,7 @@ type serviceWithRoutes struct {
 
 type serviceWrap struct {
 	*v1.Service
-	selectorWrapper selectorWrapper
+	selectorWrapper selectorWrap
 }
 
 func wrapService(svc *v1.Service) *serviceWrap {
@@ -140,7 +140,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
 	}
-	var sw selectorWrapper
+	var sw selectorWrap
 	oldWrap := sh.serviceStore.getService(svc.Namespace, svc.Name)
 	if oldWrap != nil {
 		sw = oldWrap.selectorWrapper
@@ -159,7 +159,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	return sh.updateDeploymentsFromStore(svc.Namespace, sw)
 }
 
-func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sw selectorWrapper) []*central.SensorEvent {
+func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sw selectorWrap) []*central.SensorEvent {
 	events := sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sw)
 	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sw)
 	return events

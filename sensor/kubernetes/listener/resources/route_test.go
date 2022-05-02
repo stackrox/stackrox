@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func getSelectorWrapper(svc *v1.Service) selectorWrapper {
+func getSelectorWrapper(svc *v1.Service) selectorWrap {
 	return createSelector(svc.Spec.Selector, false)
 }
 
@@ -54,7 +54,7 @@ type mockPortExposureReconciler struct {
 	orderedCalls []call
 }
 
-func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(namespace string, sw selectorWrapper) []*central.SensorEvent {
+func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(namespace string, sw selectorWrap) []*central.SensorEvent {
 	m.orderedCalls = append(m.orderedCalls,
 		call{
 			"UpdateExposuresForMatchingDeployments",
@@ -85,7 +85,7 @@ func (m *mockEndpointManager) OnDeploymentRemove(*deploymentWrap) {
 func (m *mockEndpointManager) OnServiceCreate(*serviceWrap) {
 }
 
-func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, selectorWrapper) {
+func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, selectorWrap) {
 }
 
 func (m *mockEndpointManager) OnNodeCreate(*nodeWrap) {

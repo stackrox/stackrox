@@ -13,49 +13,36 @@ type labelsWithLen interface {
 	Len() uint
 }
 
-// selector is a restricted version of selectorWrapper
+// selector is a restricted version of selectorWrap
 type selector interface {
 	Matches(labelsWithLen) bool
 }
 
-// internalSelector is a restricted version of labels.Selector
-type internalSelector interface {
-	Matches(labels.Labels) bool
-}
-
-type labelWrapper struct {
+type labelWithLenImpl struct {
 	labels    labels.Labels
 	numLabels uint
 }
 
-func (l labelWrapper) Has(label string) bool {
+func (l labelWithLenImpl) Has(label string) bool {
 	return l.labels.Has(label)
 }
 
-func (l labelWrapper) Get(label string) string {
+func (l labelWithLenImpl) Get(label string) string {
 	return l.labels.Get(label)
 }
 
-func (l labelWrapper) Len() uint {
+func (l labelWithLenImpl) Len() uint {
 	return l.numLabels
 }
 
-type restrictedSelector struct {
-	selector labels.Selector
-}
-
-func (r restrictedSelector) Matches(labels labels.Labels) bool {
-	return r.selector.Matches(labels)
-}
-
-// SelectorWrapper holds a selector and information allowing for additional checks before matching
-type selectorWrapper struct {
-	selector  internalSelector
+// SelectorWrap holds a selector and information allowing for additional checks before matching
+type selectorWrap struct {
+	selector  labels.Selector
 	numLabels uint
 	matchNil  bool
 }
 
-func (s *selectorWrapper) Matches(labels labelsWithLen) bool {
+func (s *selectorWrap) Matches(labels labelsWithLen) bool {
 	if s.numLabels > labels.Len() {
 		return false
 	}
@@ -66,7 +53,41 @@ func (s *selectorWrapper) Matches(labels labelsWithLen) bool {
 }
 
 // selectorDisjunction is the disjunction (logical or) of a list of selectors.
-type selectorDisjunction []internalSelector
+type selectorDisjunction []labels.Selector
+
+func (d selectorDisjunction) Empty() bool {
+	for _, sel := range d {
+		if !sel.Empty() {
+			return false
+		}
+	}
+	return true
+}
+
+func (d selectorDisjunction) String() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d selectorDisjunction) Add(r ...labels.Requirement) labels.Selector {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d selectorDisjunction) Requirements() (requirements labels.Requirements, selectable bool) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d selectorDisjunction) DeepCopySelector() labels.Selector {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d selectorDisjunction) RequiresExactMatch(label string) (value string, found bool) {
+	//TODO implement me
+	panic("implement me")
+}
 
 func (d selectorDisjunction) Matches(labels labels.Labels) bool {
 	for _, sel := range d {
@@ -78,8 +99,8 @@ func (d selectorDisjunction) Matches(labels labels.Labels) bool {
 }
 
 // or returns the logical or of the given SelectorWrappers.
-func or(sels ...selectorWrapper) selectorWrapper {
-	var selWrapper = selectorWrapper{nil, math.MaxUint, false}
+func or(sels ...selectorWrap) selectorWrap {
+	var selWrapper = selectorWrap{nil, math.MaxUint, false}
 	var selectors selectorDisjunction
 	for _, s := range sels {
 		if s.matchNil {
@@ -99,8 +120,8 @@ func or(sels ...selectorWrapper) selectorWrapper {
 
 // CreateSelector returns a SelectorWrapper for the given map of labels; matchNil determines whether
 // an empty set of labels matches everything or nothing.
-func createSelector(labelsMap map[string]string, matchNil bool) selectorWrapper {
-	var selWrapper selectorWrapper
+func createSelector(labelsMap map[string]string, matchNil bool) selectorWrap {
+	var selWrapper selectorWrap
 	selWrapper.numLabels = uint(len(labelsMap))
 	if matchNil {
 		selWrapper.matchNil = true

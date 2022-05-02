@@ -14,7 +14,7 @@ type endpointManager interface {
 	OnDeploymentRemove(deployment *deploymentWrap)
 
 	OnServiceCreate(svc *serviceWrap)
-	OnServiceUpdateOrRemove(namespace string, sel selectorWrapper)
+	OnServiceUpdateOrRemove(namespace string, sel selectorWrap)
 
 	OnNodeCreate(node *nodeWrap)
 	OnNodeUpdateOrRemove()
@@ -200,7 +200,7 @@ func (m *endpointManagerImpl) OnServiceCreate(svc *serviceWrap) {
 	m.entityStore.Apply(updates, true)
 }
 
-func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sw selectorWrapper) {
+func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sw selectorWrap) {
 	updates := make(map[string]*clusterentities.EntityData)
 	for _, deployment := range m.deploymentStore.getMatchingDeployments(namespace, sw) {
 		updates[deployment.GetId()] = m.endpointDataForDeployment(deployment)

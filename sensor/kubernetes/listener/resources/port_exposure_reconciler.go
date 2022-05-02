@@ -7,7 +7,7 @@ import (
 // portExposureReconciler reconciles the port exposures in the deployment store on receiving
 // service or route updates.
 type portExposureReconciler interface {
-	UpdateExposuresForMatchingDeployments(namespace string, sw selectorWrapper) []*central.SensorEvent
+	UpdateExposuresForMatchingDeployments(namespace string, sw selectorWrap) []*central.SensorEvent
 	UpdateExposureOnServiceCreate(svc serviceWithRoutes) []*central.SensorEvent
 }
 
@@ -23,7 +23,7 @@ func newPortExposureReconciler(deploymentStore *DeploymentStore, serviceStore *s
 	}
 }
 
-func (p *portExposureReconcilerImpl) UpdateExposuresForMatchingDeployments(namespace string, sw selectorWrapper) []*central.SensorEvent {
+func (p *portExposureReconcilerImpl) UpdateExposuresForMatchingDeployments(namespace string, sw selectorWrap) []*central.SensorEvent {
 	var events []*central.SensorEvent
 	for _, deploymentWrap := range p.deploymentStore.getMatchingDeployments(namespace, sw) {
 		if svcs := p.serviceStore.getMatchingServicesWithRoutes(deploymentWrap.Namespace, deploymentWrap.PodLabels); len(svcs) > 0 || deploymentWrap.anyNonHostPort() {
