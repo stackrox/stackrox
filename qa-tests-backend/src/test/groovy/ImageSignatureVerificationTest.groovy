@@ -1,6 +1,9 @@
+
+
 import static Services.waitForViolation
 
 import groups.Integration
+import groups.BAT
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.ScopeOuterClass
@@ -202,7 +205,7 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
 
     @Unroll
     @SuppressWarnings('LineLength')
-    @Category(Integration)
+    @Category([BAT, Integration])
     def "Check violations of policy '#policyName' for deployment '#deployment.name'"() {
         expect:
         "Verify deployment has expected violations"
