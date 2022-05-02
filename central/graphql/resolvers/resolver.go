@@ -160,7 +160,7 @@ func New() *Resolver {
 //lint:file-ignore U1000 It's okay for some of the variables below to be unused.
 var (
 	readAlerts                           = readAuth(resources.Alert)
-	readTokens                           = anyReadAuth(resources.APIToken, resources.Integrations)
+	readTokens                           = readAuth(resources.APIToken)
 	readClusters                         = readAuth(resources.Cluster)
 	readCompliance                       = readAuth(resources.Compliance)
 	readComplianceRuns                   = readAuth(resources.ComplianceRuns)

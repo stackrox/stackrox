@@ -29,7 +29,7 @@ func Singleton() Backend {
 		ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.Integrations)))
+				sac.ResourceScopeKeys(resources.APIToken)))
 
 		// Create and initialize source.
 		src := newSource()

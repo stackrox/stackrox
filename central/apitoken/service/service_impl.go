@@ -24,18 +24,11 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		// TODO(dhaus): Check what's up with the user.Any, whether resource replacement can be done there as well in a simpler way.
-		user.Any(
-			user.With(permissions.View(resources.APIToken)),
-			user.With(permissions.View(resources.Integrations)),
-		): {
+		user.With(permissions.View(resources.APIToken)): {
 			"/v1.APITokenService/GetAPIToken",
 			"/v1.APITokenService/GetAPITokens",
 		},
-		user.Any(
-			user.With(permissions.Modify(resources.APIToken)),
-			user.With(permissions.Modify(resources.Integrations)),
-		): {
+		user.With(permissions.Modify(resources.APIToken)): {
 			"/v1.APITokenService/GenerateToken",
 			"/v1.APITokenService/RevokeToken",
 		},
