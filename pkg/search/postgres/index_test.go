@@ -66,7 +66,7 @@ func (s *IndexSuite) SetupTest() {
 }
 
 func (s *IndexSuite) TearDownTest() {
-	if features.PostgresDatastore.Enabled() {
+	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
