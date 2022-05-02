@@ -211,6 +211,27 @@ func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args IDQuery) (Vu
 }
 
 func (resolver *Resolver) vulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
+	ret := make([]VulnerabilityResolver, 0, len(vulnResolvers))
+	for _, resolver := range vulnResolvers {
+		resolver.ctx = ctx
+		ret = append(ret, resolver)
+	}
+	return ret, err
+}
+
+// imageVulnerabilitiesV2 wraps the resolvers as ImageVulnerabilityResolver objects to restrict the supported API
+func (resolver *Resolver) imageVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
+	ret := make([]ImageVulnerabilityResolver, 0, len(vulnResolvers))
+	for _, resolver := range vulnResolvers {
+		resolver.ctx = ctx
+		ret = append(ret, resolver)
+	}
+	return ret, err
+}
+
+func (resolver *Resolver) unwrappedVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]*cVEResolver, error) {
 	if err := readCVEs(ctx); err != nil {
 		return nil, err
 	}
@@ -228,10 +249,20 @@ func (resolver *Resolver) vulnerabilitiesV2(ctx context.Context, args PaginatedQ
 	if err != nil {
 		return nil, err
 	}
-	return resolver.vulnerabilitiesV2Query(ctx, query)
+	return resolver.unwrappedVulnerabilitiesV2Query(ctx, query)
 }
 
 func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.Query) ([]VulnerabilityResolver, error) {
+	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2Query(ctx, query)
+	ret := make([]VulnerabilityResolver, 0, len(vulnResolvers))
+	for _, resolver := range vulnResolvers {
+		resolver.ctx = ctx
+		ret = append(ret, resolver)
+	}
+	return ret, err
+}
+
+func (resolver *Resolver) unwrappedVulnerabilitiesV2Query(ctx context.Context, query *v1.Query) ([]*cVEResolver, error) {
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return nil, err
@@ -281,12 +312,7 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 	}
 
 	vulnResolvers, err := resolver.wrapCVEs(vulns, err)
-	ret := make([]VulnerabilityResolver, 0, len(vulns))
-	for _, resolver := range vulnResolvers {
-		resolver.ctx = ctx
-		ret = append(ret, resolver)
-	}
-	return ret, err
+	return vulnResolvers, err
 }
 
 func (resolver *Resolver) vulnerabilityCountV2(ctx context.Context, args RawQuery) (int32, error) {

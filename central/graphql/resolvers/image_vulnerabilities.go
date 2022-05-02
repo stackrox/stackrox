@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
@@ -54,8 +55,42 @@ func init() {
 	)
 }
 
+// ImageVulnerabilityResolver represents the supported API on image vulnerabilities
+type ImageVulnerabilityResolver interface {
+	ID(ctx context.Context) graphql.ID
+	CVE(ctx context.Context) string
+	Cvss(ctx context.Context) float64
+	ScoreVersion(ctx context.Context) string
+	Vectors() *EmbeddedVulnerabilityVectorsResolver
+	Link(ctx context.Context) string
+	Summary(ctx context.Context) string
+	FixedByVersion(ctx context.Context) (string, error)
+	IsFixable(ctx context.Context, args RawQuery) (bool, error)
+	LastScanned(ctx context.Context) (*graphql.Time, error)
+	CreatedAt(ctx context.Context) (*graphql.Time, error)
+	DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error)
+	Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error)
+	ComponentCount(ctx context.Context, args RawQuery) (int32, error)
+	Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error)
+	ImageCount(ctx context.Context, args RawQuery) (int32, error)
+	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
+	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
+	EnvImpact(ctx context.Context) (float64, error)
+	Severity(ctx context.Context) string
+	PublishedOn(ctx context.Context) (*graphql.Time, error)
+	LastModified(ctx context.Context) (*graphql.Time, error)
+	ImpactScore(ctx context.Context) float64
+	Suppressed(ctx context.Context) bool
+	SuppressActivation(ctx context.Context) (*graphql.Time, error)
+	SuppressExpiry(ctx context.Context) (*graphql.Time, error)
+	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
+	VulnerabilityState(ctx context.Context) string
+	EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error)
+	UnusedVarSink(ctx context.Context, args RawQuery) *int32
+}
+
 // ImageVulnerability returns a vulnerability of the given id
-func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
+func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerability")
 	if !features.PostgresDatastore.Enabled() {
 		return resolver.vulnerabilityV2(ctx, args)
@@ -65,11 +100,11 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 }
 
 // ImageVulnerabilities resolves a set of image vulnerabilities based on a query.
-func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]VulnerabilityResolver, error) {
+func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
 	if !features.PostgresDatastore.Enabled() {
 		query := withImageTypeFiltering(q.String())
-		return resolver.vulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
+		return resolver.imageVulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
 	}
 	// TODO add postgres support
 	return nil, errors.New("Resolver ImageVulnerabilities does not support postgres yet")
