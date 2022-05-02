@@ -55,7 +55,9 @@ func (s *K8srolesStoreSuite) SetupTest() {
 }
 
 func (s *K8srolesStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

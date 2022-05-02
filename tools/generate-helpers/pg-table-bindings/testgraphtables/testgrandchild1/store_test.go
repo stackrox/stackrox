@@ -53,7 +53,9 @@ func (s *Testgrandchild1StoreSuite) SetupTest() {
 }
 
 func (s *Testgrandchild1StoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

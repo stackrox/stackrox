@@ -53,7 +53,9 @@ func (s *ProcesswhitelistresultsStoreSuite) SetupTest() {
 }
 
 func (s *ProcesswhitelistresultsStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

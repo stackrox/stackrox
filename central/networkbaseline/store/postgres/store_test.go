@@ -53,7 +53,9 @@ func (s *NetworkbaselineStoreSuite) SetupTest() {
 }
 
 func (s *NetworkbaselineStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

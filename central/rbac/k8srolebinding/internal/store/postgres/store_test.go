@@ -55,7 +55,9 @@ func (s *RolebindingsStoreSuite) SetupTest() {
 }
 
 func (s *RolebindingsStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

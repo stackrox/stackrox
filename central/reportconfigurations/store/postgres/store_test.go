@@ -53,7 +53,9 @@ func (s *ReportconfigsStoreSuite) SetupTest() {
 }
 
 func (s *ReportconfigsStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

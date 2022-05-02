@@ -53,7 +53,9 @@ func (s *ApitokensStoreSuite) SetupTest() {
 }
 
 func (s *ApitokensStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

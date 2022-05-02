@@ -53,7 +53,9 @@ func (s *PermissionsetsStoreSuite) SetupTest() {
 }
 
 func (s *PermissionsetsStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 
