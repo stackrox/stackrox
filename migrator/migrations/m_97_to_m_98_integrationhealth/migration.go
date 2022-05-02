@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/tecbot/gorocksdb"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -52,7 +53,7 @@ func moveIntegrationHealths(rocksDB *gorocksdb.DB, postgresDB *gorm.DB) error {
 	}
 
 	log.WriteToStderr(fmt.Sprintf("converted %d integration health", len(conv)))
-	tx := db.Model(&models.IntegrationHealth{}).CreateInBatches(conv, 5000)
+	tx := db.Model(&models.IntegrationHealth{}).Clauses(clause.OnConflict{UpdateAll: true}).CreateInBatches(conv, 5000)
 	if tx.Error != nil {
 		tx.Rollback()
 		return tx.Error

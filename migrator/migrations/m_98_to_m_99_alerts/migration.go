@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/tecbot/gorocksdb"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -95,7 +96,7 @@ func moveAlerts(rocksDB *gorocksdb.DB, postgresDB *gorm.DB) error {
 	}
 
 	log.WriteToStderr(fmt.Sprintf("converted %d alerts", len(conv)))
-	tx := postgresDB.Table(models.AlertsTableName).Model(&models.Alert{}).CreateInBatches(conv, 5000)
+	tx := postgresDB.Table(models.AlertsTableName).Model(&models.Alert{}).Clauses(clause.OnConflict{UpdateAll: true}).CreateInBatches(conv, 5000)
 	if tx.Error != nil {
 		tx.Rollback()
 		return tx.Error
