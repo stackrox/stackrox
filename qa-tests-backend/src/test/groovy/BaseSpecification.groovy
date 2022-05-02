@@ -401,6 +401,23 @@ class BaseSpecification extends Specification {
         return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOBNAME == "race-condition-tests"
     }
 
+    // getViolationTimeout will return the timeout value based on the specific environment / build that is
+    // used during test execution. The following values will be returned:
+    // Default: 30s
+    // OpenShift: 100s
+    // Race build: 300s
+    static Integer getViolationTimeout() {
+        return  isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 30)
+    }
+
+    // getReprocessingRetries will return the number of retries based on the specific environment / build that is
+    // used during test execution. The following values will be returned:
+    // Default: 30
+    // OpenShift: 100
+    // Race build: 300
+    static Integer getReprocessingRetries() {
+        return isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 30)
+    }
 }
 
 class TestSpecRuntimeException extends RuntimeException {
