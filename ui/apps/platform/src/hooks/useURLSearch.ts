@@ -33,7 +33,7 @@ function parseFilter(rawFilter: QueryValue): SearchFilter {
     return parsedFilter;
 }
 
-function useURLSearch(keyPrefix = 'search'): UseUrlSearchReturn {
+function useURLSearch(keyPrefix = 's'): UseUrlSearchReturn {
     const [rawFilter, setSearchFilter] = useURLParameter(keyPrefix, {});
     const searchFilterRef = useRef<SearchFilter>({});
     const sanitizedFilter = parseFilter(rawFilter);
