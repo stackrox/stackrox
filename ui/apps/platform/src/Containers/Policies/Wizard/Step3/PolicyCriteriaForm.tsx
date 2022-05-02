@@ -6,11 +6,7 @@ import { useFormikContext } from 'formik';
 
 import { Policy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import {
-    policyConfigurationDescriptor,
-    auditLogDescriptor,
-    Descriptor,
-} from './policyCriteriaDescriptors';
+import { policyConfigurationDescriptor, auditLogDescriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
 import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
 
@@ -19,7 +15,6 @@ import './PolicyCriteriaForm.css';
 const MAX_POLICY_SECTIONS = 16;
 
 function PolicyCriteriaForm() {
-    const [descriptor, setDescriptor] = React.useState<Descriptor[]>([]);
     const { values, setFieldValue } = useFormikContext<Policy>();
     const { criteriaLocked } = values;
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -36,20 +31,16 @@ function PolicyCriteriaForm() {
         }
     }
 
-    React.useEffect(() => {
-        const unfilteredDescriptors =
-            values.eventSource === 'AUDIT_LOG_EVENT'
-                ? auditLogDescriptor
-                : policyConfigurationDescriptor;
-        setDescriptor(
-            unfilteredDescriptors.filter((unfilteredDescriptor) => {
-                if (typeof unfilteredDescriptor.featureFlagDependency === 'string') {
-                    return isFeatureFlagEnabled(unfilteredDescriptor.featureFlagDependency);
-                }
-                return true;
-            })
-        );
-    }, [values.eventSource]); // eslint-disable-line react-hooks/exhaustive-deps
+    const unfilteredDescriptors =
+        values.eventSource === 'AUDIT_LOG_EVENT'
+            ? auditLogDescriptor
+            : policyConfigurationDescriptor;
+    const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
+        if (typeof unfilteredDescriptor.featureFlagDependency === 'string') {
+            return isFeatureFlagEnabled(unfilteredDescriptor.featureFlagDependency);
+        }
+        return true;
+    });
 
     const headingElements = (
         <>
@@ -119,7 +110,7 @@ function PolicyCriteriaForm() {
                 </Flex>
                 <Divider component="div" isVertical />
                 <Flex className="pf-u-h-100 pf-u-pt-lg" id="policy-criteria-keys-container">
-                    <PolicyCriteriaKeys keys={descriptor} />
+                    <PolicyCriteriaKeys keys={descriptors} />
                 </Flex>
             </Flex>
         </DndProvider>

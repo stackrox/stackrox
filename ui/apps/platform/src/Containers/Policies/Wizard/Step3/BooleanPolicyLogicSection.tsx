@@ -4,11 +4,7 @@ import { useFormikContext } from 'formik';
 
 import { Policy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import {
-    policyConfigurationDescriptor,
-    auditLogDescriptor,
-    Descriptor,
-} from './policyCriteriaDescriptors';
+import { policyConfigurationDescriptor, auditLogDescriptor } from './policyCriteriaDescriptors';
 import PolicySection from './PolicySection';
 
 import './BooleanPolicyLogicSection.css';
@@ -18,24 +14,19 @@ type BooleanPolicyLogicSectionProps = {
 };
 
 function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSectionProps) {
-    const [descriptor, setDescriptor] = React.useState<Descriptor[]>([]);
     const { values } = useFormikContext<Policy>();
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    React.useEffect(() => {
-        const unfilteredDescriptors =
-            values.eventSource === 'AUDIT_LOG_EVENT'
-                ? auditLogDescriptor
-                : policyConfigurationDescriptor;
-        setDescriptor(
-            unfilteredDescriptors.filter((unfilteredDescriptor) => {
-                if (typeof unfilteredDescriptor.featureFlagDependency === 'string') {
-                    return isFeatureFlagEnabled(unfilteredDescriptor.featureFlagDependency);
-                }
-                return true;
-            })
-        );
-    }, [values.eventSource]); // eslint-disable-line react-hooks/exhaustive-deps
+    const unfilteredDescriptors =
+        values.eventSource === 'AUDIT_LOG_EVENT'
+            ? auditLogDescriptor
+            : policyConfigurationDescriptor;
+    const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
+        if (typeof unfilteredDescriptor.featureFlagDependency === 'string') {
+            return isFeatureFlagEnabled(unfilteredDescriptor.featureFlagDependency);
+        }
+        return true;
+    });
 
     return (
         <>
@@ -47,7 +38,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                         <GridItem>
                             <PolicySection
                                 sectionIndex={sectionIndex}
-                                descriptors={descriptor}
+                                descriptors={descriptors}
                                 readOnly={readOnly}
                             />
                         </GridItem>
@@ -74,7 +65,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                     <React.Fragment key={sectionIndex}>
                         <PolicySection
                             sectionIndex={sectionIndex}
-                            descriptors={descriptor}
+                            descriptors={descriptors}
                             readOnly={readOnly}
                         />
                         {sectionIndex !== values.policySections.length - 1 && (
