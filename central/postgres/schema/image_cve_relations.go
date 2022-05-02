@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/stackrox/rox/central/globaldb"
@@ -40,9 +41,15 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ImageCVEEdge)(nil)), "image_cve_relations").
-			WithReference(ImagesSchema).
-			WithReference(ImageCvesSchema)
+		schema = walker.Walk(reflect.TypeOf((*storage.ImageCVEEdge)(nil)), "image_cve_relations")
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.Image": ImagesSchema,
+			"storage.CVE":   ImageCvesSchema,
+		}
+
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_VULN_EDGE, "image_cve_relations", (*storage.ImageCVEEdge)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema

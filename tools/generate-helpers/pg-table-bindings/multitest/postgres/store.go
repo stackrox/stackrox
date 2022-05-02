@@ -246,7 +246,8 @@ func (s *storeImpl) copyFromMultikey(ctx context.Context, tx pgx.Tx, objs ...*st
 		}
 	}
 
-	for _, obj := range objs {
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
 		if err = s.copyFromMultikeyNested(ctx, tx, obj.GetKey1(), obj.GetKey2(), obj.GetNested()...); err != nil {
 			return err

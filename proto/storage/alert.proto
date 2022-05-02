@@ -23,7 +23,7 @@ message Alert {
         string                  cluster_id          = 9  [(gogoproto.moretags) = 'search:"Cluster ID,hidden"'];
         string                  cluster_name        = 10 [(gogoproto.moretags) = 'search:"Cluster,hidden"'];
         message Container {
-            ContainerImage      image               = 3 [(gogoproto.moretags) = 'search:"-"'];
+            ContainerImage      image               = 3 [(gogoproto.moretags) = 'search:"-" sql:"ignore-fks"'];
             string              name                = 10;
         }
         repeated Container      containers          = 11;
@@ -116,7 +116,7 @@ message Alert {
         Deployment            deployment        = 4  [(gogoproto.moretags) = "sensorhash:\"ignore\""];
         // Represents an alert on a container image.
         // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
-        ContainerImage        image             = 15;
+        ContainerImage        image             = 15 [(gogoproto.moretags) = 'sql:"ignore-fks"'];
         // Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
         // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
         Resource              resource          = 16;

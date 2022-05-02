@@ -2,41 +2,91 @@ package walker
 
 import (
 	"fmt"
-	"strings"
+	"reflect"
 
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
 	log = logging.LoggerForModule()
+)
 
-	serializedField = Field{
-		Name: "serialized",
+func getSerializedField(s *Schema) Field {
+	return Field{
 		ObjectGetter: ObjectGetter{
 			variable: true,
 			value:    "serialized",
 		},
+		Name:       "serialized",
 		ColumnName: "serialized",
 		SQLType:    "bytea",
+		Schema:     s,
 	}
-)
+}
+
+func getIdxField(s *Schema) Field {
+	return Field{
+		Schema: s,
+		Name:   "idx",
+		ObjectGetter: ObjectGetter{
+			variable: true,
+			value:    "idx",
+		},
+		Type:       reflect.TypeOf(0).String(),
+		ColumnName: "idx",
+		DataType:   Integer,
+		SQLType:    "integer",
+		Options: PostgresOptions{
+			Ignored:    false,
+			Index:      "btree",
+			PrimaryKey: true,
+		},
+	}
+}
+
+// ColumnNamePair is a pair of column names in a SchemaRelationship.
+type ColumnNamePair struct {
+	ColumnNameInThisSchema  string
+	ColumnNameInOtherSchema string
+}
+
+// SchemaRelationship denotes a relationship between this schema and the OtherSchema,
+// via the MappedColumnNames.
+type SchemaRelationship struct {
+	OtherSchema       *Schema
+	MappedColumnNames []ColumnNamePair
+
+	// NoConstraint indicates that this relationship is not enforced at the SQL
+	// level by a foreign key constraint.
+	NoConstraint bool
+}
 
 // Schema is the go representation of the schema for a table
 // This is derived from walking the go struct
 type Schema struct {
-	Table             string
-	ReferencedSchema  []*Schema
-	Fields            []Field
-	ReferencingSchema []*Schema
-	Type              string
-	TypeName          string
-	ObjectGetter      string
+	Table string
+	// Parent stores a link to the parent table, if any.
+	// This happens when this table represents a repeated field
+	// in the Parent.
+	Parent *Schema
+	// Children stores all Schemas for which this Schema is the Parent.
+	Children     []*Schema
+	Fields       []Field
+	Type         string
+	TypeName     string
+	ObjectGetter string
 
-	// This indicates the name of the referenced schema in which current schema is embedded (in proto). A schema can be
-	// embedded exactly one porent. For the top-most schema this field is unset.
-	EmbeddedIn string
+	// References stores information about the other tables referenced by this schema.
+	// It is grouped by referenced table.
+	// It does NOT duplicate information stored in the Parent and Children fields.
+	References []SchemaRelationship
+	// ReferencedBy stores information about the tables that reference this schema.
+	// It is just a reverse edge from the References of the other tables to enable
+	// traversing the graph starting from this schema as well.
+	ReferencedBy []SchemaRelationship
+	// referencesResolved in an internal bool to ensure ResolveReferences is called exactly once.
+	referencesResolved bool
 
 	OptionsMap search.OptionsMap
 }
@@ -47,36 +97,12 @@ type TableFieldsGroup struct {
 	Fields []Field
 }
 
-// FieldsBySearchLabel returns the resulting fields in the schema by their field label
-func (s *Schema) FieldsBySearchLabel() map[string]*Field {
-	m := make(map[string]*Field)
-	for _, f := range s.Fields {
-		field := f
-		if f.Search.Enabled {
-			m[f.Search.FieldName] = &field
-		}
-	}
-	for _, child := range s.ReferencingSchema {
-		for k, v := range child.FieldsBySearchLabel() {
-			m[k] = v
-		}
-	}
-	return m
-}
-
 // SetOptionsMap sets options map for the schema.
 func (s *Schema) SetOptionsMap(optionsMap search.OptionsMap) {
 	s.OptionsMap = optionsMap
-	for _, c := range s.ReferencingSchema {
-		if c.EmbeddedIn == s.Table {
-			c.OptionsMap = optionsMap
-		}
+	for _, c := range s.Children {
+		c.SetOptionsMap(optionsMap)
 	}
-}
-
-// HasSearchableFields returns true or false if the schema has fields that are searchable
-func (s *Schema) HasSearchableFields() bool {
-	return len(s.FieldsBySearchLabel()) != 0
 }
 
 // AddFieldWithType adds a field to the schema with the specified data type
@@ -96,265 +122,111 @@ func (s *Schema) Print() {
 		fmt.Printf("  name=%s columnName=%s getter=%+v datatype=%s searchable:%v\n", f.Name, f.ColumnName, f.ObjectGetter, f.DataType, f.Search.Enabled)
 	}
 	fmt.Println()
-	for _, c := range s.ReferencingSchema {
+	for _, c := range s.Children {
 		c.Print()
 	}
 }
 
-func (s *Schema) localFKs() map[foreignKeyRef]*Field {
-	localFKs := make(map[foreignKeyRef]*Field)
-	for idx := range s.Fields {
-		f := &s.Fields[idx]
-		if ref := f.Options.Reference; ref != nil {
-			localFKs[foreignKeyRef{
-				TypeName:      strings.ToLower(ref.TypeName),
-				ProtoBufField: strings.ToLower(ref.ProtoBufField),
-			}] = f
-		}
-	}
-	return localFKs
-}
-
-func localFK(field *Field, localFKMap map[foreignKeyRef]*Field) (*Field, bool) {
-	if field == nil || field.Schema == nil {
-		return nil, false
-	}
-	f := localFKMap[foreignKeyRef{
-		TypeName:      strings.ToLower(field.Schema.TypeName),
-		ProtoBufField: strings.ToLower(field.ProtoBufName),
-	}]
-	if f == nil {
-		return nil, false
-	}
-	return f, true
-}
-
-// tryParentify attempts to convert the specified field to a reference. If the field is already a reference in
-// the referenced schema, it is used as is.
-func tryParentify(field *Field, parentSchema *Schema) {
-	referencedColName := field.ColumnName
-	if field.Reference == "" {
-		field.Name = parentify(parentSchema.Table, field.Name)
-		field.ColumnName = parentify(parentSchema.Table, referencedColName)
-	}
-	field.Reference = referencedColName
-}
-
-func parentify(parent, name string) string {
-	return parent + "_" + name
-}
-
-// ResolvedFields is the total set of fields for the schema including
-// fields that are derived from the parent schemas. e.g. parent primary keys, array indexes, etc.
-func (s *Schema) ResolvedFields() []Field {
-	// Find all the local fields that are already defined as foreign keys.
-	localFKs := s.localFKs()
-
-	var allPKs []Field
-	for _, parent := range s.ReferencedSchema {
-		pks := parent.ResolvedPrimaryKeys()
-		for idx := range pks {
-			pk := &pks[idx]
-			if _, found := localFK(pk, localFKs); found {
-				continue
-			}
-			tryParentify(pk, parent)
-			pk.ObjectGetter = ObjectGetter{
-				variable: true,
-				value:    pk.Name,
-			}
-			allPKs = append(allPKs, *pk)
-		}
-	}
-
+// DBColumnFields is the set of fields that should be columns in the DB table.
+func (s *Schema) DBColumnFields() []Field {
 	var includedFields []Field
 	for _, f := range s.Fields {
 		if f.Include() {
 			includedFields = append(includedFields, f)
 		}
 	}
-
-	allPKs = append(allPKs, includedFields...)
-	if len(s.ReferencedSchema) == 0 || s.EmbeddedIn == "" {
-		allPKs = append(allPKs, serializedField)
-	}
-	return allPKs
+	return includedFields
 }
 
-// ReferenceKeys are the keys from the referenced schemas that should be defined
-// as foreign keys for the current schema.
-func (s *Schema) ReferenceKeys() []Field {
-	var fields []Field
-	pksGrps := s.ReferenceKeysGroupedByTable()
-	for _, pks := range pksGrps {
-		fields = append(fields, pks.Fields...)
+// RelationshipsToDefineAsForeignKeys returns the schema relationships which should be defined as foreign key
+// constraint in this schema. If this Schema is embedded, then the relationship to the parent is also included.
+func (s *Schema) RelationshipsToDefineAsForeignKeys() []SchemaRelationship {
+	var out []SchemaRelationship
+	// First, add the one referring to the parent, if a parent exists.
+	if s.Parent != nil {
+		out = append(out, s.getParentRelationship())
 	}
-	return fields
-}
-
-// ParentKeys are the keys from the (proto-)parent schemas that should be defined
-// as foreign keys for the current schema.
-func (s *Schema) ParentKeys() []Field {
-	var fields []Field
-	pksGrps := s.ParentKeysGroupedByTable()
-	for _, pks := range pksGrps {
-		fields = append(fields, pks.Fields...)
-	}
-	return fields
-}
-
-// ReferenceKeysGroupedByTable returns the keys from the referenced schemas that should be defined
-// as **foreign keys** for the current schema grouped by parent schema.
-func (s *Schema) ReferenceKeysGroupedByTable() []TableFieldsGroup {
-	pks := make([]TableFieldsGroup, 0, len(s.ReferencedSchema))
-	// Find all the local fields that are already defined as foreign keys.
-	localFKs := s.localFKs()
-
-	for _, parent := range s.ReferencedSchema {
-		currPks := parent.ResolvedPrimaryKeys()
-		filtered := make([]Field, 0, len(currPks))
-		for idx := range currPks {
-			pk := &currPks[idx]
-			field, found := localFK(pk, localFKs)
-			if !found {
-				tryParentify(pk, parent)
-				filtered = append(filtered, *pk)
-				continue
-			}
-
-			// If the referenced parent field is already embedded in child but without constraint, skip it.
-			if field.Options.Reference != nil && field.Options.Reference.NoConstraint {
-				continue
-			}
-			// If the referenced parent field is already embedded in child, use the child field names.
-			pk.Name = field.Name
-			pk.Reference = pk.ColumnName
-			pk.ColumnName = field.ColumnName
-			pk.Options.Reference = field.Options.Reference
-			filtered = append(filtered, *pk)
-		}
-
-		if len(filtered) > 0 {
-			pks = append(pks, TableFieldsGroup{Table: parent.Table, Fields: filtered})
+	for _, ref := range s.References {
+		if !ref.NoConstraint {
+			out = append(out, ref)
 		}
 	}
-	return pks
+	return out
 }
 
-// ParentKeysGroupedByTable returns the keys from the (proto-)parent schemas that should be defined
-// as **foreign keys** for the current schema grouped by parent schema.
-func (s *Schema) ParentKeysGroupedByTable() []TableFieldsGroup {
-	pks := make([]TableFieldsGroup, 0, len(s.ReferencedSchema))
-	// Find all the local fields that are already defined as foreign keys.
-	localFKs := s.localFKs()
-
-	for _, parent := range s.ReferencedSchema {
-		currPks := parent.ResolvedPrimaryKeys()
-		filtered := make([]Field, 0, len(currPks))
-		for idx := range currPks {
-			pk := &currPks[idx]
-			if _, found := localFK(pk, localFKs); found {
-				continue
-			}
-			tryParentify(pk, parent)
-			filtered = append(filtered, *pk)
-		}
-
-		if len(filtered) > 0 {
-			pks = append(pks, TableFieldsGroup{Table: parent.Table, Fields: filtered})
+func (s *Schema) getParentRelationship() SchemaRelationship {
+	rel := SchemaRelationship{
+		OtherSchema: s.Parent,
+	}
+	for _, f := range s.Fields {
+		if ref := f.Options.Reference; ref != nil && ref.OtherSchema == s.Parent {
+			rel.MappedColumnNames = append(rel.MappedColumnNames, ColumnNamePair{
+				ColumnNameInThisSchema:  f.ColumnName,
+				ColumnNameInOtherSchema: ref.ColumnName,
+			})
 		}
 	}
-	return pks
+	return rel
 }
 
-// ForeignKeysForTable returns the keys from the input schema that are referred in
-// the current schema with or without explicit referential constraint.
-func (s *Schema) ForeignKeysForTable(tableName string) []Field {
-	// Find all the local fields that are already defined as foreign keys.
-	localFKs := s.localFKs()
+// AllRelationships returns all SchemaRelationships this schema has.
+// It includes relationships to everything -- schemas this schema references, other schemas that
+// reference this schema, parent and children -- irrespective of whether a foreign key reference constraint
+// exists.
+func (s *Schema) AllRelationships() []SchemaRelationship {
+	out := make([]SchemaRelationship, len(s.References)+len(s.ReferencedBy))
+	copy(out, s.References)
+	copy(out[len(s.References):], s.ReferencedBy)
+	if s.Parent != nil {
+		out = append(out, s.getParentRelationship())
+	}
+	for _, child := range s.Children {
+		relationshipFromChild := child.getParentRelationship()
+		reversedRelationship := SchemaRelationship{OtherSchema: child}
+		for _, columnNamePairFromChild := range relationshipFromChild.MappedColumnNames {
+			reversedRelationship.MappedColumnNames = append(reversedRelationship.MappedColumnNames, ColumnNamePair{
+				ColumnNameInThisSchema:  columnNamePairFromChild.ColumnNameInOtherSchema,
+				ColumnNameInOtherSchema: columnNamePairFromChild.ColumnNameInThisSchema,
+			})
+		}
+		out = append(out, reversedRelationship)
+	}
+	return out
+}
 
-	var parent *Schema
-	for _, p := range s.ReferencedSchema {
-		if p.Table == tableName {
-			parent = p
+// FieldsDeterminedByParent returns the set of fields in this schema whose value is
+// set in the context of its parent.
+func (s *Schema) FieldsDeterminedByParent() []Field {
+	if s.Parent == nil {
+		return nil
+	}
+	out := s.FieldsReferringToParent()
+	for _, f := range s.Fields {
+		if f.ColumnName == "idx" {
+			out = append(out, f)
 			break
 		}
 	}
+	return out
+}
 
-	if parent == nil {
+// FieldsReferringToParent are the keys from the (proto-)parent schemas that should be defined
+// as foreign keys for the current schema.
+func (s *Schema) FieldsReferringToParent() []Field {
+	if s.Parent == nil {
 		return nil
 	}
-
-	currPks := parent.ResolvedPrimaryKeys()
-	for idx := range currPks {
-		pk := &currPks[idx]
-		field, found := localFK(pk, localFKs)
-		if !found {
-			tryParentify(pk, parent)
-			continue
+	var fieldsReferringToParent []Field
+	for _, f := range s.Fields {
+		if ref := f.Options.Reference; ref != nil && ref.OtherSchema == s.Parent {
+			fieldsReferringToParent = append(fieldsReferringToParent, f)
 		}
-		// If the referenced parent field is already embedded in child, use the child field names.
-		pk.Name = field.Name
-		pk.Reference = pk.ColumnName
-		pk.ColumnName = field.ColumnName
-		pk.Options.Reference = field.Options.Reference
 	}
-	return currPks
+	return fieldsReferringToParent
 }
 
-// ForeignKeys are the foreign keys in current schema.
-func (s *Schema) ForeignKeys() []Field {
-	if len(s.ReferencedSchema) == 0 {
-		return nil
-	}
-
-	// Find all the local fields that are already defined as foreign keys.
-	localFKs := s.localFKs()
-
-	var fks []Field
-	for _, parent := range s.ReferencedSchema {
-		parentPKs := parent.LocalPrimaryKeys()
-		for idx := range parentPKs {
-			parentPK := &parentPKs[idx]
-			if _, found := localFK(parentPK, localFKs); found {
-				continue
-			}
-			tryParentify(parentPK, parent)
-			fks = append(fks, *parentPK)
-		}
-	}
-	for _, fk := range localFKs {
-		fks = append(fks, *fk)
-	}
-	return fks
-}
-
-// ResolvedPrimaryKeys are all the primary keys of the current schema which is the union
-// of keys from the parent schemas and also any local keys
-func (s *Schema) ResolvedPrimaryKeys() []Field {
-	localPKSet := set.NewStringSet()
-	localPKS := s.LocalPrimaryKeys()
-	for _, pk := range localPKS {
-		localPKSet.Add(pk.ColumnName)
-	}
-
-	var pks []Field
-	for _, pk := range s.ParentKeys() {
-		// If the parent key is an explicitly set reference, it should not be the primary key in the current table.
-		if pk.Options.Reference != nil {
-			continue
-		}
-		// If the resolved primary key is already present as local primary key, do not add it.
-		if localPKSet.Add(pk.ColumnName) {
-			pks = append(pks, pk)
-		}
-	}
-	pks = append(pks, localPKS...)
-	return pks
-}
-
-// LocalPrimaryKeys are the primary keys in the current schema
-func (s *Schema) LocalPrimaryKeys() []Field {
+// PrimaryKeys are the primary keys in the current schema
+func (s *Schema) PrimaryKeys() []Field {
 	var pks []Field
 	for _, f := range s.Fields {
 		if f.Options.PrimaryKey {
@@ -372,7 +244,7 @@ func (s *Schema) ID() Field {
 		}
 	}
 	// If there is only one primary key, that is considered Id column by default even if not specified explicitly.
-	pks := s.LocalPrimaryKeys()
+	pks := s.PrimaryKeys()
 	if len(pks) == 1 {
 		return pks[0]
 	}
@@ -380,45 +252,90 @@ func (s *Schema) ID() Field {
 	return Field{}
 }
 
-// WithReference adds the specified schema as a reference to this schema and returns it. The referencing receiver
-// schema is not a direct field in proto object of the specified reference.
-func (s *Schema) WithReference(ref *Schema) *Schema {
-	for _, p := range s.ReferencedSchema {
-		if p.Table == ref.Table {
-			log.Panicf("%s already has a reference registered with table name %s", s.Table, ref.Table)
-			return s
-		}
-	}
-
-	added := set.NewStringSet()
+func (s *Schema) findTableAndColumnName(protoBufName string) (*Schema, string) {
 	for _, f := range s.Fields {
-		if f.Options.Reference != nil && f.Options.Reference.TypeName == ref.TypeName {
-			if !added.Add(ref.Table) {
-				continue
-			}
-			s.ReferencedSchema = append(s.ReferencedSchema, ref)
-			ref.ReferencingSchema = append(ref.ReferencingSchema, s)
+		if f.ProtoBufName == protoBufName {
+			return s, f.ColumnName
 		}
 	}
-
-	// The foreign key may not be on the top-level table. Therefore, go through all the children to find where it resides.
-	for _, c := range s.ReferencingSchema {
-		return c.WithReference(ref)
+	for _, s := range s.Children {
+		if table, columnName := s.findTableAndColumnName(protoBufName); table != nil && columnName != "" {
+			return table, columnName
+		}
 	}
-	return s
+	return nil, ""
+}
+
+// ResolveReferences resolves references from this schema to other schemas, using the passed function that
+// returns peer Schemas, in order to populate relationship info in this Schema and peer schemas.
+// Until this function is called, the References and ReferencedBy fields in the Schema will be blank.
+func (s *Schema) ResolveReferences(schemaProvider func(messageTypeName string) *Schema) {
+	if s.referencesResolved {
+		log.Panicf("Duplicate call to ResolveReferences for schema %+v", s)
+	}
+	s.referencesResolved = true
+	for i := range s.Fields {
+		f := &s.Fields[i]
+		fieldRef := f.Options.Reference
+		if fieldRef == nil {
+			continue
+		}
+		// Reference is resolved already.
+		if fieldRef.OtherSchema != nil && fieldRef.ColumnName != "" {
+			continue
+		}
+		referencedSchema := schemaProvider(fieldRef.TypeName)
+		if referencedSchema == nil {
+			log.Panicf("Couldn't resolve reference in field %+v (ref: %v): type not provided", f, *fieldRef)
+		}
+		otherTable, columnNameInOtherSchema := referencedSchema.findTableAndColumnName(fieldRef.ProtoBufField)
+		if otherTable == nil || columnNameInOtherSchema == "" {
+			log.Panicf("Couldn't resolve reference in field %+v: no field with protobuf name found", f)
+			continue // This continue will not be hit, it's here because the linter doesn't realize that log.Panic panics.
+		}
+		fieldRef.OtherSchema = otherTable
+		fieldRef.ColumnName = columnNameInOtherSchema
+
+		addColumnPairToRelationshipsSlice(&s.References, s, otherTable, f.ColumnName, columnNameInOtherSchema, fieldRef.NoConstraint)
+		addColumnPairToRelationshipsSlice(&otherTable.ReferencedBy, otherTable, s, columnNameInOtherSchema, f.ColumnName, fieldRef.NoConstraint)
+	}
+
+	for _, child := range s.Children {
+		child.ResolveReferences(schemaProvider)
+	}
+}
+
+func addColumnPairToRelationshipsSlice(relationshipsSlice *[]SchemaRelationship, thisSchema, otherSchema *Schema, columnNameInThisSchema, columnNameInOtherSchema string, noConstraint bool) {
+	refIdxToModify := -1
+	for i, ref := range *relationshipsSlice {
+		if ref.OtherSchema == otherSchema {
+			if ref.NoConstraint != noConstraint {
+				log.Panicf("This reference from %s (%s)to %s (%s) has a noConstraint value inconsistent with the other reference(s) (%+v)",
+					thisSchema.Table, columnNameInThisSchema, otherSchema.Table, columnNameInOtherSchema, ref.MappedColumnNames)
+			}
+			refIdxToModify = i
+			break
+		}
+	}
+	// This is the first column mapping for this particular schema.
+	if refIdxToModify == -1 {
+		*relationshipsSlice = append(*relationshipsSlice, SchemaRelationship{OtherSchema: otherSchema, NoConstraint: noConstraint})
+		refIdxToModify = len(*relationshipsSlice) - 1
+	}
+	(*relationshipsSlice)[refIdxToModify].MappedColumnNames = append((*relationshipsSlice)[refIdxToModify].MappedColumnNames, ColumnNamePair{
+		ColumnNameInThisSchema:  columnNameInThisSchema,
+		ColumnNameInOtherSchema: columnNameInOtherSchema,
+	})
 }
 
 // NoPrimaryKey returns true if the current schema does not have a primary key defined
 func (s *Schema) NoPrimaryKey() bool {
-	return len(s.LocalPrimaryKeys()) == 0
+	return len(s.PrimaryKeys()) == 0
 }
 
 // SearchField is the parsed representation of the search tag on the struct field
 type SearchField struct {
 	FieldName string
-	Analyzer  string
-	Hidden    bool
-	Store     bool
 	Enabled   bool
 	Ignored   bool
 }
@@ -433,6 +350,10 @@ type PostgresOptions struct {
 	IgnorePrimaryKey       bool
 	IgnoreUniqueConstraint bool
 	Reference              *foreignKeyRef
+
+	// IgnoreChildFKs is an option used to tell the walker that
+	// foreign keys of children of this field should be ignored.
+	IgnoreChildFKs bool
 }
 
 type foreignKeyRef struct {
@@ -440,6 +361,14 @@ type foreignKeyRef struct {
 	ProtoBufField string
 	// If true, this column (foreign key) depends on a column in other table, but does not have a constraint.
 	NoConstraint bool
+
+	// The referenced schema and column name are what we ultimately need for the foreign key reference.
+	// However, we don't want to put this information in the proto message itself, since we
+	// don't want to bleed that level of detail from the  SQL implementation into the proto.
+	// Therefore, these are filled later, based on the parameters provided at code generation
+	// time.
+	OtherSchema *Schema
+	ColumnName  string
 }
 
 // ObjectGetter is wrapper around determining how to represent the variable in the
@@ -458,11 +387,10 @@ type Field struct {
 	ProtoBufName string
 	ObjectGetter ObjectGetter
 	ColumnName   string
-	// If set, this is the reference to
-	Reference string
+
 	// Type is the reflect.TypeOf value of the field
-	Type     string
-	TypeName string
+	Type string
+
 	// DataType is the internal type
 	DataType DataType
 	SQLType  string
@@ -481,5 +409,5 @@ func (f Field) Getter(prefix string) string {
 
 // Include returns if the field should be included in the schema
 func (f Field) Include() bool {
-	return f.Options.PrimaryKey || f.Search.Enabled || f.ObjectGetter.variable
+	return f.Options.PrimaryKey || f.Search.Enabled || f.ColumnName == "serialized" || f.Options.Reference != nil
 }

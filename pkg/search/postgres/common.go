@@ -137,6 +137,8 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, selectT
 	standardizeFieldNamesInQuery(q)
 	// Field can belong to multiple tables. Therefore, find all the tables reachable from starting table, that contain
 	// query fields.
+	// TODO(viswa): both getTableFieldsForQuery and getJoins do the same BFS, see if there's a way to simplify and do
+	// it in one go.
 	dbFields := getTableFieldsForQuery(schema, q)
 	tables := make([]*walker.Schema, 0, len(dbFields))
 	for _, f := range dbFields {
@@ -157,7 +159,7 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, selectT
 	}
 
 	fromClause := stringutils.JoinNonEmpty(", ", froms...)
-	selQuery := generateSelectFields(queryEntry, schema.LocalPrimaryKeys(), selectType)
+	selQuery := generateSelectFields(queryEntry, schema.PrimaryKeys(), selectType)
 	pagination, err := getPaginationQuery(q.GetPagination(), schema, dbFields)
 	if err != nil {
 		return nil, err
@@ -258,51 +260,40 @@ func getTableFieldsForQuery(schema *walker.Schema, q *v1.Query) map[string]*walk
 }
 
 func getDBFieldsForSearchFields(schema *walker.Schema, searchFields set.StringSet) map[string]*walker.Field {
-	reachableFields := make(map[string]*walker.Field)
-	schemaQ := []*walker.Schema{schema}
-	recursiveSearchForFields(&schemaQ, searchFields, reachableFields, set.NewStringSet())
-	return reachableFields
-}
-
-func recursiveSearchForFields(schemaQ *[]*walker.Schema, searchFields set.StringSet, reachableFields map[string]*walker.Field, visitedTables set.StringSet) {
-	if len(*schemaQ) == 0 || len(searchFields) == 0 {
-		return
-	}
-
-	curr := (*schemaQ)[0]
-	*schemaQ = (*schemaQ)[1:]
-	if !visitedTables.Add(curr.Table) {
-		return
-	}
-
-	for _, f := range curr.Fields {
-		field := f
-		lowerCaseName := strings.ToLower(f.Search.FieldName)
-		if searchFields.Remove(lowerCaseName) {
-			reachableFields[lowerCaseName] = &field
-		}
-	}
-
 	if len(searchFields) == 0 {
-		return
+		return nil
 	}
-	if len(curr.ReferencedSchema) == 0 && len(curr.ReferencingSchema) == 0 {
-		return
-	}
+	reachableFields := make(map[string]*walker.Field)
+
+	schemaQ := []*walker.Schema{schema}
+
+	visitedTables := set.NewStringSet()
 
 	// We want to traverse shortest length from current schema to find the tables containing the getDBFieldsForSearchFields fields.
 	// Therefore, perform BFS.
-	for _, p := range curr.ReferencedSchema {
-		if !visitedTables.Contains(p.Table) {
-			*schemaQ = append(*schemaQ, p)
+bfsLoop:
+	for len(schemaQ) > 0 {
+		curr := schemaQ[0]
+		schemaQ = schemaQ[1:]
+		if !visitedTables.Add(curr.Table) {
+			continue
+		}
+
+		for _, f := range curr.Fields {
+			field := f
+			lowerCaseName := strings.ToLower(f.Search.FieldName)
+			if searchFields.Remove(lowerCaseName) {
+				reachableFields[lowerCaseName] = &field
+				if len(searchFields) == 0 {
+					break bfsLoop
+				}
+			}
+		}
+		for _, rel := range curr.AllRelationships() {
+			schemaQ = append(schemaQ, rel.OtherSchema)
 		}
 	}
-	for _, c := range curr.ReferencingSchema {
-		if !visitedTables.Contains(c.Table) {
-			*schemaQ = append(*schemaQ, c)
-		}
-	}
-	recursiveSearchForFields(schemaQ, searchFields, reachableFields, visitedTables)
+	return reachableFields
 }
 
 func withJoinClause(queryEntry *pgsearch.QueryEntry, dbField *walker.Field, joinMap map[string]string) {
@@ -462,7 +453,7 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool)
 	defer rows.Close()
 	log.Debugf("SEARCH: ran query %s; data %+v", queryStr, query.Data)
 
-	numPrimaryKeys := len(schema.LocalPrimaryKeys())
+	numPrimaryKeys := len(schema.PrimaryKeys())
 	highlightedResults := make([]interface{}, len(query.Select.Fields)+numPrimaryKeys)
 
 	// Assumes that ids are strings.

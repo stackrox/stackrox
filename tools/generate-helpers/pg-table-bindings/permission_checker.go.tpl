@@ -1,5 +1,5 @@
 {{- $ := . }}
-{{- $pks := .Schema.LocalPrimaryKeys }}
+{{- $pks := .Schema.PrimaryKeys }}
 
 {{- $singlePK := false }}
 {{- if eq (len $pks) 1 }}

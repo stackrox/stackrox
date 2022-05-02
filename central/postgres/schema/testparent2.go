@@ -3,12 +3,15 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/stackrox/rox/central/globaldb"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -34,8 +37,15 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.TestParent2)(nil)), "testparent2").
-			WithReference(TestgrandparentSchema)
+		schema = walker.Walk(reflect.TypeOf((*storage.TestParent2)(nil)), "testparent2")
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.TestGrandparent": TestgrandparentSchema,
+		}
+
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory(68), "testparent2", (*storage.TestParent2)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

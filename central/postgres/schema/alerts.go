@@ -59,11 +59,8 @@ var (
                )
                `,
 		Indexes: []string{
-
 			"create index if not exists alerts_LifecycleStage on alerts using btree(LifecycleStage)",
-
 			"create index if not exists alerts_Deployment_Id on alerts using hash(Deployment_Id)",
-
 			"create index if not exists alerts_State on alerts using btree(State)",
 		},
 		Children: []*postgres.CreateStmts{},

@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/stackrox/rox/central/globaldb"
@@ -173,8 +174,14 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments").
-			WithReference(ImagesSchema)
+		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.Image": ImagesSchema,
+		}
+
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployments", (*storage.Deployment)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
