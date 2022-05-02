@@ -1,5 +1,7 @@
 [![CircleCI][circleci-badge]][circleci-link]
 
+# Dummy demo of development workflow
+
 # StackRox Kubernetes Security Platform
 
 The StackRox Kubernetes Security Platform performs a risk analysis of the
