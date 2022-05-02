@@ -39,19 +39,18 @@ func (suite *orScopeCheckerTestSuite) SetupTest() {
 func (suite *orScopeCheckerTestSuite) TestPerformChecks() {
 	// 1. Expect no error when ScopeCheckers will not return any.
 	suite.scopeChecker1.EXPECT().PerformChecks(gomock.Any()).Return(nil)
+	suite.scopeChecker2.EXPECT().PerformChecks(gomock.Any()).Return(nil)
 
 	err := suite.orScopeChecker.PerformChecks(context.Background())
 	suite.NoError(err)
 	// Regression: It happened that the returned value was non-nil.
 	suite.Nil(err)
 
-	// 2. Expect no error when at least 1 ScopeChecker will not return an error.
+	// 2. Expect an error when at least 1 ScopeChecker will return an error.
 	suite.scopeChecker1.EXPECT().PerformChecks(gomock.Any()).Return(errors.New("something happened"))
 	suite.scopeChecker2.EXPECT().PerformChecks(gomock.Any()).Return(nil)
 	err = suite.orScopeChecker.PerformChecks(context.Background())
-	suite.NoError(err)
-	// Regression: It happened that the returned value was non-nil.
-	suite.Nil(err)
+	suite.Error(err)
 
 	// 3. Expect an error when all ScopeCheckers will return an error.
 	suite.scopeChecker1.EXPECT().PerformChecks(gomock.Any()).Return(errors.New("something happened"))

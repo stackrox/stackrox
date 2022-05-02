@@ -40,10 +40,12 @@ func (s orScopeChecker) PerformChecks(ctx context.Context) error {
 	for _, checker := range s.scopeCheckers {
 		err := checker.PerformChecks(ctx)
 		// Short-circuit on the first non-error perform check.
-		if err == nil {
-			return nil
+		if err != nil {
+			performChecksErrs = multierror.Append(performChecksErrs, err)
 		}
-		performChecksErrs = multierror.Append(performChecksErrs, err)
+	}
+	if performChecksErrs == nil {
+		return nil
 	}
 	return performChecksErrs
 }
@@ -137,43 +139,42 @@ func (s orScopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeK
 
 func (s orScopeChecker) ForClusterScopedObject(obj ClusterScopedObject) ScopeChecker {
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].SubScopeChecker(ClusterScopeKey(obj.GetClusterId()))
+		s.scopeCheckers[i] = s.scopeCheckers[i].ForClusterScopedObject(obj)
 	}
 	return s
 }
 
 func (s orScopeChecker) ForNamespaceScopedObject(obj NamespaceScopedObject) ScopeChecker {
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].SubScopeChecker(
-			ClusterScopeKey(obj.GetClusterId()), NamespaceScopeKey(obj.GetNamespace()))
+		s.scopeCheckers[i] = s.scopeCheckers[i].ForNamespaceScopedObject(obj)
 	}
 	return s
 }
 
 func (s orScopeChecker) AccessMode(am storage.Access) ScopeChecker {
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].SubScopeChecker(AccessModeScopeKey(am))
+		s.scopeCheckers[i] = s.scopeCheckers[i].AccessMode(am)
 	}
 	return s
 }
 
 func (s orScopeChecker) Resource(resource permissions.ResourceHandle) ScopeChecker {
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].SubScopeChecker(ResourceScopeKey(resource.GetResource()))
+		s.scopeCheckers[i] = s.scopeCheckers[i].Resource(resource)
 	}
 	return s
 }
 
 func (s orScopeChecker) ClusterID(clusterID string) ScopeChecker {
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].SubScopeChecker(ClusterScopeKey(clusterID))
+		s.scopeCheckers[i] = s.scopeCheckers[i].ClusterID(clusterID)
 	}
 	return s
 }
 
 func (s orScopeChecker) Namespace(namespace string) ScopeChecker {
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].SubScopeChecker(NamespaceScopeKey(namespace))
+		s.scopeCheckers[i] = s.scopeCheckers[i].Namespace(namespace)
 	}
 	return s
 }
