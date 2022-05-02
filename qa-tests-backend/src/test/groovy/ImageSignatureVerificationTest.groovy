@@ -1,5 +1,3 @@
-
-
 import static Services.waitForViolation
 
 import groups.Integration
