@@ -8,6 +8,7 @@ import io.stackrox.proto.storage.DeploymentOuterClass
 
 import groups.BAT
 import objects.Deployment
+import orchestratormanager.OrchestratorTypes
 import services.AlertService
 import services.ApiTokenService
 import services.BaseService
@@ -60,11 +61,13 @@ class SACTest extends BaseSpecification {
             "stackrox/monitoring -> INTERNET",
     ] as Set
 
-    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 600 : 60
+    // Increase the timeout conditionally based on whether we are running race-detection builds or within OpenShift
+    // environments. Both take longer than the default values.
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
+            isRaceBuild() ? 600 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 60)
 
-    // Increase the timeout for race-condition tests. By default, we will wait 60 seconds, on race-condition tests
-    // we will wait 600 seconds.
-    static final private Integer WAIT_FOR_RISK_RETRIES = isRaceBuild() ? 300 : 30
+    static final private Integer WAIT_FOR_RISK_RETRIES =
+            isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 50 : 30)
 
     def setupSpec() {
         // Make sure we scan the image initially to make reprocessing faster.
