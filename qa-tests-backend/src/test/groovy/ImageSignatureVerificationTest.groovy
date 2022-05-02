@@ -7,7 +7,6 @@ import io.stackrox.proto.storage.ScopeOuterClass
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.CosignPublicKeyVerification
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.SignatureIntegration
 import objects.Deployment
-import orchestratormanager.OrchestratorTypes
 import org.junit.experimental.categories.Category
 import services.PolicyService
 import services.SignatureIntegrationService
