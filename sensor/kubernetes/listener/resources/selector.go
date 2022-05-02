@@ -84,28 +84,23 @@ func (d selectorDisjunction) Empty() bool {
 }
 
 func (d selectorDisjunction) String() string {
-	//TODO implement me
-	panic("implement me")
+	panic("unused function")
 }
 
 func (d selectorDisjunction) Add(r ...labels.Requirement) labels.Selector {
-	//TODO implement me
-	panic("implement me")
+	panic("unused function")
 }
 
 func (d selectorDisjunction) Requirements() (requirements labels.Requirements, selectable bool) {
-	//TODO implement me
-	panic("implement me")
+	panic("unused function")
 }
 
 func (d selectorDisjunction) DeepCopySelector() labels.Selector {
-	//TODO implement me
-	panic("implement me")
+	panic("unused function")
 }
 
 func (d selectorDisjunction) RequiresExactMatch(label string) (value string, found bool) {
-	//TODO implement me
-	panic("implement me")
+	panic("unused function")
 }
 
 func (d selectorDisjunction) Matches(labels labels.Labels) bool {
