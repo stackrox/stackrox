@@ -284,7 +284,7 @@ message ClusterHealthStatus {
     AdmissionControlHealthInfo admission_control_health_info    = 8;
     // scanner_health_info is filled when the scanner is deployed on a secured cluster (so called "local scanner").
     // Please do not confuse this with the default scanner deployment on a central cluster.
-    ScannerHealthInfo          scanner_health_info        = 10;
+    ScannerHealthInfo          scanner_health_info              = 10;
 
     // The following _health_status fields provide aggregated health status of the respective components and are assigned by central.
     HealthStatusLabel         sensor_health_status              = 2 [(gogoproto.moretags) = "search:\"Sensor Status,store\""];
@@ -299,7 +299,7 @@ message ClusterHealthStatus {
     google.protobuf.Timestamp last_contact                      = 5;
 
     // To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
-    bool                      health_info_complete                  = 6;
+    bool                      health_info_complete              = 6;
 
     // Note that the tags are out of order. The next tag number is 12.
 }
@@ -349,6 +349,8 @@ message AdmissionControlHealthInfo {
     repeated string status_errors = 3;
 }
 
+// ScannerHealthInfo represents health info of a scanner instance that is deployed on a secured cluster (so called "local scanner").
+// When the scanner is deployed on a central cluster, the following message is NOT used.
 // ScannerHealthInfo carries data about scanner deployment but does not include scanner health status
 // derived from this data.
 // Aggregated scanner health status is not included because it is derived in central and not in the component that

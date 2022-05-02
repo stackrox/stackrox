@@ -2140,7 +2140,7 @@
           "description": "Collection of errors that occurred while trying to obtain scanner health info."
         }
       },
-      "description": "ScannerHealthInfo carries data about scanner deployment but does not include scanner health status\nderived from this data.\nAggregated scanner health status is not included because it is derived in central and not in the component that\nfirst reports ScannerHealthInfo (sensor)."
+      "description": "ScannerHealthInfo represents health info of a scanner instance that is deployed on a secured cluster (so called \"local scanner\").\nWhen the scanner is deployed on a central cluster, the following message is NOT used.\nScannerHealthInfo carries data about scanner deployment but does not include scanner health status\nderived from this data.\nAggregated scanner health status is not included because it is derived in central and not in the component that\nfirst reports ScannerHealthInfo (sensor)."
     },
     "storageSecurityContext": {
       "type": "object",

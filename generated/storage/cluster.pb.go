@@ -2743,6 +2743,8 @@ func (m *AdmissionControlHealthInfo) Clone() *AdmissionControlHealthInfo {
 	return cloned
 }
 
+// ScannerHealthInfo represents health info of a scanner instance that is deployed on a secured cluster (so called "local scanner").
+// When the scanner is deployed on a central cluster, the following message is NOT used.
 // ScannerHealthInfo carries data about scanner deployment but does not include scanner health status
 // derived from this data.
 // Aggregated scanner health status is not included because it is derived in central and not in the component that
