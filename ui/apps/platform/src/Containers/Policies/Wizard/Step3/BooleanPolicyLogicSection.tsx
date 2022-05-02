@@ -35,7 +35,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                 return true;
             })
         );
-    }, [values.eventSource, isFeatureFlagEnabled]);
+    }, [values.eventSource]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <>
