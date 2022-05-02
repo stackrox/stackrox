@@ -38,7 +38,7 @@ func (l labelWithLenImpl) Len() uint {
 	return uint(len(l.labels))
 }
 
-func CreateLabelsWithLen(labels map[string]string) labelWithLenImpl {
+func createLabelsWithLen(labels map[string]string) labelWithLenImpl {
 	return labelWithLenImpl{labels}
 }
 

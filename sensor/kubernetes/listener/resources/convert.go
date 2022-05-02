@@ -461,7 +461,7 @@ func (w *deploymentWrap) updatePortExposureFromServices(svcs ...serviceWithRoute
 }
 
 func (w *deploymentWrap) updatePortExposure(svc serviceWithRoutes) {
-	if svc.selector.Matches(CreateLabelsWithLen(labels.Set(w.PodLabels))) {
+	if svc.selector.Matches(createLabelsWithLen(labels.Set(w.PodLabels))) {
 		return
 	}
 

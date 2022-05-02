@@ -80,7 +80,7 @@ func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector
 			continue
 		}
 
-		if sel.Matches(CreateLabelsWithLen(labels.Set(wrap.PodLabels))) {
+		if sel.Matches(createLabelsWithLen(labels.Set(wrap.PodLabels))) {
 			matching = append(matching, wrap)
 		}
 	}
