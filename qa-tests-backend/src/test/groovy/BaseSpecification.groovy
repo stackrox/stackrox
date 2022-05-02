@@ -403,20 +403,20 @@ class BaseSpecification extends Specification {
 
     // getViolationTimeout will return the timeout value based on the specific environment / build that is
     // used during test execution. The following values will be returned:
-    // Default: 30s
+    // Default: 60s
     // OpenShift: 100s
-    // Race build: 300s
+    // Race build: 600s
     static Integer getViolationTimeout() {
-        return  isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 30)
+        return  isRaceBuild() ? 600 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 60)
     }
 
     // getReprocessingRetries will return the number of retries based on the specific environment / build that is
     // used during test execution. The following values will be returned:
     // Default: 30
-    // OpenShift: 100
+    // OpenShift: 50
     // Race build: 300
     static Integer getReprocessingRetries() {
-        return isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 30)
+        return isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 50 : 30)
     }
 }
 

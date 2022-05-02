@@ -199,7 +199,7 @@ class ImageManagementTest extends BaseSpecification {
 
         then:
         "Assert that riskScore is non-zero"
-        withRetry(10, 3) {
+        withRetry(getReprocessingRetries(), 2) {
             def image = ImageService.getImage(
                     "sha256:de2913a0ec53d98ced6f6bd607f487b7ad8fe8d2a86e2128308ebf4be2f92667")
             assert image != null && image.riskScore != 0
@@ -222,7 +222,7 @@ class ImageManagementTest extends BaseSpecification {
 
         then:
         "Assert that riskScore is non-zero"
-        withRetry(10, 3) {
+        withRetry(getReprocessingRetries(), 2) {
             def image = ImageService.getImage(
                     "sha256:f7985e36c668bb862a0e506f4ef9acdd1254cdf690469816f99633898895f7fa")
             assert image != null && image.riskScore != 0

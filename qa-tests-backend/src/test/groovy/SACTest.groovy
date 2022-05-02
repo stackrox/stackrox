@@ -60,11 +60,11 @@ class SACTest extends BaseSpecification {
             "stackrox/monitoring -> INTERNET",
     ] as Set
 
-    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 600 : 60
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = getViolationTimeout()
 
     // Increase the timeout for race-condition tests. By default, we will wait 60 seconds, on race-condition tests
     // we will wait 600 seconds.
-    static final private Integer WAIT_FOR_RISK_RETRIES = isRaceBuild() ? 300 : 30
+    static final private Integer WAIT_FOR_RISK_RETRIES = getReprocessingRetries()
 
     def setupSpec() {
         // Make sure we scan the image initially to make reprocessing faster.

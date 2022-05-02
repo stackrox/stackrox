@@ -20,8 +20,7 @@ import util.Env
 @IgnoreIf({ !Env.CI_JOBNAME.contains("crio") })
 class ImageSignatureVerificationTest extends BaseSpecification {
     // https://issues.redhat.com/browse/ROX-6891
-    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
-            isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 30)
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = getViolationTimeout()
 
     static final private String SIGNATURE_TESTING_NAMESPACE = "qa-signature-tests"
 
