@@ -7,7 +7,7 @@ import (
 // portExposureReconciler reconciles the port exposures in the deployment store on receiving
 // service or route updates.
 type portExposureReconciler interface {
-	UpdateExposuresForMatchingDeployments(namespace string, sw selectorWrap) []*central.SensorEvent
+	UpdateExposuresForMatchingDeployments(namespace string, sel selector) []*central.SensorEvent
 	UpdateExposureOnServiceCreate(svc serviceWithRoutes) []*central.SensorEvent
 }
 
@@ -23,9 +23,9 @@ func newPortExposureReconciler(deploymentStore *DeploymentStore, serviceStore *s
 	}
 }
 
-func (p *portExposureReconcilerImpl) UpdateExposuresForMatchingDeployments(namespace string, sw selectorWrap) []*central.SensorEvent {
+func (p *portExposureReconcilerImpl) UpdateExposuresForMatchingDeployments(namespace string, sel selector) []*central.SensorEvent {
 	var events []*central.SensorEvent
-	for _, deploymentWrap := range p.deploymentStore.getMatchingDeployments(namespace, sw) {
+	for _, deploymentWrap := range p.deploymentStore.getMatchingDeployments(namespace, sel) {
 		if svcs := p.serviceStore.getMatchingServicesWithRoutes(deploymentWrap.Namespace, deploymentWrap.PodLabels); len(svcs) > 0 || deploymentWrap.anyNonHostPort() {
 			cloned := deploymentWrap.Clone()
 			cloned.updatePortExposureFromServices(svcs...)
@@ -39,7 +39,7 @@ func (p *portExposureReconcilerImpl) UpdateExposuresForMatchingDeployments(names
 
 func (p *portExposureReconcilerImpl) UpdateExposureOnServiceCreate(svc serviceWithRoutes) []*central.SensorEvent {
 	var events []*central.SensorEvent
-	for _, deploymentWrap := range p.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selectorWrapper) {
+	for _, deploymentWrap := range p.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
 		cloned := deploymentWrap.Clone()
 		cloned.updatePortExposure(svc)
 		p.deploymentStore.addOrUpdateDeployment(cloned)

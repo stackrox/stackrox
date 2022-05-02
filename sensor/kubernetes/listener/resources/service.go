@@ -15,13 +15,13 @@ type serviceWithRoutes struct {
 
 type serviceWrap struct {
 	*v1.Service
-	selectorWrapper selectorWrap
+	selector selector
 }
 
 func wrapService(svc *v1.Service) *serviceWrap {
 	return &serviceWrap{
-		Service:         svc,
-		selectorWrapper: createSelector(svc.Spec.Selector, false),
+		Service:  svc,
+		selector: createSelector(svc.Spec.Selector, false),
 	}
 }
 
@@ -140,28 +140,28 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
 	}
-	var sw selectorWrap
+	var sel selector
 	oldWrap := sh.serviceStore.getService(svc.Namespace, svc.Name)
 	if oldWrap != nil {
-		sw = oldWrap.selectorWrapper
+		sel = oldWrap.selector
 	}
 	if action == central.ResourceAction_UPDATE_RESOURCE {
 		newWrap := wrapService(svc)
 		sh.serviceStore.addOrUpdateService(newWrap)
-		if sw.selector != nil {
-			sw = or(sw, newWrap.selectorWrapper)
+		if sel != nil {
+			sel = or(sel, newWrap.selector)
 		} else {
-			sw = newWrap.selectorWrapper
+			sel = newWrap.selector
 		}
 	} else if action == central.ResourceAction_REMOVE_RESOURCE {
 		sh.serviceStore.removeService(svc)
 	}
-	return sh.updateDeploymentsFromStore(svc.Namespace, sw)
+	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
 
-func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sw selectorWrap) []*central.SensorEvent {
-	events := sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sw)
-	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sw)
+func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector) []*central.SensorEvent {
+	events := sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sel)
+	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
 	return events
 }
 

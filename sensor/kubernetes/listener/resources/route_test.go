@@ -54,11 +54,11 @@ type mockPortExposureReconciler struct {
 	orderedCalls []call
 }
 
-func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(namespace string, sw selectorWrap) []*central.SensorEvent {
+func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(namespace string, sel selector) []*central.SensorEvent {
 	m.orderedCalls = append(m.orderedCalls,
 		call{
 			"UpdateExposuresForMatchingDeployments",
-			[]interface{}{namespace, sw},
+			[]interface{}{namespace, sel},
 		})
 	return nil
 }
@@ -85,7 +85,7 @@ func (m *mockEndpointManager) OnDeploymentRemove(*deploymentWrap) {
 func (m *mockEndpointManager) OnServiceCreate(*serviceWrap) {
 }
 
-func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, selectorWrap) {
+func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, selector) {
 }
 
 func (m *mockEndpointManager) OnNodeCreate(*nodeWrap) {

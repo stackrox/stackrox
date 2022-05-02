@@ -14,7 +14,7 @@ type endpointManager interface {
 	OnDeploymentRemove(deployment *deploymentWrap)
 
 	OnServiceCreate(svc *serviceWrap)
-	OnServiceUpdateOrRemove(namespace string, sel selectorWrap)
+	OnServiceUpdateOrRemove(namespace string, sel selector)
 
 	OnNodeCreate(node *nodeWrap)
 	OnNodeUpdateOrRemove()
@@ -191,7 +191,7 @@ func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWr
 
 func (m *endpointManagerImpl) OnServiceCreate(svc *serviceWrap) {
 	updates := make(map[string]*clusterentities.EntityData)
-	for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selectorWrapper) {
+	for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
 		update := &clusterentities.EntityData{}
 		m.addEndpointDataForService(deployment, svc, update)
 		updates[deployment.GetId()] = update
@@ -200,9 +200,9 @@ func (m *endpointManagerImpl) OnServiceCreate(svc *serviceWrap) {
 	m.entityStore.Apply(updates, true)
 }
 
-func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sw selectorWrap) {
+func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sel selector) {
 	updates := make(map[string]*clusterentities.EntityData)
-	for _, deployment := range m.deploymentStore.getMatchingDeployments(namespace, sw) {
+	for _, deployment := range m.deploymentStore.getMatchingDeployments(namespace, sel) {
 		updates[deployment.GetId()] = m.endpointDataForDeployment(deployment)
 	}
 
@@ -216,7 +216,7 @@ func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
 
 	updates := make(map[string]*clusterentities.EntityData)
 	for _, svc := range m.serviceStore.NodePortServicesSnapshot() {
-		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selectorWrapper) {
+		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
 			update, ok := updates[deployment.GetId()]
 			if !ok {
 				update = &clusterentities.EntityData{}
@@ -237,7 +237,7 @@ func (m *endpointManagerImpl) OnNodeUpdateOrRemove() {
 	affectedDeployments := make(map[*deploymentWrap]struct{})
 
 	for _, svc := range m.serviceStore.NodePortServicesSnapshot() {
-		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selectorWrapper) {
+		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
 			affectedDeployments[deployment] = struct{}{}
 		}
 	}

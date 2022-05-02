@@ -31,8 +31,32 @@ type SelectorWrapperTestSuite struct {
 }
 
 type mockSelector struct {
-	internalSelector internalSelector
+	internalSelector labels.Selector
 	testSuite        *SelectorWrapperTestSuite
+}
+
+func (m mockSelector) Empty() bool {
+	return false
+}
+
+func (m mockSelector) String() string {
+	return ""
+}
+
+func (m mockSelector) Add(r ...labels.Requirement) labels.Selector {
+	return nil
+}
+
+func (m mockSelector) Requirements() (requirements labels.Requirements, selectable bool) {
+	return nil, false
+}
+
+func (m mockSelector) DeepCopySelector() labels.Selector {
+	return nil
+}
+
+func (m mockSelector) RequiresExactMatch(label string) (value string, found bool) {
+	return "", false
 }
 
 func (m mockSelector) Matches(labels labels.Labels) bool {
@@ -40,8 +64,8 @@ func (m mockSelector) Matches(labels labels.Labels) bool {
 	return m.internalSelector.Matches(labels)
 }
 
-func (s *SelectorWrapperTestSuite) injectMockSelector(wrapper *selectorWrap) {
-	wrapper.selector = mockSelector{wrapper.selector, s}
+func (s *SelectorWrapperTestSuite) injectMockSelector(sw *selectorWrap) {
+	sw.selector = mockSelector{sw.getSelector(), s}
 }
 
 func (s *SelectorWrapperTestSuite) TestLabelMatching() {
@@ -178,15 +202,16 @@ func (s *SelectorWrapperTestSuite) TestLabelMatchingWithDisjunctions() {
 	for name, tt := range tests {
 		s.Run(name, func() {
 			s.hasMatchesBeenCalled = false
-			var selectorWrappers []selectorWrap
+			var selectorWrappers []selector
 			for i := 0; i < len(tt.givenSelectorLabels); i++ {
 				selectorWrappers = append(selectorWrappers, createSelector(tt.givenSelectorLabels[i], tt.matchEmptySelector[i]))
 			}
 
-			selectorWrap := or(selectorWrappers...)
-			s.injectMockSelector(&selectorWrap)
+			sel := or(selectorWrappers...)
+			sw := sel.(selectorWrap)
+			s.injectMockSelector(&sw)
 
-			receivedMatch := selectorWrap.Matches(labelWithLenImpl{labels.Set(tt.givenMatchingLabels), uint(len(tt.givenMatchingLabels))})
+			receivedMatch := sw.Matches(labelWithLenImpl{labels.Set(tt.givenMatchingLabels), uint(len(tt.givenMatchingLabels))})
 			receivedSelectorMatchesFunctionCalled := s.hasMatchesBeenCalled
 
 			s.Equal(tt.expectedMatch, receivedMatch)

@@ -16,6 +16,9 @@ type labelsWithLen interface {
 // selector is a restricted version of selectorWrap
 type selector interface {
 	Matches(labelsWithLen) bool
+	getSelector() labels.Selector
+	getNumLabels() uint
+	getMatchNil() bool
 }
 
 type labelWithLenImpl struct {
@@ -42,7 +45,7 @@ type selectorWrap struct {
 	matchNil  bool
 }
 
-func (s *selectorWrap) Matches(labels labelsWithLen) bool {
+func (s selectorWrap) Matches(labels labelsWithLen) bool {
 	if s.numLabels > labels.Len() {
 		return false
 	}
@@ -50,6 +53,18 @@ func (s *selectorWrap) Matches(labels labelsWithLen) bool {
 		return s.matchNil
 	}
 	return s.selector.Matches(labels)
+}
+
+func (s selectorWrap) getSelector() labels.Selector {
+	return s.selector
+}
+
+func (s selectorWrap) getNumLabels() uint {
+	return s.numLabels
+}
+
+func (s selectorWrap) getMatchNil() bool {
+	return s.matchNil
 }
 
 // selectorDisjunction is the disjunction (logical or) of a list of selectors.
@@ -99,17 +114,17 @@ func (d selectorDisjunction) Matches(labels labels.Labels) bool {
 }
 
 // or returns the logical or of the given SelectorWrappers.
-func or(sels ...selectorWrap) selectorWrap {
+func or(sels ...selector) selector {
 	var selWrapper = selectorWrap{nil, math.MaxUint, false}
 	var selectors selectorDisjunction
 	for _, s := range sels {
-		if s.matchNil {
+		if s.getMatchNil() {
 			selWrapper.matchNil = true
 		}
-		if selWrapper.numLabels > s.numLabels && (s.numLabels > 0 || s.matchNil) {
-			selWrapper.numLabels = s.numLabels
+		if selWrapper.numLabels > s.getNumLabels() && (s.getNumLabels() > 0 || s.getMatchNil()) {
+			selWrapper.numLabels = s.getNumLabels()
 		}
-		selectors = append(selectors, s.selector)
+		selectors = append(selectors, s.getSelector())
 	}
 	if selWrapper.numLabels == math.MaxUint {
 		selWrapper.numLabels = 0
@@ -126,14 +141,14 @@ func createSelector(labelsMap map[string]string, matchNil bool) selectorWrap {
 	if matchNil {
 		selWrapper.matchNil = true
 		if selWrapper.numLabels == 0 {
-			selWrapper.selector = restrictedSelector{labels.Everything()}
+			selWrapper.selector = labels.Everything()
 		}
 	} else {
 		selWrapper.matchNil = false
 		if selWrapper.numLabels == 0 {
-			selWrapper.selector = restrictedSelector{labels.Nothing()}
+			selWrapper.selector = labels.Nothing()
 		}
 	}
-	selWrapper.selector = restrictedSelector{labels.SelectorFromSet(labels.Set(labelsMap))}
+	selWrapper.selector = labels.SelectorFromSet(labels.Set(labelsMap))
 	return selWrapper
 }
