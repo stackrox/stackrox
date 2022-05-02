@@ -425,7 +425,27 @@ class DefaultPoliciesTest extends BaseSpecification {
                     println violation
                 }
                  exists
-        }.collect()
+             }.filter { alert ->
+                // The OpenShift: Kubeadmin Secret Accessed policy can sometimes get triggered
+                // by the CI. This happens when the CI scripts use kubectl to pull resources
+                // to save on a test failure. Ignore this alert iff _all_ violations was by kube:admin
+                // using kubectl. Do not ignore for any other violations.
+                // See https://issues.redhat.com/browse/ROX-10018
+                def noKubectlViolation = true
+                if (alert.policy.getName() == "OpenShift: Kubeadmin Secret Accessed") {
+                    noKubectlViolation = !AlertService.getViolation(alert.id).getViolationsList().
+                        stream().allMatch { v ->
+                            def user = v.getKeyValueAttrs().getAttrsList().find { a ->
+                                a.getKey() == "Username" && a.getValue() == "kube:admin"
+                            }
+                            def ua = v.getKeyValueAttrs().getAttrsList().find { a ->
+                                a.getKey() == "User Agent" && a.getValue().startsWith("kubectl/")
+                            }
+                            user != null && ua != null
+                        }
+                }
+                noKubectlViolation
+            }.collect()
 
         if (nonWhitelistedKubeSystemViolations.size() != 0) {
             nonWhitelistedKubeSystemViolations.forEach {
