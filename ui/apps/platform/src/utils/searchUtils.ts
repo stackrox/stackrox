@@ -8,36 +8,6 @@ import {
 } from 'types/search';
 
 /**
- *  Adds a search modifier to the searchOptions
- *
- *  @param searchOptions an array of search options
- *  @param modifier a modifier term (ie. 'Cluster:')
- *  @returns the modified search options
- */
-export function addSearchModifier(
-    searchOptions: GlobalSearchOption[],
-    modifier: string
-): GlobalSearchOption[] {
-    const chip = { value: modifier, label: modifier, type: 'categoryOption' };
-    return [...searchOptions, chip];
-}
-
-/**
- *  Adds a search keyword to the searchOptions
- *
- *  @param searchOptions an array of search options
- *  @param keyword a keyword term (ie. 'remote')
- *  @returns the modified search options
- */
-export function addSearchKeyword(
-    searchOptions: GlobalSearchOption[],
-    keyword: string
-): GlobalSearchOption[] {
-    const chip = { value: keyword, label: keyword, className: 'Select-create-option-placeholder' };
-    return [...searchOptions, chip];
-}
-
-/**
  *  Checks if the modifier exists in the searchOptions
  *
  *  @param {!Object[]} searchOptions an array of search options

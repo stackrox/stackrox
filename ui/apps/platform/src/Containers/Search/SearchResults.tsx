@@ -14,12 +14,7 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import {
-    addSearchModifier,
-    addSearchKeyword,
-    getUrlQueryStringForSearchFilter,
-    searchOptionsToSearchFilter,
-} from 'utils/searchUtils';
+import { getUrlQueryStringForSearchFilter, searchOptionsToSearchFilter } from 'utils/searchUtils';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { GlobalSearchOption } from 'types/search';
@@ -200,28 +195,36 @@ function SearchResults({
         setGlobalSearchCategory(selectedTab.category);
     }
 
-    const amendSearchOptions = (searchCategory: string, category: string, name: string) => {
-        let searchOptions = [...globalSearchOptions];
+    const amendSearchOptions = (searchCategory: string, name: string) => {
         if (name) {
-            searchOptions = addSearchModifier(
-                searchOptions,
-                `${mapping[searchCategory].name as string}:`
-            );
-            searchOptions = addSearchKeyword(searchOptions, name);
+            const searchModifier = `${mapping[searchCategory].name as string}:`;
+            return [
+                ...globalSearchOptions,
+                {
+                    value: searchModifier,
+                    label: searchModifier,
+                    type: 'categoryOption',
+                },
+                {
+                    value: name,
+                    label: name,
+                    className: 'Select-create-option-placeholder',
+                } as GlobalSearchOption,
+            ];
         }
-        return searchOptions;
+        return [...globalSearchOptions];
     };
 
     const onLinkHandler =
         (searchCategory: string, category: string, toURL: string, name: string) => () => {
-            const searchOptions = amendSearchOptions(searchCategory, category, name);
+            const searchOptions = amendSearchOptions(searchCategory, name);
             passthroughGlobalSearchOptions(searchOptions, category);
             onClose(toURL);
         };
 
     const onFilterLinkHandler =
         (searchCategory: string, category: string, toURL: string, name: string) => () => {
-            const searchOptions = amendSearchOptions(searchCategory, category, name);
+            const searchOptions = amendSearchOptions(searchCategory, name);
             passthroughGlobalSearchOptions(searchOptions, category);
             const searchFilter = searchOptionsToSearchFilter(searchOptions);
             let queryString = '';
