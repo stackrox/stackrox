@@ -1,6 +1,7 @@
 import static Services.waitForViolation
 
 import groups.Integration
+import groups.BAT
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.ScopeOuterClass
@@ -17,7 +18,7 @@ import spock.lang.Unroll
 import util.Env
 
 // Do not run tests on crio due to an issue with crio trying to pull images referenced by digest from gcr.io.
-@IgnoreIf({ !Env.CI_JOBNAME.contains("crio") })
+@IgnoreIf({ Env.CI_JOBNAME.contains("crio") })
 class ImageSignatureVerificationTest extends BaseSpecification {
     // https://issues.redhat.com/browse/ROX-6891
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
@@ -202,7 +203,7 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
 
     @Unroll
     @SuppressWarnings('LineLength')
-    @Category(Integration)
+    @Category([BAT, Integration])
     def "Check violations of policy '#policyName' for deployment '#deployment.name'"() {
         expect:
         "Verify deployment has expected violations"
