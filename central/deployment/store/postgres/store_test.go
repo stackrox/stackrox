@@ -55,7 +55,9 @@ func (s *DeploymentsStoreSuite) SetupTest() {
 }
 
 func (s *DeploymentsStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

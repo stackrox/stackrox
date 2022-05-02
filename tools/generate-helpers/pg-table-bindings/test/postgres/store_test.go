@@ -53,7 +53,9 @@ func (s *SinglekeyStoreSuite) SetupTest() {
 }
 
 func (s *SinglekeyStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

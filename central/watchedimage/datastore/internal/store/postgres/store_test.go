@@ -53,7 +53,9 @@ func (s *WatchedimagesStoreSuite) SetupTest() {
 }
 
 func (s *WatchedimagesStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

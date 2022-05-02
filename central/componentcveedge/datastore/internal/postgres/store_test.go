@@ -53,7 +53,9 @@ func (s *ImageComponentCveRelationsStoreSuite) SetupTest() {
 }
 
 func (s *ImageComponentCveRelationsStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

@@ -55,7 +55,9 @@ func (s *ProcessIndicatorsStoreSuite) SetupTest() {
 }
 
 func (s *ProcessIndicatorsStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

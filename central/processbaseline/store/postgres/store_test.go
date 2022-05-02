@@ -55,7 +55,9 @@ func (s *ProcessbaselinesStoreSuite) SetupTest() {
 }
 
 func (s *ProcessbaselinesStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

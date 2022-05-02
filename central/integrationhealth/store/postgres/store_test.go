@@ -53,7 +53,9 @@ func (s *IntegrationhealthStoreSuite) SetupTest() {
 }
 
 func (s *IntegrationhealthStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

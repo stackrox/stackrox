@@ -53,7 +53,9 @@ func (s *PolicyStoreSuite) SetupTest() {
 }
 
 func (s *PolicyStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 
