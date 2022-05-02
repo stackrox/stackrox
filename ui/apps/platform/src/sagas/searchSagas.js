@@ -1,15 +1,7 @@
 import { all, put, call } from 'redux-saga/effects';
 
-import {
-    mainPath,
-    clustersPathWithParam,
-    policiesPath,
-    imagesPath,
-    secretsPath,
-    networkPath,
-} from 'routePaths';
+import { mainPath, policiesPath, imagesPath, secretsPath, networkPath } from 'routePaths';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
-import { actions as clustersActions } from 'reducers/clusters';
 import { actions as policiesActions } from 'reducers/policies/search';
 import { actions as imagesActions } from 'reducers/images';
 import { actions as secretsActions } from 'reducers/secrets';
@@ -82,14 +74,6 @@ export default function* searches() {
             globalSearchActions.setGlobalSearchSuggestions,
             null,
             ''
-        ),
-        takeEveryNewlyMatchedLocation(
-            clustersPathWithParam,
-            getSearchOptions,
-            clustersActions.setClustersSearchModifiers,
-            clustersActions.setClustersSearchSuggestions,
-            clustersActions.setClustersSearchOptions,
-            `categories=CLUSTERS`
         ),
         // TODO: remove once policies is fully migrated over to PF
         takeEveryNewlyMatchedLocation(
