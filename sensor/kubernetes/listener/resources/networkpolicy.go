@@ -36,14 +36,14 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 		if oldNp, ok := old.(*networkingV1.NetworkPolicy); ok && oldNp != nil {
 			roxOldNetpol = networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: oldNp}.ToRoxNetworkPolicy()
 		}
-		sw := h.getSelector(roxNetpol, roxOldNetpol)
+		sel := h.getSelector(roxNetpol, roxOldNetpol)
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			h.netpolStore.Delete(roxNetpol.GetId(), roxNetpol.GetNamespace())
 		} else {
 			h.netpolStore.Upsert(roxNetpol)
 		}
 
-		h.updateDeploymentsFromStore(roxNetpol, sw)
+		h.updateDeploymentsFromStore(roxNetpol, sel)
 	}
 
 	return []*central.SensorEvent{

@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func getSelectorWrapper(svc *v1.Service) selectorWrap {
+func getSelector(svc *v1.Service) selector {
 	return createSelector(svc.Spec.Selector, false)
 }
 
@@ -191,12 +191,12 @@ func (suite *RouteAndServiceDispatcherTestSuite) TestManyRoutesMatchingAndDeleti
 		// After the creating of testRoute2Svc2
 		{
 			"UpdateExposuresForMatchingDeployments",
-			[]interface{}{"test-ns", getSelectorWrapper(testSvc2)},
+			[]interface{}{"test-ns", getSelector(testSvc2)},
 		},
 		// After the deletion of testRoute1Svc2
 		{
 			"UpdateExposuresForMatchingDeployments",
-			[]interface{}{"test-ns", getSelectorWrapper(testSvc2)},
+			[]interface{}{"test-ns", getSelector(testSvc2)},
 		},
 	}, suite.mockReconciler.orderedCalls)
 
