@@ -171,7 +171,8 @@ func (s *Schema) getParentRelationship() SchemaRelationship {
 
 // AllRelationships returns all SchemaRelationships this schema has.
 // It includes relationships to everything -- schemas this schema references, other schemas that
-// reference this schema, parent and children.
+// reference this schema, parent and children -- irrespective of whether a foreign key reference constraint
+// exists.
 func (s *Schema) AllRelationships() []SchemaRelationship {
 	out := make([]SchemaRelationship, len(s.References)+len(s.ReferencedBy))
 	copy(out, s.References)
