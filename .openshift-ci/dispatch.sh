@@ -37,6 +37,9 @@ case "$ci_job" in
     gke-upgrade-tests)
         "$ROOT/.openshift-ci/gke_upgrade_test.py"
         ;;
+    ui-unit-tests)
+        "$ROOT/.openshift-ci/ui-unit-tests.sh"
+        ;;
     *)
         # For ease of initial integration this function does not fail when the
         # job is unknown.
