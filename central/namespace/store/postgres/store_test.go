@@ -55,7 +55,9 @@ func (s *NamespacesStoreSuite) SetupTest() {
 }
 
 func (s *NamespacesStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

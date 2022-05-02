@@ -53,7 +53,9 @@ func (s *ClusterHealthStatusStoreSuite) SetupTest() {
 }
 
 func (s *ClusterHealthStatusStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

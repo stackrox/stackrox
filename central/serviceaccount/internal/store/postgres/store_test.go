@@ -55,7 +55,9 @@ func (s *ServiceaccountsStoreSuite) SetupTest() {
 }
 
 func (s *ServiceaccountsStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

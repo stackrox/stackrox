@@ -55,7 +55,9 @@ func (s *SecretsStoreSuite) SetupTest() {
 }
 
 func (s *SecretsStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

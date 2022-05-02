@@ -53,7 +53,9 @@ func (s *RolesStoreSuite) SetupTest() {
 }
 
 func (s *RolesStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

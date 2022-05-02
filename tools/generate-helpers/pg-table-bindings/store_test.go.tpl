@@ -61,7 +61,9 @@ func (s *{{$namePrefix}}StoreSuite) SetupTest() {
 }
 
 func (s *{{$namePrefix}}StoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

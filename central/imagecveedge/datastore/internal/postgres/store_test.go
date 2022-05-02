@@ -53,7 +53,9 @@ func (s *ImageCveRelationsStoreSuite) SetupTest() {
 }
 
 func (s *ImageCveRelationsStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

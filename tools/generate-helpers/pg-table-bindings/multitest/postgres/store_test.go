@@ -53,7 +53,9 @@ func (s *MultikeyStoreSuite) SetupTest() {
 }
 
 func (s *MultikeyStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 

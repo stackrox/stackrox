@@ -53,7 +53,9 @@ func (s *NodeCvesStoreSuite) SetupTest() {
 }
 
 func (s *NodeCvesStoreSuite) TearDownTest() {
-	s.pool.Close()
+	if s.pool != nil {
+		s.pool.Close()
+	}
 	s.envIsolator.RestoreAll()
 }
 
