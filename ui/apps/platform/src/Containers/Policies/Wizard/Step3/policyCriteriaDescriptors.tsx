@@ -130,6 +130,7 @@ export const imageSigningCriteriaName = 'Image Signature Verified By';
         type: 'text',
         placeholder: 'latest',
         canBooleanLogic: true,
+        featureFlagDependency: 'ROX_WHATEVER',
     },
 
     label: for legacy policy alert labels
@@ -148,6 +149,7 @@ export const imageSigningCriteriaName = 'Image Signature Verified By';
     defaultValue: the default value to set, if provided
     disabled: disables the field entirely
     reverse: will reverse boolean value on store
+    featureFlagDependency: optional property to filter descriptor by feature flag enabled or disabled
  */
 
 export type DescriptorOption = {
