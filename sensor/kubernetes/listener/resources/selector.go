@@ -22,20 +22,24 @@ type selector interface {
 }
 
 type labelWithLenImpl struct {
-	labels    labels.Labels
-	numLabels uint
+	labels map[string]string
 }
 
 func (l labelWithLenImpl) Has(label string) bool {
-	return l.labels.Has(label)
+	_, exists := l.labels[label]
+	return exists
 }
 
 func (l labelWithLenImpl) Get(label string) string {
-	return l.labels.Get(label)
+	return l.labels[label]
 }
 
 func (l labelWithLenImpl) Len() uint {
-	return l.numLabels
+	return uint(len(l.labels))
+}
+
+func CreateLabelsWithLen(labels map[string]string) labelWithLenImpl {
+	return labelWithLenImpl{labels}
 }
 
 // SelectorWrap holds a selector and information allowing for additional checks before matching

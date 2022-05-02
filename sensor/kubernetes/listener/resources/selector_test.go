@@ -139,7 +139,7 @@ func (s *SelectorWrapperTestSuite) TestLabelMatching() {
 			selectorWrap := createSelector(tt.givenSelectorLabels, tt.matchEmptySelector)
 			s.injectMockSelector(&selectorWrap)
 
-			receivedMatch := selectorWrap.Matches(labelWithLenImpl{labels.Set(tt.givenMatchingLabels), uint(len(tt.givenMatchingLabels))})
+			receivedMatch := selectorWrap.Matches(CreateLabelsWithLen(tt.givenMatchingLabels))
 			receivedSelectorMatchesFunctionCalled := s.hasMatchesBeenCalled
 
 			s.Equal(tt.expectedMatch, receivedMatch)
@@ -211,7 +211,7 @@ func (s *SelectorWrapperTestSuite) TestLabelMatchingWithDisjunctions() {
 			sw := sel.(selectorWrap)
 			s.injectMockSelector(&sw)
 
-			receivedMatch := sw.Matches(labelWithLenImpl{labels.Set(tt.givenMatchingLabels), uint(len(tt.givenMatchingLabels))})
+			receivedMatch := sw.Matches(CreateLabelsWithLen(tt.givenMatchingLabels))
 			receivedSelectorMatchesFunctionCalled := s.hasMatchesBeenCalled
 
 			s.Equal(tt.expectedMatch, receivedMatch)
