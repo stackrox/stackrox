@@ -429,12 +429,14 @@ func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, pre
 	for conn, currTS := range current {
 		prevTS, ok := previous[conn]
 		if !ok || currTS > prevTS {
+			log.Infof("current vs previous: %s vs %s", conn.toProto(currTS), conn.toProto(prevTS))
 			updates = append(updates, conn.toProto(currTS))
 		}
 	}
 
 	for conn, prevTS := range previous {
-		if _, ok := current[conn]; !ok {
+		if currTS, ok := current[conn]; !ok {
+			log.Infof("previous vs current: %s vs %s", conn.toProto(prevTS), conn.toProto(currTS))
 			updates = append(updates, conn.toProto(prevTS))
 		}
 	}
@@ -583,6 +585,7 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 			if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
 				t += tsOffset
 			}
+
 			status := h.connections[c]
 			if status == nil {
 				status = &connStatus{
@@ -592,6 +595,8 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 					status.firstSeen = t
 				}
 				h.connections[c] = status
+			} else {
+				log.Infof("%s: Saw %s -> %s (incoming=%t) again from %s", c.containerID, c.local, c.remote, c.incoming, h.hostname)
 			}
 			status.lastSeen = t
 		}
