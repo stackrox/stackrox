@@ -58,6 +58,9 @@ func init() {
 		schema.AddExtraResolver("Cluster", `vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Cluster", `vulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `vulnCounter(query: String): VulnerabilityCounter!`),
+		schema.AddExtraResolver("Cluster", `nodeVulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
+		schema.AddExtraResolver("Cluster", `nodeVulnCount(query: String): Int!`),
+		schema.AddExtraResolver("Cluster", `nodeVulnCounter(query: String): VulnerabilityCounter!`),
 		schema.AddExtraResolver("Cluster", `k8sVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Cluster", `k8sVulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `istioVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
@@ -551,6 +554,30 @@ func (resolver *clusterResolver) VulnCounter(ctx context.Context, args RawQuery)
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
 
 	return resolver.root.VulnCounter(ctx, RawQuery{Query: &query})
+}
+
+func (resolver *clusterResolver) NodeVulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulns")
+
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+
+	return resolver.root.NodeVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+}
+
+func (resolver *clusterResolver) NodeVulnCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnCount")
+
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+
+	return resolver.root.NodeVulnerabilityCount(ctx, RawQuery{Query: &query})
+}
+
+func (resolver *clusterResolver) NodeVulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnCounter")
+
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+
+	return resolver.root.NodeVulnCounter(ctx, RawQuery{Query: &query})
 }
 
 func (resolver *clusterResolver) K8sVulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
