@@ -12,8 +12,9 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
-func compileFKArgAndAttachToSchema(schema *walker.Schema, refs []string) []*walker.Schema {
-	refSchemas := make([]*walker.Schema, 0, len(refs))
+func parseReferencesAndInjectPeerSchemas(schema *walker.Schema, refs []string) (parsedRefs []parsedReference) {
+	schemasByObjType := make(map[string]*walker.Schema, len(refs))
+	parsedRefs = make([]parsedReference, 0, len(refs))
 	for _, ref := range refs {
 		refTable, refObjType := stringutils.Split2(ref, ":")
 		refMsgType := proto.MessageType(refObjType)
@@ -21,10 +22,16 @@ func compileFKArgAndAttachToSchema(schema *walker.Schema, refs []string) []*walk
 			log.Fatalf("could not find message for type: %s", refObjType)
 		}
 		refSchema := walker.Walk(refMsgType, refTable)
-		schema.WithReference(refSchema)
-		refSchemas = append(refSchemas, refSchema)
+		schemasByObjType[refObjType] = refSchema
+		parsedRefs = append(parsedRefs, parsedReference{
+			TypeName: refObjType,
+			Table:    refTable,
+		})
 	}
-	return refSchemas
+	schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+		return schemasByObjType[fmt.Sprintf("storage.%s", messageTypeName)]
+	})
+	return parsedRefs
 }
 
 func splitWords(s string) []string {

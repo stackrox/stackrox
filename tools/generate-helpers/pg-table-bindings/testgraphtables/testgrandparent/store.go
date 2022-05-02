@@ -222,7 +222,8 @@ func (s *storeImpl) copyFromTestgrandparent(ctx context.Context, tx pgx.Tx, objs
 		}
 	}
 
-	for _, obj := range objs {
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
 		if err = s.copyFromTestgrandparentEmbedded(ctx, tx, obj.GetId(), obj.GetEmbedded()...); err != nil {
 			return err
@@ -277,6 +278,7 @@ func (s *storeImpl) copyFromTestgrandparentEmbedded(ctx context.Context, tx pgx.
 	}
 
 	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
 		if err = s.copyFromTestgrandparentEmbeddedEmbedded2(ctx, tx, testgrandparent_Id, idx, obj.GetEmbedded2()...); err != nil {
 			return err

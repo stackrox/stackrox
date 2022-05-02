@@ -6,9 +6,11 @@ import (
 	"go/scanner"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
 	// Embed is used to import the template files
 	_ "embed"
@@ -17,11 +19,10 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/central/postgres/schema"
 	_ "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/tools/imports"
@@ -74,6 +75,9 @@ type properties struct {
 
 	// Indicates whether to generate only the schema. If set to true, only the schema is generated, and not store and indexer.
 	SchemaOnly bool
+
+	// Indicates the directory in which the generated schema file must go.
+	SchemaDirectory string
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -83,7 +87,10 @@ func renderFile(templateMap map[string]interface{}, temp func(s string) *templat
 	}
 	file := buf.Bytes()
 
+	importProcessingStart := time.Now()
 	formatted, err := imports.Process(templateFileName, file, nil)
+	importProcessingDuration := time.Since(importProcessingStart)
+
 	if err != nil {
 		target := scanner.ErrorList{}
 		if !errors.As(err, &target) {
@@ -99,7 +106,22 @@ func renderFile(templateMap map[string]interface{}, temp func(s string) *templat
 	if err := os.WriteFile(templateFileName, formatted, 0644); err != nil {
 		return err
 	}
+	if importProcessingDuration > time.Second {
+		absTemplatePath, err := filepath.Abs(templateFileName)
+		if err != nil {
+			absTemplatePath = templateFileName
+		}
+		log.Panicf("Import processing for file %q took more than 1 second (%s). This typically indicates that an import was "+
+			"not added to the Go template, which forced import processing to search through all types and magically "+
+			"add the import. Please add the import to the template; you can compare the imports in the generated file "+
+			"with the ones in the template, and add the missing one(s)", absTemplatePath, importProcessingDuration)
+	}
 	return nil
+}
+
+type parsedReference struct {
+	TypeName string
+	Table    string
 }
 
 func main() {
@@ -122,10 +144,12 @@ func main() {
 	c.Flags().StringSliceVar(&props.Refs, "references", []string{}, "additional foreign key references as <table_name:type>")
 	c.Flags().BoolVar(&props.JoinTable, "join-table", false, "indicates the schema represents a join table. The generation of mutating functions is skipped")
 	c.Flags().BoolVar(&props.SchemaOnly, "schema-only", false, "if true, generates only the schema and not store and index")
+	c.Flags().StringVar(&props.SchemaDirectory, "schema-directory", "", "the directory in which to generate the schema")
+	utils.Must(c.MarkFlagRequired("schema-directory"))
 
 	c.RunE = func(*cobra.Command, []string) error {
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
-		fmt.Println("Generating for", typ)
+		fmt.Println(readable.Time(time.Now()), "Generating for", typ)
 		mt := proto.MessageType(typ)
 		if mt == nil {
 			log.Fatalf("could not find message for type: %s", typ)
@@ -136,14 +160,16 @@ func main() {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
 
-		refs := compileFKArgAndAttachToSchema(schema, props.Refs)
+		parsedReferences := parseReferencesAndInjectPeerSchemas(schema, props.Refs)
 
 		permissionCheckerEnabled := props.PermissionChecker != ""
 		var searchCategory string
-		if asInt, err := strconv.Atoi(props.SearchCategory); err == nil {
-			searchCategory = fmt.Sprintf("SearchCategory(%d)", asInt)
-		} else {
-			searchCategory = fmt.Sprintf("SearchCategory_%s", props.SearchCategory)
+		if props.SearchCategory != "" {
+			if asInt, err := strconv.Atoi(props.SearchCategory); err == nil {
+				searchCategory = fmt.Sprintf("SearchCategory(%d)", asInt)
+			} else {
+				searchCategory = fmt.Sprintf("SearchCategory_%s", props.SearchCategory)
+			}
 		}
 		templateMap := map[string]interface{}{
 			"Type":              props.Type,
@@ -161,7 +187,7 @@ func main() {
 			},
 		}
 
-		if err := generateSchema(schema, refs); err != nil {
+		if err := generateSchema(schema, searchCategory, parsedReferences, props.SchemaDirectory); err != nil {
 			return err
 		}
 		if props.SchemaOnly {
@@ -193,46 +219,17 @@ func main() {
 	}
 }
 
-func generateSchema(s *walker.Schema, refs []*walker.Schema) error {
-	return generateSchemaRecursive(s, refs, set.NewStringSet(), schema.SchemaGenFS)
-}
-
-func generateSchemaRecursive(schema *walker.Schema, refs []*walker.Schema, visited set.StringSet, pkgPath string) error {
-	if !visited.Add(schema.Table) {
-		return nil
-	}
-
+func generateSchema(s *walker.Schema, searchCategory string, parsedReferences []parsedReference, dir string) error {
 	templateMap := map[string]interface{}{
-		"Schema":         schema,
-		"SearchCategory": "",
-		"Refs":           refs,
+		"Schema":         s,
+		"SearchCategory": searchCategory,
+		"References":     parsedReferences,
 	}
 
-	searchCategory, ok := typeToSearchCategoryMap[stringutils.GetAfter(schema.Type, ".")]
-	if ok {
-		templateMap["SearchCategory"] = fmt.Sprintf("v1.SearchCategory_%s", searchCategory)
-	}
-
-	if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(pkgPath, schema.Table)); err != nil {
+	if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(dir, s.Table)); err != nil {
 		return err
 	}
 
-	// No top-level schema has a parent unless attached synthetically.
-	for _, parent := range schema.ReferencedSchema {
-		if err := generateSchemaRecursive(parent, []*walker.Schema{}, visited, pkgPath); err != nil {
-			return err
-		}
-	}
-
-	for _, child := range schema.ReferencingSchema {
-		// If child is the embedded one, it has already been generated in the file above.
-		if child.EmbeddedIn == schema.Table {
-			continue
-		}
-		if err := generateSchemaRecursive(child, []*walker.Schema{}, visited, pkgPath); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 

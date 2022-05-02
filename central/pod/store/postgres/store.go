@@ -71,6 +71,7 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableDeploymentsStmt)
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTablePodsStmt)
 
 	return &storeImpl{
@@ -210,7 +211,8 @@ func (s *storeImpl) copyFromPods(ctx context.Context, tx pgx.Tx, objs ...*storag
 		}
 	}
 
-	for _, obj := range objs {
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
 		if err = s.copyFromPodsLiveInstances(ctx, tx, obj.GetId(), obj.GetLiveInstances()...); err != nil {
 			return err

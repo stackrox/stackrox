@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/stackrox/rox/central/globaldb"
@@ -24,7 +25,8 @@ var (
                    Namespace varchar,
                    ClusterId varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id)
+                   PRIMARY KEY(Id),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (DeploymentId) REFERENCES deployments(Id) ON DELETE CASCADE
                )
                `,
 		Indexes: []string{},
@@ -54,6 +56,13 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Pod)(nil)), "pods")
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.Deployment": DeploymentsSchema,
+		}
+
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PODS, "pods", (*storage.Pod)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema

@@ -60,13 +60,14 @@ func (s *ImagePostgresDataStoreTestSuite) SetupSuite() {
 	s.NoError(err)
 	s.db = pool
 
+	postgres.Destroy(s.ctx, s.db)
+
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
 	s.datastore = NewWithPostgres(postgres.New(s.ctx, s.db, false), postgres.NewIndexer(s.db), s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
 }
 
 func (s *ImagePostgresDataStoreTestSuite) TearDownSuite() {
 	s.envIsolator.RestoreAll()
-	postgres.Destroy(s.ctx, s.db)
 	s.db.Close()
 }
 
@@ -116,15 +117,11 @@ func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.NoError(err)
 	s.Len(images, 1)
 
-	// TODO: Count of 4 is incorrect as includes duplicates.
-	// TODO: Join generation, and sql search query generation in general needs to be changed.
-	//  We cannot simply joins tables using `=` and as it may result in duplicates.
-
 	// Search by CVE.
 	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, "cve1").ProtoQuery()
 	images, err = s.datastore.SearchRawImages(ctx, q)
 	s.NoError(err)
-	s.Len(images, 4)
+	s.Len(images, 2)
 
 	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, "cve3").ProtoQuery()
 	results, err = s.datastore.Search(ctx, q)

@@ -20,6 +20,7 @@ type context struct {
 	searchDisabled bool
 	ignorePK       bool
 	ignoreUnique   bool
+	ignoreFKs      bool
 }
 
 func (c context) Getter(name string) string {
@@ -44,20 +45,88 @@ func (c context) childContext(name string, searchDisabled bool, opts PostgresOpt
 		searchDisabled: c.searchDisabled || searchDisabled,
 		ignorePK:       c.ignorePK || opts.IgnorePrimaryKey,
 		ignoreUnique:   c.ignoreUnique || opts.IgnoreUniqueConstraint,
+		ignoreFKs:      c.ignoreFKs || opts.IgnoreChildFKs,
 	}
 }
 
-func recursiveChildFiltering(schema *Schema) {
-	for _, c := range schema.ReferencingSchema {
-		recursiveChildFiltering(c)
-	}
-	includedChildren := schema.ReferencingSchema[:0]
-	for _, child := range schema.ReferencingSchema {
-		if len(child.FieldsBySearchLabel()) > 0 {
+func removeTablesWithNoSearchableFields(schema *Schema) (shouldInclude bool) {
+	includedChildren := schema.Children[:0]
+	for _, child := range schema.Children {
+		if shouldIncludeChild := removeTablesWithNoSearchableFields(child); shouldIncludeChild {
 			includedChildren = append(includedChildren, child)
 		}
 	}
-	schema.ReferencingSchema = includedChildren
+	schema.Children = includedChildren
+	// If a child has searchable fields, then this field should be included, regardless of
+	// whether it has searchable fields itself.
+	if len(schema.Children) > 0 {
+		return true
+	}
+	for _, f := range schema.Fields {
+		if f.Search.Enabled || f.Options.Reference != nil {
+			return true
+		}
+	}
+	return false
+}
+
+func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
+	if len(parentPrimaryKeys) == 0 {
+		s.Fields = append(s.Fields, getSerializedField(s))
+	} else {
+		// Collect additional fields separately so we can put them in front of the field list
+		// (since these are primary keys, that is cleaner).
+		var additionalFields []Field
+		// Child tables represent tables that are stored in an array inside the parent.
+		// Rows in the child table do not have an id of their own.
+		// Instead, they are identified by their parent's primary key, and an index column (which
+		// represents the index of this specific child among the parent's children).
+		for _, parentPrimaryKey := range parentPrimaryKeys {
+			var columnNameInChild string
+			// If a column in a child table references a column "X" in the parent table, we
+			// name the column in the child "parent_table_name_X".
+			// We keep this name even in the grandchild, and do not continuously add prefixes in front.
+			// This is accomplished by only prefixing the table name if the column is not already a reference.
+			if parentPrimaryKey.Options.Reference == nil {
+				columnNameInChild = fmt.Sprintf("%s_%s", parentPrimaryKey.Schema.Table, parentPrimaryKey.ColumnName)
+			} else {
+				columnNameInChild = parentPrimaryKey.ColumnName
+			}
+			additionalFields = append(additionalFields, Field{
+				Schema: s,
+				Name:   columnNameInChild,
+				ObjectGetter: ObjectGetter{
+					value:    columnNameInChild,
+					variable: true,
+				},
+				ColumnName: columnNameInChild,
+				Type:       parentPrimaryKey.Type,
+				DataType:   parentPrimaryKey.DataType,
+				SQLType:    parentPrimaryKey.SQLType,
+				Options: PostgresOptions{
+					PrimaryKey: true,
+					Reference: &foreignKeyRef{
+						OtherSchema: parentPrimaryKey.Schema,
+						ColumnName:  parentPrimaryKey.ColumnName,
+					},
+				},
+			})
+		}
+		additionalFields = append(additionalFields, getIdxField(s))
+		s.Fields = append(additionalFields, s.Fields...)
+	}
+
+	if len(s.Children) > 0 {
+		currPrimaryKeys := s.PrimaryKeys()
+		for _, child := range s.Children {
+			addCommonFields(child, currPrimaryKeys...)
+		}
+	}
+}
+
+func postProcessSchema(s *Schema) {
+	removeTablesWithNoSearchableFields(s)
+	addCommonFields(s)
 }
 
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
@@ -70,18 +139,15 @@ func Walk(obj reflect.Type, table string) *Schema {
 	handleStruct(context{}, schema, obj.Elem())
 
 	// Post-process schema
-	recursiveChildFiltering(schema)
+	postProcessSchema(schema)
 
 	return schema
 }
 
 const defaultIndex = "btree"
 
-func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique bool) PostgresOptions {
-	opts := PostgresOptions{
-		IgnorePrimaryKey:       ignorePK,
-		IgnoreUniqueConstraint: ignoreUnique,
-	}
+func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignoreFKs bool) PostgresOptions {
+	var opts PostgresOptions
 
 	for _, field := range strings.Split(tag, ",") {
 		switch {
@@ -114,19 +180,27 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique bool) 
 		case field == "unique":
 			opts.Unique = !ignoreUnique
 		case strings.HasPrefix(field, "fk"):
-			// If we already have a field acting as foreign key use it as is rather than adding a redundant field using parentify.
-			typeName, ref := stringutils.Split2(field[strings.Index(field, "(")+1:strings.Index(field, ")")], ":")
-			opts.Reference = &foreignKeyRef{
-				TypeName:      typeName,
-				ProtoBufField: ref,
+			if ignoreFKs {
+				continue
 			}
+			typeName, ref := stringutils.Split2(field[strings.Index(field, "(")+1:strings.Index(field, ")")], ":")
+			if opts.Reference == nil {
+				opts.Reference = &foreignKeyRef{}
+			}
+			opts.Reference.TypeName = typeName
+			opts.Reference.ProtoBufField = ref
 		case field == "no-fk-constraint":
+			if ignoreFKs {
+				continue
+			}
 			// This column depends on a column in other table, but does not have a explicit referential constraint.
 			// i.e. a column without `REFERENCES other_table(col)` part.
 			if opts.Reference == nil {
 				opts.Reference = &foreignKeyRef{}
 			}
 			opts.Reference.NoConstraint = true
+		case field == "ignore-fks":
+			opts.IgnoreChildFKs = true
 		case field == "":
 		default:
 			// ignore for just right now
@@ -139,7 +213,7 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique bool) 
 func getProtoBufName(protoBufTag string) string {
 	for _, part := range strings.Split(protoBufTag, ",") {
 		if strings.HasPrefix(part, "name=") {
-			return strings.TrimPrefix(part, "name=")
+			return part[len("name="):]
 		}
 	}
 	return ""
@@ -188,7 +262,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		if strings.HasPrefix(structField.Name, "XXX") {
 			continue
 		}
-		opts := getPostgresOptions(structField.Tag.Get("sql"), len(schema.ReferencedSchema) == 0, ctx.ignorePK, ctx.ignoreUnique)
+		opts := getPostgresOptions(structField.Tag.Get("sql"), schema.Parent == nil, ctx.ignorePK, ctx.ignoreUnique, ctx.ignoreFKs)
 
 		if opts.Ignored {
 			continue
@@ -206,9 +280,6 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 				value: ctx.Getter(structField.Name),
 			},
 			ColumnName: ctx.Column(structField.Name),
-		}
-		if field.Options.Reference != nil {
-			field.Reference = field.Options.Reference.ProtoBufField
 		}
 
 		if dt, ok := simpleFieldsMap[structField.Type.Kind()]; ok {
@@ -244,34 +315,17 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			}
 
 			childSchema := &Schema{
-				ReferencedSchema: []*Schema{schema},
-				Table:            tableName(schema.Table, field.Name),
-				Type:             elemType.String(),
-				TypeName:         elemType.Elem().Name(),
-				ObjectGetter:     ctx.Getter(field.Name),
-				EmbeddedIn:       schema.Table,
+				Parent:       schema,
+				Table:        tableName(schema.Table, field.Name),
+				Type:         elemType.String(),
+				TypeName:     elemType.Elem().Name(),
+				ObjectGetter: ctx.Getter(field.Name),
 			}
-			idxField := Field{
-				Schema: childSchema,
-				Name:   "idx",
-				ObjectGetter: ObjectGetter{
-					variable: true,
-					value:    "idx",
-				},
-				ColumnName: "idx",
-				Type:       "int",
-				Options: PostgresOptions{
-					Ignored:    false,
-					Index:      "btree",
-					PrimaryKey: true,
-				},
-			}
-			childSchema.AddFieldWithType(idxField, Integer)
 
 			// Take all the primary keys of the parent and copy them into the child schema
 			// with references to the parent so we that we can create
-			schema.ReferencingSchema = append(schema.ReferencingSchema, childSchema)
-			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored, ignorePK: opts.IgnorePrimaryKey, ignoreUnique: opts.IgnoreUniqueConstraint}, childSchema, structField.Type.Elem().Elem())
+			schema.Children = append(schema.Children, childSchema)
+			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored, ignorePK: opts.IgnorePrimaryKey, ignoreUnique: opts.IgnoreUniqueConstraint, ignoreFKs: opts.IgnoreChildFKs}, childSchema, structField.Type.Elem().Elem())
 		case reflect.Struct:
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type)
 		case reflect.Uint8:

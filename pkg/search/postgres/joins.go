@@ -28,6 +28,24 @@ type join struct {
 
 type joins []*join
 
+func (j *joins) withSchemaRelationship(currSchema *walker.Schema, rel walker.SchemaRelationship) joins {
+	newJoins := make(joins, len(*j))
+	copy(newJoins, *j)
+	for _, mappedColumnName := range rel.MappedColumnNames {
+		newJoins = append(newJoins, &join{
+			lhs: &joinPart{
+				table:      currSchema.Table,
+				columnName: mappedColumnName.ColumnNameInThisSchema,
+			},
+			rhs: &joinPart{
+				table:      rel.OtherSchema.Table,
+				columnName: mappedColumnName.ColumnNameInOtherSchema,
+			},
+		})
+	}
+	return newJoins
+}
+
 func (j *joins) toSQLJoinClauseParts() *sqlJoinClauseParts {
 	if j == nil {
 		return nil
@@ -63,9 +81,9 @@ func getJoins(src *walker.Schema, destinations ...*walker.Schema) ([]string, map
 		if _, joinExists := joinMap[dst.Table]; joinExists {
 			continue
 		}
-		currJoins := &joins{}
-		if joinPathRecursive(src, dst, currJoins, set.NewStringSet()) {
-			joinMap[dst.Table] = currJoins.toSQLJoinClauseParts()
+		joinsToDest, found := findJoins(src, dst)
+		if found {
+			joinMap[dst.Table] = joinsToDest.toSQLJoinClauseParts()
 		}
 	}
 
@@ -79,62 +97,36 @@ func getJoins(src *walker.Schema, destinations ...*walker.Schema) ([]string, map
 	return tables.AsSortedSlice(func(i, j string) bool { return i < j }), joinStrMap
 }
 
-func joinPathRecursive(currSchema, dstSchema *walker.Schema, joins *joins, visited set.StringSet) bool {
-	if currSchema == nil || dstSchema == nil {
-		return false
-	}
+type bfsQueueElem struct {
+	joinsSoFar joins
+	currSchema *walker.Schema
+}
 
-	if !visited.Add(currSchema.Table) {
-		return false
-	}
+func findJoins(srcSchema, dstSchema *walker.Schema) (joins, bool) {
+	visited := set.NewStringSet()
 
-	if currSchema.Table == dstSchema.Table {
-		return true
-	}
-	if len(currSchema.ReferencedSchema) == 0 && len(currSchema.ReferencingSchema) == 0 {
-		return false
-	}
+	queue := []bfsQueueElem{{joinsSoFar: joins{}, currSchema: srcSchema}}
+	// We want to traverse shortest length from current schema to the other, so do it via BFS.
+	for len(queue) > 0 {
+		currElem := queue[0]
+		queue = queue[1:]
 
-	for _, parent := range currSchema.ReferencedSchema {
-		if !joinPathRecursive(parent, dstSchema, joins, visited) {
+		if !visited.Add(currElem.currSchema.Table) {
 			continue
 		}
 
-		// Since we are going from child to parent, foreign keys in current schema map to primary keys in parent.
-		for _, fk := range currSchema.ForeignKeysForTable(parent.Table) {
-			*joins = append(*joins, &join{
-				lhs: &joinPart{
-					table:      currSchema.Table,
-					columnName: fk.ColumnName,
-				},
-				rhs: &joinPart{
-					table:      parent.Table,
-					columnName: fk.Reference,
-				},
-			})
-		}
-		return true
-	}
-
-	for _, child := range currSchema.ReferencingSchema {
-		if !joinPathRecursive(child, dstSchema, joins, visited) {
-			continue
+		if currElem.currSchema == dstSchema {
+			return currElem.joinsSoFar, true
 		}
 
-		// Since we are going from parent to child, primary keys in current schema map to foreign keys in child.
-		for _, fk := range child.ForeignKeysForTable(currSchema.Table) {
-			*joins = append(*joins, &join{
-				lhs: &joinPart{
-					table:      currSchema.Table,
-					columnName: fk.Reference,
-				},
-				rhs: &joinPart{
-					table:      child.Table,
-					columnName: fk.ColumnName,
-				},
-			})
+		for _, rel := range currElem.currSchema.AllRelationships() {
+			newElem := bfsQueueElem{
+				joinsSoFar: currElem.joinsSoFar.withSchemaRelationship(currElem.currSchema, rel),
+				currSchema: rel.OtherSchema,
+			}
+			queue = append(queue, newElem)
 		}
-		return true
 	}
-	return false
+
+	return joins{}, false
 }

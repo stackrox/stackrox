@@ -7,7 +7,7 @@
 {{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
 
 {{- $ := . }}
-{{- $pks := .Schema.LocalPrimaryKeys }}
+{{- $pks := .Schema.PrimaryKeys }}
 
 {{- $singlePK := false }}
 {{- if eq (len $pks) 1 }}
@@ -21,24 +21,23 @@ package postgres
 
 import (
     "context"
+    "strings"
     "time"
 
     "github.com/gogo/protobuf/proto"
-    "github.com/jackc/pgx/v4/pgxpool"
     "github.com/jackc/pgx/v4"
+    "github.com/jackc/pgx/v4/pgxpool"
+    "github.com/pkg/errors"
     "github.com/stackrox/rox/central/globaldb"
     "github.com/stackrox/rox/central/metrics"
     pkgSchema "github.com/stackrox/rox/central/postgres/schema"
+    "github.com/stackrox/rox/central/role/resources"
     "github.com/stackrox/rox/generated/storage"
     "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
-    {{ if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) -}}
     "github.com/stackrox/rox/pkg/sac"
-    {{- end }}
-    {{- if .Obj.IsDirectlyScoped -}}
     "github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
-    {{- end }}
 )
 
 const (
@@ -111,9 +110,8 @@ pgutils.CreateTable(ctx, db, {{template "createTableStmtVar" $schema}})
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-    {{- /* No top-level has a parent unless attached synthetically. Therefore, start at the referenced tables, if any, so that create of current table succeeds. */ -}}
-    {{- range $idx, $parent := .Schema.ReferencedSchema }}
-    {{- template "createTable"  $parent}}
+    {{- range $reference := .Schema.References }}
+    {{- template "createTable" $reference.OtherSchema }}
     {{- end }}
     {{- template "createTable" .Schema}}
 
@@ -127,8 +125,8 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 
 {{- define "insertObject"}}
 {{- $schema := .schema }}
-func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{if not .joinTable}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.EmbeddedIn}}, idx int{{end}}{{end}}) error {
-    {{if not $schema.EmbeddedIn }}
+func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
+    {{if not $schema.Parent }}
     serialized, marshalErr := obj.Marshal()
     if marshalErr != nil {
         return marshalErr
@@ -137,7 +135,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
 
     values := []interface{} {
         // parent primary keys start
-        {{- range $idx, $field := $schema.ResolvedFields -}}
+        {{- range $field := $schema.DBColumnFields -}}
         {{- if eq $field.DataType "datetime" }}
         pgutils.NilOrTime({{$field.Getter "obj"}}),
         {{- else }}
@@ -145,25 +143,25 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
         {{- end}}
     }
 
-    finalStr := "INSERT INTO {{$schema.Table}} ({{template "commaSeparatedColumns" $schema.ResolvedFields }}) VALUES({{ valueExpansion (len $schema.ResolvedFields) }}) ON CONFLICT({{template "commaSeparatedColumns" $schema.ResolvedPrimaryKeys}}) DO UPDATE SET {{template "updateExclusions" $schema.ResolvedFields}}"
+    finalStr := "INSERT INTO {{$schema.Table}} ({{template "commaSeparatedColumns" $schema.DBColumnFields }}) VALUES({{ valueExpansion (len $schema.DBColumnFields) }}) ON CONFLICT({{template "commaSeparatedColumns" $schema.PrimaryKeys}}) DO UPDATE SET {{template "updateExclusions" $schema.DBColumnFields}}"
     _, err := tx.Exec(ctx, finalStr, values...)
     if err != nil {
         return err
     }
 
-    {{if $schema.ReferencingSchema}}
+    {{ if $schema.Children }}
     var query string
     {{end}}
 
-    {{range $idx, $child := $schema.ReferencingSchema}}
+    {{range $idx, $child := $schema.Children }}
     for childIdx, child := range obj.{{$child.ObjectGetter}} {
-        if err := {{ template "insertFunctionName" $child }}(ctx, tx, child{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIdx); err != nil {
+        if err := {{ template "insertFunctionName" $child }}(ctx, tx, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIdx); err != nil {
             return err
         }
     }
 
-    query = "delete from {{$child.Table}} where {{ range $idx, $field := $child.ParentKeys }}{{if $idx}} AND {{end}}{{$field.ColumnName}} = ${{add $idx 1}}{{end}} AND idx >= ${{add (len $child.ParentKeys) 1}}"
-    _, err = tx.Exec(ctx, query, {{ range $idx, $field := $schema.ParentKeys }}{{$field.Name}}, {{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}} len(obj.{{$child.ObjectGetter}}))
+    query = "delete from {{$child.Table}} where {{ range $idx, $field := $child.FieldsReferringToParent }}{{if $idx}} AND {{end}}{{$field.ColumnName}} = ${{add $idx 1}}{{end}} AND idx >= ${{add (len $child.FieldsReferringToParent) 1}}"
+    _, err = tx.Exec(ctx, query{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, len(obj.{{$child.ObjectGetter}}))
     if err != nil {
         return err
     }
@@ -172,7 +170,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
     return nil
 }
 
-{{range $idx, $child := $schema.ReferencingSchema}}{{ template "insertObject" dict "schema" $child "joinTable" false }}{{end}}
+{{range $idx, $child := $schema.Children}}{{ template "insertObject" dict "schema" $child "joinTable" false }}{{end}}
 {{- end}}
 
 {{- if not .JoinTable }}
@@ -184,20 +182,20 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
 
 {{- define "copyObject"}}
 {{- $schema := . }}
-func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, {{ range $idx, $field := $schema.ParentKeys }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
+func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, {{ range $idx, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
 
     inputRows := [][]interface{}{}
 
     var err error
 
-    {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.EmbeddedIn) }}
+    {{if and (eq (len $schema.PrimaryKeys) 1) (not $schema.Parent) }}
     // This is a copy so first we must delete the rows and re-add them
     // Which is essentially the desired behaviour of an upsert.
     var deletes []string
     {{end}}
 
     copyCols := []string {
-    {{range $idx, $field := $schema.ResolvedFields}}
+    {{range $idx, $field := $schema.DBColumnFields}}
         "{{$field.ColumnName|lowerCase}}",
     {{end}}
     }
@@ -207,7 +205,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
         {{/* If embedded, the top-level has the full serialized object */}}
-        {{if not $schema.EmbeddedIn }}
+        {{if not $schema.Parent }}
         serialized, marshalErr := obj.Marshal()
         if marshalErr != nil {
             return marshalErr
@@ -215,7 +213,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         {{end}}
 
         inputRows = append(inputRows, []interface{}{
-            {{ range $idx, $field := $schema.ResolvedFields }}
+            {{ range $idx, $field := $schema.DBColumnFields }}
             {{if eq $field.DataType "datetime"}}
             pgutils.NilOrTime({{$field.Getter "obj"}}),
             {{- else}}
@@ -223,12 +221,12 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
             {{end}}
         })
 
-        {{ if not $schema.EmbeddedIn }}
-        {{if eq (len $schema.LocalPrimaryKeys) 1}}
+        {{ if not $schema.Parent }}
+        {{if eq (len $schema.PrimaryKeys) 1}}
         // Add the id to be deleted.
-        deletes = append(deletes, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
+        deletes = append(deletes, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
         {{else}}
-        if _, err := tx.Exec(ctx, deleteStmt, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}}); err != nil {
+        if _, err := tx.Exec(ctx, deleteStmt, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}}); err != nil {
             return err
         }
 
@@ -239,7 +237,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         if (idx + 1) % batchSize == 0 || idx == len(objs) - 1  {
             // copy does not upsert so have to delete first.  parent deletion cascades so only need to
             // delete for the top level parent
-            {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.EmbeddedIn) }}
+            {{if and ((eq (len $schema.PrimaryKeys) 1)) (not $schema.Parent) }}
             _, err = tx.Exec(ctx, deleteManyStmt, deletes);
             if err != nil {
                 return err
@@ -259,14 +257,11 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         }
     }
 
-    {{if $schema.ReferencingSchema}}
-    {{if not $schema.EmbeddedIn }}
-    for _, obj := range objs {
-    {{else}}
+    {{if $schema.Children }}
     for idx, obj := range objs {
-    {{end}}
-        {{range $idx, $child := $schema.ReferencingSchema}}
-        if err = s.{{ template "copyFunctionName" $child }}(ctx, tx{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
+        _ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
+        {{range $child := $schema.Children }}
+        if err = s.{{ template "copyFunctionName" $child }}(ctx, tx{{ range $idx, $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
             return err
         }
         {{- end}}
@@ -275,7 +270,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
     return err
 }
-{{range $idx, $child := $schema.ReferencingSchema}}{{ template "copyObject" $child }}{{end}}
+{{range $child := $schema.Children}}{{ template "copyObject" $child }}{{end}}
 {{- end}}
 
 {{- if not .JoinTable }}
@@ -697,10 +692,10 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 {{- $schema := . }}
 func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *pgxpool.Pool) {
     _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{$schema.Table}} CASCADE")
-    {{range $idx, $child := $schema.ReferencingSchema}}{{ template "dropTableFunctionName" $child }}(ctx, db)
+    {{range $child := $schema.Children}}{{ template "dropTableFunctionName" $child }}(ctx, db)
     {{end}}
 }
-{{range $idx, $child := $schema.ReferencingSchema}}{{ template "dropTable" $child }}{{end}}
+{{range $child := $schema.Children}}{{ template "dropTable" $child }}{{end}}
 {{- end}}
 
 {{template "dropTable" .Schema}}

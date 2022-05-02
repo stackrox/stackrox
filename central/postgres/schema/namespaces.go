@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/stackrox/rox/central/globaldb"
@@ -38,8 +39,14 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NamespaceMetadata)(nil)), "namespaces").
-			WithReference(ClustersSchema)
+		schema = walker.Walk(reflect.TypeOf((*storage.NamespaceMetadata)(nil)), "namespaces")
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.Cluster": ClustersSchema,
+		}
+
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NAMESPACES, "namespaces", (*storage.NamespaceMetadata)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
