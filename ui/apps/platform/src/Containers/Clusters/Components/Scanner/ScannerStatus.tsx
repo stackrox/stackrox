@@ -1,6 +1,8 @@
 import React from 'react';
 
 import { DetailedTooltipOverlay, Tooltip } from '@stackrox/ui-components';
+import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
+
 import { ClusterHealthStatus } from '../../clusterTypes';
 import {
     delayedScannerStatusStyle,
@@ -8,7 +10,6 @@ import {
     isDelayedSensorHealthStatus,
 } from '../../cluster.helpers';
 import HealthLabelWithDelayed from '../HealthLabelWithDelayed';
-import { getDistanceStrictAsPhrase } from '../../../../utils/dateUtils';
 import HealthStatusNotApplicable from '../HealthStatusNotApplicable';
 import HealthStatus from '../HealthStatus';
 import ScannerStatusTotals from './ScannerStatusTotals';
