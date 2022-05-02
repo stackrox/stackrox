@@ -73,15 +73,15 @@ func or(sels ...selector) selector {
 
 type selectorWrapOption func(*selectorWrap)
 
-// EmptyMatchesNothing means that a set with no labels should not match with anything
-func EmptyMatchesNothing() selectorWrapOption {
+// emptyMatchesNothing means that a set with no labels should not match with anything
+func emptyMatchesNothing() selectorWrapOption {
 	return func(sw *selectorWrap) {
 		sw.matchNil = false
 	}
 }
 
-// EmptyMatchesEverything means that a set with no labels should match with everything
-func EmptyMatchesEverything() selectorWrapOption {
+// emptyMatchesEverything means that a set with no labels should match with everything
+func emptyMatchesEverything() selectorWrapOption {
 	return func(sw *selectorWrap) {
 		sw.matchNil = true
 	}
