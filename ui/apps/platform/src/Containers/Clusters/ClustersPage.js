@@ -1,8 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { generatePath } from 'react-router-dom';
-import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
 import { useQuery } from '@apollo/client';
 import { HashLink } from 'react-router-hash-link';
 
@@ -11,8 +9,6 @@ import URLSearchInput from 'Components/URLSearchInput';
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
-import { actions as clustersActions } from 'reducers/clusters';
-import { selectors } from 'reducers';
 import { clustersBasePath, clustersPathWithParam, integrationsPath } from 'routePaths';
 import parseURL from 'utils/URLParser';
 
@@ -115,12 +111,4 @@ ClustersPage.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
 };
 
-const mapStateToProps = createStructuredSelector({
-    searchOptions: selectors.getClustersSearchOptions,
-});
-
-const mapDispatchToProps = {
-    setSearchOptions: clustersActions.setClustersSearchOptions,
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(ClustersPage);
+export default ClustersPage;
