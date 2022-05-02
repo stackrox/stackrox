@@ -1,18 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
-import { connect } from 'react-redux';
-
-import { selectors } from 'reducers';
-import { createStructuredSelector } from 'reselect';
 
 import * as Icon from 'react-feather';
 import { severityLabels } from 'messages/common';
 import { severityColorMap } from 'constants/severityColors';
 import TwoLevelPieChart from 'Components/visuals/TwoLevelPieChart';
+import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import severityPropType from './severityPropTypes';
 
-const ViolationsByPolicyCategory = ({ data, history }) => {
+const ViolationsByPolicyCategory = ({ data, history, clusters }) => {
     if (!data) {
         return '';
     }
@@ -22,9 +19,13 @@ const ViolationsByPolicyCategory = ({ data, history }) => {
             value: parseInt(d.count, 10),
             color: severityColorMap[d.severity],
             onClick: () => {
-                history.push(
-                    `/main/violations?category=${policyType.group}&severity=${d.severity}`
-                );
+                const searchFilter = {
+                    Severity: d.severity,
+                    Category: policyType.group,
+                    Cluster: clusters,
+                };
+                const searchString = getUrlQueryStringForSearchFilter(searchFilter);
+                history.push(`/main/violations?${searchString}`);
             },
         }));
         return (
@@ -64,14 +65,12 @@ ViolationsByPolicyCategory.propTypes = {
     history: PropTypes.shape({
         push: PropTypes.func.isRequired,
     }).isRequired,
+    clusters: PropTypes.arrayOf(PropTypes.string),
 };
 
 ViolationsByPolicyCategory.defaultProps = {
     data: [],
+    clusters: [],
 };
 
-const mapStateToProps = createStructuredSelector({
-    data: selectors.getAlertCountsByPolicyCategories,
-});
-
-export default withRouter(connect(mapStateToProps, null)(ViolationsByPolicyCategory));
+export default withRouter(ViolationsByPolicyCategory);

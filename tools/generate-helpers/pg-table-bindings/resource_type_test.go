@@ -31,14 +31,14 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.Email{}, resourceType: permissionChecker, permissionChecker: true},
 	} {
 		tc := tc
-		t.Run(fmt.Sprintf("%T (join: %t, perm: %t) -> %s", tc.typ, tc.joinTable, tc.permissionChecker, tc.resourceType), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%T (join: %t, perm: %t) -> %d", tc.typ, tc.joinTable, tc.permissionChecker, tc.resourceType), func(t *testing.T) {
 			actual := getResourceType(
 				fmt.Sprintf("%T", tc.typ),
 				walker.Walk(reflect.TypeOf(tc.typ), ""),
 				tc.permissionChecker,
 				tc.joinTable,
 			)
-			assert.Equal(t, tc.resourceType.String(), actual.String())
+			assert.Equal(t, tc.resourceType, actual)
 		})
 	}
 

@@ -3,11 +3,16 @@
 package schema
 
 import (
+	"reflect"
+
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 var (
-	// CreateTableClusterinitbundlesStmt holds the create statement for table `Clusterinitbundles`.
+	// CreateTableClusterinitbundlesStmt holds the create statement for table `clusterinitbundles`.
 	CreateTableClusterinitbundlesStmt = &postgres.CreateStmts{
 		Table: `
                create table if not exists clusterinitbundles (
@@ -19,4 +24,15 @@ var (
 		Indexes:  []string{},
 		Children: []*postgres.CreateStmts{},
 	}
+
+	// ClusterinitbundlesSchema is the go schema for table `clusterinitbundles`.
+	ClusterinitbundlesSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("clusterinitbundles")
+		if schema != nil {
+			return schema
+		}
+		schema = walker.Walk(reflect.TypeOf((*storage.InitBundleMeta)(nil)), "clusterinitbundles")
+		globaldb.RegisterTable(schema)
+		return schema
+	}()
 )

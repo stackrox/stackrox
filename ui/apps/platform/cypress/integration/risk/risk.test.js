@@ -2,6 +2,11 @@ import { selectors as RiskPageSelectors, url, errorMessages } from '../../consta
 import { selectors as searchSelectors } from '../../constants/SearchPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
+import {
+    visitRiskDeployments,
+    viewRiskDeploymentByName,
+    viewRiskDeploymentInNetworkGraph,
+} from '../../helpers/risk';
 
 describe('Risk page', () => {
     withAuth();
@@ -103,14 +108,15 @@ describe('Risk page', () => {
             cy.get(searchSelectors.pageSearch.input).type('{esc}'); // close the drop-down menu
             cy.get(RiskPageSelectors.sidePanel.tabs).should('not.exist');
         });
+    });
 
+    describe('with actual API', () => {
         it('should navigate to network page with selected deployment', () => {
-            mockGetDeployment();
-            cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
-            cy.wait('@firstDeployment');
+            visitRiskDeployments();
+            viewRiskDeploymentByName('central');
+            viewRiskDeploymentInNetworkGraph();
 
-            cy.get(RiskPageSelectors.viewDeploymentsInNetworkGraphButton).click({ force: true });
-            cy.url().should('contain', '/main/network');
+            cy.location('pathname').should('match', /^\/main\/network\/[-0-9a-z]+$/);
         });
     });
 

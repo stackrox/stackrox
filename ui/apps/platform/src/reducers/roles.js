@@ -15,7 +15,6 @@ export const types = {
     SELECTED_ROLE: 'roles/SELECTED_ROLE',
     SAVE_ROLE: 'roles/SAVE_ROLE',
     DELETE_ROLE: 'roles/DELETE_ROLE',
-    FETCH_RESOURCES: createFetchingActionTypes('roles/FETCH_RESOURCES'),
 };
 
 export const actions = {
@@ -33,19 +32,11 @@ export const actions = {
         type: types.DELETE_ROLE,
         id,
     }),
-    fetchResources: createFetchingActions(types.FETCH_RESOURCES),
 };
 
 const roles = (state = [], action) => {
     if (action.type === types.FETCH_ROLES.SUCCESS) {
         return isEqual(action.response.roles, state) ? state : action.response.roles;
-    }
-    return state;
-};
-
-const resources = (state = [], action) => {
-    if (action.type === types.FETCH_RESOURCES.SUCCESS) {
-        return isEqual(action.response.resources, state) ? state : action.response.resources;
     }
     return state;
 };
@@ -101,7 +92,6 @@ const isLoading = (state = true, action) => {
 
 const reducer = combineReducers({
     roles,
-    resources,
     selectedRole,
     userRolePermissions,
     error,
@@ -109,7 +99,6 @@ const reducer = combineReducers({
 });
 
 const getRoles = (state) => state.roles;
-const getResources = (state) => state.resources;
 const getSelectedRole = (state) => state.selectedRole;
 const getUserRolePermissions = (state) => state.userRolePermissions;
 const getUserRolePermissionsError = (state) => state.error;
@@ -135,7 +124,6 @@ export const getHasReadWritePermission = (resource, userRolePermissionsArg) => {
 
 export const selectors = {
     getRoles,
-    getResources,
     getSelectedRole,
     getUserRolePermissions,
     getUserRolePermissionsError,

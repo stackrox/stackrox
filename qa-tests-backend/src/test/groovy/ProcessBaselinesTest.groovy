@@ -12,7 +12,7 @@ import groups.BAT
 import io.stackrox.proto.storage.ProcessBaselineOuterClass
 import objects.Deployment
 
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 
 import org.junit.experimental.categories.Category
 

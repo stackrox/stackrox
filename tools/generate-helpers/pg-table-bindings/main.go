@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"go/scanner"
 	"log"
 	"os"
-	"path"
+	"strconv"
+	"strings"
 	"text/template"
 
 	// Embed is used to import the template files
@@ -13,14 +15,15 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/golang/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/central/postgres/schema"
 	_ "github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/tools/generate-helpers/common/packagenames"
 	"golang.org/x/tools/imports"
 )
 
@@ -57,7 +60,6 @@ type properties struct {
 	ObjectPathName string
 	Singular       string
 	WriteOptions   bool
-	OptionsPath    string
 
 	PermissionChecker string
 
@@ -69,6 +71,9 @@ type properties struct {
 	// When set to true, it means that the schema represents a join table. The generation of mutating functions
 	// such as inserts, updates, deletes, is skipped. This is because join tables should be filled from parents.
 	JoinTable bool
+
+	// Indicates whether to generate only the schema. If set to true, only the schema is generated, and not store and indexer.
+	SchemaOnly bool
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -80,6 +85,15 @@ func renderFile(templateMap map[string]interface{}, temp func(s string) *templat
 
 	formatted, err := imports.Process(templateFileName, file, nil)
 	if err != nil {
+		target := scanner.ErrorList{}
+		if !errors.As(err, &target) {
+			fmt.Println(string(file))
+			return err
+		}
+		e := target[0]
+		fileLines := strings.Split(string(file), "\n")
+		fmt.Printf("There is an error in following snippet: %s\n", e.Msg)
+		fmt.Println(strings.Join(fileLines[mathutil.MaxInt(0, e.Pos.Line-2):mathutil.MinInt(len(fileLines), e.Pos.Line+1)], "\n"))
 		return err
 	}
 	if err := os.WriteFile(templateFileName, formatted, 0644); err != nil {
@@ -103,11 +117,11 @@ func main() {
 	utils.Must(c.MarkFlagRequired("table"))
 
 	c.Flags().StringVar(&props.Singular, "singular", "", "the singular name of the object")
-	c.Flags().StringVar(&props.OptionsPath, "options-path", "/index/mappings", "path to write out the options to")
 	c.Flags().StringVar(&props.SearchCategory, "search-category", "", "the search category to index under")
 	c.Flags().StringVar(&props.PermissionChecker, "permission-checker", "", "the permission checker that should be used")
 	c.Flags().StringSliceVar(&props.Refs, "references", []string{}, "additional foreign key references as <table_name:type>")
 	c.Flags().BoolVar(&props.JoinTable, "join-table", false, "indicates the schema represents a join table. The generation of mutating functions is skipped")
+	c.Flags().BoolVar(&props.SchemaOnly, "schema-only", false, "if true, generates only the schema and not store and index")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
@@ -122,28 +136,36 @@ func main() {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
 
-		compileFKArgAndAttachToSchema(schema, props.Refs)
+		refs := compileFKArgAndAttachToSchema(schema, props.Refs)
 
 		permissionCheckerEnabled := props.PermissionChecker != ""
-		resourceType := getResourceType(props.Type, schema, permissionCheckerEnabled, props.JoinTable)
+		var searchCategory string
+		if asInt, err := strconv.Atoi(props.SearchCategory); err == nil {
+			searchCategory = fmt.Sprintf("SearchCategory(%d)", asInt)
+		} else {
+			searchCategory = fmt.Sprintf("SearchCategory_%s", props.SearchCategory)
+		}
 		templateMap := map[string]interface{}{
 			"Type":              props.Type,
 			"TrimmedType":       stringutils.GetAfter(props.Type, "."),
 			"Table":             props.Table,
 			"Schema":            schema,
-			"SearchCategory":    fmt.Sprintf("SearchCategory_%s", props.SearchCategory),
-			"OptionsPath":       path.Join(packagenames.Rox, props.OptionsPath),
+			"SearchCategory":    searchCategory,
 			"JoinTable":         props.JoinTable,
 			"PermissionChecker": props.PermissionChecker,
-			"ResourceType":      resourceType.String(),
-		}
-		if resourceType == directlyScoped {
-			templateMap["ClusterGetter"] = clusterGetter(schema)
-			templateMap["NamespaceGetter"] = namespaceGetter(schema)
+			"Obj": object{
+				storageType:              props.Type,
+				permissionCheckerEnabled: permissionCheckerEnabled,
+				isJoinTable:              props.JoinTable,
+				schema:                   schema,
+			},
 		}
 
-		if err := generateSchema(schema); err != nil {
+		if err := generateSchema(schema, refs); err != nil {
 			return err
+		}
+		if props.SchemaOnly {
+			return nil
 		}
 		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
 			return err
@@ -171,35 +193,43 @@ func main() {
 	}
 }
 
-func generateSchema(s *walker.Schema) error {
-	return generateSchemaRecursive(s, set.NewStringSet(), schema.SchemaGenFS)
+func generateSchema(s *walker.Schema, refs []*walker.Schema) error {
+	return generateSchemaRecursive(s, refs, set.NewStringSet(), schema.SchemaGenFS)
 }
 
-func generateSchemaRecursive(schema *walker.Schema, visited set.StringSet, pkgPath string) error {
+func generateSchemaRecursive(schema *walker.Schema, refs []*walker.Schema, visited set.StringSet, pkgPath string) error {
 	if !visited.Add(schema.Table) {
 		return nil
 	}
 
 	templateMap := map[string]interface{}{
-		"Schema": schema,
+		"Schema":         schema,
+		"SearchCategory": "",
+		"Refs":           refs,
 	}
+
+	searchCategory, ok := typeToSearchCategoryMap[stringutils.GetAfter(schema.Type, ".")]
+	if ok {
+		templateMap["SearchCategory"] = fmt.Sprintf("v1.SearchCategory_%s", searchCategory)
+	}
+
 	if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(pkgPath, schema.Table)); err != nil {
 		return err
 	}
 
 	// No top-level schema has a parent unless attached synthetically.
-	for _, parent := range schema.Parents {
-		if err := generateSchemaRecursive(parent, visited, pkgPath); err != nil {
+	for _, parent := range schema.ReferencedSchema {
+		if err := generateSchemaRecursive(parent, []*walker.Schema{}, visited, pkgPath); err != nil {
 			return err
 		}
 	}
 
-	for _, child := range schema.Children {
+	for _, child := range schema.ReferencingSchema {
 		// If child is the embedded one, it has already been generated in the file above.
 		if child.EmbeddedIn == schema.Table {
 			continue
 		}
-		if err := generateSchemaRecursive(child, visited, pkgPath); err != nil {
+		if err := generateSchemaRecursive(child, []*walker.Schema{}, visited, pkgPath); err != nil {
 			return err
 		}
 	}

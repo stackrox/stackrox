@@ -22,7 +22,7 @@ import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
 import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
-import DownloadCAConfigBundle from '../ClusterInitBundles/DownloadCAConfigBundle';
+import DownloadCAConfigBundle from './DownloadCAConfigBundle';
 
 function getNewButtonText(type) {
     if (type === 'apitoken') {
@@ -59,9 +59,9 @@ function IntegrationsTable({
     } = useTableSelection<Integration>(integrations);
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const columns = tableColumnDescriptor[source][type].filter(({ featureFlagDependency }) => {
-        if (typeof featureFlagDependency === 'string') {
-            return isFeatureFlagEnabled(featureFlagDependency);
+    const columns = tableColumnDescriptor[source][type].filter((integration) => {
+        if (typeof integration.featureFlagDependency === 'string') {
+            return isFeatureFlagEnabled(integration.featureFlagDependency);
         }
         return true;
     });

@@ -87,6 +87,9 @@ create_cluster() {
     else
         die "Support is missing for this CI environment"
     fi
+    # lowercase
+    tags="${tags,,}"
+    labels="${labels,,}"
 
     ### Network Sizing ###
     # The overall subnetwork ("--create-subnetwork") is used for nodes.

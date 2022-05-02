@@ -48,16 +48,16 @@ func (c context) childContext(name string, searchDisabled bool, opts PostgresOpt
 }
 
 func recursiveChildFiltering(schema *Schema) {
-	for _, c := range schema.Children {
+	for _, c := range schema.ReferencingSchema {
 		recursiveChildFiltering(c)
 	}
-	includedChildren := schema.Children[:0]
-	for _, child := range schema.Children {
+	includedChildren := schema.ReferencingSchema[:0]
+	for _, child := range schema.ReferencingSchema {
 		if len(child.FieldsBySearchLabel()) > 0 {
 			includedChildren = append(includedChildren, child)
 		}
 	}
-	schema.Children = includedChildren
+	schema.ReferencingSchema = includedChildren
 }
 
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
@@ -102,6 +102,8 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique bool) 
 			// primary key since the owning entity's primary key is what we'd like to use
 			opts.IgnorePrimaryKey = true
 
+		case field == "id":
+			opts.ID = true
 		case field == "pk":
 			// if we have a child object, we don't want to propagate its primary key
 			// an example of this is process_indicator.  It is its own object
@@ -118,6 +120,13 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique bool) 
 				TypeName:      typeName,
 				ProtoBufField: ref,
 			}
+		case field == "no-fk-constraint":
+			// This column depends on a column in other table, but does not have a explicit referential constraint.
+			// i.e. a column without `REFERENCES other_table(col)` part.
+			if opts.Reference == nil {
+				opts.Reference = &foreignKeyRef{}
+			}
+			opts.Reference.NoConstraint = true
 		case field == "":
 		default:
 			// ignore for just right now
@@ -179,7 +188,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 		if strings.HasPrefix(structField.Name, "XXX") {
 			continue
 		}
-		opts := getPostgresOptions(structField.Tag.Get("sql"), len(schema.Parents) == 0, ctx.ignorePK, ctx.ignoreUnique)
+		opts := getPostgresOptions(structField.Tag.Get("sql"), len(schema.ReferencedSchema) == 0, ctx.ignorePK, ctx.ignoreUnique)
 
 		if opts.Ignored {
 			continue
@@ -235,12 +244,12 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			}
 
 			childSchema := &Schema{
-				Parents:      []*Schema{schema},
-				Table:        tableName(schema.Table, field.Name),
-				Type:         elemType.String(),
-				TypeName:     elemType.Elem().Name(),
-				ObjectGetter: ctx.Getter(field.Name),
-				EmbeddedIn:   schema.Table,
+				ReferencedSchema: []*Schema{schema},
+				Table:            tableName(schema.Table, field.Name),
+				Type:             elemType.String(),
+				TypeName:         elemType.Elem().Name(),
+				ObjectGetter:     ctx.Getter(field.Name),
+				EmbeddedIn:       schema.Table,
 			}
 			idxField := Field{
 				Schema: childSchema,
@@ -261,7 +270,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 
 			// Take all the primary keys of the parent and copy them into the child schema
 			// with references to the parent so we that we can create
-			schema.Children = append(schema.Children, childSchema)
+			schema.ReferencingSchema = append(schema.ReferencingSchema, childSchema)
 			handleStruct(context{searchDisabled: ctx.searchDisabled || searchOpts.Ignored, ignorePK: opts.IgnorePrimaryKey, ignoreUnique: opts.IgnoreUniqueConstraint}, childSchema, structField.Type.Elem().Elem())
 		case reflect.Struct:
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type)

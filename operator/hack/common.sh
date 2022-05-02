@@ -65,6 +65,21 @@ function retry() {
   return 1
 }
 
+function check_version_tag() {
+  local -r version_tag="$1"
+  local -r allow_dirty_tag="$2"
+
+  if [[ "$version_tag" == *-dirty ]]; then
+    log "Target image tag has -dirty suffix."
+    if [[ "$allow_dirty_tag" == false ]]; then
+      log "Cannot install from *-dirty image tag. Please, use 'deploy-dirty-tag-via-olm' command or add '--allow-dirty-tag' flag if you need to install dirty tagged image."
+      return 1
+    fi
+  fi
+
+  return 0
+}
+
 function approve_install_plan() {
   local -r operator_ns="$1"
   local -r version_tag="$2"

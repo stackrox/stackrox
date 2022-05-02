@@ -8,12 +8,15 @@ type UseURLPaginationResult = {
     setPerPage: (perPage: number) => void;
 };
 
+function safeNumber(val: unknown, defaultVal: number) {
+    const parsed = Number(val);
+
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : defaultVal;
+}
+
 function useURLPagination(defaultPerPage: number): UseURLPaginationResult {
-    const [page, setPageString] = useURLParameter<string | undefined>('page', '1');
-    const [perPage, setPerPageString] = useURLParameter<string | undefined>(
-        'perPage',
-        `${defaultPerPage}`
-    );
+    const [page, setPageString] = useURLParameter('page', '1');
+    const [perPage, setPerPageString] = useURLParameter('perPage', `${defaultPerPage}`);
     const setPage = useCallback(
         (num: number) => setPageString(num > 1 ? String(num) : undefined),
         [setPageString]
@@ -23,8 +26,8 @@ function useURLPagination(defaultPerPage: number): UseURLPaginationResult {
         [setPerPageString, defaultPerPage]
     );
     return {
-        page: Number(page),
-        perPage: Number(perPage),
+        page: safeNumber(page, 1),
+        perPage: safeNumber(perPage, defaultPerPage),
         setPage,
         setPerPage,
     };

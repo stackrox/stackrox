@@ -8,7 +8,6 @@ import (
 	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/scheduler"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -35,9 +34,6 @@ func initialize() {
 
 // Singleton provides the instance of Manager to use.
 func Singleton() Manager {
-	if !features.VulnReporting.Enabled() {
-		return nil
-	}
 	once.Do(initialize)
 	return instance
 }

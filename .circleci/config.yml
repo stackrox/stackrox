@@ -21,6 +21,15 @@ runOnlyOnReleaseBuilds: &runOnlyOnReleaseBuilds
     branches:
       ignore: /.*/
 
+# This runs a command only on rc and release builds,
+# which is a tagged build with a tag matching the below regex.
+runOnlyOnReleaseAndReleaseCandidateBuilds: &runOnlyOnReleaseAndReleaseCandidateBuilds
+  filters:
+    tags:
+      only: /^\d+(\.\d+)?\.\d+\.\d+(-rc\.\d+)?$/
+    branches:
+      ignore: /.*/
+
 runOnAllTagsWithQuayIOPullCtx: &runOnAllTagsWithQuayIOPullCtx
   <<: *runOnAllTags
   context: quay-rhacs-eng-readonly
@@ -92,12 +101,15 @@ saveGoLintCache: &saveGoLintCache
     - /home/circleci/.cache/golangci-lint
     - /go/pkg/mod
 
-goModCacheKey: &goModCacheKey 'rox-go-pkg-mod-v3-{{ checksum "go.sum" }}'
 restoreGoModCache: &restoreGoModCache
   restore_cache:
     name: Restore Go module cache
     keys:
-      - *goModCacheKey
+      - rox-go-pkg-mod-v3-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-{{ .Revision }}
+      - rox-go-pkg-mod-v3-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-
+      - rox-go-pkg-mod-v3-{{ .Environment.CIRCLE_JOB }}-master-
+      - rox-go-pkg-mod-v3-{{ .Environment.CIRCLE_JOB }}-
+      - rox-go-pkg-mod-v3-
 
 goModTidy: &goModTidy
   run:
@@ -108,7 +120,7 @@ goModTidy: &goModTidy
 saveGoModCache: &saveGoModCache
   save_cache:
     name: Saving Go module cache
-    key: *goModCacheKey
+    key: rox-go-pkg-mod-v3-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-{{ .Revision }}
     paths:
       - /go/pkg/mod
 
@@ -930,7 +942,7 @@ commands:
 
       - run:
           name: Build main image
-          command: make docker-build-main-image
+          command: make docker-build-main-image ROX_PRODUCT_BRANDING="<< parameters.branding >>"
 
       - run:
           name: Check debugger presence in the main image
@@ -1502,7 +1514,7 @@ commands:
           command: |
             if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
               export CLUSTER=OPENSHIFT
-              oc apply -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
+              oc get scc qatest-anyuid || oc create -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
             else
               export CLUSTER=K8S
             fi
@@ -1640,7 +1652,7 @@ commands:
       - run:
           name: Create cloud resources
           command: |
-            mkdir -p openshift
+            mkdir -m 777 -p openshift
             set +e
             try=0
             max_attempts=2
@@ -1658,7 +1670,7 @@ commands:
                     --dns-project=stackrox-ci \
                     --dns-zone=openshift-ci-rox-systems \
                     --zone=us-central1-a \
-                    2>&1 | scripts/ci/monitor-output.sh 60
+                    2>&1 | scripts/ci/monitor-output.sh 60 && sudo chmod -R +r openshift
                 rc=$?
                 if [[ ${rc} == 0 ]]; then
                     echo "============= Openshift provision succeeded ============="
@@ -2705,25 +2717,8 @@ jobs:
       - run:
           name: Validate expected Go version
           command: |
-            roxctl_go_version="$(roxctl version --json | jq '.GoVersion' -r)"
-            expected_go_version="$(cat EXPECTED_GO_VERSION)"
-            if [[ "${roxctl_go_version}" != "${expected_go_version}" ]]; then
-              echo "Got unexpected go version ${roxctl_go_version} (wanted ${expected_go_version})"
-              exit 1
-            fi
+            ./scripts/ci/lib.sh validate_expected_go_version
 
-            # Ensure that the Go version is up-to-date in go.mod as well.
-            # Note that the patch version is not specified in go.mod.
-            [[ "${expected_go_version}" =~ ^go(1\.[0-9]{2})(\.[0-9]+)?$ ]]
-            go_version="${BASH_REMATCH[1]}"
-
-            # TODO(ROX-8056): temporarily suspend the following check. The source needs to be go1.16 compatible
-            # due to OSBS build constraints, but we don't want everyone to revert their local toolchain
-            # to that.
-            go_version="1.16" # hardcode. To be removed once the above is fixed.
-
-            go mod edit -go "${go_version}"
-            git diff --exit-code -- go.mod
       - *saveGoModCache
 
       - *saveGoBuildCache
@@ -3027,6 +3022,8 @@ jobs:
           run-on-master: true
           run-on-tags: true
           changed-path: '^migrator/.*$|^image/'
+      - check-label-to-skip-tests:
+          label: ci-no-upgrade-tests
 
       - provision-gke-cluster:
           cluster-id: upgrade-test
@@ -3414,7 +3411,7 @@ jobs:
       name: custom
       resource_class: medium
     environment:
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - LOAD_BALANCER: lb
       - ROX_PLAINTEXT_ENDPOINTS: "8080,grpc@8081"
@@ -3423,6 +3420,7 @@ jobs:
       - ROX_ACTIVE_VULN_REFRESH_INTERVAL: 1m
       - ROX_VERIFY_IMAGE_SIGNATURE: true
       - ROX_NETPOL_FIELDS: true
+      - ROX_NEW_POLICY_CATEGORIES: true
 
     steps:
       - checkout
@@ -3570,13 +3568,13 @@ jobs:
       name: custom
       resource_class: medium+
     environment:
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - LOAD_BALANCER: lb
       - OUTPUT_FORMAT: helm
       - ROX_SYSTEM_HEALTH_PF: true
       - ROX_POLICIES_PATTERNFLY: true
-      - ROX_NETWORK_DETECTION_BLOCKED_FLOWS: true
+      - ROX_NEW_POLICY_CATEGORIES: true
 
     steps:
       - checkout
@@ -3635,13 +3633,14 @@ jobs:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
       - GCP_IMAGE_TYPE: "COS"
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_NEW_POLICY_CATEGORIES: true
 
     steps:
       - run-qa-tests:
@@ -3657,7 +3656,7 @@ jobs:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
       - GCP_IMAGE_TYPE: "COS"
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -3682,7 +3681,7 @@ jobs:
     environment:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: kernel-module
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -3713,6 +3712,8 @@ jobs:
           run-on-master: true
           run-on-tags: true
           changed-path: '^migrator/.*$|^image/'
+      - check-label-to-skip-tests:
+          label: ci-no-upgrade-tests
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
       - restore-go-mod-cache
@@ -3743,7 +3744,7 @@ jobs:
   gke-api-scale-tests:
     executor: custom
     environment:
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - STORAGE: pvc
       - STORAGE_CLASS: faster
@@ -3821,7 +3822,7 @@ jobs:
   gke-postgres-api-scale-tests:
     executor: custom
     environment:
-    - MONITORING_SUPPORT: true
+    - MONITORING_SUPPORT: false
     - SCANNER_SUPPORT: true
     - STORAGE: pvc
     - STORAGE_CLASS: faster
@@ -3891,7 +3892,7 @@ jobs:
     environment:
       - LOCAL_PORT: 8000
       - COLLECTION_METHOD: kernel-module
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
@@ -3934,7 +3935,7 @@ jobs:
       - EKS_AUTOMATION_VERSION: 0.2.17
       - LOCAL_PORT: 8000
       - COLLECTION_METHOD: kernel-module
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_BASELINE_GENERATION_DURATION: 1m
       - ADMISSION_CONTROLLER: true
@@ -4022,7 +4023,7 @@ jobs:
     environment:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -4058,7 +4059,7 @@ jobs:
     environment:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -4282,7 +4283,7 @@ jobs:
       LOCAL_PORT: 443
       COLLECTION_METHOD: ebpf
       GCP_IMAGE_TYPE: "COS"
-      MONITORING_SUPPORT: "true"
+      MONITORING_SUPPORT: "false"
       SCANNER_SUPPORT: "true"
       ROX_BASELINE_GENERATION_DURATION: 1m
       LOAD_BALANCER: lb
@@ -4631,7 +4632,7 @@ jobs:
     environment:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -4670,7 +4671,7 @@ jobs:
     environment:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -4708,7 +4709,7 @@ jobs:
     environment:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -4753,7 +4754,7 @@ jobs:
     environment:
       - LOCAL_PORT: 443
       - COLLECTION_METHOD: ebpf
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - LOAD_BALANCER: lb
@@ -5119,14 +5120,10 @@ workflows:
             - go-unit-tests
             - ui-unit-tests
 
-      - scan-images-in-quay:
+      - scan-images-in-quay: #TODO(ROX-10676): Enable scan on every change.
+          <<: *runOnlyOnReleaseAndReleaseCandidateBuilds
           context:
           - quay-rhacs-eng-readonly
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore: /.*/
           requires:
             - build-stackrox
             - build-rhacs

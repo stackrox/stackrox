@@ -32,6 +32,16 @@ func init() {
 		// Tests
 		&storage.TestMultiKeyStruct{}:  resources.Namespace,
 		&storage.TestSingleKeyStruct{}: resources.Namespace,
+		&storage.TestGrandparent{}:     resources.Namespace,
+		&storage.TestParent1{}:         resources.Namespace,
+		&storage.TestChild1{}:          resources.Namespace,
+		&storage.TestGrandChild1{}:     resources.Namespace,
+		&storage.TestGGrandChild1{}:    resources.Namespace,
+		&storage.TestG2GrandChild1{}:   resources.Namespace,
+		&storage.TestG3GrandChild1{}:   resources.Namespace,
+		&storage.TestParent2{}:         resources.Namespace,
+		&storage.TestChild2{}:          resources.Namespace,
+		&storage.TestParent3{}:         resources.Namespace,
 	} {
 		typeRegistry[fmt.Sprintf("%T", s)] = string(r.GetResource())
 	}
@@ -62,20 +72,20 @@ func resourceMetadataFromString(resource string) permissions.ResourceMetadata {
 	panic("unknown resource: " + resource)
 }
 
-func clusterGetter(schema *walker.Schema) string {
+func clusterGetter(prefix string, schema *walker.Schema) string {
 	for _, f := range schema.Fields {
 		if strings.Contains(f.Search.FieldName, "Cluster ID") {
-			return f.Getter("obj")
+			return f.Getter(prefix)
 		}
 	}
-	panic(schema.TypeName + "has no cluster. Is it directly scoped?")
+	panic(schema.TypeName + " has no cluster. Is it directly scoped?")
 }
 
-func namespaceGetter(schema *walker.Schema) string {
+func namespaceGetter(prefix string, schema *walker.Schema) string {
 	for _, f := range schema.Fields {
 		if strings.Contains(f.Search.FieldName, "Namespace") {
-			return f.Getter("obj")
+			return f.Getter(prefix)
 		}
 	}
-	return ""
+	panic(schema.TypeName + " has no namespace. Is it directly and namespace scoped?")
 }

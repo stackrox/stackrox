@@ -73,12 +73,15 @@ class Enforcement extends BaseSpecification {
                                         .setLabel(ScopeOuterClass.Scope.Label.newBuilder()
                                         .setKey("app").setValue(SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE))
                         )
-                        .setFields(PolicyOuterClass.PolicyFields.newBuilder()
-                                .setImageName(PolicyOuterClass.ImageNamePolicy.newBuilder()
-                                        .setTag("enforcement")
-                                        .build())
-                                .build())
-                        .build()
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Image Tag")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("enforcement")
+                                                        .build()).build()
+                                ).build()
+                        ).build()
                 PolicyService.createNewPolicy(policy)
             },
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY) : {
@@ -210,6 +213,7 @@ class Enforcement extends BaseSpecification {
     private final static Map<String, DaemonSet> DAEMON_SETS = [
             (SCALE_DOWN_AND_NODE_CONSTRAINT_FOR_DS):
                     new DaemonSet()
+                            .setName("dset1")
                             .setImage("busybox")
                             .addPort(22)
                             .setCommand(["sleep", "600"])

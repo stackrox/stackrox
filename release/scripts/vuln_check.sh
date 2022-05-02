@@ -37,7 +37,7 @@ function compare_fixable_vulns {
   local count=1
 
   echo "Getting scan status for ${image_name}"
-  wait=30
+  wait=60
   count=0
   scan_present=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.status')
   until [ "$scan_present" = "scanned" ] || [ "$count" -gt 100 ]; do
@@ -53,7 +53,7 @@ function compare_fixable_vulns {
     FAIL_SCRIPT=true
   else
     echo "Trying to get any fixable vulns for ${image_name}"
-    CURRENT_FIXABLE=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.data.Layer.Features | .[] | select(.Vulnerabilities != null) | .Vulnerabilities | .[] | select(.FixedBy != null) | .Name')
+    CURRENT_FIXABLE=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.data.Layer.Features | .[] | select(.Vulnerabilities != null) | .Vulnerabilities | .[] | select(.FixedBy | . != null and . != "") | .Name')
 
     # fail the check if fixable vulns are found that are not allowed
     if [[ -n "$CURRENT_FIXABLE" ]]; then

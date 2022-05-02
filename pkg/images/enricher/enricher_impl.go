@@ -630,8 +630,8 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 
 func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 	if image.GetName().GetRegistry() == "" {
-		return errox.InvalidArgs.CausedBy(fmt.Sprintf("no registry is indicated for image %q",
-			image.GetName().GetFullName()))
+		return errox.InvalidArgs.CausedByf("no registry is indicated for image %q",
+			image.GetName().GetFullName())
 	}
 	return nil
 }
@@ -659,8 +659,8 @@ func getMatchingRegistries(registries []registryTypes.ImageRegistry,
 	}
 
 	if len(matchingRegistries) == 0 {
-		return nil, errox.NotFound.CausedBy(fmt.Sprintf("no matching registries found: please add "+
-			"an image integration for %q", image.GetName().GetFullName()))
+		return nil, errox.NotFound.CausedByf("no matching registries found: please add "+
+			"an image integration for %q", image.GetName().GetFullName())
 	}
 
 	return matchingRegistries, nil

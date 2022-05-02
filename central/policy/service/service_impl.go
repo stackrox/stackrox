@@ -12,6 +12,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
@@ -24,13 +25,16 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/backgroundtasks"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/networkpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -99,6 +103,7 @@ type serviceImpl struct {
 	policies          datastore.DataStore
 	clusters          clusterDataStore.DataStore
 	deployments       deploymentDataStore.DataStore
+	networkPolicies   networkPolicyDS.DataStore
 	notifiers         notifierDataStore.DataStore
 	mitreStore        mitreDataStore.MitreAttackReadOnlyDataStore
 	reprocessor       reprocessor.Loop
@@ -136,14 +141,14 @@ func (s *serviceImpl) GetPolicy(ctx context.Context, request *v1.ResourceByID) (
 
 func (s *serviceImpl) getPolicy(ctx context.Context, id string) (*storage.Policy, error) {
 	if id == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Policy ID must be provided")
+		return nil, errors.Wrap(errox.InvalidArgs, "Policy ID must be provided")
 	}
 	policy, exists, err := s.policies.GetPolicy(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "policy with ID '%s' does not exist", id)
+		return nil, errors.Wrapf(errox.NotFound, "policy with ID '%s' does not exist", id)
 	}
 	if len(policy.GetCategories()) == 0 {
 		policy.Categories = []string{uncategorizedCategory}
@@ -182,7 +187,7 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 	} else {
 		parsedQuery, err := search.ParseQuery(request.GetQuery())
 		if err != nil {
-			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 		}
 		policies, err := s.policies.SearchRawPolicies(ctx, parsedQuery)
 		if err != nil {
@@ -196,11 +201,11 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 
 func (s *serviceImpl) convertAndValidate(ctx context.Context, p *storage.Policy, options ...booleanpolicy.ValidateOption) error {
 	if err := policyversion.EnsureConvertedToLatest(p); err != nil {
-		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "Could not ensure policy format: %v", err.Error())
+		return errors.Wrapf(errox.InvalidArgs, "Could not ensure policy format: %v", err.Error())
 	}
 
 	if err := s.validator.validate(ctx, p, options...); err != nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	return nil
 }
@@ -234,7 +239,7 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 
 func ensureIDEmpty(p *storage.Policy) error {
 	if p.GetId() != "" {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Id field should be empty when posting a new policy")
+		return errors.Wrap(errox.InvalidArgs, "Id field should be empty when posting a new policy")
 	}
 	return nil
 }
@@ -297,7 +302,7 @@ func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRe
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Policy with id '%s' not found", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "Policy with id '%s' not found", request.GetId())
 	}
 	if request.SetDisabled != nil {
 		policy.Disabled = request.GetDisabled()
@@ -309,7 +314,7 @@ func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRe
 // DeletePolicy deletes an policy from the system.
 func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "A policy id must be specified to delete a Policy")
+		return nil, errors.Wrap(errox.InvalidArgs, "A policy id must be specified to delete a Policy")
 	}
 
 	if err := s.policies.RemovePolicy(ctx, request.GetId()); err != nil {
@@ -387,7 +392,7 @@ func (s *serviceImpl) QueryDryRunJobStatus(ctx context.Context, jobid *v1.JobId)
 func (s *serviceImpl) CancelDryRunJob(ctx context.Context, jobid *v1.JobId) (*v1.Empty, error) {
 	metadata, _, _, err := s.dryRunPolicyJobManager.GetTaskStatusAndMetadata(jobid.JobId)
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	if err := checkIdentityFromMetadata(ctx, metadata); err != nil {
@@ -395,10 +400,19 @@ func (s *serviceImpl) CancelDryRunJob(ctx context.Context, jobid *v1.JobId) (*v1
 	}
 
 	if err := s.dryRunPolicyJobManager.CancelTask(jobid.JobId); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) getNetworkPoliciesForDeployment(ctx context.Context, dep *storage.Deployment) (*augmentedobjs.NetworkPoliciesApplied, error) {
+	storedPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, dep.GetClusterId(), dep.GetNamespace())
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get network policies for clusterId %s on namespace %s", dep.GetClusterId(), dep.GetNamespace())
+	}
+	matchedNetworkPolicies := networkpolicy.FilterForDeployment(storedPolicies, dep)
+	return networkpolicy.GenerateNetworkPoliciesAppliedObj(matchedNetworkPolicies), nil
 }
 
 func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx concurrency.ErrorWaitable, request *storage.Policy) (*v1.DryRunResponse, error) {
@@ -412,7 +426,7 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 
 	compiledPolicy, err := detection.CompilePolicy(request)
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid policy: %v", err)
+		return nil, errors.Wrapf(errox.InvalidArgs, "invalid policy: %v", err)
 	}
 
 	deploymentIds, err := s.deployments.GetDeploymentIDs(ctx)
@@ -452,10 +466,6 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				<-pChan
 			}()
 
-			if compiledPolicy.Policy().GetDisabled() {
-				return
-			}
-
 			deployment, exists, err := s.deployments.GetDeployment(ctx, depId)
 			if !exists || err != nil {
 				return
@@ -470,9 +480,19 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				return
 			}
 
+			var matched *augmentedobjs.NetworkPoliciesApplied
+			if features.NetworkPolicySystemPolicy.Enabled() {
+				matched, err = s.getNetworkPoliciesForDeployment(ctx, deployment)
+				if err != nil {
+					log.Errorf("failed to fetch network policies for deployment: %s", err.Error())
+					return
+				}
+			}
+
 			violations, err := compiledPolicy.MatchAgainstDeployment(nil, booleanpolicy.EnhancedDeployment{
-				Deployment: deployment,
-				Images:     images,
+				Deployment:             deployment,
+				Images:                 images,
+				NetworkPoliciesApplied: matched,
 			})
 
 			if err != nil {
@@ -550,7 +570,7 @@ func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.Dele
 	}
 
 	if !categorySet.Contains(request.GetCategory()) {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Policy Category %s does not exist", request.GetCategory())
+		return nil, errors.Wrapf(errox.NotFound, "Policy Category %s does not exist", request.GetCategory())
 	}
 
 	if err := s.policies.DeletePolicyCategory(ctx, request); err != nil {
@@ -601,7 +621,7 @@ func (s *serviceImpl) removeActivePolicy(id string) error {
 
 func (s *serviceImpl) EnableDisablePolicyNotification(ctx context.Context, request *v1.EnableDisablePolicyNotificationRequest) (*v1.Empty, error) {
 	if request.GetPolicyId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Policy ID must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "Policy ID must be specified")
 	}
 	var err error
 	if request.GetDisable() {
@@ -618,7 +638,7 @@ func (s *serviceImpl) EnableDisablePolicyNotification(ctx context.Context, reque
 
 func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID string, notifierIDs []string) error {
 	if len(notifierIDs) == 0 {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Notifier IDs must be specified")
+		return errors.Wrap(errox.InvalidArgs, "Notifier IDs must be specified")
 	}
 
 	policy, exists, err := s.policies.GetPolicy(ctx, policyID)
@@ -626,7 +646,7 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 		return errors.Errorf("failed to retrieve policy: %v", err)
 	}
 	if !exists {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "Policy %q not found", policyID)
+		return errors.Wrapf(errox.NotFound, "Policy %q not found", policyID)
 	}
 	notifierSet := set.NewStringSet(policy.Notifiers...)
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
@@ -675,7 +695,7 @@ func (s *serviceImpl) disablePolicyNotification(ctx context.Context, policyID st
 		return errors.Errorf("failed to retrieve policy: %v", err)
 	}
 	if !exists {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "Policy %q not found", policyID)
+		return errors.Wrapf(errox.NotFound, "Policy %q not found", policyID)
 	}
 	notifierSet := set.NewStringSet(policy.Notifiers...)
 	if notifierSet.Cardinality() == 0 {
@@ -714,7 +734,7 @@ func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interfac
 		return err
 	}
 	if identityUID != id.UID() {
-		return errorhelpers.ErrNotAuthorized
+		return errox.NotAuthorized
 	}
 
 	return nil
@@ -857,7 +877,7 @@ func (s *serviceImpl) PolicyFromSearch(ctx context.Context, request *v1.PolicyFr
 func (s *serviceImpl) parsePolicy(ctx context.Context, searchString string) (*storage.Policy, []search.FieldLabel, bool, error) {
 	// Handle empty input query case.
 	if len(searchString) == 0 {
-		return nil, nil, false, errox.NewErrInvalidArgs("can not generate a policy from an empty query")
+		return nil, nil, false, errox.InvalidArgs.CausedBy("can not generate a policy from an empty query")
 	}
 	// Have a filled query, parse it.
 	fieldMap, err := getFieldMapFromQueryString(searchString)

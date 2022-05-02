@@ -83,21 +83,6 @@ func (mr *MockDataStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDataStore)(nil).Get), ctx, id)
 }
 
-// GetBatch mocks base method.
-func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.ComponentCVEEdge, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBatch", ctx, id)
-	ret0, _ := ret[0].([]*storage.ComponentCVEEdge)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetBatch indicates an expected call of GetBatch.
-func (mr *MockDataStoreMockRecorder) GetBatch(ctx, id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockDataStore)(nil).GetBatch), ctx, id)
-}
-
 // Search mocks base method.
 func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()

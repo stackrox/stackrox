@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 
+SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+source "$SCRIPTS_ROOT/scripts/lib.sh"
+
 set -euo pipefail
 
 # A library of CI related reusable bash functions
 
-set +u
-SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-set -u
-
-source "$SCRIPTS_ROOT/scripts/lib.sh"
 
 # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
 RELEASE_RC_TAG_BASH_REGEX='^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
@@ -143,6 +141,10 @@ push_main_image_set() {
     local brand="$2"
 
     local main_image_set=("main" "roxctl" "central-db")
+    if is_OPENSHIFT_CI; then
+        local main_image_srcs=("$MAIN_IMAGE" "$ROXCTL_IMAGE" "$CENTRAL_DB_IMAGE")
+        oc registry login
+    fi
 
     _push_main_image_set() {
         local registry="$1"
@@ -160,6 +162,17 @@ push_main_image_set() {
 
         for image in "${main_image_set[@]}"; do
             docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${remote_tag}"
+        done
+    }
+
+    _mirror_main_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        local idx=0
+        for image in "${main_image_set[@]}"; do
+            oc image mirror "${main_image_srcs[$idx]}" "${registry}/${image}:${tag}"
+            (( idx++ )) || true
         done
     }
 
@@ -187,11 +200,19 @@ push_main_image_set() {
     local tag
     tag="$(make --quiet tag)"
     for registry in "${destination_registries[@]}"; do
-        _tag_main_image_set "$tag" "$registry" "$tag"
-        _push_main_image_set "$registry" "$tag"
+        if is_OPENSHIFT_CI; then
+            _mirror_main_image_set "$registry" "$tag"
+        else
+            _tag_main_image_set "$tag" "$registry" "$tag"
+            _push_main_image_set "$registry" "$tag"
+        fi
         if [[ "$branch" == "master" ]]; then
-            _tag_main_image_set "$tag" "$registry" "latest"
-            _push_main_image_set "$registry" "latest"
+            if is_OPENSHIFT_CI; then
+                _mirror_main_image_set "$registry" "latest"
+            else
+                _tag_main_image_set "$tag" "$registry" "latest"
+                _push_main_image_set "$registry" "latest"
+            fi
         fi
     done
 }
@@ -433,10 +454,36 @@ openshift_ci_mods() {
     BASH_ENV=$(mktemp)
     export BASH_ENV
 
+    # These are not set in the binary_build_commands or image build envs.
+    export CI=true
+    export OPENSHIFT_CI=true
+
     # For gradle
-    info "HOME ${HOME:-}"
     export GRADLE_USER_HOME="${HOME}"
-    info "GRADLE_USER_HOME ${GRADLE_USER_HOME:-}"
+}
+
+validate_expected_go_version() {
+    info "Validating the expected go version against what was used to build roxctl"
+
+    roxctl_go_version="$(roxctl version --json | jq '.GoVersion' -r)"
+    expected_go_version="$(cat EXPECTED_GO_VERSION)"
+    if [[ "${roxctl_go_version}" != "${expected_go_version}" ]]; then
+        echo "Got unexpected go version ${roxctl_go_version} (wanted ${expected_go_version})"
+        exit 1
+    fi
+
+    # Ensure that the Go version is up-to-date in go.mod as well.
+    # Note that the patch version is not specified in go.mod.
+    [[ "${expected_go_version}" =~ ^go(1\.[0-9]{2})(\.[0-9]+)?$ ]]
+    go_version="${BASH_REMATCH[1]}"
+
+    # TODO(ROX-8056): temporarily suspend the following check. The source needs to be go1.16 compatible
+    # due to OSBS build constraints, but we don't want everyone to revert their local toolchain
+    # to that.
+    go_version="1.16" # hardcode. To be removed once the above is fixed.
+
+    go mod edit -go "${go_version}"
+    git diff --exit-code -- go.mod
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

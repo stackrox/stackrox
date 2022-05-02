@@ -91,7 +91,7 @@ func (t *ClientTestSuite) TearDownSuite() {
 func (t *ClientTestSuite) newSelfSignedCertificate(commonName string) *tls.Certificate {
 	req := csr.CertificateRequest{
 		CN:         commonName,
-		KeyRequest: csr.NewBasicKeyRequest(),
+		KeyRequest: csr.NewKeyRequest(),
 		Hosts:      []string{"host"},
 	}
 

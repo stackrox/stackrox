@@ -4,7 +4,6 @@ import { Nav, NavList, NavExpandable, PageSidebar } from '@patternfly/react-core
 
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
-import { knownBackendFlags } from 'utils/featureFlags';
 
 import {
     basePathToLabelMap,
@@ -38,15 +37,12 @@ const platformConfigurationPaths = [
 
 type NavigationSideBarProps = {
     hasReadAccess: HasReadAccess;
+    // eslint-disable-next-line react/no-unused-prop-types
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
 };
 
-function NavigationSideBar({
-    hasReadAccess,
-    isFeatureFlagEnabled,
-}: NavigationSideBarProps): ReactElement {
+function NavigationSideBar({ hasReadAccess }: NavigationSideBarProps): ReactElement {
     const location: Location = useLocation();
-    const isVulnReportingEnabled = isFeatureFlagEnabled(knownBackendFlags.ROX_VULN_REPORTING);
 
     const vulnerabilityManagementPaths = [vulnManagementPath];
     if (
@@ -55,7 +51,7 @@ function NavigationSideBar({
     ) {
         vulnerabilityManagementPaths.push(vulnManagementRiskAcceptancePath);
     }
-    if (isVulnReportingEnabled && hasReadAccess('VulnerabilityReports')) {
+    if (hasReadAccess('VulnerabilityReports')) {
         vulnerabilityManagementPaths.push(vulnManagementReportsPath);
     }
 

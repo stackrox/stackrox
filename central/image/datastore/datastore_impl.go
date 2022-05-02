@@ -266,6 +266,19 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return ds.storage.Exists(ctx, id)
 }
 
+func (ds *datastoreImpl) UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error {
+	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	if err := ds.storage.UpdateVulnState(ctx, cve, images, state); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (ds *datastoreImpl) initializeRankers() {
 	readCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(

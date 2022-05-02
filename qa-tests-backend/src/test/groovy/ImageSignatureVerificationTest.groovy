@@ -11,10 +11,13 @@ import orchestratormanager.OrchestratorTypes
 import org.junit.experimental.categories.Category
 import services.PolicyService
 import services.SignatureIntegrationService
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
 
+// Do not run tests on crio due to an issue with crio trying to pull images referenced by digest from gcr.io.
+@IgnoreIf({ !Env.CI_JOBNAME.contains("crio") })
 class ImageSignatureVerificationTest extends BaseSpecification {
     // https://issues.redhat.com/browse/ROX-6891
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =

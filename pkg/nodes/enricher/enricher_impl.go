@@ -49,7 +49,14 @@ func (e *enricherImpl) RemoveNodeIntegration(id string) {
 
 // EnrichNode enriches a node with the integration set present.
 func (e *enricherImpl) EnrichNode(node *storage.Node) error {
+	// Clear any pre-existing notes, as it will all be filled here.
+	// Note: this is valid even if node.Notes is nil.
+	node.Notes = node.Notes[:0]
+
 	err := e.enrichWithScan(node)
+	if err != nil {
+		node.Notes = append(node.Notes, storage.Node_MISSING_SCAN_DATA)
+	}
 
 	e.cves.EnrichNodeWithSuppressedCVEs(node)
 

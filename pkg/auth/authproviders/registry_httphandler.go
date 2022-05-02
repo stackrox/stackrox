@@ -14,9 +14,10 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sac"
@@ -275,14 +276,14 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 
 	userInfo := user.GetUserInfo()
 	if userInfo == nil {
-		err := errorhelpers.NewErrNotAuthorized("failed to get user info")
+		err := errox.NotAuthorized.CausedBy("failed to get user info")
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}
+
 	userRoles := userInfo.GetRoles()
 	if len(userRoles) == 0 {
-		err := errorhelpers.GenericNoValidRole()
-		r.error(w, err, typ, clientState, testMode)
+		r.error(w, auth.ErrNoValidRole, typ, clientState, testMode)
 		return
 	}
 

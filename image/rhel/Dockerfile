@@ -17,10 +17,12 @@ LABEL name="main" \
       description="This image contains components required to operate the StackRox Kubernetes Security Platform."
 
 ARG ROX_IMAGE_FLAVOR
+ARG ROX_PRODUCT_BRANDING
 
 ENV PATH="/stackrox:$PATH" \
     ROX_ROXCTL_IN_MAIN_IMAGE="true" \
-    ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
+    ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR} \
+    ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
 
 COPY signatures/RPM-GPG-KEY-CentOS-Official /
 COPY scripts /stackrox/
@@ -45,7 +47,7 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     rm /tmp/snappy.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf && \
+    rm -rf /var/cache/dnf /var/cache/yum && \
     # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
     # by the script `save-dir-contents` during the image build. The directory
     # contents are then restored by the script `restore-all-dir-contents`

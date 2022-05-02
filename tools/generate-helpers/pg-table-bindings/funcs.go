@@ -12,15 +12,19 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
-func compileFKArgAndAttachToSchema(schema *walker.Schema, refs []string) {
+func compileFKArgAndAttachToSchema(schema *walker.Schema, refs []string) []*walker.Schema {
+	refSchemas := make([]*walker.Schema, 0, len(refs))
 	for _, ref := range refs {
 		refTable, refObjType := stringutils.Split2(ref, ":")
 		refMsgType := proto.MessageType(refObjType)
 		if refMsgType == nil {
 			log.Fatalf("could not find message for type: %s", refObjType)
 		}
-		schema.WithReference(walker.Walk(refMsgType, refTable))
+		refSchema := walker.Walk(refMsgType, refTable)
+		schema.WithReference(refSchema)
+		refSchemas = append(refSchemas, refSchema)
 	}
+	return refSchemas
 }
 
 func splitWords(s string) []string {

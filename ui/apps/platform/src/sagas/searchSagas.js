@@ -3,22 +3,16 @@ import { all, put, call } from 'redux-saga/effects';
 import {
     mainPath,
     clustersPathWithParam,
-    dashboardPath,
-    violationsPath,
-    riskPath,
     policiesPath,
     imagesPath,
     secretsPath,
     networkPath,
 } from 'routePaths';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
-import { actions as alertActions } from 'reducers/alerts';
 import { actions as clustersActions } from 'reducers/clusters';
-import { actions as deploymentsActions } from 'reducers/deployments';
 import { actions as policiesActions } from 'reducers/policies/search';
 import { actions as imagesActions } from 'reducers/images';
 import { actions as secretsActions } from 'reducers/secrets';
-import { actions as dashboardActions } from 'reducers/dashboard';
 import { actions as networkActions } from 'reducers/network/search';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { fetchOptions } from 'services/SearchService';
@@ -90,28 +84,12 @@ export default function* searches() {
             ''
         ),
         takeEveryNewlyMatchedLocation(
-            violationsPath,
-            getSearchOptions,
-            alertActions.setAlertsSearchModifiers,
-            alertActions.setAlertsSearchSuggestions,
-            alertActions.setAlertsSearchOptions,
-            `categories=ALERTS`
-        ),
-        takeEveryNewlyMatchedLocation(
             clustersPathWithParam,
             getSearchOptions,
             clustersActions.setClustersSearchModifiers,
             clustersActions.setClustersSearchSuggestions,
             clustersActions.setClustersSearchOptions,
             `categories=CLUSTERS`
-        ),
-        takeEveryNewlyMatchedLocation(
-            riskPath,
-            getSearchOptions,
-            deploymentsActions.setDeploymentsSearchModifiers,
-            deploymentsActions.setDeploymentsSearchSuggestions,
-            deploymentsActions.setDeploymentsSearchOptions,
-            'categories=DEPLOYMENTS'
         ),
         // TODO: remove once policies is fully migrated over to PF
         takeEveryNewlyMatchedLocation(
@@ -137,14 +115,6 @@ export default function* searches() {
             secretsActions.setSecretsSearchSuggestions,
             secretsActions.setSecretsSearchOptions,
             'categories=SECRETS'
-        ),
-        takeEveryNewlyMatchedLocation(
-            dashboardPath,
-            getSearchOptions,
-            dashboardActions.setDashboardSearchModifiers,
-            dashboardActions.setDashboardSearchSuggestions,
-            dashboardActions.setDashboardSearchOptions,
-            null
         ),
         takeEveryNewlyMatchedLocation(
             networkPath,

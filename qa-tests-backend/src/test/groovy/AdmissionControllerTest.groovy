@@ -1,10 +1,14 @@
 import common.Constants
+import groovy.util.logging.Slf4j
 import groups.BAT
 import groups.SensorBounceNext
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
+import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
+import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
 import objects.Deployment
 import objects.GCRImageIntegration
@@ -21,6 +25,7 @@ import util.Helpers
 import util.Timer
 import util.ChaosMonkey
 
+@Slf4j
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
     private List<PolicyOuterClass.EnforcementAction> latestTagEnforcements
@@ -172,7 +177,12 @@ class AdmissionControllerTest extends BaseSpecification {
                 .build()
         assert ClusterService.updateAdmissionController(ac)
 
-        printlnDated "Admission control configuration updated"
+        log.info("Admission control configuration updated")
+
+        def policyGroup = PolicyGroup.newBuilder()
+                .setFieldName("CVE")
+                .setBooleanOperator(PolicyOuterClass.BooleanOperator.AND)
+        policyGroup.addAllValues([PolicyValue.newBuilder().setValue("CVE-2019-3462").build(),])
 
         PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
                 .setName("Matching CVE (CVE-2019-3462)")
@@ -180,9 +190,8 @@ class AdmissionControllerTest extends BaseSpecification {
                 .addCategories("Testing")
                 .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
                 .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
-                .setFields(
-                        PolicyOuterClass.PolicyFields.newBuilder().setCve("CVE-2019-3462").build()
-                )
+                .addPolicySections(
+                        PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build())
                 .build()
         policy = PolicyService.policyClient.postPolicy(
                 PolicyServiceOuterClass.PostPolicyRequest.newBuilder()
@@ -190,10 +199,10 @@ class AdmissionControllerTest extends BaseSpecification {
                         .build()
         )
 
-        printlnDated "Policy created to scale-to-zero deployments with CVE-2019-3462"
+        log.info("Policy created to scale-to-zero deployments with CVE-2019-3462")
         // Maximum time to wait for propagation to sensor
         Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
-        printlnDated "Sensor and admission-controller _should_ have the policy update"
+        log.info("Sensor and admission-controller _should_ have the policy update")
 
         def deployment = new Deployment()
                 .setName("admission-suppress-cve")
@@ -208,10 +217,10 @@ class AdmissionControllerTest extends BaseSpecification {
         when:
         "Suppress CVE and check that the deployment can now launch"
         CVEService.suppressCVE("CVE-2019-3462")
-        printlnDated "Suppressing CVE-2019-3462"
+        log.info("Suppressing CVE-2019-3462")
         // Allow propagation of CVE suppression and invalidation of cache
         Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
-        printlnDated "Expect that the suppression has propagated"
+        log.info("Expect that the suppression has propagated")
 
         created = orchestrator.createDeploymentNoWait(deployment)
         assert created
@@ -221,10 +230,10 @@ class AdmissionControllerTest extends BaseSpecification {
         and:
         "Unsuppress CVE"
         CVEService.unsuppressCVE("CVE-2019-3462")
-        printlnDated "Unsuppress CVE-2019-3462"
+        log.info("Unsuppress CVE-2019-3462")
         // Allow propagation of CVE suppression and invalidation of cache
         Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
-        printlnDated "Expect that the unsuppression has propagated"
+        log.info("Expect that the unsuppression has propagated")
 
         and:
         "Verify unsuppressing lets the deployment be blocked again"
@@ -447,7 +456,7 @@ class AdmissionControllerTest extends BaseSpecification {
         "Sensor is unavailable"
         orchestrator.scaleDeployment("stackrox", "sensor", 0)
         orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"], 30, 1)
-        printlnDated "Sensor is now scaled to 0"
+        log.info("Sensor is now scaled to 0")
 
         and:
         "Admission controller is started from scratch w/o cached scans"
@@ -455,11 +464,11 @@ class AdmissionControllerTest extends BaseSpecification {
         def originalAdmCtrlReplicas = admCtrlDeploy.spec.replicas
         orchestrator.scaleDeployment("stackrox", "admission-control", 0)
         orchestrator.waitForAllPodsToBeRemoved("stackrox", admCtrlDeploy.spec.selector.matchLabels, 30, 1)
-        printlnDated "Admission controller scaled to 0, was ${originalAdmCtrlReplicas}"
+        log.info("Admission controller scaled to 0, was ${originalAdmCtrlReplicas}")
         orchestrator.scaleDeployment("stackrox", "admission-control", originalAdmCtrlReplicas)
         orchestrator.waitForPodsReady("stackrox", admCtrlDeploy.spec.selector.matchLabels,
                 originalAdmCtrlReplicas, 30, 1)
-        printlnDated "Admission controller scaled back to ${originalAdmCtrlReplicas}"
+        log.info("Admission controller scaled back to ${originalAdmCtrlReplicas}")
 
         when:
         "A deployment with an image violating a policy is created"

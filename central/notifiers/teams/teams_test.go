@@ -57,11 +57,6 @@ func TestTeamsRandomAlertNotify(t *testing.T) {
 	alert := fixtures.GetAlert()
 	alert.Policy.Rationale = ""
 	alert.Policy.Remediation = ""
-	alert.Policy.Fields.AddCapabilities = []string{}
-	alert.Policy.Fields.DropCapabilities = []string{}
-	alert.Policy.Fields.Env = &storage.KeyValuePolicy{}
-	alert.Policy.Fields.VolumePolicy = &storage.VolumePolicy{}
-	alert.Policy.Fields.ImageName = &storage.ImageNamePolicy{}
 	assert.NoError(t, s.AlertNotify(context.Background(), alert))
 
 	alert.Policy = &storage.Policy{}

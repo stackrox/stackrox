@@ -170,14 +170,14 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheImages() {
 	expiry, err := getSuppressExpiry(start, duration)
 	suite.NoError(err)
 
-	suite.storage.EXPECT().GetBatch([]string{"CVE-GHI"}).Return([]*storage.CVE{{Id: "CVE-GHI"}}, nil, nil)
+	suite.storage.EXPECT().GetMany(testAllAccessContext, []string{"CVE-GHI"}).Return([]*storage.CVE{{Id: "CVE-GHI"}}, nil, nil)
 	storedCVE := &storage.CVE{
 		Id:                 "CVE-GHI",
 		Suppressed:         true,
 		SuppressActivation: start,
 		SuppressExpiry:     expiry,
 	}
-	suite.storage.EXPECT().Upsert(storedCVE).Return(nil)
+	suite.storage.EXPECT().Upsert(testAllAccessContext, storedCVE).Return(nil)
 
 	// Clear image before suppressing
 	img = getImageWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
@@ -188,8 +188,8 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheImages() {
 
 	// Clear image before unsupressing
 	img = getImageWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
-	suite.storage.EXPECT().GetBatch([]string{"CVE-GHI"}).Return([]*storage.CVE{storedCVE}, nil, nil)
-	suite.storage.EXPECT().Upsert(&storage.CVE{Id: "CVE-GHI"}).Return(nil)
+	suite.storage.EXPECT().GetMany(testAllAccessContext, []string{"CVE-GHI"}).Return([]*storage.CVE{storedCVE}, nil, nil)
+	suite.storage.EXPECT().Upsert(testAllAccessContext, &storage.CVE{Id: "CVE-GHI"}).Return(nil)
 	err = suite.datastore.Unsuppress(testAllAccessContext, "CVE-GHI")
 	suite.NoError(err)
 	suite.datastore.EnrichImageWithSuppressedCVEs(img)
@@ -230,14 +230,14 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheNodes() {
 	expiry, err := getSuppressExpiry(start, duration)
 	suite.NoError(err)
 
-	suite.storage.EXPECT().GetBatch([]string{"CVE-GHI"}).Return([]*storage.CVE{{Id: "CVE-GHI"}}, nil, nil)
+	suite.storage.EXPECT().GetMany(testAllAccessContext, []string{"CVE-GHI"}).Return([]*storage.CVE{{Id: "CVE-GHI"}}, nil, nil)
 	storedCVE := &storage.CVE{
 		Id:                 "CVE-GHI",
 		Suppressed:         true,
 		SuppressActivation: start,
 		SuppressExpiry:     expiry,
 	}
-	suite.storage.EXPECT().Upsert(storedCVE).Return(nil)
+	suite.storage.EXPECT().Upsert(testAllAccessContext, storedCVE).Return(nil)
 
 	// Clear node before suppressing
 	node = getNodeWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
@@ -248,8 +248,8 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheNodes() {
 
 	// Clear node before unsupressing
 	node = getNodeWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
-	suite.storage.EXPECT().GetBatch([]string{"CVE-GHI"}).Return([]*storage.CVE{storedCVE}, nil, nil)
-	suite.storage.EXPECT().Upsert(&storage.CVE{Id: "CVE-GHI"}).Return(nil)
+	suite.storage.EXPECT().GetMany(testAllAccessContext, []string{"CVE-GHI"}).Return([]*storage.CVE{storedCVE}, nil, nil)
+	suite.storage.EXPECT().Upsert(testAllAccessContext, &storage.CVE{Id: "CVE-GHI"}).Return(nil)
 	err = suite.datastore.Unsuppress(testAllAccessContext, "CVE-GHI")
 	suite.NoError(err)
 	suite.datastore.EnrichNodeWithSuppressedCVEs(node)

@@ -48,8 +48,8 @@ func enhancedDeployment(dep *storage.Deployment, images []*storage.Image) Enhanc
 		Deployment: dep,
 		Images:     images,
 		NetworkPoliciesApplied: &augmentedobjs.NetworkPoliciesApplied{
-			MissingIngressNetworkPolicy: false,
-			MissingEgressNetworkPolicy:  false,
+			HasIngressNetworkPolicy: true,
+			HasEgressNetworkPolicy:  true,
 		},
 	}
 }
@@ -1827,16 +1827,25 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 
 func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {
 	for _, p := range suite.defaultPolicies {
-		if policyUtils.AppliesAtRunTime(p) && p.GetFields().GetProcessPolicy() != nil {
-			processPolicy := p.GetFields().GetProcessPolicy()
-			if processPolicy.GetName() != "" {
-				regexp.MustCompile(processPolicy.GetName())
-			}
-			if processPolicy.GetArgs() != "" {
-				regexp.MustCompile(processPolicy.GetArgs())
-			}
-			if processPolicy.GetAncestor() != "" {
-				regexp.MustCompile(processPolicy.GetAncestor())
+		if policyUtils.AppliesAtRunTime(p) {
+			checkRegexCompiles(p.GetPolicySections(), fieldnames.ProcessName)
+			checkRegexCompiles(p.GetPolicySections(), fieldnames.ProcessArguments)
+			checkRegexCompiles(p.GetPolicySections(), fieldnames.ProcessAncestor)
+		}
+	}
+}
+
+func checkRegexCompiles(sections []*storage.PolicySection, fieldname string) {
+	for _, s := range sections {
+		for _, g := range s.GetPolicyGroups() {
+			if g.GetFieldName() == fieldname {
+				if policyVals := g.GetValues(); len(policyVals) > 0 {
+					for _, policyVal := range policyVals {
+						if v := policyVal.GetValue(); v != "" {
+							regexp.MustCompile(v)
+						}
+					}
+				}
 			}
 		}
 	}
@@ -3206,8 +3215,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 	}{
 		"Missing Ingress Network Policy": {
 			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: true,
-				MissingEgressNetworkPolicy:  false,
+				HasIngressNetworkPolicy: false,
+				HasEgressNetworkPolicy:  true,
 			},
 			alerts: []*storage.Alert_Violation{
 				{Message: "The deployment is missing Ingress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
@@ -3215,17 +3224,17 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 		},
 		"Missing Egress Network Policy": {
 			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: false,
-				MissingEgressNetworkPolicy:  true,
+				HasIngressNetworkPolicy: true,
+				HasEgressNetworkPolicy:  false,
 			},
 			alerts: []*storage.Alert_Violation{
 				{Message: "The deployment is missing Egress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
 			},
 		},
-		"Missing both policies": {
+		"Both policies missing": {
 			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: true,
-				MissingEgressNetworkPolicy:  true,
+				HasIngressNetworkPolicy: false,
+				HasEgressNetworkPolicy:  false,
 			},
 			alerts: []*storage.Alert_Violation{
 				{Message: "The deployment is missing Ingress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
@@ -3234,8 +3243,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 		},
 		"No alerts": {
 			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: false,
-				MissingEgressNetworkPolicy:  false,
+				HasIngressNetworkPolicy: true,
+				HasEgressNetworkPolicy:  true,
 			},
 			alerts: []*storage.Alert_Violation(nil),
 		},
@@ -3245,8 +3254,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 		},
 		"Policies attached to augmentedobj": {
 			netpolsApplied: &augmentedobjs.NetworkPoliciesApplied{
-				MissingIngressNetworkPolicy: true,
-				MissingEgressNetworkPolicy:  false,
+				HasIngressNetworkPolicy: false,
+				HasEgressNetworkPolicy:  true,
 				Policies: map[string]*storage.NetworkPolicy{
 					"ID1": {Id: "ID1", Name: "policy1"},
 				},
@@ -3271,8 +3280,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 	for name, testCase := range testCases {
 		suite.Run(name, func() {
 			deployment := fixtures.GetDeployment().Clone()
-			missingIngressPolicy := policyWithSingleKeyValue(fieldnames.MissingIngressNetworkPolicy, "true", false)
-			missingEgressPolicy := policyWithSingleKeyValue(fieldnames.MissingEgressNetworkPolicy, "true", false)
+			missingIngressPolicy := policyWithSingleKeyValue(fieldnames.HasIngressNetworkPolicy, "false", false)
+			missingEgressPolicy := policyWithSingleKeyValue(fieldnames.HasEgressNetworkPolicy, "false", false)
 
 			enhanced := enhancedDeploymentWithNetworkPolicies(
 				deployment,

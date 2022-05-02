@@ -159,18 +159,20 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	}
 
 	// Check that the CVEs were written with the correct timestamp.
-	vuln, _, err := suite.cveStorage.Get("cve1")
+	vuln, _, err := suite.cveStorage.Get(allAccessCtx, "cve1")
 	suite.NoError(err)
 	suite.Equal(images[0].GetLastUpdated(), vuln.GetCreatedAt())
-	vuln, _, err = suite.cveStorage.Get("cve2")
+	vuln, _, err = suite.cveStorage.Get(allAccessCtx, "cve2")
 	suite.NoError(err)
 	suite.Equal(images[0].GetLastUpdated(), vuln.GetCreatedAt())
 
 	// Check that the Image CVE Edges were written with the correct timestamp.
-	imageCVEEdge, _, err := suite.imageCVEEdgeStore.Get(edges.EdgeID{ParentID: "sha256:sha1", ChildID: "cve1"}.ToString())
+	// This test relies on dackbox that does not require the primary keys.
+	imageCVEEdge, _, err := suite.imageCVEEdgeStore.Get(allAccessCtx, edges.EdgeID{ParentID: "sha256:sha1", ChildID: "cve1"}.ToString(), "", "", "", "")
 	suite.NoError(err)
 	suite.Equal(images[0].GetLastUpdated(), imageCVEEdge.GetFirstImageOccurrence())
-	imageCVEEdge, _, err = suite.imageCVEEdgeStore.Get(edges.EdgeID{ParentID: "sha256:sha1", ChildID: "cve1"}.ToString())
+	// This test relies on dackbox that does not require the primary keys.
+	imageCVEEdge, _, err = suite.imageCVEEdgeStore.Get(allAccessCtx, edges.EdgeID{ParentID: "sha256:sha1", ChildID: "cve1"}.ToString(), "", "", "", "")
 	suite.NoError(err)
 	suite.Equal(images[0].GetLastUpdated(), imageCVEEdge.GetFirstImageOccurrence())
 
@@ -293,12 +295,12 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	suite.Equal(0, count)
 
 	// Check that the CVEs are removed.
-	count, err = suite.cveStorage.Count()
+	count, err = suite.cveStorage.Count(allAccessCtx)
 	suite.NoError(err)
 	suite.Equal(0, count)
 
 	// Check that the Image CVE Edges are removed.
-	count, err = suite.imageCVEEdgeStore.Count()
+	count, err = suite.imageCVEEdgeStore.Count(allAccessCtx)
 	suite.NoError(err)
 	suite.Equal(0, count)
 }

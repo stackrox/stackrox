@@ -2,11 +2,10 @@ package gjson
 
 import (
 	"encoding/json"
-	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/tidwall/gjson"
 )
 
@@ -22,7 +21,7 @@ type RowMapper struct {
 func NewRowMapper(jsonObj interface{}, multiPathExpression string) (*RowMapper, error) {
 	bytes, err := json.Marshal(jsonObj)
 	if err != nil {
-		return nil, errorhelpers.NewErrInvariantViolation(err.Error())
+		return nil, errox.InvariantViolation.CausedBy(err)
 	}
 
 	result, err := getResultFromBytes(bytes, multiPathExpression)
@@ -85,7 +84,7 @@ func isJaggedArray(array [][]string) error {
 func getResultFromBytes(bytes []byte, jsonPathExpression string) (gjson.Result, error) {
 	results := gjson.GetManyBytes(bytes, jsonPathExpression)
 	if len(results) != 1 {
-		return gjson.Result{}, errorhelpers.NewErrInvariantViolation("expected gjson " +
+		return gjson.Result{}, errox.InvariantViolation.CausedBy("expected gjson " +
 			"results to be exactly 1")
 	}
 
@@ -110,12 +109,11 @@ func getRowsFromColumns(columns [][]string) [][]string {
 	return rows
 }
 
-// jaggedArrayError helper to create an errorhelpers.ErrInvariantViolation with an explanation about
-// a jagged array being found
+// jaggedArrayError helper to create an errox.InvariantViolation with an explanation about a jagged array being found
 func jaggedArrayError(maxAmount, violatedAmount, arrayIndex int) error {
-	return errorhelpers.NewErrInvariantViolation(fmt.Sprintf("jagged array found: yielded values within "+
+	return errox.InvariantViolation.CausedByf("jagged array found: yielded values within "+
 		"each array are not matching; expected each array to hold %d elements but found an array with %d elements "+
-		"at array index %d", maxAmount, violatedAmount, arrayIndex+1))
+		"at array index %d", maxAmount, violatedAmount, arrayIndex+1)
 }
 
 // columnTree is responsible for providing columns and their values in a tree structure.

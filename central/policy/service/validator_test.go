@@ -97,12 +97,59 @@ func (s *PolicyValidatorTestSuite) TestValidatesName() {
 	s.Error(err, "special characters should not be supported")
 }
 
+func (s *PolicyValidatorTestSuite) TestValidateVersion() {
+	tests := []struct {
+		name    string
+		version string
+		valid   bool
+	}{
+		{
+			"Current version should be valid",
+			policyversion.CurrentVersion().String(),
+			true,
+		},
+		{
+			"No version is no longer valid",
+			"",
+			false,
+		},
+		{
+			"Version 1 is no longer valid",
+			"1",
+			false,
+		},
+		{
+			"Invalid version string is not valid",
+			"x.y.z",
+			false,
+		},
+		{
+			"Non-existent version is not valid",
+			"2.0",
+			false,
+		},
+	}
+	for _, c := range tests {
+		s.T().Run(c.name, func(t *testing.T) {
+			policy := &storage.Policy{
+				PolicyVersion: c.version,
+			}
+			err := s.validator.validateVersion(policy)
+			if c.valid {
+				s.NoError(err, "Version should be valid")
+			} else {
+				s.Error(err, "Version should be invalid")
+			}
+		})
+	}
+}
+
 func (s *PolicyValidatorTestSuite) TestsValidateCapabilities() {
 
 	cases := []struct {
 		name          string
-		adds          []string
-		drops         []string
+		adds          []*storage.PolicyValue
+		drops         []*storage.PolicyValue
 		expectedError bool
 	}{
 		{
@@ -110,25 +157,49 @@ func (s *PolicyValidatorTestSuite) TestsValidateCapabilities() {
 			expectedError: false,
 		},
 		{
-			name:          "adds only",
-			adds:          []string{"hi"},
+			name: "adds only",
+			adds: []*storage.PolicyValue{
+				{
+					Value: "hi",
+				},
+			},
 			expectedError: false,
 		},
 		{
-			name:          "drops only",
-			drops:         []string{"hi"},
+			name: "drops only",
+			drops: []*storage.PolicyValue{
+				{
+					Value: "hi",
+				},
+			},
 			expectedError: false,
 		},
 		{
-			name:          "different adds and drops",
-			adds:          []string{"hello"},
-			drops:         []string{"hey"},
+			name: "different adds and drops",
+			adds: []*storage.PolicyValue{
+				{
+					Value: "hey",
+				},
+			},
+			drops: []*storage.PolicyValue{
+				{
+					Value: "hello",
+				},
+			},
 			expectedError: false,
 		},
 		{
-			name:          "same adds and drops",
-			adds:          []string{"hello"},
-			drops:         []string{"hello"},
+			name: "same adds and drops",
+			adds: []*storage.PolicyValue{
+				{
+					Value: "hello",
+				},
+			},
+			drops: []*storage.PolicyValue{
+				{
+					Value: "hello",
+				},
+			},
 			expectedError: true,
 		},
 	}
@@ -136,10 +207,22 @@ func (s *PolicyValidatorTestSuite) TestsValidateCapabilities() {
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
 			policy := &storage.Policy{
-				Fields: &storage.PolicyFields{
-					AddCapabilities:  c.adds,
-					DropCapabilities: c.drops,
+				PolicySections: []*storage.PolicySection{
+					{
+						SectionName: "section-1",
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: fieldnames.AddCaps,
+								Values:    c.adds,
+							},
+							{
+								FieldName: fieldnames.DropCaps,
+								Values:    c.drops,
+							},
+						},
+					},
 				},
+				PolicyVersion: "1.1",
 			}
 			assert.Equal(t, c.expectedError, s.validator.validateCapabilities(policy) != nil)
 		})
@@ -168,12 +251,12 @@ func (s *PolicyValidatorTestSuite) TestValidateDescription() {
 	policy = &storage.Policy{
 		Description: `This policy is the stop when an image is terrible and will cause us to lose lots-o-dough. Why? Cause Money!
 			Oh, and I almost forgot that this is also to help the good people of nowhere-ville get back on their
-			feet after that tornado ripped their town to shreds and left them nothing but pineapple and gum.  It was the It was 
-			the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the 
-			epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was 
-			the spring of hope, it was the winter of despair, we had everything before us, we had nothing before us, we were all 
-			going direct to Heaven, we were all going direct the other way--in short, the period was so far like the present 
-			period that some of its noisiest authorities insisted on its being received, for good or for evil, in the superlative 
+			feet after that tornado ripped their town to shreds and left them nothing but pineapple and gum.  It was the It was
+			the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the
+			epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was
+			the spring of hope, it was the winter of despair, we had everything before us, we had nothing before us, we were all
+			going direct to Heaven, we were all going direct the other way--in short, the period was so far like the present
+			period that some of its noisiest authorities insisted on its being received, for good or for evil, in the superlative
 			degree of comparison only.`,
 	}
 	err = s.validator.validateDescription(policy)
@@ -304,15 +387,38 @@ func (s *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombination()
 				LifecycleStages: []storage.LifecycleStage{
 					storage.LifecycleStage_RUNTIME,
 				},
-				Fields: &storage.PolicyFields{
-					ImageName: &storage.ImageNamePolicy{
-						Tag: "latest",
+				PolicySections: []*storage.PolicySection{
+					{
+						SectionName: "section-1",
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: fieldnames.ImageTag,
+								Values: []*storage.PolicyValue{
+									{
+										Value: "latest",
+									},
+								},
+							},
+							{
+								FieldName: fieldnames.VolumeName,
+								Values: []*storage.PolicyValue{
+									{
+										Value: "Asfasf",
+									},
+								},
+							},
+							{
+								FieldName: fieldnames.ProcessName,
+								Values: []*storage.PolicyValue{
+									{
+										Value: "asfasfaa",
+									},
+								},
+							},
+						},
 					},
-					VolumePolicy: &storage.VolumePolicy{
-						Name: "Asfasf",
-					},
-					ProcessPolicy: &storage.ProcessPolicy{Name: "asfasfaa"},
 				},
+				PolicyVersion: "1.1",
 				EnforcementActions: []storage.EnforcementAction{
 					storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
 					storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
@@ -329,15 +435,38 @@ func (s *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombination()
 				LifecycleStages: []storage.LifecycleStage{
 					storage.LifecycleStage_BUILD,
 				},
-				Fields: &storage.PolicyFields{
-					ImageName: &storage.ImageNamePolicy{
-						Tag: "latest",
+				PolicySections: []*storage.PolicySection{
+					{
+						SectionName: "section-1",
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: fieldnames.ImageTag,
+								Values: []*storage.PolicyValue{
+									{
+										Value: "latest",
+									},
+								},
+							},
+							{
+								FieldName: fieldnames.VolumeName,
+								Values: []*storage.PolicyValue{
+									{
+										Value: "Asfasf",
+									},
+								},
+							},
+							{
+								FieldName: fieldnames.ProcessName,
+								Values: []*storage.PolicyValue{
+									{
+										Value: "asfasfaa",
+									},
+								},
+							},
+						},
 					},
-					VolumePolicy: &storage.VolumePolicy{
-						Name: "Asfasf",
-					},
-					ProcessPolicy: &storage.ProcessPolicy{Name: "asfasfaa"},
 				},
+				PolicyVersion: "1.1",
 				EnforcementActions: []storage.EnforcementAction{
 					storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
 					storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
@@ -353,15 +482,38 @@ func (s *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombination()
 				LifecycleStages: []storage.LifecycleStage{
 					storage.LifecycleStage_DEPLOY,
 				},
-				Fields: &storage.PolicyFields{
-					ImageName: &storage.ImageNamePolicy{
-						Tag: "latest",
+				PolicySections: []*storage.PolicySection{
+					{
+						SectionName: "section-1",
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: fieldnames.ImageTag,
+								Values: []*storage.PolicyValue{
+									{
+										Value: "latest",
+									},
+								},
+							},
+							{
+								FieldName: fieldnames.VolumeName,
+								Values: []*storage.PolicyValue{
+									{
+										Value: "Asfasf",
+									},
+								},
+							},
+							{
+								FieldName: fieldnames.ProcessName,
+								Values: []*storage.PolicyValue{
+									{
+										Value: "asfasfaa",
+									},
+								},
+							},
+						},
 					},
-					VolumePolicy: &storage.VolumePolicy{
-						Name: "Asfasf",
-					},
-					ProcessPolicy: &storage.ProcessPolicy{Name: "asfasfaa"},
 				},
+				PolicyVersion: "1.1",
 				EnforcementActions: []storage.EnforcementAction{
 					storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
 					storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
@@ -735,14 +887,14 @@ func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
 					{
 						PolicyGroups: []*storage.PolicyGroup{
 							{
-								FieldName: augmentedobjs.MissingEgressPolicyCustomTag,
+								FieldName: augmentedobjs.HasEgressPolicyCustomTag,
 							},
 						},
 					},
 				},
 			},
 			featureFlag:   true,
-			expectedError: fmt.Sprintf("enforcement of %s is not allowed", augmentedobjs.MissingEgressPolicyCustomTag),
+			expectedError: fmt.Sprintf("enforcement of %s is not allowed", augmentedobjs.HasEgressPolicyCustomTag),
 		},
 		"Missing Ingress Policy Field": {
 			policy: &storage.Policy{
@@ -753,14 +905,14 @@ func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
 					{
 						PolicyGroups: []*storage.PolicyGroup{
 							{
-								FieldName: augmentedobjs.MissingIngressPolicyCustomTag,
+								FieldName: augmentedobjs.HasIngressPolicyCustomTag,
 							},
 						},
 					},
 				},
 			},
 			featureFlag:   true,
-			expectedError: fmt.Sprintf("enforcement of %s is not allowed", augmentedobjs.MissingIngressPolicyCustomTag),
+			expectedError: fmt.Sprintf("enforcement of %s is not allowed", augmentedobjs.HasIngressPolicyCustomTag),
 		},
 		"Enforceable Policy Field": {
 			policy: &storage.Policy{

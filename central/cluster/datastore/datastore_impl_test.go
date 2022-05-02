@@ -13,7 +13,7 @@ import (
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterIndexMocks "github.com/stackrox/rox/central/cluster/index/mocks"
 	clusterStoreMocks "github.com/stackrox/rox/central/cluster/store/cluster/mocks"
-	clusterHealthStoreMocks "github.com/stackrox/rox/central/cluster/store/cluster_health_status/mocks"
+	clusterHealthStoreMocks "github.com/stackrox/rox/central/cluster/store/clusterhealth/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"

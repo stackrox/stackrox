@@ -17,8 +17,8 @@ const (
 Please upgrade Central if slim collector images shall be used.`
 	errorWhenCallingGetKernelSupportAvailable = "error checking kernel support availability via GetKernelSupportAvailable Central gRPC method"
 	warningLegacyCentralDefaultMain           = "Central is running on a legacy version, main image will be defaulted to %s unless overridden by user."
-	warningNoClusterDefaultsAPI               = "Central does not implement GetClusterDefaultValutes gRPC method, this is likely an older Central version."
-	errorWhenCallingGetClusterDefaults        = "error obtaining default cluster settings from GetClusterDefaultValutes Central gRPC method"
+	warningNoClusterDefaultsAPI               = "Central does not implement GetClusterDefaultValues gRPC method, this is likely an older Central version."
+	errorWhenCallingGetClusterDefaults        = "error obtaining default cluster settings from GetClusterDefaultValues Central gRPC method"
 )
 
 // CentralEnv contains information about Central's runtime environment.

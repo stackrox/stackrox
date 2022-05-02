@@ -140,7 +140,7 @@ func (e *ecr) Test() error {
 
 	// the following code taken from generic Test method
 	if err != nil {
-		logging.Errorf("error testing ECR integration: %v", err)
+		log.Errorf("error testing ECR integration: %v", err)
 		if e, _ := err.(*registry.ClientError); e != nil {
 			return errors.Errorf("error testing ECR integration (code: %d). Please check Central logs for full error", e.Code())
 		}
@@ -158,11 +158,10 @@ func Creator() (string, func(integration *storage.ImageIntegration) (types.Regis
 }
 
 func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
-	ecrConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Ecr)
-	if !ok {
+	conf := integration.GetEcr()
+	if conf == nil {
 		return nil, errors.New("ECR configuration required")
 	}
-	conf := ecrConfig.Ecr
 	if err := sanitizeConfiguration(conf); err != nil {
 		return nil, err
 	}
@@ -175,7 +174,7 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 	// If the ECR configuration provides Authorization Data, we do not initialize an
 	// ECR client, but instead, we create the registry immediately since the
 	// Authorization Data payload provides the credentials statically.
-	if authData := ecrConfig.Ecr.GetAuthorizationData(); authData != nil {
+	if authData := conf.GetAuthorizationData(); authData != nil {
 		expiresAt, err := protobuftypes.TimestampFromProto(authData.GetExpiresAt())
 		if err != nil {
 			return nil, errors.New("invalid authorization data")
@@ -235,10 +234,10 @@ func createECRClient(conf *storage.ECRConfig) (*awsECR.ECR, error) {
 
 	if conf.GetUseAssumeRole() {
 		if endpoint != "" {
-			return nil, errox.NewErrInvalidArgs("AssumeRole and Endpoint cannot both be enabled")
+			return nil, errox.InvalidArgs.CausedBy("AssumeRole and Endpoint cannot both be enabled")
 		}
 		if conf.GetAssumeRoleId() == "" {
-			return nil, errox.NewErrInvalidArgs("AssumeRole ID is required to use AssumeRole")
+			return nil, errox.InvalidArgs.CausedBy("AssumeRole ID is required to use AssumeRole")
 		}
 
 		roleToAssumeArn := fmt.Sprintf("arn:aws:iam::%s:role/%s", conf.RegistryId, conf.AssumeRoleId)

@@ -114,7 +114,7 @@ func (j *JUnitPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error
 func (j *JUnitPrinterFactory) validate() error {
 	// ensure that the suite name is not empty
 	if j.suiteName == "" {
-		return errox.NewErrInvalidArgs("empty JUnit test suite name given, " +
+		return errox.InvalidArgs.New("empty JUnit test suite name given, " +
 			"please provide a meaningful name")
 	}
 

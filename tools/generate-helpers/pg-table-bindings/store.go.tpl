@@ -1,3 +1,4 @@
+{{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
 {{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
 {{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
 {{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
@@ -11,6 +12,9 @@
 {{- $singlePK := false }}
 {{- if eq (len $pks) 1 }}
 {{ $singlePK = index $pks 0 }}
+{{/*If there are multiple pks, then use the explicitly specified id column.*/}}
+{{- else if .Schema.ID.ColumnName}}
+{{ $singlePK = .Schema.ID }}
 {{- end }}
 
 package postgres
@@ -29,10 +33,10 @@ import (
     "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
-    {{if or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker") -}}
+    {{ if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) -}}
     "github.com/stackrox/rox/pkg/sac"
     {{- end }}
-    {{- if eq .ResourceType "directlyScoped" -}}
+    {{- if .Obj.IsDirectlyScoped -}}
     "github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
     {{- end }}
 )
@@ -63,31 +67,8 @@ const (
 
 var (
     log = logging.LoggerForModule()
-    schema = func() *walker.Schema {
-             		schema := globaldb.GetSchemaForTable(baseTable)
-             		if schema != nil {
-             			return schema
-             		}
-             		schema = walker.Walk(reflect.TypeOf((*{{.Type}})(nil)), baseTable)
-             		 {{- /* Attach reference schemas, if provided. */ -}}
-                        {{- $schema := .Schema }}
-                        {{- range $idx, $ref := $schema.Parents}}
-                            {{- if ne $ref.Table $schema.EmbeddedIn -}}.
-                            WithReference(func() *walker.Schema {
-                                parent := globaldb.GetSchemaForTable("{{$ref.Table}}")
-                                if parent != nil {
-                                    return parent
-                                }
-                                parent = walker.Walk(reflect.TypeOf(({{$ref.Type}})(nil)), "{{$ref.Table}}")
-                                globaldb.RegisterTable(parent)
-                                return parent
-                            }())
-                            {{- end }}
-                        {{- end }}
-             		globaldb.RegisterTable(schema)
-             		return schema
-             	}()
-    {{ if eq .ResourceType "globallyScoped" -}}
+    schema = {{ template "schemaVar" .Schema}}
+    {{ if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) -}}
     targetResource = resources.{{.Type | storageToResource}}
     {{- end }}
 )
@@ -105,7 +86,9 @@ type Store interface {
 {{- if $singlePK }}
     GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
     GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error)
+{{- if not .JoinTable }}
     DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error
+{{- end }}
 {{- end }}
 
     Walk(ctx context.Context, fn func(obj *{{.Type}}) error) error
@@ -118,6 +101,8 @@ type storeImpl struct {
     db *pgxpool.Pool
 }
 
+{{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
+
 {{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 {{- define "createTable" }}
 {{- $schema := . }}
@@ -127,7 +112,7 @@ pgutils.CreateTable(ctx, db, {{template "createTableStmtVar" $schema}})
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
     {{- /* No top-level has a parent unless attached synthetically. Therefore, start at the referenced tables, if any, so that create of current table succeeds. */ -}}
-    {{- range $idx, $parent := .Schema.Parents }}
+    {{- range $idx, $parent := .Schema.ReferencedSchema }}
     {{- template "createTable"  $parent}}
     {{- end }}
     {{- template "createTable" .Schema}}
@@ -142,8 +127,8 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 
 {{- define "insertObject"}}
 {{- $schema := .schema }}
-func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{if not .joinTable}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.Parents}}, idx int{{end}}{{end}}) error {
-    {{if not $schema.Parents }}
+func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{if not .joinTable}}{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}} {{$field.Type}}{{end}}{{if $schema.EmbeddedIn}}, idx int{{end}}{{end}}) error {
+    {{if not $schema.EmbeddedIn }}
     serialized, marshalErr := obj.Marshal()
     if marshalErr != nil {
         return marshalErr
@@ -166,11 +151,11 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
         return err
     }
 
-    {{if $schema.Children}}
+    {{if $schema.ReferencingSchema}}
     var query string
     {{end}}
 
-    {{range $idx, $child := $schema.Children}}
+    {{range $idx, $child := $schema.ReferencingSchema}}
     for childIdx, child := range obj.{{$child.ObjectGetter}} {
         if err := {{ template "insertFunctionName" $child }}(ctx, tx, child{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIdx); err != nil {
             return err
@@ -187,7 +172,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
     return nil
 }
 
-{{range $idx, $child := $schema.Children}}{{ template "insertObject" dict "schema" $child "joinTable" false }}{{end}}
+{{range $idx, $child := $schema.ReferencingSchema}}{{ template "insertObject" dict "schema" $child "joinTable" false }}{{end}}
 {{- end}}
 
 {{- if not .JoinTable }}
@@ -205,7 +190,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
     var err error
 
-    {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.Parents) }}
+    {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.EmbeddedIn) }}
     // This is a copy so first we must delete the rows and re-add them
     // Which is essentially the desired behaviour of an upsert.
     var deletes []string
@@ -221,7 +206,8 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         // Todo: ROX-9499 Figure out how to more cleanly template around this issue.
         log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
-        {{if not $schema.Parents }}
+        {{/* If embedded, the top-level has the full serialized object */}}
+        {{if not $schema.EmbeddedIn }}
         serialized, marshalErr := obj.Marshal()
         if marshalErr != nil {
             return marshalErr
@@ -237,7 +223,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
             {{end}}
         })
 
-        {{ if not $schema.Parents }}
+        {{ if not $schema.EmbeddedIn }}
         {{if eq (len $schema.LocalPrimaryKeys) 1}}
         // Add the id to be deleted.
         deletes = append(deletes, {{ range $idx, $field := $schema.LocalPrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
@@ -253,7 +239,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         if (idx + 1) % batchSize == 0 || idx == len(objs) - 1  {
             // copy does not upsert so have to delete first.  parent deletion cascades so only need to
             // delete for the top level parent
-            {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.Parents) }}
+            {{if and (eq (len $schema.LocalPrimaryKeys) 1) (not $schema.EmbeddedIn) }}
             _, err = tx.Exec(ctx, deleteManyStmt, deletes);
             if err != nil {
                 return err
@@ -273,13 +259,13 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         }
     }
 
-    {{if $schema.Children}}
-    {{if not $schema.Parents }}
+    {{if $schema.ReferencingSchema}}
+    {{if not $schema.EmbeddedIn }}
     for _, obj := range objs {
     {{else}}
     for idx, obj := range objs {
     {{end}}
-        {{range $idx, $child := $schema.Children}}
+        {{range $idx, $child := $schema.ReferencingSchema}}
         if err = s.{{ template "copyFunctionName" $child }}(ctx, tx{{ range $idx, $field := $schema.ParentKeys }}, {{$field.Name}}{{end}}{{ range $idx, $field := $schema.LocalPrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
             return err
         }
@@ -289,7 +275,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
 
     return err
 }
-{{range $idx, $child := $schema.Children}}{{ template "copyObject" $child }}{{end}}
+{{range $idx, $child := $schema.ReferencingSchema}}{{ template "copyObject" $child }}{{end}}
 {{- end}}
 
 {{- if not .JoinTable }}
@@ -357,14 +343,22 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+    {{- else if .Obj.IsGloballyScoped }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
+    {{- else if and (.Obj.IsDirectlyScoped) (.Obj.IsClusterScope) }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}.
+        ClusterID({{ "obj" | .Obj.GetClusterID }})
+    {{- else if and (.Obj.IsDirectlyScoped) (.Obj.IsNamespaceScope) }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}.
+        ClusterID({{ "obj" | .Obj.GetClusterID }}).Namespace({{ "obj" | .Obj.GetNamespace }})
+    {{- end }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- end}}
+    {{- end }}
 
     return s.upsert(ctx, obj)
 }
@@ -378,14 +372,36 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+    {{- else if .Obj.IsGloballyScoped }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- end}}
+    {{- else if .Obj.IsDirectlyScoped -}}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
+    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        var deniedIds []string
+        for _, obj := range objs {
+            {{- if .Obj.IsClusterScope }}
+            subScopeChecker := scopeChecker.ClusterID({{ "obj" | .Obj.GetClusterID }})
+            {{- else if .Obj.IsNamespaceScope }}
+            subScopeChecker := scopeChecker.ClusterID({{ "obj" | .Obj.GetClusterID }}).Namespace({{ "obj" | .Obj.GetNamespace }})
+            {{- end }}
+            if ok, err := subScopeChecker.Allowed(ctx); err != nil {
+                return err
+            } else if !ok {
+                deniedIds = append(deniedIds, obj.GetId())
+            }
+        }
+        if len(deniedIds) != 0 {
+            return errors.Wrapf(sac.ErrResourceAccessDenied, "modifying {{ .TrimmedType|lowerCamelCase }}s with IDs [%s] was denied", strings.Join(deniedIds, ", "))
+        }
+    }
+    {{- end }}
 
     if len(objs) < batchAfter {
         return s.upsert(ctx, objs...)
@@ -403,8 +419,8 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
     if ok, err := {{ .PermissionChecker }}.CountAllowed(ctx); err != nil || !ok {
         return 0, err
     }
-    {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+    {{- else if .Obj.IsGloballyScoped }}
+    {{ template "defineScopeChecker" "READ" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
         return 0, err
     }
@@ -426,8 +442,8 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
     if ok, err := {{ .PermissionChecker }}.ExistsAllowed(ctx); err != nil || !ok {
         return false, err
     }
-    {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+    {{- else if .Obj.IsGloballyScoped }}
+    {{ template "defineScopeChecker" "READ" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return false, err
     } else if !ok {
@@ -451,8 +467,8 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
     if ok, err := {{ .PermissionChecker }}.GetAllowed(ctx); err != nil || !ok {
         return nil, false, err
     }
-    {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+    {{- else if .Obj.IsGloballyScoped }}
+    {{ template "defineScopeChecker" "READ" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return nil, false, err
     } else if !ok {
@@ -499,8 +515,8 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+    {{- else if .Obj.IsGloballyScoped }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -531,8 +547,8 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
     if ok, err := {{ .PermissionChecker }}.GetIDsAllowed(ctx); err != nil || !ok {
         return nil, err
     }
-    {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+    {{- else if .Obj.IsGloballyScoped }}
+    {{ template "defineScopeChecker" "READ" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return nil, err
     } else if !ok {
@@ -560,14 +576,14 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "{{.TrimmedType}}")
 
-    {{ if .PermissionChecker -}}
+    {{ if .Obj.HasPermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.GetManyAllowed(ctx); err != nil {
         return nil, nil, err
     } else if !ok {
         return nil, nil, nil
     }
-    {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+    {{- else if .Obj.IsGloballyScoped }}
+    {{ template "defineScopeChecker" "READ" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return nil, nil, err
     } else if !ok {
@@ -630,8 +646,8 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- else if eq .ResourceType "globallyScoped" }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+    {{- else if .Obj.IsGloballyScoped }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -675,41 +691,16 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
 	return nil
 }
 
-{{ if eq .ResourceType "directlyScoped" }}
-    func isInScope(obj *{{.Type}}, eas *effectiveaccessscope.ScopeTree) bool {
-    if eas.State == effectiveaccessscope.Included {
-        return true
-    }
-    if eas.State == effectiveaccessscope.Excluded {
-        return false
-    }
-    clusterId := {{ .ClusterGetter }}
-    cluster := eas.GetClusterByID(clusterId)
-    {{ if not .NamespaceGetter -}}
-    return cluster.State == effectiveaccessscope.Included
-    {{  else -}}
-    if cluster.State == effectiveaccessscope.Included {
-        return true
-    }
-    if cluster.State == effectiveaccessscope.Excluded {
-        return false
-    }
-    namespaceName := {{ .NamespaceGetter }}
-    return cluster.Namespaces[namespaceName].State == effectiveaccessscope.Included
-    {{- end }}
-}
-{{ end -}}
-
 //// Used for testing
 {{- define "dropTableFunctionName"}}dropTable{{.Table | upperCamelCase}}{{end}}
 {{- define "dropTable"}}
 {{- $schema := . }}
 func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *pgxpool.Pool) {
     _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{$schema.Table}} CASCADE")
-    {{range $idx, $child := $schema.Children}}{{ template "dropTableFunctionName" $child }}(ctx, db)
+    {{range $idx, $child := $schema.ReferencingSchema}}{{ template "dropTableFunctionName" $child }}(ctx, db)
     {{end}}
 }
-{{range $idx, $child := $schema.Children}}{{ template "dropTable" $child }}{{end}}
+{{range $idx, $child := $schema.ReferencingSchema}}{{ template "dropTable" $child }}{{end}}
 {{- end}}
 
 {{template "dropTable" .Schema}}

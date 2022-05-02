@@ -24,7 +24,7 @@ var (
 				},
 			},
 		},
-		PolicyVersion: "1",
+		PolicyVersion: "1.1",
 		PolicySections: []*storage.PolicySection{
 			{
 				PolicyGroups: []*storage.PolicyGroup{

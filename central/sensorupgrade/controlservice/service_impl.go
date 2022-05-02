@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/utils"
@@ -36,12 +36,12 @@ func clusterIDFromCtx(ctx context.Context) (string, error) {
 
 	svc := id.Service()
 	if svc == nil || svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
-		return "", errorhelpers.NewErrNotAuthorized("only sensor/upgrader may access this API")
+		return "", errox.NotAuthorized.CausedBy("only sensor/upgrader may access this API")
 	}
 
 	clusterID := svc.GetId()
 	if clusterID == "" {
-		return "", errorhelpers.NewErrNotAuthorized("only sensors with a valid cluster ID may access this API")
+		return "", errox.NotAuthorized.CausedBy("only sensors with a valid cluster ID may access this API")
 	}
 	return clusterID, nil
 }
@@ -54,7 +54,7 @@ func (s *service) UpgradeCheckInFromUpgrader(ctx context.Context, req *central.U
 
 	clusterID, err := centralsensor.GetClusterID(req.GetClusterId(), clusterIDFromCert)
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "failed to derive cluster ID: %s", err)
+		return nil, errors.Wrapf(errox.InvalidArgs, "failed to derive cluster ID: %s", err)
 	}
 
 	return s.connectionManager.ProcessCheckInFromUpgrader(ctx, clusterID, req)
@@ -68,7 +68,7 @@ func (s *service) UpgradeCheckInFromSensor(ctx context.Context, req *central.Upg
 
 	clusterID, err := centralsensor.GetClusterID(req.GetClusterId(), clusterIDFromCert)
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "failed to derive cluster ID: %s", err)
+		return nil, errors.Wrapf(errox.InvalidArgs, "failed to derive cluster ID: %s", err)
 	}
 
 	if err := s.connectionManager.ProcessUpgradeCheckInFromSensor(ctx, clusterID, req); err != nil {

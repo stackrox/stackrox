@@ -6,20 +6,25 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type RolebindingsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestRolebindingsStore(t *testing.T) {
@@ -34,24 +39,30 @@ func (s *RolebindingsStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *RolebindingsStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *RolebindingsStoreSuite) TestStore() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *RolebindingsStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *RolebindingsStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	k8SRoleBinding := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(k8SRoleBinding, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -61,6 +72,8 @@ func (s *RolebindingsStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundK8SRoleBinding)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, k8SRoleBinding))
 	foundK8SRoleBinding, exists, err = store.Get(ctx, k8SRoleBinding.GetId())
 	s.NoError(err)
@@ -69,12 +82,13 @@ func (s *RolebindingsStoreSuite) TestStore() {
 
 	k8SRoleBindingCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(k8SRoleBindingCount, 1)
+	s.Equal(1, k8SRoleBindingCount)
 
 	k8SRoleBindingExists, err := store.Exists(ctx, k8SRoleBinding.GetId())
 	s.NoError(err)
 	s.True(k8SRoleBindingExists)
 	s.NoError(store.Upsert(ctx, k8SRoleBinding))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, k8SRoleBinding), sac.ErrResourceAccessDenied)
 
 	foundK8SRoleBinding, exists, err = store.Get(ctx, k8SRoleBinding.GetId())
 	s.NoError(err)
@@ -98,5 +112,85 @@ func (s *RolebindingsStoreSuite) TestStore() {
 
 	k8SRoleBindingCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(k8SRoleBindingCount, 200)
+	s.Equal(200, k8SRoleBindingCount)
+}
+
+func (s *RolebindingsStoreSuite) TestSACUpsert() {
+	obj := &storage.K8SRoleBinding{}
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	ctxs := getSACContexts(obj)
+	for name, expectedErr := range map[string]error{
+		withAllAccess:           nil,
+		withNoAccess:            sac.ErrResourceAccessDenied,
+		withNoAccessToCluster:   sac.ErrResourceAccessDenied,
+		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
+		withAccess:              nil,
+		withAccessToCluster:     nil,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			assert.ErrorIs(t, s.store.Upsert(ctxs[name], obj), expectedErr)
+		})
+	}
+}
+
+func (s *RolebindingsStoreSuite) TestSACUpsertMany() {
+	obj := &storage.K8SRoleBinding{}
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	ctxs := getSACContexts(obj)
+	for name, expectedErr := range map[string]error{
+		withAllAccess:           nil,
+		withNoAccess:            sac.ErrResourceAccessDenied,
+		withNoAccessToCluster:   sac.ErrResourceAccessDenied,
+		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
+		withAccess:              nil,
+		withAccessToCluster:     nil,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			assert.ErrorIs(t, s.store.UpsertMany(ctxs[name], []*storage.K8SRoleBinding{obj}), expectedErr)
+		})
+	}
+}
+
+const (
+	withAllAccess           = "AllAccess"
+	withNoAccess            = "NoAccess"
+	withAccessToDifferentNs = "AccessToDifferentNs"
+	withAccess              = "Access"
+	withAccessToCluster     = "AccessToCluster"
+	withNoAccessToCluster   = "NoAccessToCluster"
+)
+
+func getSACContexts(obj *storage.K8SRoleBinding) map[string]context.Context {
+	return map[string]context.Context{
+		withAllAccess: sac.WithAllAccess(context.Background()),
+		withNoAccess:  sac.WithNoAccess(context.Background()),
+		withAccessToDifferentNs: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetClusterId()),
+				sac.NamespaceScopeKeys("unknown ns"),
+			)),
+		withAccess: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetClusterId()),
+				sac.NamespaceScopeKeys(obj.GetNamespace()),
+			)),
+		withAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetClusterId()),
+			)),
+		withNoAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys("unknown cluster"),
+			)),
+	}
 }

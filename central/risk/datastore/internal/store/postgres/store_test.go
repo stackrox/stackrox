@@ -6,20 +6,25 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 type RiskStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store       Store
+	pool        *pgxpool.Pool
 }
 
 func TestRiskStore(t *testing.T) {
@@ -34,24 +39,30 @@ func (s *RiskStoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *RiskStoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *RiskStoreSuite) TestStore() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *RiskStoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *RiskStoreSuite) TestStore() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	risk := &storage.Risk{}
 	s.NoError(testutils.FullInit(risk, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -61,6 +72,8 @@ func (s *RiskStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundRisk)
 
+	withNoAccessCtx := sac.WithNoAccess(ctx)
+
 	s.NoError(store.Upsert(ctx, risk))
 	foundRisk, exists, err = store.Get(ctx, risk.GetId())
 	s.NoError(err)
@@ -69,12 +82,13 @@ func (s *RiskStoreSuite) TestStore() {
 
 	riskCount, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(riskCount, 1)
+	s.Equal(1, riskCount)
 
 	riskExists, err := store.Exists(ctx, risk.GetId())
 	s.NoError(err)
 	s.True(riskExists)
 	s.NoError(store.Upsert(ctx, risk))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, risk), sac.ErrResourceAccessDenied)
 
 	foundRisk, exists, err = store.Get(ctx, risk.GetId())
 	s.NoError(err)
@@ -98,5 +112,85 @@ func (s *RiskStoreSuite) TestStore() {
 
 	riskCount, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(riskCount, 200)
+	s.Equal(200, riskCount)
+}
+
+func (s *RiskStoreSuite) TestSACUpsert() {
+	obj := &storage.Risk{}
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	ctxs := getSACContexts(obj)
+	for name, expectedErr := range map[string]error{
+		withAllAccess:           nil,
+		withNoAccess:            sac.ErrResourceAccessDenied,
+		withNoAccessToCluster:   sac.ErrResourceAccessDenied,
+		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
+		withAccess:              nil,
+		withAccessToCluster:     nil,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			assert.ErrorIs(t, s.store.Upsert(ctxs[name], obj), expectedErr)
+		})
+	}
+}
+
+func (s *RiskStoreSuite) TestSACUpsertMany() {
+	obj := &storage.Risk{}
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	ctxs := getSACContexts(obj)
+	for name, expectedErr := range map[string]error{
+		withAllAccess:           nil,
+		withNoAccess:            sac.ErrResourceAccessDenied,
+		withNoAccessToCluster:   sac.ErrResourceAccessDenied,
+		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
+		withAccess:              nil,
+		withAccessToCluster:     nil,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			assert.ErrorIs(t, s.store.UpsertMany(ctxs[name], []*storage.Risk{obj}), expectedErr)
+		})
+	}
+}
+
+const (
+	withAllAccess           = "AllAccess"
+	withNoAccess            = "NoAccess"
+	withAccessToDifferentNs = "AccessToDifferentNs"
+	withAccess              = "Access"
+	withAccessToCluster     = "AccessToCluster"
+	withNoAccessToCluster   = "NoAccessToCluster"
+)
+
+func getSACContexts(obj *storage.Risk) map[string]context.Context {
+	return map[string]context.Context{
+		withAllAccess: sac.WithAllAccess(context.Background()),
+		withNoAccess:  sac.WithNoAccess(context.Background()),
+		withAccessToDifferentNs: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetSubject().GetClusterId()),
+				sac.NamespaceScopeKeys("unknown ns"),
+			)),
+		withAccess: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetSubject().GetClusterId()),
+				sac.NamespaceScopeKeys(obj.GetSubject().GetNamespace()),
+			)),
+		withAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys(obj.GetSubject().GetClusterId()),
+			)),
+		withNoAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys("unknown cluster"),
+			)),
+	}
 }

@@ -12,12 +12,13 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-    {{- if (or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker")) }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped) }}
     "github.com/stackrox/rox/pkg/sac"{{- end }}
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -28,6 +29,8 @@ import (
 type {{$namePrefix}}StoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	store Store
+	pool *pgxpool.Pool
 }
 
 func Test{{$namePrefix}}Store(t *testing.T) {
@@ -42,28 +45,30 @@ func (s *{{$namePrefix}}StoreSuite) SetupTest() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
-}
 
-func (s *{{$namePrefix}}StoreSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *{{$namePrefix}}StoreSuite) TestStore() {
-    {{- if or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker") }}
-    ctx := sac.WithAllAccess(context.Background())
-    {{- else -}}
-    ctx := context.Background()
-    {{- end }}
+	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
-	s.NoError(err)
-	defer pool.Close()
+	s.Require().NoError(err)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	s.pool = pool
+	s.store = New(ctx, pool)
+}
+
+func (s *{{$namePrefix}}StoreSuite) TearDownTest() {
+	s.pool.Close()
+	s.envIsolator.RestoreAll()
+}
+
+func (s *{{$namePrefix}}StoreSuite) TestStore() {
+    ctx := sac.WithAllAccess(context.Background())
+
+	store := s.store
 
 	{{$name}} := &{{.Type}}{}
 	s.NoError(testutils.FullInit({{$name}}, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -74,7 +79,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
     {{if not .JoinTable -}}
-    {{- if or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker") }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped)}}
     withNoAccessCtx := sac.WithNoAccess(ctx)
     {{- end }}
 
@@ -86,9 +91,9 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 
 	{{$name}}Count, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal({{$name}}Count, 1)
+	s.Equal(1, {{$name}}Count)
 
-    {{- if or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker") }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
     {{$name}}Count, err = store.Count(withNoAccessCtx)
     s.NoError(err)
     s.Zero({{$name}}Count)
@@ -98,7 +103,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.NoError(err)
 	s.True({{$name}}Exists)
 	s.NoError(store.Upsert(ctx, {{$name}}))
-    {{- if or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker") }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) (.Obj.IsDirectlyScoped)}}
 	s.ErrorIs(store.Upsert(withNoAccessCtx, {{$name}}), sac.ErrResourceAccessDenied)
     {{- end }}
 
@@ -113,7 +118,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
-    {{- if or (eq .ResourceType "globallyScoped") (eq .ResourceType "permissionChecker") }}
+    {{- if or (.Obj.IsGloballyScoped) (.Obj.HasPermissionChecker) }}
     s.ErrorIs(store.Delete(withNoAccessCtx, {{template "paramList" $}}), sac.ErrResourceAccessDenied)
     {{- end }}
 
@@ -124,11 +129,94 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
         {{$name}}s = append({{.TrimmedType|lowerCamelCase}}s, {{.TrimmedType|lowerCamelCase}})
     }
 
-    s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
+	s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
 
     {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
     s.NoError(err)
-    s.Equal({{.TrimmedType|lowerCamelCase}}Count, 200)
+    s.Equal(200, {{.TrimmedType|lowerCamelCase}}Count)
     {{- end }}
 }
 
+{{ if .Obj.IsDirectlyScoped -}}
+func (s *{{$namePrefix}}StoreSuite) TestSACUpsert() {
+	obj := &{{.Type}}{}
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	ctxs := getSACContexts(obj)
+	for name, expectedErr := range map[string]error{
+		withAllAccess: nil,
+		withNoAccess: sac.ErrResourceAccessDenied,
+		withNoAccessToCluster: sac.ErrResourceAccessDenied,
+		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
+		withAccess: nil,
+		withAccessToCluster: nil,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			assert.ErrorIs(t, s.store.Upsert(ctxs[name], obj), expectedErr)
+		})
+	}
+}
+
+func (s *{{$namePrefix}}StoreSuite) TestSACUpsertMany() {
+	obj := &{{.Type}}{}
+	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+
+	ctxs := getSACContexts(obj)
+	for name, expectedErr := range map[string]error{
+		withAllAccess: nil,
+		withNoAccess: sac.ErrResourceAccessDenied,
+		withNoAccessToCluster: sac.ErrResourceAccessDenied,
+		withAccessToDifferentNs: sac.ErrResourceAccessDenied,
+		withAccess: nil,
+		withAccessToCluster: nil,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			assert.ErrorIs(t, s.store.UpsertMany(ctxs[name], []*{{.Type}}{obj}), expectedErr)
+		})
+	}
+}
+
+const (
+	withAllAccess = "AllAccess"
+	withNoAccess = "NoAccess"
+	withAccessToDifferentNs = "AccessToDifferentNs"
+	withAccess = "Access"
+	withAccessToCluster = "AccessToCluster"
+	withNoAccessToCluster = "NoAccessToCluster"
+)
+
+func getSACContexts(obj *{{.Type}}) map[string]context.Context {
+	return map[string]context.Context {
+		withAllAccess: sac.WithAllAccess(context.Background()),
+		withNoAccess: sac.WithNoAccess(context.Background()),
+		withAccessToDifferentNs: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys({{ "obj" | .Obj.GetClusterID }}),
+				sac.NamespaceScopeKeys("unknown ns"),
+		)),
+		withAccess: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys({{ "obj" | .Obj.GetClusterID }}),
+				{{- if .Obj.IsNamespaceScope }}
+					sac.NamespaceScopeKeys({{ "obj" | .Obj.GetNamespace }}),
+				{{- end }}
+		)),
+		withAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys({{ "obj" | .Obj.GetClusterID }}),
+		)),
+		withNoAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(targetResource),
+				sac.ClusterScopeKeys("unknown cluster"),
+		)),
+	}
+}
+{{ end }}

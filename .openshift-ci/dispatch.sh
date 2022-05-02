@@ -28,14 +28,14 @@ ci_job="$1"
 shift
 
 case "$ci_job" in
-    binary_build_commands)
-        "$ROOT/.openshift-ci-migration/binary_build_commands.sh"
+    style-checks)
+        make style
+        ;;
+    push-images)
+        "$ROOT/scripts/ci/jobs/push-images.sh"
         ;;
     gke-upgrade-tests)
         "$ROOT/.openshift-ci/gke_upgrade_test.py"
-        ;;
-    style-checks)
-        make style
         ;;
     *)
         # For ease of initial integration this function does not fail when the

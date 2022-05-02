@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	"github.com/stackrox/rox/central/cluster/index"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
-	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/cluster_health_status"
+	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
@@ -34,7 +34,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -872,7 +874,8 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		lastContact := protoconv.ConvertTimestampToTimeOrDefault(cluster.GetHealthStatus().GetLastContact(), time.Time{})
 		timeLeftInGracePeriod := clusterMoveGracePeriod - time.Since(lastContact)
 
-		if timeLeftInGracePeriod > 0 {
+		// In a scale test environment, allow Sensors to reconnect in under the time limit
+		if timeLeftInGracePeriod > 0 && !env.ScaleTestEnabled.BooleanSetting() {
 			if err := common.CheckConnReplace(hello.GetDeploymentIdentification(), cluster.GetMostRecentSensorId()); err != nil {
 				managerPretty := "non-manually" // Unless we extend the `ManagerType` and forget to extend the switch here, this should never surface to the user.
 				switch manager {
@@ -926,7 +929,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 func normalizeCluster(cluster *storage.Cluster) error {
 	if cluster == nil {
-		return errorhelpers.NewErrInvariantViolation("cannot normalize nil cluster object")
+		return errox.InvariantViolation.CausedBy("cannot normalize nil cluster object")
 	}
 
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
@@ -944,7 +947,7 @@ func validateInput(cluster *storage.Cluster) error {
 // `cluster.* bool` flags remain untouched.
 func addDefaults(cluster *storage.Cluster) error {
 	if cluster == nil {
-		return errorhelpers.NewErrInvariantViolation("cannot enrich nil cluster object")
+		return errox.InvariantViolation.CausedBy("cannot enrich nil cluster object")
 	}
 	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
 	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
