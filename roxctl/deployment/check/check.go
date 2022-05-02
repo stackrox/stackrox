@@ -9,10 +9,10 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/printer"
@@ -129,7 +129,7 @@ func (d *deploymentCheckCommand) Construct(args []string, cmd *cobra.Command, f 
 
 func (d *deploymentCheckCommand) Validate() error {
 	if _, err := os.Open(d.file); err != nil {
-		return errors.Wrap(errox.InvalidArgs.CausedBy(err.Error()), "validating command")
+		return common.ErrInvalidCommandOption.CausedBy(err)
 	}
 
 	return nil

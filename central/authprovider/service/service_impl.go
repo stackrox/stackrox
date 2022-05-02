@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -169,7 +168,7 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 
 	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq), authproviders.WithValidateCallback(datastore.Singleton()))
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs.CausedBy(err.Error()), "creating auth provider instance")
+		return nil, errox.InvalidArgs.New("unable to create an auth provider instance").CausedBy(err)
 	}
 	return provider.StorageView(), nil
 }
@@ -181,14 +180,14 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 
 	provider := s.registry.GetProvider(request.GetId())
 	if provider == nil {
-		return nil, errox.InvalidArgs.CausedBy(fmt.Sprintf("auth provider with id %q does not exist", request.GetId()))
+		return nil, errox.NotFound.Newf("auth provider with id %q does not exist", request.GetId())
 	}
 
 	// Attempt to merge configs.
 	request.Config = provider.MergeConfigInto(request.GetConfig())
 
 	if err := s.registry.ValidateProvider(ctx, authproviders.WithStorageView(request)); err != nil {
-		return nil, errox.InvalidArgs.CausedBy(fmt.Sprintf("auth provider validation check failed: %v", err))
+		return nil, errox.InvalidArgs.New("auth provider validation check failed").CausedBy(err)
 	}
 
 	// This will not log anyone out as the provider was not validated and thus no one has ever logged into it
@@ -198,7 +197,7 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 
 	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(request), authproviders.WithValidateCallback(datastore.Singleton()))
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs.CausedBy(err.Error()), "creating auth provider instance")
+		return nil, errox.InvalidArgs.New("unable to create an auth provider instance").CausedBy(err)
 	}
 	return provider.StorageView(), nil
 }
@@ -217,7 +216,7 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 	}
 	provider, err := s.registry.UpdateProvider(ctx, request.GetId(), options...)
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs.CausedBy(err.Error()), "updating auth provider")
+		return nil, errox.InvalidArgs.New("unable to update auth provider").CausedBy(err)
 	}
 	return provider.StorageView(), nil
 }

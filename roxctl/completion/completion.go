@@ -5,12 +5,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common"
 )
 
 var (
-	errInvalidArgs = errox.InvalidArgs.CausedBy("use one of the following: [bash|zsh|fish|powershell]")
+	errInvalidArgs = common.ErrInvalidCommandOption.CausedBy("use one of the following: [bash|zsh|fish|powershell]")
 )
 
 const (

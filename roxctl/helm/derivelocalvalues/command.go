@@ -65,11 +65,11 @@ func (cfg *helmDeriveLocalValuesCommand) Construct(chartName string) {
 // provided values
 func (cfg *helmDeriveLocalValuesCommand) Validate() error {
 	if cfg.output == "" && cfg.outputDir == "" {
-		return errox.InvalidArgs.CausedBy(noOutputFileExplanation)
+		return errox.InvalidArgs.New(noOutputFileExplanation)
 	}
 
 	if cfg.output != "" && cfg.outputDir != "" {
-		return errox.InvalidArgs.CausedBy(`specify either "--output" or "--output-dir" but not both`)
+		return errox.InvalidArgs.New(`specify either "--output" or "--output-dir" but not both`)
 	}
 
 	if cfg.output == "-" {

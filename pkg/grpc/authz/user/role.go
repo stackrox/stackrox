@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
@@ -40,5 +39,5 @@ func (p *roleChecker) checkRole(roleNames []string) error {
 		}
 	}
 
-	return errox.NotAuthorized.CausedBy(fmt.Sprintf("role %q is required", p.roleName))
+	return errox.NotAuthorized.CausedByf("role %q is required", p.roleName)
 }
