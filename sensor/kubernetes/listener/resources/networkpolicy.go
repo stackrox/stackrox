@@ -58,9 +58,9 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 }
 
 func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) selector {
-	newsel := createSelector(np.GetSpec().GetPodSelector().GetMatchLabels(), true)
+	newsel := createSelector(np.GetSpec().GetPodSelector().GetMatchLabels(), EmptyMatchesEverything())
 	if oldNp != nil {
-		oldsel := createSelector(oldNp.GetSpec().GetPodSelector().GetMatchLabels(), true)
+		oldsel := createSelector(oldNp.GetSpec().GetPodSelector().GetMatchLabels(), EmptyMatchesEverything())
 		return or(oldsel, newsel)
 	}
 	return newsel
