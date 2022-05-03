@@ -25,7 +25,6 @@ import (
 	"k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	v1listers "k8s.io/client-go/listers/core/v1"
 )
@@ -461,7 +460,7 @@ func (w *deploymentWrap) updatePortExposureFromServices(svcs ...serviceWithRoute
 }
 
 func (w *deploymentWrap) updatePortExposure(svc serviceWithRoutes) {
-	if svc.selector.Matches(labels.Set(w.PodLabels)) {
+	if svc.selector.Matches(createLabelsWithLen(w.PodLabels)) {
 		return
 	}
 
