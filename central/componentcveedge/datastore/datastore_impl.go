@@ -19,12 +19,7 @@ import (
 
 type componentCVEEdgePks struct {
 	componentID string
-	compName    string
-	compVersion string
-	compOS      string
 	cveID       string
-	cve         string
-	cveOS       string
 }
 
 type datastoreImpl struct {
@@ -55,12 +50,15 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ComponentCVEEdge, bool, error) {
-	filteredIDs, err := ds.filterReadable(ctx, []string{id})
-	if err != nil || len(filteredIDs) != 1 {
-		return nil, false, err
+	if !features.PostgresDatastore.Enabled() {
+		filteredIDs, err := ds.filterReadable(ctx, []string{id})
+		if err != nil || len(filteredIDs) != 1 {
+			return nil, false, err
+		}
 	}
 
 	var pks componentCVEEdgePks
+	var err error
 	if features.PostgresDatastore.Enabled() {
 		pks, err = getPKs(id)
 		if err != nil {
@@ -69,7 +67,7 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.Component
 	}
 	// For dackbox, we do not need all the primary keys.
 
-	edge, found, err := ds.storage.Get(ctx, id, pks.componentID, pks.compName, pks.compVersion, pks.compOS, pks.cveID, pks.cve, pks.cveOS)
+	edge, found, err := ds.storage.Get(ctx, id, pks.componentID, pks.cveID)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -77,11 +75,15 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.Component
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	filteredIDs, err := ds.filterReadable(ctx, []string{id})
-	if err != nil || len(filteredIDs) != 1 {
-		return false, err
+	if !features.PostgresDatastore.Enabled() {
+		filteredIDs, err := ds.filterReadable(ctx, []string{id})
+		if err != nil || len(filteredIDs) != 1 {
+			return false, err
+		}
 	}
+
 	var pks componentCVEEdgePks
+	var err error
 	if features.PostgresDatastore.Enabled() {
 		pks, err = getPKs(id)
 		if err != nil {
@@ -90,7 +92,7 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	}
 	// For dackbox, we do not need all the primary keys.
 
-	found, err := ds.storage.Exists(ctx, id, pks.componentID, pks.compName, pks.compVersion, pks.compOS, pks.cveID, pks.cve, pks.cveOS)
+	found, err := ds.storage.Exists(ctx, id, pks.componentID, pks.cveID)
 	if err != nil || !found {
 		return false, err
 	}
@@ -108,17 +110,17 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 
 func getPKs(id string) (componentCVEEdgePks, error) {
 	parts := postgres.IDToParts(id)
-	if len(parts) != 7 {
-		return componentCVEEdgePks{}, errors.Errorf("unexpected number of primary keys (%v) found for component-cve relation. Expected 7 parts", parts)
+	if len(parts) != 5 {
+		return componentCVEEdgePks{}, errors.Errorf("unexpected number of primary keys (%v) found for component-cve relation. Expected 5 parts", parts)
 	}
 
+	compName := parts[0]
+	compVersion := parts[1]
+	compOS := parts[2]
+	cve := parts[3]
+	cveOS := parts[4]
 	return componentCVEEdgePks{
-		componentID: parts[0],
-		compName:    parts[1],
-		compVersion: parts[2],
-		compOS:      parts[3],
-		cveID:       parts[4],
-		cve:         parts[5],
-		cveOS:       parts[6],
+		componentID: postgres.IDFromPks([]string{compName, compVersion, compOS}),
+		cveID:       postgres.IDFromPks([]string{cve, cveOS}),
 	}, nil
 }

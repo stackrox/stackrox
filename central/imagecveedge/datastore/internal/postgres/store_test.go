@@ -67,7 +67,7 @@ func (s *ImageCveRelationsStoreSuite) TestStore() {
 	imageCVEEdge := &storage.ImageCVEEdge{}
 	s.NoError(testutils.FullInit(imageCVEEdge, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundImageCVEEdge, exists, err := store.Get(ctx, imageCVEEdge.GetId(), imageCVEEdge.GetImageId(), imageCVEEdge.GetImageCveId(), imageCVEEdge.GetImageCve(), imageCVEEdge.GetImageCveOperatingSystem())
+	foundImageCVEEdge, exists, err := store.Get(ctx, imageCVEEdge.GetId(), imageCVEEdge.GetImageId(), imageCVEEdge.GetImageCveId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundImageCVEEdge)

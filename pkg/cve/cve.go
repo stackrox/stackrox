@@ -59,21 +59,3 @@ func ID(cve, os string) string {
 	}
 	return cve
 }
-
-// IDToParts returns the parts—cve and operating system—that make up CVE ID.
-func IDToParts(id string) (string, string) {
-	parts := postgres.IDToParts(id)
-	if len(parts) > 2 {
-		log.Errorf("More than 2 parts found in CVE ID: %v", parts)
-		return "", ""
-	}
-
-	switch len(parts) {
-	case 0:
-		return "", ""
-	case 1:
-		return parts[0], ""
-	default:
-		return parts[0], parts[1]
-	}
-}

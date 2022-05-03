@@ -23,15 +23,10 @@ var (
                    IsFixable bool,
                    FixedBy varchar,
                    ImageComponentId varchar,
-                   ImageComponentName varchar,
-                   ImageComponentVersion varchar,
-                   ImageComponentOperatingSystem varchar,
                    ImageCveId varchar,
-                   ImageCve varchar,
-                   ImageCveOperatingSystem varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, ImageComponentId, ImageComponentName, ImageComponentVersion, ImageComponentOperatingSystem, ImageCveId, ImageCve, ImageCveOperatingSystem),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageComponentId, ImageComponentName, ImageComponentVersion, ImageComponentOperatingSystem) REFERENCES image_components(Id, Name, Version, OperatingSystem) ON DELETE CASCADE
+                   PRIMARY KEY(Id, ImageComponentId, ImageCveId),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageComponentId) REFERENCES image_components(Id) ON DELETE CASCADE
                )
                `,
 		Indexes:  []string{},
