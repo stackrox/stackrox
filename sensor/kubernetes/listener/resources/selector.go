@@ -37,7 +37,6 @@ func createLabelsWithLen(labels map[string]string) labelWithLenImpl {
 	return labelWithLenImpl{labels}
 }
 
-// SelectorWrap holds a selector and information allowing for additional checks before matching
 type selectorWrap struct {
 	selector  labels.Selector
 	numLabels uint
