@@ -1,6 +1,5 @@
-import isPlainObject from 'lodash/isPlainObject';
 import pluralize from 'pluralize';
-import qs, { ParsedQs } from 'qs';
+import qs from 'qs';
 import cloneDeep from 'lodash/cloneDeep';
 
 import integrationsList from 'Containers/Integrations/utils/integrationsList';
@@ -25,47 +24,23 @@ function isValidAction(action: unknown): action is ExtendedPageAction {
     return action === 'clone' || action === 'create' || action === 'edit' || action === 'generate';
 }
 
-function isParsedQs(s: unknown): s is ParsedQs {
-    return isPlainObject(s);
-}
-
-function isValidFilterValue(value: unknown): value is string | string[] {
-    if (typeof value === 'string') {
-        return true;
-    }
-
-    if (Array.isArray(value) && value.every((item) => typeof item === 'string')) {
-        return true;
-    }
-
-    return false;
-}
-
-function isValidFilter(s: unknown): s is SearchFilter {
-    return isParsedQs(s) && Object.values(s).every((value) => isValidFilterValue(value));
-}
-
 export type PoliciesSearch = {
     pageAction?: ExtendedPageAction;
     searchFilter?: SearchFilter;
 };
 
 /*
- * Given search query string from location, return validated action string and filter object.
+ * Given search query string from location, return validated action string.
  *
  * Examples of search query string:
  * ?action=create
  * ?action=edit
- * ?s[Lifecycle Stage]=BUILD
- * ?s[Lifecycle Stage]=BUILD&s[Lifecycle State]=DEPLOY
- * ?s[Lifecycle State]=RUNTIME&s[Severity]=CRITICAL_SEVERITY
  */
 export function parsePoliciesSearchString(search: string): PoliciesSearch {
-    const { action, s } = qs.parse(search, { ignoreQueryPrefix: true });
+    const { action } = qs.parse(search, { ignoreQueryPrefix: true });
 
     return {
         pageAction: isValidAction(action) ? action : undefined,
-        searchFilter: isValidFilter(s) ? s : undefined,
     };
 }
 
