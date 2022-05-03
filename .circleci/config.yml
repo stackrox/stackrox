@@ -415,12 +415,6 @@ checkToRunSeparateRaceConditionTestPipe: &checkToRunSeparateRaceConditionTestPip
     run-on-tags: true
     label: ci-race-tests
 
-workaroundRvmUnboundVar: &workaroundRvmUnboundVar
-  run:
-    name: Add a workaround for RVM unbound var (ROX-10695)
-    command: |
-      echo export rvm_bash_nounset=1 >> ~/.bashrc
-
 version: 2.1
 
 parameters:
@@ -2748,7 +2742,6 @@ jobs:
     resource_class: large
     steps:
       - checkout
-      - *workaroundRvmUnboundVar
       - attach_workspace:
           at: ~/go/src/github.com/stackrox/rox
       - run:
@@ -3108,7 +3101,6 @@ jobs:
     machine:
       image: << pipeline.parameters.ci_machine_image >>
     steps:
-      - *workaroundRvmUnboundVar
       - check-label-exists-or-skip:
           label: ci-openshift-tests
           run-on-master: false
@@ -3121,7 +3113,6 @@ jobs:
     machine:
       image: << pipeline.parameters.ci_machine_image >>
     steps:
-      - *workaroundRvmUnboundVar
       - check-label-exists-or-skip:
           label: ci-openshift-crio-tests
           run-on-master: false
