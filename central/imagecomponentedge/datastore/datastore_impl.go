@@ -18,11 +18,8 @@ import (
 )
 
 type imageComponentEdgePks struct {
-	imageID     string
-	compID      string
-	compName    string
-	compVersion string
-	compOS      string
+	imageID string
+	compID  string
 }
 
 type datastoreImpl struct {
@@ -53,12 +50,15 @@ func (ds *datastoreImpl) Count(ctx context.Context) (int, error) {
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComponentEdge, bool, error) {
-	filteredIDs, err := ds.filterReadable(ctx, []string{id})
-	if err != nil || len(filteredIDs) != 1 {
-		return nil, false, err
+	if !features.PostgresDatastore.Enabled() {
+		filteredIDs, err := ds.filterReadable(ctx, []string{id})
+		if err != nil || len(filteredIDs) != 1 {
+			return nil, false, err
+		}
 	}
 
 	var pks imageComponentEdgePks
+	var err error
 	if features.PostgresDatastore.Enabled() {
 		pks, err = getPKs(id)
 		if err != nil {
@@ -67,7 +67,7 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComp
 	}
 	// For dackbox, we do not need all the primary keys.
 
-	edge, found, err := ds.storage.Get(ctx, id, pks.imageID, pks.compID, pks.compName, pks.compVersion, pks.compOS)
+	edge, found, err := ds.storage.Get(ctx, id, pks.imageID, pks.compID)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -75,12 +75,15 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComp
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	filteredIDs, err := ds.filterReadable(ctx, []string{id})
-	if err != nil || len(filteredIDs) != 1 {
-		return false, err
+	if !features.PostgresDatastore.Enabled() {
+		filteredIDs, err := ds.filterReadable(ctx, []string{id})
+		if err != nil || len(filteredIDs) != 1 {
+			return false, err
+		}
 	}
 
 	var pks imageComponentEdgePks
+	var err error
 	if features.PostgresDatastore.Enabled() {
 		pks, err = getPKs(id)
 		if err != nil {
@@ -89,7 +92,7 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	}
 	// For dackbox, we do not need all the primary keys.
 
-	found, err := ds.storage.Exists(ctx, id, pks.imageID, pks.compID, pks.compName, pks.compVersion, pks.compOS)
+	found, err := ds.storage.Exists(ctx, id, pks.imageID, pks.compID)
 	if err != nil || !found {
 		return false, err
 	}
@@ -97,12 +100,15 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.ImageComponentEdge, error) {
-	filteredIDs, err := ds.filterReadable(ctx, ids)
-	if err != nil {
-		return nil, err
+	if !features.PostgresDatastore.Enabled() {
+		var err error
+		ids, err = ds.filterReadable(ctx, ids)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	edges, _, err := ds.storage.GetMany(ctx, filteredIDs)
+	edges, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -124,11 +130,12 @@ func getPKs(id string) (imageComponentEdgePks, error) {
 		return imageComponentEdgePks{}, errors.Errorf("unexpected number of primary keys (%v) found for image-component relation. Expected 4 parts", parts)
 	}
 
+	imageID := parts[0]
+	compName := parts[1]
+	compVersion := parts[2]
+	compOS := parts[3]
 	return imageComponentEdgePks{
-		imageID:     parts[0],
-		compID:      parts[1],
-		compName:    parts[2],
-		compVersion: parts[3],
-		compOS:      parts[4],
+		imageID: imageID,
+		compID:  postgres.IDFromPks([]string{compName, compVersion, compOS}),
 	}, nil
 }

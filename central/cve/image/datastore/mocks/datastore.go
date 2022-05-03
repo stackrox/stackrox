@@ -126,34 +126,34 @@ func (mr *MockDataStoreMockRecorder) Search(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q)
 }
 
-// SearchImageCVEs mocks base method.
-func (m *MockDataStore) SearchImageCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+// SearchCVEs mocks base method.
+func (m *MockDataStore) SearchCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchImageCVEs", ctx, q)
+	ret := m.ctrl.Call(m, "SearchCVEs", ctx, q)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchImageCVEs indicates an expected call of SearchImageCVEs.
-func (mr *MockDataStoreMockRecorder) SearchImageCVEs(ctx, q interface{}) *gomock.Call {
+// SearchCVEs indicates an expected call of SearchCVEs.
+func (mr *MockDataStoreMockRecorder) SearchCVEs(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchImageCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchImageCVEs), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchCVEs), ctx, q)
 }
 
-// SearchRawImageCVEs mocks base method.
-func (m *MockDataStore) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.CVE, error) {
+// SearchRawCVEs mocks base method.
+func (m *MockDataStore) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.CVE, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchRawImageCVEs", ctx, q)
+	ret := m.ctrl.Call(m, "SearchRawCVEs", ctx, q)
 	ret0, _ := ret[0].([]*storage.CVE)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchRawImageCVEs indicates an expected call of SearchRawImageCVEs.
-func (mr *MockDataStoreMockRecorder) SearchRawImageCVEs(ctx, q interface{}) *gomock.Call {
+// SearchRawCVEs indicates an expected call of SearchRawCVEs.
+func (mr *MockDataStoreMockRecorder) SearchRawCVEs(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImageCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchRawImageCVEs), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchRawCVEs), ctx, q)
 }
 
 // Suppress mocks base method.

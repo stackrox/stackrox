@@ -21,8 +21,9 @@ import (
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
 	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
+	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
+	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
@@ -55,6 +56,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	auditPkg "github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -73,7 +75,7 @@ type Resolver struct {
 	ComplianceManager           complianceManager.ComplianceManager
 	clusterCVEEdgeDataStore     clusterCVEEdgeDataStore.DataStore
 	ComponentCVEEdgeDataStore   componentCVEEdgeDataStore.DataStore
-	CVEDataStore                cveDataStore.DataStore
+	CVEDataStore                imageCVEDataStore.DataStore
 	DeploymentDataStore         deploymentDatastore.DataStore
 	PodDataStore                podDatastore.DataStore
 	ImageDataStore              imageDatastore.DataStore
@@ -109,6 +111,13 @@ type Resolver struct {
 
 // New returns a Resolver wired into the relevant data stores
 func New() *Resolver {
+	var imageCVEDS imageCVEDataStore.DataStore
+	if features.PostgresDatastore.Enabled() {
+		imageCVEDS = imageCVEDataStore.Singleton()
+	} else {
+		imageCVEDS = legacyImageCVEDataStore.Singleton()
+	}
+
 	resolver := &Resolver{
 		ActiveComponent:             activeComponent.Singleton(),
 		ComplianceAggregator:        aggregation.Singleton(),
@@ -121,7 +130,7 @@ func New() *Resolver {
 		ClusterDataStore:            clusterDatastore.Singleton(),
 		clusterCVEEdgeDataStore:     clusterCVEEdgeDataStore.Singleton(),
 		ComponentCVEEdgeDataStore:   componentCVEEdgeDataStore.Singleton(),
-		CVEDataStore:                cveDataStore.Singleton(),
+		CVEDataStore:                imageCVEDS,
 		DeploymentDataStore:         deploymentDatastore.Singleton(),
 		PodDataStore:                podDatastore.Singleton(),
 		ImageDataStore:              imageDatastore.Singleton(),

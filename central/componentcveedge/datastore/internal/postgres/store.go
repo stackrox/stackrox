@@ -20,10 +20,10 @@ import (
 const (
 	baseTable  = "image_component_cve_relations"
 	countStmt  = "SELECT COUNT(*) FROM image_component_cve_relations"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_cve_relations WHERE Id = $1 AND ImageComponentId = $2 AND ImageComponentName = $3 AND ImageComponentVersion = $4 AND ImageComponentOperatingSystem = $5 AND ImageCveId = $6 AND ImageCve = $7 AND ImageCveOperatingSystem = $8)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_cve_relations WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3)"
 
-	getStmt     = "SELECT serialized FROM image_component_cve_relations WHERE Id = $1 AND ImageComponentId = $2 AND ImageComponentName = $3 AND ImageComponentVersion = $4 AND ImageComponentOperatingSystem = $5 AND ImageCveId = $6 AND ImageCve = $7 AND ImageCveOperatingSystem = $8"
-	deleteStmt  = "DELETE FROM image_component_cve_relations WHERE Id = $1 AND ImageComponentId = $2 AND ImageComponentName = $3 AND ImageComponentVersion = $4 AND ImageComponentOperatingSystem = $5 AND ImageCveId = $6 AND ImageCve = $7 AND ImageCveOperatingSystem = $8"
+	getStmt     = "SELECT serialized FROM image_component_cve_relations WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3"
+	deleteStmt  = "DELETE FROM image_component_cve_relations WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3"
 	walkStmt    = "SELECT serialized FROM image_component_cve_relations"
 	getIDsStmt  = "SELECT Id FROM image_component_cve_relations"
 	getManyStmt = "SELECT serialized FROM image_component_cve_relations WHERE Id = ANY($1::text[])"
@@ -45,8 +45,8 @@ var (
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string, imageComponentId string, imageComponentName string, imageComponentVersion string, imageComponentOperatingSystem string, imageCveId string, imageCve string, imageCveOperatingSystem string) (bool, error)
-	Get(ctx context.Context, id string, imageComponentId string, imageComponentName string, imageComponentVersion string, imageComponentOperatingSystem string, imageCveId string, imageCve string, imageCveOperatingSystem string) (*storage.ComponentCVEEdge, bool, error)
+	Exists(ctx context.Context, id string, imageComponentId string, imageCveId string) (bool, error)
+	Get(ctx context.Context, id string, imageComponentId string, imageCveId string) (*storage.ComponentCVEEdge, bool, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ComponentCVEEdge, []int, error)
 
@@ -84,10 +84,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string, imageComponentId string, imageComponentName string, imageComponentVersion string, imageComponentOperatingSystem string, imageCveId string, imageCve string, imageCveOperatingSystem string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string, imageComponentId string, imageCveId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ComponentCVEEdge")
 
-	row := s.db.QueryRow(ctx, existsStmt, id, imageComponentId, imageComponentName, imageComponentVersion, imageComponentOperatingSystem, imageCveId, imageCve, imageCveOperatingSystem)
+	row := s.db.QueryRow(ctx, existsStmt, id, imageComponentId, imageCveId)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -96,7 +96,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string, imageComponentId stri
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string, imageComponentId string, imageComponentName string, imageComponentVersion string, imageComponentOperatingSystem string, imageCveId string, imageCve string, imageCveOperatingSystem string) (*storage.ComponentCVEEdge, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string, imageComponentId string, imageCveId string) (*storage.ComponentCVEEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ComponentCVEEdge")
 
 	conn, release, err := s.acquireConn(ctx, ops.Get, "ComponentCVEEdge")
@@ -105,7 +105,7 @@ func (s *storeImpl) Get(ctx context.Context, id string, imageComponentId string,
 	}
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, id, imageComponentId, imageComponentName, imageComponentVersion, imageComponentOperatingSystem, imageCveId, imageCve, imageCveOperatingSystem)
+	row := conn.QueryRow(ctx, getStmt, id, imageComponentId, imageCveId)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)

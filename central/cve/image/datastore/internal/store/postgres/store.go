@@ -20,10 +20,10 @@ import (
 const (
 	baseTable  = "image_cves"
 	countStmt  = "SELECT COUNT(*) FROM image_cves"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_cves WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM image_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3"
-	deleteStmt  = "DELETE FROM image_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3"
+	getStmt     = "SELECT serialized FROM image_cves WHERE Id = $1"
+	deleteStmt  = "DELETE FROM image_cves WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM image_cves"
 	getIDsStmt  = "SELECT Id FROM image_cves"
 	getManyStmt = "SELECT serialized FROM image_cves WHERE Id = ANY($1::text[])"
@@ -45,11 +45,11 @@ var (
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string, cve string, operatingSystem string) (bool, error)
-	Get(ctx context.Context, id string, cve string, operatingSystem string) (*storage.CVE, bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	Get(ctx context.Context, id string) (*storage.CVE, bool, error)
 	Upsert(ctx context.Context, obj *storage.CVE) error
 	UpsertMany(ctx context.Context, objs []*storage.CVE) error
-	Delete(ctx context.Context, id string, cve string, operatingSystem string) error
+	Delete(ctx context.Context, id string) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error)
 	DeleteMany(ctx context.Context, ids []string) error
@@ -84,7 +84,6 @@ func insertIntoImageCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetCve(),
-		obj.GetOperatingSystem(),
 		obj.GetCvss(),
 		obj.GetImpactScore(),
 		pgutils.NilOrTime(obj.GetPublishedOn()),
@@ -95,7 +94,7 @@ func insertIntoImageCves(ctx context.Context, tx pgx.Tx, obj *storage.CVE) error
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cves (Id, Cve, OperatingSystem, Cvss, ImpactScore, PublishedOn, CreatedAt, Suppressed, SuppressExpiry, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id, Cve, OperatingSystem) DO UPDATE SET Id = EXCLUDED.Id, Cve = EXCLUDED.Cve, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, ImpactScore = EXCLUDED.ImpactScore, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, Suppressed = EXCLUDED.Suppressed, SuppressExpiry = EXCLUDED.SuppressExpiry, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cves (Id, Cve, Cvss, ImpactScore, PublishedOn, CreatedAt, Suppressed, SuppressExpiry, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Cve = EXCLUDED.Cve, Cvss = EXCLUDED.Cvss, ImpactScore = EXCLUDED.ImpactScore, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, Suppressed = EXCLUDED.Suppressed, SuppressExpiry = EXCLUDED.SuppressExpiry, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -110,13 +109,15 @@ func (s *storeImpl) copyFromImageCves(ctx context.Context, tx pgx.Tx, objs ...*s
 
 	var err error
 
+	// This is a copy so first we must delete the rows and re-add them
+	// Which is essentially the desired behaviour of an upsert.
+	var deletes []string
+
 	copyCols := []string{
 
 		"id",
 
 		"cve",
-
-		"operatingsystem",
 
 		"cvss",
 
@@ -150,8 +151,6 @@ func (s *storeImpl) copyFromImageCves(ctx context.Context, tx pgx.Tx, objs ...*s
 
 			obj.GetCve(),
 
-			obj.GetOperatingSystem(),
-
 			obj.GetCvss(),
 
 			obj.GetImpactScore(),
@@ -169,14 +168,20 @@ func (s *storeImpl) copyFromImageCves(ctx context.Context, tx pgx.Tx, objs ...*s
 			serialized,
 		})
 
-		if _, err := tx.Exec(ctx, deleteStmt, obj.GetId(), obj.GetCve(), obj.GetOperatingSystem()); err != nil {
-			return err
-		}
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
+
+			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
+			if err != nil {
+				return err
+			}
+			// clear the inserts and vals for the next batch
+			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"image_cves"}, copyCols, pgx.CopyFromRows(inputRows))
 
@@ -271,10 +276,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string, cve string, operatingSystem string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "CVE")
 
-	row := s.db.QueryRow(ctx, existsStmt, id, cve, operatingSystem)
+	row := s.db.QueryRow(ctx, existsStmt, id)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -283,7 +288,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string, cve string, operating
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string, cve string, operatingSystem string) (*storage.CVE, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string) (*storage.CVE, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "CVE")
 
 	conn, release, err := s.acquireConn(ctx, ops.Get, "CVE")
@@ -292,7 +297,7 @@ func (s *storeImpl) Get(ctx context.Context, id string, cve string, operatingSys
 	}
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, id, cve, operatingSystem)
+	row := conn.QueryRow(ctx, getStmt, id)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -315,7 +320,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, id string, cve string, operatingSystem string) error {
+func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "CVE")
 
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "CVE")
@@ -324,7 +329,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string, cve string, operating
 	}
 	defer release()
 
-	if _, err := conn.Exec(ctx, deleteStmt, id, cve, operatingSystem); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
 		return err
 	}
 	return nil
