@@ -91,6 +91,10 @@ func (e *RoxError) Newf(format string, args ...interface{}) *RoxError {
 // CausedBy adds a cause to the RoxError. The resulting message is a combination
 // of the rox error and the cause following a colon.
 //
+// Note, that if cause is an error chain, the chain is collapsed to the message
+// and the cause class is dropped, i.e.:
+//     errors.Is(err.CausedBy(cause), cause) == false
+//
 // Example:
 //     return errox.InvalidArgument.CausedBy(err)
 // or
