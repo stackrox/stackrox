@@ -38,8 +38,7 @@ var (
                    RiskScore numeric,
                    ProcessTags text[],
                    serialized bytea,
-                   PRIMARY KEY(Id),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (NamespaceId) REFERENCES namespaces(Id) ON DELETE CASCADE
+                   PRIMARY KEY(Id)
                )
                `,
 		Indexes: []string{},
