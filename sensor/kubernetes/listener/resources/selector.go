@@ -90,8 +90,8 @@ func emptyMatchesEverything() selectorWrapOption {
 // CreateSelector returns a SelectorWrapper for the given map of labels; matchNil determines whether
 // an empty set of labels matches everything or nothing.
 func createSelector(labelsMap map[string]string, opts ...selectorWrapOption) selectorWrap {
-	var selWrapper selectorWrap
-	selWrapper.matchNil = false
+	selWrapper := selectorWrap{matchNil: false}
+
 	for _, opt := range opts {
 		opt(&selWrapper)
 	}
