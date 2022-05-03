@@ -3,15 +3,8 @@ import { Flex, GridItem } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
 import { Policy } from 'types/policy.proto';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import {
-    networkPolicyFieldDescriptors,
-    policyConfigurationDescriptor,
-    networkDetectionDescriptor,
-    auditLogDescriptor,
-    Descriptor,
-    imageSigningCriteriaDescriptor,
-} from './policyCriteriaDescriptors';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import { policyConfigurationDescriptor, auditLogDescriptor } from './policyCriteriaDescriptors';
 import PolicySection from './PolicySection';
 
 import './BooleanPolicyLogicSection.css';
@@ -21,23 +14,19 @@ type BooleanPolicyLogicSectionProps = {
 };
 
 function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSectionProps) {
-    const [descriptor, setDescriptor] = React.useState<Descriptor[]>([]);
     const { values } = useFormikContext<Policy>();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const isImageSigningEnabled = useFeatureFlagEnabled('ROX_VERIFY_IMAGE_SIGNATURE');
-    const isNetworkPolicyFieldsEnabled = useFeatureFlagEnabled('ROX_NETPOL_FIELDS');
-    React.useEffect(() => {
-        if (values.eventSource === 'AUDIT_LOG_EVENT') {
-            setDescriptor(auditLogDescriptor);
-        } else {
-            setDescriptor([
-                ...policyConfigurationDescriptor,
-                ...networkDetectionDescriptor,
-                ...(isImageSigningEnabled ? [imageSigningCriteriaDescriptor] : []),
-                ...(isNetworkPolicyFieldsEnabled ? networkPolicyFieldDescriptors : []),
-            ]);
+    const unfilteredDescriptors =
+        values.eventSource === 'AUDIT_LOG_EVENT'
+            ? auditLogDescriptor
+            : policyConfigurationDescriptor;
+    const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
+        if (typeof unfilteredDescriptor.featureFlagDependency === 'string') {
+            return isFeatureFlagEnabled(unfilteredDescriptor.featureFlagDependency);
         }
-    }, [values.eventSource, isImageSigningEnabled, isNetworkPolicyFieldsEnabled]);
+        return true;
+    });
 
     return (
         <>
@@ -49,7 +38,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                         <GridItem>
                             <PolicySection
                                 sectionIndex={sectionIndex}
-                                descriptors={descriptor}
+                                descriptors={descriptors}
                                 readOnly={readOnly}
                             />
                         </GridItem>
@@ -76,7 +65,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                     <React.Fragment key={sectionIndex}>
                         <PolicySection
                             sectionIndex={sectionIndex}
-                            descriptors={descriptor}
+                            descriptors={descriptors}
                             readOnly={readOnly}
                         />
                         {sectionIndex !== values.policySections.length - 1 && (
