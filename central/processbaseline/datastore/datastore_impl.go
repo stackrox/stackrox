@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -80,11 +79,8 @@ func (ds *datastoreImpl) addProcessBaselineUnlocked(ctx context.Context, id stri
 	baseline.Id = id
 	baseline.Created = types.TimestampNow()
 	baseline.LastUpdate = baseline.GetCreated()
-	genDuration := env.BaselineGenerationDuration.DurationSetting()
-	lockTimestamp, err := types.TimestampProto(time.Now().Add(genDuration))
-	if err == nil {
-		baseline.StackRoxLockedTimestamp = lockTimestamp
-	}
+	baseline.StackRoxLockedTimestamp = ds.generateLockTimestamp()
+
 	if err := ds.storage.Upsert(ctx, baseline); err != nil {
 		return id, errors.Wrapf(err, "inserting process baseline %q into store", baseline.GetId())
 	}
@@ -487,6 +483,7 @@ func (ds *datastoreImpl) ClearProcessBaseline(ctx context.Context, key *storage.
 	ds.baselineLock.Lock(id)
 	defer ds.baselineLock.Unlock(id)
 
+	// getBaselineForUpdate returns an error if the baseline does not exist.
 	baseline, err := ds.getBaselineForUpdate(ctx, id)
 	if err != nil {
 		return nil, err
@@ -495,10 +492,8 @@ func (ds *datastoreImpl) ClearProcessBaseline(ctx context.Context, key *storage.
 	baseline.Elements = nil
 	baseline.ElementGraveyard = nil
 
-	// We need to update the StackRox timestamp to now if it is set to later still
-	if protoutils.After(baseline.StackRoxLockedTimestamp, types.TimestampNow()) {
-		baseline.StackRoxLockedTimestamp = types.TimestampNow()
-	}
+	// We need to extend the stackrox lock timestamp to re-observe the processes.
+	baseline.StackRoxLockedTimestamp = ds.generateLockTimestamp()
 
 	err = ds.updateProcessBaselineAndSetTimestamp(ctx, baseline)
 	if err != nil {
@@ -508,4 +503,15 @@ func (ds *datastoreImpl) ClearProcessBaseline(ctx context.Context, key *storage.
 	// no need to index the process baseline here because the only indexed things are
 	// top level fields that are immutable
 	return baseline, nil
+}
+
+func (ds *datastoreImpl) generateLockTimestamp() *types.Timestamp {
+	genDuration := env.BaselineGenerationDuration.DurationSetting()
+	lockTimestamp, err := types.TimestampProto(time.Now().Add(genDuration))
+	// This should not occur unless genDuration is in a bad state.  If that happens just
+	// set it to one hour in the future.
+	if err != nil {
+		lockTimestamp, _ = types.TimestampProto(time.Now().Add(1 * time.Hour))
+	}
+	return lockTimestamp
 }

@@ -215,12 +215,14 @@ func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.De
 		if exists && err == nil {
 			// Clear the contents of the baseline
 			_, err := s.dataStore.ClearProcessBaseline(ctx, key)
+			// ClearProcessBaseline returns an error if the baseline does not exist.
 			if err != nil {
 				log.Errorf("Error clearing process baseline for %q: %v", key, err)
 				continue
 			}
 
-			// Remove the deployment from observation so everything forward is processed as a risk
+			// Remove the deployment from observation so everything forward is processed to prevent us from re-processing
+			// indicators from the past.
 			s.lifecycleManager.RemoveDeploymentFromObservation(key.GetDeploymentId())
 		}
 	}

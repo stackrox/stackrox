@@ -427,6 +427,8 @@ class ProcessBaselinesTest extends BaseSpecification {
         // Baseline should still exist but have no elements associated.  Essentially cleared out.
         assert  ( baselineAfterDelete.elementsList == [] )
 
+        // Give the baseline time to lock again keep in mind process indicators flush every 60 seconds
+        sleep 60000
         orchestrator.execInContainer(deployment, "pwd")
 
         then:

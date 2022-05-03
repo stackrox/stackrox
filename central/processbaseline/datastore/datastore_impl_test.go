@@ -390,6 +390,6 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestClearProcessBaseline() {
 
 	baseline, _ = suite.datastore.ClearProcessBaseline(suite.requestContext, key)
 	suite.True(baseline.Elements == nil)
-	suite.True(protoutils.After(types.TimestampNow(), baseline.StackRoxLockedTimestamp))
+	suite.True(protoutils.After(baseline.StackRoxLockedTimestamp, types.TimestampNow()))
 
 }
