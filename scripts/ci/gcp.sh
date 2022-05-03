@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-
 # A collection of GCP related reusable bash functions for CI
 
-set +u
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-set -u
-
 source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
+
+set -euo pipefail
 
 setup_gcp() {
     info "Setting up GCP auth and config"

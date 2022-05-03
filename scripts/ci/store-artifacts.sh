@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-
 # A secure store for CI artifacts
 
-set +u; SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"; set -u
-
+SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
+
+set -euo pipefail
 
 store_artifacts() {
     info "Storing artifacts"
