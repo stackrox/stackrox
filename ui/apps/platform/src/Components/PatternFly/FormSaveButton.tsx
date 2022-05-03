@@ -7,6 +7,7 @@ export type FormSaveButtonProps = {
     isSubmitting: boolean;
     isTesting: boolean;
     isDisabled?: boolean;
+    type?: 'button' | 'submit' | 'reset';
 };
 
 function FormSaveButton({
@@ -15,9 +16,11 @@ function FormSaveButton({
     isSubmitting,
     isTesting,
     isDisabled = false,
+    type = 'button',
 }: FormSaveButtonProps): ReactElement {
     return (
         <Button
+            type={type}
             variant="primary"
             onClick={onSave}
             data-testid="create-btn"
