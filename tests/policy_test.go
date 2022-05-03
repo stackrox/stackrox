@@ -34,7 +34,6 @@ func TestImportExportPolicies(t *testing.T) {
 	verifyExportExistentSucceeds(t)
 	verifyMixedExportFails(t)
 	verifyImportSucceeds(t)
-	verifyDuplicateImportSucceeds(t)
 	verifyDefaultPolicyDuplicateImportFails(t)
 	verifyImportInvalidFails(t)
 	verifyImportDuplicateNameFails(t)
@@ -277,23 +276,6 @@ func verifyImportSucceeds(t *testing.T) {
 	policy := exportPolicy(t, service, knownPolicyID)
 	policy.Name = "A new name"
 	policy.Id = "integrationtestpolicy"
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
-		Policies: []*storage.Policy{policy},
-	})
-	cancel()
-	require.NoError(t, err)
-	// All imported policies are treated as custom policies.
-	markPolicyAsCustom(policy)
-	validateImportPoliciesSuccess(t, importResp, []*storage.Policy{policy}, false)
-}
-
-func verifyDuplicateImportSucceeds(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
-	service := v1.NewPolicyServiceClient(conn)
-
-	// Create an existing policy so we don't change default policies
-	policy := createUniquePolicy(t, service)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
 		Policies: []*storage.Policy{policy},

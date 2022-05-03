@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"testing"
@@ -20,7 +21,7 @@ func TestPolicyStore(t *testing.T) {
 
 type PolicyStoreTestSuite struct {
 	suite.Suite
-
+	ctx             context.Context
 	db              *bolt.DB
 	removedPolicyDB *bolt.DB
 	store           Store
@@ -39,6 +40,8 @@ func (suite *PolicyStoreTestSuite) SetupTest() {
 	suite.db = db
 	suite.removedPolicyDB = removedPolicyDB
 	suite.store = newWithoutDefaults(db)
+
+	suite.ctx = policyCtx
 }
 
 // Do teardown after each test because we're doing setup before each test
@@ -48,26 +51,25 @@ func (suite *PolicyStoreTestSuite) TearDownTest() {
 }
 
 func (suite *PolicyStoreTestSuite) verifyAddPolicySucceeds(policy *storage.Policy) {
-	dbID, err := suite.store.AddPolicy(policy, true)
+	err := suite.store.Upsert(suite.ctx, policy)
 	suite.NoError(err)
-	suite.Equal(policy.GetId(), dbID)
 }
 
 func (suite *PolicyStoreTestSuite) verifyPolicyExists(policy *storage.Policy) {
-	dbPolicy, exists, err := suite.store.GetPolicy(policy.GetId())
+	dbPolicy, exists, err := suite.store.Get(suite.ctx, policy.GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	suite.Equal(policy, dbPolicy)
 }
 
 func (suite *PolicyStoreTestSuite) verifyPolicyDoesNotExist(id string) {
-	_, exists, err := suite.store.GetPolicy(id)
+	_, exists, err := suite.store.Get(suite.ctx, id)
 	suite.NoError(err)
 	suite.False(exists)
 }
 
 func (suite *PolicyStoreTestSuite) verifyPolicyStoreErrorList(policy *storage.Policy, errorTypes []error) {
-	_, err := suite.store.AddPolicy(policy, true)
+	err := suite.store.Upsert(suite.ctx, policy)
 	suite.Error(err)
 	policyStoreErrorList := new(PolicyStoreErrorList)
 	suite.Require().IsType(policyStoreErrorList, err)
@@ -81,22 +83,22 @@ func (suite *PolicyStoreTestSuite) verifyPolicyStoreErrorList(policy *storage.Po
 
 func (suite *PolicyStoreTestSuite) TestPolicies() {
 	policy1 := &storage.Policy{
+		Id:       "policy1",
 		Name:     "policy1",
 		Severity: storage.Severity_LOW_SEVERITY,
 	}
 	policy2 := &storage.Policy{
+		Id:       "policy2",
 		Name:     "policy2",
 		Severity: storage.Severity_HIGH_SEVERITY,
 	}
 	policies := []*storage.Policy{policy1, policy2}
 	for _, p := range policies {
-		id, err := suite.store.AddPolicy(p, true)
-		suite.NoError(err)
-		suite.NotEmpty(id)
+		suite.NoError(suite.store.Upsert(suite.ctx, p))
 	}
 
 	// Get all policies
-	retrievedPolicies, err := suite.store.GetAllPolicies()
+	retrievedPolicies, err := suite.store.GetAll(suite.ctx)
 	suite.Nil(err)
 	suite.ElementsMatch(policies, retrievedPolicies)
 
@@ -104,85 +106,28 @@ func (suite *PolicyStoreTestSuite) TestPolicies() {
 	for _, p := range policies {
 		p.Severity = storage.Severity_MEDIUM_SEVERITY
 		p.Name = p.Name + " "
-		suite.NoError(suite.store.UpdatePolicy(p))
+		suite.NoError(suite.store.Upsert(suite.ctx, p))
 	}
-	retrievedPolicies, err = suite.store.GetAllPolicies()
+	retrievedPolicies, err = suite.store.GetAll(suite.ctx)
 	suite.Nil(err)
 	suite.ElementsMatch(policies, retrievedPolicies)
 
 	// Revert policy name changes.
 	for _, p := range policies {
 		p.Name = strings.TrimSpace(p.Name)
-		suite.NoError(suite.store.UpdatePolicy(p))
+		suite.NoError(suite.store.Upsert(suite.ctx, p))
 	}
-	retrievedPolicies, err = suite.store.GetAllPolicies()
+	retrievedPolicies, err = suite.store.GetAll(suite.ctx)
 	suite.Nil(err)
 	suite.ElementsMatch(policies, retrievedPolicies)
 
 	for _, p := range policies {
-		suite.NoError(suite.store.RemovePolicy(p.GetId()))
+		suite.NoError(suite.store.Delete(suite.ctx, p.GetId()))
 	}
 
-	retrievedPolicies, err = suite.store.GetAllPolicies()
+	retrievedPolicies, err = suite.store.GetAll(suite.ctx)
 	suite.NoError(err)
 	suite.Empty(retrievedPolicies)
-}
-
-func (suite *PolicyStoreTestSuite) TestAddPolicyIDConflict() {
-	id := "SomeID"
-	policy1 := &storage.Policy{
-		Name: "policy1",
-		Id:   id,
-	}
-	policy2 := &storage.Policy{
-		Name: "policy2",
-		Id:   id,
-	}
-
-	suite.verifyAddPolicySucceeds(policy1)
-
-	suite.verifyPolicyStoreErrorList(policy2, []error{new(IDConflictError)})
-
-	suite.verifyPolicyExists(policy1)
-}
-
-func (suite *PolicyStoreTestSuite) TestAddPolicyNameConflict() {
-	name := "SomeName"
-	policy1 := &storage.Policy{
-		Name: name,
-		Id:   "abcd",
-	}
-	policy2 := &storage.Policy{
-		Name: name,
-		Id:   "zyxw",
-	}
-	suite.verifyAddPolicySucceeds(policy1)
-
-	suite.verifyPolicyStoreErrorList(policy2, []error{new(NameConflictError)})
-
-	suite.verifyPolicyExists(policy1)
-
-	suite.verifyPolicyDoesNotExist(policy2.GetId())
-}
-
-func (suite *PolicyStoreTestSuite) TestAddPolicyNameAndIDConflict() {
-	name := "SomeName"
-	id := "abcd"
-	policy1 := &storage.Policy{
-		Name: name,
-		Id:   id,
-	}
-	policy2 := &storage.Policy{
-		Name:        name,
-		Id:          id,
-		Description: "This is a non equal policy",
-	}
-
-	suite.verifyAddPolicySucceeds(policy1)
-
-	suite.verifyPolicyStoreErrorList(policy2, []error{new(IDConflictError), new(NameConflictError)})
-
-	suite.verifyPolicyExists(policy1)
 }
 
 func (suite *PolicyStoreTestSuite) TestAddSamePolicySucceeds() {
@@ -222,12 +167,10 @@ func (suite *PolicyStoreTestSuite) TestPolicyLockFieldUpdates() {
 
 	policies := []*storage.Policy{policy1, policy2}
 	for _, p := range policies {
-		id, err := suite.store.AddPolicy(p, true)
-		suite.NoError(err)
-		suite.NotEmpty(id)
+		suite.NoError(suite.store.Upsert(suite.ctx, p))
 	}
 
-	suite.Error(suite.store.UpdatePolicy(&storage.Policy{
+	suite.Error(suite.store.Upsert(suite.ctx, &storage.Policy{
 		Id:                 "policy1",
 		Name:               "policy1",
 		MitreVectorsLocked: true,
@@ -239,7 +182,7 @@ func (suite *PolicyStoreTestSuite) TestPolicyLockFieldUpdates() {
 		},
 	}))
 
-	suite.NoError(suite.store.UpdatePolicy(&storage.Policy{
+	suite.NoError(suite.store.Upsert(suite.ctx, &storage.Policy{
 		Id:                 "policy1",
 		Name:               "policy1",
 		MitreVectorsLocked: false,
@@ -251,7 +194,7 @@ func (suite *PolicyStoreTestSuite) TestPolicyLockFieldUpdates() {
 		},
 	}))
 
-	suite.NoError(suite.store.UpdatePolicy(&storage.Policy{
+	suite.NoError(suite.store.Upsert(suite.ctx, &storage.Policy{
 		Id:                 "policy2",
 		Name:               "policy2",
 		MitreVectorsLocked: false,
@@ -263,7 +206,7 @@ func (suite *PolicyStoreTestSuite) TestPolicyLockFieldUpdates() {
 		},
 	}))
 
-	suite.NoError(suite.store.UpdatePolicy(&storage.Policy{
+	suite.NoError(suite.store.Upsert(suite.ctx, &storage.Policy{
 		Id:                 "policy2",
 		Name:               "policy2",
 		MitreVectorsLocked: true,
@@ -276,10 +219,10 @@ func (suite *PolicyStoreTestSuite) TestPolicyLockFieldUpdates() {
 	}))
 
 	for _, p := range policies {
-		suite.NoError(suite.store.RemovePolicy(p.GetId()))
+		suite.NoError(suite.store.Delete(suite.ctx, p.GetId()))
 	}
 
-	policies, err := suite.store.GetAllPolicies()
+	policies, err := suite.store.GetAll(suite.ctx)
 	suite.NoError(err)
 	suite.Empty(policies)
 }
@@ -292,7 +235,7 @@ func (suite *PolicyStoreTestSuite) TestUpdatePolicyAlreadyExists() {
 
 	suite.verifyAddPolicySucceeds(policy1)
 
-	suite.NoError(suite.store.UpdatePolicy(&storage.Policy{Id: "boo-1",
+	suite.NoError(suite.store.Upsert(suite.ctx, &storage.Policy{Id: "boo-1",
 		Name: "Foo",
 	}))
 }
@@ -312,7 +255,7 @@ func TestDefaultPolicyRemoval(t *testing.T) {
 	}
 
 	// Test remove.
-	err = store.RemovePolicy(policy.GetId())
+	err = store.Delete(policyCtx, policy.GetId())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Default system policies cannot be removed")
 
@@ -321,10 +264,10 @@ func TestDefaultPolicyRemoval(t *testing.T) {
 		Name: "OpenShift: Advanced Cluster Security Central Admin Secret Accessed (CUSTOM)",
 	}
 
-	_, err = store.AddPolicy(policy, true)
+	err = store.Upsert(policyCtx, policy)
 	require.NoError(t, err)
 
 	// Test remove.
-	err = store.RemovePolicy(policy.GetId())
+	err = store.Delete(policyCtx, policy.GetId())
 	assert.NoError(t, err)
 }
