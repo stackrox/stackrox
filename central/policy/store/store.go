@@ -1,13 +1,17 @@
 package store
 
 import (
+	"context"
+
 	policyUtils "github.com/stackrox/rox/central/policy/utils"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
@@ -19,6 +23,11 @@ var (
 	// Any policies added prior to 65.0 can be deleted because the criteria fields are not locked.
 	// Locked policy criteria guarantees that the criteria remains unchanged as is as it was shipped.
 	removedDefaultPolicyBucket = []byte("removed_default_policies")
+
+	policyCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Policy)))
 
 	log = logging.LoggerForModule()
 )
@@ -55,14 +64,23 @@ func (i *NameConflictError) Error() string {
 // Store provides storage functionality for policies.
 //go:generate mockgen-wrapper
 type Store interface {
-	GetPolicy(id string) (*storage.Policy, bool, error)
-	GetAllPolicies() ([]*storage.Policy, error)
-	GetPolicies(ids ...string) ([]*storage.Policy, []int, []error, error)
-	AddPolicy(policy *storage.Policy, removePolicyTombstone bool) (string, error)
-	UpdatePolicy(*storage.Policy) error
-	RemovePolicy(id string) error
+	Get(ctx context.Context, id string) (*storage.Policy, bool, error)
+	GetMany(ctx context.Context, ids ...string) ([]*storage.Policy, []int, []error, error)
+
+	GetAll(ctx context.Context) ([]*storage.Policy, error)
+	GetIDs(ctx context.Context) ([]string, error)
+
+	Upsert(ctx context.Context, policy *storage.Policy) error
+	UpsertMany(ctx context.Context, objs []*storage.Policy) error
+
+	Delete(ctx context.Context, id string) error
+	DeleteMany(ctx context.Context, ids []string) error
+
 	RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error
 	DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error
+
+	AckKeysIndexed(ctx context.Context, keys ...string) error
+	GetKeysToIndex(ctx context.Context) ([]string, error)
 }
 
 // New returns a new Store instance using the provided bolt DB instance.
@@ -87,7 +105,7 @@ func newWithoutDefaults(db *bolt.DB) Store {
 
 func (s *storeImpl) addDefaults() {
 	policyIDSet, policyNameSet := set.NewStringSet(), set.NewStringSet()
-	storedPolicies, err := s.GetAllPolicies()
+	storedPolicies, err := s.GetAll(policyCtx)
 	if err != nil {
 		panic(err)
 	}
@@ -114,14 +132,6 @@ func (s *storeImpl) addDefaults() {
 			continue
 		}
 
-		// If the ID or Name already exists then ignore
-		if policyIDSet.Contains(p.GetId()) {
-			if err := s.updatePolicyTombstone(p.GetId(), false, true); err != nil {
-				panic(err)
-			}
-			continue
-		}
-
 		// If ID is not the same as the shipped default policy, we treat it as custom policy. Hence, the tombstone
 		// state is not tracked.
 		if policyNameSet.Contains(p.GetName()) {
@@ -132,11 +142,7 @@ func (s *storeImpl) addDefaults() {
 		// fill multi-word sort helper field
 		policyUtils.FillSortHelperFields(p)
 
-		if _, err := s.AddPolicy(p, false); err != nil {
-			panic(err)
-		}
-
-		if err = s.updatePolicyTombstone(p.GetId(), false, true); err != nil {
+		if err := s.Upsert(policyCtx, p); err != nil {
 			panic(err)
 		}
 	}
