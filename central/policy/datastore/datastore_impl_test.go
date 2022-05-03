@@ -99,7 +99,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {
 		SORTName: "test policy",
 	}
 
-	errString1 := "policy with id 'test-policy-1' already exists, unable to import policy"
+	errString1 := "policy with id '\"test-policy-1\"' already exists, unable to import policy"
 	errString2 := "policy with name 'test policy' already exists, unable to import policy"
 
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)

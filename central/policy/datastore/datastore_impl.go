@@ -25,9 +25,13 @@ import (
 )
 
 var (
-	log          = logging.LoggerForModule()
-	policySAC    = sac.ForResource(resources.Policy)
-	allAccessCtx = sac.WithAllAccess(context.Background())
+	log       = logging.LoggerForModule()
+	policySAC = sac.ForResource(resources.Policy)
+
+	policyCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Policy)))
 )
 
 type datastoreImpl struct {
@@ -41,7 +45,7 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) buildIndex() error {
-	policies, err := ds.storage.GetAll(allAccessCtx)
+	policies, err := ds.storage.GetAll(policyCtx)
 	if err != nil {
 		return err
 	}
