@@ -25,13 +25,9 @@ import (
 )
 
 var (
-	log       = logging.LoggerForModule()
-	policySAC = sac.ForResource(resources.Policy)
-
-	policyCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Policy)))
+	log          = logging.LoggerForModule()
+	policySAC    = sac.ForResource(resources.Policy)
+	allAccessCtx = sac.WithAllAccess(context.Background())
 )
 
 type datastoreImpl struct {
@@ -45,7 +41,7 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) buildIndex() error {
-	policies, err := ds.storage.GetAll(policyCtx)
+	policies, err := ds.storage.GetAll(allAccessCtx)
 	if err != nil {
 		return err
 	}
@@ -297,17 +293,17 @@ func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Polic
 	if overwrite {
 		err = ds.importOverwrite(ctx, policy, policyNameIDMap)
 	} else {
-		importErrors := make([]*v1.ImportPolicyError, 0)
+		var importErrors []*v1.ImportPolicyError
 
 		if policy.GetId() != "" {
-			existingPolicy, exists, storeErr := ds.storage.Get(ctx, policy.GetId())
-			if storeErr != nil {
-				result.Errors = getImportErrorsFromError(storeErr)
+			existingPolicy, exists, err := ds.storage.Get(ctx, policy.GetId())
+			if err != nil {
+				result.Errors = getImportErrorsFromError(err)
 				return result
 			}
 			if exists {
 				importErrors = append(result.Errors, &v1.ImportPolicyError{
-					Message: fmt.Sprintf("policy with id '%s' already exists, unable to import policy", policy.GetId()),
+					Message: fmt.Sprintf("policy with id '%q' already exists, unable to import policy", policy.GetId()),
 					Type:    policiesPkg.ErrImportDuplicateID,
 					Metadata: &v1.ImportPolicyError_DuplicateName{
 						DuplicateName: existingPolicy.GetName(),

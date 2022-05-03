@@ -33,11 +33,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	err := s.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(policyBucket)
 		return b.ForEach(func(k, v []byte) error {
-			var policy storage.Policy
-			if err := proto.Unmarshal(v, &policy); err != nil {
-				return err
-			}
-			policyIDs = append(policyIDs, policy.GetId())
+			policyIDs = append(policyIDs, string(k))
 			return nil
 		})
 	})
