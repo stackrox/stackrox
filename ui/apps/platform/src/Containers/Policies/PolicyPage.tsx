@@ -8,7 +8,7 @@ import { policiesBasePath } from 'routePaths';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
 import { getPolicy, updatePolicyDisabledState } from 'services/PoliciesService';
-import { Policy } from 'types/policy.proto';
+import { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 
@@ -16,7 +16,7 @@ import { getClientWizardPolicy } from './policies.utils';
 import PolicyDetail from './Detail/PolicyDetail';
 import PolicyWizard from './Wizard/PolicyWizard';
 
-function clonePolicy(policy: Policy) {
+function clonePolicy(policy: ClientPolicy) {
     /*
      * Default policies will have the "criteriaLocked" and "mitreVectorsLocked" fields set to true.
      * When we clone these policies, we'll need to set them to false to allow users to edit
@@ -32,7 +32,7 @@ function clonePolicy(policy: Policy) {
     };
 }
 
-const initialPolicy: Policy = {
+const initialPolicy: ClientPolicy = {
     id: '',
     name: '',
     description: '',
@@ -68,10 +68,13 @@ const initialPolicy: Policy = {
 };
 
 type WizardPolicyState = {
-    wizardPolicy: Policy;
+    wizardPolicy: ClientPolicy;
 };
 
-const wizardPolicyState = createStructuredSelector<WizardPolicyState, { wizardPolicy: Policy }>({
+const wizardPolicyState = createStructuredSelector<
+    WizardPolicyState,
+    { wizardPolicy: ClientPolicy }
+>({
     wizardPolicy: selectors.getWizardPolicy,
 });
 
@@ -88,7 +91,7 @@ function PolicyPage({
 }: PolicyPageProps): ReactElement {
     const { wizardPolicy } = useSelector(wizardPolicyState);
 
-    const [policy, setPolicy] = useState<Policy>(
+    const [policy, setPolicy] = useState<ClientPolicy>(
         pageAction === 'generate' && wizardPolicy
             ? getClientWizardPolicy(wizardPolicy)
             : initialPolicy
@@ -134,7 +137,7 @@ function PolicyPage({
              * If failure, PolicyDetail element has catch block to display error.
              */
             return getPolicy(id).then((data) => {
-                setPolicy(data);
+                setPolicy(getClientWizardPolicy(data));
             });
         });
     }
