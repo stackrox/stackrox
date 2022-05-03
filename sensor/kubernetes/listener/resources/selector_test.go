@@ -200,8 +200,8 @@ func (s *SelectorWrapperTestSuite) TestLabelMatchingWithDisjunctions() {
 		s.Run(name, func() {
 			s.hasMatchesBeenCalled = false
 			var selectorWrappers []selector
-			for i := 0; i < len(tt.givenSelectorLabels); i++ {
-				newSelector := createSelector(tt.givenSelectorLabels[i], tt.matchEmptySelector[i])
+			for i, label := range tt.givenSelectorLabels {
+				newSelector := createSelector(label, tt.matchEmptySelector[i])
 				s.injectMockSelector(&newSelector)
 				selectorWrappers = append(selectorWrappers, newSelector)
 			}
