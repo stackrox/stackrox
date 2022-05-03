@@ -9,14 +9,11 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
-	imgDackBox "github.com/stackrox/rox/central/image/dackbox"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/image/datastore/internal/store/common"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -198,7 +195,6 @@ func copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Im
 
 	copyCols := []string{
 		"id",
-		"operatingsystem",
 		"name",
 		"version",
 		"source",
@@ -216,7 +212,6 @@ func copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Im
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			obj.GetOperatingSystem(),
 			obj.GetName(),
 			obj.GetVersion(),
 			obj.GetSource(),
@@ -316,7 +311,6 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 
 	copyCols := []string{
 		"id",
-		"operatingsystem",
 		"cve",
 		"cvss",
 		"impactscore",
@@ -353,7 +347,6 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			obj.GetOperatingSystem(),
 			obj.GetCve(),
 			obj.GetCvss(),
 			obj.GetImpactScore(),
@@ -1090,21 +1083,4 @@ func (s *storeImpl) UpdateVulnState(_ context.Context, cve string, images []stri
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.UpdateMany, "ImageCVEEdge")
 
 	panic("not implemented")
-}
-
-func getEdgeIDs(cve string, imageIDs ...string) []string {
-	ids := make([]string, 0, len(imageIDs))
-	for _, imgID := range imageIDs {
-		ids = append(ids, edges.EdgeID{ParentID: imgID, ChildID: cve}.ToString())
-	}
-	return ids
-}
-
-func gatherKeysForEdge(cve string, imageIDs ...string) [][]byte {
-	allKeys := make([][]byte, 0, len(imageIDs)+1)
-	for _, imgID := range imageIDs {
-		allKeys = append(allKeys, imgDackBox.BucketHandler.GetKey(imgID))
-	}
-	allKeys = append(allKeys, cveDackBox.BucketHandler.GetKey(cve))
-	return allKeys
 }
