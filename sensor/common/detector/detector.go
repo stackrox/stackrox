@@ -69,7 +69,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		extSrcsStore:        externalsrcs.StoreInstance(),
 		baselineEval:        baseline.NewBaselineEvaluator(),
 		networkbaselineEval: networkBaselineEval.NewNetworkBaselineEvaluator(),
-		deduper:             newDeduper(),
+		deduper:             newDoNothingDeduper(),
 		enforcer:            enforcer,
 
 		admCtrlSettingsMgr: admCtrlSettingsMgr,
@@ -104,7 +104,7 @@ type detectorImpl struct {
 	baselineEval        baseline.Evaluator
 	networkbaselineEval networkBaselineEval.Evaluator
 	enforcer            enforcer.Enforcer
-	deduper             *deduper
+	deduper             *doNothingDeduper
 
 	admCtrlSettingsMgr admissioncontroller.SettingsManager
 	auditLogUpdater    updater.Component

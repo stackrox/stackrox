@@ -23,6 +23,7 @@ type key struct {
 	resourceType reflect.Type
 }
 
+// TODO(ROX-10638): Remove this deduper
 // deduper takes care of deduping sensor events.
 type deduper struct {
 	stream   messagestream.SensorMessageStream
