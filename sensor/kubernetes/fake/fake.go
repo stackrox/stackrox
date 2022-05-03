@@ -164,6 +164,16 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		}
 	}
 
+	var npResources []*networkPolicyToBeManaged
+	for _, npWorkload := range w.workload.NetworkPolicyWorkload {
+		for i := 0; i < npWorkload.NumNetworkPolicies; i++ {
+			resource := w.getNetworkPolicy(npWorkload)
+			npResources = append(npResources, resource)
+
+			objects = append(objects, resource.networkPolicy)
+		}
+	}
+
 	w.fakeClient = fake.NewSimpleClientset(objects...)
 	w.fakeClient.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
 		Major:        "1",
@@ -185,6 +195,11 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	// Fork management of deployment resources
 	for _, resource := range resources {
 		go w.manageDeployment(context.Background(), resource)
+	}
+
+	// Fork management of networkPolicy resources
+	for _, resource := range npResources {
+		go w.manageNetworkPolicy(context.Background(), resource)
 	}
 
 	go w.manageFlows(context.Background(), w.workload.NetworkWorkload)
