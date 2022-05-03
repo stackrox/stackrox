@@ -9,6 +9,7 @@ import {
     seccompProfileTypeLabels,
     severityRatings,
 } from 'messages/common';
+import { FeatureFlagEnvVar } from 'types/featureFlag';
 
 const equalityOptions: DescriptorOption[] = [
     { label: 'Is greater than', value: '>' },
@@ -115,6 +116,7 @@ const memoryResource = (label: string): GroupDescriptor => ({
     canBooleanLogic: true,
 });
 
+// TODO Delete after signaturePolicyCriteria type encapsulates its behavior.
 export const imageSigningCriteriaName = 'Image Signature Verified By';
 
 // A form descriptor for every option (key) on the policy criteria form page.
@@ -128,6 +130,7 @@ export const imageSigningCriteriaName = 'Image Signature Verified By';
         type: 'text',
         placeholder: 'latest',
         canBooleanLogic: true,
+        featureFlagDependency: 'ROX_WHATEVER',
     },
 
     label: for legacy policy alert labels
@@ -146,6 +149,7 @@ export const imageSigningCriteriaName = 'Image Signature Verified By';
     defaultValue: the default value to set, if provided
     disabled: disables the field entirely
     reverse: will reverse boolean value on store
+    featureFlagDependency: optional property to filter descriptor by feature flag enabled or disabled
  */
 
 export type DescriptorOption = {
@@ -174,6 +178,7 @@ export type BaseDescriptor = {
     type: DescriptorType;
     canBooleanLogic?: boolean;
     disabled?: boolean;
+    featureFlagDependency?: FeatureFlagEnvVar;
 };
 
 export type DescriptorType =
@@ -228,60 +233,6 @@ export type TextDescriptor = {
     placeholder?: string;
 } & BaseDescriptor;
 
-// TODO: merge with policyConfigurationDescriptor after ROX_VERIFY_IMAGE_SIGNATURE enabled by default
-export const imageSigningCriteriaDescriptor: SignatureDescriptor = {
-    label: 'Not verified by trusted image signers',
-    name: imageSigningCriteriaName,
-    shortName: 'Not verified by trusted image signers',
-    longName: 'Not verified by trusted image signers',
-    category: policyCriteriaCategories.IMAGE_REGISTRY,
-    type: 'signaturePolicyCriteria',
-    canBooleanLogic: true,
-};
-
-export const networkPolicyFieldDescriptors: Descriptor[] = [
-    {
-        label: 'Ingress Network Policy',
-        name: 'Has Ingress Network Policy',
-        shortName: 'Ingress Network Policy',
-        longName: 'Ingress Network Policy',
-        category: policyCriteriaCategories.NETWORKING,
-        type: 'radioGroup',
-        radioButtons: [
-            {
-                text: 'Policy Missing',
-                value: false,
-            },
-            {
-                text: 'Policy Present',
-                value: true,
-            },
-        ],
-        defaultValue: false,
-        canBooleanLogic: false,
-    },
-    {
-        label: 'Egress Network Policy',
-        name: 'Has Egress Network Policy',
-        shortName: 'Egress Network Policy',
-        longName: 'Egress Network Policy',
-        category: policyCriteriaCategories.NETWORKING,
-        type: 'radioGroup',
-        radioButtons: [
-            {
-                text: 'Policy Missing',
-                value: false,
-            },
-            {
-                text: 'Policy Present',
-                value: true,
-            },
-        ],
-        defaultValue: false,
-        canBooleanLogic: false,
-    },
-];
-
 export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Image registry',
@@ -314,6 +265,16 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         type: 'text',
         placeholder: 'latest',
         canBooleanLogic: true,
+    },
+    {
+        label: 'Not verified by trusted image signers',
+        name: imageSigningCriteriaName,
+        shortName: 'Not verified by trusted image signers',
+        longName: 'Not verified by trusted image signers',
+        category: policyCriteriaCategories.IMAGE_REGISTRY,
+        type: 'signaturePolicyCriteria',
+        canBooleanLogic: true,
+        featureFlagDependency: 'ROX_VERIFY_IMAGE_SIGNATURE',
     },
     {
         label: 'Days since image was created',
@@ -717,6 +678,78 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         placeholder: '22',
         canBooleanLogic: true,
     },
+    {
+        label: 'Port Exposure',
+        name: 'Port Exposure Method',
+        shortName: 'Port exposure method',
+        negatedName: 'Port exposure method is not',
+        category: policyCriteriaCategories.NETWORKING,
+        type: 'select',
+        options: Object.keys(portExposureLabels)
+            .filter((key) => key !== 'INTERNAL')
+            .map((key) => ({
+                label: portExposureLabels[key],
+                value: key,
+            })),
+        canBooleanLogic: true,
+    },
+    {
+        label: 'Network baselining enabled',
+        name: 'Unexpected Network Flow Detected',
+        shortName: 'Unexpected network flow detected',
+        longName: 'Network baselining status',
+        category: policyCriteriaCategories.NETWORKING,
+        type: 'radioGroup',
+        radioButtons: [
+            { text: 'Unexpected network flow', value: true },
+            { text: 'Expected network flow', value: false },
+        ],
+        defaultValue: false,
+        reverse: false,
+        canBooleanLogic: false,
+    },
+    {
+        label: 'Ingress Network Policy',
+        name: 'Has Ingress Network Policy',
+        shortName: 'Ingress Network Policy',
+        longName: 'Ingress Network Policy',
+        category: policyCriteriaCategories.NETWORKING,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'Policy Missing',
+                value: false,
+            },
+            {
+                text: 'Policy Present',
+                value: true,
+            },
+        ],
+        defaultValue: false,
+        canBooleanLogic: false,
+        featureFlagDependency: 'ROX_NETPOL_FIELDS',
+    },
+    {
+        label: 'Egress Network Policy',
+        name: 'Has Egress Network Policy',
+        shortName: 'Egress Network Policy',
+        longName: 'Egress Network Policy',
+        category: policyCriteriaCategories.NETWORKING,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'Policy Missing',
+                value: false,
+            },
+            {
+                text: 'Policy Present',
+                value: true,
+            },
+        ],
+        defaultValue: false,
+        canBooleanLogic: false,
+        featureFlagDependency: 'ROX_NETPOL_FIELDS',
+    },
     cpuResource('Container CPU request'),
     cpuResource('Container CPU limit'),
     memoryResource('Container memory request'),
@@ -908,21 +941,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         category: policyCriteriaCategories.PROCESS_ACTIVITY,
         type: 'text',
         placeholder: '0',
-        canBooleanLogic: true,
-    },
-    {
-        label: 'Port Exposure',
-        name: 'Port Exposure Method',
-        shortName: 'Port exposure method',
-        negatedName: 'Port exposure method is not',
-        category: policyCriteriaCategories.NETWORKING,
-        type: 'select',
-        options: Object.keys(portExposureLabels)
-            .filter((key) => key !== 'INTERNAL')
-            .map((key) => ({
-                label: portExposureLabels[key],
-                value: key,
-            })),
         canBooleanLogic: true,
     },
     {
@@ -1266,24 +1284,6 @@ export const auditLogDescriptor: Descriptor[] = [
             { text: 'True', value: true },
             { text: 'False', value: false },
         ],
-        canBooleanLogic: false,
-    },
-];
-
-export const networkDetectionDescriptor: Descriptor[] = [
-    {
-        label: 'Network baselining enabled',
-        name: 'Unexpected Network Flow Detected',
-        shortName: 'Unexpected network flow detected',
-        longName: 'Network baselining status',
-        category: policyCriteriaCategories.NETWORKING,
-        type: 'radioGroup',
-        radioButtons: [
-            { text: 'Unexpected network flow', value: true },
-            { text: 'Expected network flow', value: false },
-        ],
-        defaultValue: false,
-        reverse: false,
         canBooleanLogic: false,
     },
 ];
