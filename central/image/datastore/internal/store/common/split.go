@@ -65,14 +65,9 @@ func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.Emb
 
 func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, convertedCVE *storage.CVE, embedded *storage.EmbeddedVulnerability) *storage.ComponentCVEEdge {
 	ret := &storage.ComponentCVEEdge{
-		IsFixable:                     embedded.GetFixedBy() != "",
-		ImageCveId:                    convertedCVE.GetId(),
-		ImageComponentId:              convertedComponent.GetId(),
-		ImageComponentName:            convertedComponent.GetName(),
-		ImageComponentVersion:         convertedComponent.GetVersion(),
-		ImageComponentOperatingSystem: convertedComponent.GetOperatingSystem(),
-		ImageCve:                      convertedCVE.GetCve(),
-		ImageCveOperatingSystem:       convertedCVE.GetOperatingSystem(),
+		IsFixable:        embedded.GetFixedBy() != "",
+		ImageCveId:       convertedCVE.GetId(),
+		ImageComponentId: convertedComponent.GetId(),
 	}
 	if features.PostgresDatastore.Enabled() {
 		ret.Id = postgres.IDFromPks([]string{convertedComponent.GetId(), convertedComponent.GetName(), convertedComponent.GetVersion(), convertedComponent.GetOperatingSystem(), convertedCVE.GetId(), convertedCVE.GetCve(), convertedCVE.GetOperatingSystem()})
@@ -109,12 +104,9 @@ func generateImageComponent(os string, from *storage.EmbeddedImageScanComponent)
 
 func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.ImageComponent, embedded *storage.EmbeddedImageScanComponent) *storage.ImageComponentEdge {
 	ret := &storage.ImageComponentEdge{
-		ImageId:                       image.GetId(),
-		ImageComponentId:              convImgComponent.GetId(),
-		Location:                      embedded.GetLocation(),
-		ImageComponentName:            embedded.GetName(),
-		ImageComponentVersion:         embedded.GetVersion(),
-		ImageComponentOperatingSystem: image.GetScan().GetOperatingSystem(),
+		ImageId:          image.GetId(),
+		ImageComponentId: convImgComponent.GetId(),
+		Location:         embedded.GetLocation(),
 	}
 
 	if features.PostgresDatastore.Enabled() {
@@ -133,11 +125,9 @@ func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.
 
 func generateImageCVEEdge(imageID string, convertedCVE *storage.CVE, embedded *storage.EmbeddedVulnerability) *storage.ImageCVEEdge {
 	ret := &storage.ImageCVEEdge{
-		State:                   embedded.GetState(),
-		ImageId:                 imageID,
-		ImageCveId:              convertedCVE.GetId(),
-		ImageCve:                convertedCVE.GetCve(),
-		ImageCveOperatingSystem: convertedCVE.GetOperatingSystem(),
+		State:      embedded.GetState(),
+		ImageId:    imageID,
+		ImageCveId: convertedCVE.GetId(),
 	}
 
 	if features.PostgresDatastore.Enabled() {

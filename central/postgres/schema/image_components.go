@@ -24,9 +24,8 @@ var (
                    Source integer,
                    RiskScore numeric,
                    TopCvss numeric,
-                   OperatingSystem varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, Name, Version, OperatingSystem)
+                   PRIMARY KEY(Id)
                )
                `,
 		Indexes:  []string{},

@@ -263,9 +263,6 @@ func copyFromImageComponentRelations(ctx context.Context, tx pgx.Tx, objs ...*st
 		"location",
 		"imageid",
 		"imagecomponentid",
-		"imagecomponentname",
-		"imagecomponentversion",
-		"imagecomponentoperatingsystem",
 		"serialized",
 	}
 
@@ -290,9 +287,6 @@ func copyFromImageComponentRelations(ctx context.Context, tx pgx.Tx, objs ...*st
 			obj.GetLocation(),
 			obj.GetImageId(),
 			obj.GetImageComponentId(),
-			obj.GetImageComponentName(),
-			obj.GetImageComponentVersion(),
-			obj.GetImageComponentOperatingSystem(),
 			serialized,
 		})
 
@@ -410,12 +404,7 @@ func copyFromImageComponentCVERelations(ctx context.Context, tx pgx.Tx, os strin
 		"isfixable",
 		"fixedby",
 		"imagecomponentid",
-		"imagecomponentname",
-		"imagecomponentversion",
-		"imagecomponentoperatingsystem",
 		"imagecveid",
-		"imagecve",
-		"imagecveoperatingsystem",
 		"serialized",
 	}
 
@@ -430,12 +419,7 @@ func copyFromImageComponentCVERelations(ctx context.Context, tx pgx.Tx, os strin
 			obj.GetIsFixable(),
 			obj.GetFixedBy(),
 			obj.GetImageComponentId(),
-			obj.GetImageComponentName(),
-			obj.GetImageComponentVersion(),
-			obj.GetImageComponentOperatingSystem(),
 			obj.GetImageCveId(),
-			obj.GetImageCve(),
-			obj.GetImageComponentOperatingSystem(),
 			serialized,
 		})
 
@@ -478,8 +462,6 @@ func copyFromImageCVERelations(ctx context.Context, tx pgx.Tx, iTime *protoTypes
 		"state",
 		"imageid",
 		"imagecveid",
-		"imagecve",
-		"imagecveoperatingsystem",
 		"serialized",
 	}
 
@@ -519,8 +501,6 @@ func copyFromImageCVERelations(ctx context.Context, tx pgx.Tx, iTime *protoTypes
 			obj.GetState(),
 			obj.GetImageId(),
 			obj.GetImageCveId(),
-			obj.GetImageCve(),
-			obj.GetImageCveOperatingSystem(),
 			serialized,
 		})
 
