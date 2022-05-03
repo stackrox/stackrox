@@ -8,36 +8,6 @@ import {
 } from 'types/search';
 
 /**
- *  Adds a search modifier to the searchOptions
- *
- *  @param searchOptions an array of search options
- *  @param modifier a modifier term (ie. 'Cluster:')
- *  @returns the modified search options
- */
-export function addSearchModifier(
-    searchOptions: GlobalSearchOption[],
-    modifier: string
-): GlobalSearchOption[] {
-    const chip = { value: modifier, label: modifier, type: 'categoryOption' };
-    return [...searchOptions, chip];
-}
-
-/**
- *  Adds a search keyword to the searchOptions
- *
- *  @param searchOptions an array of search options
- *  @param keyword a keyword term (ie. 'remote')
- *  @returns the modified search options
- */
-export function addSearchKeyword(
-    searchOptions: GlobalSearchOption[],
-    keyword: string
-): GlobalSearchOption[] {
-    const chip = { value: keyword, label: keyword, className: 'Select-create-option-placeholder' };
-    return [...searchOptions, chip];
-}
-
-/**
  *  Checks if the modifier exists in the searchOptions
  *
  *  @param {!Object[]} searchOptions an array of search options
@@ -114,6 +84,33 @@ export function convertSortToRestFormat(graphqlSort: GraphQLSortOption[]): Parti
         field: graphqlSort[0]?.id,
         reversed: graphqlSort[0]?.desc,
     };
+}
+
+/**
+ * Function to convert the legacy SearchEntry array format to the
+ * SearchFilter format.
+ */
+export function searchOptionsToSearchFilter(searchOptions: GlobalSearchOption[]): SearchFilter {
+    const searchFilter = {};
+    let currentOption = '';
+    searchOptions.forEach(({ value, type }) => {
+        if (type === 'categoryOption') {
+            // categoryOption represents the key of a search filter
+            const option = value.replace(':', '');
+            searchFilter[option] = '';
+            currentOption = option;
+        } else if (searchFilter[currentOption].length === 0) {
+            // If this is the first search value for this category, store it as a string
+            searchFilter[currentOption] = value;
+        } else if (!Array.isArray(searchFilter[currentOption])) {
+            // If this is not the first search value for this category, store it in a new array
+            searchFilter[currentOption] = [searchFilter[currentOption], value];
+        } else {
+            // If we already have an array, simply add the next value
+            searchFilter[currentOption].push(value);
+        }
+    });
+    return searchFilter;
 }
 
 /*
