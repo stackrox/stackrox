@@ -2,6 +2,7 @@ package file
 
 import (
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 )
@@ -31,6 +32,7 @@ func parseSystemUserMap(file string, userMap map[uint32]string) {
 }
 
 func init() {
+	debug.PrintStack()
 	parseSystemUserMap("/etc/passwd", userMap)
 	parseSystemUserMap("/etc/group", groupMap)
 }
