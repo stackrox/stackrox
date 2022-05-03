@@ -1,6 +1,5 @@
 import { nodeTypes } from 'constants/networkGraph';
 import { filterModes } from 'constants/networkFilterModes';
-import { UIfeatureFlags } from 'utils/featureFlags';
 import {
     getIsNodeHoverable,
     getSourceTargetKey,
@@ -19,8 +18,6 @@ import {
  */
 export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => {
     const filteredLinks = [];
-    // a map of all the edges in the node set to know whether we need to add disallowed edges
-    const filteredEdgeHashTable = {};
 
     const isActive = (edgeKey) => !!networkEdgeMap[edgeKey]?.active;
     const isNonIsolated = (nodeId) => !!networkNodeMap[nodeId]?.nonIsolated;
@@ -31,10 +28,6 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => 
         targetNS === 'stackrox' ||
         isBetweenNonIsolated(source, target) ||
         !!networkEdgeMap[edgeKey]?.allowed;
-    const isDisallowed = (edgeKey, link) =>
-        UIfeatureFlags.SHOW_DISALLOWED_CONNECTIONS &&
-        isActive(edgeKey) &&
-        !isAllowed(edgeKey, link);
 
     nodes.forEach((node) => {
         const isHoverable = getIsNodeHoverable(node?.entity?.type);
@@ -98,7 +91,6 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => 
                         targetEntityId
                     );
                     link.isAllowed = isAllowed(edgeKey, link);
-                    link.isDisallowed = isDisallowed(edgeKey, link);
 
                     // Do not draw implicit links between fully non-isolated nodes unless the connection is active.
                     const isImplicit = node.nonIsolatedIngress && targetNode.nonIsolatedEgress;
@@ -107,7 +99,6 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => 
                         link.isActive;
                     if (!isImplicit || isCurrentlyActive) {
                         filteredLinks.push(link);
-                        filteredEdgeHashTable[edgeKey] = true;
                     }
                 });
             }
@@ -140,10 +131,8 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => 
                 link.isActive = isActive(edgeKey);
                 link.isBetweenNonIsolated = isBetweenNonIsolated(sourceEntityId, targetEntityId);
                 link.isAllowed = isAllowed(edgeKey, link);
-                link.isDisallowed = isDisallowed(edgeKey, link);
 
                 filteredLinks.push(link);
-                filteredEdgeHashTable[edgeKey] = true;
             }
         });
     });

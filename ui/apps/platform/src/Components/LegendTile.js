@@ -5,30 +5,23 @@ import deploymentActiveConnection from 'images/legend-icons/deployment-active-co
 import deploymentAllowedConnection from 'images/legend-icons/deployment-allowed-connection.svg';
 import nonIsolatedDeploymentAllowed from 'images/legend-icons/non-isolated-deployment-allowed.svg';
 import deploymentExternalConnections from 'images/legend-icons/deployment-with-external-flows.svg';
-import disallowedConnection from 'images/legend-icons/disallowed-connection.svg';
 import namespace from 'images/legend-icons/namespace.svg';
 import namespaceAllowed from 'images/legend-icons/namespace-allowed.svg';
 import namespaceConnection from 'images/legend-icons/namespace-connection.svg';
-import namespaceDisallowedConnection from 'images/legend-icons/namespace-disallowed-connection.svg';
 import * as constants from 'constants/networkGraph';
 
 const svgMapping = {
     'active-connection': deploymentActiveConnection,
     'allowed-connection': deploymentAllowedConnection,
     namespace,
-    'disallowed-connection': disallowedConnection,
     'namespace-allowed-connection': namespaceAllowed,
     'namespace-connection': namespaceConnection,
     'non-isolated-deployment-allowed': nonIsolatedDeploymentAllowed,
-    'namespace-disallowed-connection': namespaceDisallowedConnection,
     'deployment-external-connections': deploymentExternalConnections,
 };
 
 const fontIconMapping = {
     deployment: <i className="icon-node text-3xl" style={{ color: constants.COLORS.inactive }} />,
-    'disallowed-deployment': (
-        <i className="icon-node text-3xl" style={{ color: constants.COLORS.disallowed }} />
-    ),
     'non-isolated-deployment-allowed': (
         <i className="icon-node text-3xl" style={{ color: constants.COLORS.nonIsolated }} />
     ),

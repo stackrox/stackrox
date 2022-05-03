@@ -24,7 +24,6 @@ export const INTERNET_ACCESS_NODE_BORDER_COLOR = '#c4cdfa';
 export const COLORS = {
     nonIsolated: 'hsla(2, 78%, 71%, 1)',
     active: 'hsla(214, 74%, 68%, 1)',
-    disallowed: 'orange',
     externallyConnectedNode: 'hsla(242, 99%, 72%, 1)',
     externallyConnectedBorder: 'hsla(230, 90%, 85%, 1)',
     hoveredActive: 'hsla(214, 74%, 58%, 1)',
