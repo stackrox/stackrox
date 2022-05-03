@@ -13,7 +13,7 @@ describe('ListCVEs.utils', () => {
                 new WorkflowEntity(entityTypes.COMPONENT),
                 new WorkflowEntity(entityTypes.CVE),
             ];
-            const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
+            const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getCveTableColumns(workflowState);
 
             const filteredColumns = getFilteredCVEColumns(tableColumns, workflowState);
@@ -23,7 +23,7 @@ describe('ListCVEs.utils', () => {
 
         it('should remove the fixed in columns when in CVE main list context', () => {
             const stateStack = [new WorkflowEntity(entityTypes.CVE)];
-            const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
+            const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getCveTableColumns(workflowState);
 
             const filteredColumns = getFilteredCVEColumns(tableColumns, workflowState);
@@ -39,7 +39,7 @@ describe('ListCVEs.utils', () => {
                 new WorkflowEntity(entityTypes.DEPLOYMENT, 'abcd-ef09'),
                 new WorkflowEntity(entityTypes.CVE),
             ];
-            const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
+            const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getCveTableColumns(workflowState);
 
             const filteredColumns = getFilteredCVEColumns(tableColumns, workflowState);
@@ -55,7 +55,7 @@ describe('ListCVEs.utils', () => {
                 new WorkflowEntity(entityTypes.COMPONENT, 'abcd-ef09'),
                 new WorkflowEntity(entityTypes.CVE),
             ];
-            const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
+            const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getCveTableColumns(workflowState);
 
             const filteredColumns = getFilteredCVEColumns(tableColumns, workflowState);
@@ -64,8 +64,3 @@ describe('ListCVEs.utils', () => {
         });
     });
 });
-
-// TODO: ROX-4546
-function getEntityState(useCase, stateStack) {
-    return new WorkflowState(useCase, stateStack);
-}
