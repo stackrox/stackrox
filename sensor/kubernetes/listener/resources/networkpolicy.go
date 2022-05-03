@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/store"
 	networkingV1 "k8s.io/api/networking/v1"
-	"k8s.io/apimachinery/pkg/labels"
 )
 
 // networkPolicyDispatcher handles network policy resource events.
@@ -60,13 +59,12 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 }
 
 func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) selector {
-	var sel selector
+	newsel := createSelector(np.GetSpec().GetPodSelector().GetMatchLabels(), emptyMatchesEverything())
 	if oldNp != nil {
-		sel = MatcherOrEverything(oldNp.GetSpec().GetPodSelector().GetMatchLabels())
-	} else {
-		sel = labels.Nothing()
+		oldsel := createSelector(oldNp.GetSpec().GetPodSelector().GetMatchLabels(), emptyMatchesEverything())
+		return or(oldsel, newsel)
 	}
-	return or(sel, MatcherOrEverything(np.GetSpec().GetPodSelector().GetMatchLabels()))
+	return newsel
 }
 
 func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sel selector) {

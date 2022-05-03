@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -16,13 +15,13 @@ type serviceWithRoutes struct {
 
 type serviceWrap struct {
 	*v1.Service
-	selector labels.Selector
+	selector selector
 }
 
 func wrapService(svc *v1.Service) *serviceWrap {
 	return &serviceWrap{
 		Service:  svc,
-		selector: SelectorFromMap(svc.Spec.Selector),
+		selector: createSelector(svc.Spec.Selector, emptyMatchesNothing()),
 	}
 }
 
