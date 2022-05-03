@@ -37,6 +37,7 @@ func createLabelsWithLen(labels map[string]string) labelWithLenImpl {
 	return labelWithLenImpl{labels}
 }
 
+// selectorWrap holds a selector and information allowing for additional checks before matching
 type selectorWrap struct {
 	selector  labels.Selector
 	numLabels uint
@@ -86,7 +87,7 @@ func emptyMatchesEverything() selectorWrapOption {
 	}
 }
 
-// CreateSelector returns a SelectorWrapper for the given map of labels; matchNil determines whether
+// createSelector returns a SelectorWrapper for the given map of labels; matchNil determines whether
 // an empty set of labels matches everything or nothing.
 func createSelector(labelsMap map[string]string, opts ...selectorWrapOption) selectorWrap {
 	selWrapper := selectorWrap{matchNil: false}
