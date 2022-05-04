@@ -91,7 +91,7 @@ func evaluateAgainstPermissions(permissions map[string]storage.Access, perm perm
 
 	// In case the resource has a ReplacingResource, we accept access to either one of them.
 	if perm.Resource.ReplacingResource != nil {
-		return hasAccess || permissions[string(perm.Resource.GetResource())] >= perm.Access
+		return hasAccess || permissions[string(perm.Resource.ReplacingResource.GetResource())] >= perm.Access
 	}
 
 	return hasAccess
