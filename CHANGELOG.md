@@ -39,6 +39,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 `v1/policycategories` endpoint have been deprecated, and will be removed in future releases. 
   - For questions about this change, please contact the Red Hat support team at support@redhat.com.
 - ROX-10018: The policy `OpenShift: Kubeadmin Secret Accessed` will no longer trigger if the request was from the default OpenShift `oauth-apiserver-sa` service account, because this is an expected access pattern for the OpenShift apiserver.
+- ROX-10819: The documentation for API v1/notifiers ("GetNotifiers") previously stated that the request could be filtered by name or type. This was incorrect as this API never allowed filtering. The documentation has been fixed to reflect that.
 
 ## [69.1]
 
