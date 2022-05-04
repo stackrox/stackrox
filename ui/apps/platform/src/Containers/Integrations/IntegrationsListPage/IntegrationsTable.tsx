@@ -153,7 +153,8 @@ function IntegrationsTable({
                                     {
                                         title: 'Trigger backup',
                                         onClick: () => onTriggerBackup(integration.id),
-                                        isHidden: integration.type !== 's3',
+                                        isHidden:
+                                            integration.type !== 's3' && integration.type !== 'gcs',
                                     },
                                     {
                                         title: (
