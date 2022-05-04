@@ -79,6 +79,8 @@ type Store interface {
 	RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error
 	DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error
 
+	Walk(ctx context.Context, fn func(ap *storage.Policy) error) error
+
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
 }

@@ -27,7 +27,7 @@ type storeImpl struct {
 	mutex sync.Mutex
 }
 
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+func (s *storeImpl) GetIDs(_ context.Context) ([]string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Policy")
 	var policyIDs []string
 	err := s.View(func(tx *bolt.Tx) error {
@@ -40,11 +40,11 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	return policyIDs, err
 }
 
-func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.Policy) error {
+func (s *storeImpl) UpsertMany(_ context.Context, objs []*storage.Policy) error {
 	return errors.New("not implemented")
 }
 
-func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
+func (s *storeImpl) DeleteMany(_ context.Context, ids []string) error {
 	return errors.New("not implemented")
 }
 
@@ -378,4 +378,24 @@ func (s *storeImpl) verifySettingFieldsAreUnchanged(newPolicy *storage.Policy) e
 		}
 		return errs.ToError()
 	})
+}
+
+func (s *storeImpl) Walk(_ context.Context, fn func(ap *storage.Policy) error) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Policy")
+
+	err := s.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(policyBucket).Cursor()
+
+		for k, v := bucket.First(); k != nil; k, v = bucket.Next() {
+			var p storage.Policy
+			if err := proto.Unmarshal(v, &p); err != nil {
+				return err
+			}
+			if err := fn(&p); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return err
 }
