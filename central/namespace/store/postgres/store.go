@@ -242,7 +242,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NamespaceMetadata) 
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "NamespaceMetadata")
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource).
-		ClusterID(obj.GetClusterId()).Namespace(obj.GetId())
+		ClusterID(obj.GetClusterId()).Namespace(obj.GetName())
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -261,7 +261,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.NamespaceMet
 	} else if !ok {
 		var deniedIds []string
 		for _, obj := range objs {
-			subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetId())
+			subScopeChecker := scopeChecker.ClusterID(obj.GetClusterId()).Namespace(obj.GetName())
 			if ok, err := subScopeChecker.Allowed(ctx); err != nil {
 				return err
 			} else if !ok {
