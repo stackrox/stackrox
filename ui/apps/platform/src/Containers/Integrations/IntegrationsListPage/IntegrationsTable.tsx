@@ -38,12 +38,14 @@ type IntegrationsTableProps = {
     integrations: Integration[];
     hasMultipleDelete: boolean;
     onDeleteIntegrations: (integration) => void;
+    onTriggerBackup: (integrationId) => void;
 };
 
 function IntegrationsTable({
     integrations,
     hasMultipleDelete,
     onDeleteIntegrations,
+    onTriggerBackup,
 }: IntegrationsTableProps): React.ReactElement {
     const permissions = useIntegrationPermissions();
     const { source, type } = useParams();
@@ -149,6 +151,11 @@ function IntegrationsTable({
                                 const { id } = integration;
                                 const actionItems = [
                                     {
+                                        title: 'Trigger backup',
+                                        onClick: () => onTriggerBackup(integration.id),
+                                        isHidden: integration.type !== 's3',
+                                    },
+                                    {
                                         title: (
                                             <Link to={getPathToEdit(source, type, id)}>
                                                 Edit integration
@@ -156,6 +163,7 @@ function IntegrationsTable({
                                         ),
                                         isHidden: isAPIToken || isClusterInitBundle,
                                     },
+
                                     {
                                         title: (
                                             <div className="pf-u-danger-color-100">

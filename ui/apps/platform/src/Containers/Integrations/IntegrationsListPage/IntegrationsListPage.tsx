@@ -36,6 +36,7 @@ import DeleteClusterInitBundleConfirmationModal from './DeleteClusterInitBundleC
 
 function IntegrationsListPage({
     deleteIntegrations,
+    triggerBackup,
     fetchClusterInitBundles,
     revokeAPITokens,
 }): ReactElement {
@@ -50,6 +51,10 @@ function IntegrationsListPage({
 
     function onDeleteIntegrations(ids) {
         setDeletingIntegrationIds(ids);
+    }
+
+    function onTriggerBackup(id) {
+        triggerBackup(id);
     }
 
     function onConfirmDeletingIntegrationIds() {
@@ -96,6 +101,7 @@ function IntegrationsListPage({
                     integrations={integrations}
                     hasMultipleDelete={!isClusterInitBundle}
                     onDeleteIntegrations={onDeleteIntegrations}
+                    onTriggerBackup={onTriggerBackup}
                 />
             </PageSection>
             {isAPIToken && (
@@ -143,6 +149,7 @@ function IntegrationsListPage({
 
 const mapDispatchToProps = {
     deleteIntegrations: integrationsActions.deleteIntegrations,
+    triggerBackup: integrationsActions.triggerBackup,
     fetchClusterInitBundles: clusterInitBundlesActions.fetchClusterInitBundles.request,
     revokeAPITokens: apitokensActions.revokeAPITokens,
 };
