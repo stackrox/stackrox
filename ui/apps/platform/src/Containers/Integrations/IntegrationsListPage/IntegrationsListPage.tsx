@@ -53,10 +53,6 @@ function IntegrationsListPage({
         setDeletingIntegrationIds(ids);
     }
 
-    function onTriggerBackup(id) {
-        triggerBackup(id);
-    }
-
     function onConfirmDeletingIntegrationIds() {
         if (isAPIToken) {
             revokeAPITokens(deletingIntegrationIds);
@@ -101,7 +97,7 @@ function IntegrationsListPage({
                     integrations={integrations}
                     hasMultipleDelete={!isClusterInitBundle}
                     onDeleteIntegrations={onDeleteIntegrations}
-                    onTriggerBackup={onTriggerBackup}
+                    onTriggerBackup={triggerBackup}
                 />
             </PageSection>
             {isAPIToken && (

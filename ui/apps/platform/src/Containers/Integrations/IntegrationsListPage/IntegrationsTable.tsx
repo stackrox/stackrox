@@ -165,7 +165,6 @@ function IntegrationsTable({
                                         ),
                                         isHidden: isAPIToken || isClusterInitBundle,
                                     },
-
                                     {
                                         title: (
                                             <div className="pf-u-danger-color-100">
