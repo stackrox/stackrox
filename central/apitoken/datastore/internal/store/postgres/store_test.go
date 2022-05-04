@@ -80,10 +80,6 @@ func (s *ApitokensStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(tokenMetadata, foundTokenMetadata)
 
-	allTokenMetadata, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(tokenMetadata, allTokenMetadata[0])
-
 	tokenMetadataCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, tokenMetadataCount)
@@ -117,10 +113,6 @@ func (s *ApitokensStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, tokenMetadatas))
-
-	allTokenMetadata, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(tokenMetadatas, allTokenMetadata)
 
 	tokenMetadataCount, err = store.Count(ctx)
 	s.NoError(err)

@@ -47,7 +47,6 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string, imageId string, imageComponentId string, imageComponentName string, imageComponentVersion string, imageComponentOperatingSystem string) (bool, error)
 	Get(ctx context.Context, id string, imageId string, imageComponentId string, imageComponentName string, imageComponentVersion string, imageComponentOperatingSystem string) (*storage.ImageComponentEdge, bool, error)
-	GetAll(ctx context.Context) ([]*storage.ImageComponentEdge, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponentEdge, []int, error)
 
@@ -117,17 +116,6 @@ func (s *storeImpl) Get(ctx context.Context, id string, imageId string, imageCom
 		return nil, false, err
 	}
 	return &msg, true, nil
-}
-
-func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.ImageComponentEdge, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "ImageComponentEdge")
-
-	var objs []*storage.ImageComponentEdge
-	err := s.Walk(ctx, func(obj *storage.ImageComponentEdge) error {
-		objs = append(objs, obj)
-		return nil
-	})
-	return objs, err
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {

@@ -78,6 +78,9 @@ type properties struct {
 
 	// Indicates the directory in which the generated schema file must go.
 	SchemaDirectory string
+
+	// Indicates that we want to generate a GetAll function. Defaults to false because this can be dangerous on high cardinality stores
+	GetAll bool
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -144,6 +147,7 @@ func main() {
 	c.Flags().StringSliceVar(&props.Refs, "references", []string{}, "additional foreign key references as <table_name:type>")
 	c.Flags().BoolVar(&props.JoinTable, "join-table", false, "indicates the schema represents a join table. The generation of mutating functions is skipped")
 	c.Flags().BoolVar(&props.SchemaOnly, "schema-only", false, "if true, generates only the schema and not store and index")
+	c.Flags().BoolVar(&props.GetAll, "get-all-func", false, "if true, generates a GetAll function")
 	c.Flags().StringVar(&props.SchemaDirectory, "schema-directory", "", "the directory in which to generate the schema")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
 
@@ -179,6 +183,7 @@ func main() {
 			"SearchCategory":    searchCategory,
 			"JoinTable":         props.JoinTable,
 			"PermissionChecker": props.PermissionChecker,
+			"GetAll":            props.GetAll,
 			"Obj": object{
 				storageType:              props.Type,
 				permissionCheckerEnabled: permissionCheckerEnabled,

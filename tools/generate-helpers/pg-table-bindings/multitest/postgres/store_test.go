@@ -78,10 +78,6 @@ func (s *MultikeyStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(testMultiKeyStruct, foundTestMultiKeyStruct)
 
-	allTestMultiKeyStruct, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(testMultiKeyStruct, allTestMultiKeyStruct[0])
-
 	testMultiKeyStructCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, testMultiKeyStructCount)
@@ -110,10 +106,6 @@ func (s *MultikeyStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, testMultiKeyStructs))
-
-	allTestMultiKeyStruct, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(testMultiKeyStructs, allTestMultiKeyStruct)
 
 	testMultiKeyStructCount, err = store.Count(ctx)
 	s.NoError(err)

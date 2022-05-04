@@ -76,7 +76,9 @@ type Store interface {
     Count(ctx context.Context) (int, error)
     Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error)
     Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error)
+{{- if .GetAll }}
     GetAll(ctx context.Context) ([]*{{.Type}}, error)
+{{- end }}
 {{- if not .JoinTable }}
     Upsert(ctx context.Context, obj *{{.Type}}) error
     UpsertMany(ctx context.Context, objs []*{{.Type}}) error
@@ -491,6 +493,7 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
 	return &msg, true, nil
 }
 
+{{- if .GetAll }}
 func(s *storeImpl) GetAll(ctx context.Context) ([]*{{.Type}}, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.TrimmedType}}")
 
@@ -501,6 +504,7 @@ func(s *storeImpl) GetAll(ctx context.Context) ([]*{{.Type}}, error) {
     })
     return objs, err
 }
+{{- end}}
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)

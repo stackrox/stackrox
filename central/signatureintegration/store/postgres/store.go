@@ -50,7 +50,6 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.SignatureIntegration, bool, error)
-	GetAll(ctx context.Context) ([]*storage.SignatureIntegration, error)
 	Upsert(ctx context.Context, obj *storage.SignatureIntegration) error
 	UpsertMany(ctx context.Context, objs []*storage.SignatureIntegration) error
 	Delete(ctx context.Context, id string) error
@@ -305,17 +304,6 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.SignatureInteg
 		return nil, false, err
 	}
 	return &msg, true, nil
-}
-
-func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.SignatureIntegration, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "SignatureIntegration")
-
-	var objs []*storage.SignatureIntegration
-	err := s.Walk(ctx, func(obj *storage.SignatureIntegration) error {
-		objs = append(objs, obj)
-		return nil
-	})
-	return objs, err
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {

@@ -78,10 +78,6 @@ func (s *NetworkentityStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(networkEntity, foundNetworkEntity)
 
-	allNetworkEntity, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(networkEntity, allNetworkEntity[0])
-
 	networkEntityCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, networkEntityCount)
@@ -110,10 +106,6 @@ func (s *NetworkentityStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, networkEntitys))
-
-	allNetworkEntity, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(networkEntitys, allNetworkEntity)
 
 	networkEntityCount, err = store.Count(ctx)
 	s.NoError(err)

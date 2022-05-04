@@ -82,10 +82,6 @@ func (s *ProcessbaselinesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(processBaseline, foundProcessBaseline)
 
-	allProcessBaseline, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(processBaseline, allProcessBaseline[0])
-
 	processBaselineCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, processBaselineCount)
@@ -115,10 +111,6 @@ func (s *ProcessbaselinesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, processBaselines))
-
-	allProcessBaseline, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(processBaselines, allProcessBaseline)
 
 	processBaselineCount, err = store.Count(ctx)
 	s.NoError(err)

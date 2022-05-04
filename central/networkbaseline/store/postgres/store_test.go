@@ -78,10 +78,6 @@ func (s *NetworkbaselineStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(networkBaseline, foundNetworkBaseline)
 
-	allNetworkBaseline, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(networkBaseline, allNetworkBaseline[0])
-
 	networkBaselineCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, networkBaselineCount)
@@ -110,10 +106,6 @@ func (s *NetworkbaselineStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, networkBaselines))
-
-	allNetworkBaseline, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(networkBaselines, allNetworkBaseline)
 
 	networkBaselineCount, err = store.Count(ctx)
 	s.NoError(err)

@@ -80,10 +80,6 @@ func (s *RolesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(role, foundRole)
 
-	allRole, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(role, allRole[0])
-
 	roleCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, roleCount)
@@ -117,10 +113,6 @@ func (s *RolesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, roles))
-
-	allRole, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(roles, allRole)
 
 	roleCount, err = store.Count(ctx)
 	s.NoError(err)

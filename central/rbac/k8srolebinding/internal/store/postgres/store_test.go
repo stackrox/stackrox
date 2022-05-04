@@ -82,10 +82,6 @@ func (s *RolebindingsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(k8SRoleBinding, foundK8SRoleBinding)
 
-	allK8SRoleBinding, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(k8SRoleBinding, allK8SRoleBinding[0])
-
 	k8SRoleBindingCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, k8SRoleBindingCount)
@@ -115,10 +111,6 @@ func (s *RolebindingsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, k8SRoleBindings))
-
-	allK8SRoleBinding, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(k8SRoleBindings, allK8SRoleBinding)
 
 	k8SRoleBindingCount, err = store.Count(ctx)
 	s.NoError(err)

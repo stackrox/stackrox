@@ -82,10 +82,6 @@ func (s *SecretsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(secret, foundSecret)
 
-	allSecret, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(secret, allSecret[0])
-
 	secretCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, secretCount)
@@ -115,10 +111,6 @@ func (s *SecretsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, secrets))
-
-	allSecret, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(secrets, allSecret)
 
 	secretCount, err = store.Count(ctx)
 	s.NoError(err)

@@ -80,10 +80,6 @@ func (s *PermissionsetsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(permissionSet, foundPermissionSet)
 
-	allPermissionSet, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(permissionSet, allPermissionSet[0])
-
 	permissionSetCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, permissionSetCount)
@@ -117,10 +113,6 @@ func (s *PermissionsetsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, permissionSets))
-
-	allPermissionSet, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(permissionSets, allPermissionSet)
 
 	permissionSetCount, err = store.Count(ctx)
 	s.NoError(err)

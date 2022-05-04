@@ -80,10 +80,6 @@ func (s *PolicyStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(policy, foundPolicy)
 
-	allPolicy, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(policy, allPolicy[0])
-
 	policyCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, policyCount)
@@ -117,10 +113,6 @@ func (s *PolicyStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, policys))
-
-	allPolicy, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(policys, allPolicy)
 
 	policyCount, err = store.Count(ctx)
 	s.NoError(err)

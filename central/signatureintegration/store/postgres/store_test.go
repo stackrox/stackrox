@@ -80,10 +80,6 @@ func (s *SignatureintegrationsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(signatureIntegration, foundSignatureIntegration)
 
-	allSignatureIntegration, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(signatureIntegration, allSignatureIntegration[0])
-
 	signatureIntegrationCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, signatureIntegrationCount)
@@ -117,10 +113,6 @@ func (s *SignatureintegrationsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, signatureIntegrations))
-
-	allSignatureIntegration, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(signatureIntegrations, allSignatureIntegration)
 
 	signatureIntegrationCount, err = store.Count(ctx)
 	s.NoError(err)

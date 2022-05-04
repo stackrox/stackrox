@@ -320,7 +320,6 @@ func (s *storeImpl) Get(ctx context.Context, key string) (*storage.TestSingleKey
 	}
 	return &msg, true, nil
 }
-
 func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.TestSingleKeyStruct, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "TestSingleKeyStruct")
 

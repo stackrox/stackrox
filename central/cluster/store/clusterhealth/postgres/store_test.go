@@ -78,10 +78,6 @@ func (s *ClusterHealthStatusStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(clusterHealthStatus, foundClusterHealthStatus)
 
-	allClusterHealthStatus, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(clusterHealthStatus, allClusterHealthStatus[0])
-
 	clusterHealthStatusCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, clusterHealthStatusCount)
@@ -110,10 +106,6 @@ func (s *ClusterHealthStatusStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, clusterHealthStatuss))
-
-	allClusterHealthStatus, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(clusterHealthStatuss, allClusterHealthStatus)
 
 	clusterHealthStatusCount, err = store.Count(ctx)
 	s.NoError(err)

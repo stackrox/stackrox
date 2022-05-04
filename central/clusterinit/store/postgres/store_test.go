@@ -80,10 +80,6 @@ func (s *ClusterinitbundlesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(initBundleMeta, foundInitBundleMeta)
 
-	allInitBundleMeta, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(initBundleMeta, allInitBundleMeta[0])
-
 	initBundleMetaCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, initBundleMetaCount)
@@ -117,10 +113,6 @@ func (s *ClusterinitbundlesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, initBundleMetas))
-
-	allInitBundleMeta, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(initBundleMetas, allInitBundleMeta)
 
 	initBundleMetaCount, err = store.Count(ctx)
 	s.NoError(err)

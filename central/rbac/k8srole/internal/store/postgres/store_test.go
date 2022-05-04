@@ -82,10 +82,6 @@ func (s *K8srolesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(k8SRole, foundK8SRole)
 
-	allK8SRole, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(k8SRole, allK8SRole[0])
-
 	k8SRoleCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, k8SRoleCount)
@@ -115,10 +111,6 @@ func (s *K8srolesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, k8SRoles))
-
-	allK8SRole, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(k8SRoles, allK8SRole)
 
 	k8SRoleCount, err = store.Count(ctx)
 	s.NoError(err)

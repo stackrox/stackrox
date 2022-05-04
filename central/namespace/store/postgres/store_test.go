@@ -82,10 +82,6 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(namespaceMetadata, foundNamespaceMetadata)
 
-	allNamespaceMetadata, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(namespaceMetadata, allNamespaceMetadata[0])
-
 	namespaceMetadataCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, namespaceMetadataCount)
@@ -115,10 +111,6 @@ func (s *NamespacesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, namespaceMetadatas))
-
-	allNamespaceMetadata, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(namespaceMetadatas, allNamespaceMetadata)
 
 	namespaceMetadataCount, err = store.Count(ctx)
 	s.NoError(err)

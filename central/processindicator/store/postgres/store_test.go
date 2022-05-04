@@ -82,10 +82,6 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(processIndicator, foundProcessIndicator)
 
-	allProcessIndicator, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(processIndicator, allProcessIndicator[0])
-
 	processIndicatorCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, processIndicatorCount)
@@ -115,10 +111,6 @@ func (s *ProcessIndicatorsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, processIndicators))
-
-	allProcessIndicator, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(processIndicators, allProcessIndicator)
 
 	processIndicatorCount, err = store.Count(ctx)
 	s.NoError(err)

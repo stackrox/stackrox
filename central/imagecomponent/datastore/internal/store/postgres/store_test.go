@@ -78,10 +78,6 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(imageComponent, foundImageComponent)
 
-	allImageComponent, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(imageComponent, allImageComponent[0])
-
 	imageComponentCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, imageComponentCount)
@@ -110,10 +106,6 @@ func (s *ImageComponentsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, imageComponents))
-
-	allImageComponent, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(imageComponents, allImageComponent)
 
 	imageComponentCount, err = store.Count(ctx)
 	s.NoError(err)

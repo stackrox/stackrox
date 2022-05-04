@@ -92,10 +92,6 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal({{$name}}, found{{.TrimmedType|upperCamelCase}})
 
-	all{{.TrimmedType|upperCamelCase}}, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal({{$name}}, all{{.TrimmedType|upperCamelCase}}[0])
-
 	{{$name}}Count, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, {{$name}}Count)
@@ -138,9 +134,11 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 
 	s.NoError(store.UpsertMany(ctx, {{.TrimmedType|lowerCamelCase}}s))
 
+{{- if .GetAll }}
 	all{{.TrimmedType|upperCamelCase}}, err = store.GetAll(ctx)
 	s.NoError(err)
 	s.Equal({{$name}}s, all{{.TrimmedType|upperCamelCase}})
+{{- end }}
 
     {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
     s.NoError(err)

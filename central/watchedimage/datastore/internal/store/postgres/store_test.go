@@ -80,10 +80,6 @@ func (s *WatchedimagesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(watchedImage, foundWatchedImage)
 
-	allWatchedImage, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(watchedImage, allWatchedImage[0])
-
 	watchedImageCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, watchedImageCount)
@@ -117,10 +113,6 @@ func (s *WatchedimagesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, watchedImages))
-
-	allWatchedImage, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(watchedImages, allWatchedImage)
 
 	watchedImageCount, err = store.Count(ctx)
 	s.NoError(err)

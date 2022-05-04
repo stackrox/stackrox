@@ -80,10 +80,6 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(reportConfiguration, foundReportConfiguration)
 
-	allReportConfiguration, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(reportConfiguration, allReportConfiguration[0])
-
 	reportConfigurationCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, reportConfigurationCount)
@@ -117,10 +113,6 @@ func (s *ReportconfigsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, reportConfigurations))
-
-	allReportConfiguration, err = store.GetAll(ctx)
-	s.NoError(err)
-	s.Equal(reportConfigurations, allReportConfiguration)
 
 	reportConfigurationCount, err = store.Count(ctx)
 	s.NoError(err)
