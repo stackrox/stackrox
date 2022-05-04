@@ -32,27 +32,6 @@ type storeImpl struct {
 	db *bolt.DB
 }
 
-// GetAllAuthProviders retrieves authProviders from bolt
-func (s *storeImpl) GetAllAuthProviders() ([]*storage.AuthProvider, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "AuthProvider")
-
-	var authProviders []*storage.AuthProvider
-	err := s.db.View(func(tx *bolt.Tx) error {
-		provB := tx.Bucket(authProviderBucket)
-
-		return provB.ForEach(func(k, v []byte) error {
-			var authProvider storage.AuthProvider
-			if err := proto.Unmarshal(v, &authProvider); err != nil {
-				return err
-			}
-
-			authProviders = append(authProviders, &authProvider)
-			return nil
-		})
-	})
-	return authProviders, err
-}
-
 func addUniqueCheck(tx *bolt.Tx, authProvider *storage.AuthProvider) error {
 	if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, authProviderBucket, authProvider.GetId(), authProvider.GetName()); err != nil {
 		return errors.Wrap(err, "Could not add AuthProvider due to name validation")
