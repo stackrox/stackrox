@@ -13,11 +13,11 @@ import (
 // networkPolicyDispatcher handles network policy resource events.
 type networkPolicyDispatcher struct {
 	netpolStore     store.NetworkPolicyStore
-	deploymentStore *DeploymentStore
+	deploymentStore store.DeploymentStore
 	detector        detector.Detector
 }
 
-func newNetworkPolicyDispatcher(networkPolicyStore store.NetworkPolicyStore, deploymentStore *DeploymentStore, detector detector.Detector) *networkPolicyDispatcher {
+func newNetworkPolicyDispatcher(networkPolicyStore store.NetworkPolicyStore, deploymentStore store.DeploymentStore, detector detector.Detector) *networkPolicyDispatcher {
 	return &networkPolicyDispatcher{
 		netpolStore:     networkPolicyStore,
 		deploymentStore: deploymentStore,
@@ -58,7 +58,7 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 	}
 }
 
-func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) selector {
+func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) store.Selector {
 	newsel := createSelector(np.GetSpec().GetPodSelector().GetMatchLabels(), emptyMatchesEverything())
 	if oldNp != nil {
 		oldsel := createSelector(oldNp.GetSpec().GetPodSelector().GetMatchLabels(), emptyMatchesEverything())
@@ -67,8 +67,8 @@ func (h *networkPolicyDispatcher) getSelector(np, oldNp *storage.NetworkPolicy) 
 	return newsel
 }
 
-func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sel selector) {
-	deployments := h.deploymentStore.getMatchingDeployments(np.GetNamespace(), sel)
+func (h *networkPolicyDispatcher) updateDeploymentsFromStore(np *storage.NetworkPolicy, sel store.Selector) {
+	deployments := h.deploymentStore.GetMatchingDeployments(np.GetNamespace(), sel)
 	idsRequireReprocessing := make([]string, 0, len(deployments))
 	for _, deploymentWrap := range deployments {
 		idsRequireReprocessing = append(idsRequireReprocessing, deploymentWrap.GetId())

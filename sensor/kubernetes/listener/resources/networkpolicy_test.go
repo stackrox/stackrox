@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
+	"github.com/stackrox/rox/sensor/common/store"
 	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -30,7 +31,7 @@ type NetworkPolicyDispatcherSuite struct {
 
 	mockCtrl        *gomock.Controller
 	netpolStore     *mocksStore.MockNetworkPolicyStore
-	deploymentStore *DeploymentStore
+	deploymentStore store.DeploymentStore
 	detector        *mocks.MockDetector
 	dispatcher      *networkPolicyDispatcher
 
@@ -95,7 +96,7 @@ func (suite *NetworkPolicyDispatcherSuite) SetupTest() {
 	}
 
 	for _, d := range deployments {
-		suite.deploymentStore.addOrUpdateDeployment(d)
+		suite.deploymentStore.AddOrUpdateDeployment(d)
 	}
 
 	suite.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")

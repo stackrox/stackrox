@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/pkg/telemetry/gatherers"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/rox/sensor/common/store"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -24,7 +24,7 @@ type ClusterGatherer struct {
 
 // NewClusterGatherer returns a new ClusterGatherer which will gather telemetry data about the cluster monitored by this
 // sensor
-func NewClusterGatherer(k8sClient kubernetes.Interface, deploymentStore *resources.DeploymentStore) *ClusterGatherer {
+func NewClusterGatherer(k8sClient kubernetes.Interface, deploymentStore store.DeploymentStore) *ClusterGatherer {
 	return &ClusterGatherer{
 		componentGatherer: gatherers.NewComponentInfoGatherer(),
 		nodeGatherer:      newNodeGatherer(k8sClient),

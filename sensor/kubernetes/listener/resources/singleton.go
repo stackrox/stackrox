@@ -1,10 +1,13 @@
 package resources
 
-import "github.com/stackrox/rox/pkg/sync"
+import (
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/store"
+)
 
 var (
 	dsInit   sync.Once
-	depStore *DeploymentStore
+	depStore store.DeploymentStore
 
 	psInit   sync.Once
 	podStore *PodStore
@@ -14,7 +17,7 @@ var (
 )
 
 // DeploymentStoreSingleton returns a singleton of the DeploymentStore
-func DeploymentStoreSingleton() *DeploymentStore {
+func DeploymentStoreSingleton() store.DeploymentStore {
 	dsInit.Do(func() {
 		depStore = newDeploymentStore()
 	})

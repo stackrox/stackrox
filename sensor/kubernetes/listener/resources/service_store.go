@@ -3,6 +3,7 @@ package resources
 import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/store"
 	v1 "k8s.io/api/core/v1"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -132,13 +133,13 @@ func (ss *serviceStore) OnNamespaceDeleted(ns string) {
 	delete(ss.routesByServiceMetadata, ns)
 }
 
-func (ss *serviceStore) getMatchingServicesWithRoutes(namespace string, labels map[string]string) (matching []serviceWithRoutes) {
+func (ss *serviceStore) GetMatchingServicesWithRoutes(namespace string, labels map[string]string) (matching []store.ServiceWithRoutes) {
 	labelSet := k8sLabels.Set(labels)
 	ss.lock.RLock()
 	defer ss.lock.RUnlock()
 	for _, entry := range ss.services[namespace] {
 		if entry.selector.Matches(createLabelsWithLen(labelSet)) {
-			svcWithRoutes := serviceWithRoutes{
+			svcWithRoutes := &serviceWithRoutes{
 				serviceWrap: entry,
 				routes:      ss.routesByServiceMetadata[namespace][entry.Name],
 			}

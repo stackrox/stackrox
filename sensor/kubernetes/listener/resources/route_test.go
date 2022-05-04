@@ -6,13 +6,14 @@ import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func getSelector(svc *v1.Service) selector {
+func getSelector(svc *v1.Service) store.Selector {
 	return createSelector(svc.Spec.Selector, emptyMatchesNothing())
 }
 
@@ -54,7 +55,7 @@ type mockPortExposureReconciler struct {
 	orderedCalls []call
 }
 
-func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(namespace string, sel selector) []*central.SensorEvent {
+func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(namespace string, sel store.Selector) []*central.SensorEvent {
 	m.orderedCalls = append(m.orderedCalls,
 		call{
 			"UpdateExposuresForMatchingDeployments",
@@ -63,7 +64,7 @@ func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(names
 	return nil
 }
 
-func (m *mockPortExposureReconciler) UpdateExposureOnServiceCreate(svc serviceWithRoutes) []*central.SensorEvent {
+func (m *mockPortExposureReconciler) UpdateExposureOnServiceCreate(svc store.ServiceWithRoutes) []*central.SensorEvent {
 	m.orderedCalls = append(m.orderedCalls,
 		call{
 			"UpdateExposureOnServiceCreate",
@@ -76,16 +77,16 @@ func (m *mockPortExposureReconciler) UpdateExposureOnServiceCreate(svc serviceWi
 type mockEndpointManager struct {
 }
 
-func (m *mockEndpointManager) OnDeploymentCreateOrUpdate(*deploymentWrap) {
+func (m *mockEndpointManager) OnDeploymentCreateOrUpdate(store.DeploymentWrap) {
 }
 
-func (m *mockEndpointManager) OnDeploymentRemove(*deploymentWrap) {
+func (m *mockEndpointManager) OnDeploymentRemove(store.DeploymentWrap) {
 }
 
-func (m *mockEndpointManager) OnServiceCreate(*serviceWrap) {
+func (m *mockEndpointManager) OnServiceCreate(store.ServiceWrap) {
 }
 
-func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, selector) {
+func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, store.Selector) {
 }
 
 func (m *mockEndpointManager) OnNodeCreate(*nodeWrap) {
@@ -94,8 +95,8 @@ func (m *mockEndpointManager) OnNodeCreate(*nodeWrap) {
 func (m *mockEndpointManager) OnNodeUpdateOrRemove() {
 }
 
-func getSvcWithRoutes(svc *v1.Service, routes ...*routeV1.Route) serviceWithRoutes {
-	return serviceWithRoutes{
+func getSvcWithRoutes(svc *v1.Service, routes ...*routeV1.Route) *serviceWithRoutes {
+	return &serviceWithRoutes{
 		serviceWrap: wrapService(svc),
 		routes:      routes,
 	}
@@ -108,14 +109,14 @@ func TestRouteAndServiceDispatchers(t *testing.T) {
 type RouteAndServiceDispatcherTestSuite struct {
 	suite.Suite
 
-	depStore     *DeploymentStore
+	depStore     store.DeploymentStore
 	serviceStore *serviceStore
 
 	serviceDispatcher *serviceDispatcher
 	routeDispatcher   *routeDispatcher
 
-	mockReconciler      *mockPortExposureReconciler
-	mockEndpointManager *mockEndpointManager
+	mockReconciler      portExposureReconciler
+	mockEndpointManager endpointManager
 }
 
 func (suite *RouteAndServiceDispatcherTestSuite) SetupTest() {
@@ -138,7 +139,7 @@ func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateNoRoute() {
 			"UpdateExposureOnServiceCreate",
 			[]interface{}{getSvcWithRoutes(testService)},
 		},
-	}, suite.mockReconciler.orderedCalls)
+	}, suite.mockReconciler.(*mockPortExposureReconciler).orderedCalls)
 }
 
 func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateWithPreexistingRoute() {
@@ -152,7 +153,7 @@ func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateWithPreexistin
 			"UpdateExposureOnServiceCreate",
 			[]interface{}{getSvcWithRoutes(testService, testRoute)},
 		},
-	}, suite.mockReconciler.orderedCalls)
+	}, suite.mockReconciler.(*mockPortExposureReconciler).orderedCalls)
 }
 
 func (suite *RouteAndServiceDispatcherTestSuite) TestManyRoutesMatchingAndDeletions() {
@@ -198,6 +199,6 @@ func (suite *RouteAndServiceDispatcherTestSuite) TestManyRoutesMatchingAndDeleti
 			"UpdateExposuresForMatchingDeployments",
 			[]interface{}{"test-ns", getSelector(testSvc2)},
 		},
-	}, suite.mockReconciler.orderedCalls)
+	}, suite.mockReconciler.(*mockPortExposureReconciler).orderedCalls)
 
 }

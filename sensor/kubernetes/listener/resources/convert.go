@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/imageutil"
+	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"k8s.io/api/batch/v1beta1"
@@ -52,16 +53,30 @@ func getK8sComponentID(clusterID string, component string) string {
 	return uuid.NewV5(u, component).String()
 }
 
+var _ store.DeploymentWrap = (*deploymentWrap)(nil)
+
 type deploymentWrap struct {
 	*storage.Deployment
 	registryOverride string
 	original         interface{}
-	portConfigs      map[portRef]*storage.PortConfig
+	portConfigs      map[store.PortRef]*storage.PortConfig
 	pods             []*v1.Pod
 	// TODO(ROX-9984): we could have the networkPoliciesApplied stored here. This would require changes in the ProcessDeployment functions of the detector.
 	// networkPoliciesApplied augmentedobjs.NetworkPoliciesApplied
 
 	mutex sync.RWMutex
+}
+
+func (w *deploymentWrap) GetPods() []*v1.Pod {
+	return w.pods
+}
+
+func (w *deploymentWrap) GetOriginal() interface{} {
+	return w.original
+}
+
+func (w *deploymentWrap) GetPortConfigs() map[store.PortRef]*storage.PortConfig {
+	return w.portConfigs
 }
 
 // This checks if a reflect value is a Zero value, which means the field did not exist
@@ -376,7 +391,7 @@ func (w *deploymentWrap) populatePorts() {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
-	w.portConfigs = make(map[portRef]*storage.PortConfig)
+	w.portConfigs = make(map[store.PortRef]*storage.PortConfig)
 	for _, c := range w.GetContainers() {
 		for _, p := range c.GetPorts() {
 			w.portConfigs[portRef{Port: intstr.FromInt(int(p.ContainerPort)), Protocol: v1.Protocol(p.Protocol)}] = p
@@ -387,7 +402,7 @@ func (w *deploymentWrap) populatePorts() {
 	}
 }
 
-func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorEvent {
+func (w *deploymentWrap) ToEvent(action central.ResourceAction) *central.SensorEvent {
 	w.mutex.RLock()
 	defer w.mutex.RUnlock()
 
@@ -402,7 +417,7 @@ func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorE
 
 // anyNonHostPort is derived from `filterHostExposure(...)`. Therefore, if `filterHostExposure(...)` is updated,
 // ensure to update this function.
-func (w *deploymentWrap) anyNonHostPort() bool {
+func (w *deploymentWrap) AnyNonHostPort() bool {
 	w.mutex.RLock()
 	defer w.mutex.RUnlock()
 
@@ -436,19 +451,19 @@ func (w *deploymentWrap) resetPortExposureNoLock() {
 	}
 }
 
-func (w *deploymentWrap) updatePortExposureFromStore(store *serviceStore) {
+func (w *deploymentWrap) UpdatePortExposureFromStore(store store.ServiceStore) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
 	w.resetPortExposureNoLock()
 
-	svcs := store.getMatchingServicesWithRoutes(w.Namespace, w.PodLabels)
+	svcs := store.GetMatchingServicesWithRoutes(w.Namespace, w.PodLabels)
 	for _, svc := range svcs {
 		w.updatePortExposureUncheckedNoLock(svc)
 	}
 }
 
-func (w *deploymentWrap) updatePortExposureFromServices(svcs ...serviceWithRoutes) {
+func (w *deploymentWrap) UpdatePortExposureFromServices(svcs ...store.ServiceWithRoutes) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
@@ -459,8 +474,8 @@ func (w *deploymentWrap) updatePortExposureFromServices(svcs ...serviceWithRoute
 	}
 }
 
-func (w *deploymentWrap) updatePortExposure(svc serviceWithRoutes) {
-	if svc.selector.Matches(createLabelsWithLen(w.PodLabels)) {
+func (w *deploymentWrap) UpdatePortExposure(svc store.ServiceWithRoutes) {
+	if svc.GetSelector().Matches(createLabelsWithLen(w.PodLabels)) {
 		return
 	}
 
@@ -470,17 +485,17 @@ func (w *deploymentWrap) updatePortExposure(svc serviceWithRoutes) {
 	w.updatePortExposureUncheckedNoLock(svc)
 }
 
-func (w *deploymentWrap) updatePortExposureUncheckedNoLock(svc serviceWithRoutes) {
-	for ref, exposureInfos := range svc.exposure() {
+func (w *deploymentWrap) updatePortExposureUncheckedNoLock(svc store.ServiceWithRoutes) {
+	for ref, exposureInfos := range svc.Exposure() {
 		portCfg := w.portConfigs[ref]
 		if portCfg == nil {
-			if ref.Port.Type == intstr.String {
+			if ref.GetPort().Type == intstr.String {
 				// named ports MUST be defined in the pod spec
 				continue
 			}
 			portCfg = &storage.PortConfig{
-				ContainerPort: ref.Port.IntVal,
-				Protocol:      string(ref.Protocol),
+				ContainerPort: ref.GetPort().IntVal,
+				Protocol:      string(ref.GetProtocol()),
 			}
 			w.Ports = append(w.Ports, portCfg)
 			w.portConfigs[ref] = portCfg
@@ -505,7 +520,7 @@ func (w *deploymentWrap) updatePortExposureUncheckedNoLock(svc serviceWithRoutes
 	})
 }
 
-func (w *deploymentWrap) updateServiceAccountPermissionLevel(permissionLevel storage.PermissionLevel) {
+func (w *deploymentWrap) UpdateServiceAccountPermissionLevel(permissionLevel storage.PermissionLevel) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
@@ -513,7 +528,7 @@ func (w *deploymentWrap) updateServiceAccountPermissionLevel(permissionLevel sto
 }
 
 // Clone clones a deploymentWrap. Note: `original` field is not cloned.
-func (w *deploymentWrap) Clone() *deploymentWrap {
+func (w *deploymentWrap) Clone() store.DeploymentWrap {
 	w.mutex.RLock()
 	defer w.mutex.RUnlock()
 
@@ -529,7 +544,7 @@ func (w *deploymentWrap) Clone() *deploymentWrap {
 		}
 	}
 	if w.portConfigs != nil {
-		ret.portConfigs = make(map[portRef]*storage.PortConfig)
+		ret.portConfigs = make(map[store.PortRef]*storage.PortConfig)
 		for k, v := range w.portConfigs {
 			ret.portConfigs[k] = v.Clone()
 		}

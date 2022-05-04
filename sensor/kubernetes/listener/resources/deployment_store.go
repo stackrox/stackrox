@@ -4,27 +4,31 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/store"
 )
 
-// DeploymentStore stores deployments.
-type DeploymentStore struct {
+var _ store.DeploymentStore = (*DeploymentStoreImpl)(nil)
+
+// DeploymentStoreImpl stores deployments.
+type DeploymentStoreImpl struct {
 	lock sync.RWMutex
 
 	// Stores deployment IDs by namespaces.
 	deploymentIDs map[string]map[string]struct{}
 	// Stores deployments by IDs.
-	deployments map[string]*deploymentWrap
+	deployments map[string]store.DeploymentWrap
 }
 
 // newDeploymentStore creates and returns a new deployment store.
-func newDeploymentStore() *DeploymentStore {
-	return &DeploymentStore{
+func newDeploymentStore() *DeploymentStoreImpl {
+	return &DeploymentStoreImpl{
 		deploymentIDs: make(map[string]map[string]struct{}),
-		deployments:   make(map[string]*deploymentWrap),
+		deployments:   make(map[string]store.DeploymentWrap),
 	}
 }
 
-func (ds *DeploymentStore) addOrUpdateDeployment(wrap *deploymentWrap) {
+// AddOrUpdateDeployment upsert
+func (ds *DeploymentStoreImpl) AddOrUpdateDeployment(wrap store.DeploymentWrap) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
@@ -38,7 +42,8 @@ func (ds *DeploymentStore) addOrUpdateDeployment(wrap *deploymentWrap) {
 	ds.deployments[wrap.GetId()] = wrap
 }
 
-func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
+// RemoveDeployment delete
+func (ds *DeploymentStoreImpl) RemoveDeployment(wrap store.DeploymentWrap) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
@@ -50,11 +55,12 @@ func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
 	delete(ds.deployments, wrap.GetId())
 }
 
-func (ds *DeploymentStore) getDeploymentsByIDs(namespace string, idSet set.StringSet) []*deploymentWrap {
+// GetDeploymentsByIDs get deployments by id
+func (ds *DeploymentStoreImpl) GetDeploymentsByIDs(namespace string, idSet set.StringSet) []store.DeploymentWrap {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
-	deployments := make([]*deploymentWrap, 0, len(idSet))
+	deployments := make([]store.DeploymentWrap, 0, len(idSet))
 	for id := range idSet {
 		wrap := ds.deployments[id]
 		if wrap != nil {
@@ -64,7 +70,8 @@ func (ds *DeploymentStore) getDeploymentsByIDs(namespace string, idSet set.Strin
 	return deployments
 }
 
-func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector) (matching []*deploymentWrap) {
+// GetMatchingDeployments get matching deployments with a given selector
+func (ds *DeploymentStoreImpl) GetMatchingDeployments(namespace string, sel store.Selector) (matching []store.DeploymentWrap) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -79,7 +86,7 @@ func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector
 			continue
 		}
 
-		if sel.Matches(createLabelsWithLen(wrap.PodLabels)) {
+		if sel.Matches(createLabelsWithLen(wrap.GetPodLabels())) {
 			matching = append(matching, wrap)
 		}
 	}
@@ -87,7 +94,7 @@ func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector
 }
 
 // CountDeploymentsForNamespace returns the number of deployments in a namespace
-func (ds *DeploymentStore) CountDeploymentsForNamespace(namespace string) int {
+func (ds *DeploymentStoreImpl) CountDeploymentsForNamespace(namespace string) int {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -95,7 +102,7 @@ func (ds *DeploymentStore) CountDeploymentsForNamespace(namespace string) int {
 }
 
 // OnNamespaceDeleted reacts to a namespace deletion, deleting all deployments in this namespace from the store.
-func (ds *DeploymentStore) OnNamespaceDeleted(namespace string) {
+func (ds *DeploymentStoreImpl) OnNamespaceDeleted(namespace string) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
@@ -111,7 +118,7 @@ func (ds *DeploymentStore) OnNamespaceDeleted(namespace string) {
 }
 
 // GetAll returns all deployments.
-func (ds *DeploymentStore) GetAll() []*storage.Deployment {
+func (ds *DeploymentStoreImpl) GetAll() []*storage.Deployment {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -125,7 +132,7 @@ func (ds *DeploymentStore) GetAll() []*storage.Deployment {
 }
 
 // Get returns deployment for supplied id.
-func (ds *DeploymentStore) Get(id string) *storage.Deployment {
+func (ds *DeploymentStoreImpl) Get(id string) *storage.Deployment {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 

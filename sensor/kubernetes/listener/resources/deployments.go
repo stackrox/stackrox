@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -66,7 +67,7 @@ func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action 
 type deploymentHandler struct {
 	podLister              v1listers.PodLister
 	serviceStore           *serviceStore
-	deploymentStore        *DeploymentStore
+	deploymentStore        store.DeploymentStore
 	podStore               *PodStore
 	endpointManager        endpointManager
 	namespaceStore         *namespaceStore
@@ -86,7 +87,7 @@ type deploymentHandler struct {
 func newDeploymentHandler(
 	clusterID string,
 	serviceStore *serviceStore,
-	deploymentStore *DeploymentStore,
+	deploymentStore store.DeploymentStore,
 	podStore *PodStore,
 	endpointManager endpointManager,
 	namespaceStore *namespaceStore,
@@ -164,22 +165,22 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		return events
 	}
 
-	deploymentWrap.updatePortExposureFromStore(d.serviceStore)
+	deploymentWrap.UpdatePortExposureFromStore(d.serviceStore)
 	if action != central.ResourceAction_REMOVE_RESOURCE {
 		// Make sure to clone and add deploymentWrap to the store if this function is being used at places other than
 		// right after deploymentWrap object creation.
-		deploymentWrap.updateServiceAccountPermissionLevel(d.rbac.GetPermissionLevelForDeployment(deploymentWrap.GetDeployment()))
-		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
+		deploymentWrap.UpdateServiceAccountPermissionLevel(d.rbac.GetPermissionLevelForDeployment(deploymentWrap.GetDeployment()))
+		d.deploymentStore.AddOrUpdateDeployment(deploymentWrap)
 		d.endpointManager.OnDeploymentCreateOrUpdate(deploymentWrap)
 	} else {
-		d.deploymentStore.removeDeployment(deploymentWrap)
+		d.deploymentStore.RemoveDeployment(deploymentWrap)
 		d.podStore.onDeploymentRemove(deploymentWrap)
 		d.endpointManager.OnDeploymentRemove(deploymentWrap)
 		d.processFilter.Delete(deploymentWrap.GetId())
 	}
 	d.detector.ProcessDeployment(deploymentWrap.GetDeployment(), action)
 	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
-	events = append(events, deploymentWrap.toEvent(action))
+	events = append(events, deploymentWrap.ToEvent(action))
 	return events
 }
 
@@ -269,10 +270,10 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 	// Hierarchy only tracks process a process's parents if they are resources that we track as a Deployment.
 	// We also only track top-level objects (ex we track Deployment resources in favor of the underlying ReplicaSet and Pods)
 	// as our version of a Deployment, so the only parents we'd want to potentially process are the top-level ones.
-	owners := d.deploymentStore.getDeploymentsByIDs(pod.Namespace, d.hierarchy.TopLevelParents(string(pod.GetUID())))
+	owners := d.deploymentStore.GetDeploymentsByIDs(pod.Namespace, d.hierarchy.TopLevelParents(string(pod.GetUID())))
 	var events []*central.SensorEvent
 	for _, owner := range owners {
-		events = append(events, d.processWithType(owner.original, nil, central.ResourceAction_UPDATE_RESOURCE, owner.Type)...)
+		events = append(events, d.processWithType(owner.GetOriginal(), nil, central.ResourceAction_UPDATE_RESOURCE, owner.GetType())...)
 	}
 	return events
 }

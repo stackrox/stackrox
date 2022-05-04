@@ -1,20 +1,14 @@
 package resources
 
 import (
+	"github.com/stackrox/rox/sensor/common/store"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-// labelWithLen is label.Labels with added Len() function
-type labelsWithLen interface {
-	Has(label string) (exists bool)
-	Get(label string) (value string)
-	Len() uint
-}
-
 // selector is a restricted version of selectorWrap
-type selector interface {
-	Matches(labelsWithLen) bool
-}
+// type selector interface {
+//	Matches(store.LabelsWithLen) bool
+//}
 
 type labelWithLenImpl struct {
 	labels map[string]string
@@ -44,7 +38,7 @@ type selectorWrap struct {
 	matchNil  bool
 }
 
-func (s selectorWrap) Matches(labels labelsWithLen) bool {
+func (s selectorWrap) Matches(labels store.LabelsWithLen) bool {
 	if s.numLabels > labels.Len() {
 		return false
 	}
@@ -55,9 +49,9 @@ func (s selectorWrap) Matches(labels labelsWithLen) bool {
 }
 
 // selectorDisjunction is the disjunction (logical or) of a list of selectors.
-type selectorDisjunction []selector
+type selectorDisjunction []store.Selector
 
-func (d selectorDisjunction) Matches(labels labelsWithLen) bool {
+func (d selectorDisjunction) Matches(labels store.LabelsWithLen) bool {
 	for _, sel := range d {
 		if sel.Matches(labels) {
 			return true
@@ -67,7 +61,7 @@ func (d selectorDisjunction) Matches(labels labelsWithLen) bool {
 }
 
 // or returns the logical or of the given SelectorWrappers.
-func or(sels ...selector) selector {
+func or(sels ...store.Selector) store.Selector {
 	return selectorDisjunction(sels)
 }
 

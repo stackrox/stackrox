@@ -3,6 +3,7 @@ package resources
 import (
 	"testing"
 
+	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stretchr/testify/suite"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -199,7 +200,7 @@ func (s *SelectorWrapperTestSuite) TestLabelMatchingWithDisjunctions() {
 	for name, tt := range tests {
 		s.Run(name, func() {
 			s.hasMatchesBeenCalled = false
-			var selectorWrappers []selector
+			var selectorWrappers []store.Selector
 			for i, label := range tt.givenSelectorLabels {
 				newSelector := createSelector(label, tt.matchEmptySelector[i])
 				s.injectMockSelector(&newSelector)
