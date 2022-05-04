@@ -22,11 +22,11 @@ func Singleton() store.Store {
 	instanceInit.Do(func() {
 		var underlying store.UnderlyingStore
 		if features.PostgresDatastore.Enabled() {
+			underlying = postgres.New(context.TODO(), globaldb.GetPostgres())
+		} else {
 			var err error
 			underlying, err = rocksdb.New(globaldb.GetRocksDB())
 			utils.CrashOnError(err)
-		} else {
-			underlying = postgres.New(context.TODO(), globaldb.GetPostgres())
 		}
 		instance = store.NewStore(underlying)
 	})
