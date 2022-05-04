@@ -406,6 +406,9 @@
     "storageNetworkGraphConfig": {
       "type": "object",
       "properties": {
+        "id": {
+          "type": "string"
+        },
         "hideDefaultExternalSrcs": {
           "type": "boolean"
         }

@@ -51,16 +51,16 @@ func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
-// UpsertWithID mocks base method.
-func (m *MockStore) UpsertWithID(ctx context.Context, id string, cluster *storage.NetworkGraphConfig) error {
+// Upsert mocks base method.
+func (m *MockStore) Upsert(ctx context.Context, cluster *storage.NetworkGraphConfig) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertWithID", ctx, id, cluster)
+	ret := m.ctrl.Call(m, "Upsert", ctx, cluster)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpsertWithID indicates an expected call of UpsertWithID.
-func (mr *MockStoreMockRecorder) UpsertWithID(ctx, id, cluster interface{}) *gomock.Call {
+// Upsert indicates an expected call of Upsert.
+func (mr *MockStoreMockRecorder) Upsert(ctx, cluster interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertWithID", reflect.TypeOf((*MockStore)(nil).UpsertWithID), ctx, id, cluster)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, cluster)
 }
