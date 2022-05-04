@@ -10,6 +10,7 @@ from common import popen_graceful_kill
 
 QA_TESTS_OUTPUT_DIR = "/tmp/qa-tests-backend-logs"
 
+
 class BaseTest:
     def __init__(self):
         self.test_output_dirs = []
