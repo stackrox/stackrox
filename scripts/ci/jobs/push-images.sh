@@ -8,6 +8,11 @@ set -euo pipefail
 push_images() {
     info "Will push images built in CI"
 
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: push_images <brand>"
+    fi
+
+    info "Images from OpenShift CI builds:"
     env | grep IMAGE
 
     [[ "${OPENSHIFT_CI:-false}" == "true" ]] || { die "Only supported in OpenShift CI"; }
@@ -24,4 +29,4 @@ push_images() {
     push_main_image_set "$branch" "$brand"
 }
 
-push_images "STACKROX_BRANDING"
+push_images "$*"

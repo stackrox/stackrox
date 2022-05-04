@@ -75,12 +75,20 @@ create_cluster() {
         require_environment "JOB_NAME"
         require_environment "BUILD_ID"
         tags="${tags},stackrox-ci-${JOB_NAME:0:50}"
-        labels="${labels},stackrox-ci-job=${JOB_NAME:0:63},stackrox-ci-build-id=${BUILD_ID:0:63}"
+        tags="${tags/%-/x}"
+        labels="${labels},stackrox-ci-job=${JOB_NAME:0:63}"
+        labels="${labels/%-/x}"
+        labels="${labels},stackrox-ci-build-id=${BUILD_ID:0:63}"
+        labels="${labels/%-/x}"
     elif is_CIRCLECI; then
         require_environment "CIRCLE_JOB"
         require_environment "CIRCLE_WORKFLOW_ID"
         tags="${tags},stackrox-ci-${CIRCLE_JOB:0:50}"
-        labels="${labels},stackrox-ci-job=${CIRCLE_JOB:0:63},stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID:0:63}"
+        tags="${tags/%-/x}"
+        labels="${labels},stackrox-ci-job=${CIRCLE_JOB:0:63}"
+        labels="${labels/%-/x}"
+        labels="${labels},stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID:0:63}"
+        labels="${labels/%-/x}"
     else
         die "Support is missing for this CI environment"
     fi

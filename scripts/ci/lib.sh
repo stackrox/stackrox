@@ -266,6 +266,39 @@ push_matching_collector_scanner_images() {
     done
 }
 
+poll_for_opensource_images() {
+    info "Polling for opensource images required for system tests"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: poll_for_opensource_images <seconds to wait>"
+    fi
+
+    local time_limit="$1"
+
+    local tag
+    tag="$(make --quiet tag)"
+    local start_time
+    start_time="$(date '+%s')"
+
+    _image_exists() {
+        local name="$1"
+        local url="https://quay.io/v2/stackrox-io/$name/manifests/$tag"
+        info "Checking for $name using $url"
+        curl -sS --head --fail "$url"
+    }
+
+    while true; do
+        if _image_exists "main" && _image_exists "roxctl" && _image_exists "central-db"; then
+            info "All images exist"
+            break
+        fi
+        if (( $(date '+%s') - start_time > time_limit )); then
+           die "Timed out waiting for images after ${time_limit} seconds"
+        fi
+        sleep 60
+    done
+}
+
 check_docs() {
     info "Check docs version"
 
