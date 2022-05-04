@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -56,7 +57,7 @@ type registryImpl struct {
 }
 
 func (r *registryImpl) Init() error {
-	providerDefs, err := r.store.GetAllAuthProviders()
+	providerDefs, err := r.store.GetAllAuthProviders(sac.WithAllAccess(context.Background()))
 	if err != nil {
 		return err
 	}

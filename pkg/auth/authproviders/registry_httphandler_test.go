@@ -303,7 +303,7 @@ func generateAuthResponse(user string, userAttr map[string][]string) *AuthRespon
 // Authprovider store (needed for NewStoreBackedRegistry)
 type tstAuthProviderStore struct{}
 
-func (*tstAuthProviderStore) GetAllAuthProviders() ([]*storage.AuthProvider, error) {
+func (*tstAuthProviderStore) GetAllAuthProviders(_ context.Context) ([]*storage.AuthProvider, error) {
 	return []*storage.AuthProvider{mockAuthProvider}, nil
 }
 
