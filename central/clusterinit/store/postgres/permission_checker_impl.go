@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/clusterinit/backend"
+	accessPkg "github.com/stackrox/rox/central/clusterinit/backend/access"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
@@ -26,7 +26,7 @@ func permissionCheckerSingleton() PermissionChecker {
 }
 
 func checkAccess(ctx context.Context, access storage.Access) (bool, error) {
-	err := backend.CheckAccess(ctx, access)
+	err := accessPkg.CheckAccess(ctx, access)
 	if errors.Is(err, errox.NotAuthorized) {
 		return false, nil
 	}
