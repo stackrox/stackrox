@@ -43,7 +43,6 @@ func init() {
 			"suppressExpiry: Time",
 			"activeState(query: String): ActiveState",
 			"vulnerabilityState: String!",
-			"effectiveVulnerabilityRequest: VulnerabilityRequest",
 			"unusedVarSink(query: String): Int",
 		}),
 		schema.AddQuery("nodeVulnerability(id: ID): NodeVulnerability"),
@@ -82,7 +81,6 @@ type NodeVulnerabilityResolver interface {
 	SuppressExpiry(ctx context.Context) (*graphql.Time, error)
 	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
 	VulnerabilityState(ctx context.Context) string
-	EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error)
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 }
 

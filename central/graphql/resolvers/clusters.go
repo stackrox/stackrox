@@ -59,7 +59,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Cluster", `vulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `vulnCounter(query: String): VulnerabilityCounter!`),
-		schema.AddExtraResolver("Cluster", `nodeVulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
+		schema.AddExtraResolver("Cluster", `nodeVulns(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!`),
 		schema.AddExtraResolver("Cluster", `nodeVulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `nodeVulnCounter(query: String): VulnerabilityCounter!`),
 		schema.AddExtraResolver("Cluster", `k8sVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),

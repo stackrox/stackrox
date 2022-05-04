@@ -33,10 +33,12 @@ func init() {
 		schema.AddExtraResolver("Node", "passingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Node", "controls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Node", "cluster: Cluster!"),
-		schema.AddExtraResolver("Node", "vulns(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability]!"),
+		schema.AddExtraResolver("Node", "vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]!"),
+		schema.AddExtraResolver("Node", "vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability]!"),
 		schema.AddExtraResolver("Node", `unusedVarSink(query: String): Int`),
 		schema.AddExtraResolver("Node", "nodeStatus(query: String): String!"),
-		schema.AddExtraResolver("Node", "topVuln(query: String): NodeVulnerability"),
+		schema.AddExtraResolver("Node", "topVuln(query: String): EmbeddedVulnerability"),
+		schema.AddExtraResolver("Node", "topVulnerability(query: String): NodeVulnerability"),
 		schema.AddExtraResolver("Node", "vulnCount(query: String): Int!"),
 		schema.AddExtraResolver("Node", "vulnCounter(query: String): VulnerabilityCounter!"),
 		schema.AddExtraResolver("Node", "plottedVulns(query: String): PlottedVulnerabilities!"),
@@ -318,7 +320,53 @@ func (resolver *nodeResolver) ComponentCount(ctx context.Context, args RawQuery)
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
-func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (NodeVulnerabilityResolver, error) {
+func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopVulnerability")
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	if resolver.data.GetSetTopCvss() == nil {
+		return nil, nil
+	}
+
+	query = search.ConjunctionQuery(query, resolver.getNodeQuery())
+	query.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.CVSS.String(),
+				Reversed: true,
+			},
+			{
+				Field:    search.CVE.String(),
+				Reversed: true,
+			},
+		},
+		Limit:  1,
+		Offset: 0,
+	}
+
+	vulnLoader, err := loaders.GetCVELoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	vulns, err := vulnLoader.FromQuery(ctx, query)
+	if err != nil {
+		return nil, err
+	} else if len(vulns) == 0 {
+		return nil, err
+	} else if len(vulns) > 1 {
+		return nil, errors.New("multiple vulnerabilities matched for top node vulnerability")
+	}
+	return &cVEResolver{root: resolver.root, data: vulns[0]}, nil
+}
+
+// TopVulnerability returns the first node vulnerability with the top CVSS score.
+func (resolver *nodeResolver) TopVulnerability(ctx context.Context, args RawQuery) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopVulnerability")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
@@ -378,7 +426,21 @@ func (resolver *nodeResolver) getNodeQuery() *v1.Query {
 }
 
 // Vulns returns all of the vulnerabilities in the node.
-func (resolver *nodeResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+func (resolver *nodeResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Vulnerabilities")
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
+
+	return resolver.root.vulnerabilitiesV2(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_NODES,
+		ID:    resolver.data.GetId(),
+	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
+}
+
+// Vulnerabilities returns all of the vulnerabilities in the node.
+func (resolver *nodeResolver) Vulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Vulnerabilities")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
