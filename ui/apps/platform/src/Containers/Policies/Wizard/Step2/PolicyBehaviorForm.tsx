@@ -19,7 +19,7 @@ import {
 } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
-import { Policy, LifecycleStage } from 'types/policy.proto';
+import { ClientPolicy, LifecycleStage } from 'types/policy.proto';
 
 import {
     appendEnforcementActionsForAddedLifecycleStage,
@@ -31,7 +31,7 @@ import DownloadCLIDropdown from './DownloadCLIDropdown';
 import './PolicyBehaviorForm.css';
 
 function PolicyBehaviorForm() {
-    const { values, setFieldValue, setValues } = useFormikContext<Policy>();
+    const { values, setFieldValue, setValues } = useFormikContext<ClientPolicy>();
     const hasEnforcementActions =
         values.enforcementActions?.length > 0 &&
         !values.enforcementActions?.includes('UNSET_ENFORCEMENT');

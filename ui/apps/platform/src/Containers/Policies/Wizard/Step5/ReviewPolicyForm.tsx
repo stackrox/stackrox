@@ -3,7 +3,7 @@ import { Alert, Flex, FlexItem, Spinner, Title, Divider, Button } from '@pattern
 import { useFormikContext } from 'formik';
 
 import { DryRunAlert, checkDryRun, startDryRun } from 'services/PoliciesService';
-import { Policy } from 'types/policy.proto';
+import { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import { getServerPolicy, postFormatExclusionField } from '../../policies.utils';
@@ -27,7 +27,7 @@ function ReviewPolicyForm({
     setIsValidOnServer,
     setPolicyErrorMessage,
 }: ReviewPolicyFormProps): ReactElement {
-    const { values } = useFormikContext<Policy>();
+    const { values } = useFormikContext<ClientPolicy>();
 
     const [showPolicyResults, setShowPolicyResults] = useState(true);
     const [isRunningDryRun, setIsRunningDryRun] = useState(false);

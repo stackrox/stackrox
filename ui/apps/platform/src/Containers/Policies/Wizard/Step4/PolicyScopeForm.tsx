@@ -14,7 +14,7 @@ import {
     FormGroup,
 } from '@patternfly/react-core';
 
-import { Policy } from 'types/policy.proto';
+import { ClientPolicy } from 'types/policy.proto';
 import { Image } from 'types/image.proto';
 import { ListDeployment } from 'types/deployment.proto';
 import { Cluster } from 'types/cluster.proto';
@@ -28,7 +28,7 @@ function PolicyScopeForm() {
     const [images, setImages] = React.useState<Image[]>([]);
     const [deployments, setDeployments] = React.useState<ListDeployment[]>([]);
     const [clusters, setClusters] = React.useState<Cluster[]>([]);
-    const { values, setFieldValue } = useFormikContext<Policy>();
+    const { values, setFieldValue } = useFormikContext<ClientPolicy>();
     const { scope, excludedDeploymentScopes, excludedImageNames } = values;
 
     const hasAuditLogEventSource = values.eventSource === 'AUDIT_LOG_EVENT';
