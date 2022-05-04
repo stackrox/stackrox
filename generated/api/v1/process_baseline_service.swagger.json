@@ -129,56 +129,6 @@
         ]
       }
     },
-    "/v1/processbaselines/lazy/key": {
-      "get": {
-        "summary": "`GetLoadProcessBaseline` returns the single\nprocess baseline referenced by the given ID.",
-        "operationId": "ProcessBaselineService_GetLoadProcessBaseline",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/storageProcessBaseline"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "key.deploymentId",
-            "description": "The idea is for the keys to be flexible.\nOnly certain combinations of these will be supported.",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "key.containerName",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "key.clusterId",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "key.namespace",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ProcessBaselineService"
-        ]
-      }
-    },
     "/v1/processbaselines/lock": {
       "put": {
         "summary": "`LockProcessBaselines` accepts a list of baseline IDs, locks\nthose baselines, and returns the updated baseline objects.",

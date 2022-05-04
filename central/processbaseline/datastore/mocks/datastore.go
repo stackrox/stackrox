@@ -52,19 +52,18 @@ func (mr *MockDataStoreMockRecorder) AddProcessBaseline(ctx, baseline interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessBaseline", reflect.TypeOf((*MockDataStore)(nil).AddProcessBaseline), ctx, baseline)
 }
 
-// ClearProcessBaseline mocks base method.
-func (m *MockDataStore) ClearProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error) {
+// ClearProcessBaselines mocks base method.
+func (m *MockDataStore) ClearProcessBaselines(ctx context.Context, ids []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClearProcessBaseline", ctx, key)
-	ret0, _ := ret[0].(*storage.ProcessBaseline)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "ClearProcessBaselines", ctx, ids)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// ClearProcessBaseline indicates an expected call of ClearProcessBaseline.
-func (mr *MockDataStoreMockRecorder) ClearProcessBaseline(ctx, key interface{}) *gomock.Call {
+// ClearProcessBaselines indicates an expected call of ClearProcessBaselines.
+func (mr *MockDataStoreMockRecorder) ClearProcessBaselines(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearProcessBaseline", reflect.TypeOf((*MockDataStore)(nil).ClearProcessBaseline), ctx, key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearProcessBaselines", reflect.TypeOf((*MockDataStore)(nil).ClearProcessBaselines), ctx, ids)
 }
 
 // CreateUnlockedProcessBaseline mocks base method.

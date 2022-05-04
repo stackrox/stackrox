@@ -121,6 +121,8 @@ class ProcessBaselinesTest extends BaseSpecification {
                     (baseline.key.containerName.equalsIgnoreCase(containerName)))
         assert baseline.elementsList.find { it.element.processName == processName } != null
 
+        // Need to sleep so the baseline has time to lock
+        sleep 70000
         orchestrator.execInContainer(deployment, "pwd")
 
         then:
@@ -401,7 +403,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     @Category(BAT)
-        def "Processes come in after baseline deleted by API"() {
+    def "Processes come in after baseline deleted by API"() {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null

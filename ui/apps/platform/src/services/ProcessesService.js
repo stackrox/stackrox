@@ -25,7 +25,7 @@ export function fetchProcesses(deploymentId) {
  * @returns {Promise<Object, Error>} fulfilled
  */
 export function fetchProcessesInBaseline(query) {
-    return axios.get(`${processesInBaselineUrl}/lazy/key?${query}`).then((response) => ({
+    return axios.get(`${processesInBaselineUrl}/key?${query}`).then((response) => ({
         data: response.data,
     }));
 }

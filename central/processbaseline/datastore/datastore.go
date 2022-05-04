@@ -34,8 +34,8 @@ type DataStore interface {
 
 	// CreateUnlockedProcessBaseline creates an unlocked baseline
 	CreateUnlockedProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error)
-	// ClearProcessBaseline clears the elements from a process baseline, essentially leaving us with a baseline without processes
-	ClearProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error)
+	// ClearProcessBaselines clears the elements from a process baseline, essentially leaving us with a baseline without processes
+	ClearProcessBaselines(ctx context.Context, ids []string) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

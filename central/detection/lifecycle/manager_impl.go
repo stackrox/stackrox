@@ -42,6 +42,8 @@ var (
 	lifecycleMgrCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image, resources.Indicator, resources.Policy, resources.ProcessWhitelist, resources.Namespace)))
+
+	genDuration = env.BaselineGenerationDuration.DurationSetting()
 )
 
 type processBaselineKey struct {
@@ -156,6 +158,7 @@ func (m *managerImpl) flushBaselineQueue() {
 		}
 
 		// Grab the first deployment to baseline.
+		// NOTE:  This is the only place from which Pull is called.
 		deployment := m.deploymentObservationQueue.Pull()
 
 		m.addBaseline(deployment.DeploymentID)
@@ -308,7 +311,6 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator) error 
 	}
 	metrics.ProcessFilterCounterInc("Added")
 
-	genDuration := env.BaselineGenerationDuration.DurationSetting()
 	observationEnd, _ := types.TimestampProto(time.Now().Add(genDuration))
 	m.deploymentObservationQueue.Push(&queue.DeploymentObservation{DeploymentID: indicator.GetDeploymentId(), InObservation: true, ObservationEnd: observationEnd})
 

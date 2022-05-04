@@ -14,6 +14,7 @@ type Store interface {
 	Walk(ctx context.Context, fn func(baseline *storage.ProcessBaseline) error) error
 
 	Upsert(ctx context.Context, baseline *storage.ProcessBaseline) error
+	UpsertMany(ctx context.Context, objs []*storage.ProcessBaseline) error
 
 	Delete(ctx context.Context, id string) error
 }

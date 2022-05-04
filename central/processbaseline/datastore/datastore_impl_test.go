@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processbaseline/index"
@@ -17,7 +16,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -359,7 +357,6 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
 	suite.NoError(err)
 
-	log.Info(baseline)
 	suite.Equal(key, baseline.GetKey())
 	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
 	suite.True(baseline.UserLockedTimestamp == nil)
@@ -375,21 +372,19 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
 	suite.NoError(err)
 
-	log.Info(baseline)
 	suite.Equal(key, baseline.GetKey())
 	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
 	suite.True(baseline.UserLockedTimestamp == nil)
-	suite.True(baseline.Elements == nil)
+	suite.True(baseline.Elements == nil || len(baseline.Elements) == 0)
 
 }
 
-func (suite *ProcessBaselineDataStoreTestSuite) TestClearProcessBaseline() {
+func (suite *ProcessBaselineDataStoreTestSuite) TestClearProcessBaselines() {
 	key := fixtures.GetBaselineKey()
 	baseline := suite.createAndStoreBaseline(key)
 	suite.True(baseline.Elements != nil)
 
-	baseline, _ = suite.datastore.ClearProcessBaseline(suite.requestContext, key)
-	suite.True(baseline.Elements == nil)
-	suite.True(protoutils.After(baseline.StackRoxLockedTimestamp, types.TimestampNow()))
-
+	ids := []string{baseline.Id}
+	err := suite.datastore.ClearProcessBaselines(suite.requestContext, ids)
+	suite.True(err == nil)
 }

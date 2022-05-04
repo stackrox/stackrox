@@ -176,6 +176,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestGetProcessBaseline() {
 			fillDB(t, suite.datastore, c.baselines)
 			defer emptyDB(t, suite.datastore, c.baselines)
 			requestByKey := &v1.GetProcessBaselineRequest{Key: knownBaseline.GetKey()}
+			suite.deployments.EXPECT().GetDeployment(hasReadCtx, gomock.Any()).Return(nil, true, nil).AnyTimes()
 			baseline, err := suite.service.GetProcessBaseline(hasReadCtx, requestByKey)
 			if c.shouldFail {
 				assert.Error(t, err)
@@ -196,7 +197,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestGetLoadProcessBaseline() {
 	suite.deployments.EXPECT().GetDeployment(hasWriteCtx, gomock.Any()).Return(nil, true, nil)
 	suite.indicatorMockStore.EXPECT().SearchRawProcessIndicators(hasWriteCtx, gomock.Any()).Return(indicators, nil)
 
-	baseline, _ := suite.service.GetLoadProcessBaseline(hasWriteCtx, requestByKey)
+	baseline, _ := suite.service.GetProcessBaseline(hasWriteCtx, requestByKey)
 
 	assert.Equal(suite.T(), baseline.GetKey(), knownBaseline.GetKey())
 }
@@ -207,7 +208,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestGetLoadProcessBaselineDeletedD
 	requestByKey := &v1.GetProcessBaselineRequest{Key: knownBaseline.GetKey()}
 	suite.deployments.EXPECT().GetDeployment(hasWriteCtx, gomock.Any()).Return(nil, false, nil)
 
-	baseline, _ := suite.service.GetLoadProcessBaseline(hasWriteCtx, requestByKey)
+	baseline, _ := suite.service.GetProcessBaseline(hasWriteCtx, requestByKey)
 
 	assert.Nil(suite.T(), baseline)
 }

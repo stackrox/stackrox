@@ -60,14 +60,6 @@ service ProcessBaselineService {
             };
     }
 
-    // `GetLoadProcessBaseline` returns the single
-    // process baseline referenced by the given ID.
-    rpc GetLoadProcessBaseline (GetProcessBaselineRequest) returns (storage.ProcessBaseline) {
-        option (google.api.http) = {
-            get: "/v1/processbaselines/lazy/key"
-        };
-    }
-
     // `UpdateProcessBaselines` adds a list of process
     // names to each of a list of process baselines.
     rpc UpdateProcessBaselines (UpdateProcessBaselinesRequest) returns (UpdateProcessBaselinesResponse) {

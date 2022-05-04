@@ -154,7 +154,7 @@ func (ds *datastoreImpl) GetProcessIndicators(ctx context.Context, ids []string)
 		return nil, false, err
 	}
 
-	var allowedIndicators []*storage.ProcessIndicator
+	allowedIndicators := make([]*storage.ProcessIndicator, 0, len(indicators))
 	for _, indicator := range indicators {
 		if ok, err := checkReadAccess(ctx, indicator); !ok || err != nil {
 			continue
