@@ -152,14 +152,14 @@ class Kubernetes implements OrchestratorMain {
         Namespace namespace = newNamespace(ns)
         try {
             client.namespaces().create(namespace)
+            log.info "Created namespace ${ns}"
             defaultPspForNamespace(ns)
             provisionDefaultServiceAccount(ns)
-            log.debug "Created namespace ${ns}"
         } catch (KubernetesClientException kce) {
-            // 409 is already exists
             if (kce.code != 409) {
                 throw kce
             }
+            log.debug("Namespace ${ns} already exists", kce)
         }
     }
 
@@ -1328,8 +1328,9 @@ class Kubernetes implements OrchestratorMain {
             return
         }
 
-        // Copy image pull secrets from the default service account in the test orchestration namespace (i.e. 'qa') for
-        // use by the default service account in another namespace.
+        log.info """Copy image pull secrets from the default service account
+                    in the test orchestration namespace (${this.namespace})
+                    for use by the default service account in ${forNamespace} namespace.""".stripIndent()
 
         ServiceAccount orchestrationServiceAccount = client.serviceAccounts()
                     .inNamespace(this.namespace)
