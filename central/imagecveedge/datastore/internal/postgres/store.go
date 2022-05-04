@@ -11,15 +11,16 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
 	baseTable  = "image_cve_relations"
-	countStmt  = "SELECT COUNT(*) FROM image_cve_relations"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3 AND ImageCve = $4 AND ImageCveOperatingSystem = $5)"
 
 	getStmt     = "SELECT serialized FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3 AND ImageCve = $4 AND ImageCveOperatingSystem = $5"
@@ -75,12 +76,9 @@ func New(ctx context.Context, db *pgxpool.Pool) Store {
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "ImageCVEEdge")
 
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
-		return 0, err
-	}
-	return count, nil
+	var sacQueryFilter *v1.Query
+
+	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store

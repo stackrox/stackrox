@@ -28,21 +28,21 @@ import (
     "github.com/jackc/pgx/v4"
     "github.com/jackc/pgx/v4/pgxpool"
     "github.com/pkg/errors"
-    "github.com/stackrox/rox/central/globaldb"
     "github.com/stackrox/rox/central/metrics"
     pkgSchema "github.com/stackrox/rox/central/postgres/schema"
     "github.com/stackrox/rox/central/role/resources"
+    v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
+    "github.com/stackrox/rox/pkg/auth/permissions"
     "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
     "github.com/stackrox/rox/pkg/sac"
-    "github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
+    "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
         baseTable = "{{.Table}}"
-        countStmt = "SELECT COUNT(*) FROM {{.Table}}"
         existsStmt = "SELECT EXISTS(SELECT 1 FROM {{.Table}} WHERE {{template "whereMatch" $pks}})"
 
         getStmt = "SELECT serialized FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
@@ -410,6 +410,8 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "{{.TrimmedType}}")
 
+    var sacQueryFilter *v1.Query
+
     {{ if .PermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.CountAllowed(ctx); err != nil || !ok {
         return 0, err
@@ -419,14 +421,27 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
     if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
         return 0, err
     }
-    {{- end }}
-
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
+    {{- else if .Obj.IsDirectlyScoped }}
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
+	if err != nil {
 		return 0, err
 	}
-	return count, nil
+    {{- if .Obj.IsClusterScope }}
+    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    {{- else}}
+    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    {{- end }}
+
+	if err != nil {
+		return 0, err
+	}
+    {{- end }}
+
+    return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store

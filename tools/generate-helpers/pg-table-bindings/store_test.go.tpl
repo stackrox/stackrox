@@ -147,7 +147,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACUpsert() {
 	obj := &{{.Type}}{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	ctxs := getSACContexts(obj)
+	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
 		withAllAccess: nil,
 		withNoAccess: sac.ErrResourceAccessDenied,
@@ -166,7 +166,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACUpsertMany() {
 	obj := &{{.Type}}{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	ctxs := getSACContexts(obj)
+	ctxs := getSACContexts(obj, storage.Access_READ_WRITE_ACCESS)
 	for name, expectedErr := range map[string]error{
 		withAllAccess: nil,
 		withNoAccess: sac.ErrResourceAccessDenied,
@@ -181,6 +181,34 @@ func (s *{{$namePrefix}}StoreSuite) TestSACUpsertMany() {
 	}
 }
 
+func (s *{{$namePrefix}}StoreSuite) TestSACCount() {
+	objA := &{{.Type}}{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &{{.Type}}{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	s.store.Upsert(withAllAccessCtx, objA)
+	s.store.Upsert(withAllAccessCtx, objB)
+
+	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
+	for name, expectedCount := range map[string]int{
+		withAllAccess:           2,
+		withNoAccess:            0,
+		withNoAccessToCluster:   0,
+		withAccessToDifferentNs: 0,
+		withAccess:              1,
+		withAccessToCluster:     1,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			count, err := s.store.Count(ctxs[name])
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
+		})
+	}
+}
+
 const (
 	withAllAccess = "AllAccess"
 	withNoAccess = "NoAccess"
@@ -190,20 +218,20 @@ const (
 	withNoAccessToCluster = "NoAccessToCluster"
 )
 
-func getSACContexts(obj *{{.Type}}) map[string]context.Context {
+func getSACContexts(obj *{{.Type}}, access storage.Access) map[string]context.Context {
 	return map[string]context.Context {
 		withAllAccess: sac.WithAllAccess(context.Background()),
 		withNoAccess: sac.WithNoAccess(context.Background()),
 		withAccessToDifferentNs: sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.AccessModeScopeKeys(access),
 				sac.ResourceScopeKeys(targetResource),
 				sac.ClusterScopeKeys({{ "obj" | .Obj.GetClusterID }}),
 				sac.NamespaceScopeKeys("unknown ns"),
 		)),
 		withAccess: sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.AccessModeScopeKeys(access),
 				sac.ResourceScopeKeys(targetResource),
 				sac.ClusterScopeKeys({{ "obj" | .Obj.GetClusterID }}),
 				{{- if .Obj.IsNamespaceScope }}
@@ -212,13 +240,13 @@ func getSACContexts(obj *{{.Type}}) map[string]context.Context {
 		)),
 		withAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.AccessModeScopeKeys(access),
 				sac.ResourceScopeKeys(targetResource),
 				sac.ClusterScopeKeys({{ "obj" | .Obj.GetClusterID }}),
 		)),
 		withNoAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.AccessModeScopeKeys(access),
 				sac.ResourceScopeKeys(targetResource),
 				sac.ClusterScopeKeys("unknown cluster"),
 		)),
