@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-
 # A collection of GKE related reusable bash functions for CI
 
-set +u
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
-set -u
-
 source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
 source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
+
+set -euo pipefail
 
 provision_gke_cluster() {
     info "Provisioning a GKE cluster"
