@@ -18,7 +18,7 @@ repositories {
 def grpcVersion = '1.21.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
 def protocVersion = '3.19.4'
-def protobufVersion = '3.19.4'
+def protobufVersion = '3.20.1'
 def nettyTcNativeVersion = '2.0.45.Final'
 def fabric8Version = '5.12.2'
 def jacksonVersion = '2.13.2'
@@ -95,7 +95,7 @@ dependencies {
     implementation group: 'org.spockframework', name: 'spock-core', version: '1.2-groovy-2.4'
 
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
-    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.7'
+    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
 
     implementation 'com.google.api.grpc:googleapis-common-protos:0.0.3'
 
