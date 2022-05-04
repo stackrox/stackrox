@@ -56,7 +56,7 @@ SELECT TABLE_NAME
              LEFT JOIN pg_namespace n ON n.oid = c.relnamespace WHERE nspname = 'public'
   ) a
   WHERE oid = parent
-) a;'`
+) a;`
 )
 
 var (
