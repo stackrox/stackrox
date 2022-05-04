@@ -11,7 +11,7 @@ import {
 } from '@patternfly/react-core';
 
 import { createPolicy, savePolicy } from 'services/PoliciesService';
-import { Policy } from 'types/policy.proto';
+import { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -29,7 +29,7 @@ import './PolicyWizard.css';
 
 type PolicyWizardProps = {
     pageAction: ExtendedPageAction;
-    policy: Policy;
+    policy: ClientPolicy;
 };
 
 function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
@@ -42,7 +42,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
 
     const formik = useFormik({
         initialValues: policy,
-        onSubmit: (values: Policy, { setSubmitting }) => {
+        onSubmit: (values: ClientPolicy, { setSubmitting }) => {
             setPolicyErrorMessage('');
             setIsBadRequest(false);
             const serverPolicy = getServerPolicy(values);
