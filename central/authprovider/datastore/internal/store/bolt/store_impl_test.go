@@ -1,11 +1,14 @@
-package store
+package bolt
 
 import (
+	"context"
 	"sort"
 	"testing"
 
+	"github.com/stackrox/rox/central/authprovider/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -21,7 +24,7 @@ type AuthProviderStoreTestSuite struct {
 
 	db *bolt.DB
 
-	store Store
+	store store.Store
 }
 
 func (suite *AuthProviderStoreTestSuite) SetupSuite() {
@@ -50,10 +53,12 @@ func (suite *AuthProviderStoreTestSuite) TestAuthProviders() {
 		},
 	}
 
+	ctx := sac.WithAllAccess(context.Background())
+
 	// Test Add
 	for _, r := range authProviders {
 		r.Id = uuid.NewV4().String()
-		err := suite.store.AddAuthProvider(r)
+		err := suite.store.Upsert(ctx, r)
 		suite.NoError(err)
 	}
 
@@ -62,7 +67,7 @@ func (suite *AuthProviderStoreTestSuite) TestAuthProviders() {
 	})
 
 	// Test GetAllAuthProviders
-	allProviders, err := suite.store.GetAllAuthProviders()
+	allProviders, err := suite.store.GetAll(ctx)
 	suite.Require().NoError(err)
 	sort.Slice(allProviders, func(i, j int) bool {
 		return allProviders[i].Id < authProviders[j].Id
@@ -76,10 +81,10 @@ func (suite *AuthProviderStoreTestSuite) TestAuthProviders() {
 	}
 
 	for _, r := range authProviders {
-		suite.NoError(suite.store.UpdateAuthProvider(r))
+		suite.NoError(suite.store.Upsert(ctx, r))
 	}
 
-	allProviders, err = suite.store.GetAllAuthProviders()
+	allProviders, err = suite.store.GetAll(ctx)
 	suite.Require().NoError(err)
 	sort.Slice(allProviders, func(i, j int) bool {
 		return allProviders[i].Id < authProviders[j].Id
@@ -89,10 +94,10 @@ func (suite *AuthProviderStoreTestSuite) TestAuthProviders() {
 
 	// Test Remove
 	for _, r := range authProviders {
-		suite.NoError(suite.store.RemoveAuthProvider(r.GetId()))
+		suite.NoError(suite.store.Delete(ctx, r.GetId()))
 	}
 
-	allProviders, err = suite.store.GetAllAuthProviders()
+	allProviders, err = suite.store.GetAll(ctx)
 	suite.NoError(err)
 	suite.Empty(allProviders)
 }

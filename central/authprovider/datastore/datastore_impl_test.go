@@ -54,7 +54,7 @@ func (s *authProviderDataStoreEnforceTestSuite) TearDownTest() {
 }
 
 func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesAdd() {
-	s.storage.EXPECT().AddAuthProvider(gomock.Any()).Times(0)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Times(0)
 
 	err := s.dataStore.AddAuthProvider(s.hasNoneCtx, &storage.AuthProvider{})
 	s.Error(err, "expected an error trying to write without permissions")
@@ -64,7 +64,7 @@ func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesAdd() {
 }
 
 func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesUpdate() {
-	s.storage.EXPECT().UpdateAuthProvider(gomock.Any()).Times(0)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Times(0)
 
 	err := s.dataStore.UpdateAuthProvider(s.hasNoneCtx, &storage.AuthProvider{})
 	s.Error(err, "expected an error trying to write without permissions")
@@ -74,7 +74,7 @@ func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesUpdate() {
 }
 
 func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesRemove() {
-	s.storage.EXPECT().RemoveAuthProvider(gomock.Any()).Times(0)
+	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Times(0)
 
 	err := s.dataStore.RemoveAuthProvider(s.hasNoneCtx, "id")
 	s.Error(err, "expected an error trying to write without permissions")
@@ -124,21 +124,37 @@ func (s *authProviderDataStoreTestSuite) TearDownTest() {
 }
 
 func (s *authProviderDataStoreTestSuite) TestAllowsAdd() {
-	s.storage.EXPECT().AddAuthProvider(gomock.Any()).Return(nil)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
+	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil)
 
 	err := s.dataStore.AddAuthProvider(s.hasWriteCtx, &storage.AuthProvider{})
 	s.NoError(err, "expected no error trying to write with permissions")
 }
 
+func (s *authProviderDataStoreTestSuite) TestErrorOnAdd() {
+	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil)
+
+	err := s.dataStore.AddAuthProvider(s.hasWriteCtx, &storage.AuthProvider{})
+	s.Error(err)
+}
+
 func (s *authProviderDataStoreTestSuite) TestAllowsUpdate() {
-	s.storage.EXPECT().UpdateAuthProvider(gomock.Any()).Return(nil)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
+	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil)
 
 	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{})
 	s.NoError(err, "expected no error trying to write with permissions")
 }
 
+func (s *authProviderDataStoreTestSuite) TestErrorOnUpdate() {
+	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil)
+
+	err := s.dataStore.UpdateAuthProvider(s.hasWriteCtx, &storage.AuthProvider{})
+	s.Error(err)
+}
+
 func (s *authProviderDataStoreTestSuite) TestAllowsRemove() {
-	s.storage.EXPECT().RemoveAuthProvider(gomock.Any()).Return(nil)
+	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil)
 
 	err := s.dataStore.RemoveAuthProvider(s.hasWriteCtx, "id")
 	s.NoError(err, "expected no error trying to write with permissions")
