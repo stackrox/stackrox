@@ -387,4 +387,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestClearProcessBaselines() {
 	ids := []string{baseline.Id}
 	err := suite.datastore.ClearProcessBaselines(suite.requestContext, ids)
 	suite.True(err == nil)
+	baseline, exists, err := suite.datastore.GetProcessBaseline(suite.requestContext, key)
+	suite.True(exists)
+	suite.True(baseline.Elements == nil)
 }

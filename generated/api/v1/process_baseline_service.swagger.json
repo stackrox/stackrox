@@ -48,7 +48,7 @@
         ]
       },
       "put": {
-        "summary": "`UpdateProcessBaselines` adds a list of process\nnames to each of a list of process baselines.",
+        "summary": "`AddToProcessBaselines` adds a list of process\nnames to each of a list of process baselines.",
         "operationId": "ProcessBaselineService_UpdateProcessBaselines",
         "responses": {
           "200": {
@@ -81,7 +81,7 @@
     },
     "/v1/processbaselines/key": {
       "get": {
-        "summary": "`GetProcessBaseline` returns the single\nprocess baseline referenced by the given ID.",
+        "summary": "`GetProcessBaselineById` returns the single\nprocess baseline referenced by the given ID.",
         "operationId": "ProcessBaselineService_GetProcessBaseline",
         "responses": {
           "200": {

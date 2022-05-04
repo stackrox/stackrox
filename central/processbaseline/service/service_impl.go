@@ -204,14 +204,14 @@ func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.De
 
 		if exists && err == nil {
 			toClear = append(toClear, r.ID)
-
-			// Remove the deployment from observation so everything forward is processed to prevent us from re-processing
-			// indicators from the past.
-			s.lifecycleManager.RemoveDeploymentFromObservation(key.GetDeploymentId())
 		}
 		if !exists {
 			toDelete = append(toDelete, r.ID)
 		}
+
+		// Remove the deployment from observation so everything forward is processed to prevent us from re-processing
+		// indicators from the past.  This operation is a no-op if the deployment has been deleted.
+		s.lifecycleManager.RemoveDeploymentFromObservation(key.GetDeploymentId())
 	}
 
 	// Clear the contents of the baseline
@@ -228,7 +228,6 @@ func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.De
 	if len(toDelete) > 0 {
 		err = s.dataStore.RemoveProcessBaselinesByIDs(ctx, toDelete)
 
-		// Not sure we care if this fails
 		if err != nil {
 			return nil, err
 		}

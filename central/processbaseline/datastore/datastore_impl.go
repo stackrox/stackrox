@@ -420,6 +420,7 @@ func (ds *datastoreImpl) CreateUnlockedProcessBaseline(ctx context.Context, key 
 	baseline = &storage.ProcessBaseline{
 		Id:         id,
 		Key:        key,
+		Elements:   baseElements,
 		Created:    timestamp,
 		LastUpdate: timestamp,
 	}

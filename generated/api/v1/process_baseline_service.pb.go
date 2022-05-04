@@ -676,10 +676,10 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type ProcessBaselineServiceClient interface {
-	// `GetProcessBaseline` returns the single
+	// `GetProcessBaselineById` returns the single
 	// process baseline referenced by the given ID.
 	GetProcessBaseline(ctx context.Context, in *GetProcessBaselineRequest, opts ...grpc.CallOption) (*storage.ProcessBaseline, error)
-	// `UpdateProcessBaselines` adds a list of process
+	// `AddToProcessBaselines` adds a list of process
 	// names to each of a list of process baselines.
 	UpdateProcessBaselines(ctx context.Context, in *UpdateProcessBaselinesRequest, opts ...grpc.CallOption) (*UpdateProcessBaselinesResponse, error)
 	// `LockProcessBaselines` accepts a list of baseline IDs, locks
@@ -735,10 +735,10 @@ func (c *processBaselineServiceClient) DeleteProcessBaselines(ctx context.Contex
 
 // ProcessBaselineServiceServer is the server API for ProcessBaselineService service.
 type ProcessBaselineServiceServer interface {
-	// `GetProcessBaseline` returns the single
+	// `GetProcessBaselineById` returns the single
 	// process baseline referenced by the given ID.
 	GetProcessBaseline(context.Context, *GetProcessBaselineRequest) (*storage.ProcessBaseline, error)
-	// `UpdateProcessBaselines` adds a list of process
+	// `AddToProcessBaselines` adds a list of process
 	// names to each of a list of process baselines.
 	UpdateProcessBaselines(context.Context, *UpdateProcessBaselinesRequest) (*UpdateProcessBaselinesResponse, error)
 	// `LockProcessBaselines` accepts a list of baseline IDs, locks
