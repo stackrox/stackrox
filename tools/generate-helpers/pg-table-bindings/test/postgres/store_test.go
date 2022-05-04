@@ -106,7 +106,7 @@ func (s *SinglekeyStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, testSingleKeyStructs))
-	allTestSingleKeyStruct, err = store.GetAll(ctx)
+	allTestSingleKeyStruct, err := store.GetAll(ctx)
 	s.NoError(err)
 	s.Equal(testSingleKeyStructs, allTestSingleKeyStruct)
 
