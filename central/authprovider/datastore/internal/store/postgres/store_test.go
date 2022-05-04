@@ -115,7 +115,7 @@ func (s *AuthprovidersStoreSuite) TestStore() {
 	s.NoError(store.UpsertMany(ctx, authProviders))
 	allAuthProvider, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.Equal(authProviders, allAuthProvider)
+	s.ElementsMatch(authProviders, allAuthProvider)
 
 	authProviderCount, err = store.Count(ctx)
 	s.NoError(err)
