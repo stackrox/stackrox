@@ -149,12 +149,13 @@ function IntegrationsTable({
                         <Tbody>
                             {integrations.map((integration, rowIndex) => {
                                 const { id } = integration;
+                                const canTriggerBackup =
+                                    integration.type === 's3' || integration.type === 'gcs';
                                 const actionItems = [
                                     {
                                         title: 'Trigger backup',
                                         onClick: () => onTriggerBackup(integration.id),
-                                        isHidden:
-                                            integration.type !== 's3' && integration.type !== 'gcs',
+                                        isHidden: !canTriggerBackup,
                                     },
                                     {
                                         title: (
