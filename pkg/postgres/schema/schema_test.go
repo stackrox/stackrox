@@ -149,6 +149,10 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 			createStmts: CreateTableDeploymentsStmt,
 		},
 		{
+			name:        ExternalbackupsTableName,
+			createStmts: CreateTableExternalbackupsStmt,
+		},
+		{
 			name:        ImagesTableName,
 			createStmts: CreateTableImagesStmt,
 		},
