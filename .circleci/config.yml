@@ -629,6 +629,24 @@ commands:
           echo "Not running tests"
           circleci step halt
 
+  gate-job:
+    description: Decide whether to run a job
+    parameters:
+      job:
+        type: string
+    steps:
+      - run:
+          name: Decide whether to run << parameters.job >>
+          command: |
+            source scripts/ci/lib.sh
+            # gate_job() exits with 0 when a job should *not* be run in keeping
+            # with OpenShift CI semantics.
+            (gate_job '<< parameters.job >>'; exit 1)
+            if [[ "$?" == "0" ]]; then
+              echo "Not running tests"
+              circleci step halt
+            fi
+
   get-and-store-debug-dump:
     description: Runs roxctl debug dump and stores it for the job.
     steps:
@@ -3016,15 +3034,8 @@ jobs:
     resource_class: small
     steps:
       - checkout
-      - check-backend-changes
-      - check-to-run:
-          label: ci-upgrade-tests
-          run-on-master: true
-          run-on-tags: true
-          changed-path: '^migrator/.*$|^image/'
-      - check-label-to-skip-tests:
-          label: ci-no-upgrade-tests
-
+      - gate-job:
+          job: gke-upgrade-tests
       - provision-gke-cluster:
           cluster-id: upgrade-test
 
@@ -3706,14 +3717,8 @@ jobs:
       LOAD_BALANCER: "lb"
     steps:
       - checkout
-      - check-backend-changes
-      - check-to-run:
-          label: ci-upgrade-tests
-          run-on-master: true
-          run-on-tags: true
-          changed-path: '^migrator/.*$|^image/'
-      - check-label-to-skip-tests:
-          label: ci-no-upgrade-tests
+      - gate-job:
+          job: gke-upgrade-tests
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
       - restore-go-mod-cache

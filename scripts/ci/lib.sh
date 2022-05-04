@@ -437,11 +437,13 @@ mark_collector_release() {
 
 pr_has_label() {
     if [[ -z "${1:-}" ]]; then
-        die "usage: pr_has_label <expected label>"
+        die "usage: pr_has_label <expected label> [<pr details>]"
     fi
 
     local expected_label="$1"
-    get_pr_details | jq '([.labels | .[].name]  // []) | .[]' -r | grep -qx "${expected_label}"
+    local pr_details
+    pr_details="${2:-$(get_pr_details)}"
+    jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details" | grep -qx "${expected_label}"
 }
 
 get_pr_details() {
@@ -479,6 +481,115 @@ get_pr_details() {
 
     url="https://api.github.com/repos/${org}/${repo}/pulls/${pull_request}"
     curl -sS "${headers[@]}" "${url}"
+}
+
+gate_job() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: gate_job <job>"
+    fi
+
+    local job="$1"
+
+    info "Will determine whether to run: $job"
+
+    local pr_details
+    pr_details="$(get_pr_details)"
+
+    if [[ "$(jq .id <<<"$pr_details")" != "null" ]]; then
+        gate_pr_job "$pr_details"
+    else
+        gate_merge_job
+    fi
+}
+
+gate_pr_job() {
+    local pr_details="$1"
+
+    local run_with_labels=()
+    local skip_with_label=""
+    local run_with_changed_path=""
+    local changed_path_to_ignore=""
+
+    case "$job" in
+        gke-upgrade-tests)
+            run_with_labels=("ci-upgrade-tests")
+            skip_with_label="ci-no-upgrade-tests"
+            run_with_changed_path='^migrator/.*$|^image/'
+            ;;
+        *)
+            info "There is no gating criteria for $job"
+            return
+    esac
+
+    if [[ -n "$skip_with_label" ]]; then
+        if pr_has_label "${skip_with_label}" "${pr_details}"; then
+            info "$job will not run because the PR has label $skip_with_label"
+            exit 0
+        fi
+    fi
+
+    for run_with_label in "${run_with_labels[@]}"; do
+        if pr_has_label "${run_with_label}" "${pr_details}"; then
+            info "$job will run because the PR has label $run_with_label"
+            return
+        fi
+    done
+
+    if [[ -n "${run_with_changed_path}" || -n "${changed_path_to_ignore}" ]]; then
+        local diff_base
+        if is_CIRCLECI; then
+            diff_base="$(git merge-base HEAD origin/master)"
+            echo "Determined diff-base as ${diff_base}"
+            echo "Master SHA: $(git rev-parse origin/master)"
+        elif is_OPENSHIFT_CI; then
+            diff_base="$(jq -r '.refs[0].base_sha' <<<"$CLONEREFS_OPTIONS")"
+            echo "Determined diff-base as ${diff_base}"
+        fi
+        echo "Diffbase diff:"
+        { git diff --name-only "${diff_base}" | cat ; } || true
+        ignored_regex="${changed_path_to_ignore}"
+        [[ -n "$ignored_regex" ]] || ignored_regex='$^' # regex that matches nothing
+        match_regex="${run_with_changed_path}"
+        [[ -n "$match_regex" ]] || match_regex='^.*$' # grep -E -q '' returns 0 even on empty input, so we have to specify some pattern
+        if grep -E -q "$match_regex" < <({ git diff --name-only "${diff_base}" || echo "???" ; } | grep -E -v "$ignored_regex"); then
+            info "$job will run because paths matching $match_regex (and not matching ${ignored_regex}) had changed."
+            return
+        fi
+    fi
+
+    info "$job will be skipped"
+    exit 0
+}
+
+gate_merge_job() {
+    local run_on_master=""
+    local run_on_tags=""
+
+    case "$job" in
+        gke-upgrade-tests)
+            run_on_master="true"
+            run_on_tags="true"
+            ;;
+        *)
+            info "There is no gating criteria for $job"
+            return
+    esac
+
+    local base_ref
+    base_ref="$(jq -r '.refs[0].base_ref' <<<"$CLONEREFS_OPTIONS")"
+
+    if [[ "${base_ref}" == "master" && "${run_on_master}" == "true" ]]; then
+        info "$job will run because this is master and run_on_master==true"
+        return
+    fi
+
+    if [[ -n "$(git tag --contains)" && "${run_on_tags}" == "true" ]]; then
+        info "$job will run because the head of this branch is tagged and run_on_tags==true"
+        return
+    fi
+
+    info "$job will be skipped"
+    exit 0
 }
 
 openshift_ci_mods() {
