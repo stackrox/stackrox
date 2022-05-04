@@ -52,6 +52,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.Secret, bool, error)
+	GetAll(ctx context.Context) ([]*storage.Secret, error)
 	Upsert(ctx context.Context, obj *storage.Secret) error
 	UpsertMany(ctx context.Context, objs []*storage.Secret) error
 	Delete(ctx context.Context, id string) error
@@ -506,6 +507,17 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Secret, bool, 
 		return nil, false, err
 	}
 	return &msg, true, nil
+}
+
+func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.Secret, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "Secret")
+
+	var objs []*storage.Secret
+	err := s.Walk(ctx, func(obj *storage.Secret) error {
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {

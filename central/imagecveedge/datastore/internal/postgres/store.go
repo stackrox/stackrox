@@ -47,6 +47,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string, imageId string, imageCveId string, imageCve string, imageCveOperatingSystem string) (bool, error)
 	Get(ctx context.Context, id string, imageId string, imageCveId string, imageCve string, imageCveOperatingSystem string) (*storage.ImageCVEEdge, bool, error)
+	GetAll(ctx context.Context) ([]*storage.ImageCVEEdge, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ImageCVEEdge, []int, error)
 
@@ -116,6 +117,17 @@ func (s *storeImpl) Get(ctx context.Context, id string, imageId string, imageCve
 		return nil, false, err
 	}
 	return &msg, true, nil
+}
+
+func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.ImageCVEEdge, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "ImageCVEEdge")
+
+	var objs []*storage.ImageCVEEdge
+	err := s.Walk(ctx, func(obj *storage.ImageCVEEdge) error {
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {

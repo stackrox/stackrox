@@ -50,6 +50,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.TokenMetadata, bool, error)
+	GetAll(ctx context.Context) ([]*storage.TokenMetadata, error)
 	Upsert(ctx context.Context, obj *storage.TokenMetadata) error
 	UpsertMany(ctx context.Context, objs []*storage.TokenMetadata) error
 	Delete(ctx context.Context, id string) error
@@ -304,6 +305,17 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.TokenMetadata,
 		return nil, false, err
 	}
 	return &msg, true, nil
+}
+
+func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.TokenMetadata, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "TokenMetadata")
+
+	var objs []*storage.TokenMetadata
+	err := s.Walk(ctx, func(obj *storage.TokenMetadata) error {
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {

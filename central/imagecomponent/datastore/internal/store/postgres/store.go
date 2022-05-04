@@ -47,6 +47,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string, name string, version string, operatingSystem string) (bool, error)
 	Get(ctx context.Context, id string, name string, version string, operatingSystem string) (*storage.ImageComponent, bool, error)
+	GetAll(ctx context.Context) ([]*storage.ImageComponent, error)
 	Upsert(ctx context.Context, obj *storage.ImageComponent) error
 	UpsertMany(ctx context.Context, objs []*storage.ImageComponent) error
 	Delete(ctx context.Context, id string, name string, version string, operatingSystem string) error
@@ -288,6 +289,17 @@ func (s *storeImpl) Get(ctx context.Context, id string, name string, version str
 		return nil, false, err
 	}
 	return &msg, true, nil
+}
+
+func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.ImageComponent, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "ImageComponent")
+
+	var objs []*storage.ImageComponent
+	err := s.Walk(ctx, func(obj *storage.ImageComponent) error {
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {

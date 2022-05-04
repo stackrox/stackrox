@@ -47,6 +47,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, deploymentId string) (bool, error)
 	Get(ctx context.Context, deploymentId string) (*storage.NetworkBaseline, bool, error)
+	GetAll(ctx context.Context) ([]*storage.NetworkBaseline, error)
 	Upsert(ctx context.Context, obj *storage.NetworkBaseline) error
 	UpsertMany(ctx context.Context, objs []*storage.NetworkBaseline) error
 	Delete(ctx context.Context, deploymentId string) error
@@ -268,6 +269,17 @@ func (s *storeImpl) Get(ctx context.Context, deploymentId string) (*storage.Netw
 		return nil, false, err
 	}
 	return &msg, true, nil
+}
+
+func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.NetworkBaseline, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "NetworkBaseline")
+
+	var objs []*storage.NetworkBaseline
+	err := s.Walk(ctx, func(obj *storage.NetworkBaseline) error {
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {

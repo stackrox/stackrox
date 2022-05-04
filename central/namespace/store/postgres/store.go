@@ -52,6 +52,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
+	GetAll(ctx context.Context) ([]*storage.NamespaceMetadata, error)
 	Upsert(ctx context.Context, obj *storage.NamespaceMetadata) error
 	UpsertMany(ctx context.Context, objs []*storage.NamespaceMetadata) error
 	Delete(ctx context.Context, id string) error
@@ -325,6 +326,17 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.NamespaceMetad
 		return nil, false, err
 	}
 	return &msg, true, nil
+}
+
+func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "NamespaceMetadata")
+
+	var objs []*storage.NamespaceMetadata
+	err := s.Walk(ctx, func(obj *storage.NamespaceMetadata) error {
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {

@@ -47,6 +47,7 @@ type Store interface {
 	Count(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string, cve string, operatingSystem string) (bool, error)
 	Get(ctx context.Context, id string, cve string, operatingSystem string) (*storage.CVE, bool, error)
+	GetAll(ctx context.Context) ([]*storage.CVE, error)
 	Upsert(ctx context.Context, obj *storage.CVE) error
 	UpsertMany(ctx context.Context, objs []*storage.CVE) error
 	Delete(ctx context.Context, id string, cve string, operatingSystem string) error
@@ -303,6 +304,17 @@ func (s *storeImpl) Get(ctx context.Context, id string, cve string, operatingSys
 		return nil, false, err
 	}
 	return &msg, true, nil
+}
+
+func (s *storeImpl) GetAll(ctx context.Context) ([]*storage.CVE, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "CVE")
+
+	var objs []*storage.CVE
+	err := s.Walk(ctx, func(obj *storage.CVE) error {
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
