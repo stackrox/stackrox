@@ -70,7 +70,7 @@ func (s *storeImpl) GetAll(_ context.Context) ([]*storage.AuthProvider, error) {
 
 // Exists checks if an auth provider exists
 func (s *storeImpl) Exists(_ context.Context, id string) (bool, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "AuthProvider")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Exists, "AuthProvider")
 
 	var exists bool
 	err := s.db.View(func(tx *bolt.Tx) error {
@@ -82,7 +82,7 @@ func (s *storeImpl) Exists(_ context.Context, id string) (bool, error) {
 
 // Upsert upserts an auth provider into bolt
 func (s *storeImpl) Upsert(_ context.Context, authProvider *storage.AuthProvider) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "AuthProvider")
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "AuthProvider")
 
 	return s.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(authProviderBucket)
