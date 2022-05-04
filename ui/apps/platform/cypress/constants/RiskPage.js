@@ -8,13 +8,17 @@ import scopeSelectors from '../helpers/scopeSelectors';
 
 export const url = '/main/risk';
 
+/*
+// TODO after PatternFly conversion: update if relevant or delete if not relevant.
 export const errorMessages = {
     deploymentNotFound: 'Deployment not found',
     riskNotFound: 'Risk not found',
     processNotFound: 'No processes discovered',
 };
+*/
 
-const sidePanelSelectors = scopeSelectors('[data-testid="panel"]:eq(1)', {
+const sidePanel = scopeSelectors('[data-testid="panel"]:eq(1)', {
+    panelHeader: '[data-testid="panel-header"]',
     firstProcessCard: scopeSelectors('[data-testid="process-discovery-card"]:first', {
         header: '[data-testid="process"]',
         tags: {
@@ -81,6 +85,7 @@ const eventTimelineSelectors = scopeSelectors('[data-testid="event-timeline"]', 
 export const selectors = {
     risk: `${navigationSelectors.navLinks}:contains("Risk")`,
     errMgBox: 'div.error-message',
+    panel: '[data-testid="panel"]',
     panelTabs: {
         riskIndicators: 'button[data-testid="tab"]:contains("Risk Indicators")',
         deploymentDetails: 'button[data-testid="tab"]:contains("Deployment Details")',
@@ -88,6 +93,7 @@ export const selectors = {
     },
     cancelButton: 'button[data-testid="cancel"]',
     search: {
+        valueContainer: '.react-select__value-container',
         searchLabels: '.react-select__multi-value__label',
         // selectors for legacy tests
         searchModifier: '.react-select__multi-value__label:first',
@@ -108,7 +114,7 @@ export const selectors = {
     },
     suspiciousProcesses: "[data-testid='suspicious-process']",
     viewDeploymentsInNetworkGraphButton: '[data-testid="view-deployments-in-network-graph-button"]',
-    sidePanel: sidePanelSelectors,
+    sidePanel,
     commentsDialog: commentsDialogSelectors,
     eventTimeline: eventTimelineSelectors,
     eventTimelineOverview: eventTimelineOverviewSelectors,
