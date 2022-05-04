@@ -180,7 +180,7 @@ func getSACContexts(obj *storage.NamespaceMetadata) map[string]context.Context {
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(targetResource),
 				sac.ClusterScopeKeys(obj.GetClusterId()),
-				sac.NamespaceScopeKeys(obj.GetId()),
+				sac.NamespaceScopeKeys(obj.GetName()),
 			)),
 		withAccessToCluster: sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
