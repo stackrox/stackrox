@@ -1,9 +1,8 @@
 import { all, put, call } from 'redux-saga/effects';
 
-import { mainPath, policiesPath, imagesPath, secretsPath, networkPath } from 'routePaths';
+import { mainPath, policiesPath, secretsPath, networkPath } from 'routePaths';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import { actions as policiesActions } from 'reducers/policies/search';
-import { actions as imagesActions } from 'reducers/images';
 import { actions as secretsActions } from 'reducers/secrets';
 import { actions as networkActions } from 'reducers/network/search';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
@@ -83,14 +82,6 @@ export default function* searches() {
             policiesActions.setPoliciesSearchSuggestions,
             policiesActions.setPoliciesSearchOptions,
             'categories=POLICIES'
-        ),
-        takeEveryNewlyMatchedLocation(
-            imagesPath,
-            getSearchOptions,
-            imagesActions.setImagesSearchModifiers,
-            imagesActions.setImagesSearchSuggestions,
-            imagesActions.setImagesSearchOptions,
-            'categories=IMAGES'
         ),
         takeEveryNewlyMatchedLocation(
             secretsPath,
