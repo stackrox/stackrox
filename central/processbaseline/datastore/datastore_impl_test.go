@@ -390,4 +390,5 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestClearProcessBaselines() {
 	baseline, exists, err := suite.datastore.GetProcessBaseline(suite.requestContext, key)
 	suite.True(exists)
 	suite.True(baseline.Elements == nil)
+	suite.True(err == nil)
 }
