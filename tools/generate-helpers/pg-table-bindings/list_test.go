@@ -42,7 +42,7 @@ func TestClusterGetter(t *testing.T) {
 
 func TestNamespaceGetter(t *testing.T) {
 	for typ, getter := range map[proto.Message]string{
-		&storage.NamespaceMetadata{}: "obj.GetId()",
+		&storage.NamespaceMetadata{}: "obj.GetName()",
 		&storage.Deployment{}:        "obj.GetNamespace()",
 		&storage.ProcessBaseline{}:   "obj.GetKey().GetNamespace()",
 		&storage.Risk{}:              "obj.GetSubject().GetNamespace()",

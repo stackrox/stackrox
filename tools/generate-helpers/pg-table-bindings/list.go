@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var typeRegistry = make(map[string]string)
@@ -74,7 +75,7 @@ func resourceMetadataFromString(resource string) permissions.ResourceMetadata {
 
 func clusterGetter(prefix string, schema *walker.Schema) string {
 	for _, f := range schema.Fields {
-		if strings.Contains(f.Search.FieldName, "Cluster ID") {
+		if f.Search.FieldName == search.ClusterID.String() {
 			return f.Getter(prefix)
 		}
 	}
@@ -83,7 +84,7 @@ func clusterGetter(prefix string, schema *walker.Schema) string {
 
 func namespaceGetter(prefix string, schema *walker.Schema) string {
 	for _, f := range schema.Fields {
-		if strings.Contains(f.Search.FieldName, "Namespace") {
+		if f.Search.FieldName == search.Namespace.String() {
 			return f.Getter(prefix)
 		}
 	}
