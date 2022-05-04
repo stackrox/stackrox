@@ -78,6 +78,10 @@ func (s *ProcesswhitelistresultsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(processBaselineResults, foundProcessBaselineResults)
 
+	allProcessBaselineResults, err := store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(processBaselineResults, allProcessBaselineResults[0])
+
 	processBaselineResultsCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, processBaselineResultsCount)
@@ -106,6 +110,10 @@ func (s *ProcesswhitelistresultsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, processBaselineResultss))
+
+	allProcessBaselineResults, err = store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(processBaselineResultss, allProcessBaselineResults)
 
 	processBaselineResultsCount, err = store.Count(ctx)
 	s.NoError(err)

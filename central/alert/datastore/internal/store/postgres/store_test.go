@@ -82,6 +82,10 @@ func (s *AlertsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(alert, foundAlert)
 
+	allAlert, err := store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(alert, allAlert[0])
+
 	alertCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, alertCount)
@@ -111,6 +115,10 @@ func (s *AlertsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, alerts))
+
+	allAlert, err = store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(alerts, allAlert)
 
 	alertCount, err = store.Count(ctx)
 	s.NoError(err)

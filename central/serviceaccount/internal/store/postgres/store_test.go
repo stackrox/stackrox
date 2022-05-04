@@ -82,6 +82,10 @@ func (s *ServiceaccountsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(serviceAccount, foundServiceAccount)
 
+	allServiceAccount, err := store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(serviceAccount, allServiceAccount[0])
+
 	serviceAccountCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, serviceAccountCount)
@@ -111,6 +115,10 @@ func (s *ServiceaccountsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, serviceAccounts))
+
+	allServiceAccount, err = store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(serviceAccounts, allServiceAccount)
 
 	serviceAccountCount, err = store.Count(ctx)
 	s.NoError(err)

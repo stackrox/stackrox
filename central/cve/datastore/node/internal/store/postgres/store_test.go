@@ -78,6 +78,10 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(cVE, foundCVE)
 
+	allCVE, err := store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(cVE, allCVE[0])
+
 	cVECount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, cVECount)
@@ -106,6 +110,10 @@ func (s *NodeCvesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, cVEs))
+
+	allCVE, err = store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(cVEs, allCVE)
 
 	cVECount, err = store.Count(ctx)
 	s.NoError(err)

@@ -80,6 +80,10 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(simpleAccessScope, foundSimpleAccessScope)
 
+	allSimpleAccessScope, err := store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(simpleAccessScope, allSimpleAccessScope[0])
+
 	simpleAccessScopeCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, simpleAccessScopeCount)
@@ -113,6 +117,10 @@ func (s *SimpleaccessscopesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, simpleAccessScopes))
+
+	allSimpleAccessScope, err = store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(simpleAccessScopes, allSimpleAccessScope)
 
 	simpleAccessScopeCount, err = store.Count(ctx)
 	s.NoError(err)

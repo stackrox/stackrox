@@ -78,6 +78,10 @@ func (s *Testggrandchild1StoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(testGGrandChild1, foundTestGGrandChild1)
 
+	allTestGGrandChild1, err := store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(testGGrandChild1, allTestGGrandChild1[0])
+
 	testGGrandChild1Count, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, testGGrandChild1Count)
@@ -106,6 +110,10 @@ func (s *Testggrandchild1StoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, testGGrandChild1s))
+
+	allTestGGrandChild1, err = store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(testGGrandChild1s, allTestGGrandChild1)
 
 	testGGrandChild1Count, err = store.Count(ctx)
 	s.NoError(err)

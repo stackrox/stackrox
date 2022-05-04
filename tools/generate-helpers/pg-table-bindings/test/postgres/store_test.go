@@ -78,6 +78,10 @@ func (s *SinglekeyStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(testSingleKeyStruct, foundTestSingleKeyStruct)
 
+	allTestSingleKeyStruct, err := store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(testSingleKeyStruct, allTestSingleKeyStruct[0])
+
 	testSingleKeyStructCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, testSingleKeyStructCount)
@@ -106,6 +110,10 @@ func (s *SinglekeyStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, testSingleKeyStructs))
+
+	allTestSingleKeyStruct, err = store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(testSingleKeyStructs, allTestSingleKeyStruct)
 
 	testSingleKeyStructCount, err = store.Count(ctx)
 	s.NoError(err)

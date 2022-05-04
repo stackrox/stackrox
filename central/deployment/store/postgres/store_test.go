@@ -82,6 +82,10 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(deployment, foundDeployment)
 
+	allDeployment, err := store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(deployment, allDeployment[0])
+
 	deploymentCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, deploymentCount)
@@ -111,6 +115,10 @@ func (s *DeploymentsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, deployments))
+
+	allDeployment, err = store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(deployments, allDeployment)
 
 	deploymentCount, err = store.Count(ctx)
 	s.NoError(err)

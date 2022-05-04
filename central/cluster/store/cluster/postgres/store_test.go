@@ -82,6 +82,10 @@ func (s *ClustersStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(cluster, foundCluster)
 
+	allCluster, err := store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(cluster, allCluster[0])
+
 	clusterCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, clusterCount)
@@ -111,6 +115,10 @@ func (s *ClustersStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, clusters))
+
+	allCluster, err = store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(clusters, allCluster)
 
 	clusterCount, err = store.Count(ctx)
 	s.NoError(err)

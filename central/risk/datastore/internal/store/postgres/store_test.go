@@ -82,6 +82,10 @@ func (s *RiskStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(risk, foundRisk)
 
+	allRisk, err := store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(risk, allRisk[0])
+
 	riskCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, riskCount)
@@ -111,6 +115,10 @@ func (s *RiskStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, risks))
+
+	allRisk, err = store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(risks, allRisk)
 
 	riskCount, err = store.Count(ctx)
 	s.NoError(err)

@@ -82,6 +82,10 @@ func (s *PodsStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(pod, foundPod)
 
+	allPod, err := store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(pod, allPod[0])
+
 	podCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, podCount)
@@ -111,6 +115,10 @@ func (s *PodsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, pods))
+
+	allPod, err = store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(pods, allPod)
 
 	podCount, err = store.Count(ctx)
 	s.NoError(err)

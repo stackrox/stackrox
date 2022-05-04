@@ -80,6 +80,10 @@ func (s *IntegrationhealthStoreSuite) TestStore() {
 	s.True(exists)
 	s.Equal(integrationHealth, foundIntegrationHealth)
 
+	allIntegrationHealth, err := store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(integrationHealth, allIntegrationHealth[0])
+
 	integrationHealthCount, err := store.Count(ctx)
 	s.NoError(err)
 	s.Equal(1, integrationHealthCount)
@@ -113,6 +117,10 @@ func (s *IntegrationhealthStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, integrationHealths))
+
+	allIntegrationHealth, err = store.GetAll(ctx)
+	s.NoError(err)
+	s.Equal(integrationHealths, allIntegrationHealth)
 
 	integrationHealthCount, err = store.Count(ctx)
 	s.NoError(err)
