@@ -29,6 +29,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		(*ast.FuncDecl)(nil),
 		(*ast.ValueSpec)(nil),
 		(*ast.TypeSpec)(nil),
+		(*ast.GenDecl)(nil),
 	}
 
 	inspectResult.Nodes(nodeFilter, func(n ast.Node, push bool) bool {
@@ -54,20 +55,25 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			return true
 		}
 
-		if astType, ok := n.(*ast.TypeSpec); ok {
-			switch astType.Type.(type) {
-			case *ast.ArrayType:
-				checkCommentCaseMatches(pass, astType.Doc, astType.Name.String(), "array", astType.Pos())
-			case *ast.StructType:
-				checkCommentCaseMatches(pass, astType.Doc, astType.Name.String(), "struct", astType.Pos())
-			case *ast.InterfaceType:
-				checkCommentCaseMatches(pass, astType.Doc, astType.Name.String(), "interface", astType.Pos())
-			case *ast.MapType:
-				checkCommentCaseMatches(pass, astType.Doc, astType.Name.String(), "map", astType.Pos())
-			case *ast.ChanType:
-				checkCommentCaseMatches(pass, astType.Doc, astType.Name.String(), "channel", astType.Pos())
+		if astGenDecl, ok := n.(*ast.GenDecl); ok {
+			documentation := astGenDecl.Doc
+			for _, spec := range astGenDecl.Specs {
+				if astType, ok2 := spec.(*ast.TypeSpec); ok2 {
+					switch astType.Type.(type) {
+					case *ast.ArrayType:
+						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "array", astType.Pos())
+					case *ast.StructType:
+						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "struct", astType.Pos())
+					case *ast.InterfaceType:
+						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "interface", astType.Pos())
+					case *ast.MapType:
+						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "map", astType.Pos())
+					case *ast.ChanType:
+						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "channel", astType.Pos())
+					}
+					return true
+				}
 			}
-			return true
 		}
 
 		return true
