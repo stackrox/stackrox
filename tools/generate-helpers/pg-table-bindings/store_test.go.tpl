@@ -137,7 +137,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 {{- if .GetAll }}
 	all{{.TrimmedType|upperCamelCase}}, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.Equal({{$name}}s, all{{.TrimmedType|upperCamelCase}})
+	s.ElementsMatch({{$name}}s, all{{.TrimmedType|upperCamelCase}})
 {{- end }}
 
     {{.TrimmedType|lowerCamelCase}}Count, err = store.Count(ctx)
