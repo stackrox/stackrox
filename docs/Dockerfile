@@ -13,6 +13,10 @@ RUN make
 FROM nginx:alpine
 COPY nginx.conf /etc/nginx/nginx.conf
 
-COPY --from=builder /workspace/build/ /usr/share/nginx/html
+# This is well known localtion that other Dockerfiles relies on.
+# Do not change until you ensure that all places were updated.
+WORKDIR /docs/public
+
+COPY --from=builder /workspace/build/ .
 
 EXPOSE 8080
