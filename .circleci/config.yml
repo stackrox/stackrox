@@ -21,15 +21,6 @@ runOnlyOnReleaseBuilds: &runOnlyOnReleaseBuilds
     branches:
       ignore: /.*/
 
-# This runs a command only on rc and release builds,
-# which is a tagged build with a tag matching the below regex.
-runOnlyOnReleaseAndReleaseCandidateBuilds: &runOnlyOnReleaseAndReleaseCandidateBuilds
-  filters:
-    tags:
-      only: /^\d+(\.\d+)?\.\d+\.\d+(-rc\.\d+)?$/
-    branches:
-      ignore: /.*/
-
 runOnAllTagsWithQuayIOPullCtx: &runOnAllTagsWithQuayIOPullCtx
   <<: *runOnAllTags
   context: quay-rhacs-eng-readonly
@@ -5120,8 +5111,8 @@ workflows:
             - go-unit-tests
             - ui-unit-tests
 
-      - scan-images-in-quay: #TODO(ROX-10676): Enable scan on every change.
-          <<: *runOnlyOnReleaseAndReleaseCandidateBuilds
+      - scan-images-in-quay:
+          <<: *runOnlyOnReleaseCandidateBuilds
           context:
           - quay-rhacs-eng-readonly
           requires:
