@@ -69,17 +69,21 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
 	deploymentIndexer := index.New(bleveIndex, processIndex)
 
-	storage = cache.NewCachedStore(storage)
-	searcher := search.New(storage,
-		graphProvider,
-		cveIndexer.New(bleveIndex),
-		componentCVEEdgeIndexer.New(bleveIndex),
-		componentIndexer.New(bleveIndex),
-		imageComponentEdgeIndexer.New(bleveIndex),
-		imageIndexer.New(bleveIndex),
-		deploymentIndexer,
-		imageCVEEdgeIndexer.New(bleveIndex))
-
+	var searcher search.Searcher
+	if features.PostgresDatastore.Enabled() {
+		searcher = search.NewV2(storage, deploymentIndexer)
+	} else {
+		storage = cache.NewCachedStore(storage)
+		searcher = search.New(storage,
+			graphProvider,
+			cveIndexer.New(bleveIndex),
+			componentCVEEdgeIndexer.New(bleveIndex),
+			componentIndexer.New(bleveIndex),
+			imageComponentEdgeIndexer.New(bleveIndex),
+			imageIndexer.New(bleveIndex),
+			deploymentIndexer,
+			imageCVEEdgeIndexer.New(bleveIndex))
+	}
 	ds := newDatastoreImpl(storage, processTagsStore, deploymentIndexer, searcher, images, baselines, networkFlows, risks,
 		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 

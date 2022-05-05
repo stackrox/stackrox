@@ -71,8 +71,11 @@ type storeImpl struct {
 }
 
 func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image, scanUpdated bool, iTime *protoTypes.Timestamp) error {
-	cloned := obj.Clone()
-	cloned.Scan.Components = nil
+	cloned := obj
+	if cloned.GetScan().GetComponents() != nil {
+		cloned = obj.Clone()
+		cloned.Scan.Components = nil
+	}
 	serialized, marshalErr := cloned.Marshal()
 	if marshalErr != nil {
 		return marshalErr
