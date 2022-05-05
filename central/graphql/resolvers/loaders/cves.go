@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
-	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	distroctx "github.com/stackrox/rox/central/graphql/resolvers/distroctx"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
