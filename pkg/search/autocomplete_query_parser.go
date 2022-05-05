@@ -10,7 +10,7 @@ import (
 // AutocompleteQueryParser provides an autocomplete specific query parser.
 type autocompleteQueryParser struct{}
 
-// Parse parses the input query.
+// parse parses the input query.
 func (pi autocompleteQueryParser) parse(input string) (*v1.Query, string, error) {
 	// Handle empty input query case.
 	if len(input) == 0 {

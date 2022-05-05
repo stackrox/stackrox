@@ -22,7 +22,7 @@ func (l handlerImpl) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// Post handles accepting new logs from the frontend.
+// post handles accepting new logs from the frontend.
 func (l handlerImpl) post(resp http.ResponseWriter, req *http.Request) {
 	// If we panic unpacking the contents, we want to return an HTTP error for a bad request.
 	panicked := true

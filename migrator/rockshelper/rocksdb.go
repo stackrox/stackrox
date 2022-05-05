@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	// RocksDBDirName it the name of the RocksDB directory on the PVC
+	// rocksDBDirName it the name of the RocksDB directory on the PVC
 	rocksDBDirName = `rocksdb`
 )
 

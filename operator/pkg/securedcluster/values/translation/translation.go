@@ -73,7 +73,7 @@ func (t Translator) Translate(ctx context.Context, u *unstructured.Unstructured)
 	return helmUtil.CoalesceTables(baseValues, imageOverrideVals, valsFromCR), nil
 }
 
-// Translate translates a SecuredCluster CR into helm values.
+// translate translates a SecuredCluster CR into helm values.
 func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (chartutil.Values, error) {
 	t.setDefaults(&sc)
 

@@ -127,7 +127,7 @@ func (s *serviceImpl) getElementSet(ctx context.Context, deploymentID string, co
 	return processbaseline.Processes(baseline, processbaseline.RoxOrUserLocked), nil
 }
 
-// IndicatorsToGroupedResponsesWithContainer rearranges process indicator storage items into API process name/container
+// indicatorsToGroupedResponsesWithContainer rearranges process indicator storage items into API process name/container
 // name group items.
 func indicatorsToGroupedResponsesWithContainer(indicators []*storage.ProcessIndicator) []*v1.ProcessNameAndContainerNameGroup {
 	type groupKey struct {

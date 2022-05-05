@@ -78,7 +78,7 @@ func (resolver *scopedPermissionsResolver) Permissions(ctx context.Context) []*s
 	return resolver.permissions
 }
 
-// WrapPermissions wraps the input into a scopedPermissionsResolver
+// wrapPermissions wraps the input into a scopedPermissionsResolver
 func wrapPermissions(values map[string]map[string]set.StringSet) []*scopedPermissionsResolver {
 	if len(values) == 0 {
 		return nil

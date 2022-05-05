@@ -100,7 +100,7 @@ func (f *FieldMetadata) IsAuditLogEventField(fieldName string) bool {
 	return f.FieldIsOfType(fieldName, AuditLogEvent)
 }
 
-// FindFieldMetadata searches for a policy criteria field by name and returns the field metadata
+// findFieldMetadata searches for a policy criteria field by name and returns the field metadata
 func (f *FieldMetadata) findFieldMetadata(fieldName string, config *validateConfiguration) (*metadataAndQB, error) {
 	field := f.fieldsToQB[fieldName]
 	if field == nil {
