@@ -20,9 +20,10 @@ func TestSensorUpgradeConfigDataStore(t *testing.T) {
 type sensorUpgradeConfigDataStoreTestSuite struct {
 	suite.Suite
 
-	hasNoneCtx  context.Context
-	hasReadCtx  context.Context
-	hasWriteCtx context.Context
+	hasNoneCtx                context.Context
+	hasReadCtx                context.Context
+	hasWriteCtx               context.Context
+	hasWriteAdministrationCtx context.Context
 
 	dataStore DataStore
 	storage   *storeMocks.MockStore
@@ -40,6 +41,10 @@ func (s *sensorUpgradeConfigDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.SensorUpgradeConfig)))
+	s.hasWriteAdministrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
@@ -67,10 +72,13 @@ func (s *sensorUpgradeConfigDataStoreTestSuite) TestAllowsGet() {
 	_, err := s.dataStore.GetSensorUpgradeConfig(s.hasReadCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().GetSensorUpgradeConfig().Return(nil, nil)
+	s.storage.EXPECT().GetSensorUpgradeConfig().Return(nil, nil).Times(2)
 
 	_, err = s.dataStore.GetSensorUpgradeConfig(s.hasWriteCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
+
+	_, err = s.dataStore.GetSensorUpgradeConfig(s.hasWriteAdministrationCtx)
+	s.NoError(err, "expected no error trying to read with Administration permissions")
 }
 
 func (s *sensorUpgradeConfigDataStoreTestSuite) TestEnforcesUpdate() {
@@ -84,10 +92,13 @@ func (s *sensorUpgradeConfigDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (s *sensorUpgradeConfigDataStoreTestSuite) TestAllowsUpdate() {
-	s.storage.EXPECT().UpsertSensorUpgradeConfig(gomock.Any()).Return(nil)
+	s.storage.EXPECT().UpsertSensorUpgradeConfig(gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.UpsertSensorUpgradeConfig(s.hasWriteCtx, &storage.SensorUpgradeConfig{})
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	err = s.dataStore.UpsertSensorUpgradeConfig(s.hasWriteAdministrationCtx, &storage.SensorUpgradeConfig{})
+	s.NoError(err, "expected no error trying to write with Administration permissions")
 }
 
 func (s *sensorUpgradeConfigDataStoreTestSuite) TestDefault() {
