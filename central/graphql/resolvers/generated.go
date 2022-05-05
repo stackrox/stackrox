@@ -264,6 +264,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"lastContact: Time",
 		"overallHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
+		"scannerHealthInfo: ScannerHealthInfo",
+		"scannerHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 		"sensorHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterHealthStatus_HealthStatusLabel(0)))
@@ -1095,6 +1097,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"globalAccess: Access!",
 		"name: String!",
 		"permissionSetId: String!",
+	}))
+	utils.Must(builder.AddType("ScannerHealthInfo", []string{
+		"statusErrors: [String!]!",
 	}))
 	utils.Must(builder.AddType("Scope", []string{
 		"cluster: String!",
@@ -3303,6 +3308,16 @@ func (resolver *clusterHealthStatusResolver) LastContact(ctx context.Context) (*
 
 func (resolver *clusterHealthStatusResolver) OverallHealthStatus(ctx context.Context) string {
 	value := resolver.data.GetOverallHealthStatus()
+	return value.String()
+}
+
+func (resolver *clusterHealthStatusResolver) ScannerHealthInfo(ctx context.Context) (*scannerHealthInfoResolver, error) {
+	value := resolver.data.GetScannerHealthInfo()
+	return resolver.root.wrapScannerHealthInfo(value, true, nil)
+}
+
+func (resolver *clusterHealthStatusResolver) ScannerHealthStatus(ctx context.Context) string {
+	value := resolver.data.GetScannerHealthStatus()
 	return value.String()
 }
 
@@ -9544,6 +9559,35 @@ func (resolver *roleResolver) Name(ctx context.Context) string {
 
 func (resolver *roleResolver) PermissionSetId(ctx context.Context) string {
 	value := resolver.data.GetPermissionSetId()
+	return value
+}
+
+type scannerHealthInfoResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ScannerHealthInfo
+}
+
+func (resolver *Resolver) wrapScannerHealthInfo(value *storage.ScannerHealthInfo, ok bool, err error) (*scannerHealthInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &scannerHealthInfoResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapScannerHealthInfos(values []*storage.ScannerHealthInfo, err error) ([]*scannerHealthInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*scannerHealthInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &scannerHealthInfoResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *scannerHealthInfoResolver) StatusErrors(ctx context.Context) []string {
+	value := resolver.data.GetStatusErrors()
 	return value
 }
 

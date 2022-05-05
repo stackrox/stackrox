@@ -88,10 +88,11 @@ func insertIntoClusterHealthStatus(ctx context.Context, tx pgx.Tx, obj *storage.
 		obj.GetCollectorHealthStatus(),
 		obj.GetOverallHealthStatus(),
 		obj.GetAdmissionControlHealthStatus(),
+		obj.GetScannerHealthStatus(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO cluster_health_status (Id, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO cluster_health_status (Id, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, ScannerHealthStatus, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, ScannerHealthStatus = EXCLUDED.ScannerHealthStatus, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -122,6 +123,8 @@ func (s *storeImpl) copyFromClusterHealthStatus(ctx context.Context, tx pgx.Tx, 
 
 		"admissioncontrolhealthstatus",
 
+		"scannerhealthstatus",
+
 		"serialized",
 	}
 
@@ -145,6 +148,8 @@ func (s *storeImpl) copyFromClusterHealthStatus(ctx context.Context, tx pgx.Tx, 
 			obj.GetOverallHealthStatus(),
 
 			obj.GetAdmissionControlHealthStatus(),
+
+			obj.GetScannerHealthStatus(),
 
 			serialized,
 		})

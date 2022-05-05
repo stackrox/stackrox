@@ -21,6 +21,7 @@ var (
                    CollectorHealthStatus integer,
                    OverallHealthStatus integer,
                    AdmissionControlHealthStatus integer,
+                   ScannerHealthStatus integer,
                    serialized bytea,
                    PRIMARY KEY(Id)
                )
