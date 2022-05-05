@@ -692,7 +692,6 @@ class NetworkFlowTest extends BaseSpecification {
             def ingressNamespaceSelectors = it."spec"."ingress".find { it.containsKey("from") } ?
                     it."spec"."ingress".get(0)."from".findAll { it.containsKey("namespaceSelector") } :
                     null
-
             if (allowAllIngress) {
                 println "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
                 assert it."spec"."ingress" == [[:]]
@@ -706,6 +705,9 @@ class NetworkFlowTest extends BaseSpecification {
                 def sourceNamespacesFromNetworkPolicy = ingressNamespaceSelectors.collect {
                     it."namespaceSelector"."matchLabels"."namespace.metadata.stackrox.io/name"
                 }
+                sourceNamespacesFromNetworkPolicy.addAll(ingressNamespaceSelectors.collect {
+                    it."namespaceSelector"."matchLabels"."kubernetes.io/metadata.name"
+                })
                 assert sourceDeploymentsFromNetworkPolicy.sort() == sourceDeploymentsFromGraph.sort()
                 if (!deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)) {
                     println "Deployed namespaces do not contain all namespaces found in the network policy"
