@@ -58,10 +58,8 @@ message NodeComponentEdge {
 
 message NodeCVEEdge {
   // base 64 encoded Node:CVE ids.
-  string                    id                    = 1 [(gogoproto.moretags) = 'sql:"pk,id"'];
+  string                    id                    = 1;
   google.protobuf.Timestamp first_node_occurrence = 2;
-  string                    node_id               = 3 [(gogoproto.moretags) = 'sql:"pk,fk(Node:id)"'];
-  string                    node_cve_id           = 4 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:id),no-fk-constraint"'];
 }
 
 message NodeComponentCVEEdge {
