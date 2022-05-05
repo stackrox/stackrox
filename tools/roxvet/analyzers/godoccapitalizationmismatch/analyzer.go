@@ -91,10 +91,7 @@ func checkCommentCaseMatches(pass *analysis.Pass, doc *ast.CommentGroup, objectN
 		return
 	}
 	commentSplit := strings.Fields(doc.List[0].Text)
-	if len(commentSplit) < 2 {
-		return
-	}
-	if len(objectName) < 1 {
+	if len(commentSplit) < 2 || len(objectName) < 1 {
 		return
 	}
 
