@@ -43,17 +43,26 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		}
 
 		if astFunction, ok := n.(*ast.FuncDecl); ok {
+			if astFunction.Doc == nil {
+				return true
+			}
 			checkCommentCaseMatches(pass, astFunction.Doc, astFunction.Name.String(), "function", astFunction.Doc.Pos())
 			return true
 		}
 
 		if astVar, ok := n.(*ast.ValueSpec); ok {
+			if astVar.Doc == nil {
+				return true
+			}
 			checkCommentCaseMatches(pass, astVar.Doc, astVar.Names[0].String(), "variable", astVar.Doc.Pos())
 			return true
 		}
 
 		if astGenDecl, ok := n.(*ast.GenDecl); ok {
 			documentation := astGenDecl.Doc
+			if documentation == nil {
+				return true
+			}
 			for _, spec := range astGenDecl.Specs {
 				if astType, ok2 := spec.(*ast.TypeSpec); ok2 {
 					switch astType.Type.(type) {
@@ -79,9 +88,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 }
 
 func checkCommentCaseMatches(pass *analysis.Pass, doc *ast.CommentGroup, objectName string, objectType string, position token.Pos) {
-	if doc == nil {
-		return
-	}
 	if len(doc.List) < 1 {
 		return
 	}
