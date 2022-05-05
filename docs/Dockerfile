@@ -19,4 +19,6 @@ WORKDIR /docs/public
 
 COPY --from=builder /workspace/build/ .
 
+RUN apk --purge del curl apk-tools
+
 EXPOSE 8080
