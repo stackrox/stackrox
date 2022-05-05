@@ -23,9 +23,10 @@ func TestImageIntegrationDataStore(t *testing.T) {
 type ImageIntegrationDataStoreTestSuite struct {
 	suite.Suite
 
-	hasNoneCtx  context.Context
-	hasReadCtx  context.Context
-	hasWriteCtx context.Context
+	hasNoneCtx              context.Context
+	hasReadCtx              context.Context
+	hasWriteCtx             context.Context
+	hasWriteIntegrationsCtx context.Context
 
 	db *bolt.DB
 
@@ -43,6 +44,10 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.ImageIntegration)))
+	suite.hasWriteIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Integrations)))
 
 	db, err := bolthelper.NewTemp(testutils.DBFileName(suite))
 	if err != nil {
@@ -205,6 +210,11 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsGet() {
 	suite.NoError(err, "expected no error trying to read with permissions")
 	suite.Equal(integration, gotInt)
 	suite.True(exists)
+
+	gotInt, exists, err = suite.datastore.GetImageIntegration(suite.hasWriteIntegrationsCtx, integration.GetId())
+	suite.NoError(err, "expected no error trying to read with Integrations permissions")
+	suite.Equal(integration, gotInt)
+	suite.True(exists)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestEnforcesGetBatch() {
@@ -225,6 +235,10 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsGetBatch() {
 
 	gotImages, err = suite.datastore.GetImageIntegrations(suite.hasWriteCtx, getRequest)
 	suite.NoError(err, "expected no error trying to read with permissions")
+	suite.ElementsMatch(integrationList, gotImages)
+
+	gotImages, err = suite.datastore.GetImageIntegrations(suite.hasWriteIntegrationsCtx, getRequest)
+	suite.NoError(err, "expected no error trying to read with Integrations permissions")
 	suite.ElementsMatch(integrationList, gotImages)
 }
 
