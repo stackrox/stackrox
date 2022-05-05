@@ -493,7 +493,13 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool)
 
 // RunCountRequest executes a request for just the count against the database
 func RunCountRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) (int, error) {
-	query, err := standardizeQueryAndPopulatePath(q, mapping.GetTableFromCategory(category), COUNT)
+	schema := mapping.GetTableFromCategory(category)
+	return RunCountRequestForSchema(schema, q, db)
+}
+
+// RunCountRequestForSchema executes a request for just the count against the database
+func RunCountRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (int, error) {
+	query, err := standardizeQueryAndPopulatePath(q, schema, COUNT)
 	if err != nil || query == nil {
 		return 0, err
 	}

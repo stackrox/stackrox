@@ -12,16 +12,17 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
 	baseTable  = "apitokens"
-	countStmt  = "SELECT COUNT(*) FROM apitokens"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM apitokens WHERE Id = $1)"
 
 	getStmt     = "SELECT serialized FROM apitokens WHERE Id = $1"
@@ -244,17 +245,14 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TokenMetadat
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "TokenMetadata")
 
+	var sacQueryFilter *v1.Query
+
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil || !ok {
 		return 0, err
 	}
 
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
-		return 0, err
-	}
-	return count, nil
+	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
