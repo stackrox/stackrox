@@ -39,7 +39,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logr/logr v0.4.0
+	github.com/go-logr/logr v1.2.3
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2
@@ -51,7 +51,7 @@ require (
 	github.com/google/go-containerregistry v0.8.1-0.20220125170349-50dfc2733d10
 	github.com/googleapis/gnostic v0.5.5
 	github.com/gorilla/schema v1.2.0
-	github.com/graph-gophers/graphql-go v1.3.0
+	github.com/graph-gophers/graphql-go v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
@@ -102,6 +102,7 @@ require (
 	github.com/tkuchiki/go-timezone v0.2.2
 	github.com/vbauerster/mpb/v4 v4.12.2
 	go.etcd.io/bbolt v1.3.6
+	go.opentelemetry.io/otel/internal/metric v0.27.0 // indirect
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.20.0
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
