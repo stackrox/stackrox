@@ -1,7 +1,6 @@
 import { takeLatest, all, call, fork, put, select } from 'redux-saga/effects';
 import { fetchGlobalSearchResults } from 'services/SearchService';
 import { actions, types } from 'reducers/globalSearch';
-import { actions as imagesActions } from 'reducers/images';
 import { actions as networkActions } from 'reducers/network/search';
 import { actions as secretsActions } from 'reducers/secrets';
 import { actions as policiesActions } from 'reducers/policies/search';
@@ -35,9 +34,6 @@ export function* getGlobalSearchResults() {
 
 export function* passthroughGlobalSearchOptions({ searchOptions, category }) {
     switch (category) {
-        case 'IMAGES':
-            yield put(imagesActions.setImagesSearchOptions(searchOptions));
-            break;
         case 'SECRETS':
             yield put(secretsActions.setSecretsSearchOptions(searchOptions));
             break;

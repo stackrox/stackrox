@@ -8,7 +8,6 @@ import auth, { selectors as authSelectors } from './auth';
 import clusterInitBundles, { selectors as clusterInitBundleSelectors } from './clusterInitBundles';
 import clusters, { selectors as clusterSelectors } from './clusters';
 import formMessages, { selectors as formMessageSelectors } from './formMessages';
-import images, { selectors as imageSelectors } from './images';
 import integrations, { selectors as integrationSelectors } from './integrations';
 import notifications, { selectors as notificationSelectors } from './notifications';
 import featureFlags, { selectors as featureFlagSelectors } from './featureFlags';
@@ -37,7 +36,6 @@ const appReducer = combineReducers({
     clusterInitBundles,
     clusters,
     formMessages,
-    images,
     integrations,
     notifications,
     featureFlags,
@@ -77,7 +75,6 @@ const getAuth = (state) => getApp(state).auth;
 const getClusterInitBundles = (state) => getApp(state).clusterInitBundles;
 const getClusters = (state) => getApp(state).clusters;
 const getFormMessages = (state) => getApp(state).formMessages;
-const getImages = (state) => getApp(state).images;
 const getIntegrations = (state) => getApp(state).integrations;
 const getNotifications = (state) => getApp(state).notifications;
 const getFeatureFlags = (state) => getApp(state).featureFlags;
@@ -103,7 +100,6 @@ const boundSelectors = {
     ...bindSelectors(getClusterInitBundles, clusterInitBundleSelectors),
     ...bindSelectors(getClusters, clusterSelectors),
     ...bindSelectors(getFormMessages, formMessageSelectors),
-    ...bindSelectors(getImages, imageSelectors),
     ...bindSelectors(getIntegrations, integrationSelectors),
     ...bindSelectors(getNotifications, notificationSelectors),
     ...bindSelectors(getFeatureFlags, featureFlagSelectors),
