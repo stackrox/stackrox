@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/stackrox/rox/tools/roxvet/analyzers/declarationcommentmismatch"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/dontprintferr"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/filepathwalk"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/importpackagenames"
@@ -18,6 +19,7 @@ import (
 
 func main() {
 	unitchecker.Main(
+		declarationcommentmismatch.Analyzer,
 		dontprintferr.Analyzer,
 		storeinterface.Analyzer,
 		uncheckederrors.Analyzer,
