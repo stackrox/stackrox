@@ -14,7 +14,7 @@ import (
 
 const doc = `check the capitalization of the first word for a Godoc comment (for a function, interface, struct)`
 
-// Analyzer is the analyzer.
+// Analyzer is responsible for analyzing code.
 var Analyzer = &analysis.Analyzer{
 	Name:     "commentcapitalization",
 	Doc:      doc,
