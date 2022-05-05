@@ -115,7 +115,7 @@ func (s *NotifiersStoreSuite) TestStore() {
 	s.NoError(store.UpsertMany(ctx, notifiers))
 	allNotifier, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.Equal(notifiers, allNotifier)
+	s.ElementsMatch(notifiers, allNotifier)
 
 	notifierCount, err = store.Count(ctx)
 	s.NoError(err)
