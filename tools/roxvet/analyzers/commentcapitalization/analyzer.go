@@ -43,12 +43,12 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		}
 
 		if astFunction, ok := n.(*ast.FuncDecl); ok {
-			checkCommentCaseMatches(pass, astFunction.Doc, astFunction.Name.String(), "function", astFunction.Pos())
+			checkCommentCaseMatches(pass, astFunction.Doc, astFunction.Name.String(), "function", astFunction.Doc.Pos())
 			return true
 		}
 
 		if astVar, ok := n.(*ast.ValueSpec); ok {
-			checkCommentCaseMatches(pass, astVar.Doc, astVar.Names[0].String(), "variable", astVar.Pos())
+			checkCommentCaseMatches(pass, astVar.Doc, astVar.Names[0].String(), "variable", astVar.Doc.Pos())
 			return true
 		}
 
@@ -58,15 +58,15 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				if astType, ok2 := spec.(*ast.TypeSpec); ok2 {
 					switch astType.Type.(type) {
 					case *ast.ArrayType:
-						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "array", astType.Pos())
+						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "array", documentation.Pos())
 					case *ast.StructType:
-						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "struct", astType.Pos())
+						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "struct", documentation.Pos())
 					case *ast.InterfaceType:
-						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "interface", astType.Pos())
+						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "interface", documentation.Pos())
 					case *ast.MapType:
-						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "map", astType.Pos())
+						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "map", documentation.Pos())
 					case *ast.ChanType:
-						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "channel", astType.Pos())
+						checkCommentCaseMatches(pass, documentation, astType.Name.String(), "channel", documentation.Pos())
 					}
 					return true
 				}
