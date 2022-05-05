@@ -79,6 +79,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 }
 
 func checkCommentCaseMatches(pass *analysis.Pass, doc *ast.CommentGroup, objectName string, objectType string, position token.Pos) {
+	if doc == nil {
+		return
+	}
 	if len(doc.List) < 1 {
 		return
 	}
