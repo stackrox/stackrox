@@ -1,4 +1,4 @@
-import React, { useContext, useState, useReducer } from 'react';
+import React, { useState, useReducer } from 'react';
 import PropTypes from 'prop-types';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import { DownloadCloud, Plus, Trash2 } from 'react-feather';
@@ -11,10 +11,9 @@ import PanelButton from 'Components/PanelButton';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
-import { searchParams } from 'constants/searchParams';
-import workflowStateContext from 'Containers/workflowStateContext';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
+import useURLSearch from 'hooks/useURLSearch';
 import {
     fetchClustersAsArray,
     deleteClusters,
@@ -29,10 +28,9 @@ import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.h
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 
 function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOptions }) {
-    const workflowState = useContext(workflowStateContext);
     const metadata = useMetadata();
 
-    const pageSearch = workflowState.search[searchParams.page];
+    const { searchFilter: pageSearch } = useURLSearch();
 
     const [checkedClusterIds, setCheckedClusters] = useState([]);
     const [upgradableClusters, setUpgradableClusters] = useState([]);
