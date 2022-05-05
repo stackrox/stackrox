@@ -21,12 +21,11 @@ import (
 
 const (
 	baseTable  = "node_components_to_cves"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_components_to_cves WHERE Id = $1 AND ComponentId = $2 AND ComponentOperatingSystem = $3 AND ImageCveId = $4)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_components_to_cves WHERE Id = $1 AND ComponentId = $2 AND CveId = $3)"
 
-	getStmt     = "SELECT serialized FROM node_components_to_cves WHERE Id = $1 AND ComponentId = $2 AND ComponentOperatingSystem = $3 AND ImageCveId = $4"
-	deleteStmt  = "DELETE FROM node_components_to_cves WHERE Id = $1 AND ComponentId = $2 AND ComponentOperatingSystem = $3 AND ImageCveId = $4"
+	getStmt     = "SELECT serialized FROM node_components_to_cves WHERE Id = $1 AND ComponentId = $2 AND CveId = $3"
+	deleteStmt  = "DELETE FROM node_components_to_cves WHERE Id = $1 AND ComponentId = $2 AND CveId = $3"
 	walkStmt    = "SELECT serialized FROM node_components_to_cves"
-	getIDsStmt  = "SELECT Id FROM node_components_to_cves"
 	getManyStmt = "SELECT serialized FROM node_components_to_cves WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM node_components_to_cves WHERE Id = ANY($1::text[])"
@@ -46,8 +45,8 @@ var (
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string, componentId string, componentOperatingSystem string, imageCveId string) (bool, error)
-	Get(ctx context.Context, id string, componentId string, componentOperatingSystem string, imageCveId string) (*storage.NodeComponentCVEEdge, bool, error)
+	Exists(ctx context.Context, id string, componentId string, cveId string) (bool, error)
+	Get(ctx context.Context, id string, componentId string, cveId string) (*storage.NodeComponentCVEEdge, bool, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.NodeComponentCVEEdge, []int, error)
 
@@ -82,10 +81,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string, componentId string, componentOperatingSystem string, imageCveId string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, id string, componentId string, cveId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NodeComponentCVEEdge")
 
-	row := s.db.QueryRow(ctx, existsStmt, id, componentId, componentOperatingSystem, imageCveId)
+	row := s.db.QueryRow(ctx, existsStmt, id, componentId, cveId)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -94,7 +93,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string, componentId string, c
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string, componentId string, componentOperatingSystem string, imageCveId string) (*storage.NodeComponentCVEEdge, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, id string, componentId string, cveId string) (*storage.NodeComponentCVEEdge, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeComponentCVEEdge")
 
 	conn, release, err := s.acquireConn(ctx, ops.Get, "NodeComponentCVEEdge")
@@ -103,7 +102,7 @@ func (s *storeImpl) Get(ctx context.Context, id string, componentId string, comp
 	}
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, id, componentId, componentOperatingSystem, imageCveId)
+	row := conn.QueryRow(ctx, getStmt, id, componentId, cveId)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -128,20 +127,18 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.NodeComponentCVEEdgeIDs")
+	var sacQueryFilter *v1.Query
 
-	rows, err := s.db.Query(ctx, getIDsStmt)
+	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, err
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+
+	ids := make([]string, 0, len(result))
+	for _, entry := range result {
+		ids = append(ids, entry.ID)
 	}
+
 	return ids, nil
 }
 

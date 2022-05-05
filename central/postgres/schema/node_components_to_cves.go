@@ -23,11 +23,10 @@ var (
                    IsFixable bool,
                    FixedBy varchar,
                    ComponentId varchar,
-                   ComponentOperatingSystem varchar,
-                   ImageCveId varchar,
+                   CveId varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, ComponentId, ComponentOperatingSystem, ImageCveId),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ComponentId, ComponentOperatingSystem) REFERENCES node_components(Id, OperatingSystem) ON DELETE CASCADE
+                   PRIMARY KEY(Id, ComponentId, CveId),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ComponentId) REFERENCES node_components(Id) ON DELETE CASCADE
                )
                `,
 		Indexes:  []string{},
