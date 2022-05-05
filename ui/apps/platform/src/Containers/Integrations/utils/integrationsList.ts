@@ -1,4 +1,3 @@
-import anchore from 'images/anchore.svg';
 import artifactory from 'images/artifactory.svg';
 import aws from 'images/aws.svg';
 import awsSecurityHub from 'images/aws-security-hub.svg';
@@ -22,7 +21,6 @@ import s3 from 'images/s3.svg';
 import syslog from 'images/syslog.svg';
 import teams from 'images/teams.svg';
 import pagerduty from 'images/pagerduty.svg';
-import tenable from 'images/tenable.svg';
 import signature from 'images/signature.svg';
 
 /*
@@ -136,13 +134,6 @@ const integrationsList: IntegrationDescriptorMap = {
             image: docker,
         },
         {
-            label: 'Anchore Scanner',
-            type: 'anchore',
-            categories: 'Scanner',
-            source: 'imageIntegrations',
-            image: anchore,
-        },
-        {
             label: 'Amazon ECR',
             type: 'ecr',
             categories: 'Registry',
@@ -178,13 +169,6 @@ const integrationsList: IntegrationDescriptorMap = {
             image: artifactory,
         },
         {
-            label: 'Docker Trusted Registry',
-            type: 'dtr',
-            categories: 'Registry + Scanner',
-            source: 'imageIntegrations',
-            image: docker,
-        },
-        {
             label: 'Quay.io',
             type: 'quay',
             categories: 'Registry + Scanner',
@@ -204,13 +188,6 @@ const integrationsList: IntegrationDescriptorMap = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: nexus,
-        },
-        {
-            label: 'Tenable.io',
-            type: 'tenable',
-            categories: 'Registry + Scanner',
-            source: 'imageIntegrations',
-            image: tenable,
         },
         {
             label: 'IBM Cloud',

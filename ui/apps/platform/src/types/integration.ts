@@ -29,21 +29,18 @@ export type AuthProviderType = 'apitoken' | 'clusterInitBundle';
 export type BackupIntegrationType = 'gcs' | 's3';
 
 export type ImageIntegrationType =
-    | 'anchore'
     | 'artifactory'
     | 'artifactregistry'
     | 'azure'
     | 'clair'
     | 'clairify'
     | 'docker'
-    | 'dtr'
     | 'ecr'
     | 'google'
     | 'ibm'
     | 'nexus'
     | 'quay'
     | 'rhel'
-    | 'tenable';
 
 export type NotifierIntegrationType =
     | 'awsSecurityHub'

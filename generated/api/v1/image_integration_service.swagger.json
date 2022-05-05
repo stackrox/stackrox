@@ -335,24 +335,6 @@
         }
       }
     },
-    "storageAnchoreConfig": {
-      "type": "object",
-      "properties": {
-        "endpoint": {
-          "type": "string"
-        },
-        "username": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string",
-          "description": "The password for the integration. The server will mask the value of this credential in responses and logs."
-        },
-        "insecure": {
-          "type": "boolean"
-        }
-      }
-    },
     "storageClairConfig": {
       "type": "object",
       "properties": {
@@ -376,24 +358,6 @@
         "numConcurrentScans": {
           "type": "integer",
           "format": "int32"
-        }
-      }
-    },
-    "storageDTRConfig": {
-      "type": "object",
-      "properties": {
-        "username": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string",
-          "description": "The password for the integration. The server will mask the value of this credential in responses and logs."
-        },
-        "endpoint": {
-          "type": "string"
-        },
-        "insecure": {
-          "type": "boolean"
         }
       }
     },
@@ -497,9 +461,6 @@
             "$ref": "#/definitions/storageImageIntegrationCategory"
           }
         },
-        "dtr": {
-          "$ref": "#/definitions/storageDTRConfig"
-        },
         "clairify": {
           "$ref": "#/definitions/storageClairifyConfig"
         },
@@ -512,17 +473,11 @@
         "ecr": {
           "$ref": "#/definitions/storageECRConfig"
         },
-        "tenable": {
-          "$ref": "#/definitions/storageTenableConfig"
-        },
         "google": {
           "$ref": "#/definitions/storageGoogleConfig"
         },
         "clair": {
           "$ref": "#/definitions/storageClairConfig"
-        },
-        "anchore": {
-          "$ref": "#/definitions/storageAnchoreConfig"
         },
         "ibm": {
           "$ref": "#/definitions/storageIBMRegistryConfig"
@@ -561,19 +516,6 @@
         },
         "insecure": {
           "type": "boolean"
-        }
-      }
-    },
-    "storageTenableConfig": {
-      "type": "object",
-      "properties": {
-        "accessKey": {
-          "type": "string",
-          "description": "The access key for the integration. The server will mask the value of this credential in responses and logs."
-        },
-        "secretKey": {
-          "type": "string",
-          "description": "The secret key for the integration. The server will mask the value of this credential in responses and logs."
         }
       }
     },
