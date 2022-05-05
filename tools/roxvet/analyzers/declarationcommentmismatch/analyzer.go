@@ -3,6 +3,7 @@ package declarationcommentmismatch
 import (
 	"fmt"
 	"go/ast"
+	"go/token"
 	"strings"
 	"unicode"
 
@@ -47,30 +48,42 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			return true
 		}
 
+		if astVar, ok := n.(*ast.ValueSpec); ok {
+			checkVariable(astVar, pass)
+			return true
+		}
+
 		return true
 	})
 	return nil, nil
 }
 
 func checkFunction(funcType *ast.FuncDecl, pass *analysis.Pass) {
-	funcName := funcType.Name.String()
-	firstFuncLetter := []rune(funcName[0:1])[0]
+	checkDocumentation(pass, funcType.Doc, funcType.Name.String(), "function", funcType.Pos())
+}
 
-	documentation := funcType.Doc
-	if documentation != nil {
-		commentSplit := strings.Split(documentation.List[0].Text, " ")
-		if len(commentSplit) < 2 {
-			return
-		}
+func checkVariable(valueSpec *ast.ValueSpec, pass *analysis.Pass) {
+	checkDocumentation(pass, valueSpec.Doc, valueSpec.Names[0].String(), "variable", valueSpec.Pos())
+}
 
-		firstCommentWord := commentSplit[1]
-		firstCommentLetter := []rune(firstCommentWord[0:1])[0]
+func checkDocumentation(pass *analysis.Pass, doc *ast.CommentGroup, objectName string, objectType string, position token.Pos) {
+	if doc == nil {
+		return
+	}
+	commentSplit := strings.Split(doc.List[0].Text, " ")
+	if len(commentSplit) < 2 {
+		return
+	}
 
-		if firstCommentWord[1:] == funcName[1:] && ((unicode.IsLower(firstFuncLetter) && unicode.ToUpper(firstFuncLetter) == firstCommentLetter) || (unicode.IsLower(firstCommentLetter) && unicode.ToUpper(firstCommentLetter) == firstFuncLetter)) {
-			pass.Report(analysis.Diagnostic{
-				Pos:     funcType.Pos(),
-				Message: fmt.Sprintf("Mismatching comment/function capitalization for function %s and comment starting with %s", funcName, firstCommentWord),
-			})
-		}
+	firstObjectLetter := []rune(objectName[0:1])[0]
+
+	firstCommentWord := commentSplit[1]
+	firstCommentLetter := []rune(firstCommentWord[0:1])[0]
+
+	if firstCommentWord[1:] == objectName[1:] && ((unicode.IsLower(firstObjectLetter) && unicode.ToUpper(firstObjectLetter) == firstCommentLetter) || (unicode.IsLower(firstCommentLetter) && unicode.ToUpper(firstCommentLetter) == firstObjectLetter)) {
+		pass.Report(analysis.Diagnostic{
+			Pos:     position,
+			Message: fmt.Sprintf("Mismatching capitalization for %s %s and comment starting with %s", objectType, objectName, firstCommentWord),
+		})
 	}
 }
