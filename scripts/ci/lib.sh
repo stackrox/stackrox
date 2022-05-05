@@ -544,6 +544,8 @@ gate_pr_job() {
         elif is_OPENSHIFT_CI; then
             diff_base="$(jq -r '.refs[0].base_sha' <<<"$CLONEREFS_OPTIONS")"
             echo "Determined diff-base as ${diff_base}"
+        else
+            die "unsupported"
         fi
         echo "Diffbase diff:"
         { git diff --name-only "${diff_base}" | cat ; } || true
@@ -576,7 +578,13 @@ gate_merge_job() {
     esac
 
     local base_ref
-    base_ref="$(jq -r '.refs[0].base_ref' <<<"$CLONEREFS_OPTIONS")"
+    if is_CIRCLECI; then
+        base_ref="${CIRCLE_BRANCH}"
+    elif is_OPENSHIFT_CI; then
+        base_ref="$(jq -r '.refs[0].base_ref' <<<"$CLONEREFS_OPTIONS")"
+    else
+        die "unsupported"
+    fi
 
     if [[ "${base_ref}" == "master" && "${run_on_master}" == "true" ]]; then
         info "$job will run because this is master and run_on_master==true"
