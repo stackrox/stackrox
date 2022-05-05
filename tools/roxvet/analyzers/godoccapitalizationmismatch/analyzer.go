@@ -28,7 +28,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		(*ast.File)(nil),
 		(*ast.FuncDecl)(nil),
 		(*ast.ValueSpec)(nil),
-		(*ast.TypeSpec)(nil),
 		(*ast.GenDecl)(nil),
 	}
 
