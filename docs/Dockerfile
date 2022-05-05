@@ -10,13 +10,9 @@ COPY Makefile ./
 RUN npm install -g npm@8.1.4 && npm install -g yarn@1.22.17
 RUN make
 
-FROM registry.access.redhat.com/ubi8/nginx-120:latest
+FROM nginx:alpine
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Delete unnecessary things from the content directory.
-RUN find . -mindepth 1 -delete
-
-COPY --from=builder /workspace/build/ ./
+COPY --from=builder /workspace/build/ /usr/share/nginx/html
 
 EXPOSE 8080
-
-CMD nginx -g "daemon off;"
