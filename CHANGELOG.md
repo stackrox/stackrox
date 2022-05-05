@@ -6,6 +6,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+## [70.0]
+
 - The default Admission Controller "fail open" timeout has been changed from 3 seconds to 20 seconds in Helm templates.
 - The maximum Admission Controller "fail open" timeout has been set at 25 seconds in Helm template verification performed by the Operator.
   - This change is *not* backwards compatible; if an existing Custom Resource sets the value to > 25 seconds, then it will fail validation in case operator is downgraded. This change is accepted because the operator is still in v1alpha1 and subject to change.
