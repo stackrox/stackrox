@@ -446,7 +446,7 @@ pr_has_label() {
     jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details" | grep -qx "${expected_label}"
 }
 
-# get_pr_details() from GitHub and display the result. Exits 1 if not in a PR context.
+# get_pr_details() from GitHub and display the result. Exits 1 if not run in CI in a PR context.
 get_pr_details() {
     local pull_request
     local org
@@ -474,11 +474,13 @@ get_pr_details() {
             org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org')
             repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo')
         else
-            die "not supported"
+            echo "Expect a JOB_SPEC or CLONEREFS_OPTIONS"
+            exit 2
         fi
         [[ "${pull_request}" == "null" ]] && _not_a_PR
     else
-        die "not supported"
+        echo "Expect Circle or OpenShift CI"
+        exit 2
     fi
 
     headers=()
@@ -487,7 +489,7 @@ get_pr_details() {
     fi
 
     url="https://api.github.com/repos/${org}/${repo}/pulls/${pull_request}"
-    pr_details=$(curl -sS "${headers[@]}" "${url}")
+    pr_details=$(curl --retry 5 -sS "${headers[@]}" "${url}")
     if [[ "$(jq .id <<<"$pr_details")" == "null" ]]; then
         # A valid PR response is expected at this point
         echo "Invalid response from GitHub: $pr_details"
@@ -505,12 +507,12 @@ gate_job() {
 
     local job="$1"
     local job_config
-    job_config="$(jq -r '."'"$job"'"' "$GATE_JOBS_CONFIG")"
+    job_config="$(jq -r .\""$job"\" "$GATE_JOBS_CONFIG")"
 
     info "Will determine whether to run: $job"
 
     if [[ "$job_config" == "null" ]]; then
-        info "There is no gating criteria for $job"
+        info "$job will run because there is no gating criteria for $job"
         return
     fi
 
@@ -523,7 +525,7 @@ gate_job() {
     elif [[ "$exitstatus" == "1" ]]; then
         gate_merge_job "$job_config"
     else
-        die "Could not determine if this is a PR"
+        die "Could not determine if this is a PR versus a merge"
     fi
 }
 
@@ -532,12 +534,12 @@ get_var_from_job_config() {
     local job_config="$2"
 
     local value
-    value="$(jq -cr ."$var_name" <<<"$job_config")"
+    value="$(jq -r ."$var_name" <<<"$job_config")"
     if [[ "$value" == "null" ]]; then
         die "$var_name is not defined in this jobs config"
     fi
     if [[ "${value:0:1}" == "[" ]]; then
-        value="$(jq -cr .[] <<<"$value")"
+        value="$(jq -r .[] <<<"$value")"
     fi
     echo "$value"
 }
@@ -546,7 +548,7 @@ gate_pr_job() {
     local job_config="$1"
     local pr_details="$2"
 
-    local run_with_labels=()
+    local run_with_labels
     local skip_with_label
     local run_with_changed_path
     local changed_path_to_ignore
@@ -578,6 +580,7 @@ gate_pr_job() {
         elif is_OPENSHIFT_CI; then
             diff_base="$(jq -r '.refs[0].base_sha' <<<"$CLONEREFS_OPTIONS")"
             echo "Determined diff-base as ${diff_base}"
+            [[ "${diff_base}" != "null" ]] || die "Could not find base_sha in CLONEREFS_OPTIONS: $CLONEREFS_OPTIONS"
         else
             die "unsupported"
         fi
