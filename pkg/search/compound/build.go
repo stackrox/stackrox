@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// Build walks the query and maps every base query field to a single SearcherSpec. This way we know which parts of the
+// build walks the query and maps every base query field to a single SearcherSpec. This way we know which parts of the
 // query are concerned with which searcher.
 func build(q *v1.Query, specs []SearcherSpec) (*searchRequestSpec, error) {
 	if len(specs) == 0 {

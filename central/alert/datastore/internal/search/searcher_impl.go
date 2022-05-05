@@ -97,7 +97,7 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.formattedSearcher.Count(ctx, q)
 }
 
-// ConvertAlert returns proto search result from an alert object and the internal search result
+// convertAlert returns proto search result from an alert object and the internal search result
 func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResult {
 	entityInfo := alert.GetCommonEntityInfo()
 	var entityName string

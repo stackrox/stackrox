@@ -241,7 +241,7 @@ func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, dep
 	return err
 }
 
-// Merge existing active component with new contexts, addend could be nil
+// merge existing active component with new contexts, addend could be nil
 func merge(base *storage.ActiveComponent, subtrahend set.StringSet, addend map[string]*storage.ActiveComponent_ActiveContext) (*converter.CompleteActiveComponent, bool) {
 	// Only remove the containers that won't be added back.
 	toRemove := set.NewStringSet()

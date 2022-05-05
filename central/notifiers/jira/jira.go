@@ -48,7 +48,7 @@ var (
 	pattern = regexp.MustCompile(`^(P[0-9])\b`)
 )
 
-// Jira notifier plugin
+// jira notifier plugin
 type jira struct {
 	client *jiraLib.Client
 

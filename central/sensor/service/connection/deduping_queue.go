@@ -61,7 +61,7 @@ func (q *dedupingQueue) pull() *central.MsgFromSensor {
 	return msg
 }
 
-// Push attempts to add an item to the queue, and returns an error if it is unable.
+// push attempts to add an item to the queue, and returns an error if it is unable.
 func (q *dedupingQueue) push(msg *central.MsgFromSensor) {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()

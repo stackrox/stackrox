@@ -286,7 +286,7 @@ func mergeAlerts(old, newAlert *storage.Alert) *storage.Alert {
 	return newAlert
 }
 
-// MergeManyAlerts merges two alerts.
+// mergeManyAlerts merges two alerts.
 func (d *alertManagerImpl) mergeManyAlerts(
 	ctx context.Context,
 	incomingAlerts []*storage.Alert,

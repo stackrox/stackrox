@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/scanners/types"
 )
 
-// NvdCVEWithComponents is to simulate the k8s vulnerabilities in scanner.
+// nvdCVEWithComponents is to simulate the k8s vulnerabilities in scanner.
 // Central does not differentiate the components in vulnerabilities in scan.
 type nvdCVEWithComponents struct {
 	nvdCVE     *schema.NVDCVEFeedJSON10DefCVEItem

@@ -96,7 +96,7 @@ func (s *searcherImplV2) Count(ctx context.Context, q *v1.Query) (count int, err
 	return s.searcher.Count(ctx, q)
 }
 
-// ConvertImage returns proto search result from a image object and the internal search result
+// convertImage returns proto search result from a image object and the internal search result
 func convertImage(image *storage.Image, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_IMAGES,

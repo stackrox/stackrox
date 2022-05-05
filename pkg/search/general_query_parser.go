@@ -69,7 +69,7 @@ func SortFieldLabels(fieldLabels []FieldLabel) []FieldLabel {
 	return fieldLabels
 }
 
-// Parse parses the input query.
+// parse parses the input query.
 func (pi generalQueryParser) parse(input string) (*v1.Query, error) {
 	// Handle empty input query case.
 	fieldMap := getFieldMap(input)

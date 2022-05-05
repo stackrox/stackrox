@@ -145,7 +145,7 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (res int, err er
 	return res, err
 }
 
-// ConvertDeployment returns proto search result from a deployment object and the internal search result
+// convertDeployment returns proto search result from a deployment object and the internal search result
 func convertDeployment(deployment *storage.ListDeployment, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_DEPLOYMENTS,
