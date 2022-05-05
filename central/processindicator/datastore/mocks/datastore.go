@@ -9,7 +9,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	analystnotes "github.com/stackrox/rox/central/analystnotes"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
@@ -39,21 +38,6 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// AddProcessComment mocks base method.
-func (m *MockDataStore) AddProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, comment *storage.Comment) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddProcessComment", ctx, processKey, comment)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AddProcessComment indicates an expected call of AddProcessComment.
-func (mr *MockDataStoreMockRecorder) AddProcessComment(ctx, processKey, comment interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessComment", reflect.TypeOf((*MockDataStore)(nil).AddProcessComment), ctx, processKey, comment)
-}
-
 // AddProcessIndicators mocks base method.
 func (m *MockDataStore) AddProcessIndicators(arg0 context.Context, arg1 ...*storage.ProcessIndicator) error {
 	m.ctrl.T.Helper()
@@ -71,36 +55,6 @@ func (mr *MockDataStoreMockRecorder) AddProcessIndicators(arg0 interface{}, arg1
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).AddProcessIndicators), varargs...)
-}
-
-// GetCommentsCountForProcess mocks base method.
-func (m *MockDataStore) GetCommentsCountForProcess(ctx context.Context, processKey *analystnotes.ProcessNoteKey) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCommentsCountForProcess", ctx, processKey)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCommentsCountForProcess indicates an expected call of GetCommentsCountForProcess.
-func (mr *MockDataStoreMockRecorder) GetCommentsCountForProcess(ctx, processKey interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommentsCountForProcess", reflect.TypeOf((*MockDataStore)(nil).GetCommentsCountForProcess), ctx, processKey)
-}
-
-// GetCommentsForProcess mocks base method.
-func (m *MockDataStore) GetCommentsForProcess(ctx context.Context, processKey *analystnotes.ProcessNoteKey) ([]*storage.Comment, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCommentsForProcess", ctx, processKey)
-	ret0, _ := ret[0].([]*storage.Comment)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCommentsForProcess indicates an expected call of GetCommentsForProcess.
-func (mr *MockDataStoreMockRecorder) GetCommentsForProcess(ctx, processKey interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommentsForProcess", reflect.TypeOf((*MockDataStore)(nil).GetCommentsForProcess), ctx, processKey)
 }
 
 // GetProcessIndicator mocks base method.
@@ -133,20 +87,6 @@ func (m *MockDataStore) GetProcessIndicators(ctx context.Context, ids []string) 
 func (mr *MockDataStoreMockRecorder) GetProcessIndicators(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).GetProcessIndicators), ctx, ids)
-}
-
-// RemoveProcessComment mocks base method.
-func (m *MockDataStore) RemoveProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, commentID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveProcessComment", ctx, processKey, commentID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RemoveProcessComment indicates an expected call of RemoveProcessComment.
-func (mr *MockDataStoreMockRecorder) RemoveProcessComment(ctx, processKey, commentID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessComment", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessComment), ctx, processKey, commentID)
 }
 
 // RemoveProcessIndicators mocks base method.
@@ -219,20 +159,6 @@ func (m *MockDataStore) Stop() bool {
 func (mr *MockDataStoreMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockDataStore)(nil).Stop))
-}
-
-// UpdateProcessComment mocks base method.
-func (m *MockDataStore) UpdateProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, comment *storage.Comment) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateProcessComment", ctx, processKey, comment)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateProcessComment indicates an expected call of UpdateProcessComment.
-func (mr *MockDataStoreMockRecorder) UpdateProcessComment(ctx, processKey, comment interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProcessComment", reflect.TypeOf((*MockDataStore)(nil).UpdateProcessComment), ctx, processKey, comment)
 }
 
 // Wait mocks base method.

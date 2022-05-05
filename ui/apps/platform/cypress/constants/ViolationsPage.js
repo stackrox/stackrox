@@ -1,4 +1,3 @@
-import { violationCommentsSelectors, commentsDialogSelectors } from '../selectors/comments';
 import navigationSelectors from '../selectors/navigation';
 
 export const url = '/main/violations';
@@ -37,7 +36,6 @@ export const selectors = {
                 `[data-testid="violation-tags"] div.pf-c-chip:contains(${tag}) button`,
             clearAllTagsButton: '[data-testid="violation-tags"] .pf-c-select__toggle-clear',
         },
-        comments: violationCommentsSelectors,
     },
     enforcement: {
         detailMessage: '[data-testid="enforcement-detail-message"]',
@@ -76,5 +74,4 @@ export const selectors = {
     securityBestPractices: '[data-testid="deployment-security-practices"]',
     runtimeProcessCards: '[data-testid="runtime-processes"]',
     excludedDeploymentRow: '.rt-tr:contains("metadata-proxy-v0.1")',
-    commentsDialog: commentsDialogSelectors,
 };

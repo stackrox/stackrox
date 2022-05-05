@@ -1,5 +1,4 @@
 import tableSelectors from '../selectors/table';
-import { processCommentsSelectors, commentsDialogSelectors } from '../selectors/comments';
 import selectSelectors from '../selectors/select';
 import paginationSelectors from '../selectors/pagination';
 import tooltipSelectors from '../selectors/tooltip';
@@ -27,7 +26,6 @@ const sidePanel = scopeSelectors('[data-testid="panel"]:eq(1)', {
             removeValueButton: (tag) =>
                 `[data-testid="process-tags"] div.pf-c-chip:contains(${tag}) button`,
         },
-        comments: processCommentsSelectors,
     }),
 
     tabs: 'button[data-testid="tab"]',
@@ -115,7 +113,6 @@ export const selectors = {
     suspiciousProcesses: "[data-testid='suspicious-process']",
     viewDeploymentsInNetworkGraphButton: '[data-testid="view-deployments-in-network-graph-button"]',
     sidePanel,
-    commentsDialog: commentsDialogSelectors,
     eventTimeline: eventTimelineSelectors,
     eventTimelineOverview: eventTimelineOverviewSelectors,
     eventTimelineOverviewButton: 'button[data-testid="event-timeline-overview"]',

@@ -2078,6 +2078,11 @@
                 "type": "AdmissionControlHealthInfo"
               },
               {
+                "id": 10,
+                "name": "scanner_health_info",
+                "type": "ScannerHealthInfo"
+              },
+              {
                 "id": 2,
                 "name": "sensor_health_status",
                 "type": "HealthStatusLabel",
@@ -2118,6 +2123,17 @@
                   {
                     "name": "(gogoproto.moretags)",
                     "value": "search:\\\"Admission Control Status,store\\\""
+                  }
+                ]
+              },
+              {
+                "id": 11,
+                "name": "scanner_health_status",
+                "type": "HealthStatusLabel",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Scanner Status,store\\\""
                   }
                 ]
               },
@@ -2179,6 +2195,37 @@
               },
               {
                 "id": 3,
+                "name": "status_errors",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "ScannerHealthInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "total_desired_analyzer_pods",
+                "type": "int32"
+              },
+              {
+                "id": 2,
+                "name": "total_ready_analyzer_pods",
+                "type": "int32"
+              },
+              {
+                "id": 3,
+                "name": "total_desired_db_pods",
+                "type": "int32"
+              },
+              {
+                "id": 4,
+                "name": "total_ready_db_pods",
+                "type": "int32"
+              },
+              {
+                "id": 5,
                 "name": "status_errors",
                 "type": "string",
                 "is_repeated": true
@@ -2254,101 +2301,6 @@
           },
           {
             "path": "gogoproto/gogo.proto"
-          }
-        ],
-        "package": {
-          "name": "storage"
-        }
-      }
-    },
-    {
-      "protopath": "comments.proto",
-      "def": {
-        "enums": [
-          {
-            "name": "ResourceType",
-            "enum_fields": [
-              {
-                "name": "UNSET_RESOURCE_TYPE"
-              },
-              {
-                "name": "ALERT",
-                "integer": 1
-              },
-              {
-                "name": "PROCESS",
-                "integer": 2
-              }
-            ]
-          }
-        ],
-        "messages": [
-          {
-            "name": "Comment",
-            "fields": [
-              {
-                "id": 1,
-                "name": "resource_type",
-                "type": "ResourceType"
-              },
-              {
-                "id": 2,
-                "name": "resource_id",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "comment_id",
-                "type": "string"
-              },
-              {
-                "id": 4,
-                "name": "comment_message",
-                "type": "string"
-              },
-              {
-                "id": 5,
-                "name": "user",
-                "type": "User"
-              },
-              {
-                "id": 6,
-                "name": "created_at",
-                "type": "google.protobuf.Timestamp"
-              },
-              {
-                "id": 7,
-                "name": "last_modified",
-                "type": "google.protobuf.Timestamp"
-              }
-            ],
-            "messages": [
-              {
-                "name": "User",
-                "fields": [
-                  {
-                    "id": 1,
-                    "name": "id",
-                    "type": "string"
-                  },
-                  {
-                    "id": 2,
-                    "name": "name",
-                    "type": "string"
-                  },
-                  {
-                    "id": 3,
-                    "name": "email",
-                    "type": "string"
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        "imports": [
-          {
-            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -9326,12 +9278,24 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"unique\""
+                  }
+                ]
               },
               {
                 "id": 3,
