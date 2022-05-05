@@ -89,8 +89,8 @@ func (s *serviceImpl) GetNotifier(ctx context.Context, request *v1.ResourceByID)
 }
 
 // GetNotifiers retrieves all notifiers that match the request filters
-func (s *serviceImpl) GetNotifiers(ctx context.Context, request *v1.GetNotifiersRequest) (*v1.GetNotifiersResponse, error) {
-	notifiers, err := s.storage.GetNotifiers(ctx, request)
+func (s *serviceImpl) GetNotifiers(ctx context.Context, _ *v1.GetNotifiersRequest) (*v1.GetNotifiersResponse, error) {
+	notifiers, err := s.storage.GetNotifiers(ctx)
 	if err != nil {
 		return nil, err
 	}

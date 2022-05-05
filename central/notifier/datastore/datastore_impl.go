@@ -5,9 +5,11 @@ import (
 
 	"github.com/stackrox/rox/central/notifier/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -15,6 +17,7 @@ var (
 )
 
 type datastoreImpl struct {
+	lock    sync.Mutex
 	storage store.Store
 }
 
@@ -25,17 +28,17 @@ func (b *datastoreImpl) GetNotifier(ctx context.Context, id string) (*storage.No
 		return nil, false, nil
 	}
 
-	return b.storage.GetNotifier(id)
+	return b.storage.Get(ctx, id)
 }
 
-func (b *datastoreImpl) GetNotifiers(ctx context.Context, request *v1.GetNotifiersRequest) ([]*storage.Notifier, error) {
+func (b *datastoreImpl) GetNotifiers(ctx context.Context) ([]*storage.Notifier, error) {
 	if ok, err := notifierSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
 	}
 
-	return b.storage.GetNotifiers(request)
+	return b.storage.GetAll(ctx)
 }
 
 func (b *datastoreImpl) AddNotifier(ctx context.Context, notifier *storage.Notifier) (string, error) {
@@ -44,8 +47,19 @@ func (b *datastoreImpl) AddNotifier(ctx context.Context, notifier *storage.Notif
 	} else if !ok {
 		return "", sac.ErrResourceAccessDenied
 	}
+	notifier.Id = uuid.NewV4().String()
 
-	return b.storage.AddNotifier(notifier)
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	exists, err := b.storage.Exists(ctx, notifier.GetId())
+	if err != nil {
+		return notifier.GetId(), err
+	}
+	if exists {
+		return notifier.GetId(), errox.InvalidArgs.Newf("notifier with id %q was found", notifier.GetId())
+	}
+	return notifier.GetId(), b.storage.Upsert(ctx, notifier)
 }
 
 func (b *datastoreImpl) UpdateNotifier(ctx context.Context, notifier *storage.Notifier) error {
@@ -54,8 +68,18 @@ func (b *datastoreImpl) UpdateNotifier(ctx context.Context, notifier *storage.No
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
 
-	return b.storage.UpdateNotifier(notifier)
+	exists, err := b.storage.Exists(ctx, notifier.GetId())
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errox.NotFound.Newf("notifier with id %q was not found", notifier.GetId())
+	}
+
+	return b.storage.Upsert(ctx, notifier)
 }
 
 func (b *datastoreImpl) RemoveNotifier(ctx context.Context, id string) error {
@@ -65,5 +89,5 @@ func (b *datastoreImpl) RemoveNotifier(ctx context.Context, id string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return b.storage.RemoveNotifier(id)
+	return b.storage.Delete(ctx, id)
 }
