@@ -11,15 +11,16 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
 	baseTable  = "node_cves"
-	countStmt  = "SELECT COUNT(*) FROM node_cves"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3)"
 
 	getStmt     = "SELECT serialized FROM node_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3"
@@ -262,12 +263,9 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.CVE) error {
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "CVE")
 
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
-		return 0, err
-	}
-	return count, nil
+	var sacQueryFilter *v1.Query
+
+	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store

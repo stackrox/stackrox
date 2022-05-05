@@ -11,16 +11,17 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
 	baseTable  = "clusterinitbundles"
-	countStmt  = "SELECT COUNT(*) FROM clusterinitbundles"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM clusterinitbundles WHERE Id = $1)"
 
 	getStmt     = "SELECT serialized FROM clusterinitbundles WHERE Id = $1"
@@ -240,16 +241,13 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.InitBundleMe
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "InitBundleMeta")
 
+	var sacQueryFilter *v1.Query
+
 	if ok, err := permissionCheckerSingleton().CountAllowed(ctx); err != nil || !ok {
 		return 0, err
 	}
 
-	row := s.db.QueryRow(ctx, countStmt)
-	var count int
-	if err := row.Scan(&count); err != nil {
-		return 0, err
-	}
-	return count, nil
+	return postgres.RunCountRequestForSchema(schema, sacQueryFilter, s.db)
 }
 
 // Exists returns if the id exists in the store
