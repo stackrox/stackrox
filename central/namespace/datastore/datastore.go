@@ -20,12 +20,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/derivedfields"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
@@ -48,12 +50,16 @@ type DataStore interface {
 // New returns a new DataStore instance using the provided store and indexer
 func New(store store.Store, graphProvider graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker, idMapStorage idmap.Storage) (DataStore, error) {
 	ds := &datastoreImpl{
-		store:             store,
-		indexer:           indexer,
-		formattedSearcher: formatSearcher(indexer, graphProvider, namespaceRanker),
-		deployments:       deploymentDataStore,
-		namespaceRanker:   namespaceRanker,
-		idMapStorage:      idMapStorage,
+		store:           store,
+		indexer:         indexer,
+		deployments:     deploymentDataStore,
+		namespaceRanker: namespaceRanker,
+		idMapStorage:    idMapStorage,
+	}
+	if features.PostgresDatastore.Enabled() {
+		ds.formattedSearcher = postgres.WithScoping(blevesearch.WrapUnsafeSearcherAsSearcher(indexer))
+	} else {
+		ds.formattedSearcher = formatSearcher(indexer, graphProvider, namespaceRanker)
 	}
 	if err := ds.buildIndex(context.TODO()); err != nil {
 		return nil, err
