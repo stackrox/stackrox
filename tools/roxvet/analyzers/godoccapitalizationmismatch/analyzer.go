@@ -109,7 +109,7 @@ func checkCommentCaseMatches(pass *analysis.Pass, doc *ast.CommentGroup, objectN
 		if unicode.IsLower(firstObjectLetter) && unicode.ToUpper(firstObjectLetter) == firstCommentLetter {
 			pass.Report(analysis.Diagnostic{
 				Pos:     position,
-				Message: fmt.Sprintf("Mismatching capitalization for %s %s and comment starting with %s, please change the comment to \"// %s\"", objectType, objectName, firstCommentWord, objectName),
+				Message: fmt.Sprintf("Mismatching capitalization for %s %s and comment starting with %s, please change the comment to \"// %d%s\"", objectType, objectName, firstCommentWord, unicode.ToLower(firstCommentLetter), firstCommentWord[1:]),
 			})
 		}
 	}
