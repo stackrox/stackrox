@@ -691,12 +691,6 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx pgx.Tx, imageID string)
 				len(componentEdgeMap), len(componentMap), image.GetName().GetFullName(), image.GetId()),
 		)
 	}
-	if len(componentCVEEdgeMap) != len(cveMap) {
-		utils.Should(
-			errors.Errorf("Number of component-cve edges (%d) is not equal to number of cves (%d) for image %s (imageID=%s)",
-				len(componentCVEEdgeMap), len(cveMap), image.GetName().GetFullName(), image.GetId()),
-		)
-	}
 
 	imageParts := common.ImageParts{
 		Image:         &image,
@@ -1079,8 +1073,25 @@ func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.I
 	return &msg, true, nil
 }
 
-func (s *storeImpl) UpdateVulnState(_ context.Context, cve string, images []string, state storage.VulnerabilityState) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.UpdateMany, "ImageCVEEdge")
+func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "UpdateVulnState")
+	if err != nil {
+		return err
+	}
+	defer release()
 
-	panic("not implemented")
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	query := "update " + imageCVERelationsTable + " set state = $1 where imagecveid = $2 AND imageid = ANY($3::text[])"
+	_, err = tx.Exec(ctx, query, state, cve, images)
+	if err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	return tx.Commit(ctx)
 }
