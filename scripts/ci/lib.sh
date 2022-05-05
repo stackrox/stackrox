@@ -490,7 +490,8 @@ get_pr_details() {
     pr_details=$(curl -sS "${headers[@]}" "${url}")
     if [[ "$(jq .id <<<"$pr_details")" != "null" ]]; then
         # A valid PR response is expected at this point
-        die "Invalid response from GitHub: $pr_details"
+        echo "Invalid response from GitHub: $pr_details"
+        exit 2
     fi
     echo "$pr_details"
 }
@@ -506,11 +507,14 @@ gate_job() {
 
     local pr_details
     pr_details="$(get_pr_details)"
+    local exitstatus="$?"
 
-    if [[ "$(jq .id <<<"$pr_details")" != "null" ]]; then
+    if [[ "$exitstatus" == "0" ]]; then
         gate_pr_job "$pr_details"
-    else
+    elif [[ "$exitstatus" == "1" ]]; then
         gate_merge_job
+    else
+        die "Could not determine if this is a PR"
     fi
 }
 
