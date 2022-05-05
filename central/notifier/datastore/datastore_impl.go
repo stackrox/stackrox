@@ -50,6 +50,8 @@ func (b *datastoreImpl) AddNotifier(ctx context.Context, notifier *storage.Notif
 	notifier.Id = uuid.NewV4().String()
 
 	b.lock.Lock()
+	defer b.lock.Unlock()
+
 	exists, err := b.storage.Exists(ctx, notifier.GetId())
 	if err != nil {
 		return notifier.GetId(), err
