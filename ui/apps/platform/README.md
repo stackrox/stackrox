@@ -38,7 +38,7 @@ Demo Setup.
 
 Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.go:
 
-1. Add `'ROX_NEW_POLICY_CATEGORIES'` to string enumeration type `FeatureFlagEnvVar` in ui/apps/platform/src/types/featureFlag.ts
+1. Add `'ROX_WHATEVER'` to string enumeration type `FeatureFlagEnvVar` in ui/apps/platform/src/types/featureFlag.ts
 
 2. To include frontend code when the flag is enabled, do any of the following:
 
@@ -122,7 +122,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 
 Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.go:
 
-1. Delete `'ROX_NEW_POLICY_CATEGORIES'` from string enumeration type `FeatureFlagEnvVar` in ui/apps/platform/src/types/featureFlag.ts
+1. Delete `'ROX_WHATEVER'` from string enumeration type `FeatureFlagEnvVar` in ui/apps/platform/src/types/featureFlag.ts
 
 2. Do any of the following:
 
