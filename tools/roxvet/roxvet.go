@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/stackrox/rox/tools/roxvet/analyzers/commentcapitalization"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/dontprintferr"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/filepathwalk"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/godoccapitalizationmismatch"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/importpackagenames"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/invalidoutputroxctl"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/needlessformat"
@@ -19,7 +19,7 @@ import (
 
 func main() {
 	unitchecker.Main(
-		commentcapitalization.Analyzer,
+		godoccapitalizationmismatch.Analyzer,
 		dontprintferr.Analyzer,
 		storeinterface.Analyzer,
 		uncheckederrors.Analyzer,

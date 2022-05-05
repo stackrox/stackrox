@@ -1,4 +1,4 @@
-package commentcapitalization
+package godoccapitalizationmismatch
 
 import (
 	"fmt"
@@ -14,9 +14,9 @@ import (
 
 const doc = `check the capitalization of the first word for a Godoc comment (for a function, interface, struct)`
 
-// Analyzer is responsible for analyzing code.
+// Analyzer is a analysis.Analyzer from the analysis package of the Go standard lib. [It analyzes code]
 var Analyzer = &analysis.Analyzer{
-	Name:     "commentcapitalization",
+	Name:     "godoccapitalizationmismatch",
 	Doc:      doc,
 	Requires: []*analysis.Analyzer{inspect.Analyzer},
 	Run:      run,
