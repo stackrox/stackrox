@@ -20,9 +20,10 @@ func TestServiceIdentityDataStore(t *testing.T) {
 type serviceIdentityDataStoreTestSuite struct {
 	suite.Suite
 
-	hasNoneCtx  context.Context
-	hasReadCtx  context.Context
-	hasWriteCtx context.Context
+	hasNoneCtx                context.Context
+	hasReadCtx                context.Context
+	hasWriteCtx               context.Context
+	hasWriteAdministrationCtx context.Context
 
 	dataStore DataStore
 	storage   *storeMocks.MockStore
@@ -40,7 +41,10 @@ func (s *serviceIdentityDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.ServiceIdentity)))
-
+	s.hasWriteAdministrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.dataStore = New(s.storage)
@@ -93,8 +97,11 @@ func (s *serviceIdentityDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (s *serviceIdentityDataStoreTestSuite) TestAllowsAdd() {
-	s.storage.EXPECT().AddServiceIdentity(gomock.Any()).Return(nil)
+	s.storage.EXPECT().AddServiceIdentity(gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.AddServiceIdentity(s.hasWriteCtx, &storage.ServiceIdentity{})
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	err = s.dataStore.AddServiceIdentity(s.hasWriteAdministrationCtx, &storage.ServiceIdentity{})
+	s.NoError(err, "expected no error trying to write with Administration permissions")
 }
