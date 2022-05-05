@@ -167,7 +167,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 
 3. For integration tests:
 
-    * Add `import { hasFeatureFlag } from '../…/helpers/features';` in cypress/integration/…/whatever.test.js
+    * Delete `import { hasFeatureFlag } from '../…/helpers/features';` in cypress/integration/…/whatever.test.js
     * And then at the beginning of `describe` block do either or both of the following:
 
         * For **older** tests which were not relevant when feature flag is **enabled**
