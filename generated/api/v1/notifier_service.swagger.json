@@ -13,7 +13,7 @@
   "paths": {
     "/v1/notifiers": {
       "get": {
-        "summary": "GetNotifiers returns all notifier configurations that match the request filters.",
+        "summary": "GetNotifiers returns all notifier configurations.",
         "operationId": "NotifierService_GetNotifiers",
         "responses": {
           "200": {
@@ -29,20 +29,6 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "name",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "type",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
         "tags": [
           "NotifierService"
         ]
