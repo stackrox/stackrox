@@ -13,10 +13,13 @@ import services.NamespaceService
 import services.NodeService
 import services.SummaryService
 import io.stackrox.proto.storage.NodeOuterClass.Node
+import spock.lang.IgnoreIf
+import util.Env
 
 class SummaryTest extends BaseSpecification {
 
     @Category([BAT])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify TopNav counts for Nodes, Deployments, and Secrets"() {
         // https://stack-rox.atlassian.net/browse/ROX-6844
         Assume.assumeFalse(ClusterService.isOpenShift4())

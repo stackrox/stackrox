@@ -9,6 +9,7 @@ import org.junit.experimental.categories.Category
 import services.CVEService
 import services.ImageService
 import services.PolicyService
+import spock.lang.IgnoreIf
 import spock.lang.Unroll
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import util.Env
@@ -16,6 +17,7 @@ import util.Env
 class ImageManagementTest extends BaseSpecification {
     @Unroll
     @Category([BAT, Integration])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry #note"() {
         when:
         "Update Policy to build time"
