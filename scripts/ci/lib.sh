@@ -446,13 +446,19 @@ pr_has_label() {
     jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details" | grep -qx "${expected_label}"
 }
 
+# get_pr_details() from GitHub and display the result. Exits 1 if not in a PR context.
 get_pr_details() {
     local pull_request
     local org
     local repo
 
+    _not_a_PR() {
+        echo '{ "msg": "this is not a PR" }'
+        exit 1
+    }
+
     if is_CIRCLECI; then
-        [ -n "${CIRCLE_PULL_REQUEST}" ] || { echo "Not on a PR, ignoring label overrides"; exit 3; }
+        [ -n "${CIRCLE_PULL_REQUEST:-}" ] || _not_a_PR
         [ -n "${CIRCLE_PROJECT_USERNAME}" ] || { echo "CIRCLE_PROJECT_USERNAME not found" ; exit 2; }
         [ -n "${CIRCLE_PROJECT_REPONAME}" ] || { echo "CIRCLE_PROJECT_REPONAME not found" ; exit 2; }
         pull_request="${CIRCLE_PULL_REQUEST}"
@@ -470,6 +476,7 @@ get_pr_details() {
         else
             die "not supported"
         fi
+        [[ "${pull_request}" == "null" ]] && _not_a_PR
     else
         die "not supported"
     fi
