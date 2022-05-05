@@ -3,6 +3,13 @@ runOnAllTags: &runOnAllTags
     tags:
       only: /.*/
 
+runOnTagsOnly: &runOnTagsOnly
+  filters:
+    tags:
+      only: /.*/
+    branches:
+      ignore: /.*/
+
 # This runs a command only on rc builds,
 # which is a tagged build with a tag matching the below regex.
 runOnlyOnReleaseCandidateBuilds: &runOnlyOnReleaseCandidateBuilds
@@ -4793,11 +4800,7 @@ workflows:
       not: << pipeline.parameters.trigger_on_demand >>
     jobs: &buildAllJobs
       - slack-notify:
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore: /.*/
+          <<: *runOnTagsOnly
           context: custom-executor-pull
       - style-checks:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -5112,24 +5115,16 @@ workflows:
             - ui-unit-tests
 
       - scan-images-in-quay:
+          <<: *runOnTagsOnly
           context:
           - quay-rhacs-eng-readonly
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore: /.*/
           requires:
             - build-stackrox
             - build-rhacs
 
       - retrigger-master-workflow:
+          <<: *runOnTagsOnly
           context: custom-executor-pull
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
 
   nightly:
     triggers:
