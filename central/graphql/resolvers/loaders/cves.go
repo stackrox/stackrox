@@ -20,14 +20,13 @@ import (
 var cveLoaderType = reflect.TypeOf(storage.CVE{})
 
 func init() {
-	var imageCVEDS imageCVEDataStore.DataStore
-	if features.PostgresDatastore.Enabled() {
-		imageCVEDS = imageCVEDataStore.Singleton()
-	} else {
-		imageCVEDS = legacyImageCVEDataStore.Singleton()
-	}
-
 	RegisterTypeFactory(reflect.TypeOf(storage.CVE{}), func() interface{} {
+		var imageCVEDS imageCVEDataStore.DataStore
+		if features.PostgresDatastore.Enabled() {
+			imageCVEDS = imageCVEDataStore.Singleton()
+		} else {
+			imageCVEDS = legacyImageCVEDataStore.Singleton()
+		}
 		return NewCVELoader(imageCVEDS)
 	})
 }
