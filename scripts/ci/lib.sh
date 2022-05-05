@@ -461,7 +461,7 @@ get_pr_details() {
         [ -n "${CIRCLE_PULL_REQUEST:-}" ] || _not_a_PR
         [ -n "${CIRCLE_PROJECT_USERNAME}" ] || { echo "CIRCLE_PROJECT_USERNAME not found" ; exit 2; }
         [ -n "${CIRCLE_PROJECT_REPONAME}" ] || { echo "CIRCLE_PROJECT_REPONAME not found" ; exit 2; }
-        pull_request="${CIRCLE_PULL_REQUEST}"
+        pull_request="${CIRCLE_PULL_REQUEST##*/}"
         org="${CIRCLE_PROJECT_USERNAME}"
         repo="${CIRCLE_PROJECT_REPONAME}"
     elif is_OPENSHIFT_CI; then
@@ -487,7 +487,12 @@ get_pr_details() {
     fi
 
     url="https://api.github.com/repos/${org}/${repo}/pulls/${pull_request}"
-    curl -sS "${headers[@]}" "${url}"
+    pr_details=$(curl -sS "${headers[@]}" "${url}")
+    if [[ "$(jq .id <<<"$pr_details")" != "null" ]]; then
+        # A valid PR response is expected at this point
+        die "Invalid response from GitHub: $pr_details"
+    fi
+    echo "$pr_details"
 }
 
 gate_job() {
