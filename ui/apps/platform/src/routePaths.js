@@ -26,7 +26,6 @@ export const policiesBasePath = `${mainPath}/policies`;
 export const policiesPath = `${policiesBasePath}/:policyId?/:command?`;
 export const riskBasePath = `${mainPath}/risk`;
 export const riskPath = `${riskBasePath}/:deploymentId?`;
-export const imagesPath = `${mainPath}/images/:imageId?`;
 export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const apidocsPath = `${mainPath}/apidocs`;
 export const accessControlPath = `${mainPath}/access`;

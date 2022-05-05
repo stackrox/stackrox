@@ -10,21 +10,6 @@ const imagesCountUrl = '/v1/imagescount';
 const watchedImagesUrl = '/v1/watchedimages';
 
 /**
- * Fetches list of registered images.
- *
- * @returns {Promise<Object[], Error>} fulfilled with array of images (as defined in .proto)
- */
-export function fetchImagesById(options) {
-    const params = queryString.stringify(
-        { query: searchOptionsToQuery(options) },
-        { arrayFormat: 'repeat' }
-    );
-    return axios
-        .get(`${imagesUrl}?${params}`)
-        .then((response) => ({ response: normalize(response?.data?.images ?? [], [imageSchema]) }));
-}
-
-/**
  * Fetches list of registered images, using the input hooks to give the results.
  *
  * @returns {Promise<Object[], Error>} fulfilled with array of images (as defined in .proto)
@@ -65,23 +50,6 @@ export function fetchImageCount(options) {
         { arrayFormat: 'repeat' }
     );
     return axios.get(`${imagesCountUrl}?${params}`).then((response) => response?.data?.count ?? 0);
-}
-
-/**
- * Fetches a specified image.
- *
- * @returns {Promise<?Object, Error>} fulfilled with object of image (as defined in .proto)
- */
-export function fetchImage(id) {
-    if (!id) {
-        throw new Error('Image ID must be specified');
-    }
-    return axios.get(`${imagesUrl}/${id}`).then((response) => {
-        const image = { ...response.data };
-        const { name } = response.data;
-        image.name = name.fullName;
-        return image;
-    });
 }
 
 /**

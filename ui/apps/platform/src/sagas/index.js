@@ -5,7 +5,6 @@ import authProviders from './authSagas';
 import clusterInitBundles from './clusterInitBundleSagas';
 import clusters from './clusterSagas';
 import featureFlags from './featureFlagSagas';
-import images from './imageSagas';
 import integrations from './integrationSagas';
 import globalSearch from './globalSearchSagas';
 import roles from './roleSagas';
@@ -26,7 +25,6 @@ export default function* root() {
         fork(authProviders),
         fork(clusterInitBundles),
         fork(clusters),
-        fork(images),
         fork(featureFlags),
         fork(integrations),
         fork(globalSearch),
