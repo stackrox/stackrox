@@ -67,7 +67,7 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType, clusterID,
 	// Ignore resources that are owned by another tracked resource.
 	for _, ref := range objMeta.GetOwnerReferences() {
 		if IsTrackedOwnerReference(ref) {
-			return nil, nil
+			return nil, nil // there is a parent and we are tracking the parent
 		}
 	}
 

@@ -177,6 +177,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		d.endpointManager.OnDeploymentRemove(deploymentWrap)
 		d.processFilter.Delete(deploymentWrap.GetId())
 	}
+	// here we assume that the deploymentWrap is complete
 	d.detector.ProcessDeployment(deploymentWrap.GetDeployment(), action)
 	events = d.appendIntegrationsOnCredentials(action, deploymentWrap.GetContainers(), events)
 	events = append(events, deploymentWrap.toEvent(action))
