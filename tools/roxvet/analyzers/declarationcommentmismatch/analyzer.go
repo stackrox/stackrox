@@ -28,6 +28,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		(*ast.File)(nil),
 		(*ast.FuncDecl)(nil),
 		(*ast.ValueSpec)(nil),
+		(*ast.TypeSpec)(nil),
 	}
 
 	inspectResult.Nodes(nodeFilter, func(n ast.Node, push bool) bool {
@@ -44,12 +45,28 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		}
 
 		if astFunction, ok := n.(*ast.FuncDecl); ok {
-			checkFunction(astFunction, pass)
+			checkCommentCaseMatches(pass, astFunction.Doc, astFunction.Name.String(), "function", astFunction.Pos())
 			return true
 		}
 
 		if astVar, ok := n.(*ast.ValueSpec); ok {
-			checkVariable(astVar, pass)
+			checkCommentCaseMatches(pass, astVar.Doc, astVar.Names[0].String(), "variable", astVar.Pos())
+			return true
+		}
+
+		if astType, ok := n.(*ast.TypeSpec); ok {
+			switch astType.Type.(type) {
+			case *ast.ArrayType:
+				checkCommentCaseMatches(pass, astType.Doc, astType.Name.String(), "array", astType.Pos())
+			case *ast.StructType:
+				checkCommentCaseMatches(pass, astType.Doc, astType.Name.String(), "struct", astType.Pos())
+			case *ast.InterfaceType:
+				checkCommentCaseMatches(pass, astType.Doc, astType.Name.String(), "interface", astType.Pos())
+			case *ast.MapType:
+				checkCommentCaseMatches(pass, astType.Doc, astType.Name.String(), "map", astType.Pos())
+			case *ast.ChanType:
+				checkCommentCaseMatches(pass, astType.Doc, astType.Name.String(), "channel", astType.Pos())
+			}
 			return true
 		}
 
@@ -58,15 +75,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	return nil, nil
 }
 
-func checkFunction(funcType *ast.FuncDecl, pass *analysis.Pass) {
-	checkDocumentation(pass, funcType.Doc, funcType.Name.String(), "function", funcType.Pos())
-}
-
-func checkVariable(valueSpec *ast.ValueSpec, pass *analysis.Pass) {
-	checkDocumentation(pass, valueSpec.Doc, valueSpec.Names[0].String(), "variable", valueSpec.Pos())
-}
-
-func checkDocumentation(pass *analysis.Pass, doc *ast.CommentGroup, objectName string, objectType string, position token.Pos) {
+func checkCommentCaseMatches(pass *analysis.Pass, doc *ast.CommentGroup, objectName string, objectType string, position token.Pos) {
 	if doc == nil {
 		return
 	}
