@@ -641,8 +641,9 @@ commands:
             source scripts/ci/lib.sh
             # gate_job() exits with 0 when a job should *not* be run in keeping
             # with OpenShift CI semantics.
-            (gate_job '<< parameters.job >>'; exit 1)
-            if [[ "$?" == "0" ]]; then
+            exitstatus=0
+            (gate_job '<< parameters.job >>'; exit 1) || exitstatus="$?"
+            if [[ "$exitstatus" == "0" ]]; then
               echo "Not running tests"
               circleci step halt
             fi
