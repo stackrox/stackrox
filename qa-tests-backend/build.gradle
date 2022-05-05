@@ -70,7 +70,7 @@ dependencies {
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
     // Use the latest Groovy version for building this library
-    implementation 'org.codehaus.groovy:groovy-all:2.4.18'
+    implementation 'org.codehaus.groovy:groovy-all:3.0.10'
     testImplementation group: 'junit', name: 'junit', version: '4.11'
     testImplementation group: 'org.yaml', name: 'snakeyaml', version: '1.29'
     implementation group: 'com.jayway.restassured', name: 'rest-assured', version: '2.9.0'
