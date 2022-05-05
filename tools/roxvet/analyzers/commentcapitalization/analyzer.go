@@ -1,4 +1,4 @@
-package declarationcommentmismatch
+package commentcapitalization
 
 import (
 	"fmt"
@@ -12,11 +12,11 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
-const doc = `check that there are no functions, interfaces or structs preceded by descriptive comments of mismatching capitalization`
+const doc = `check the capitalization of the first word for a Godoc comment (for a function, interface, struct)`
 
 // Analyzer is the analyzer.
 var Analyzer = &analysis.Analyzer{
-	Name:     "declarationcommentmismatch",
+	Name:     "commentcapitalization",
 	Doc:      doc,
 	Requires: []*analysis.Analyzer{inspect.Analyzer},
 	Run:      run,
@@ -39,10 +39,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 		if astFile, ok := n.(*ast.File); ok {
 			file := pass.Fset.File(astFile.Pos())
-			if file != nil && strings.HasSuffix(file.Name(), "_test.go") {
-				return false
-			}
-			return true
+			return file == nil || !strings.HasSuffix(file.Name(), "_test.go")
 		}
 
 		if astFunction, ok := n.(*ast.FuncDecl); ok {
@@ -82,17 +79,22 @@ func run(pass *analysis.Pass) (interface{}, error) {
 }
 
 func checkCommentCaseMatches(pass *analysis.Pass, doc *ast.CommentGroup, objectName string, objectType string, position token.Pos) {
-	if doc == nil {
+	if len(doc.List) < 1 {
 		return
 	}
-	commentSplit := strings.Split(doc.List[0].Text, " ")
+	commentSplit := strings.Fields(doc.List[0].Text)
 	if len(commentSplit) < 2 {
+		return
+	}
+	if len(objectName) < 1 {
 		return
 	}
 
 	firstObjectLetter := []rune(objectName[0:1])[0]
-
 	firstCommentWord := commentSplit[1]
+	if len(firstCommentWord) < 1 {
+		return
+	}
 	firstCommentLetter := []rune(firstCommentWord[0:1])[0]
 
 	if firstCommentWord[1:] == objectName[1:] && ((unicode.IsLower(firstObjectLetter) && unicode.ToUpper(firstObjectLetter) == firstCommentLetter) || (unicode.IsLower(firstCommentLetter) && unicode.ToUpper(firstCommentLetter) == firstObjectLetter)) {
