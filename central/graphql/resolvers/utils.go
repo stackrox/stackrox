@@ -33,13 +33,13 @@ type IDQuery struct {
 	ID *graphql.ID
 }
 
-// StringListEntryResolver represents a set of values keyed by a string
+// stringListEntryResolver represents a set of values keyed by a string
 type stringListEntryResolver struct {
 	key    string
 	values set.StringSet
 }
 
-// ScopedPermissionsResolver represents the scoped permissions of a subject/service account
+// scopedPermissionsResolver represents the scoped permissions of a subject/service account
 type scopedPermissionsResolver struct {
 	scope       string
 	permissions []*stringListEntryResolver

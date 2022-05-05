@@ -7,7 +7,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
-// AutocompleteQueryParser provides an autocomplete specific query parser.
+// autocompleteQueryParser provides an autocomplete specific query parser.
 type autocompleteQueryParser struct{}
 
 // parse parses the input query.
