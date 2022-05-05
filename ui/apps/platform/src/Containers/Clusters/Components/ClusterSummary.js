@@ -14,6 +14,7 @@ import SensorStatus from './SensorStatus';
 import SensorUpgrade from './SensorUpgrade';
 
 import { formatBuildDate, formatCloudProvider, formatKubernetesVersion } from '../cluster.helpers';
+import ScannerStatus from './Scanner/ScannerStatus';
 
 const trClass = 'align-top leading-normal';
 const thClass = 'pl-0 pr-2 py-1 text-left whitespace-nowrap';
@@ -87,6 +88,17 @@ const ClusterSummary = ({ healthStatus, status, centralVersion, clusterId }) => 
                                     <AdmissionControlStatus healthStatus={healthStatus} />
                                 </td>
                             </tr>
+                            {healthStatus?.scannerHealthStatus &&
+                                healthStatus?.scannerHealthStatus !== 'UNINITIALIZED' && (
+                                    <tr className={trClass} key="Scanner">
+                                        <th className={thClass} scope="row">
+                                            Scanner
+                                        </th>
+                                        <td className={tdClass}>
+                                            <ScannerStatus healthStatus={healthStatus} />
+                                        </td>
+                                    </tr>
+                                )}
                         </tbody>
                     </table>
                 </Widget>
@@ -129,6 +141,7 @@ ClusterSummary.propTypes = {
         sensorHealthStatus: PropTypes.string,
         collectorHealthStatus: PropTypes.string,
         admissionControlHealthStatus: PropTypes.string,
+        scannerHealthStatus: PropTypes.string,
         overallHealthStatus: PropTypes.string,
         lastContact: PropTypes.string, // ISO 8601
         healthInfoComplete: PropTypes.bool,
