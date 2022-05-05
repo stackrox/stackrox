@@ -496,46 +496,64 @@ get_pr_details() {
     echo "$pr_details"
 }
 
+GATE_JOBS_CONFIG="$SCRIPTS_ROOT/scripts/ci/gate-jobs-config.json"
+
 gate_job() {
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: gate_job <job>"
     fi
 
     local job="$1"
+    local job_config
+    job_config="$(jq -r '."'"$job"'"' "$GATE_JOBS_CONFIG")"
 
     info "Will determine whether to run: $job"
+
+    if [[ "$job_config" == "null" ]]; then
+        info "There is no gating criteria for $job"
+        return
+    fi
 
     local pr_details
     pr_details="$(get_pr_details)"
     local exitstatus="$?"
 
     if [[ "$exitstatus" == "0" ]]; then
-        gate_pr_job "$pr_details"
+        gate_pr_job "$job_config" "$pr_details"
     elif [[ "$exitstatus" == "1" ]]; then
-        gate_merge_job
+        gate_merge_job "$job_config"
     else
         die "Could not determine if this is a PR"
     fi
 }
 
+get_var_from_job_config() {
+    local var_name="$1"
+    local job_config="$2"
+
+    local value
+    value="$(jq -cr ."$var_name" <<<"$job_config")"
+    if [[ "$value" == "null" ]]; then
+        die "$var_name is not defined in this jobs config"
+    fi
+    if [[ "${value:0:1}" == "[" ]]; then
+        value="$(jq -cr .[] <<<"$value")"
+    fi
+    echo "$value"
+}
+
 gate_pr_job() {
-    local pr_details="$1"
+    local job_config="$1"
+    local pr_details="$2"
 
     local run_with_labels=()
-    local skip_with_label=""
-    local run_with_changed_path=""
-    local changed_path_to_ignore=""
-
-    case "$job" in
-        gke-upgrade-tests)
-            run_with_labels=("ci-upgrade-tests")
-            skip_with_label="ci-no-upgrade-tests"
-            run_with_changed_path='^migrator/.*$|^image/'
-            ;;
-        *)
-            info "There is no gating criteria for $job"
-            return
-    esac
+    local skip_with_label
+    local run_with_changed_path
+    local changed_path_to_ignore
+    mapfile -t run_with_labels < <(get_var_from_job_config run_with_labels "$job_config")
+    skip_with_label="$(get_var_from_job_config skip_with_label "$job_config")"
+    run_with_changed_path="$(get_var_from_job_config run_with_changed_path "$job_config")"
+    changed_path_to_ignore="$(get_var_from_job_config changed_path_to_ignore "$job_config")"
 
     if [[ -n "$skip_with_label" ]]; then
         if pr_has_label "${skip_with_label}" "${pr_details}"; then
@@ -580,18 +598,12 @@ gate_pr_job() {
 }
 
 gate_merge_job() {
-    local run_on_master=""
-    local run_on_tags=""
+    local job_config="$1"
 
-    case "$job" in
-        gke-upgrade-tests)
-            run_on_master="true"
-            run_on_tags="true"
-            ;;
-        *)
-            info "There is no gating criteria for $job"
-            return
-    esac
+    local run_on_master
+    local run_on_tags
+    run_on_master="$(get_var_from_job_config run_on_master "$job_config")"
+    run_on_tags="$(get_var_from_job_config run_on_tags "$job_config")"
 
     local base_ref
     if is_CIRCLECI; then
