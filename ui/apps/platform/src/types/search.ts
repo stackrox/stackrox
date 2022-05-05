@@ -18,12 +18,6 @@ export type SearchEntry = {
     label: string; // an option ends with a colon
 };
 
-export type GlobalSearchOption = {
-    value: string;
-    label: string;
-    type?: string;
-};
-
 export type ApiSortOption = {
     field: string;
     reversed: boolean;
