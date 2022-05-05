@@ -100,10 +100,19 @@ func checkCommentCaseMatches(pass *analysis.Pass, doc *ast.CommentGroup, objectN
 	}
 	firstCommentLetter := []rune(firstCommentWord[0:1])[0]
 
-	if firstCommentWord[1:] == objectName[1:] && ((unicode.IsLower(firstObjectLetter) && unicode.ToUpper(firstObjectLetter) == firstCommentLetter) || (unicode.IsLower(firstCommentLetter) && unicode.ToUpper(firstCommentLetter) == firstObjectLetter)) {
-		pass.Report(analysis.Diagnostic{
-			Pos:     position,
-			Message: fmt.Sprintf("Mismatching capitalization for %s %s and comment starting with %s", objectType, objectName, firstCommentWord),
-		})
+	if firstCommentWord[1:] == objectName[1:] {
+		if unicode.IsLower(firstObjectLetter) && unicode.ToUpper(firstObjectLetter) == firstCommentLetter {
+			pass.Report(analysis.Diagnostic{
+				Pos:     position,
+				Message: fmt.Sprintf("Mismatching capitalization for %s %s and comment starting with %s, please change the comment to \"// %c%s\"", objectType, objectName, firstCommentWord, unicode.ToLower(firstCommentLetter), firstCommentWord[:1]),
+			})
+		}
+		if unicode.IsLower(firstCommentLetter) && unicode.ToUpper(firstCommentLetter) == firstObjectLetter {
+			pass.Report(analysis.Diagnostic{
+				Pos:     position,
+				Message: fmt.Sprintf("Mismatching capitalization for %s %s and comment starting with %s, please change the comment to \"// %c%s\"", objectType, objectName, firstCommentWord, unicode.ToUpper(firstCommentLetter), firstCommentWord[:1]),
+			})
+		}
 	}
+
 }
