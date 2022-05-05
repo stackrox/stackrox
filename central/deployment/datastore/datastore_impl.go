@@ -230,7 +230,7 @@ func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *stora
 	return ds.upsertDeployment(ctx, deployment, true)
 }
 
-// UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
+// upsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
 func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *storage.Deployment, populateTagsFromExisting bool) error {
 	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
 		return err

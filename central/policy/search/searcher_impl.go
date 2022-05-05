@@ -89,7 +89,7 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.searcher.Count(ctx, q)
 }
 
-// ConvertPolicy returns proto search result from a policy object and the internal search result
+// convertPolicy returns proto search result from a policy object and the internal search result
 func convertPolicy(policy *storage.Policy, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_POLICIES,

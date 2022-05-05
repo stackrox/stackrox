@@ -43,7 +43,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	return c
 }
 
-// LogLevelCommand allows getting and setting the Log Level for StackRox services.
+// logLevelCommand allows getting and setting the Log Level for StackRox services.
 func logLevelCommand(cliEnvironment environment.Environment) *cobra.Command {
 	levelCmd := &centralDebugLogLevelCommand{env: cliEnvironment}
 

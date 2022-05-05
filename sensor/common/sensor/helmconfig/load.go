@@ -39,7 +39,7 @@ func load(data []byte) (*central.HelmManagedConfigInit, error) {
 	return &config, nil
 }
 
-// GetEffectiveClusterName returns the cluster name which is currently used within central.
+// getEffectiveClusterName returns the cluster name which is currently used within central.
 func getEffectiveClusterName() (string, error) {
 	name, err := os.ReadFile(clusterNameFile)
 	if err != nil {
