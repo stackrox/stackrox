@@ -488,7 +488,7 @@ get_pr_details() {
 
     url="https://api.github.com/repos/${org}/${repo}/pulls/${pull_request}"
     pr_details=$(curl -sS "${headers[@]}" "${url}")
-    if [[ "$(jq .id <<<"$pr_details")" != "null" ]]; then
+    if [[ "$(jq .id <<<"$pr_details")" == "null" ]]; then
         # A valid PR response is expected at this point
         echo "Invalid response from GitHub: $pr_details"
         exit 2
