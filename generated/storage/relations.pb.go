@@ -390,55 +390,375 @@ func (m *ImageCVEEdge) Clone() *ImageCVEEdge {
 	return cloned
 }
 
+type NodeComponentEdge struct {
+	// base 64 encoded Node:Component ids.
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`
+	NodeId               string   `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty" sql:"pk,fk(Node:id)"`
+	NodeComponentId      string   `protobuf:"bytes,3,opt,name=node_component_id,json=nodeComponentId,proto3" json:"node_component_id,omitempty" sql:"pk,fk(ImageComponent:id),no-fk-constraint"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *NodeComponentEdge) Reset()         { *m = NodeComponentEdge{} }
+func (m *NodeComponentEdge) String() string { return proto.CompactTextString(m) }
+func (*NodeComponentEdge) ProtoMessage()    {}
+func (*NodeComponentEdge) Descriptor() ([]byte, []int) {
+	return fileDescriptor_62f882e266fcf764, []int{3}
+}
+func (m *NodeComponentEdge) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NodeComponentEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NodeComponentEdge.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NodeComponentEdge) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NodeComponentEdge.Merge(m, src)
+}
+func (m *NodeComponentEdge) XXX_Size() int {
+	return m.Size()
+}
+func (m *NodeComponentEdge) XXX_DiscardUnknown() {
+	xxx_messageInfo_NodeComponentEdge.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NodeComponentEdge proto.InternalMessageInfo
+
+func (m *NodeComponentEdge) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *NodeComponentEdge) GetNodeId() string {
+	if m != nil {
+		return m.NodeId
+	}
+	return ""
+}
+
+func (m *NodeComponentEdge) GetNodeComponentId() string {
+	if m != nil {
+		return m.NodeComponentId
+	}
+	return ""
+}
+
+func (m *NodeComponentEdge) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *NodeComponentEdge) Clone() *NodeComponentEdge {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NodeComponentEdge)
+	*cloned = *m
+
+	return cloned
+}
+
+type NodeCVEEdge struct {
+	// base 64 encoded Node:CVE ids.
+	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`
+	FirstNodeOccurrence  *types.Timestamp `protobuf:"bytes,2,opt,name=first_node_occurrence,json=firstNodeOccurrence,proto3" json:"first_node_occurrence,omitempty"`
+	NodeId               string           `protobuf:"bytes,3,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty" sql:"pk,fk(Node:id)"`
+	NodeCveId            string           `protobuf:"bytes,4,opt,name=node_cve_id,json=nodeCveId,proto3" json:"node_cve_id,omitempty" sql:"pk,fk(CVE:id),no-fk-constraint"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
+}
+
+func (m *NodeCVEEdge) Reset()         { *m = NodeCVEEdge{} }
+func (m *NodeCVEEdge) String() string { return proto.CompactTextString(m) }
+func (*NodeCVEEdge) ProtoMessage()    {}
+func (*NodeCVEEdge) Descriptor() ([]byte, []int) {
+	return fileDescriptor_62f882e266fcf764, []int{4}
+}
+func (m *NodeCVEEdge) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NodeCVEEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NodeCVEEdge.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NodeCVEEdge) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NodeCVEEdge.Merge(m, src)
+}
+func (m *NodeCVEEdge) XXX_Size() int {
+	return m.Size()
+}
+func (m *NodeCVEEdge) XXX_DiscardUnknown() {
+	xxx_messageInfo_NodeCVEEdge.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NodeCVEEdge proto.InternalMessageInfo
+
+func (m *NodeCVEEdge) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *NodeCVEEdge) GetFirstNodeOccurrence() *types.Timestamp {
+	if m != nil {
+		return m.FirstNodeOccurrence
+	}
+	return nil
+}
+
+func (m *NodeCVEEdge) GetNodeId() string {
+	if m != nil {
+		return m.NodeId
+	}
+	return ""
+}
+
+func (m *NodeCVEEdge) GetNodeCveId() string {
+	if m != nil {
+		return m.NodeCveId
+	}
+	return ""
+}
+
+func (m *NodeCVEEdge) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *NodeCVEEdge) Clone() *NodeCVEEdge {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NodeCVEEdge)
+	*cloned = *m
+
+	cloned.FirstNodeOccurrence = m.FirstNodeOccurrence.Clone()
+	return cloned
+}
+
+type NodeComponentCVEEdge struct {
+	// base 64 encoded Component:CVE ids.
+	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`
+	IsFixable bool   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable,store"`
+	// Whether there is a version the CVE is fixed in the component.
+	//
+	// Types that are valid to be assigned to HasFixedBy:
+	//	*NodeComponentCVEEdge_FixedBy
+	HasFixedBy               isNodeComponentCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
+	ComponentId              string                            `protobuf:"bytes,4,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" sql:"pk,fk(ImageComponent:id)"`
+	ComponentOperatingSystem string                            `protobuf:"bytes,5,opt,name=component_operating_system,json=componentOperatingSystem,proto3" json:"component_operating_system,omitempty" sql:"pk,fk(ImageComponent:operating_system)"`
+	ImageCveId               string                            `protobuf:"bytes,6,opt,name=image_cve_id,json=imageCveId,proto3" json:"image_cve_id,omitempty" sql:"pk,fk(CVE:id),no-fk-constraint"`
+	XXX_NoUnkeyedLiteral     struct{}                          `json:"-"`
+	XXX_unrecognized         []byte                            `json:"-"`
+	XXX_sizecache            int32                             `json:"-"`
+}
+
+func (m *NodeComponentCVEEdge) Reset()         { *m = NodeComponentCVEEdge{} }
+func (m *NodeComponentCVEEdge) String() string { return proto.CompactTextString(m) }
+func (*NodeComponentCVEEdge) ProtoMessage()    {}
+func (*NodeComponentCVEEdge) Descriptor() ([]byte, []int) {
+	return fileDescriptor_62f882e266fcf764, []int{5}
+}
+func (m *NodeComponentCVEEdge) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NodeComponentCVEEdge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NodeComponentCVEEdge.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NodeComponentCVEEdge) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NodeComponentCVEEdge.Merge(m, src)
+}
+func (m *NodeComponentCVEEdge) XXX_Size() int {
+	return m.Size()
+}
+func (m *NodeComponentCVEEdge) XXX_DiscardUnknown() {
+	xxx_messageInfo_NodeComponentCVEEdge.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NodeComponentCVEEdge proto.InternalMessageInfo
+
+type isNodeComponentCVEEdge_HasFixedBy interface {
+	isNodeComponentCVEEdge_HasFixedBy()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isNodeComponentCVEEdge_HasFixedBy
+}
+
+type NodeComponentCVEEdge_FixedBy struct {
+	FixedBy string `protobuf:"bytes,3,opt,name=fixed_by,json=fixedBy,proto3,oneof" json:"fixed_by,omitempty" search:"Fixed By,store,hidden"`
+}
+
+func (*NodeComponentCVEEdge_FixedBy) isNodeComponentCVEEdge_HasFixedBy() {}
+func (m *NodeComponentCVEEdge_FixedBy) Clone() isNodeComponentCVEEdge_HasFixedBy {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NodeComponentCVEEdge_FixedBy)
+	*cloned = *m
+
+	return cloned
+}
+
+func (m *NodeComponentCVEEdge) GetHasFixedBy() isNodeComponentCVEEdge_HasFixedBy {
+	if m != nil {
+		return m.HasFixedBy
+	}
+	return nil
+}
+
+func (m *NodeComponentCVEEdge) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *NodeComponentCVEEdge) GetIsFixable() bool {
+	if m != nil {
+		return m.IsFixable
+	}
+	return false
+}
+
+func (m *NodeComponentCVEEdge) GetFixedBy() string {
+	if x, ok := m.GetHasFixedBy().(*NodeComponentCVEEdge_FixedBy); ok {
+		return x.FixedBy
+	}
+	return ""
+}
+
+func (m *NodeComponentCVEEdge) GetComponentId() string {
+	if m != nil {
+		return m.ComponentId
+	}
+	return ""
+}
+
+func (m *NodeComponentCVEEdge) GetComponentOperatingSystem() string {
+	if m != nil {
+		return m.ComponentOperatingSystem
+	}
+	return ""
+}
+
+func (m *NodeComponentCVEEdge) GetImageCveId() string {
+	if m != nil {
+		return m.ImageCveId
+	}
+	return ""
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*NodeComponentCVEEdge) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*NodeComponentCVEEdge_FixedBy)(nil),
+	}
+}
+
+func (m *NodeComponentCVEEdge) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *NodeComponentCVEEdge) Clone() *NodeComponentCVEEdge {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NodeComponentCVEEdge)
+	*cloned = *m
+
+	if m.HasFixedBy != nil {
+		cloned.HasFixedBy = m.HasFixedBy.Clone()
+	}
+	return cloned
+}
+
 func init() {
 	proto.RegisterType((*ImageComponentEdge)(nil), "storage.ImageComponentEdge")
 	proto.RegisterType((*ComponentCVEEdge)(nil), "storage.ComponentCVEEdge")
 	proto.RegisterType((*ImageCVEEdge)(nil), "storage.ImageCVEEdge")
+	proto.RegisterType((*NodeComponentEdge)(nil), "storage.NodeComponentEdge")
+	proto.RegisterType((*NodeCVEEdge)(nil), "storage.NodeCVEEdge")
+	proto.RegisterType((*NodeComponentCVEEdge)(nil), "storage.NodeComponentCVEEdge")
 }
 
 func init() { proto.RegisterFile("storage/relations.proto", fileDescriptor_62f882e266fcf764) }
 
 var fileDescriptor_62f882e266fcf764 = []byte{
-	// 613 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x94, 0xdf, 0x6e, 0xd3, 0x30,
-	0x14, 0xc6, 0x97, 0x6e, 0x63, 0x9d, 0x37, 0xed, 0x8f, 0x35, 0x46, 0x57, 0x50, 0x13, 0x2c, 0x2e,
-	0x8a, 0xd4, 0xa5, 0x68, 0xdb, 0x0d, 0xbb, 0x41, 0xca, 0x34, 0xb4, 0x22, 0x24, 0x50, 0x86, 0x76,
-	0xc1, 0x4d, 0xe5, 0xc6, 0x4e, 0x66, 0x35, 0x8d, 0x8b, 0xed, 0x4d, 0xed, 0x0b, 0x70, 0xcb, 0x2d,
-	0x8f, 0xc4, 0x15, 0xe2, 0x05, 0x88, 0xd0, 0x78, 0x83, 0x3c, 0x01, 0x8a, 0x9d, 0x64, 0x1d, 0x1a,
-	0x68, 0x42, 0xdc, 0x59, 0xc7, 0xdf, 0xf9, 0xce, 0x39, 0x3f, 0xe7, 0x04, 0x3c, 0x90, 0x8a, 0x0b,
-	0x1c, 0xd1, 0xae, 0xa0, 0x31, 0x56, 0x8c, 0x27, 0xd2, 0x1d, 0x0b, 0xae, 0x38, 0x5c, 0x2a, 0x2e,
-	0x9a, 0x76, 0xc4, 0x79, 0x14, 0xd3, 0xae, 0x0e, 0x0f, 0x2e, 0xc2, 0xae, 0x62, 0x23, 0x2a, 0x15,
-	0x1e, 0x8d, 0x8d, 0xb2, 0xb9, 0x59, 0x5a, 0x04, 0x97, 0xb4, 0x08, 0x6d, 0x45, 0x3c, 0xe2, 0xfa,
-	0xd8, 0xcd, 0x4f, 0x26, 0x8a, 0xbe, 0xd6, 0x00, 0xec, 0x8d, 0x70, 0x44, 0x8f, 0xf8, 0x68, 0xcc,
-	0x13, 0x9a, 0xa8, 0x63, 0x12, 0x51, 0x68, 0x83, 0x1a, 0x23, 0x0d, 0xcb, 0xb1, 0xda, 0xcb, 0xde,
-	0x7a, 0x96, 0xda, 0x2b, 0xf2, 0x43, 0x7c, 0x88, 0xc6, 0xc3, 0x0e, 0x23, 0xc8, 0xaf, 0x31, 0x02,
-	0x1f, 0x83, 0x95, 0x18, 0x4f, 0xa9, 0xe8, 0xb3, 0x84, 0xd0, 0x49, 0xa3, 0xe6, 0x58, 0xed, 0xc5,
-	0x93, 0x39, 0x1f, 0xe8, 0x60, 0x2f, 0x8f, 0xc1, 0x13, 0x50, 0x8f, 0x79, 0xa0, 0x07, 0x68, 0xcc,
-	0x6b, 0xa7, 0x4e, 0x96, 0xda, 0x6d, 0x49, 0xb1, 0x08, 0xce, 0x0f, 0x51, 0x55, 0xd0, 0x79, 0x5d,
-	0xa8, 0x3a, 0x79, 0xd3, 0xb4, 0x73, 0xce, 0x08, 0xa1, 0x09, 0xf2, 0xab, 0x6c, 0x78, 0x00, 0xea,
-	0x2c, 0xef, 0xb1, 0xcf, 0x48, 0x63, 0x41, 0x3b, 0xed, 0x64, 0xa9, 0x7d, 0xbf, 0xec, 0x29, 0x1c,
-	0xb6, 0xf5, 0x08, 0x87, 0x8c, 0x3c, 0x45, 0xfe, 0x92, 0x96, 0xf6, 0x08, 0xc4, 0x00, 0x9a, 0xac,
-	0xa0, 0xac, 0x94, 0xe7, 0x2f, 0xea, 0xfc, 0xfd, 0x2c, 0xb5, 0xbb, 0xbf, 0xe7, 0x57, 0x1d, 0xe5,
-	0x46, 0x9d, 0x84, 0xef, 0x86, 0xc3, 0xdd, 0x80, 0x27, 0x52, 0x09, 0xcc, 0x12, 0x85, 0xfc, 0x0d,
-	0x76, 0x43, 0xd5, 0x23, 0xde, 0x26, 0x58, 0x3f, 0xc7, 0xb2, 0x3f, 0x43, 0x02, 0x7d, 0xaf, 0x81,
-	0x8d, 0x4a, 0x72, 0x74, 0x76, 0x7c, 0x37, 0x9c, 0xcf, 0x01, 0x60, 0xb2, 0x1f, 0xb2, 0x09, 0x1e,
-	0xc4, 0x54, 0xd3, 0xac, 0x7b, 0xcd, 0x2c, 0xb5, 0xb7, 0x4b, 0x5a, 0x2f, 0xcd, 0x95, 0x41, 0x84,
-	0xfc, 0x65, 0x26, 0x8b, 0x08, 0x7c, 0x01, 0xea, 0x21, 0x9b, 0x50, 0xd2, 0x1f, 0x4c, 0x0b, 0xcc,
-	0x28, 0x4b, 0xed, 0xd6, 0x4c, 0x22, 0x25, 0x8e, 0x37, 0xbd, 0x09, 0xf7, 0x64, 0xce, 0x5f, 0xd2,
-	0x59, 0xde, 0x14, 0xbe, 0xbd, 0x95, 0xd3, 0xc2, 0x8c, 0xd5, 0xdf, 0x38, 0xdd, 0x82, 0x05, 0xbe,
-	0x02, 0xab, 0x85, 0xe3, 0x25, 0xbd, 0x66, 0xde, 0xce, 0x52, 0xfb, 0xc9, 0x8c, 0xd7, 0xd1, 0xd9,
-	0xf1, 0x1f, 0x40, 0x03, 0xe3, 0x78, 0x49, 0x7b, 0xc4, 0x5b, 0x03, 0xab, 0x39, 0xe2, 0x72, 0x44,
-	0xf4, 0x69, 0x1e, 0xac, 0x9a, 0x2e, 0xee, 0xca, 0xf6, 0xa3, 0x05, 0xb6, 0x43, 0x26, 0xa4, 0xea,
-	0x9b, 0xa6, 0x78, 0x10, 0x5c, 0x08, 0x41, 0x93, 0xc0, 0x80, 0x5e, 0xd9, 0x6b, 0xba, 0x66, 0x9d,
-	0xdc, 0x72, 0x9d, 0xdc, 0x77, 0xe5, 0x3a, 0x79, 0x07, 0x59, 0x6a, 0x3f, 0xbb, 0x66, 0x29, 0xa4,
-	0x72, 0x74, 0x75, 0xe7, 0x4d, 0xe5, 0xe2, 0x54, 0xea, 0xea, 0xd3, 0xdd, 0xd2, 0xf5, 0xb4, 0xf0,
-	0x5a, 0x07, 0x4f, 0xc1, 0xa2, 0x54, 0x58, 0x51, 0xfd, 0x4c, 0x6b, 0x7b, 0x0f, 0xdd, 0x62, 0x49,
-	0xdd, 0xb3, 0x8b, 0x38, 0xa1, 0x02, 0x0f, 0x58, 0xcc, 0xd4, 0xf4, 0x34, 0x97, 0x78, 0x4e, 0x96,
-	0xda, 0x8f, 0xca, 0xba, 0x37, 0xee, 0x1d, 0x2d, 0x40, 0xbe, 0xf1, 0xfa, 0xc7, 0xdd, 0xf8, 0x9f,
-	0x2f, 0x74, 0xf0, 0xe5, 0xaa, 0x65, 0x7d, 0xbb, 0x6a, 0x59, 0x3f, 0xae, 0x5a, 0xd6, 0xe7, 0x9f,
-	0xad, 0x39, 0xb0, 0xc3, 0xb8, 0x2b, 0x15, 0x0e, 0x86, 0x82, 0x4f, 0x0c, 0xd4, 0x72, 0xd4, 0xf7,
-	0xe5, 0x2f, 0x6c, 0x70, 0x4f, 0xc7, 0xf7, 0x7f, 0x05, 0x00, 0x00, 0xff, 0xff, 0x9a, 0xdd, 0x90,
-	0xba, 0xed, 0x04, 0x00, 0x00,
+	// 782 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x56, 0x41, 0x4f, 0xdb, 0x48,
+	0x14, 0xc6, 0x09, 0x90, 0x30, 0x89, 0x80, 0x78, 0x03, 0x1b, 0xb2, 0xab, 0xd8, 0x6b, 0xed, 0x21,
+	0x48, 0x21, 0x61, 0x81, 0xcb, 0x72, 0xa9, 0x64, 0x94, 0x2a, 0xa9, 0x2a, 0xa8, 0x4c, 0xc5, 0xa1,
+	0x17, 0xcb, 0xf1, 0x4c, 0xcc, 0x28, 0x8e, 0x27, 0xb5, 0x87, 0x28, 0xf9, 0x03, 0xbd, 0xf6, 0xda,
+	0x5f, 0x54, 0x71, 0xaa, 0xfa, 0x07, 0x6a, 0x55, 0xf4, 0x1f, 0xf8, 0xda, 0x4b, 0xe5, 0x19, 0xdb,
+	0x71, 0x28, 0x54, 0x01, 0x71, 0xe9, 0xcd, 0x7a, 0xf3, 0x7d, 0xdf, 0x7b, 0xf3, 0xcd, 0x7b, 0x4f,
+	0x06, 0x7f, 0x7a, 0x94, 0xb8, 0x86, 0x85, 0x5a, 0x2e, 0xb2, 0x0d, 0x8a, 0x89, 0xe3, 0x35, 0x47,
+	0x2e, 0xa1, 0x44, 0xcc, 0x45, 0x07, 0x55, 0xc9, 0x22, 0xc4, 0xb2, 0x51, 0x8b, 0x85, 0x7b, 0x57,
+	0xfd, 0x16, 0xc5, 0x43, 0xe4, 0x51, 0x63, 0x38, 0xe2, 0xc8, 0x6a, 0x29, 0x96, 0x30, 0xc7, 0x28,
+	0x0a, 0x95, 0x2d, 0x62, 0x11, 0xf6, 0xd9, 0x0a, 0xbf, 0x78, 0x54, 0xf9, 0x94, 0x01, 0x62, 0x77,
+	0x68, 0x58, 0xe8, 0x84, 0x0c, 0x47, 0xc4, 0x41, 0x0e, 0x6d, 0x43, 0x0b, 0x89, 0x12, 0xc8, 0x60,
+	0x58, 0x11, 0x64, 0xa1, 0xbe, 0xa6, 0x6e, 0x04, 0xbe, 0x54, 0xf0, 0xde, 0xda, 0xc7, 0xca, 0x68,
+	0xd0, 0xc0, 0x50, 0xd1, 0x32, 0x18, 0x8a, 0xff, 0x80, 0x82, 0x6d, 0x4c, 0x91, 0xab, 0x63, 0x07,
+	0xa2, 0x49, 0x25, 0x23, 0x0b, 0xf5, 0x95, 0xce, 0x92, 0x06, 0x58, 0xb0, 0x1b, 0xc6, 0xc4, 0x0e,
+	0xc8, 0xdb, 0xc4, 0x64, 0x17, 0xa8, 0x64, 0x99, 0x52, 0x23, 0xf0, 0xa5, 0xba, 0x87, 0x0c, 0xd7,
+	0xbc, 0x3c, 0x56, 0x92, 0x84, 0xf2, 0xcb, 0x08, 0xd5, 0x08, 0x8b, 0x46, 0x8d, 0x4b, 0x0c, 0x21,
+	0x72, 0x14, 0x2d, 0x61, 0x8b, 0x47, 0x20, 0x8f, 0xc3, 0x1a, 0x75, 0x0c, 0x2b, 0xcb, 0x4c, 0x69,
+	0x27, 0xf0, 0xa5, 0xad, 0xb8, 0xa6, 0xfe, 0xa0, 0xce, 0xae, 0x70, 0x8c, 0xe1, 0xae, 0xa2, 0xe5,
+	0x18, 0xb4, 0x0b, 0x45, 0x03, 0x88, 0x9c, 0x65, 0xc6, 0x99, 0x42, 0xfe, 0x0a, 0xe3, 0x1f, 0x06,
+	0xbe, 0xd4, 0xba, 0xcd, 0x4f, 0x2a, 0x0a, 0x85, 0x1a, 0x0e, 0xd9, 0xeb, 0x0f, 0xf6, 0x4c, 0xe2,
+	0x78, 0xd4, 0x35, 0xb0, 0x43, 0x15, 0x6d, 0x13, 0xcf, 0xa1, 0xba, 0x50, 0x2d, 0x81, 0x8d, 0x4b,
+	0xc3, 0xd3, 0x53, 0x4e, 0x28, 0x5f, 0x32, 0x60, 0x33, 0x81, 0x9c, 0x5c, 0xb4, 0x17, 0xb3, 0xf3,
+	0x7f, 0x00, 0xb0, 0xa7, 0xf7, 0xf1, 0xc4, 0xe8, 0xd9, 0x88, 0xb9, 0x99, 0x57, 0xab, 0x81, 0x2f,
+	0x6d, 0xc7, 0x6e, 0x3d, 0xe7, 0x47, 0xdc, 0x22, 0x45, 0x5b, 0xc3, 0x5e, 0x14, 0x11, 0x9f, 0x81,
+	0x7c, 0x1f, 0x4f, 0x10, 0xd4, 0x7b, 0xd3, 0xc8, 0x66, 0x25, 0xf0, 0xa5, 0x5a, 0x8a, 0x88, 0xa0,
+	0xac, 0x4e, 0xe7, 0xcd, 0xed, 0x2c, 0x69, 0x39, 0xc6, 0x52, 0xa7, 0xe2, 0xab, 0x3b, 0x7d, 0x5a,
+	0x4e, 0x49, 0xfd, 0xca, 0xa7, 0x3b, 0x6c, 0x11, 0x5f, 0x80, 0x62, 0xa4, 0x38, 0x46, 0x33, 0xcf,
+	0xeb, 0x81, 0x2f, 0xfd, 0x9b, 0xd2, 0x3a, 0xb9, 0x68, 0xdf, 0x63, 0x34, 0xe0, 0x8a, 0x63, 0xd4,
+	0x85, 0xea, 0x3a, 0x28, 0x86, 0x16, 0xc7, 0x57, 0x54, 0xde, 0x67, 0x41, 0x91, 0x57, 0xb1, 0xa8,
+	0xb7, 0xef, 0x04, 0xb0, 0xdd, 0xc7, 0xae, 0x47, 0x75, 0x5e, 0x14, 0x31, 0xcd, 0x2b, 0xd7, 0x45,
+	0x8e, 0xc9, 0x8d, 0x2e, 0x1c, 0x54, 0x9b, 0x7c, 0x9c, 0x9a, 0xf1, 0x38, 0x35, 0x5f, 0xc7, 0xe3,
+	0xa4, 0x1e, 0x05, 0xbe, 0xb4, 0x3f, 0xf3, 0xd2, 0xf5, 0xa8, 0xcc, 0xb2, 0xcb, 0x67, 0x89, 0x8a,
+	0x9c, 0xa0, 0x93, 0xd6, 0x2d, 0xb3, 0x7c, 0x0c, 0x38, 0xc3, 0x89, 0xe7, 0x60, 0xc5, 0xa3, 0x06,
+	0x45, 0xec, 0x99, 0xd6, 0x0f, 0xfe, 0x6a, 0x46, 0x43, 0xda, 0xbc, 0xb8, 0xb2, 0x1d, 0xe4, 0x1a,
+	0x3d, 0x6c, 0x63, 0x3a, 0x3d, 0x0f, 0x21, 0xaa, 0x1c, 0xf8, 0xd2, 0xdf, 0x71, 0xde, 0xb9, 0x73,
+	0x99, 0x01, 0x14, 0x8d, 0x6b, 0x3d, 0x72, 0x36, 0x9e, 0xf0, 0x85, 0x94, 0x6b, 0x01, 0x94, 0x4e,
+	0x09, 0x7c, 0xe8, 0x06, 0xf9, 0x0f, 0xe4, 0x1c, 0x02, 0x59, 0xf6, 0x0c, 0x43, 0x55, 0x02, 0x5f,
+	0x2a, 0xa7, 0xb2, 0x87, 0x9a, 0xbc, 0xec, 0xd5, 0x10, 0xd8, 0x85, 0xa2, 0x0e, 0x4a, 0x8c, 0x32,
+	0xd7, 0xa8, 0xd9, 0xc7, 0x0f, 0xf4, 0x86, 0x93, 0x2e, 0xbb, 0x0b, 0x95, 0xef, 0x02, 0x28, 0xb0,
+	0xab, 0x2c, 0xda, 0x5b, 0xa7, 0x60, 0x8b, 0xb7, 0x16, 0xab, 0xeb, 0x21, 0x9d, 0xa5, 0xfd, 0xc1,
+	0x88, 0x61, 0xb6, 0x54, 0x8b, 0xa4, 0x4c, 0xc9, 0x2e, 0x68, 0x4a, 0x07, 0x14, 0xb8, 0x29, 0xe3,
+	0x54, 0x0f, 0x2c, 0xfe, 0x92, 0x6b, 0xcc, 0x03, 0xf6, 0x90, 0x1f, 0xb3, 0xa0, 0x3c, 0xf7, 0x90,
+	0xbf, 0xc5, 0xfa, 0x6a, 0x83, 0xe2, 0x23, 0x17, 0x57, 0xc1, 0x4c, 0xed, 0x2c, 0x07, 0x54, 0x67,
+	0x32, 0x64, 0x84, 0x5c, 0x83, 0x62, 0xc7, 0xd2, 0xbd, 0xa9, 0x47, 0xd1, 0x30, 0x9a, 0x8f, 0xfd,
+	0xc0, 0x97, 0x1a, 0xf7, 0x8b, 0xde, 0x66, 0xed, 0x2a, 0x5a, 0x25, 0xd1, 0x3c, 0x8b, 0x0f, 0xcf,
+	0xd9, 0xd9, 0x4f, 0x13, 0xb8, 0xfa, 0x74, 0x3b, 0x52, 0x3d, 0xba, 0xbe, 0xa9, 0x09, 0x9f, 0x6f,
+	0x6a, 0xc2, 0xd7, 0x9b, 0x9a, 0xf0, 0xe1, 0x5b, 0x6d, 0x09, 0xec, 0x60, 0xd2, 0xf4, 0xa8, 0x61,
+	0x0e, 0x5c, 0x32, 0xe1, 0xcd, 0x18, 0x2f, 0x9f, 0x37, 0xf1, 0x4f, 0x45, 0x6f, 0x95, 0xc5, 0x0f,
+	0x7f, 0x04, 0x00, 0x00, 0xff, 0xff, 0x11, 0xf6, 0xd9, 0x3b, 0x7f, 0x08, 0x00, 0x00,
 }
 
 func (m *ImageComponentEdge) Marshal() (dAtA []byte, err error) {
@@ -663,6 +983,202 @@ func (m *ImageCVEEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *NodeComponentEdge) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NodeComponentEdge) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NodeComponentEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.NodeComponentId) > 0 {
+		i -= len(m.NodeComponentId)
+		copy(dAtA[i:], m.NodeComponentId)
+		i = encodeVarintRelations(dAtA, i, uint64(len(m.NodeComponentId)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.NodeId) > 0 {
+		i -= len(m.NodeId)
+		copy(dAtA[i:], m.NodeId)
+		i = encodeVarintRelations(dAtA, i, uint64(len(m.NodeId)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintRelations(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NodeCVEEdge) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NodeCVEEdge) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NodeCVEEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.NodeCveId) > 0 {
+		i -= len(m.NodeCveId)
+		copy(dAtA[i:], m.NodeCveId)
+		i = encodeVarintRelations(dAtA, i, uint64(len(m.NodeCveId)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.NodeId) > 0 {
+		i -= len(m.NodeId)
+		copy(dAtA[i:], m.NodeId)
+		i = encodeVarintRelations(dAtA, i, uint64(len(m.NodeId)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.FirstNodeOccurrence != nil {
+		{
+			size, err := m.FirstNodeOccurrence.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintRelations(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintRelations(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NodeComponentCVEEdge) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NodeComponentCVEEdge) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NodeComponentCVEEdge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ImageCveId) > 0 {
+		i -= len(m.ImageCveId)
+		copy(dAtA[i:], m.ImageCveId)
+		i = encodeVarintRelations(dAtA, i, uint64(len(m.ImageCveId)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.ComponentOperatingSystem) > 0 {
+		i -= len(m.ComponentOperatingSystem)
+		copy(dAtA[i:], m.ComponentOperatingSystem)
+		i = encodeVarintRelations(dAtA, i, uint64(len(m.ComponentOperatingSystem)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.ComponentId) > 0 {
+		i -= len(m.ComponentId)
+		copy(dAtA[i:], m.ComponentId)
+		i = encodeVarintRelations(dAtA, i, uint64(len(m.ComponentId)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.HasFixedBy != nil {
+		{
+			size := m.HasFixedBy.Size()
+			i -= size
+			if _, err := m.HasFixedBy.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if m.IsFixable {
+		i--
+		if m.IsFixable {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintRelations(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NodeComponentCVEEdge_FixedBy) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NodeComponentCVEEdge_FixedBy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.FixedBy)
+	copy(dAtA[i:], m.FixedBy)
+	i = encodeVarintRelations(dAtA, i, uint64(len(m.FixedBy)))
+	i--
+	dAtA[i] = 0x1a
+	return len(dAtA) - i, nil
+}
 func encodeVarintRelations(dAtA []byte, offset int, v uint64) int {
 	offset -= sovRelations(v)
 	base := offset
@@ -782,6 +1298,103 @@ func (m *ImageCVEEdge) Size() (n int) {
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
+	return n
+}
+
+func (m *NodeComponentEdge) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	l = len(m.NodeId)
+	if l > 0 {
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	l = len(m.NodeComponentId)
+	if l > 0 {
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NodeCVEEdge) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	if m.FirstNodeOccurrence != nil {
+		l = m.FirstNodeOccurrence.Size()
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	l = len(m.NodeId)
+	if l > 0 {
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	l = len(m.NodeCveId)
+	if l > 0 {
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NodeComponentCVEEdge) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	if m.IsFixable {
+		n += 2
+	}
+	if m.HasFixedBy != nil {
+		n += m.HasFixedBy.Size()
+	}
+	l = len(m.ComponentId)
+	if l > 0 {
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	l = len(m.ComponentOperatingSystem)
+	if l > 0 {
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	l = len(m.ImageCveId)
+	if l > 0 {
+		n += 1 + l + sovRelations(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NodeComponentCVEEdge_FixedBy) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.FixedBy)
+	n += 1 + l + sovRelations(uint64(l))
 	return n
 }
 
@@ -1338,6 +1951,567 @@ func (m *ImageCVEEdge) Unmarshal(dAtA []byte) error {
 			m.ImageId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageCveId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ImageCveId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRelations(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NodeComponentEdge) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRelations
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NodeComponentEdge: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NodeComponentEdge: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodeId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NodeId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodeComponentId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NodeComponentId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRelations(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NodeCVEEdge) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRelations
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NodeCVEEdge: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NodeCVEEdge: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FirstNodeOccurrence", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.FirstNodeOccurrence == nil {
+				m.FirstNodeOccurrence = &types.Timestamp{}
+			}
+			if err := m.FirstNodeOccurrence.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodeId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NodeId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodeCveId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NodeCveId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRelations(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NodeComponentCVEEdge) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRelations
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NodeComponentCVEEdge: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NodeComponentCVEEdge: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsFixable", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsFixable = bool(v != 0)
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixedBy", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.HasFixedBy = &NodeComponentCVEEdge_FixedBy{string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComponentId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ComponentId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComponentOperatingSystem", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRelations
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRelations
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRelations
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ComponentOperatingSystem = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ImageCveId", wireType)
 			}
