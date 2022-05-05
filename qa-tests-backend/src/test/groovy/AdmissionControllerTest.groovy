@@ -28,6 +28,7 @@ import util.Timer
 import util.ChaosMonkey
 
 @Slf4j
+@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
     private List<PolicyOuterClass.EnforcementAction> latestTagEnforcements
@@ -161,7 +162,6 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify CVE snoozing applies to images scanned by admission controller #image"() {
         given:
          "Create policy looking for a specific CVE"

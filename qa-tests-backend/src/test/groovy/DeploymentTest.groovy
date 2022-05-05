@@ -8,7 +8,9 @@ import services.ClusterService
 import services.DeploymentService
 import services.ImageService
 import objects.Deployment
+import spock.lang.IgnoreIf
 import spock.lang.Unroll
+import util.Env
 import util.Timer
 
 class DeploymentTest extends BaseSpecification {
@@ -57,6 +59,7 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify deployment -> image links #query"() {
         when:
         Timer t = new Timer(3, 10)
