@@ -4443,19 +4443,19 @@ jobs:
     - setup_remote_docker
     - run:
         name: Scan main image
-        command: trivy --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/main:$(make tag)
+        command: trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/main:$(make tag)
     - run:
         name: Scan roxctl image
-        command: trivy --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/roxctl:$(make tag)
+        command: trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/roxctl:$(make tag)
     - run:
         name: Scan scanner image
-        command: trivy --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/scanner:$(make scanner-tag)
+        command: trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/scanner:$(make scanner-tag)
     - run:
         name: Scan scanner-db image
-        command: trivy --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/scanner-db:$(make scanner-tag)
+        command: trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/scanner-db:$(make scanner-tag)
     - run:
         name: Scan collector image
-        command: trivy --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/collector:$(make collector-tag)-slim
+        command: trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/collector:$(make collector-tag)-slim
 
   ###
   # Infrastructure and workflow utility jobs
