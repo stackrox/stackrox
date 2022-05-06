@@ -433,7 +433,7 @@ func (s *serviceImpl) getNotifiers(ctx context.Context, zipWriter *zip.Writer) e
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Notifier)))
 
-	notifiers, err := s.notifierDataStore.GetNotifiers(accessNotifierCtx, nil)
+	notifiers, err := s.notifierDataStore.GetNotifiers(accessNotifierCtx)
 	if err != nil {
 		return err
 	}
