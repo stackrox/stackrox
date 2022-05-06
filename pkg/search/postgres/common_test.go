@@ -159,7 +159,7 @@ func TestMultiTableQueries(t *testing.T) {
 					Query: "select deployments.Id",
 				},
 				From:  "deployments",
-				Where: "(deployments.id = ANY($$::text[]) and false)",
+				Where: "(deployments.Id = ANY($$::text[]) and false)",
 				Data:  []interface{}{[]string{"123"}},
 			},
 		},

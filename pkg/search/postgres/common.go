@@ -315,7 +315,7 @@ func compileQueryToPostgres(
 		switch subBQ := q.GetBaseQuery().Query.(type) {
 		case *v1.BaseQuery_DocIdQuery:
 			return &pgsearch.QueryEntry{Where: pgsearch.WhereClause{
-				Query:  fmt.Sprintf("%s.id = ANY($$::text[])", schema.Table),
+				Query:  fmt.Sprintf("%s.%s = ANY($$::text[])", schema.Table, schema.ID().ColumnName),
 				Values: []interface{}{subBQ.DocIdQuery.GetIds()},
 			}}, nil
 		case *v1.BaseQuery_MatchFieldQuery:
