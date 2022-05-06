@@ -14,6 +14,13 @@ import {
     urlEntityTypes,
     policiesPath,
 } from '../routePaths';
+/*
+ TODO This exception would be unnecessary if the contents of this file were moved to WorkflowState.ts, as that
+ file is the only place that the exported function is used.
+ */
+/* eslint-disable-next-line import/no-cycle */
+import { WorkflowState } from './WorkflowState';
+import WorkflowEntity from './WorkflowEntity';
 
 const defaultPathMap = {
     [pageTypes.DASHBOARD]: workflowPaths.DASHBOARD,
@@ -43,7 +50,8 @@ const legacyPathMap = {
         [pageTypes.DASHBOARD]: '/main/policies',
     },
 };
-function generateURL(workflowState) {
+
+function generateURL(workflowState: WorkflowState) {
     const { stateStack: originalStateStack, useCase } = workflowState;
     const stateStack = [...originalStateStack];
     const pageStack = workflowState.getPageStack();
@@ -75,12 +83,14 @@ function generateURL(workflowState) {
     }
 
     // create url params
-    const params = { useCase, context: useCase }; // using legacy context url param. remove after paths are updated
+    const params: Record<string, unknown> = { useCase, context: useCase }; // using legacy context url param. remove after paths are updated
     if (pageParams.length > 0) {
         params.pageEntityId = pageParams[0].entityId;
-        params.pageEntityType = urlEntityTypes[pageParams[0].entityType];
-        params.pageEntityListType = urlEntityListTypes[pageParams[0].entityType];
-        if (pageType === pageTypes.ENTITY && pageParams[1]) {
+        if (pageParams[0].entityType) {
+            params.pageEntityType = urlEntityTypes[pageParams[0].entityType];
+            params.pageEntityListType = urlEntityListTypes[pageParams[0].entityType];
+        }
+        if (pageType === pageTypes.ENTITY && pageParams[1] && pageParams[1].entityType) {
             params.entityType1 = urlEntityListTypes[pageParams[1].entityType];
         }
     }
@@ -95,7 +105,10 @@ function generateURL(workflowState) {
     }
 
     // generate the querystring using remaining statestack params
-    const queryParams = {
+    const queryParams: {
+        [x: string]: unknown;
+        workflowState?: WorkflowEntity[];
+    } = {
         workflowState: qsStack,
         [searchParams.page]: workflowState.search[searchParams.page],
         [searchParams.sidePanel]: workflowState.search[searchParams.sidePanel],
@@ -138,10 +151,9 @@ function generateURL(workflowState) {
             const entityId2 = stateToDowngrade[1] && stateToDowngrade[1].i;
 
             params.entityId1 = entityId1;
-            params.entityType2 = urlEntityListTypes[entityType2];
+            params.entityType2 = entityType2 ? urlEntityListTypes[entityType2] : undefined;
             params.entityId2 = entityId2;
 
-            // @ts-ignore The operand of a 'delete' operator must be optional.ts (2790)
             delete queryParams.workflowState;
         }
     }
@@ -153,7 +165,7 @@ function generateURL(workflowState) {
               encodeValuesOnly: true,
           })
         : '';
-    const newPath = generatePath(path, params) + queryString;
+    const newPath = `${generatePath(path, params) as string}${queryString}`;
     return newPath;
 }
 

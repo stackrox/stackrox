@@ -1,6 +1,12 @@
 import cloneDeep from 'lodash/cloneDeep';
 
 import entityRelationships from 'utils/entityRelationships';
+
+/*
+ TODO This exception would be unnecessary if the contents of the URLGenerator file were 
+ moved to this file, as this is the only place that the exported function is used.
+ */
+/* eslint-disable-next-line import/no-cycle */
 import generateURL from 'utils/URLGenerator';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 
@@ -96,7 +102,7 @@ function baseStateStack(entityType, entityId) {
 }
 
 // Returns skimmed stack for stack to navigate away to
-function skimStack(stack) {
+function skimStack(stack: WorkflowEntity[]) {
     if (stack.length < 2) {
         return stack;
     }
@@ -111,7 +117,7 @@ function skimStack(stack) {
 }
 
 // Checks state stack for overflow state/invalid state and returns a valid skimmed version
-function trimStack(stack) {
+function trimStack(stack: WorkflowEntity[]) {
     // Navigate away if:
     // If there's no more "room" in the stack
     return isStackValid(stack) ? stack : skimStack(stack);
@@ -125,7 +131,32 @@ function trimStack(stack) {
  * }
  */
 export class WorkflowState {
-    constructor(useCase, stateStack, search, sort, paging) {
+    useCase: string;
+
+    stateStack: WorkflowEntity[];
+
+    search: Record<string, string | string[] | qs.ParsedQs | qs.ParsedQs[] | null | undefined>;
+
+    /**
+     *  TODO This can probably be safer
+     *  @see {formatSort} in URLParser.ts
+     */
+    sort: Record<string, Record<string, unknown>[] | null | undefined>;
+
+    paging: Record<string, number>;
+
+    sidePanelActive: boolean;
+
+    constructor(
+        useCase: string,
+        stateStack: WorkflowEntity[],
+        search?: Record<
+            string,
+            string | string[] | qs.ParsedQs | qs.ParsedQs[] | null | undefined
+        > | null,
+        sort?: Record<string, Record<string, unknown>[] | null | undefined> | null,
+        paging?: Record<string, number> | null
+    ) {
         this.useCase = useCase;
         this.stateStack = cloneDeep(stateStack) || [];
         this.search = cloneDeep(search) || {};
@@ -219,30 +250,30 @@ export class WorkflowState {
 
     getCurrentSearchState() {
         const param = this.sidePanelActive ? searchParams.sidePanel : searchParams.page;
-        return this.search[param] || {};
+        return this.search?.[param] || {};
     }
 
     getCurrentSortState() {
         const param = this.sidePanelActive ? sortParams.sidePanel : sortParams.page;
-        return this.sort[param] || {};
+        return this.sort?.[param] || {};
     }
 
     getCurrentPagingState() {
         const param = this.sidePanelActive ? pagingParams.sidePanel : pagingParams.page;
-        return this.paging[param] || {};
+        return this.paging?.[param] || {};
     }
 
     // Returns skimmed stack version of WorkflowState to render into URL
     getSkimmedStack() {
         const { useCase, stateStack, search, sort, paging } = this;
         const newStateStack = skimStack(stateStack);
-        const newSearch = search[searchParams.sidePanel]
+        const newSearch = search?.[searchParams.sidePanel]
             ? { [searchParams.page]: search[searchParams.sidePanel] }
             : null;
-        const newSort = sort[sortParams.sidePanel]
+        const newSort = sort?.[sortParams.sidePanel]
             ? { [sortParams.page]: sort[sortParams.sidePanel] }
             : null;
-        const newPaging = paging[pagingParams.sidePanel]
+        const newPaging = paging?.[pagingParams.sidePanel]
             ? { [pagingParams.page]: paging[pagingParams.sidePanel] }
             : null;
         return new WorkflowState(useCase, newStateStack, newSearch, newSort, newPaging);
@@ -307,6 +338,16 @@ export class WorkflowState {
     pushListItem(id) {
         const { useCase, stateStack, search, sort, paging } = this;
         const currentItem = this.getCurrentEntity();
+
+        if (currentItem === null) {
+            // TODO This is probably a logic error that needs to be cleaned up. Is it intended that `getCurrentEntity`
+            // can return null?
+            //
+            // If so, what should we do in that case to prevent an error?
+            // If not, can we type this in a way to prevent it from happening?
+            throw new Error('The WorkflowState current Entity is null');
+        }
+
         const newItem = new WorkflowEntity(currentItem.entityType, id);
         // Slice an item off the end of the stack if this push should result in a replacement (e.g. clicking on multiple list items)
         const newStateStack = currentItem.entityId ? stateStack.slice(0, -1) : [...stateStack];
@@ -413,7 +454,7 @@ export class WorkflowState {
         return this.stateStack
             .filter((item) => !!item.entityId)
             .reduce((entityContext, item) => {
-                return { ...entityContext, [item.entityType]: item.entityId };
+                return { ...entityContext, [item.entityType as string]: item.entityId };
             }, {});
     }
 

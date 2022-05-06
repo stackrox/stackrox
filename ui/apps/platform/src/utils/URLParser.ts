@@ -148,18 +148,13 @@ function formatSort(sort?: ParsedQs | ParsedQs[]): Record<string, unknown>[] | n
         return {
             id,
             desc: JSON.parse(desc as string),
-        } as Record<string, unknown>;
+        };
     });
 }
 
 // Convert URL to workflow state and search objects
 // note: this will read strictly from 'location' as 'match' is relative to the closest Route component
 function parseURL(location: Location<LocationState>): WorkflowState {
-    if (!location) {
-        // TODO: be more specific, it could be an exception instead of a dummy object
-        return new WorkflowState();
-    }
-
     const { pathname, search } = location;
     const params = getParams(pathname);
     const queryStr = search ? qs.parse(search, { ignoreQueryPrefix: true }) : {};
@@ -179,7 +174,9 @@ function parseURL(location: Location<LocationState>): WorkflowState {
     const stateStackFromQueryString = !Array.isArray(queryWorkflowState)
         ? [queryWorkflowState as ParsedQs]
         : (queryWorkflowState as ParsedQs[]);
-    const stateStack = stateStackFromQueryString.map(({ t, i }) => new WorkflowEntity(t, i));
+    const stateStack = stateStackFromQueryString.map(
+        ({ t, i }) => new WorkflowEntity(t as string, i as string)
+    );
 
     const workflowState = new WorkflowState(
         params.context,

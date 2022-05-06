@@ -1,12 +1,12 @@
 // An item in the workflow stack
 export default class WorkflowEntity {
-    constructor(entityType, entityId) {
-        if (entityType) {
-            this.t = entityType;
-        }
-        if (entityId) {
-            this.i = entityId;
-        }
+    t: string | null;
+
+    i?: string;
+
+    constructor(entityType: string | null, entityId?: string) {
+        this.t = entityType;
+        this.i = entityId;
         Object.freeze(this);
     }
 
