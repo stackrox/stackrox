@@ -59,9 +59,9 @@ func init() {
 		schema.AddExtraResolver("Cluster", `vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Cluster", `vulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `vulnCounter(query: String): VulnerabilityCounter!`),
-		schema.AddExtraResolver("Cluster", `nodeVulns(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!`),
-		schema.AddExtraResolver("Cluster", `nodeVulnCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `nodeVulnCounter(query: String): VulnerabilityCounter!`),
+		schema.AddExtraResolver("Cluster", `nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!`),
+		schema.AddExtraResolver("Cluster", `nodeVulnerabilityCount(query: String): Int!`),
+		schema.AddExtraResolver("Cluster", `nodeVulnerabilityCounter(query: String): VulnerabilityCounter!`),
 		schema.AddExtraResolver("Cluster", `k8sVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Cluster", `k8sVulnCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `istioVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
@@ -557,37 +557,34 @@ func (resolver *clusterResolver) VulnCounter(ctx context.Context, args RawQuery)
 	return resolver.root.VulnCounter(ctx, RawQuery{Query: &query})
 }
 
-func (resolver *clusterResolver) NodeVulns(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulns")
+func (resolver *clusterResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilities")
 
 	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-		return resolver.root.NodeVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+		return resolver.root.NodeVulnerabilities(resolver.clusterScopeContext(ctx), args)
 	}
 	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeVulns in clusterResolver does not support postgres yet")
+	return nil, errors.New("Sub-resolver NodeVulnerabilities in clusterResolver does not support postgres yet")
 }
 
-func (resolver *clusterResolver) NodeVulnCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnCount")
+func (resolver *clusterResolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilityCount")
 
 	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-		return resolver.root.NodeVulnerabilityCount(ctx, RawQuery{Query: &query})
+		return resolver.root.NodeVulnerabilityCount(resolver.clusterScopeContext(ctx), args)
 	}
 	// TODO : Add postgres support
-	return 0, errors.New("Sub-resolver NodeVulnCount in clusterResolver does not support postgres yet")
+	return 0, errors.New("Sub-resolver NodeVulnerabilityCount in clusterResolver does not support postgres yet")
 }
 
-func (resolver *clusterResolver) NodeVulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnCounter")
+func (resolver *clusterResolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilityCounter")
 
 	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-		return resolver.root.NodeVulnCounter(ctx, RawQuery{Query: &query})
+		return resolver.root.NodeVulnCounter(resolver.clusterScopeContext(ctx), args)
 	}
 	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeVulnCounter in clusterResolver does not support postgres yet")
+	return nil, errors.New("Sub-resolver NodeVulnerabilityCounter in clusterResolver does not support postgres yet")
 }
 
 func (resolver *clusterResolver) K8sVulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
@@ -986,6 +983,13 @@ func (resolver *clusterResolver) PlottedVulns(ctx context.Context, args RawQuery
 
 func (resolver *clusterResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
 	return nil
+}
+
+func (resolver *clusterResolver) clusterScopeContext(ctx context.Context) context.Context {
+	return scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_CLUSTERS,
+		ID:    resolver.data.GetId(),
+	})
 }
 
 func (resolver *orchestratorMetadataResolver) OpenShiftVersion() (string, error) {
