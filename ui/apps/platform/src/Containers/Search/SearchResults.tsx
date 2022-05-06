@@ -17,7 +17,7 @@ import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-tab
 import { getUrlQueryStringForSearchFilter, searchOptionsToSearchFilter } from 'utils/searchUtils';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
-import { GlobalSearchOption } from 'types/search';
+import { SearchEntry } from 'types/search';
 import { SortDirection } from 'types/table';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import RelatedLink from './RelatedLink';
@@ -38,14 +38,14 @@ type SearchTab = {
 };
 interface StateProps {
     globalSearchResults: GlobalSearchResult[];
-    globalSearchOptions: GlobalSearchOption[];
+    globalSearchOptions: SearchEntry[];
     tabs: SearchTab[];
     defaultTab: SearchTab | null;
 }
 
 interface DispatchProps {
     setGlobalSearchCategory: (category: string) => void;
-    passthroughGlobalSearchOptions: (searchOptions: GlobalSearchOption[], category: string) => void;
+    passthroughGlobalSearchOptions: (searchOptions: SearchEntry[], category: string) => void;
 }
 
 interface PassedProps {
@@ -195,7 +195,7 @@ function SearchResults({
         setGlobalSearchCategory(selectedTab.category);
     }
 
-    const amendSearchOptions = (searchCategory: string, name: string) => {
+    const amendSearchOptions = (searchCategory: string, name: string): SearchEntry[] => {
         if (name) {
             const searchModifier = `${mapping[searchCategory].name as string}:`;
             return [
@@ -209,7 +209,7 @@ function SearchResults({
                     value: name,
                     label: name,
                     className: 'Select-create-option-placeholder',
-                } as GlobalSearchOption,
+                } as SearchEntry,
             ];
         }
         return [...globalSearchOptions];
