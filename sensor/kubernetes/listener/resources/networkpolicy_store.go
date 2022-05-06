@@ -201,8 +201,8 @@ func (n *networkPolicyStoreImpl) OnNamespaceDeleted(namespace string) {
 	defer n.lock.Unlock()
 	defer n.updateStateMetric()
 
-	netpols := n.data[namespace]
-	if netpols == nil {
+	netpols, found := n.data[namespace]
+	if !found {
 		return
 	}
 
