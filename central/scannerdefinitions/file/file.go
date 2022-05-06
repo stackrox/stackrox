@@ -111,3 +111,14 @@ func (file *File) Open() (*os.File, time.Time, error) {
 	succeeded = true
 	return f, fi.ModTime().UTC(), nil
 }
+
+// GetLastModifiedTime gets the last modified time of the file.
+// If the file doesn't exist, or there was an error getting it,
+// the second value is false.
+func (file *File) GetLastModifiedTime() (time.Time, bool) {
+	fi, err := os.Stat(file.path)
+	if err != nil {
+		return time.Time{}, false
+	}
+	return fi.ModTime().UTC(), true
+}

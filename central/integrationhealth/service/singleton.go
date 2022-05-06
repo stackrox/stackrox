@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/integrationhealth/datastore"
+	"github.com/stackrox/rox/central/scannerdefinitions/handler"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -13,7 +13,7 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), imageintegration.VulnDefsInfoProvider())
+	as = New(datastore.Singleton(), handler.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

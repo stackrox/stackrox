@@ -10,7 +10,6 @@ import (
 
 	gogoProto "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -432,18 +431,6 @@ func (c *clairify) Type() string {
 // Name returns the integration's name
 func (c *clairify) Name() string {
 	return c.protoImageIntegration.GetName()
-}
-
-// GetVulnDefinitionsInfo gets the vulnerability definition metadata.
-func (c *clairify) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	info, err := c.httpClient.GetVulnDefsMetadata()
-	if err != nil {
-		return nil, err
-	}
-
-	return &v1.VulnDefinitionsInfo{
-		LastUpdatedTimestamp: info.GetLastUpdatedTime(),
-	}, nil
 }
 
 // OrchestratorScannerCreator provides creator for OrchestratorScanner

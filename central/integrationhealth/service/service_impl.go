@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/scanners"
 	"google.golang.org/grpc"
 )
 
@@ -36,7 +35,7 @@ var (
 // ImageIntegrationService is the struct that manages the ImageIntegration API
 type serviceImpl struct {
 	datastore            datastore.DataStore
-	vulnDefsInfoProvider scanners.VulnDefsInfoProvider
+	vulnDefsInfoProvider vulnDefsInfoProvider
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

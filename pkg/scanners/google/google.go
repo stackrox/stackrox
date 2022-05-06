@@ -10,7 +10,6 @@ import (
 	containeranalysis "cloud.google.com/go/containeranalysis/apiv1beta1"
 	gogoTypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -267,8 +266,4 @@ func (c *googleScanner) Type() string {
 
 func (c *googleScanner) Name() string {
 	return c.protoIntegration.GetName()
-}
-
-func (c *googleScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	return nil, nil
 }

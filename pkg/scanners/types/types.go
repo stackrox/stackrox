@@ -1,7 +1,6 @@
 package types
 
 import (
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
@@ -18,7 +17,6 @@ type Scanner interface {
 	Test() error
 	Type() string
 	Name() string
-	GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error)
 }
 
 // ImageScannerWithDataSource provides a GetScanner to retrieve the underlying Scanner and

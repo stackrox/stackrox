@@ -7,7 +7,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/scanners"
 )
 
 var (
@@ -23,8 +22,12 @@ type Service interface {
 	v1.IntegrationHealthServiceServer
 }
 
+type vulnDefsInfoProvider interface {
+	GetVulnDefsInfo() (*v1.VulnDefinitionsInfo, error)
+}
+
 // New returns a new Service instance using the given DataStore.
-func New(integrationHealthDS datastore.DataStore, vulnDefsInfoProvider scanners.VulnDefsInfoProvider) Service {
+func New(integrationHealthDS datastore.DataStore, vulnDefsInfoProvider vulnDefsInfoProvider) Service {
 	return &serviceImpl{
 		datastore:            integrationHealthDS,
 		vulnDefsInfoProvider: vulnDefsInfoProvider,

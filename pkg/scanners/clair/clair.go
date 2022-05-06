@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -166,8 +165,4 @@ func (c *clair) Type() string {
 
 func (c *clair) Name() string {
 	return c.protoImageIntegration.GetName()
-}
-
-func (c *clair) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	return nil, nil
 }

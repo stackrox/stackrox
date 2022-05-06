@@ -10,9 +10,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -69,7 +72,7 @@ type httpHandler struct {
 }
 
 // New creates a new http.Handler to handle vulnerability data.
-func New(cveManager fetcher.OrchestratorIstioCVEManager, opts handlerOpts) http.Handler {
+func New(cveManager fetcher.OrchestratorIstioCVEManager, opts handlerOpts) ScannerDefinitionsHandler {
 	h := &httpHandler{
 		cveManager: cveManager,
 
@@ -86,6 +89,35 @@ func New(cveManager fetcher.OrchestratorIstioCVEManager, opts handlerOpts) http.
 	}
 
 	return h
+}
+
+func (h *httpHandler) GetVulnDefsInfo() (*v1.VulnDefinitionsInfo, error) {
+	var mostUpToDateTime time.Time
+	if h.online {
+		concurrency.WithLock(&h.lock, func() {
+			for _, u := range h.updaters {
+				modTime, found := u.file.GetLastModifiedTime()
+				if found && modTime.After(mostUpToDateTime) {
+					mostUpToDateTime = modTime
+				}
+			}
+		})
+	}
+	offlineModTime, found := h.offlineFile.GetLastModifiedTime()
+	if found && offlineModTime.After(mostUpToDateTime) {
+		mostUpToDateTime = offlineModTime
+	}
+	var lastUpdatedTimestamp *types.Timestamp
+	if !mostUpToDateTime.IsZero() {
+		var err error
+		lastUpdatedTimestamp, err = types.TimestampProto(mostUpToDateTime)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &v1.VulnDefinitionsInfo{
+		LastUpdatedTimestamp: lastUpdatedTimestamp,
+	}, nil
 }
 
 func (h *httpHandler) initializeOfflineVulnDump(vulnDefsDir string) {
