@@ -147,6 +147,9 @@ build_main_and_bundles() {
     create_main_bundle_and_scripts
     create_central_db_bundle
 
+    info "Make the main image Dockerfile"
+    make "$ROOT/image/rhel/Dockerfile.gen"
+
     cleanup_image
 }
 
