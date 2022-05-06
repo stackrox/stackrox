@@ -92,18 +92,12 @@ func (ds *searcherImplV2) searchDeployments(ctx context.Context, q *v1.Query) ([
 }
 
 func (ds *searcherImplV2) Search(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
-	graph.Context(ctx, ds.graphProvider, func(inner context.Context) {
-		res, err = ds.searcher.Search(inner, q)
-	})
-	return res, err
+	return ds.searcher.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (ds *searcherImplV2) Count(ctx context.Context, q *v1.Query) (res int, err error) {
-	graph.Context(ctx, ds.graphProvider, func(inner context.Context) {
-		res, err = ds.searcher.Count(inner, q)
-	})
-	return res, err
+	return ds.searcher.Count(ctx, q)
 }
 
 // convertDeployment returns proto search result from a deployment object and the internal search result

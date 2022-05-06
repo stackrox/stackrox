@@ -4,12 +4,14 @@ import objects.SortOption
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.GraphQLService
+import spock.lang.IgnoreIf
 import spock.lang.Unroll
 
 class GraphQLResourcePaginationTest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify graphql/sublist pagination #topResource #topLevelQuery #topLevelSortOption #subResource"() {
         given:
         "Ensure on GKE"
@@ -71,6 +73,7 @@ class GraphQLResourcePaginationTest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify graphql pagination and sublist pagination for namespaces #topLevelQuery #subResource"() {
         given:
         "Check on GKE"
