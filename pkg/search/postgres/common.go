@@ -330,7 +330,7 @@ func compileQueryToPostgres(
 			withJoinClause(qe, queryFields[subBQ.MatchFieldQuery.GetField()], joinMap)
 			return qe, nil
 		case *v1.BaseQuery_MatchNoneQuery:
-			return nil, nil
+			return pgsearch.NewFalseQuery(), nil
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
 			var entries []*pgsearch.QueryEntry
 			for _, q := range subBQ.MatchLinkedFieldsQuery.Query {
