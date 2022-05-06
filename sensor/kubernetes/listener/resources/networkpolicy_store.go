@@ -194,3 +194,19 @@ func (n *networkPolicyStoreImpl) Find(namespace string, podLabels map[string]str
 	}
 	return results
 }
+
+// OnNamespaceDeleted reacts to a namespace deletion, deleting all network policies in this namespace from the store.
+func (n *networkPolicyStoreImpl) OnNamespaceDeleted(namespace string) {
+	n.lock.Lock()
+	defer n.lock.Unlock()
+
+	netpols := n.data[namespace]
+	if netpols == nil {
+		return
+	}
+
+	for id := range netpols {
+		delete(n.data[namespace], id)
+	}
+	delete(n.data, namespace)
+}
