@@ -4438,22 +4438,22 @@ jobs:
     - setup_remote_docker
     - run:
         name: Install trivy
-        command: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+        command: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /tmp
     - run:
         name: Scan main image
-        command: trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/main:$(make tag)
+        command: /tmp/trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/main:$(make tag)
     - run:
         name: Scan roxctl image
-        command: trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/roxctl:$(make tag)
+        command: /tmp/trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/roxctl:$(make tag)
     - run:
         name: Scan scanner image
-        command: trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/scanner:$(make scanner-tag)
+        command: /tmp/trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/scanner:$(make scanner-tag)
     - run:
         name: Scan scanner-db image
-        command: trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/scanner-db:$(make scanner-tag)
+        command: /tmp/trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/scanner-db:$(make scanner-tag)
     - run:
         name: Scan collector image
-        command: trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/collector:$(make collector-tag)-slim
+        command: /tmp/trivy image --exit-code 1 --severity HIGH,CRITICAL quay.io/stackrox-io/collector:$(make collector-tag)-slim
 
   ###
   # Infrastructure and workflow utility jobs
