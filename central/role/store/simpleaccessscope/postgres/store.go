@@ -87,10 +87,11 @@ func insertIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, obj *storage.S
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
+		obj.GetName(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO simpleaccessscopes (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO simpleaccessscopes (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -113,6 +114,8 @@ func (s *storeImpl) copyFromSimpleaccessscopes(ctx context.Context, tx pgx.Tx, o
 
 		"id",
 
+		"name",
+
 		"serialized",
 	}
 
@@ -128,6 +131,8 @@ func (s *storeImpl) copyFromSimpleaccessscopes(ctx context.Context, tx pgx.Tx, o
 		inputRows = append(inputRows, []interface{}{
 
 			obj.GetId(),
+
+			obj.GetName(),
 
 			serialized,
 		})
