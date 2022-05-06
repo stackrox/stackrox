@@ -40,7 +40,8 @@ func NewDeploymentScorer(alertGetter getters.AlertGetter, roles roleStore.DataSt
 			deployment.NewImageMultiplier(image.RiskyComponentCountHeading),
 			deployment.NewImageMultiplier(image.ComponentCountHeading),
 			deployment.NewImageMultiplier(image.ImageAgeHeading),
-			deployment.NewSAPermissionsMultiplier(roles, bindings, serviceAccounts),
+			// TODO(ROX-10854)
+			// deployment.NewSAPermissionsMultiplier(roles, bindings, serviceAccounts),
 		},
 	}
 

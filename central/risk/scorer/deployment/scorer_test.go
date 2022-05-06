@@ -100,15 +100,11 @@ func TestScore(t *testing.T) {
 		},
 	}
 
-	mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
-
 	actualRisk := scorer.Score(ctx, deployment, getMockImagesRisk())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 
 	expectedRiskScore = 12.1794405
-
-	mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
 
 	actualRisk = scorer.Score(ctx, deployment, getMockImagesRisk())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
