@@ -36,7 +36,7 @@ type processIndicatorDatastoreSACSuite struct {
 	suite.Suite
 
 	engine *rocksdb.RocksDB
-	index  *bleve.Index
+	index  bleve.Index
 
 	pool *pgxpool.Pool
 
@@ -70,12 +70,12 @@ func (s *processIndicatorDatastoreSACSuite) SetupSuite() {
 	} else {
 		s.engine, err = rocksdb.NewTemp(processIndicatorObj)
 		s.Require().NoError(err)
-		bleveIndex, err := globalindex.TempInitializeIndices(processIndicatorObj)
+		bleveIndex, err := globalindex.MemOnlyIndex()
 		s.Require().NoError(err)
-		s.index = &bleveIndex
+		s.index = bleveIndex
 
 		s.storage = rdbStore.New(s.engine)
-		s.indexer = index.New(*s.index)
+		s.indexer = index.New(s.index)
 	}
 
 	s.boltDb = testutils.DBForSuite(s)
@@ -97,6 +97,8 @@ func (s *processIndicatorDatastoreSACSuite) TearDownSuite() {
 	}
 
 	testutils.TearDownDB(s.boltDb)
+
+	s.Require().NoError(s.index.Close())
 }
 
 func (s *processIndicatorDatastoreSACSuite) SetupTest() {
