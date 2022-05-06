@@ -28,6 +28,7 @@ func Test_DefaultPolicies_FilterByFeatureFlag(t *testing.T) {
 	isolator := envisolator.NewEnvIsolator(t)
 	defer isolator.RestoreAll()
 	for filename, ff := range featureFlagFileGuard {
+		isolator.Setenv(ff.EnvVar(), "false")
 		require.False(t, checkPoliciesContain(t, fileToPolicyName[filename]))
 		isolator.Setenv(ff.EnvVar(), "true")
 		require.True(t, checkPoliciesContain(t, fileToPolicyName[filename]))
