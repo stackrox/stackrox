@@ -60,6 +60,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify two consecutive latest tag image have different scans"() {
         given:
         // Scan an ubuntu 14:04 image we're pretending is latest
@@ -147,6 +148,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify CVE snoozing applies to build time detection"() {
         given:
         "Create policy looking for a specific CVE applying to build time"

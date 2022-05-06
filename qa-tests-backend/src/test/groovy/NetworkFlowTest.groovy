@@ -26,6 +26,7 @@ import objects.Service
 import services.ClusterService
 import services.NetworkGraphService
 import services.NetworkPolicyService
+import spock.lang.IgnoreIf
 import util.Env
 import util.Helpers
 import util.NetworkGraphUtil
@@ -636,6 +637,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Category([BAT])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify generated network policies"() {
         // ROX-8785 - EKS cannot NetworkPolicy (RS-178)
         Assume.assumeFalse(ClusterService.isEKS())
