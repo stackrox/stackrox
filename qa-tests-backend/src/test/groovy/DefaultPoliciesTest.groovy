@@ -337,6 +337,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify risk factors on struts deployment: #riskFactor"() {
         given:
         "Check Feature Flags"

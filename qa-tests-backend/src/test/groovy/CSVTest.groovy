@@ -9,6 +9,7 @@ import objects.SortOption
 import org.junit.experimental.categories.Category
 import services.GraphQLService
 import services.ImageService
+import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Unroll
 import util.Env
@@ -95,6 +96,7 @@ class CSVTest extends BaseSpecification {
     }
 
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify CVE CSV data scoped by entity is correct"() {
         when:
         "Query fixable CVEs from graphQL"
