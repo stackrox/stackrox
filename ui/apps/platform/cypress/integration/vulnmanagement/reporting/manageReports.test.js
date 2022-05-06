@@ -2,27 +2,19 @@ import * as api from '../../../constants/apiEndpoints';
 import { url, selectors } from '../../../constants/VulnManagementPage';
 import withAuth from '../../../helpers/basicAuth';
 import { getHelperElementByLabel, getInputByLabel } from '../../../helpers/formHelpers';
-import { visitFromLeftNavExpandable } from '../../../helpers/nav';
+import {
+    visitVulnerabilityReporting,
+    visitVulnerabilityReportingFromLeftNav,
+} from '../../../helpers/vulnmanagement/reporting';
 import navigationSelectors from '../../../selectors/navigation';
-
-function visitVulnerabilityReporting() {
-    cy.intercept('GET', api.report.configurations).as('getReportConfigurations');
-    cy.intercept('GET', api.report.configurationsCount).as('getReportConfigurationsCount');
-    cy.visit(url.reporting.list);
-    cy.wait(['@getReportConfigurations', '@getReportConfigurationsCount']);
-}
 
 describe('Vulnmanagement reports', () => {
     withAuth();
 
     describe('creating a report', () => {
         it('should go from left navigation', () => {
-            cy.intercept('GET', api.report.configurations).as('getReportConfigurations');
-            cy.intercept('GET', api.report.configurationsCount).as('getReportConfigurationsCount');
-            visitFromLeftNavExpandable('Vulnerability Management', 'Reporting');
-            cy.wait(['@getReportConfigurations', '@getReportConfigurationsCount']);
+            visitVulnerabilityReportingFromLeftNav();
 
-            cy.get('h1:contains("Vulnerability reporting")');
             cy.location('pathname').should('eq', url.reporting.list);
         });
 
