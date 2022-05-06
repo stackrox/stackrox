@@ -168,3 +168,65 @@ func TestNetworkPoliciesStoreAll(t *testing.T) {
 		})
 	}
 }
+
+func TestNetworkPoliciesStoreOnNamespaceDeleted(t *testing.T) {
+	ns0 := "random-namespace"
+	ns1 := "other-namespace"
+	p0 := newNPDummy("p0", defaultNS, map[string]string{})
+	p1 := newNPDummy("p1", ns0, map[string]string{"app": "sensor"})
+	p2 := newNPDummy("p2", ns0, map[string]string{"app": "sensor", "role": "backend"})
+	p3 := newNPDummy("p3", ns1, map[string]string{"role": "other"})
+
+	tests := []struct {
+		name          string
+		policiesToAdd []*storage.NetworkPolicy
+		nsToDelete    string
+		expectedIDs   []string
+	}{
+		{
+			name:          "Empty store",
+			policiesToAdd: []*storage.NetworkPolicy{},
+			nsToDelete:    ns0,
+			expectedIDs:   []string{},
+		},
+		{
+			name:          "Policy in a different namespace",
+			policiesToAdd: []*storage.NetworkPolicy{p0},
+			nsToDelete:    ns0,
+			expectedIDs:   []string{"p0"},
+		},
+		{
+			name:          "Policy in same namespace",
+			policiesToAdd: []*storage.NetworkPolicy{p1},
+			nsToDelete:    ns0,
+			expectedIDs:   []string{},
+		},
+		{
+			name:          "Multiple namespaces",
+			policiesToAdd: []*storage.NetworkPolicy{p1, p2, p3},
+			nsToDelete:    ns0,
+			expectedIDs:   []string{"p3"},
+		},
+		{
+			name:          "Multiple policies, no policies in namespace",
+			policiesToAdd: []*storage.NetworkPolicy{p0, p1, p2},
+			nsToDelete:    ns1,
+			expectedIDs:   []string{"p0", "p1", "p2"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			store := newNetworkPoliciesStore()
+			for _, p := range tt.policiesToAdd {
+				store.Upsert(p)
+			}
+			store.OnNamespaceDeleted(tt.nsToDelete)
+			got := store.All()
+			for _, expectedID := range tt.expectedIDs {
+				assert.Contains(t, got, expectedID)
+			}
+			assert.Equal(t, len(tt.expectedIDs), store.Size())
+			assert.Equal(t, len(tt.expectedIDs), len(got))
+		})
+	}
+}
