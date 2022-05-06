@@ -689,9 +689,11 @@ class NetworkFlowTest extends BaseSpecification {
             def ingressPodSelectors = it."spec"."ingress".find { it.containsKey("from") } ?
                     it."spec"."ingress".get(0)."from".findAll { it.containsKey("podSelector") } :
                     null
+            println "ingressPodSelectors ${ingressPodSelectors}"
             def ingressNamespaceSelectors = it."spec"."ingress".find { it.containsKey("from") } ?
                     it."spec"."ingress".get(0)."from".findAll { it.containsKey("namespaceSelector") } :
                     null
+            println "ingressNamespaceSelectors ${ingressNamespaceSelectors}"
             if (allowAllIngress) {
                 println "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
                 assert it."spec"."ingress" == [[:]]
@@ -702,12 +704,15 @@ class NetworkFlowTest extends BaseSpecification {
                 def sourceDeploymentsFromNetworkPolicy = ingressPodSelectors.collect {
                     it."podSelector"."matchLabels"."app"
                 }
+                println "sourceDeploymentsFromNetworkPolicy ${sourceDeploymentsFromNetworkPolicy}"
                 def sourceNamespacesFromNetworkPolicy = ingressNamespaceSelectors.collect {
                     it."namespaceSelector"."matchLabels"."namespace.metadata.stackrox.io/name"
                 }
+                println "sourceNamespacesFromNetworkPolicy ${sourceNamespacesFromNetworkPolicy}"
                 sourceNamespacesFromNetworkPolicy.addAll(ingressNamespaceSelectors.collect {
                     it."namespaceSelector"."matchLabels"."kubernetes.io/metadata.name"
                 })
+                println "sourceNamespacesFromNetworkPolicy ${sourceNamespacesFromNetworkPolicy}"
                 assert sourceDeploymentsFromNetworkPolicy.sort() == sourceDeploymentsFromGraph.sort()
                 if (!deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)) {
                     println "Deployed namespaces do not contain all namespaces found in the network policy"
