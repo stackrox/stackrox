@@ -7,7 +7,9 @@ import services.ImageService
 
 import org.junit.experimental.categories.Category
 import spock.lang.Ignore
+import spock.lang.IgnoreIf
 import spock.lang.Unroll
+import util.Env
 
 class CVETest extends BaseSpecification {
     private static final GET_CVES_QUERY = """
@@ -420,6 +422,7 @@ class CVETest extends BaseSpecification {
     }
 
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify IsFixable for entities when scoped by CVE is still correct"() {
         when:
         "Query fixable CVEs by a specific CVE in the image"
@@ -439,6 +442,7 @@ class CVETest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify IsFixable is correct when scoped (#digest, #fixable)"() {
         when:
         "Query fixable CVEs by a specific CVE in the image"

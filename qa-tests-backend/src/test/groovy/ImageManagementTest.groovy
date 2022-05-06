@@ -9,6 +9,7 @@ import org.junit.experimental.categories.Category
 import services.CVEService
 import services.ImageService
 import services.PolicyService
+import spock.lang.IgnoreIf
 import spock.lang.Unroll
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import util.Env
@@ -16,6 +17,7 @@ import util.Env
 class ImageManagementTest extends BaseSpecification {
     @Unroll
     @Category([BAT, Integration])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry #note"() {
         when:
         "Update Policy to build time"
@@ -58,6 +60,7 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify two consecutive latest tag image have different scans"() {
         given:
         // Scan an ubuntu 14:04 image we're pretending is latest
@@ -145,6 +148,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify CVE snoozing applies to build time detection"() {
         given:
         "Create policy looking for a specific CVE applying to build time"
@@ -240,6 +244,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify image scan results when CVEs are suppressed: "() {
         given:
         "Scan image"

@@ -25,6 +25,7 @@ import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.ImageIntegrationService
 import services.ImageService
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
@@ -181,6 +182,7 @@ class ImageScanningTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT, Integration])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify Image Registry+Scanner Integrations: #testName"() {
         cleanupSetupForRetry()
 
@@ -362,6 +364,7 @@ class ImageScanningTest extends BaseSpecification {
     @SuppressWarnings('LineLength')
     @Unroll
     @Category([BAT, Integration])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify Image Scan Results - #scanner.name() - #component:#version - #image - #cve - #idx"() {
         Assume.assumeTrue(scanner.isTestable())
         cleanupSetupForRetry()
@@ -524,6 +527,7 @@ class ImageScanningTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT, Integration])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Image metadata from registry test - #testName"() {
         Assume.assumeTrue(testName != "ecr-iam" || ClusterService.isEKS())
         cleanupSetupForRetry()

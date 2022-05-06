@@ -4,7 +4,9 @@ import groups.BAT
 import org.junit.experimental.categories.Category
 import services.ImageIntegrationService
 import services.ImageService
+import spock.lang.IgnoreIf
 import spock.lang.Unroll
+import util.Env
 
 @Category(BAT)
 class VulnMgmtTest extends BaseSpecification {
@@ -124,6 +126,7 @@ fragment cveFields on EmbeddedVulnerability {
     }
 
     @Unroll
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify severities and CVSS #imageDigest #component #severity #cvss"() {
         when:
         def gqlService = new GraphQLService()
