@@ -1,6 +1,7 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=8.5
+ARG QUAY_EXPIRATION=never
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
 
@@ -14,7 +15,8 @@ LABEL name="main" \
       vendor="StackRox" \
       maintainer="support@stackrox.com" \
       summary="The StackRox Kubernetes Security Platform" \
-      description="This image contains components required to operate the StackRox Kubernetes Security Platform."
+      description="This image contains components required to operate the StackRox Kubernetes Security Platform." \
+      quay.expires-after=${QUAY_EXPIRATION}
 
 ARG ROX_IMAGE_FLAVOR
 ARG ROX_PRODUCT_BRANDING

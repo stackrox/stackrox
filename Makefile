@@ -19,6 +19,7 @@ endif
 # 2. If makefile variable GOTAGS is contains "release", use "stackrox.io".
 # 3. Otherwise set it to "development_build" by default, e.g. for developers running the Makefile locally.
 ROX_IMAGE_FLAVOR ?= $(shell if [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then echo "stackrox.io"; else echo "development_build"; fi)
+QUAY_EXPIRATION ?= $(shell if [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then echo "never"; else echo "1w"; fi)
 
 ROX_PRODUCT_BRANDING ?= STACKROX_BRANDING
 DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
@@ -508,6 +509,7 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image $(CU
 	docker build \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
+		--build-arg QUAY_EXPIRATION=$(QUAY_EXPIRATION) \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
 		--file image/rhel/Dockerfile \
