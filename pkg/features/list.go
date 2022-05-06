@@ -41,8 +41,8 @@ var (
 
 	// NetworkPolicySystemPolicy enables two system policy fields (Missing (Ingress|Egress) Network Policy) to check deployments
 	// against network policies applied in the secured cluster.
-	NetworkPolicySystemPolicy = registerFeature("Enable NetworkPolicy-related system policy fields", "ROX_NETPOL_FIELDS", false)
+	NetworkPolicySystemPolicy = registerFeature("Enable NetworkPolicy-related system policy fields", "ROX_NETPOL_FIELDS", true)
 
 	// NewPolicyCategories enables new policy categories as first-class entities.
-	NewPolicyCategories = registerFeature("Enable new policy categories as first-class entities", "ROX_NEW_POLICY_CATEGORIES", true)
+	NewPolicyCategories = registerFeature("Enable new policy categories as first-class entities", "ROX_NEW_POLICY_CATEGORIES", false)
 )
