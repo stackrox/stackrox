@@ -5,11 +5,12 @@ import { useQuery } from '@apollo/client';
 import { HashLink } from 'react-router-hash-link';
 
 import PageHeader from 'Components/PageHeader';
-import URLSearchInput from 'Components/URLSearchInput';
+import SearchFilterInput from 'Components/SearchFilterInput';
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { clustersBasePath, clustersPathWithParam, integrationsPath } from 'routePaths';
+import useURLSearch from 'hooks/useURLSearch';
 import parseURL from 'utils/URLParser';
 
 import ClustersTablePanel from './ClustersTablePanel';
@@ -22,6 +23,7 @@ const ClustersPage = ({
         params: { clusterId: selectedClusterId },
     },
 }) => {
+    const { searchFilter, setSearchFilter } = useURLSearch();
     const workflowState = parseURL({ pathname, search });
 
     // Handle changes to the currently selected deployment.
@@ -46,7 +48,6 @@ const ClustersPage = ({
     };
     const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
     const searchOptions = (searchData && searchData.searchOptions) || [];
-    const autoFocusSearchInput = !selectedClusterId;
 
     // When the selected cluster changes, update the URL.
     useEffect(() => {
@@ -64,12 +65,13 @@ const ClustersPage = ({
     const pageHeader = (
         <PageHeader header={headerText} subHeader={subHeaderText}>
             <div className="flex flex-1 items-center justify-end">
-                <URLSearchInput
+                <SearchFilterInput
                     className="w-full"
-                    categoryOptions={searchOptions}
-                    categories={['CLUSTERS']}
+                    searchFilter={searchFilter}
+                    searchOptions={searchOptions}
+                    searchCategory="CLUSTERS"
                     placeholder="Add one or more filters"
-                    autoFocus={autoFocusSearchInput}
+                    handleChangeSearchFilter={setSearchFilter}
                 />
                 <div className="flex items-center ml-4 mr-3">
                     <HashLink
