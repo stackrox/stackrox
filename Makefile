@@ -503,16 +503,21 @@ main-image: all-builds
 $(CURDIR)/image/rhel/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
 
+.PHONY: $(CURDIR)/image/rhel/Dockerfile.gen
+$(CURDIR)/image/rhel/Dockerfile.gen:
+	LABEL_VERSION=$(TAG) \
+	LABEL_RELEASE=$(TAG) \
+	envsubst '$${LABEL_VERSION} $${LABEL_RELEASE}' < $(CURDIR)/image/rhel/Dockerfile.envsubst > $(CURDIR)/image/rhel/Dockerfile.gen
+
 .PHONY: docker-build-main-image
-docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image $(CURDIR)/image/rhel/bundle.tar.gz central-db-image
+docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image central-db-image \
+                         $(CURDIR)/image/rhel/bundle.tar.gz $(CURDIR)/image/rhel/Dockerfile.gen
 	docker build \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
-		--file image/rhel/Dockerfile \
-		--label version=$(TAG) \
-		--label release=$(TAG) \
+		--file image/rhel/Dockerfile.gen \
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
