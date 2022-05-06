@@ -123,9 +123,9 @@ func New(
 	}
 
 	if features.PostgresDatastore.Enabled() {
-		ds.searcher = search.New(clusterStorage, indexer, graphProvider, clusterRanker)
-	} else {
 		ds.searcher = search.NewV2(clusterStorage, indexer)
+	} else {
+		ds.searcher = search.New(clusterStorage, indexer, graphProvider, clusterRanker)
 	}
 	if err := ds.buildIndex(context.TODO()); err != nil {
 		return ds, err
