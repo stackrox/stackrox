@@ -24,7 +24,7 @@ export type ImageIntegration =
     | IbmImageIntegration
     | NexusImageIntegration
     | QuayImageIntegration
-    | RhelImageIntegration
+    | RhelImageIntegration;
 
 export type ArtifactoryImageIntegration = {
     type: 'artifactory';
