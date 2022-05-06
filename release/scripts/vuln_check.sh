@@ -37,7 +37,7 @@ function compare_fixable_vulns {
   local count=1
 
   echo "Getting scan status for ${image_name}"
-  wait=60
+  wait=30
   count=0
   scan_present=$(quay_curl "${image_name}/manifest/${CURRENT_IMAGE}/security?vulnerabilities=true" | jq -r '.status')
   until [ "$scan_present" = "scanned" ] || [ "$count" -gt 100 ]; do
