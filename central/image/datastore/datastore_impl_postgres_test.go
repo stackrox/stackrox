@@ -45,8 +45,10 @@ func (s *ImagePostgresDataStoreTestSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
-	s.T().Skip("Skip postgres store tests")
-	s.T().SkipNow()
+	if !features.PostgresDatastore.Enabled() {
+		s.T().Skip("Skip postgres store tests")
+		s.T().SkipNow()
+	}
 
 	s.ctx = context.Background()
 
