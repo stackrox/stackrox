@@ -199,6 +199,7 @@ func (n *networkPolicyStoreImpl) Find(namespace string, podLabels map[string]str
 func (n *networkPolicyStoreImpl) OnNamespaceDeleted(namespace string) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
+	defer n.updateStateMetric()
 
 	netpols := n.data[namespace]
 	if netpols == nil {
