@@ -2,6 +2,7 @@ import * as api from '../../../constants/apiEndpoints';
 import { url, selectors } from '../../../constants/VulnManagementPage';
 import withAuth from '../../../helpers/basicAuth';
 import { getHelperElementByLabel, getInputByLabel } from '../../../helpers/formHelpers';
+import { visit } from '../../../helpers/visit';
 import {
     visitVulnerabilityReporting,
     visitVulnerabilityReportingFromLeftNav,
@@ -59,7 +60,7 @@ describe('Vulnmanagement reports', () => {
             cy.intercept('GET', api.integrations.notifiers, {
                 fixture: 'integrations/notifiers.json',
             }).as('getNotifiers');
-            cy.visit(`${url.reporting.list}?action=create`);
+            visit(`${url.reporting.list}?action=create`);
             cy.wait(['@getSimpleAccessScopes', '@getNotifiers']);
 
             cy.get('h1:contains("Create a vulnerability report")');

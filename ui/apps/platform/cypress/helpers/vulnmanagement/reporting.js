@@ -22,7 +22,7 @@ export function visitVulnerabilityReporting() {
     cy.intercept('GET', api.report.configurations).as('getReportConfigurations');
     cy.intercept('GET', api.report.configurationsCount).as('getReportConfigurationsCount');
 
-    cy.visit(url.reporting.list);
+    visit(url.reporting.list);
 
     cy.wait(['@searchOptions', '@getReportConfigurations', '@getReportConfigurationsCount']);
     cy.get('h1:contains("Vulnerability reporting")');
