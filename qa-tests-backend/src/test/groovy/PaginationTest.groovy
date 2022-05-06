@@ -8,6 +8,7 @@ import services.AlertService
 import services.DeploymentService
 import services.ImageService
 import services.SecretService
+import spock.lang.IgnoreIf
 
 class PaginationTest extends BaseSpecification {
     static final private Map<String, String> SECRETS = [
@@ -81,6 +82,7 @@ class PaginationTest extends BaseSpecification {
     }
 
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify deployment pagination"() {
         when:
         "Set pagination limit to 3"
@@ -131,6 +133,7 @@ class PaginationTest extends BaseSpecification {
     }
 
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify image pagination"() {
         when:
         "Set pagination limit to 3"
