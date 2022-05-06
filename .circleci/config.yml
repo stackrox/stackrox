@@ -3,6 +3,13 @@ runOnAllTags: &runOnAllTags
     tags:
       only: /.*/
 
+runOnTagsOnly: &runOnTagsOnly
+  filters:
+    tags:
+      only: /.*/
+    branches:
+      ignore: /.*/
+
 # This runs a command only on rc builds,
 # which is a tagged build with a tag matching the below regex.
 runOnlyOnReleaseCandidateBuilds: &runOnlyOnReleaseCandidateBuilds
@@ -18,15 +25,6 @@ runOnlyOnReleaseBuilds: &runOnlyOnReleaseBuilds
   filters:
     tags:
       only: /^\d+(\.\d+)?\.\d+\.\d+$/
-    branches:
-      ignore: /.*/
-
-# This runs a command only on rc and release builds,
-# which is a tagged build with a tag matching the below regex.
-runOnlyOnReleaseAndReleaseCandidateBuilds: &runOnlyOnReleaseAndReleaseCandidateBuilds
-  filters:
-    tags:
-      only: /^\d+(\.\d+)?\.\d+\.\d+(-rc\.\d+)?$/
     branches:
       ignore: /.*/
 
@@ -4802,11 +4800,7 @@ workflows:
       not: << pipeline.parameters.trigger_on_demand >>
     jobs: &buildAllJobs
       - slack-notify:
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore: /.*/
+          <<: *runOnTagsOnly
           context: custom-executor-pull
       - style-checks:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -5120,8 +5114,8 @@ workflows:
             - go-unit-tests
             - ui-unit-tests
 
-      - scan-images-in-quay: #TODO(ROX-10676): Enable scan on every change.
-          <<: *runOnlyOnReleaseAndReleaseCandidateBuilds
+      - scan-images-in-quay:
+          <<: *runOnTagsOnly
           context:
           - quay-rhacs-eng-readonly
           requires:
@@ -5129,12 +5123,8 @@ workflows:
             - build-rhacs
 
       - retrigger-master-workflow:
+          <<: *runOnTagsOnly
           context: custom-executor-pull
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
 
   nightly:
     triggers:
