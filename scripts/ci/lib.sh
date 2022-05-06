@@ -437,23 +437,31 @@ mark_collector_release() {
 
 pr_has_label() {
     if [[ -z "${1:-}" ]]; then
-        die "usage: pr_has_label <expected label>"
+        die "usage: pr_has_label <expected label> [<pr details>]"
     fi
 
     local expected_label="$1"
-    get_pr_details | jq '([.labels | .[].name]  // []) | .[]' -r | grep -qx "${expected_label}"
+    local pr_details
+    pr_details="${2:-$(get_pr_details)}"
+    jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details" | grep -qx "${expected_label}"
 }
 
+# get_pr_details() from GitHub and display the result. Exits 1 if not run in CI in a PR context.
 get_pr_details() {
     local pull_request
     local org
     local repo
 
+    _not_a_PR() {
+        echo '{ "msg": "this is not a PR" }'
+        exit 1
+    }
+
     if is_CIRCLECI; then
-        [ -n "${CIRCLE_PULL_REQUEST}" ] || { echo "Not on a PR, ignoring label overrides"; exit 3; }
+        [ -n "${CIRCLE_PULL_REQUEST:-}" ] || _not_a_PR
         [ -n "${CIRCLE_PROJECT_USERNAME}" ] || { echo "CIRCLE_PROJECT_USERNAME not found" ; exit 2; }
         [ -n "${CIRCLE_PROJECT_REPONAME}" ] || { echo "CIRCLE_PROJECT_REPONAME not found" ; exit 2; }
-        pull_request="${CIRCLE_PULL_REQUEST}"
+        pull_request="${CIRCLE_PULL_REQUEST##*/}"
         org="${CIRCLE_PROJECT_USERNAME}"
         repo="${CIRCLE_PROJECT_REPONAME}"
     elif is_OPENSHIFT_CI; then
@@ -466,10 +474,13 @@ get_pr_details() {
             org=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].org')
             repo=$(jq -r <<<"$CLONEREFS_OPTIONS" '.refs[0].repo')
         else
-            die "not supported"
+            echo "Expect a JOB_SPEC or CLONEREFS_OPTIONS"
+            exit 2
         fi
+        [[ "${pull_request}" == "null" ]] && _not_a_PR
     else
-        die "not supported"
+        echo "Expect Circle or OpenShift CI"
+        exit 2
     fi
 
     headers=()
@@ -478,7 +489,146 @@ get_pr_details() {
     fi
 
     url="https://api.github.com/repos/${org}/${repo}/pulls/${pull_request}"
-    curl -sS "${headers[@]}" "${url}"
+    pr_details=$(curl --retry 5 -sS "${headers[@]}" "${url}")
+    if [[ "$(jq .id <<<"$pr_details")" == "null" ]]; then
+        # A valid PR response is expected at this point
+        echo "Invalid response from GitHub: $pr_details"
+        exit 2
+    fi
+    echo "$pr_details"
+}
+
+GATE_JOBS_CONFIG="$SCRIPTS_ROOT/scripts/ci/gate-jobs-config.json"
+
+gate_job() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: gate_job <job>"
+    fi
+
+    local job="$1"
+    local job_config
+    job_config="$(jq -r .\""$job"\" "$GATE_JOBS_CONFIG")"
+
+    info "Will determine whether to run: $job"
+
+    if [[ "$job_config" == "null" ]]; then
+        info "$job will run because there is no gating criteria for $job"
+        return
+    fi
+
+    local pr_details
+    pr_details="$(get_pr_details)"
+    local exitstatus="$?"
+
+    if [[ "$exitstatus" == "0" ]]; then
+        gate_pr_job "$job_config" "$pr_details"
+    elif [[ "$exitstatus" == "1" ]]; then
+        gate_merge_job "$job_config"
+    else
+        die "Could not determine if this is a PR versus a merge"
+    fi
+}
+
+get_var_from_job_config() {
+    local var_name="$1"
+    local job_config="$2"
+
+    local value
+    value="$(jq -r ."$var_name" <<<"$job_config")"
+    if [[ "$value" == "null" ]]; then
+        die "$var_name is not defined in this jobs config"
+    fi
+    if [[ "${value:0:1}" == "[" ]]; then
+        value="$(jq -r .[] <<<"$value")"
+    fi
+    echo "$value"
+}
+
+gate_pr_job() {
+    local job_config="$1"
+    local pr_details="$2"
+
+    local run_with_labels
+    local skip_with_label
+    local run_with_changed_path
+    local changed_path_to_ignore
+    mapfile -t run_with_labels < <(get_var_from_job_config run_with_labels "$job_config")
+    skip_with_label="$(get_var_from_job_config skip_with_label "$job_config")"
+    run_with_changed_path="$(get_var_from_job_config run_with_changed_path "$job_config")"
+    changed_path_to_ignore="$(get_var_from_job_config changed_path_to_ignore "$job_config")"
+
+    if [[ -n "$skip_with_label" ]]; then
+        if pr_has_label "${skip_with_label}" "${pr_details}"; then
+            info "$job will not run because the PR has label $skip_with_label"
+            exit 0
+        fi
+    fi
+
+    for run_with_label in "${run_with_labels[@]}"; do
+        if pr_has_label "${run_with_label}" "${pr_details}"; then
+            info "$job will run because the PR has label $run_with_label"
+            return
+        fi
+    done
+
+    if [[ -n "${run_with_changed_path}" || -n "${changed_path_to_ignore}" ]]; then
+        local diff_base
+        if is_CIRCLECI; then
+            diff_base="$(git merge-base HEAD origin/master)"
+            echo "Determined diff-base as ${diff_base}"
+            echo "Master SHA: $(git rev-parse origin/master)"
+        elif is_OPENSHIFT_CI; then
+            diff_base="$(jq -r '.refs[0].base_sha' <<<"$CLONEREFS_OPTIONS")"
+            echo "Determined diff-base as ${diff_base}"
+            [[ "${diff_base}" != "null" ]] || die "Could not find base_sha in CLONEREFS_OPTIONS: $CLONEREFS_OPTIONS"
+        else
+            die "unsupported"
+        fi
+        echo "Diffbase diff:"
+        { git diff --name-only "${diff_base}" | cat ; } || true
+        ignored_regex="${changed_path_to_ignore}"
+        [[ -n "$ignored_regex" ]] || ignored_regex='$^' # regex that matches nothing
+        match_regex="${run_with_changed_path}"
+        [[ -n "$match_regex" ]] || match_regex='^.*$' # grep -E -q '' returns 0 even on empty input, so we have to specify some pattern
+        if grep -E -q "$match_regex" < <({ git diff --name-only "${diff_base}" || echo "???" ; } | grep -E -v "$ignored_regex"); then
+            info "$job will run because paths matching $match_regex (and not matching ${ignored_regex}) had changed."
+            return
+        fi
+    fi
+
+    info "$job will be skipped"
+    exit 0
+}
+
+gate_merge_job() {
+    local job_config="$1"
+
+    local run_on_master
+    local run_on_tags
+    run_on_master="$(get_var_from_job_config run_on_master "$job_config")"
+    run_on_tags="$(get_var_from_job_config run_on_tags "$job_config")"
+
+    local base_ref
+    if is_CIRCLECI; then
+        base_ref="${CIRCLE_BRANCH}"
+    elif is_OPENSHIFT_CI; then
+        base_ref="$(jq -r '.refs[0].base_ref' <<<"$CLONEREFS_OPTIONS")"
+    else
+        die "unsupported"
+    fi
+
+    if [[ "${base_ref}" == "master" && "${run_on_master}" == "true" ]]; then
+        info "$job will run because this is master and run_on_master==true"
+        return
+    fi
+
+    if [[ -n "$(git tag --contains)" && "${run_on_tags}" == "true" ]]; then
+        info "$job will run because the head of this branch is tagged and run_on_tags==true"
+        return
+    fi
+
+    info "$job will be skipped"
+    exit 0
 }
 
 openshift_ci_mods() {
