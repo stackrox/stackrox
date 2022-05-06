@@ -106,7 +106,7 @@ func checkCommentCaseMatches(pass *analysis.Pass, doc *ast.CommentGroup, objectN
 		if unicode.IsLower(firstObjectLetter) && unicode.ToUpper(firstObjectLetter) == firstCommentLetter {
 			pass.Report(analysis.Diagnostic{
 				Pos:     position,
-				Message: fmt.Sprintf("Mismatching capitalization for %s %s and comment starting with %s\n please change the comment to start with \"// %d%s\"", objectType, objectName, firstCommentWord, unicode.ToLower(firstCommentLetter), firstCommentWord[1:]),
+				Message: fmt.Sprintf("If a Godoc comment starts with a %s name, the capitalization of the first word in the comment must match the capitalization used in %s name.\nChange '// %s' to '// %s%s'.", objectType, objectType, firstCommentWord, string(unicode.ToLower(firstCommentLetter)), firstCommentWord[1:]),
 			})
 		}
 	}
