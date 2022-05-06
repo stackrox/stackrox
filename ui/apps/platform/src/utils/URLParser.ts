@@ -4,6 +4,7 @@ import { Location, LocationState } from 'history';
 
 import useCases from 'constants/useCaseTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
+import { GraphQLSortOption } from 'types/search';
 import WorkflowEntity from './WorkflowEntity';
 import { WorkflowState } from './WorkflowState';
 import {
@@ -132,8 +133,10 @@ function paramsToStateStack(params): WorkflowEntity[] {
     return stateArray;
 }
 
-function formatSort(sort?: ParsedQs | ParsedQs[]): Record<string, unknown>[] | null {
+function formatSort(sort?: ParsedQs | ParsedQs[]): GraphQLSortOption[] | null {
     if (!sort) {
+        // TODO Do we want `null` here? The tests expect `null` but it seems an empty array would
+        // be a more appropriate value.
         return null;
     }
 
@@ -144,12 +147,18 @@ function formatSort(sort?: ParsedQs | ParsedQs[]): Record<string, unknown>[] | n
         sorts = [...sort];
     }
 
-    return sorts.map(({ id, desc }) => {
-        return {
-            id,
-            desc: JSON.parse(desc as string),
-        };
+    const sortOptions: GraphQLSortOption[] = [];
+
+    sorts.forEach(({ id, desc }) => {
+        if (id && typeof id === 'string' && desc) {
+            sortOptions.push({
+                id,
+                desc: JSON.parse(desc as string),
+            });
+        }
     });
+
+    return sortOptions;
 }
 
 // Convert URL to workflow state and search objects

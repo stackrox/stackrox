@@ -10,6 +10,7 @@ import entityRelationships from 'utils/entityRelationships';
 import generateURL from 'utils/URLGenerator';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 
+import { GraphQLSortOption } from 'types/search';
 import WorkflowEntity from './WorkflowEntity';
 
 // Returns true if stack provided makes sense
@@ -124,6 +125,15 @@ function trimStack(stack: WorkflowEntity[]) {
 }
 
 /**
+ *  TODO The intended type for `search` is probably just:
+ *  Record<string, SearchFilter>
+ */
+type WorkflowStateSearch = Record<
+    string,
+    string | string[] | qs.ParsedQs | qs.ParsedQs[] | null | undefined
+>;
+
+/**
  * Summary: Class that ensures the shape of a WorkflowState object
  * {
  *   useCase: 'text',
@@ -135,13 +145,9 @@ export class WorkflowState {
 
     stateStack: WorkflowEntity[];
 
-    search: Record<string, string | string[] | qs.ParsedQs | qs.ParsedQs[] | null | undefined>;
+    search: WorkflowStateSearch;
 
-    /**
-     *  TODO This can probably be safer
-     *  @see {formatSort} in URLParser.ts
-     */
-    sort: Record<string, Record<string, unknown>[] | null | undefined>;
+    sort: Record<string, GraphQLSortOption[] | null>;
 
     paging: Record<string, number>;
 
@@ -150,11 +156,8 @@ export class WorkflowState {
     constructor(
         useCase: string,
         stateStack: WorkflowEntity[],
-        search?: Record<
-            string,
-            string | string[] | qs.ParsedQs | qs.ParsedQs[] | null | undefined
-        > | null,
-        sort?: Record<string, Record<string, unknown>[] | null | undefined> | null,
+        search?: WorkflowStateSearch | null,
+        sort?: Record<string, GraphQLSortOption[] | null> | null,
         paging?: Record<string, number> | null
     ) {
         this.useCase = useCase;
@@ -429,8 +432,9 @@ export class WorkflowState {
 
         const newSort = {
             ...sort,
-            [param]: undefined,
         };
+
+        delete newSort[param];
 
         return new WorkflowState(useCase, stateStack, search, newSort, paging);
     }
