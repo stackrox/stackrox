@@ -4432,6 +4432,10 @@ jobs:
 
   scan-high-critical-vulnerabilities:
     docker:
+    - image: quay.io/rhacs-eng/apollo-ci:0.3.31
+      auth:
+        username: $QUAY_RHACS_ENG_RO_USERNAME
+        password: $QUAY_RHACS_ENG_RO_PASSWORD
     - image: aquasec/trivy:latest
     resource_class: small
     steps:
