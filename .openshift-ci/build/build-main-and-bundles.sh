@@ -119,6 +119,9 @@ cleanup_image() {
 
 build_main_and_bundles() {
 
+    # avoid a -dirty tag
+    info "Reset to remove Dockerfile modification by OpenShift CI"
+    git restore .
     git status
 
     # TODO(RS-509) Submodules are not initialized in migration but they should
