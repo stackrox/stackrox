@@ -20,8 +20,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const scratchPath = "backuptest"
-
 // Grab the backup DB and open it, ensuring that there are values for deployments
 func TestBackup(t *testing.T) {
 	setupNginxLatestTagDeployment(t)
@@ -37,12 +35,10 @@ func TestBackup(t *testing.T) {
 }
 
 func doTestBackup(t *testing.T, includeCerts bool) {
-	tmpZipDir, err := os.MkdirTemp("", scratchPath)
-	require.NoError(t, err)
+	tmpZipDir := t.TempDir()
 	zipFilePath := filepath.Join(tmpZipDir, "backup.zip")
 	out, err := os.Create(zipFilePath)
 	require.NoError(t, err)
-	defer func() { _ = os.RemoveAll(tmpZipDir) }()
 
 	client := testutils.HTTPClientForCentral(t)
 	endpoint := "/db/backup"
@@ -104,9 +100,7 @@ func checkZipForRocks(t *testing.T, zipFile *zip.ReadCloser) {
 	require.NoError(t, err)
 
 	// Dump the untar'd rocks file to a scratch directory.
-	tmpBackupDir, err := os.MkdirTemp("", scratchPath)
-	require.NoError(t, err)
-	defer func() { _ = os.RemoveAll(tmpBackupDir) }()
+	tmpBackupDir := t.TempDir()
 
 	err = tar.ToPath(tmpBackupDir, rocksFile)
 	require.NoError(t, err)
@@ -118,9 +112,7 @@ func checkZipForRocks(t *testing.T, zipFile *zip.ReadCloser) {
 	require.NoError(t, err)
 
 	// Restore the db to another temp directory
-	tmpDBDir, err := os.MkdirTemp("", scratchPath)
-	require.NoError(t, err)
-	defer func() { _ = os.RemoveAll(tmpDBDir) }()
+	tmpDBDir := t.TempDir()
 	err = backupEngine.RestoreDBFromLatestBackup(tmpDBDir, tmpDBDir, gorocksdb.NewRestoreOptions())
 	require.NoError(t, err)
 
