@@ -538,7 +538,7 @@ docs-image:
 docker-build-data-image: docs-image
 	docker build -t stackrox-data:$(TAG) \
 	    --build-arg DOCS_IMAGE=$(DOCS_IMAGE) \
-		$(QUAY_TAG_EXPIRATION) \
+		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
 		image/ \
 		--file image/stackrox-data.Dockerfile
 
@@ -549,7 +549,7 @@ docker-build-roxctl-image:
 		-t stackrox/roxctl:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
 		-f image/roxctl.Dockerfile \
-		$(QUAY_TAG_EXPIRATION) \
+		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
 		image/
 
 .PHONY: copy-go-binaries-to-image-dir
