@@ -8,6 +8,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
+	queueMocks "github.com/stackrox/rox/central/deployment/queue/mocks"
 	alertManagerMocks "github.com/stackrox/rox/central/detection/alertmanager/mocks"
 	processBaselineDataStoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	reprocessorMocks "github.com/stackrox/rox/central/reprocessor/mocks"
@@ -28,12 +29,12 @@ func TestManager(t *testing.T) {
 type ManagerTestSuite struct {
 	suite.Suite
 
-	baselines    *processBaselineDataStoreMocks.MockDataStore
-	reprocessor  *reprocessorMocks.MockLoop
-	alertManager *alertManagerMocks.MockAlertManager
-	manager      *managerImpl
-
-	mockCtrl *gomock.Controller
+	baselines                  *processBaselineDataStoreMocks.MockDataStore
+	reprocessor                *reprocessorMocks.MockLoop
+	alertManager               *alertManagerMocks.MockAlertManager
+	deploymentObservationQueue *queueMocks.MockDeploymentObservationQueue
+	manager                    *managerImpl
+	mockCtrl                   *gomock.Controller
 }
 
 func (suite *ManagerTestSuite) SetupTest() {
@@ -42,10 +43,13 @@ func (suite *ManagerTestSuite) SetupTest() {
 	suite.baselines = processBaselineDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.reprocessor = reprocessorMocks.NewMockLoop(suite.mockCtrl)
 	suite.alertManager = alertManagerMocks.NewMockAlertManager(suite.mockCtrl)
+	suite.deploymentObservationQueue = queueMocks.NewMockDeploymentObservationQueue(suite.mockCtrl)
+
 	suite.manager = &managerImpl{
-		baselines:    suite.baselines,
-		reprocessor:  suite.reprocessor,
-		alertManager: suite.alertManager,
+		baselines:                  suite.baselines,
+		reprocessor:                suite.reprocessor,
+		alertManager:               suite.alertManager,
+		deploymentObservationQueue: suite.deploymentObservationQueue,
 	}
 }
 
@@ -95,7 +99,8 @@ func (suite *ManagerTestSuite) TestBaselineNotFound() {
 	key, indicator := makeIndicator()
 	elements := fixtures.MakeBaselineItems(indicator.GetSignal().GetExecFilePath())
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)
-	suite.baselines.EXPECT().UpsertProcessBaseline(gomock.Any(), key, elements, true).Return(nil, nil)
+	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false).AnyTimes()
+	suite.baselines.EXPECT().UpsertProcessBaseline(gomock.Any(), key, elements, true, true).Return(nil, nil)
 	_, err := suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.NoError(err)
 	suite.mockCtrl.Finish()
@@ -109,30 +114,30 @@ func (suite *ManagerTestSuite) TestBaselineNotFound() {
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)
-	suite.baselines.EXPECT().UpsertProcessBaseline(gomock.Any(), key, elements, true).Return(nil, expectedError)
+	suite.baselines.EXPECT().UpsertProcessBaseline(gomock.Any(), key, elements, true, true).Return(nil, expectedError)
 	_, err = suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.Equal(expectedError, err)
 }
 
-func (suite *ManagerTestSuite) TestBaselineShouldBeUpdated() {
+func (suite *ManagerTestSuite) TestBaselineNotFoundInObservation() {
+	envIsolator := envisolator.NewEnvIsolator(suite.T())
+	defer envIsolator.RestoreAll()
+
+	envIsolator.Setenv(env.BaselineGenerationDuration.EnvVar(), time.Millisecond.String())
 	key, indicator := makeIndicator()
-	baseline := &storage.ProcessBaseline{}
-	elements := fixtures.MakeBaselineItems(indicator.Signal.GetExecFilePath())
-	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
-	suite.baselines.EXPECT().UpdateProcessBaselineElements(gomock.Any(), key, elements, nil, true).Return(nil, nil)
+	elements := fixtures.MakeBaselineItems(indicator.GetSignal().GetExecFilePath())
+	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)
+	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(true).AnyTimes()
+	suite.baselines.EXPECT().UpsertProcessBaseline(gomock.Any(), key, elements, true, true).Return(nil, nil).MaxTimes(0)
 	_, err := suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.NoError(err)
-
-	expectedError := errors.New("Expected error")
-	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
-	suite.baselines.EXPECT().UpdateProcessBaselineElements(gomock.Any(), key, elements, nil, true).Return(nil, expectedError)
-	_, err = suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
-	suite.Equal(expectedError, err)
+	suite.mockCtrl.Finish()
 }
 
 func (suite *ManagerTestSuite) TestBaselineShouldPass() {
 	key, indicator := makeIndicator()
 	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath())}
+	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false).AnyTimes()
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
 	_, err := suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.NoError(err)

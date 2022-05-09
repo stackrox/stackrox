@@ -52,6 +52,35 @@ func (mr *MockDataStoreMockRecorder) AddProcessBaseline(ctx, baseline interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessBaseline", reflect.TypeOf((*MockDataStore)(nil).AddProcessBaseline), ctx, baseline)
 }
 
+// ClearProcessBaselines mocks base method.
+func (m *MockDataStore) ClearProcessBaselines(ctx context.Context, ids []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearProcessBaselines", ctx, ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearProcessBaselines indicates an expected call of ClearProcessBaselines.
+func (mr *MockDataStoreMockRecorder) ClearProcessBaselines(ctx, ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearProcessBaselines", reflect.TypeOf((*MockDataStore)(nil).ClearProcessBaselines), ctx, ids)
+}
+
+// CreateUnlockedProcessBaseline mocks base method.
+func (m *MockDataStore) CreateUnlockedProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUnlockedProcessBaseline", ctx, key)
+	ret0, _ := ret[0].(*storage.ProcessBaseline)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateUnlockedProcessBaseline indicates an expected call of CreateUnlockedProcessBaseline.
+func (mr *MockDataStoreMockRecorder) CreateUnlockedProcessBaseline(ctx, key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUnlockedProcessBaseline", reflect.TypeOf((*MockDataStore)(nil).CreateUnlockedProcessBaseline), ctx, key)
+}
+
 // GetProcessBaseline mocks base method.
 func (m *MockDataStore) GetProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, bool, error) {
 	m.ctrl.T.Helper()
@@ -156,18 +185,18 @@ func (mr *MockDataStoreMockRecorder) UpdateProcessBaselineElements(ctx, key, add
 }
 
 // UpsertProcessBaseline mocks base method.
-func (m *MockDataStore) UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
+func (m *MockDataStore) UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto, lock bool) (*storage.ProcessBaseline, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertProcessBaseline", ctx, key, addElements, auto)
+	ret := m.ctrl.Call(m, "UpsertProcessBaseline", ctx, key, addElements, auto, lock)
 	ret0, _ := ret[0].(*storage.ProcessBaseline)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpsertProcessBaseline indicates an expected call of UpsertProcessBaseline.
-func (mr *MockDataStoreMockRecorder) UpsertProcessBaseline(ctx, key, addElements, auto interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) UpsertProcessBaseline(ctx, key, addElements, auto, lock interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertProcessBaseline", reflect.TypeOf((*MockDataStore)(nil).UpsertProcessBaseline), ctx, key, addElements, auto)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertProcessBaseline", reflect.TypeOf((*MockDataStore)(nil).UpsertProcessBaseline), ctx, key, addElements, auto, lock)
 }
 
 // UserLockProcessBaseline mocks base method.
