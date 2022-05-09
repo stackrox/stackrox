@@ -50,7 +50,6 @@ const (
         walkStmt = "SELECT serialized FROM {{.Table}}"
 
 {{- if $singlePK }}
-        getIDsStmt = "SELECT {{$singlePK.ColumnName}} FROM {{.Table}}"
         getManyStmt = "SELECT serialized FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
 
         deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
