@@ -391,7 +391,8 @@ test_upgrade_paths() {
     wait_for_central_reconciliation
 
     info "Running smoke tests"
-    CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test
+    CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test || touch FAIL
+    store_qa_test_results "${ARTIFACTS}/upgrade-paths-smoke-tests"
     if [[ -n "${ARTIFACTS:-}" ]]; then
         cp -a qa-tests-backend/build/test-results/test "${ARTIFACTS}/upgrade-paths-smoke-tests"
     fi

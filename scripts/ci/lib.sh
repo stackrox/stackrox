@@ -668,6 +668,37 @@ validate_expected_go_version() {
     git diff --exit-code -- go.mod
 }
 
+store_qa_test_results() {
+    if ! is_OPENSHIFT_CI; then
+        return
+    fi
+
+    local to="${1:-qa-tests}"
+
+    info "Copying qa-tests-backend results to $to"
+
+    store_test_results qa-tests-backend/build/test-results/test "$to"
+}
+
+store_test_results() {    
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: store_test_results <from> <to>"
+    fi
+
+    if ! is_OPENSHIFT_CI; then
+        return
+    fi
+
+    local from="$1"
+    local to="$2"
+
+    info "Copying test results from $from to $to"
+
+    local dest="${ARTIFACTS}/$to"
+
+    cp -a "$from" "$dest" || true # (best effort)
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         die "When invoked at the command line a method is required."
