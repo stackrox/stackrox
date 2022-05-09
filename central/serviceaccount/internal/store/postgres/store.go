@@ -28,7 +28,6 @@ import (
 const (
 	baseTable = "serviceaccounts"
 
-	getStmt     = "SELECT serialized FROM serviceaccounts WHERE Id = $1"
 	deleteStmt  = "DELETE FROM serviceaccounts WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM serviceaccounts"
 	getManyStmt = "SELECT serialized FROM serviceaccounts WHERE Id = ANY($1::text[])"
@@ -333,15 +332,25 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ServiceAccount, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ServiceAccount")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ServiceAccount")
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return nil, false, err
 	}
-	defer release()
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, false, err
+	}
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
