@@ -141,6 +141,42 @@
       ]
     }
   ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0001",
+      "techniques": [
+        "T1133",
+        "T1199"
+      ]
+    },
+    {
+      "tactic": "TA0007",
+      "techniques": [
+        "T1046"
+      ]
+    },
+    {
+      "tactic": "TA0008",
+      "techniques": [
+        "T1210",
+        "T1570",
+        "T1021"
+      ]
+    },
+    {
+      "tactic": "TA0040",
+      "techniques": [
+        "T1498",
+        "T1499"
+      ]
+    },
+    {
+      "tactic": "TA0005",
+      "techniques": [
+        "T1610"
+      ]
+    }
+  ],
   "criteriaLocked": true,
   "mitreVectorsLocked": true,
   "isDefault": true
