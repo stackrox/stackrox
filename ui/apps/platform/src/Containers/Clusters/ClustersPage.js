@@ -1,6 +1,5 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import { generatePath } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { HashLink } from 'react-router-hash-link';
 
@@ -9,7 +8,7 @@ import SearchFilterInput from 'Components/SearchFilterInput';
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
-import { clustersBasePath, clustersPathWithParam, integrationsPath } from 'routePaths';
+import { integrationsPath } from 'routePaths';
 import useURLSearch from 'hooks/useURLSearch';
 import parseURL from 'utils/URLParser';
 

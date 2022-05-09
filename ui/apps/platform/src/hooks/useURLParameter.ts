@@ -49,7 +49,6 @@ function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLPar
 
             // Do not change history states if setter is called with current value
             if (!isEqual(previousQuery[keyPrefix], newValue)) {
-                console.log('history', historyAction, previousQuery[keyPrefix], newValue);
                 history[historyAction]({ search: newQueryString });
             }
         },
