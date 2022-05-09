@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -30,8 +29,7 @@ func BenchmarkSearchAllPods(b *testing.B) {
 			sac.ResourceScopeKeys(resources.Deployment),
 		))
 
-	tempPath, err := os.MkdirTemp("", "")
-	require.NoError(b, err)
+	tempPath := b.TempDir()
 
 	blevePath := filepath.Join(tempPath, "scorch.bleve")
 

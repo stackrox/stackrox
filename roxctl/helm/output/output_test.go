@@ -2,7 +2,6 @@ package output
 
 import (
 	"bytes"
-	"os"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -10,7 +9,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -136,12 +134,7 @@ func (suite *helmOutputTestSuite) TestValidate() {
 			helmOutputCmd.removeOutputDir = c.removeOutputDir
 			helmOutputCmd.outputDir = c.outputDir
 			if c.createOutputDir {
-				outputDir, mkDirErr := os.MkdirTemp("", "roxctl-helm-output-")
-				suite.T().Cleanup(func() {
-					_ = os.RemoveAll(outputDir)
-				})
-				require.NoError(suite.T(), mkDirErr)
-				helmOutputCmd.outputDir = outputDir
+				helmOutputCmd.outputDir = suite.T().TempDir()
 			}
 
 			err := helmOutputCmd.Validate()

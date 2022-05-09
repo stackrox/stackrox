@@ -14,11 +14,7 @@ import (
 )
 
 func TestGetFilePath(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Remove(tempDir)
-	}()
+	tempDir := t.TempDir()
 	const existingFileName = "existing.file"
 	existingFile, err := os.Create(filepath.Join(tempDir, existingFileName))
 	require.NoError(t, err)

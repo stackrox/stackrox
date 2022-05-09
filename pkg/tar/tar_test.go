@@ -12,12 +12,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const testBasePathIn = "tarTestIn"
-const testTarHolder = "tar"
-const testTarName = "test_path.tar"
-const testBasePathOut = "tarTestOut"
-
-const testFileContents = "test file"
+const (
+	testTarName      = "test_path.tar"
+	testFileContents = "test file"
+)
 
 var testStructure = []string{
 	"f1",
@@ -45,16 +43,12 @@ func TestFromPathTarUntar(t *testing.T) {
 }
 
 func doTestTarUntar(t *testing.T, tarFunc func(string, *tar.Writer)) {
-	tmpDirIn, err := os.MkdirTemp("", testBasePathIn)
-	assert.NoError(t, err)
-	defer func() { _ = os.RemoveAll(tmpDirIn) }()
+	tmpDirIn := t.TempDir()
 
-	err = createTarDir(t, tmpDirIn)
+	err := createTarDir(t, tmpDirIn)
 	assert.NoError(t, err)
 
-	tmpDir, err := os.MkdirTemp("", testTarHolder)
-	assert.NoError(t, err)
-	defer func() { _ = os.RemoveAll(tmpDir) }()
+	tmpDir := t.TempDir()
 
 	f, err := os.OpenFile(filepath.Join(tmpDir, testTarName), os.O_CREATE|os.O_RDWR, os.ModePerm)
 	defer utils.IgnoreError(f.Close)
@@ -68,9 +62,7 @@ func doTestTarUntar(t *testing.T, tarFunc func(string, *tar.Writer)) {
 	err = f.Close()
 	assert.NoError(t, err)
 
-	tmpDirOut, err := os.MkdirTemp("", testBasePathOut)
-	defer func() { _ = os.RemoveAll(tmpDirOut) }()
-	assert.NoError(t, err)
+	tmpDirOut := t.TempDir()
 
 	f, err = os.OpenFile(filepath.Join(tmpDir, testTarName), os.O_RDONLY, os.ModePerm)
 	defer utils.IgnoreError(f.Close)
