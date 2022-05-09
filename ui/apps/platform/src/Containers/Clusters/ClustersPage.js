@@ -49,16 +49,6 @@ const ClustersPage = ({
     const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
     const searchOptions = (searchData && searchData.searchOptions) || [];
 
-    // When the selected cluster changes, update the URL.
-    useEffect(() => {
-        const newPath = selectedClusterId
-            ? generatePath(clustersPathWithParam, { clusterId: selectedClusterId })
-            : clustersBasePath;
-        history.push({
-            pathname: newPath,
-            search,
-        });
-    }, [history, search, selectedClusterId]);
     const headerText = 'Clusters';
     const subHeaderText = 'Resource list';
 
