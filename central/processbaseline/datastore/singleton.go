@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/processbaseline/store/postgres"
 	"github.com/stackrox/rox/central/processbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore"
+	indicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -44,7 +45,7 @@ func initialize() {
 		panic("unable to load search index for process baseline")
 	}
 
-	ad = New(storage, indexer, searcher, datastore.Singleton())
+	ad = New(storage, indexer, searcher, datastore.Singleton(), indicatorStore.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.
