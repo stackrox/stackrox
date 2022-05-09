@@ -28,7 +28,6 @@ const (
 	getStmt     = "SELECT serialized FROM reportconfigs WHERE Id = $1"
 	deleteStmt  = "DELETE FROM reportconfigs WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM reportconfigs"
-	getIDsStmt  = "SELECT Id FROM reportconfigs"
 	getManyStmt = "SELECT serialized FROM reportconfigs WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM reportconfigs WHERE Id = ANY($1::text[])"

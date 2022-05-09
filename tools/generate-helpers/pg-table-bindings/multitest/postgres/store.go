@@ -26,7 +26,6 @@ const (
 	getStmt     = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
 	deleteStmt  = "DELETE FROM multikey WHERE Key1 = $1 AND Key2 = $2"
 	walkStmt    = "SELECT serialized FROM multikey"
-	getIDsStmt  = "SELECT Key1 FROM multikey"
 	getManyStmt = "SELECT serialized FROM multikey WHERE Key1 = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM multikey WHERE Key1 = ANY($1::text[])"

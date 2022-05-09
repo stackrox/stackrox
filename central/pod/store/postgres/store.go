@@ -31,7 +31,6 @@ const (
 	getStmt     = "SELECT serialized FROM pods WHERE Id = $1"
 	deleteStmt  = "DELETE FROM pods WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM pods"
-	getIDsStmt  = "SELECT Id FROM pods"
 	getManyStmt = "SELECT serialized FROM pods WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM pods WHERE Id = ANY($1::text[])"

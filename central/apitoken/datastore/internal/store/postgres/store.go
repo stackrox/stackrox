@@ -28,7 +28,6 @@ const (
 	getStmt     = "SELECT serialized FROM apitokens WHERE Id = $1"
 	deleteStmt  = "DELETE FROM apitokens WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM apitokens"
-	getIDsStmt  = "SELECT Id FROM apitokens"
 	getManyStmt = "SELECT serialized FROM apitokens WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM apitokens WHERE Id = ANY($1::text[])"

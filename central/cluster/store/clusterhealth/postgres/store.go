@@ -26,7 +26,6 @@ const (
 	getStmt     = "SELECT serialized FROM cluster_health_status WHERE Id = $1"
 	deleteStmt  = "DELETE FROM cluster_health_status WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM cluster_health_status"
-	getIDsStmt  = "SELECT Id FROM cluster_health_status"
 	getManyStmt = "SELECT serialized FROM cluster_health_status WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM cluster_health_status WHERE Id = ANY($1::text[])"

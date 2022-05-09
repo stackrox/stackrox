@@ -31,7 +31,6 @@ const (
 	getStmt     = "SELECT serialized FROM processbaselines WHERE Id = $1"
 	deleteStmt  = "DELETE FROM processbaselines WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM processbaselines"
-	getIDsStmt  = "SELECT Id FROM processbaselines"
 	getManyStmt = "SELECT serialized FROM processbaselines WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM processbaselines WHERE Id = ANY($1::text[])"

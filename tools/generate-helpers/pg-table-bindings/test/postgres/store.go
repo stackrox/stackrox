@@ -26,7 +26,6 @@ const (
 	getStmt     = "SELECT serialized FROM singlekey WHERE Key = $1"
 	deleteStmt  = "DELETE FROM singlekey WHERE Key = $1"
 	walkStmt    = "SELECT serialized FROM singlekey"
-	getIDsStmt  = "SELECT Key FROM singlekey"
 	getManyStmt = "SELECT serialized FROM singlekey WHERE Key = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM singlekey WHERE Key = ANY($1::text[])"

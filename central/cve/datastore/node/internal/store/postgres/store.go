@@ -26,7 +26,6 @@ const (
 	getStmt     = "SELECT serialized FROM node_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3"
 	deleteStmt  = "DELETE FROM node_cves WHERE Id = $1 AND Cve = $2 AND OperatingSystem = $3"
 	walkStmt    = "SELECT serialized FROM node_cves"
-	getIDsStmt  = "SELECT Id FROM node_cves"
 	getManyStmt = "SELECT serialized FROM node_cves WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM node_cves WHERE Id = ANY($1::text[])"

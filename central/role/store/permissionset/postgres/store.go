@@ -28,7 +28,6 @@ const (
 	getStmt     = "SELECT serialized FROM permissionsets WHERE Id = $1"
 	deleteStmt  = "DELETE FROM permissionsets WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM permissionsets"
-	getIDsStmt  = "SELECT Id FROM permissionsets"
 	getManyStmt = "SELECT serialized FROM permissionsets WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM permissionsets WHERE Id = ANY($1::text[])"

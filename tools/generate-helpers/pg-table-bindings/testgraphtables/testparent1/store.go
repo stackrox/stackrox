@@ -26,7 +26,6 @@ const (
 	getStmt     = "SELECT serialized FROM testparent1 WHERE Id = $1"
 	deleteStmt  = "DELETE FROM testparent1 WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM testparent1"
-	getIDsStmt  = "SELECT Id FROM testparent1"
 	getManyStmt = "SELECT serialized FROM testparent1 WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM testparent1 WHERE Id = ANY($1::text[])"

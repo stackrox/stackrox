@@ -26,7 +26,6 @@ const (
 	getStmt     = "SELECT serialized FROM image_components WHERE Id = $1 AND Name = $2 AND Version = $3 AND OperatingSystem = $4"
 	deleteStmt  = "DELETE FROM image_components WHERE Id = $1 AND Name = $2 AND Version = $3 AND OperatingSystem = $4"
 	walkStmt    = "SELECT serialized FROM image_components"
-	getIDsStmt  = "SELECT Id FROM image_components"
 	getManyStmt = "SELECT serialized FROM image_components WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM image_components WHERE Id = ANY($1::text[])"

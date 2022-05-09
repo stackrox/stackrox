@@ -31,7 +31,6 @@ const (
 	getStmt     = "SELECT serialized FROM process_indicators WHERE Id = $1"
 	deleteStmt  = "DELETE FROM process_indicators WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM process_indicators"
-	getIDsStmt  = "SELECT Id FROM process_indicators"
 	getManyStmt = "SELECT serialized FROM process_indicators WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM process_indicators WHERE Id = ANY($1::text[])"

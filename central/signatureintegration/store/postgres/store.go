@@ -28,7 +28,6 @@ const (
 	getStmt     = "SELECT serialized FROM signatureintegrations WHERE Id = $1"
 	deleteStmt  = "DELETE FROM signatureintegrations WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM signatureintegrations"
-	getIDsStmt  = "SELECT Id FROM signatureintegrations"
 	getManyStmt = "SELECT serialized FROM signatureintegrations WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM signatureintegrations WHERE Id = ANY($1::text[])"

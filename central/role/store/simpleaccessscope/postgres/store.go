@@ -28,7 +28,6 @@ const (
 	getStmt     = "SELECT serialized FROM simpleaccessscopes WHERE Id = $1"
 	deleteStmt  = "DELETE FROM simpleaccessscopes WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM simpleaccessscopes"
-	getIDsStmt  = "SELECT Id FROM simpleaccessscopes"
 	getManyStmt = "SELECT serialized FROM simpleaccessscopes WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM simpleaccessscopes WHERE Id = ANY($1::text[])"

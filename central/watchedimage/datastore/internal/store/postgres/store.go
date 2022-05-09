@@ -28,7 +28,6 @@ const (
 	getStmt     = "SELECT serialized FROM watchedimages WHERE Name = $1"
 	deleteStmt  = "DELETE FROM watchedimages WHERE Name = $1"
 	walkStmt    = "SELECT serialized FROM watchedimages"
-	getIDsStmt  = "SELECT Name FROM watchedimages"
 	getManyStmt = "SELECT serialized FROM watchedimages WHERE Name = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM watchedimages WHERE Name = ANY($1::text[])"

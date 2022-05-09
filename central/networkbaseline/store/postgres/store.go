@@ -26,7 +26,6 @@ const (
 	getStmt     = "SELECT serialized FROM networkbaseline WHERE DeploymentId = $1"
 	deleteStmt  = "DELETE FROM networkbaseline WHERE DeploymentId = $1"
 	walkStmt    = "SELECT serialized FROM networkbaseline"
-	getIDsStmt  = "SELECT DeploymentId FROM networkbaseline"
 	getManyStmt = "SELECT serialized FROM networkbaseline WHERE DeploymentId = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM networkbaseline WHERE DeploymentId = ANY($1::text[])"

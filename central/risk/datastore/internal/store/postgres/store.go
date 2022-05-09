@@ -31,7 +31,6 @@ const (
 	getStmt     = "SELECT serialized FROM risk WHERE Id = $1"
 	deleteStmt  = "DELETE FROM risk WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM risk"
-	getIDsStmt  = "SELECT Id FROM risk"
 	getManyStmt = "SELECT serialized FROM risk WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM risk WHERE Id = ANY($1::text[])"

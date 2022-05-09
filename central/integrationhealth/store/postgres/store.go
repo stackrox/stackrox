@@ -27,7 +27,6 @@ const (
 	getStmt     = "SELECT serialized FROM integrationhealth WHERE Id = $1"
 	deleteStmt  = "DELETE FROM integrationhealth WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM integrationhealth"
-	getIDsStmt  = "SELECT Id FROM integrationhealth"
 	getManyStmt = "SELECT serialized FROM integrationhealth WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM integrationhealth WHERE Id = ANY($1::text[])"

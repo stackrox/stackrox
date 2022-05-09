@@ -31,7 +31,6 @@ const (
 	getStmt     = "SELECT serialized FROM clusters WHERE Id = $1"
 	deleteStmt  = "DELETE FROM clusters WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM clusters"
-	getIDsStmt  = "SELECT Id FROM clusters"
 	getManyStmt = "SELECT serialized FROM clusters WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM clusters WHERE Id = ANY($1::text[])"

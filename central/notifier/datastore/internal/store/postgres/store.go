@@ -28,7 +28,6 @@ const (
 	getStmt     = "SELECT serialized FROM notifiers WHERE Id = $1"
 	deleteStmt  = "DELETE FROM notifiers WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM notifiers"
-	getIDsStmt  = "SELECT Id FROM notifiers"
 	getManyStmt = "SELECT serialized FROM notifiers WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM notifiers WHERE Id = ANY($1::text[])"

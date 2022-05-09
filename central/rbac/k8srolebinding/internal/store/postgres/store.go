@@ -31,7 +31,6 @@ const (
 	getStmt     = "SELECT serialized FROM rolebindings WHERE Id = $1"
 	deleteStmt  = "DELETE FROM rolebindings WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM rolebindings"
-	getIDsStmt  = "SELECT Id FROM rolebindings"
 	getManyStmt = "SELECT serialized FROM rolebindings WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM rolebindings WHERE Id = ANY($1::text[])"

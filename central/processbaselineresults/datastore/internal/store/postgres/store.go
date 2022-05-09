@@ -26,7 +26,6 @@ const (
 	getStmt     = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = $1"
 	deleteStmt  = "DELETE FROM processwhitelistresults WHERE DeploymentId = $1"
 	walkStmt    = "SELECT serialized FROM processwhitelistresults"
-	getIDsStmt  = "SELECT DeploymentId FROM processwhitelistresults"
 	getManyStmt = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"

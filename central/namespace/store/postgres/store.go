@@ -31,7 +31,6 @@ const (
 	getStmt     = "SELECT serialized FROM namespaces WHERE Id = $1"
 	deleteStmt  = "DELETE FROM namespaces WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM namespaces"
-	getIDsStmt  = "SELECT Id FROM namespaces"
 	getManyStmt = "SELECT serialized FROM namespaces WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM namespaces WHERE Id = ANY($1::text[])"

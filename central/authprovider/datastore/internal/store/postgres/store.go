@@ -28,7 +28,6 @@ const (
 	getStmt     = "SELECT serialized FROM authproviders WHERE Id = $1"
 	deleteStmt  = "DELETE FROM authproviders WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM authproviders"
-	getIDsStmt  = "SELECT Id FROM authproviders"
 	getManyStmt = "SELECT serialized FROM authproviders WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM authproviders WHERE Id = ANY($1::text[])"
