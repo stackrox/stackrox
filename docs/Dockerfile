@@ -25,7 +25,7 @@ RUN dnf upgrade -y && \
 # Switch back to the normal user of nginx container and check that we really switch to the original one.
 USER 1001:0
 RUN echo "If the following command fails, update USER statement to match UID:GID of the user of nginx base container." && \
-    [ "$(id -u):$(id -g)" = "$(cat /tmp/container-uid)" ] && \
+    [[ "$(id -u):$(id -g)" == "$(cat /tmp/container-uid)" ]] && \
     rm -f /tmp/container-uid
 
 # Delete unnecessary things from the content directory.
