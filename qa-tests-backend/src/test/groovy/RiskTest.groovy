@@ -1,12 +1,11 @@
 import static io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery.newBuilder
 
-import orchestratormanager.OrchestratorTypes
-
 import io.stackrox.proto.api.v1.DeploymentServiceOuterClass.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo
 import io.stackrox.proto.storage.DeploymentOuterClass.ListDeployment
 import io.stackrox.proto.storage.ProcessBaselineOuterClass
 
 import objects.Deployment
+import orchestratormanager.OrchestratorTypes
 import services.ClusterService
 import services.DeploymentService
 import services.ProcessBaselineService
@@ -42,7 +41,9 @@ class RiskTest extends BaseSpecification {
     @Shared
     private List<DeploymentWithProcessInfo> whenOneHasRisk
 
-    static final private int RETRIES = 24
+
+    static final private int RETRIES = isRaceBuild() ? 120 : (
+            (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 50 : 24)
     static final private int RETRY_DELAY = 5
     static final private List<Deployment> DEPLOYMENTS = []
     static final private String TEST_NAMESPACE = "qa-risk-${UUID.randomUUID()}"
@@ -111,10 +112,26 @@ class RiskTest extends BaseSpecification {
                         println "SR found ${element.element.processName} for ${DEPLOYMENTS[i].name}"
                     }
                 }
+
             }
 
             if (!processesFound) {
                 println "not yet ready to test - processes not found"
+                continue
+            }
+
+            def risksFound = true
+            for (DeploymentWithProcessInfo d :  listDeployments()) {
+                if (!DeploymentService.getDeploymentWithRisk(d.getDeployment().getId()).hasRisk()) {
+                    println "not yet ready to test - risk not found for ${d.getDeployment().getName()}"
+                    risksFound = false
+                } else {
+                    println "risk found for deployment ${d.getDeployment().getName()}"
+                }
+            }
+
+            if (!risksFound) {
+                println "not yet ready to test - risks not found"
                 continue
             }
 
