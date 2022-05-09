@@ -101,7 +101,6 @@ func New(
 		clusterStorage:          clusterStorage,
 		clusterHealthStorage:    clusterHealthStorage,
 		indexer:                 indexer,
-		searcher:                search.New(clusterStorage, indexer, graphProvider, clusterRanker),
 		alertDataStore:          ads,
 		namespaceDataStore:      namespaceDS,
 		deploymentDataStore:     dds,
@@ -123,7 +122,7 @@ func New(
 	}
 
 	if features.PostgresDatastore.Enabled() {
-		ds.searcher = search.NewV2(clusterStorage, indexer)
+		ds.searcher = search.NewV2(clusterStorage, indexer, clusterRanker)
 	} else {
 		ds.searcher = search.New(clusterStorage, indexer, graphProvider, clusterRanker)
 	}

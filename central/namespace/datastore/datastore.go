@@ -27,7 +27,6 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/derivedfields"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
@@ -57,7 +56,7 @@ func New(store store.Store, graphProvider graph.Provider, indexer index.Indexer,
 		idMapStorage:    idMapStorage,
 	}
 	if features.PostgresDatastore.Enabled() {
-		ds.formattedSearcher = postgres.WithScoping(blevesearch.WrapUnsafeSearcherAsSearcher(indexer))
+		ds.formattedSearcher = formatSearcherV2(indexer, namespaceRanker)
 	} else {
 		ds.formattedSearcher = formatSearcher(indexer, graphProvider, namespaceRanker)
 	}
@@ -268,6 +267,12 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 
 // Helper functions which format our searching.
 ///////////////////////////////////////////////
+
+func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher, namespaceRanker *ranking.Ranker) search.Searcher {
+	safeSearcher := namespaceSACSearchHelper.FilteredSearcher(unsafeSearcher)
+	prioritySortedSearcher := sorted.Searcher(safeSearcher, search.NamespacePriority, namespaceRanker)
+	return paginated.WithDefaultSortOption(prioritySortedSearcher, defaultSortOption)
+}
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher, graphProvider graph.Provider, namespaceRanker *ranking.Ranker) search.Searcher {
 	filteredSearcher := namespaceSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.

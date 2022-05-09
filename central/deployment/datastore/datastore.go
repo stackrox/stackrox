@@ -67,13 +67,14 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
-	deploymentIndexer := index.New(bleveIndex, processIndex)
-
+	storage = cache.NewCachedStore(storage)
+	var deploymentIndexer index.Indexer
 	var searcher search.Searcher
 	if features.PostgresDatastore.Enabled() {
+		deploymentIndexer = postgres.NewIndexer(globaldb.GetPostgres())
 		searcher = search.NewV2(storage, deploymentIndexer)
 	} else {
-		storage = cache.NewCachedStore(storage)
+		deploymentIndexer = index.New(bleveIndex, processIndex)
 		searcher = search.New(storage,
 			graphProvider,
 			cveIndexer.New(bleveIndex),
@@ -96,7 +97,6 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, processTagsStore
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
-
 	var storage store.Store
 	if features.PostgresDatastore.Enabled() {
 		storage = postgres.NewFullStore(context.TODO(), globaldb.GetPostgres())
