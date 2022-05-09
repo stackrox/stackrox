@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,32 +34,32 @@ func (m *MockUndoStore) EXPECT() *MockUndoStoreMockRecorder {
 	return m.recorder
 }
 
-// Get mocks base method.
-func (m *MockUndoStore) Get(ctx context.Context, clusterID string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error) {
+// GetUndoRecord mocks base method.
+func (m *MockUndoStore) GetUndoRecord(clusterID string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, clusterID)
+	ret := m.ctrl.Call(m, "GetUndoRecord", clusterID)
 	ret0, _ := ret[0].(*storage.NetworkPolicyApplicationUndoRecord)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// Get indicates an expected call of Get.
-func (mr *MockUndoStoreMockRecorder) Get(ctx, clusterID interface{}) *gomock.Call {
+// GetUndoRecord indicates an expected call of GetUndoRecord.
+func (mr *MockUndoStoreMockRecorder) GetUndoRecord(clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockUndoStore)(nil).Get), ctx, clusterID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUndoRecord", reflect.TypeOf((*MockUndoStore)(nil).GetUndoRecord), clusterID)
 }
 
-// Upsert mocks base method.
-func (m *MockUndoStore) Upsert(ctx context.Context, undoRecord *storage.NetworkPolicyApplicationUndoRecord) error {
+// UpsertUndoRecord mocks base method.
+func (m *MockUndoStore) UpsertUndoRecord(clusterID string, undoRecord *storage.NetworkPolicyApplicationUndoRecord) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", ctx, undoRecord)
+	ret := m.ctrl.Call(m, "UpsertUndoRecord", clusterID, undoRecord)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Upsert indicates an expected call of Upsert.
-func (mr *MockUndoStoreMockRecorder) Upsert(ctx, undoRecord interface{}) *gomock.Call {
+// UpsertUndoRecord indicates an expected call of UpsertUndoRecord.
+func (mr *MockUndoStoreMockRecorder) UpsertUndoRecord(clusterID, undoRecord interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockUndoStore)(nil).Upsert), ctx, undoRecord)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertUndoRecord", reflect.TypeOf((*MockUndoStore)(nil).UpsertUndoRecord), clusterID, undoRecord)
 }

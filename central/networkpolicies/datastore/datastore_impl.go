@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
@@ -9,7 +11,9 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -18,7 +22,9 @@ var (
 )
 
 type datastoreImpl struct {
-	storage               store.Store
+	storage store.Store
+
+	undoStorageLock       sync.Mutex
 	undoStorage           undostore.UndoStore
 	undoDeploymentStorage undodeploymentstore.UndoDeploymentStore
 }
@@ -125,7 +131,7 @@ func (ds *datastoreImpl) GetUndoRecord(ctx context.Context, clusterID string) (*
 		return nil, false, err
 	}
 
-	undoRecord, found, err := ds.undoStorage.GetUndoRecord(clusterID)
+	undoRecord, found, err := ds.undoStorage.Get(ctx, clusterID)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -133,14 +139,27 @@ func (ds *datastoreImpl) GetUndoRecord(ctx context.Context, clusterID string) (*
 	return undoRecord, true, nil
 }
 
-func (ds *datastoreImpl) UpsertUndoRecord(ctx context.Context, clusterID string, undoRecord *storage.NetworkPolicyApplicationUndoRecord) error {
-	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS, sac.ClusterScopeKey(clusterID)).Allowed(ctx); err != nil {
+func (ds *datastoreImpl) UpsertUndoRecord(ctx context.Context, undoRecord *storage.NetworkPolicyApplicationUndoRecord) error {
+	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS, sac.ClusterScopeKey(undoRecord.GetClusterId())).Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
+	ds.undoStorageLock.Lock()
+	defer ds.undoStorageLock.Unlock()
 
-	return ds.undoStorage.UpsertUndoRecord(clusterID, undoRecord)
+	previousUndo, exists, err := ds.undoStorage.Get(ctx, undoRecord.GetClusterId())
+	if err != nil {
+		return err
+	}
+	if exists {
+		if undoRecord.GetApplyTimestamp().Compare(previousUndo.GetApplyTimestamp()) < 0 {
+			return fmt.Errorf("apply timestamp of record to store (%v) is older than that of existing record (%v)",
+				protoconv.ConvertTimestampToTimeOrDefault(undoRecord.GetApplyTimestamp(), time.Time{}),
+				protoconv.ConvertTimestampToTimeOrDefault(previousUndo.GetApplyTimestamp(), time.Time{}))
+		}
+	}
+	return ds.undoStorage.Upsert(ctx, undoRecord)
 }
 
 // UndoDeploymentDataStore functionality.

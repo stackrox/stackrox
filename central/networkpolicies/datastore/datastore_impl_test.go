@@ -180,7 +180,7 @@ func (s *netPolDataStoreTestSuite) TestAllowsRemove() {
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforceGetUndo() {
-	s.undoStorage.EXPECT().GetUndoRecord(gomock.Any()).Times(0)
+	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Times(0)
 
 	_, found, err := s.dataStore.GetUndoRecord(s.hasNoneCtx, FakeID1)
 	s.NoError(err, "expected no error trying to read without permissions")
@@ -192,7 +192,7 @@ func (s *netPolDataStoreTestSuite) TestEnforceGetUndo() {
 }
 
 func (s *netPolDataStoreTestSuite) TestAllowGetUndo() {
-	s.undoStorage.EXPECT().GetUndoRecord(gomock.Any()).Return(&storage.NetworkPolicyApplicationUndoRecord{}, true, nil)
+	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.NetworkPolicyApplicationUndoRecord{}, true, nil)
 
 	_, found, err := s.dataStore.GetUndoRecord(s.hasWriteCtx, FakeClusterID)
 	s.NoError(err, "expected an error trying to write without permissions")
@@ -200,18 +200,18 @@ func (s *netPolDataStoreTestSuite) TestAllowGetUndo() {
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforceUpdateUndo() {
-	s.undoStorage.EXPECT().UpsertUndoRecord(gomock.Any(), gomock.Any()).Times(0)
+	s.undoStorage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Times(0)
 
-	err := s.dataStore.UpsertUndoRecord(s.hasNoneCtx, FakeClusterID, &storage.NetworkPolicyApplicationUndoRecord{})
+	err := s.dataStore.UpsertUndoRecord(s.hasNoneCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID})
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.UpsertUndoRecord(s.hasNS1ReadCtx, FakeClusterID, &storage.NetworkPolicyApplicationUndoRecord{})
+	err = s.dataStore.UpsertUndoRecord(s.hasNS1ReadCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID})
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *netPolDataStoreTestSuite) TestAllowUpdateUndo() {
-	s.undoStorage.EXPECT().UpsertUndoRecord(gomock.Any(), gomock.Any()).Return(nil)
+	s.undoStorage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
 
-	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, FakeClusterID, &storage.NetworkPolicyApplicationUndoRecord{})
+	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID})
 	s.NoError(err, "expected an error trying to write without permissions")
 }

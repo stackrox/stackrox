@@ -1,6 +1,7 @@
-package undostore
+package bolt
 
 import (
+	"context"
 	"testing"
 
 	"github.com/gogo/protobuf/types"
@@ -18,8 +19,9 @@ func TestUndoStore(t *testing.T) {
 type undoStoreTestSuite struct {
 	suite.Suite
 
+	ctx   context.Context
 	db    *bolt.DB
-	store UndoStore
+	store *undoStore
 }
 
 func (suite *undoStoreTestSuite) SetupSuite() {
@@ -30,6 +32,7 @@ func (suite *undoStoreTestSuite) SetupSuite() {
 
 	suite.db = db
 	suite.store = New(db)
+	suite.ctx = context.Background()
 }
 
 func (suite *undoStoreTestSuite) TearDownSuite() {
@@ -39,7 +42,7 @@ func (suite *undoStoreTestSuite) TearDownSuite() {
 func (suite *undoStoreTestSuite) TestGetOnEmptyStore() {
 	clusterID := uuid.NewV4().String()
 
-	_, exists, err := suite.store.GetUndoRecord(clusterID)
+	_, exists, err := suite.store.Get(suite.ctx, clusterID)
 	suite.Require().NoError(err)
 	suite.False(exists)
 }
@@ -51,14 +54,12 @@ func (suite *undoStoreTestSuite) TestUpsertOnEmpty() {
 		UndoModification: &storage.NetworkPolicyModification{
 			ApplyYaml: "some yaml",
 		},
+		ClusterId: uuid.NewV4().String(),
 	}
-
-	clusterID := uuid.NewV4().String()
-
-	err := suite.store.UpsertUndoRecord(clusterID, record)
+	err := suite.store.Upsert(suite.ctx, record)
 	suite.Require().NoError(err)
 
-	readRecord, exists, err := suite.store.GetUndoRecord(clusterID)
+	readRecord, exists, err := suite.store.Get(suite.ctx, record.GetClusterId())
 	suite.Require().NoError(err)
 	suite.Require().True(exists)
 
@@ -72,6 +73,7 @@ func (suite *undoStoreTestSuite) TestUpsertNewer() {
 		UndoModification: &storage.NetworkPolicyModification{
 			ApplyYaml: "some yaml",
 		},
+		ClusterId: uuid.NewV4().String(),
 	}
 
 	newerRecord := &storage.NetworkPolicyApplicationUndoRecord{
@@ -80,17 +82,16 @@ func (suite *undoStoreTestSuite) TestUpsertNewer() {
 		UndoModification: &storage.NetworkPolicyModification{
 			ApplyYaml: "another yaml",
 		},
+		ClusterId: olderRecord.GetClusterId(),
 	}
 
-	clusterID := uuid.NewV4().String()
-
-	err := suite.store.UpsertUndoRecord(clusterID, olderRecord)
+	err := suite.store.Upsert(suite.ctx, olderRecord)
 	suite.Require().NoError(err)
 
-	err = suite.store.UpsertUndoRecord(clusterID, newerRecord)
+	err = suite.store.Upsert(suite.ctx, newerRecord)
 	suite.Require().NoError(err)
 
-	readRecord, exists, err := suite.store.GetUndoRecord(clusterID)
+	readRecord, exists, err := suite.store.Get(suite.ctx, olderRecord.GetClusterId())
 	suite.Require().NoError(err)
 	suite.Require().True(exists)
 
@@ -104,6 +105,7 @@ func (suite *undoStoreTestSuite) TestUpsertOlder() {
 		UndoModification: &storage.NetworkPolicyModification{
 			ApplyYaml: "some yaml",
 		},
+		ClusterId: uuid.NewV4().String(),
 	}
 
 	newerRecord := &storage.NetworkPolicyApplicationUndoRecord{
@@ -112,13 +114,12 @@ func (suite *undoStoreTestSuite) TestUpsertOlder() {
 		UndoModification: &storage.NetworkPolicyModification{
 			ApplyYaml: "another yaml",
 		},
+		ClusterId: olderRecord.GetClusterId(),
 	}
 
-	clusterID := uuid.NewV4().String()
-
-	err := suite.store.UpsertUndoRecord(clusterID, newerRecord)
+	err := suite.store.Upsert(suite.ctx, newerRecord)
 	suite.Require().NoError(err)
 
-	err = suite.store.UpsertUndoRecord(clusterID, olderRecord)
+	err = suite.store.Upsert(suite.ctx, olderRecord)
 	suite.Require().Error(err)
 }

@@ -216,8 +216,9 @@ func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyN
 	if err != nil {
 		return nil, err
 	}
+	undoRecord.ClusterId = request.GetClusterId()
 
-	err = s.networkPolicies.UpsertUndoRecord(ctx, request.GetClusterId(), undoRecord)
+	err = s.networkPolicies.UpsertUndoRecord(ctx, undoRecord)
 	if err != nil {
 		return nil, errors.Errorf("network policy was applied, but undo record could not be stored: %v", err)
 	}

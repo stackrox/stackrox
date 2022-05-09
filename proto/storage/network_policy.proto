@@ -88,6 +88,7 @@ message NetworkPolicyModification {
 }
 
 message NetworkPolicyApplicationUndoRecord {
+    string cluster_id                           = 5 [(gogoproto.moretags) = 'sql:"pk"'];
     string user                                 = 1;
     google.protobuf.Timestamp apply_timestamp   = 2;
 
