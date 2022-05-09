@@ -148,6 +148,21 @@ func TestMultiTableQueries(t *testing.T) {
 				Data:  []interface{}{},
 			},
 		},
+		{
+			desc: "id and match non query",
+			q: search.ConjunctionQuery(
+				search.NewQueryBuilder().AddDocIDs("123").ProtoQuery(),
+				search.MatchNoneQuery(),
+			),
+			expected: &query{
+				Select: selectQuery{
+					Query: "select deployments.Id",
+				},
+				From:  "deployments",
+				Where: "(deployments.Id = ANY($$::text[]) and false)",
+				Data:  []interface{}{[]string{"123"}},
+			},
+		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			actual, err := standardizeQueryAndPopulatePath(c.q, deploymentBaseSchema, GET)
