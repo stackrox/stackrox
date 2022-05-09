@@ -561,7 +561,8 @@ func (resolver *clusterResolver) NodeVulnerabilities(ctx context.Context, args P
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilities")
 
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeVulnerabilities(resolver.clusterScopeContext(ctx), args)
+		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+		return resolver.root.NodeVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver NodeVulnerabilities in clusterResolver does not support postgres yet")
@@ -571,7 +572,8 @@ func (resolver *clusterResolver) NodeVulnerabilityCount(ctx context.Context, arg
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilityCount")
 
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeVulnerabilityCount(resolver.clusterScopeContext(ctx), args)
+		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+		return resolver.root.NodeVulnerabilityCount(ctx, RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
 	return 0, errors.New("Sub-resolver NodeVulnerabilityCount in clusterResolver does not support postgres yet")
@@ -581,7 +583,8 @@ func (resolver *clusterResolver) NodeVulnerabilityCounter(ctx context.Context, a
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilityCounter")
 
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeVulnCounter(resolver.clusterScopeContext(ctx), args)
+		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+		return resolver.root.NodeVulnCounter(ctx, RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver NodeVulnerabilityCounter in clusterResolver does not support postgres yet")
@@ -983,13 +986,6 @@ func (resolver *clusterResolver) PlottedVulns(ctx context.Context, args RawQuery
 
 func (resolver *clusterResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
 	return nil
-}
-
-func (resolver *clusterResolver) clusterScopeContext(ctx context.Context) context.Context {
-	return scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_CLUSTERS,
-		ID:    resolver.data.GetId(),
-	})
 }
 
 func (resolver *orchestratorMetadataResolver) OpenShiftVersion() (string, error) {
