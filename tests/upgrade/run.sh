@@ -392,10 +392,8 @@ test_upgrade_paths() {
 
     info "Running smoke tests"
     CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test || touch FAIL
-    store_qa_test_results "${ARTIFACTS}/upgrade-paths-smoke-tests"
-    if [[ -n "${ARTIFACTS:-}" ]]; then
-        cp -a qa-tests-backend/build/test-results/test "${ARTIFACTS}/upgrade-paths-smoke-tests"
-    fi
+    store_qa_test_results "upgrade-paths-smoke-tests"
+    [[ -f FAIL ]] && die "Smoke tests failed"
 
     collect_and_check_stackrox_logs "$log_output_dir" "03_final"
 }

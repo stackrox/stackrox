@@ -694,7 +694,7 @@ store_test_results() {
 
     info "Copying test results from $from to $to"
 
-    local dest="${ARTIFACTS}/$to"
+    local dest="${ARTIFACT_DIR}/$to"
 
     cp -a "$from" "$dest" || true # (best effort)
 }
