@@ -6,12 +6,14 @@ import (
 
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
+	"github.com/stackrox/rox/central/postgres/schema"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped/postgres"
+	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
 // NewV2 returns a new instance of Searcher for the given storage and indexer.
@@ -23,12 +25,17 @@ func NewV2(storage store.Store, indexer index.Indexer) Searcher {
 	}
 }
 
+func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
+	safeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
+	transformedSortFieldSearcher := sortfields.TransformSortFields(safeSearcher, schema.DeploymentsSchema.OptionsMap)
+	return paginated.WithDefaultSortOption(transformedSortFieldSearcher, defaultSortOption)
+}
+
 // searcherImplV2 provides an intermediary search implementation layer for Deployments.
 type searcherImplV2 struct {
-	storage       store.Store
-	indexer       index.Indexer
-	graphProvider graph.Provider
-	searcher      search.Searcher
+	storage  store.Store
+	indexer  index.Indexer
+	searcher search.Searcher
 }
 
 // SearchRawDeployments retrieves deployments from the indexer and storage
