@@ -211,6 +211,34 @@ func (s *ClustersStoreSuite) TestSACGetIDs() {
 	}
 }
 
+func (s *ClustersStoreSuite) TestSACExists() {
+	objA := &storage.Cluster{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.Cluster{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	s.store.Upsert(withAllAccessCtx, objA)
+	s.store.Upsert(withAllAccessCtx, objB)
+
+	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
+	for name, expected := range map[string]bool{
+		withAllAccess:           true,
+		withNoAccess:            false,
+		withNoAccessToCluster:   false,
+		withAccessToDifferentNs: false,
+		withAccess:              true,
+		withAccessToCluster:     true,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			exists, err := s.store.Exists(ctxs[name], objA.GetId())
+			assert.NoError(t, err)
+			assert.Equal(t, expected, exists)
+		})
+	}
+}
+
 const (
 	withAllAccess           = "AllAccess"
 	withNoAccess            = "NoAccess"

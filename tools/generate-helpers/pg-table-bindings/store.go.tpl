@@ -38,6 +38,7 @@ import (
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
     "github.com/stackrox/rox/pkg/sac"
+    "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres"
 )
 
@@ -450,6 +451,17 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "{{.TrimmedType}}")
 
+    {{- if eq (len $pks) 1 }}
+    q := search.NewQueryBuilder().AddDocIDs({{template "argList" $pks}}).ProtoQuery()
+    {{- else }}
+    q := search.ConjunctionQuery(
+        {{- range $idx, $pk := $pks}}
+        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ $pk.Search.FieldName }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        {{- end}}
+    )
+    {{- end }}
+    var sacQueryFilter *v1.Query
+
     {{ if .PermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.ExistsAllowed(ctx); err != nil || !ok {
         return false, err
@@ -461,14 +473,27 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
     } else if !ok {
         return false, nil
     }
-    {{- end}}
-
-	row := s.db.QueryRow(ctx, existsStmt, {{template "argList" $pks}})
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
+    {{- else if .Obj.IsDirectlyScoped }}
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
+	if err != nil {
+		return false, err
 	}
-	return exists, nil
+    {{- if .Obj.IsClusterScope }}
+    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    {{- else}}
+    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    {{- end }}
+	if err != nil {
+		return false, err
+	}
+    {{- end }}
+
+	count, err := postgres.RunCountRequestForSchema(schema, search.ConjunctionQuery(q, sacQueryFilter), s.db)
+	return count == 1, err
 }
 
 // Get returns the object, if it exists from the store

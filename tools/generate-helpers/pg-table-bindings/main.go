@@ -191,6 +191,13 @@ func main() {
 				schema:                   schema,
 			},
 		}
+		if len(schema.PrimaryKeys()) > 1 {
+			for _, pk := range schema.PrimaryKeys() {
+				if pk.Search.FieldName == "" {
+					log.Printf("%s:%s is not searchable and is PK", props.Type, pk.Name)
+				}
+			}
+		}
 
 		if err := generateSchema(schema, searchCategory, parsedReferences, props.SchemaDirectory); err != nil {
 			return err
