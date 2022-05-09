@@ -54,10 +54,6 @@ const (
 
         walkStmt = "SELECT serialized FROM {{.Table}}"
 
-{{- if $singlePK }}
-        getManyStmt = "SELECT serialized FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
-{{- end }}
-
         batchAfter = 100
 
         // using copyFrom, we may not even want to batch.  It would probably be simpler
@@ -711,7 +707,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "{{.TrimmedType}}")
-
+    var sacQueryFilter *v1.Query
     {{ if .Obj.HasPermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.GetManyAllowed(ctx); err != nil {
         return nil, nil, err
@@ -725,15 +721,30 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
     } else if !ok {
         return nil, nil, nil
     }
-    {{- end}}
-
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "{{.TrimmedType}}")
+    {{- else if .Obj.IsDirectlyScoped }}
+    {{ template "defineScopeChecker" "READ" }}
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-	    return nil, nil, err
+        return nil, nil, err
 	}
-	defer release()
+    {{- if .Obj.IsClusterScope }}
+    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    {{- else}}
+    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    {{- end }}
+	if err != nil {
+        return nil, nil, err
+	}
+    {{- end }}
+    q := search.ConjunctionQuery(
+        sacQueryFilter,
+        search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+    )
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))

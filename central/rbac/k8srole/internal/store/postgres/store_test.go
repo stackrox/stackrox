@@ -332,6 +332,38 @@ func (s *K8sRolesStoreSuite) TestSACDeleteMany() {
 	}
 }
 
+func (s *K8sRolesStoreSuite) TestSACGetMany() {
+	objA := &storage.K8SRole{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.K8SRole{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	s.store.Upsert(withAllAccessCtx, objA)
+	s.store.Upsert(withAllAccessCtx, objB)
+
+	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
+	for name, expected := range map[string]struct {
+		elems          []*storage.K8SRole
+		missingIndices []int
+	}{
+		withAllAccess:           {elems: []*storage.K8SRole{objA, objB}, missingIndices: []int{}},
+		withNoAccess:            {elems: []*storage.K8SRole{}, missingIndices: []int{0, 1}},
+		withNoAccessToCluster:   {elems: []*storage.K8SRole{}, missingIndices: []int{0, 1}},
+		withAccessToDifferentNs: {elems: []*storage.K8SRole{}, missingIndices: []int{0, 1}},
+		withAccess:              {elems: []*storage.K8SRole{objA}, missingIndices: []int{1}},
+		withAccessToCluster:     {elems: []*storage.K8SRole{objA}, missingIndices: []int{1}},
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			actual, missingIndices, err := s.store.GetMany(ctxs[name], []string{objA.GetId(), objB.GetId()})
+			s.NoError(err)
+			assert.Equal(t, expected.elems, actual)
+			assert.Equal(t, expected.missingIndices, missingIndices)
+		})
+	}
+}
+
 const (
 	withAllAccess           = "AllAccess"
 	withNoAccess            = "NoAccess"

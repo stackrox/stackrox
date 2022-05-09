@@ -25,8 +25,7 @@ import (
 const (
 	baseTable = "auth_providers"
 
-	walkStmt    = "SELECT serialized FROM auth_providers"
-	getManyStmt = "SELECT serialized FROM auth_providers WHERE Id = ANY($1::text[])"
+	walkStmt = "SELECT serialized FROM auth_providers"
 
 	batchAfter = 100
 
@@ -372,6 +371,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.AuthProvider, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "AuthProvider")
+	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
@@ -379,14 +379,12 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.AuthP
 	} else if !ok {
 		return nil, nil, nil
 	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
 
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "AuthProvider")
-	if err != nil {
-		return nil, nil, err
-	}
-	defer release()
-
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))

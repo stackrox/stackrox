@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
@@ -26,8 +27,7 @@ const (
 	getStmt    = "SELECT serialized FROM node_component_cve_edges WHERE Id = $1 AND ComponentId = $2 AND CveId = $3"
 	deleteStmt = "DELETE FROM node_component_cve_edges WHERE Id = $1 AND ComponentId = $2 AND CveId = $3"
 
-	walkStmt    = "SELECT serialized FROM node_component_cve_edges"
-	getManyStmt = "SELECT serialized FROM node_component_cve_edges WHERE Id = ANY($1::text[])"
+	walkStmt = "SELECT serialized FROM node_component_cve_edges"
 
 	batchAfter = 100
 
@@ -144,14 +144,14 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.NodeComponentCVEEdge, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentCVEEdge")
+	var sacQueryFilter *v1.Query
 
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "NodeComponentCVEEdge")
-	if err != nil {
-		return nil, nil, err
-	}
-	defer release()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))

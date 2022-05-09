@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -543,6 +544,20 @@ func RunGetQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Quer
 	var data []byte
 	err = row.Scan(&data)
 	return data, err
+}
+
+// RunGetManyQueryForSchema executes a request for just the search against the database
+func RunGetManyQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (pgx.Rows, error) {
+	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
+	if err != nil {
+		return nil, err
+	}
+	if query == nil {
+		return nil, errox.InvalidArgs.New("empty query")
+	}
+
+	queryStr := query.String()
+	return db.Query(ctx, replaceVars(queryStr), query.Data...)
 }
 
 // RunDeleteRequestForSchema executes a request for just the delete against the database

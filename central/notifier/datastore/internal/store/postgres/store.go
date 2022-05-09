@@ -25,8 +25,7 @@ import (
 const (
 	baseTable = "notifiers"
 
-	walkStmt    = "SELECT serialized FROM notifiers"
-	getManyStmt = "SELECT serialized FROM notifiers WHERE Id = ANY($1::text[])"
+	walkStmt = "SELECT serialized FROM notifiers"
 
 	batchAfter = 100
 
@@ -372,6 +371,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Notifier, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Notifier")
+	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
@@ -379,14 +379,12 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Notif
 	} else if !ok {
 		return nil, nil, nil
 	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
 
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "Notifier")
-	if err != nil {
-		return nil, nil, err
-	}
-	defer release()
-
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))

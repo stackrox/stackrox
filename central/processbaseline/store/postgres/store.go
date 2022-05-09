@@ -28,8 +28,7 @@ import (
 const (
 	baseTable = "process_baselines"
 
-	walkStmt    = "SELECT serialized FROM process_baselines"
-	getManyStmt = "SELECT serialized FROM process_baselines WHERE Id = ANY($1::text[])"
+	walkStmt = "SELECT serialized FROM process_baselines"
 
 	batchAfter = 100
 
@@ -404,14 +403,26 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ProcessBaseline, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ProcessBaseline")
+	var sacQueryFilter *v1.Query
 
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "ProcessBaseline")
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
 		return nil, nil, err
 	}
-	defer release()
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))

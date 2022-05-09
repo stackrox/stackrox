@@ -332,6 +332,38 @@ func (s *DeploymentsStoreSuite) TestSACDeleteMany() {
 	}
 }
 
+func (s *DeploymentsStoreSuite) TestSACGetMany() {
+	objA := &storage.Deployment{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.Deployment{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	s.store.Upsert(withAllAccessCtx, objA)
+	s.store.Upsert(withAllAccessCtx, objB)
+
+	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
+	for name, expected := range map[string]struct {
+		elems          []*storage.Deployment
+		missingIndices []int
+	}{
+		withAllAccess:           {elems: []*storage.Deployment{objA, objB}, missingIndices: []int{}},
+		withNoAccess:            {elems: []*storage.Deployment{}, missingIndices: []int{0, 1}},
+		withNoAccessToCluster:   {elems: []*storage.Deployment{}, missingIndices: []int{0, 1}},
+		withAccessToDifferentNs: {elems: []*storage.Deployment{}, missingIndices: []int{0, 1}},
+		withAccess:              {elems: []*storage.Deployment{objA}, missingIndices: []int{1}},
+		withAccessToCluster:     {elems: []*storage.Deployment{objA}, missingIndices: []int{1}},
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			actual, missingIndices, err := s.store.GetMany(ctxs[name], []string{objA.GetId(), objB.GetId()})
+			s.NoError(err)
+			assert.Equal(t, expected.elems, actual)
+			assert.Equal(t, expected.missingIndices, missingIndices)
+		})
+	}
+}
+
 const (
 	withAllAccess           = "AllAccess"
 	withNoAccess            = "NoAccess"

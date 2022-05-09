@@ -24,8 +24,7 @@ import (
 const (
 	baseTable = "cluster_init_bundles"
 
-	walkStmt    = "SELECT serialized FROM cluster_init_bundles"
-	getManyStmt = "SELECT serialized FROM cluster_init_bundles WHERE Id = ANY($1::text[])"
+	walkStmt = "SELECT serialized FROM cluster_init_bundles"
 
 	batchAfter = 100
 
@@ -339,20 +338,18 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.InitBundleMeta, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "InitBundleMeta")
-
+	var sacQueryFilter *v1.Query
 	if ok, err := permissionCheckerSingleton().GetManyAllowed(ctx); err != nil {
 		return nil, nil, err
 	} else if !ok {
 		return nil, nil, nil
 	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
 
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "InitBundleMeta")
-	if err != nil {
-		return nil, nil, err
-	}
-	defer release()
-
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))

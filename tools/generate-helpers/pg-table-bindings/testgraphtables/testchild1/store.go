@@ -23,8 +23,7 @@ import (
 const (
 	baseTable = "test_child1"
 
-	walkStmt    = "SELECT serialized FROM test_child1"
-	getManyStmt = "SELECT serialized FROM test_child1 WHERE Id = ANY($1::text[])"
+	walkStmt = "SELECT serialized FROM test_child1"
 
 	batchAfter = 100
 
@@ -314,14 +313,14 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestChild1, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "TestChild1")
+	var sacQueryFilter *v1.Query
 
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "TestChild1")
-	if err != nil {
-		return nil, nil, err
-	}
-	defer release()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			missingIndices := make([]int, 0, len(ids))
