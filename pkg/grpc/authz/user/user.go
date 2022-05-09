@@ -87,5 +87,12 @@ func (p *permissionChecker) checkPermissions(rolePerms map[string]storage.Access
 }
 
 func evaluateAgainstPermissions(permissions map[string]storage.Access, perm permissions.ResourceWithAccess) bool {
-	return permissions[string(perm.Resource.GetResource())] >= perm.Access
+	hasAccess := permissions[string(perm.Resource.GetResource())] >= perm.Access
+
+	// In case the resource has a ReplacingResource, we accept access to either one of them.
+	if perm.Resource.ReplacingResource != nil {
+		return hasAccess || permissions[string(perm.Resource.ReplacingResource.GetResource())] >= perm.Access
+	}
+
+	return hasAccess
 }

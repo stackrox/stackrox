@@ -23,7 +23,18 @@ func ForResource(resourceMD permissions.ResourceMetadata) ForResourceHelper {
 
 // ScopeChecker returns the scope checker for accessing the given resource in the specified way.
 func (h ForResourceHelper) ScopeChecker(ctx context.Context, am storage.Access, keys ...ScopeKey) ScopeChecker {
-	return GlobalAccessScopeChecker(ctx).AccessMode(am).Resource(h.resourceMD.GetResource()).SubScopeChecker(keys...)
+	resourceScopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(am).Resource(
+		h.resourceMD.GetResource()).SubScopeChecker(keys...)
+
+	if h.resourceMD.ReplacingResource == nil {
+		return resourceScopeChecker
+	}
+	// Conditionally create a OR scope checker if a replacing resource is given. This way we check access to either
+	// the old resource OR the replacing resource, keeping backwards-compatibility.
+	return NewOrScopeChecker(
+		resourceScopeChecker,
+		GlobalAccessScopeChecker(ctx).AccessMode(am).
+			Resource(h.resourceMD.ReplacingResource.GetResource()).SubScopeChecker(keys...))
 }
 
 // AccessAllowed checks if in the given context, we have access of the specified kind to the resource or

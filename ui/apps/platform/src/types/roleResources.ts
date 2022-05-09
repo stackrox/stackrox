@@ -1,6 +1,8 @@
 // central/role/resources/list.go
 
 export type ResourceName =
+    | 'Access'
+    | 'Administration'
     | 'APIToken'
     | 'Alert'
     | 'AllComments'
@@ -15,12 +17,14 @@ export type ResourceName =
     | 'Config'
     | 'DebugLogs'
     | 'Deployment'
+    | 'DeploymentExtensions'
     | 'Detection'
     | 'Group'
     | 'Image'
     | 'ImageComponent'
     | 'ImageIntegration'
     | 'Indicator'
+    | 'Integrations'
     | 'K8sRole'
     | 'K8sRoleBinding'
     | 'K8sSubject'

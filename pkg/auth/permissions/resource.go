@@ -23,7 +23,11 @@ const (
 // ResourceMetadata contains metadata about a resource.
 type ResourceMetadata struct {
 	Resource
-	Scope ResourceScope
+	// ReplacingResource may be used when the given Resource has a replacing equivalent, i.e. during deprecation.
+	// The ReplacingResource will be used during SAC checks for the resource, essentially allowing access if either
+	// access to the old Resource is allowed OR to the ReplacingResource.
+	ReplacingResource *ResourceMetadata
+	Scope             ResourceScope
 	// legacyAuthForSAC is a tri-state bool determining whether legacy auth for SAC is forced on or off. If false,
 	// no legacy auth for SAC is performed (only affects globally-scoped resources). If true, legacy auth for SAC
 	// (at the global scope) is performed even for non-globally scoped resources. If `nil`, the default behavior is used
