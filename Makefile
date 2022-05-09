@@ -12,7 +12,12 @@ TAG=$(shell cat CI_TAG)
 endif
 endif
 
-QUAY_TAG_EXPIRATION=$(shell echo $(TAG) | if egrep -xq "[0-9]+(\.[0-9]+)?\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?"; then echo 24w; else echo 3w; fi)
+# Set expiration on Quay.io for non-release tags.
+ifeq ($(findstring x,$(TAG)),x)
+QUAY_TAG_EXPIRATION=1w
+else
+QUAY_TAG_EXPIRATION=never
+endif
 
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scaner, and collector images.
 # ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs.
@@ -533,7 +538,7 @@ docs-image:
 docker-build-data-image: docs-image
 	docker build -t stackrox-data:$(TAG) \
 	    --build-arg DOCS_IMAGE=$(DOCS_IMAGE) \
-		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
+		$(QUAY_TAG_EXPIRATION) \
 		image/ \
 		--file image/stackrox-data.Dockerfile
 
@@ -544,7 +549,7 @@ docker-build-roxctl-image:
 		-t stackrox/roxctl:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
 		-f image/roxctl.Dockerfile \
-		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
+		$(QUAY_TAG_EXPIRATION) \
 		image/
 
 .PHONY: copy-go-binaries-to-image-dir
