@@ -40,6 +40,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 `v1/policycategories` endpoint have been deprecated, and will be removed in future releases. 
   - For questions about this change, please contact the Red Hat support team at support@redhat.com.
 - ROX-10018: The policy `OpenShift: Kubeadmin Secret Accessed` will no longer trigger if the request was from the default OpenShift `oauth-apiserver-sa` service account, because this is an expected access pattern for the OpenShift apiserver.
+- Violation tags and process tags are deprecated, and will be removed in version 3.72.0.
+
 
 ## [69.1]
 
