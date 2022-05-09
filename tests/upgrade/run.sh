@@ -392,6 +392,9 @@ test_upgrade_paths() {
 
     info "Running smoke tests"
     CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test
+    if [[ -n "${ARTIFACTS:-}" ]]; then
+        cp -a qa-tests-backend/build/test-results/test "${ARTIFACTS}/upgrade-paths-smoke-tests"
+    fi
 
     collect_and_check_stackrox_logs "$log_output_dir" "03_final"
 }
