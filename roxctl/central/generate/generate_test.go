@@ -3,7 +3,6 @@ package generate
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -36,9 +35,7 @@ const (
 )
 
 func TestRestoreKeysAndCerts(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "testGenerate")
-	require.NoError(t, err)
-	defer func() { _ = os.RemoveAll(tmpDir) }()
+	tmpDir := t.TempDir()
 
 	testutils.SetExampleVersion(t)
 	buildTestutils.SetBuildTimestamp(t, time.Now())

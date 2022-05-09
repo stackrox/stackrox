@@ -2,7 +2,6 @@ package generic
 
 import (
 	"bytes"
-	"os"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
@@ -48,8 +47,8 @@ type CRUDTestSuite struct {
 }
 
 func (s *CRUDTestSuite) SetupTest() {
-	dir, err := os.MkdirTemp("", "")
-	s.NoError(err)
+	var err error
+	dir := s.T().TempDir()
 
 	s.dir = dir
 
@@ -60,7 +59,6 @@ func (s *CRUDTestSuite) SetupTest() {
 
 func (s *CRUDTestSuite) TearDownTest() {
 	s.db.Close()
-	_ = os.RemoveAll(s.dir)
 }
 
 func (s *CRUDTestSuite) TestWalkAllWithID() {
@@ -284,8 +282,8 @@ type CRUDTestSuiteWithoutIndexTracking struct {
 }
 
 func (s *CRUDTestSuiteWithoutIndexTracking) SetupTest() {
-	dir, err := os.MkdirTemp("", "")
-	s.NoError(err)
+	var err error
+	dir := s.T().TempDir()
 
 	s.dir = dir
 
@@ -296,7 +294,6 @@ func (s *CRUDTestSuiteWithoutIndexTracking) SetupTest() {
 
 func (s *CRUDTestSuiteWithoutIndexTracking) TearDownTest() {
 	s.db.Close()
-	_ = os.RemoveAll(s.dir)
 }
 
 func (s *CRUDTestSuiteWithoutIndexTracking) verifyNoKeysMarkedForIndexing() {

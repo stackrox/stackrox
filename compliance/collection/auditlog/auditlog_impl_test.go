@@ -44,11 +44,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderReturnsGracefullyIfFileDoe
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderReturnsErrorIfFileExistsButCannotBeRead() {
-	tempDir, err := os.MkdirTemp("", "")
-	s.NoError(err)
-	defer func() {
-		s.NoError(os.RemoveAll(tempDir))
-	}()
+	tempDir := s.T().TempDir()
 	logPath := filepath.Join(tempDir, "testaudit_notopenable.log")
 
 	// Create a file that the reader cannot open due to permissions missing
@@ -87,11 +83,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderReturnsErrorIfReaderIsAlre
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
-	tempDir, err := os.MkdirTemp("", "")
-	s.NoError(err)
-	defer func() {
-		s.NoError(os.RemoveAll(tempDir))
-	}()
+	tempDir := s.T().TempDir()
 	logPath := filepath.Join(tempDir, "testaudit_tail.log")
 
 	sender, reader := s.getMocks(logPath)
@@ -138,11 +130,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsThatMatchResourceTypeFilter() {
-	tempDir, err := os.MkdirTemp("", "")
-	s.NoError(err)
-	defer func() {
-		s.NoError(os.RemoveAll(tempDir))
-	}()
+	tempDir := s.T().TempDir()
 	logPath := filepath.Join(tempDir, "testaudit_filter.log")
 
 	sender, reader := s.getMocks(logPath)
@@ -175,11 +163,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsThatMatchRe
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForValidStages() {
-	tempDir, err := os.MkdirTemp("", "")
-	s.NoError(err)
-	defer func() {
-		s.NoError(os.RemoveAll(tempDir))
-	}()
+	tempDir := s.T().TempDir()
 	logPath := filepath.Join(tempDir, "testaudit_filter.log")
 
 	sender, reader := s.getMocks(logPath)
@@ -223,11 +207,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForValidSta
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForVerbsNotInDenyList() {
-	tempDir, err := os.MkdirTemp("", "")
-	s.NoError(err)
-	defer func() {
-		s.NoError(os.RemoveAll(tempDir))
-	}()
+	tempDir := s.T().TempDir()
 	logPath := filepath.Join(tempDir, "testaudit_filter_verb.log")
 
 	sender, reader := s.getMocks(logPath)
@@ -271,11 +251,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForVerbsNot
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderSkipsEventsThatCannotBeParsed() {
-	tempDir, err := os.MkdirTemp("", "")
-	s.NoError(err)
-	defer func() {
-		s.NoError(os.RemoveAll(tempDir))
-	}()
+	tempDir := s.T().TempDir()
 	logPath := filepath.Join(tempDir, "testaudit_marshallerr.log")
 
 	sender, reader := s.getMocks(logPath)
@@ -307,11 +283,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderSkipsEventsThatCannotBePar
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderStartsSendingEventsAfterStartState() {
-	tempDir, err := os.MkdirTemp("", "")
-	s.NoError(err)
-	defer func() {
-		s.NoError(os.RemoveAll(tempDir))
-	}()
+	tempDir := s.T().TempDir()
 	logPath := filepath.Join(tempDir, "testaudit_filestate.log")
 
 	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
@@ -352,11 +324,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderStartsSendingEventsAfterSt
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderStartsSendingEventsAtStartStateIfIdsDontMatch() {
-	tempDir, err := os.MkdirTemp("", "")
-	s.NoError(err)
-	defer func() {
-		s.NoError(os.RemoveAll(tempDir))
-	}()
+	tempDir := s.T().TempDir()
 	logPath := filepath.Join(tempDir, "testaudit_filestate.log")
 
 	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)

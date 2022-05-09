@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -63,10 +62,7 @@ func (suite *NodeDataStoreTestSuite) SetupSuite() {
 		suite.FailNow("failed to create dackbox", err.Error())
 	}
 
-	suite.blevePath, err = os.MkdirTemp("", "")
-	if err != nil {
-		suite.FailNow("failed to create dir for bleve", err.Error())
-	}
+	suite.blevePath = suite.T().TempDir()
 	blevePath := filepath.Join(suite.blevePath, "scorch.bleve")
 	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")
 	if err != nil {
@@ -87,7 +83,6 @@ func (suite *NodeDataStoreTestSuite) SetupSuite() {
 }
 
 func (suite *NodeDataStoreTestSuite) TearDownSuite() {
-	_ = os.RemoveAll(suite.blevePath)
 	rocksdbtest.TearDownRocksDB(suite.db)
 }
 

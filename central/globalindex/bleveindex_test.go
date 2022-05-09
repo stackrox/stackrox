@@ -2,7 +2,6 @@ package globalindex
 
 import (
 	"encoding/json"
-	"os"
 	"testing"
 
 	bleveMapping "github.com/blevesearch/bleve/mapping"
@@ -15,8 +14,7 @@ import (
 func TestCompareMapping(t *testing.T) {
 	indexMapping := mapping.GetIndexMapping()
 
-	tmpDir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
+	tmpDir := t.TempDir()
 
 	index, err := TempInitializeIndices(tmpDir)
 	require.NoError(t, err)

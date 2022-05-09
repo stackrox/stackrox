@@ -30,16 +30,9 @@ func TestManager(t *testing.T) {
 }
 
 func (s *managerTestSuite) SetupTest() {
-	dataDir, err := os.MkdirTemp("", "probeupload-mgr-test-")
-	s.Require().NoError(err)
-
-	s.dataDir = dataDir
+	s.dataDir = s.T().TempDir()
 	s.mgr = newManager(s.dataDir)
 	s.mgr.freeDiskThreshold = 0 // not interested in testing this
-}
-
-func (s *managerTestSuite) TearDownTest() {
-	_ = os.RemoveAll(s.dataDir)
 }
 
 func (s *managerTestSuite) TestInitializeOnEmptyDir() {

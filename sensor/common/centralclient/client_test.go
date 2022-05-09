@@ -71,8 +71,7 @@ func (t *ClientTestSuite) SetupSuite() {
 	ca, err := certgen.GenerateCA()
 	t.Require().NoError(err)
 
-	t.clientCertDir, err = os.MkdirTemp("", "client-certs")
-	t.Require().NoError(err)
+	t.clientCertDir = t.T().TempDir()
 
 	leafCert, err := ca.IssueCertForSubject(mtls.SensorSubject)
 	t.Require().NoError(err)
@@ -84,7 +83,6 @@ func (t *ClientTestSuite) SetupSuite() {
 }
 
 func (t *ClientTestSuite) TearDownSuite() {
-	_ = os.RemoveAll(t.clientCertDir)
 	t.envIsolator.RestoreAll()
 }
 
