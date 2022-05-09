@@ -13,34 +13,18 @@ export type BaseImageIntegration = {
 export type ImageIntegrationCategory = 'REGISTRY' | 'SCANNER' | 'NODE_SCANNER';
 
 export type ImageIntegration =
-    | AnchoreImageIntegration
     | ArtifactoryImageIntegration
     | ArtifactRegistryImageIntegration
     | AzureImageIntegration
     | ClairImageIntegration
     | ClairifyImageIntegration
     | DockerImageIntegration
-    | DtrImageIntegration
     | EcrImageIntegration
     | GoogleImageIntegration
     | IbmImageIntegration
     | NexusImageIntegration
     | QuayImageIntegration
-    | RhelImageIntegration
-    | TenableImageIntegration;
-
-export type AnchoreImageIntegration = {
-    type: 'anchore';
-    anchore: AnchoreConfig;
-} & BaseImageIntegration;
-
-export type AnchoreConfig = {
-    endpoint: string; // scrub: dependent
-    username: string; // scrub: dependent
-    // The password for the integration. The server will mask the value of this credential in responses and logs.
-    password: string; // scrub: always
-    insecure: boolean;
-};
+    | RhelImageIntegration;
 
 export type ArtifactoryImageIntegration = {
     type: 'artifactory';
@@ -85,19 +69,6 @@ export type DockerConfig = {
     username: string; // scrub: dependent
     // The password for the integration. The server will mask the value of this credential in responses and logs.
     password: string; // scrub: always
-    insecure: boolean;
-};
-
-export type DtrImageIntegration = {
-    type: 'dtr';
-    dtr: DtrConfig;
-} & BaseImageIntegration;
-
-export type DtrConfig = {
-    username: string; // scrub: dependent
-    // The password for the integration. The server will mask the value of this credential in responses and logs.
-    password: string; // scrub: always
-    endpoint: string; // scrub: dependent
     insecure: boolean;
 };
 
@@ -169,15 +140,3 @@ export type QuayConfig = {
 export type RhelImageIntegration = {
     type: 'rhel';
 } & BaseImageIntegration;
-
-export type TenableImageIntegration = {
-    type: 'tenable';
-    tenable: TenableConfig;
-} & BaseImageIntegration;
-
-export type TenableConfig = {
-    // The access key for the integration. The server will mask the value of this credential in responses and logs.
-    accessKey: string; // scrub: always
-    // The secret key for the integration. The server will mask the value of this credential in responses and logs.
-    secretKey: string; // scrub: always
-};
