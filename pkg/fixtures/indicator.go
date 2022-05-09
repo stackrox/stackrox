@@ -61,7 +61,7 @@ func GetScopedProcessIndicator(ID string, clusterID string, namespace string) *s
 // It will include:
 // 9 Process indicators scoped to Cluster1, 3 to each Namespace A / B / C.
 // 9 Process indicators scoped to Cluster2, 3 to each Namespace A / B / C.
-// 9 Process indicators scoped to Cluster2, 3 to each Namespace A / B / C.
+// 9 Process indicators scoped to Cluster3, 3 to each Namespace A / B / C.
 func GetSACTestProcessIndicatorSet() []*storage.ProcessIndicator {
 	return []*storage.ProcessIndicator{
 		scopedProcessIndicator(testconsts.Cluster1, testconsts.NamespaceA),
