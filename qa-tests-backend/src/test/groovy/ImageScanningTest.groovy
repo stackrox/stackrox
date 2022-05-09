@@ -8,7 +8,6 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.Vulnerability
-import objects.AnchoreScannerIntegration
 import objects.ClairScannerIntegration
 import objects.Deployment
 import objects.AzureRegistryIntegration
@@ -418,8 +417,6 @@ class ImageScanningTest extends BaseSpecification {
         new StackroxScannerIntegration() | "openssl-libs" | "1:1.0.1e-34.el7"  | 1   | "RHSA-2014:1052" | RHEL7_IMAGE | ""
         new StackroxScannerIntegration() | "openssl-libs" | "1:1.0.1e-34.el7"  | 1   | "CVE-2014-3509"  | RHEL7_IMAGE | ""
         new StackroxScannerIntegration() | "glibc"        | "2.23-0ubuntu11.2" | 0   | "CVE-2015-8985"  | OCI_IMAGE   | ""
-        new AnchoreScannerIntegration()  | "openssl"      | "1.0.1t-1+deb8u12" | 0   | "CVE-2010-0928"  | GCR_IMAGE   | "gcr"
-        new AnchoreScannerIntegration()  | "perl"         | "5.20.2-3+deb8u12" | 0   | "CVE-2011-4116"  | GCR_IMAGE   | "gcr"
         new ClairScannerIntegration()    | "apt"          | "1.4.8"            | 0   | "CVE-2011-3374"  | NGINX_IMAGE | ""
         new ClairScannerIntegration()    | "bash"         | "4.4-5"            | 0   | "CVE-2019-18276" | NGINX_IMAGE | ""
     }
@@ -468,11 +465,6 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     static final private IMAGES_FOR_ERROR_TESTS = [
-            "Anchore Scanner" : [
-                    "image does not exist"     : "non-existent:image",
-                    "no access"                : "quay.io/stackrox/testing:registry-image",
-                    "missing required registry": GCR_IMAGE,
-            ],
             "Clair Scanner"   : [
                     "image does not exist"     : "non-existent:image",
                     "missing required registry": GCR_IMAGE,
@@ -511,15 +503,12 @@ class ImageScanningTest extends BaseSpecification {
         "tests are:"
 
         scanner                          | expectedMessage                      | testAspect
-        new AnchoreScannerIntegration()  | /Failed to get the manifest digest/  | "image does not exist"
         new ClairScannerIntegration()    | /Failed to get the manifest digest/  | "image does not exist"
         new StackroxScannerIntegration() | /Failed to get the manifest digest/  | "image does not exist"
-        new AnchoreScannerIntegration()  | /no matching image registries found/ | "missing required registry"
         new ClairScannerIntegration()    | /no matching image registries found/ | "missing required registry"
         new StackroxScannerIntegration() | /no matching image registries found/ | "missing required registry"
 // This is not supported. Scanners get access to previous creds and can pull the images that way.
 // https://stack-rox.atlassian.net/browse/ROX-5376
-//        new AnchoreScannerIntegration() | /access to the requested resource is not authorized/ | "no access"
 //        new StackroxScannerIntegration() | /status=401/ | "no access"
 
         expectedError = StatusRuntimeException

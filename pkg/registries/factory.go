@@ -6,14 +6,12 @@ import (
 	artifactRegistryFactory "github.com/stackrox/rox/pkg/registries/artifactregistry"
 	azureFactory "github.com/stackrox/rox/pkg/registries/azure"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
-	dtrFactory "github.com/stackrox/rox/pkg/registries/dtr"
 	ecrFactory "github.com/stackrox/rox/pkg/registries/ecr"
 	googleFactory "github.com/stackrox/rox/pkg/registries/google"
 	ibmFactory "github.com/stackrox/rox/pkg/registries/ibm"
 	nexusFactory "github.com/stackrox/rox/pkg/registries/nexus"
 	quayFactory "github.com/stackrox/rox/pkg/registries/quay"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
-	tenableFactory "github.com/stackrox/rox/pkg/registries/tenable"
 
 	"github.com/stackrox/rox/pkg/registries/types"
 )
@@ -34,11 +32,9 @@ var AllCreatorFuncs = []CreatorWrapper{
 	artifactRegistryFactory.Creator,
 	artifactoryFactory.Creator,
 	dockerFactory.Creator,
-	dtrFactory.Creator,
 	ecrFactory.Creator,
 	googleFactory.Creator,
 	quayFactory.Creator,
-	tenableFactory.Creator,
 	nexusFactory.Creator,
 	azureFactory.Creator,
 	rhelFactory.Creator,

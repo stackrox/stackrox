@@ -31,7 +31,7 @@ func initialize() {
 	}
 	for _, ii := range integrations {
 		if err := integrationManager.Upsert(ii); err != nil {
-			log.Errorf("unable to use previous integration: %s", err)
+			log.Errorf("unable to use previous integration %s: %v", ii.GetName(), err)
 		}
 	}
 }

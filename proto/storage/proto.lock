@@ -230,7 +230,13 @@
               {
                 "id": 15,
                 "name": "image",
-                "type": "ContainerImage"
+                "type": "ContainerImage",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"ignore-fks\""
+                  }
+                ]
               },
               {
                 "id": 16,
@@ -455,7 +461,7 @@
                         "options": [
                           {
                             "name": "(gogoproto.moretags)",
-                            "value": "search:\"-\""
+                            "value": "search:\"-\"sql:\"ignore-fks\""
                           }
                         ]
                       },
@@ -1115,12 +1121,24 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"unique\""
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -1175,6 +1193,11 @@
                 }
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -4302,7 +4325,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Namespace ID\\\""
+                    "value": "search:\"Namespace ID\"sql:\"fk(NamespaceMetadata:id),no-fk-constraint\""
                   }
                 ]
               },
@@ -4595,7 +4618,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Image Sha,store,hidden\\\""
+                    "value": "search:\"Image Sha,store,hidden\"sql:\"fk(Image:id),no-fk-constraint\""
                   }
                 ]
               },
@@ -4893,7 +4916,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Deployment ID,hidden\\\""
+                    "value": "search:\"Deployment ID,hidden\"sql:\"fk(Deployment:id),no-fk-constraint\""
                   }
                 ]
               },
@@ -6833,11 +6856,6 @@
                 "is_repeated": true
               },
               {
-                "id": 7,
-                "name": "dtr",
-                "type": "DTRConfig"
-              },
-              {
                 "id": 8,
                 "name": "clairify",
                 "type": "ClairifyConfig"
@@ -6858,11 +6876,6 @@
                 "type": "ECRConfig"
               },
               {
-                "id": 12,
-                "name": "tenable",
-                "type": "TenableConfig"
-              },
-              {
                 "id": 13,
                 "name": "google",
                 "type": "GoogleConfig"
@@ -6871,11 +6884,6 @@
                 "id": 14,
                 "name": "clair",
                 "type": "ClairConfig"
-              },
-              {
-                "id": 17,
-                "name": "anchore",
-                "type": "AnchoreConfig"
               },
               {
                 "id": 20,
@@ -6901,6 +6909,9 @@
             "reserved_ids": [
               4,
               5,
+              7,
+              12,
+              17,
               19
             ]
           },
@@ -7167,49 +7178,6 @@
             ]
           },
           {
-            "name": "DTRConfig",
-            "fields": [
-              {
-                "id": 1,
-                "name": "username",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"dependent\\\""
-                  }
-                ]
-              },
-              {
-                "id": 2,
-                "name": "password",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\\""
-                  }
-                ]
-              },
-              {
-                "id": 3,
-                "name": "endpoint",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"dependent\\\" validate:\\\"nolocalendpoint\\\""
-                  }
-                ]
-              },
-              {
-                "id": 4,
-                "name": "insecure",
-                "type": "bool"
-              }
-            ]
-          },
-          {
             "name": "GoogleConfig",
             "fields": [
               {
@@ -7238,76 +7206,6 @@
                 "id": 3,
                 "name": "project",
                 "type": "string"
-              }
-            ]
-          },
-          {
-            "name": "TenableConfig",
-            "fields": [
-              {
-                "id": 1,
-                "name": "access_key",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\\""
-                  }
-                ]
-              },
-              {
-                "id": 2,
-                "name": "secret_key",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\\""
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "name": "AnchoreConfig",
-            "fields": [
-              {
-                "id": 1,
-                "name": "endpoint",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"dependent\\\" validate:\\\"nolocalendpoint\\\""
-                  }
-                ]
-              },
-              {
-                "id": 2,
-                "name": "username",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"dependent\\\""
-                  }
-                ]
-              },
-              {
-                "id": 3,
-                "name": "password",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "scrub:\\\"always\\\""
-                  }
-                ]
-              },
-              {
-                "id": 4,
-                "name": "insecure",
-                "type": "bool"
               }
             ]
           }
@@ -8926,6 +8824,32 @@
     {
       "protopath": "node.proto",
       "def": {
+        "enums": [
+          {
+            "name": "Node.Note",
+            "enum_fields": [
+              {
+                "name": "MISSING_SCAN_DATA"
+              }
+            ]
+          },
+          {
+            "name": "NodeScan.Note",
+            "enum_fields": [
+              {
+                "name": "UNSET"
+              },
+              {
+                "name": "UNSUPPORTED",
+                "integer": 1
+              },
+              {
+                "name": "KERNEL_UNSUPPORTED",
+                "integer": 2
+              }
+            ]
+          }
+        ],
         "messages": [
           {
             "name": "Node",
@@ -9142,6 +9066,12 @@
                     "value": "search:\\\"Node Top CVSS,store\\\""
                   }
                 ]
+              },
+              {
+                "id": 27,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
               }
             ],
             "maps": [
@@ -9198,6 +9128,12 @@
                 "id": 2,
                 "name": "components",
                 "type": "EmbeddedNodeScanComponent",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "notes",
+                "type": "Note",
                 "is_repeated": true
               }
             ]
@@ -14324,6 +14260,447 @@
                         "type": "string"
                       }
                     ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "TestGrandparent",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Grandparent ID\"sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "val",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Grandparent Val\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "embedded",
+                "type": "Embedded",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "Embedded",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "val",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\"Test Grandparent Embedded\""
+                      }
+                    ]
+                  },
+                  {
+                    "id": 2,
+                    "name": "embedded2",
+                    "type": "Embedded2",
+                    "is_repeated": true
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "Embedded2",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "val",
+                        "type": "string",
+                        "options": [
+                          {
+                            "name": "(gogoproto.moretags)",
+                            "value": "search:\"Test Grandparent Embedded2\""
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "TestParent1",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Parent1 ID\"sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "parent_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Grandparent ID\"sql:\"fk(TestGrandparent:id)\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "children",
+                "type": "Child1Ref",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "val",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Parent1 Val\""
+                  }
+                ]
+              }
+            ],
+            "messages": [
+              {
+                "name": "Child1Ref",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "child_id",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\"Test Child1 ID\"sql:\"fk(TestChild1:id),no-fk-constraint\""
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "TestChild1",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Child1 ID\"sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "val",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Child1 Val\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "TestGrandChild1",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Grandchild1 ID\"sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "parent_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Child1 ID\"sql:\"fk(TestChild1:id)\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "child_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test GGrandchild1 ID\"sql:\"fk(TestGGrandChild1:id),no-fk-constraint\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "val",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Grandchild1 Val\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "TestGGrandChild1",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test GGrandchild1 ID\"sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "val",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test GGrandchild1 Val\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "TestG2GrandChild1",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test G2Grandchild1 ID\"sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "parent_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test GGrandchild1 ID\"sql:\"fk(TestGGrandChild1:id)\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "child_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test G3Grandchild1 ID\"sql:\"fk(TestG3GrandChild1:id),no-fk-constraint\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "val",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test G2Grandchild1 Val\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "TestG3GrandChild1",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test G3Grandchild1 ID\"sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "val",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test G3Grandchild1 Val\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "TestParent2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Parent2 ID\"sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "parent_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Grandparent ID\"sql:\"fk(TestGrandparent:id)\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "val",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Parent2 Val\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "TestChild2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Child2 ID\"sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "parent_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Parent2 ID\"sql:\"fk(TestParent2:id)\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "grandparent_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Grandparent ID\"sql:\"fk(TestGrandparent:id),no-fk-constraint\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "val",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Child2 Val\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "TestParent3",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Parent3 ID\"sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "parent_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Grandparent ID\"sql:\"fk(TestGrandparent:id)\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "val",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Parent3 Val\""
                   }
                 ]
               }
