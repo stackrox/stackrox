@@ -1,7 +1,7 @@
 package reconciler
 
 import (
-	pkgReconciler "github.com/joelanford/helm-operator/pkg/reconciler"
+	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/stackrox/rox/image"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
