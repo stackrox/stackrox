@@ -20,9 +20,11 @@ func TestServiceIdentityDataStore(t *testing.T) {
 type serviceIdentityDataStoreTestSuite struct {
 	suite.Suite
 
-	hasNoneCtx                context.Context
-	hasReadCtx                context.Context
-	hasWriteCtx               context.Context
+	hasNoneCtx  context.Context
+	hasReadCtx  context.Context
+	hasWriteCtx context.Context
+
+	hasReadAdministrationCtx  context.Context
 	hasWriteAdministrationCtx context.Context
 
 	dataStore DataStore
@@ -37,6 +39,10 @@ func (s *serviceIdentityDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.ServiceIdentity)))
+	s.hasReadAdministrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -60,13 +66,20 @@ func (s *serviceIdentityDataStoreTestSuite) TestAddSrvId() {
 	}
 	allSrvIDs := []*storage.ServiceIdentity{srvID}
 
-	s.storage.EXPECT().GetServiceIdentities().Return(allSrvIDs, nil)
-	s.storage.EXPECT().AddServiceIdentity(srvID).Return(nil)
+	s.storage.EXPECT().GetServiceIdentities().Return(allSrvIDs, nil).Times(2)
+	s.storage.EXPECT().AddServiceIdentity(srvID).Return(nil).Times(2)
 
 	err := s.dataStore.AddServiceIdentity(s.hasWriteCtx, srvID)
 	s.NoError(err)
 
+	err = s.dataStore.AddServiceIdentity(s.hasWriteAdministrationCtx, srvID)
+	s.NoError(err)
+
 	result, err := s.dataStore.GetServiceIdentities(s.hasReadCtx)
+	s.Equal(allSrvIDs, result)
+	s.NoError(err)
+
+	result, err = s.dataStore.GetServiceIdentities(s.hasReadAdministrationCtx)
 	s.Equal(allSrvIDs, result)
 	s.NoError(err)
 }
@@ -80,9 +93,12 @@ func (s *serviceIdentityDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (s *serviceIdentityDataStoreTestSuite) TestAllowsGet() {
-	s.storage.EXPECT().GetServiceIdentities().Return(nil, nil)
+	s.storage.EXPECT().GetServiceIdentities().Return(nil, nil).Times(2)
 
 	_, err := s.dataStore.GetServiceIdentities(s.hasReadCtx)
+	s.NoError(err, "expected no error trying to read with permissions")
+
+	_, err = s.dataStore.GetServiceIdentities(s.hasReadAdministrationCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 
@@ -93,6 +109,9 @@ func (s *serviceIdentityDataStoreTestSuite) TestEnforcesAdd() {
 	s.Error(err, "expected an error trying to write without permissions")
 
 	err = s.dataStore.AddServiceIdentity(s.hasReadCtx, &storage.ServiceIdentity{})
+	s.Error(err, "expected an error trying to write without permissions")
+
+	err = s.dataStore.AddServiceIdentity(s.hasReadAdministrationCtx, &storage.ServiceIdentity{})
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
