@@ -2324,11 +2324,11 @@ jobs:
     resource_class: xlarge
     steps:
       - checkout
-      - check-to-run:
-          run-on-master: false # don't run on master by default
-          run-on-tags: true
-          changed-path: '^ui/'
-          #- restore-npm-deps-cache
+        #- check-to-run:
+        #    run-on-master: false # don't run on master by default
+        #    run-on-tags: true
+        #    changed-path: '^ui/'
+        #- restore-npm-deps-cache
 
       - run:
           name: Run UI unit tests
