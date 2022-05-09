@@ -61,7 +61,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgtype v1.11.0
-	github.com/jackc/pgx/v4 v4.15.0
+	github.com/jackc/pgx/v4 v4.16.1
 	github.com/joshdk/go-junit v0.0.0-20210226021600-6145f504ca0d
 	github.com/kisielk/sqlstruct v0.0.0-20210630145711-dae28ed37023 // indirect
 	github.com/machinebox/graphql v0.2.2
