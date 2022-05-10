@@ -8,22 +8,22 @@ import (
 )
 
 const (
-	RHACSlogoFile    = "files/red-hat-acs-logo-rgb.png"
-	StackroxLogoFile = "files/StackRox_Logo_Wide_DkBlue.png"
+	rhacslogoFile    = "files/red-hat-acs-logo-rgb.png"
+	stackroxLogoFile = "files/StackRox_Logo_Wide_DkBlue.png"
 )
 
 var (
 	//go:embed files/red-hat-acs-logo-rgb.png
 	logoRHACS       embed.FS
 	logoRHACSBase64 = func() string {
-		bytes, err := logoRHACS.ReadFile(RHACSlogoFile)
+		bytes, err := logoRHACS.ReadFile(rhacslogoFile)
 		utils.Must(err)
 		return base64.StdEncoding.EncodeToString(bytes)
 	}()
 	//go:embed files/StackRox_Logo_Wide_DkBlue.png
 	logoStackRox       embed.FS
 	logoStackRoxBase64 = func() string {
-		bytes, err := logoStackRox.ReadFile(StackroxLogoFile)
+		bytes, err := logoStackRox.ReadFile(stackroxLogoFile)
 		utils.Must(err)
 		return base64.StdEncoding.EncodeToString(bytes)
 	}()
@@ -31,9 +31,9 @@ var (
 
 func getLogoFile() string {
 	if getProductBrandingEnv() == ProductBrandingRHACS {
-		return RHACSlogoFile
+		return rhacslogoFile
 	}
-	return StackroxLogoFile
+	return stackroxLogoFile
 }
 
 // GetLogoBase64 returns the logo bytes in base64 encoded string.
