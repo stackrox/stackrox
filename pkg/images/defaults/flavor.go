@@ -71,6 +71,7 @@ type ImagePullSecrets struct {
 
 // ImageFlavor represents default settings for pulling images.
 type ImageFlavor struct {
+	Name string
 	// MainRegistry is a registry for all images except of collector.
 	MainRegistry       string
 	MainImageName      string
@@ -102,6 +103,7 @@ type ImageFlavor struct {
 func DevelopmentBuildImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
 	return ImageFlavor{
+		Name:               ImageFlavorNameDevelopmentBuild,
 		MainRegistry:       "docker.io/stackrox",
 		MainImageName:      "main",
 		MainImageTag:       v.MainVersion,
@@ -134,6 +136,7 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 func StackRoxIOReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
+		Name:               ImageFlavorNameStackRoxIORelease,
 		MainRegistry:       "stackrox.io",
 		MainImageName:      "main",
 		MainImageTag:       v.MainVersion,
@@ -166,6 +169,7 @@ func StackRoxIOReleaseImageFlavor() ImageFlavor {
 func RHACSReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
+		Name:          ImageFlavorNameRHACSRelease,
 		MainRegistry:  "registry.redhat.io/advanced-cluster-security",
 		MainImageName: "rhacs-main-rhel8",
 		MainImageTag:  v.MainVersion,
@@ -199,6 +203,7 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 func OpenSourceImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
+		Name:               ImageFlavorNameOpenSourceRelease,
 		MainRegistry:       "quay.io/stackrox-io",
 		MainImageName:      "main",
 		MainImageTag:       v.MainVersion,
