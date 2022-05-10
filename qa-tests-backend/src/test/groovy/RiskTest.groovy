@@ -118,18 +118,14 @@ class RiskTest extends BaseSpecification {
                 continue
             }
 
-            def risksFound = true
-            for (DeploymentWithProcessInfo d :  listDeployments()) {
-                if (DeploymentService.getDeploymentWithRisk(d.getDeployment().getId()).hasRisk()) {
-                    println "risk found for deployment ${d.getDeployment().getName()}"
-                    continue
-                }
-                println "not yet ready to test - risk not found for ${d.getDeployment().getName()}"
-                risksFound = false
-            }
+            List<String> deploymentNamesWithoutRisk = listDeployments()
+                    .collect {
+                        DeploymentService.getDeploymentWithRisk(it.getDeployment().getId()) }
+                    .findAll { !it.hasRisk() }
+                    .collect { it.deployment.name }
 
-            if (!risksFound) {
-                println "not yet ready to test - risks not found"
+            if (!deploymentNamesWithoutRisk.isEmpty()) {
+                print "not yet ready to tst - risks not found ${deploymentNamesWithoutRisk}"
                 continue
             }
 
