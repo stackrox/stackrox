@@ -22,6 +22,9 @@ func NewOrScopeChecker(scopeCheckers ...ScopeChecker) ScopeChecker {
 }
 
 func (s orScopeChecker) Core() ScopeCheckerCore {
+	// We can't unambiguously return a ScopeCheckerCore here. The method itself is used only
+	// within verifying interceptor. The verifying interceptor is used within the context of the
+	// external authz plugin. Once this will be fully deprecated, we can eventually also remove this method.
 	if len(s.scopeCheckers) != 0 {
 		return s.scopeCheckers[0].Core()
 	}
@@ -46,10 +49,7 @@ func (s orScopeChecker) PerformChecks(ctx context.Context) error {
 			performChecksErrs = multierror.Append(performChecksErrs, err)
 		}
 	}
-	if performChecksErrs == nil {
-		return nil
-	}
-	return performChecksErrs
+	return performChecksErrs.ErrorOrNil()
 }
 
 func (s orScopeChecker) TryAllowed(subScopeKeys ...ScopeKey) TryAllowedResult {
@@ -75,10 +75,7 @@ func (s orScopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (
 			return allowed, nil
 		}
 	}
-	if allowedErrs != nil {
-		return false, allowedErrs
-	}
-	return false, nil
+	return false, allowedErrs.ErrorOrNil()
 }
 
 func (s orScopeChecker) TryAnyAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult {
@@ -104,10 +101,7 @@ func (s orScopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeK
 			return allowed, nil
 		}
 	}
-	if anyAllowedErrs != nil {
-		return false, anyAllowedErrs
-	}
-	return false, nil
+	return false, anyAllowedErrs.ErrorOrNil()
 }
 
 func (s orScopeChecker) TryAllAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult {
@@ -133,10 +127,7 @@ func (s orScopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeK
 			return allowed, nil
 		}
 	}
-	if allAllowedErrs != nil {
-		return false, allAllowedErrs
-	}
-	return false, nil
+	return false, allAllowedErrs.ErrorOrNil()
 }
 
 func (s orScopeChecker) ForClusterScopedObject(obj ClusterScopedObject) ScopeChecker {
@@ -210,7 +201,7 @@ func (s orScopeChecker) Check(ctx context.Context, pred ScopePredicate) (bool, e
 		}
 	}
 
-	return false, checkErrs
+	return false, checkErrs.ErrorOrNil()
 }
 
 func (s orScopeChecker) EffectiveAccessScope(
