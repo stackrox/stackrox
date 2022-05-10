@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processindicator/index"
-	"github.com/stackrox/rox/central/processindicator/internal/commentsstore"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
 	pgStore "github.com/stackrox/rox/central/processindicator/store/postgres"
@@ -22,10 +21,8 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	mappings "github.com/stackrox/rox/pkg/search/options/processindicators"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
-	bolt "go.etcd.io/bbolt"
 )
 
 func TestProcessIndicatorDataStoreSAC(t *testing.T) {
@@ -43,9 +40,6 @@ type processIndicatorDatastoreSACSuite struct {
 	storage store.Store
 	indexer index.Indexer
 	search  search.Searcher
-
-	commentsStorage commentsstore.Store
-	boltDb          *bolt.DB
 
 	datastore DataStore
 
@@ -78,10 +72,8 @@ func (s *processIndicatorDatastoreSACSuite) SetupSuite() {
 		s.indexer = index.New(s.index)
 	}
 
-	s.boltDb = testutils.DBForSuite(s)
-	s.commentsStorage = commentsstore.New(s.boltDb)
 	s.search = search.New(s.storage, s.indexer)
-	s.datastore, err = New(s.storage, s.commentsStorage, s.indexer, s.search, nil)
+	s.datastore, err = New(s.storage, s.indexer, s.search, nil)
 	s.Require().NoError(err)
 
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
@@ -95,8 +87,6 @@ func (s *processIndicatorDatastoreSACSuite) TearDownSuite() {
 		err := rocksdb.CloseAndRemove(s.engine)
 		s.Require().NoError(err)
 	}
-
-	testutils.TearDownDB(s.boltDb)
 
 	s.Require().NoError(s.index.Close())
 }

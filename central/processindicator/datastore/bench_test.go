@@ -35,7 +35,7 @@ func BenchmarkAddIndicator(b *testing.B) {
 	indexer := index.New(tmpIndex)
 	searcher := search.New(store, indexer)
 
-	datastore, err := New(store, nil, indexer, searcher, nil)
+	datastore, err := New(store, indexer, searcher, nil)
 	require.NoError(b, err)
 
 	ctx := sac.WithAllAccess(context.Background())

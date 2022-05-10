@@ -23,7 +23,7 @@ import analystNotesLabels from 'messages/analystnotes';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import { getQueriesByType, getTagsDataByType } from './analystTagsQueries';
 import getRefetchQueriesByCondition from '../analystNotesUtils/getRefetchQueriesByCondition';
-import GET_PROCESS_COMMENTS_TAGS_COUNT from '../processCommentsTagsQuery';
+import GET_PROCESS_TAGS_COUNT from '../processTagsCountQuery';
 
 const AnalystTags = ({ type, variables, autoComplete, autoCompleteVariables, onInputChange }) => {
     const { GET_TAGS, ADD_TAGS, REMOVE_TAGS } = getQueriesByType(type);
@@ -40,7 +40,7 @@ const AnalystTags = ({ type, variables, autoComplete, autoCompleteVariables, onI
     const refetchAndWait = getRefetchQueriesByCondition([
         { query: GET_TAGS, variables },
         {
-            query: GET_PROCESS_COMMENTS_TAGS_COUNT,
+            query: GET_PROCESS_TAGS_COUNT,
             variables,
             exclude: type !== ANALYST_NOTES_TYPES.PROCESS,
         },

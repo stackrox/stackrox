@@ -6,14 +6,12 @@ import (
 
 // Constants for unit tests that need fake Alerts.
 const (
-	FakeAlertID             = "fake-alert-id"
-	FakeClusterName         = "fakeCluster"
-	FakePolicyID            = "fake-policy-id"
-	FakeCommentID           = "fake-comment-id"
-	FakeAlertCommentMessage = "fake-alert-comment-message"
-	FakeTag1                = "FakeTag1"
-	FakeTag2                = "FakeTag2"
-	FakeTag3                = "FakeTag3"
+	FakeAlertID     = "fake-alert-id"
+	FakeClusterName = "fakeCluster"
+	FakePolicyID    = "fake-policy-id"
+	FakeTag1        = "FakeTag1"
+	FakeTag2        = "FakeTag2"
+	FakeTag3        = "FakeTag3"
 )
 
 // NewFakeListAlert constructs and returns a new V1.ListAlert object suitable for unit-testing.
@@ -73,15 +71,6 @@ func NewFakeAlertWithOneTag() *storage.Alert {
 		Id:             FakeAlertID,
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Tags:           []string{FakeTag3},
-	}
-}
-
-// NewFakeAlertComment constructs and returns a new storage.Comment object suitable for unit-testing.
-func NewFakeAlertComment() *storage.Comment {
-	return &storage.Comment{
-		ResourceId:     FakeAlertID,
-		CommentId:      FakeCommentID,
-		CommentMessage: FakeAlertCommentMessage,
 	}
 }
 

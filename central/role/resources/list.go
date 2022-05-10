@@ -61,9 +61,6 @@ var (
 
 	// Deprecated resources.
 
-	// Deprecated: AllComments is deprecated, use Administration.
-	AllComments = newDeprecatedResourceMetadata("AllComments", permissions.GlobalScope,
-		Administration)
 	// Deprecated: APIToken is deprecated, use Integrations.
 	APIToken = newDeprecatedResourceMetadata("APIToken", permissions.GlobalScope, Integrations)
 	// Deprecated: AuthPlugin is deprecated, use Access.
