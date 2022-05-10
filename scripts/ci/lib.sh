@@ -677,7 +677,7 @@ store_qa_test_results() {
 
     info "Copying qa-tests-backend results to $to"
 
-    store_test_results qa-tests-backend/build/test-results/test "$to"
+    store_test_results qa-tests-backend/build/junit-xml/test "$to"
 }
 
 store_test_results() {    
@@ -690,7 +690,7 @@ store_test_results() {
     fi
 
     local from="$1"
-    local to="junit-$2"
+    local to="$2"
 
     info "Copying test results from $from to $to"
 
