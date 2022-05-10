@@ -147,7 +147,7 @@ export function selectNamespaceFilter(namespace) {
     cy.wait(['@networkGraph', '@networkPolicies']);
 }
 
-export function selectNamespaceFilterWithFixtures(
+export function selectNamespaceFilterWithGraphAndPoliciesFixtures(
     namespace,
     fixturePathGraph,
     fixturePathPolicies
@@ -200,7 +200,7 @@ export function visitNetworkGraphWithNamespaceFilter(namespace) {
 
 export function visitNetworkGraphWithMockedData() {
     visitNetworkGraph();
-    selectNamespaceFilterWithFixtures(
+    selectNamespaceFilterWithGraphAndPoliciesFixtures(
         'stackrox',
         'network/networkGraph.json',
         'network/networkPolicies.json'
