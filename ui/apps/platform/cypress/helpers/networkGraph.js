@@ -126,8 +126,6 @@ export function filterBySourceTarget(sourceNode, targetNode) {
 
 // search filters
 
-// Additional calls in a test can select additional namespaces.
-
 export function selectDeploymentFilter(deploymentName) {
     cy.intercept('GET', api.network.networkGraph).as('networkGraph');
     cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
@@ -135,6 +133,8 @@ export function selectDeploymentFilter(deploymentName) {
     cy.get(networkGraphSelectors.toolbar.filterSelect).type(`${deploymentName}{enter}{esc}`);
     cy.wait(['@networkGraph', '@networkPolicies']);
 }
+
+// Additional calls in a test can select additional namespaces.
 
 export function selectNamespaceFilter(namespace) {
     cy.intercept('GET', api.network.networkGraph).as('networkGraph');
