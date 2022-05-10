@@ -571,8 +571,6 @@ func (resolver *deploymentResolver) vulnQueryScoping(ctx context.Context) contex
 		ID:    resolver.data.GetId(),
 	})
 
-	ctx = deploymentctx.Context(ctx, resolver.data.GetId())
-
 	return ctx
 }
 
