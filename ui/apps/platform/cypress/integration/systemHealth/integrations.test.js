@@ -49,7 +49,7 @@ describe('System Health Integrations local deployment', () => {
 
 describe('System Health Integrations fixtures', () => {
     withAuth();
-    it('should not have count in healthy text for notifier integrations', () => {
+    it('should not have count in healthy text for backup integrations', () => {
         visitSystemHealthWithNotifierIntegrations([], []);
 
         const { healthyText, widgets } = selectors.integrations;
