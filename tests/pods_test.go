@@ -68,7 +68,7 @@ func TestPod(testT *testing.T) {
 			}
 			loopCount++
 			require.LessOrEqual(retryT, loopCount, 20)
-			time.Sleep(3 * time.Second)
+			time.Sleep(4 * time.Second)
 		}
 
 		// Expecting processes: nginx, sh, date, sleep
