@@ -521,7 +521,11 @@ gate_job() {
     local exitstatus="$?"
 
     if [[ "$exitstatus" == "0" ]]; then
-        gate_pr_job "$job_config" "$pr_details"
+        if [[ "$(jq -r .base.repo.full_name <<<"$pr_details")" == "openshift/release" ]]; then
+            gate_openshift_release_rehearse_job "$job" "$pr_details"
+        else
+            gate_pr_job "$job_config" "$pr_details"
+        fi
     elif [[ "$exitstatus" == "1" ]]; then
         gate_merge_job "$job_config"
     else
@@ -631,6 +635,25 @@ gate_merge_job() {
     exit 0
 }
 
+# gate_openshift_release_rehearse_job() - use the PR description to indicate if
+# the pj-rehearse job should run for configured jobs.
+gate_openshift_release_rehearse_job() {
+    local job="$1"
+    local pr_details="$2"
+
+    if [[ "$(jq -r '.body' <<<"$pr_details")" =~ open.the.gate.*$job ]]; then
+        info "$job will run because the gate was opened"
+        return
+    fi
+
+    cat << _EOH_
+$job will be skipped. If you want to run a gated job during openshift/release pj-rehearsal 
+update the PR description with:
+open the gate: $job
+_EOH_
+    exit 0
+}
+
 openshift_ci_mods() {
     # For ci_export(), override BASH_ENV from stackrox-test with something that is writable.
     BASH_ENV=$(mktemp)
@@ -639,6 +662,11 @@ openshift_ci_mods() {
     # These are not set in the binary_build_commands or image build envs.
     export CI=true
     export OPENSHIFT_CI=true
+
+    # Provide Circle CI vars that are commonly used
+    export CIRCLE_JOB="${JOB_NAME}"
+    CIRCLE_TAG="$(git tag --contains | head -1)"
+    export CIRCLE_TAG
 
     # For gradle
     export GRADLE_USER_HOME="${HOME}"
@@ -666,6 +694,37 @@ validate_expected_go_version() {
 
     go mod edit -go "${go_version}"
     git diff --exit-code -- go.mod
+}
+
+store_qa_test_results() {
+    if ! is_OPENSHIFT_CI; then
+        return
+    fi
+
+    local to="${1:-qa-tests}"
+
+    info "Copying qa-tests-backend results to $to"
+
+    store_test_results qa-tests-backend/build/test-results/test "$to"
+}
+
+store_test_results() {    
+    if [[ "$#" -ne 2 ]]; then
+        die "missing args. usage: store_test_results <from> <to>"
+    fi
+
+    if ! is_OPENSHIFT_CI; then
+        return
+    fi
+
+    local from="$1"
+    local to="$2"
+
+    info "Copying test results from $from to $to"
+
+    local dest="${ARTIFACT_DIR}/junit-$to"
+
+    cp -a "$from" "$dest" || true # (best effort)
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
