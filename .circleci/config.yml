@@ -355,7 +355,7 @@ storeUITestArtifacts: &storeUITestArtifacts
 
 storeQATestResults: &storeQATestResults
   store_test_results:
-    path: qa-tests-backend/build/junit-xml/test
+    path: qa-tests-backend/build/test-results/test
 
 checkQASpockResults: &checkQASpockResults
   run:
