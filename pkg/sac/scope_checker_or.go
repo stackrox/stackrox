@@ -29,17 +29,19 @@ func (s orScopeChecker) Core() ScopeCheckerCore {
 }
 
 func (s orScopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
+	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].SubScopeChecker(keys...)
+		checkers = append(checkers, s.scopeCheckers[i].SubScopeChecker(keys...))
 	}
-	return s
+	return &orScopeChecker{
+		scopeCheckers: checkers,
+	}
 }
 
 func (s orScopeChecker) PerformChecks(ctx context.Context) error {
 	var performChecksErrs *multierror.Error
 	for _, checker := range s.scopeCheckers {
 		err := checker.PerformChecks(ctx)
-		// Short-circuit on the first non-error perform check.
 		if err != nil {
 			performChecksErrs = multierror.Append(performChecksErrs, err)
 		}
@@ -138,45 +140,63 @@ func (s orScopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeK
 }
 
 func (s orScopeChecker) ForClusterScopedObject(obj ClusterScopedObject) ScopeChecker {
+	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].ForClusterScopedObject(obj)
+		checkers = append(checkers, s.scopeCheckers[i].ForClusterScopedObject(obj))
 	}
-	return s
+	return &orScopeChecker{
+		scopeCheckers: checkers,
+	}
 }
 
 func (s orScopeChecker) ForNamespaceScopedObject(obj NamespaceScopedObject) ScopeChecker {
+	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].ForNamespaceScopedObject(obj)
+		checkers = append(checkers, s.scopeCheckers[i].ForNamespaceScopedObject(obj))
 	}
-	return s
+	return &orScopeChecker{
+		scopeCheckers: checkers,
+	}
 }
 
 func (s orScopeChecker) AccessMode(am storage.Access) ScopeChecker {
+	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].AccessMode(am)
+		checkers = append(checkers, s.scopeCheckers[i].AccessMode(am))
 	}
-	return s
+	return &orScopeChecker{
+		scopeCheckers: checkers,
+	}
 }
 
 func (s orScopeChecker) Resource(resource permissions.ResourceHandle) ScopeChecker {
+	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].Resource(resource)
+		checkers = append(checkers, s.scopeCheckers[i].Resource(resource))
 	}
-	return s
+	return &orScopeChecker{
+		scopeCheckers: checkers,
+	}
 }
 
 func (s orScopeChecker) ClusterID(clusterID string) ScopeChecker {
+	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].ClusterID(clusterID)
+		checkers = append(checkers, s.scopeCheckers[i].ClusterID(clusterID))
 	}
-	return s
+	return &orScopeChecker{
+		scopeCheckers: checkers,
+	}
 }
 
 func (s orScopeChecker) Namespace(namespace string) ScopeChecker {
+	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].Namespace(namespace)
+		checkers = append(checkers, s.scopeCheckers[i].Namespace(namespace))
 	}
-	return s
+	return &orScopeChecker{
+		scopeCheckers: checkers,
+	}
 }
 
 func (s orScopeChecker) Check(ctx context.Context, pred ScopePredicate) (bool, error) {
