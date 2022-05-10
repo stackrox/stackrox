@@ -21,7 +21,7 @@ const resourceDescriptions: Record<ResourceName, string> = {
     CVE: 'Internal use only',
     Cluster: 'Read: View secured clusters. Write: Add, modify, or delete secured clusters.',
     Compliance:
-        'Read: View compliance standards, results, and runs. Write: Add, modify, or delete scheduled compliance runs',
+        'Read: View compliance standards, results, and runs. Write: Add, modify, or delete scheduled compliance runs.',
     ComplianceRunSchedule:
         'Read: View scheduled compliance runs. Write: Add, modify, or delete scheduled compliance runs.',
     ComplianceRuns:
@@ -31,7 +31,7 @@ const resourceDescriptions: Record<ResourceName, string> = {
         "Read: View the current logging verbosity level of all components, including Central, Scanner, Sensor, Collector, and Admission controller. Download diagnostic bundle. Note: The diagnostic bundle contains information about all clusters and namespaces regardless of the user's role and access scope. Don't give this permission to users with limited access scope. Write: Modify the logging verbosity level.",
     Deployment: 'Read: View deployments (workloads) in secured clusters. Write: N/A',
     DeploymentExtension:
-        'Read: View risk score, network, and process baseline extensions of deployments. Write: Modify the process and network baseline extensions of deployments.',
+        'Read: View network and process baseline extensions, risk score of deployments. Write: Modify the process and network baseline extensions of deployments.',
     Detection: 'Read: Check build-time policies against images or deployment YAMLs. Write: N/A',
     Group: 'Read: View the RBAC rules that match user metadata to the system roles. Write: Add, modify, or delete RBAC rules.',
     Image: 'Read: View images, their components, and their vulnerabilities. Write: N/A',

@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -125,7 +124,17 @@ func (s *clusterInitBackendTestSuite) SetupTest() {
 	store, err := rocksdbStore.NewStore(s.rocksDB)
 	s.Require().NoError(err)
 	s.backend = newBackend(store, m)
-	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+
+	id := mockIdentity.NewMockIdentity(gomock.NewController(s.T()))
+	id.EXPECT().Permissions().Return(map[string]storage.Access{
+		resources.ServiceIdentity.String(): storage.Access_READ_WRITE_ACCESS,
+		resources.APIToken.String():        storage.Access_READ_WRITE_ACCESS,
+	}).AnyTimes()
+	id.EXPECT().ExternalAuthProvider().Return(nil).AnyTimes()
+	id.EXPECT().Attributes().Return(nil).AnyTimes()
+	id.EXPECT().UID().Return("").AnyTimes()
+
+	s.ctx = authn.ContextWithIdentity(context.Background(), id, s.T())
 	s.certProvider = m
 
 	// Configure CertificateProvider mock.
