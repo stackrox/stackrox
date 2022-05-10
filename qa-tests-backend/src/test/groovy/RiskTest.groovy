@@ -41,7 +41,6 @@ class RiskTest extends BaseSpecification {
     @Shared
     private List<DeploymentWithProcessInfo> whenOneHasRisk
 
-
     static final private int RETRIES = isRaceBuild() ? 120 : (
             (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 50 : 24)
     static final private int RETRY_DELAY = 5
@@ -112,7 +111,6 @@ class RiskTest extends BaseSpecification {
                         println "SR found ${element.element.processName} for ${DEPLOYMENTS[i].name}"
                     }
                 }
-
             }
 
             if (!processesFound) {
@@ -122,12 +120,12 @@ class RiskTest extends BaseSpecification {
 
             def risksFound = true
             for (DeploymentWithProcessInfo d :  listDeployments()) {
-                if (!DeploymentService.getDeploymentWithRisk(d.getDeployment().getId()).hasRisk()) {
-                    println "not yet ready to test - risk not found for ${d.getDeployment().getName()}"
-                    risksFound = false
-                } else {
+                if (DeploymentService.getDeploymentWithRisk(d.getDeployment().getId()).hasRisk()) {
                     println "risk found for deployment ${d.getDeployment().getName()}"
+                    continue
                 }
+                println "not yet ready to test - risk not found for ${d.getDeployment().getName()}"
+                risksFound = false
             }
 
             if (!risksFound) {
