@@ -43,6 +43,7 @@ type ProcessWorkload struct {
 type NetworkWorkload struct {
 	FlowInterval time.Duration `yaml:"flowInterval"`
 	BatchSize    int           `yaml:"batchSize"`
+	DenseGraph   bool          `yaml:"denseGraph"`
 }
 
 // PodWorkload defines the workload and lifecycle of the pods within a deployment

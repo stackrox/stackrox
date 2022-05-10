@@ -70,6 +70,12 @@ func (p *pool) mustGetRandomElem() string {
 	return val
 }
 
+func (p *pool) getAllIps() []string {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	return p.pool.AsSlice()
+}
+
 func generateIP() string {
 	return fmt.Sprintf("10.%d.%d.%d", rand.Intn(256), rand.Intn(256), rand.Intn(256))
 }
@@ -102,8 +108,58 @@ func (w *WorkloadManager) getRandomHostConnection(ctx context.Context) (manager.
 	return registeredHostConnections[rand.Intn(len(registeredHostConnections))], true
 }
 
+func (w *WorkloadManager) generateDenseGraph() {
+	// generate workload from every ip to every ip
+	ips := ipPool.getAllIps()
+	var connections []*sensor.NetworkConnection
+	for _, src := range ips {
+		for _, dest := range ips {
+			if src != dest {
+				containerID, ok := containerPool.randomElem()
+				if !ok {
+					log.Error("found no containers in pool")
+					continue
+				}
+
+				closeTS, err := types.TimestampProto(time.Now().Add(-5 * time.Second))
+				utils.CrashOnError(err)
+
+				conn := &sensor.NetworkConnection{
+					SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
+					LocalAddress: &sensor.NetworkAddress{
+						AddressData: net.ParseIP(src).AsNetIP(),
+						Port:        rand.Uint32() % 63556,
+					},
+					RemoteAddress: &sensor.NetworkAddress{
+						AddressData: net.ParseIP(dest).AsNetIP(),
+						Port:        rand.Uint32() % 63556,
+					},
+					Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+					Role:           sensor.ClientServerRole_ROLE_CLIENT,
+					ContainerId:    containerID,
+					CloseTimestamp: closeTS,
+				}
+				connections = append(connections, conn)
+			}
+		}
+		// process network flows once per src to avoid sending a payload that's too large
+		hostConn, ok := w.getRandomHostConnection(context.Background())
+		if !ok {
+			return
+		}
+
+		err := hostConn.Process(&sensor.NetworkConnectionInfo{
+			UpdatedConnections: connections,
+			Time:               types.TimestampNow(),
+		}, timestamp.Now(), 1)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+}
+
 // manageFlows should be called via `go manageFlows` as it will run forever
-func (w *WorkloadManager) manageFlows(ctx context.Context, workload NetworkWorkload) {
+func (w *WorkloadManager) manageFlows(ctx context.Context, workload NetworkWorkload, resources []*deploymentResourcesToBeManaged) {
 	if workload.FlowInterval == 0 {
 		return
 	}
@@ -116,6 +172,11 @@ func (w *WorkloadManager) manageFlows(ctx context.Context, workload NetworkWorkl
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+		}
+
+		if workload.DenseGraph {
+			w.generateDenseGraph()
+			continue
 		}
 
 		conns := make([]*sensor.NetworkConnection, 0, workload.BatchSize)

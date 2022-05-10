@@ -202,5 +202,5 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		go w.manageNetworkPolicy(context.Background(), resource)
 	}
 
-	go w.manageFlows(context.Background(), w.workload.NetworkWorkload)
+	go w.manageFlows(context.Background(), w.workload.NetworkWorkload, resources)
 }
