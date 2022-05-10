@@ -298,20 +298,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"statusErrors: [String!]!",
 		"version: String!",
 	}))
-	utils.Must(builder.AddType("Comment", []string{
-		"commentId: String!",
-		"commentMessage: String!",
-		"createdAt: Time",
-		"lastModified: Time",
-		"resourceId: String!",
-		"resourceType: ResourceType!",
-		"user: Comment_User",
-	}))
-	utils.Must(builder.AddType("Comment_User", []string{
-		"email: String!",
-		"id: ID!",
-		"name: String!",
-	}))
 	utils.Must(builder.AddType("CompleteClusterConfig", []string{
 		"clusterLabels: [Label!]!",
 		"configFingerprint: String!",
@@ -1062,7 +1048,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"message: String!",
 		"user: SlimUser",
 	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ResourceType(0)))
 	utils.Must(builder.AddType("Resources", []string{
 		"cpuCoresLimit: Float!",
 		"cpuCoresRequest: Float!",
@@ -3594,104 +3579,6 @@ func (resolver *collectorHealthInfoResolver) StatusErrors(ctx context.Context) [
 
 func (resolver *collectorHealthInfoResolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
-	return value
-}
-
-type commentResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.Comment
-}
-
-func (resolver *Resolver) wrapComment(value *storage.Comment, ok bool, err error) (*commentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &commentResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapComments(values []*storage.Comment, err error) ([]*commentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*commentResolver, len(values))
-	for i, v := range values {
-		output[i] = &commentResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *commentResolver) CommentId(ctx context.Context) string {
-	value := resolver.data.GetCommentId()
-	return value
-}
-
-func (resolver *commentResolver) CommentMessage(ctx context.Context) string {
-	value := resolver.data.GetCommentMessage()
-	return value
-}
-
-func (resolver *commentResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetCreatedAt()
-	return timestamp(value)
-}
-
-func (resolver *commentResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetLastModified()
-	return timestamp(value)
-}
-
-func (resolver *commentResolver) ResourceId(ctx context.Context) string {
-	value := resolver.data.GetResourceId()
-	return value
-}
-
-func (resolver *commentResolver) ResourceType(ctx context.Context) string {
-	value := resolver.data.GetResourceType()
-	return value.String()
-}
-
-func (resolver *commentResolver) User(ctx context.Context) (*comment_UserResolver, error) {
-	value := resolver.data.GetUser()
-	return resolver.root.wrapComment_User(value, true, nil)
-}
-
-type comment_UserResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.Comment_User
-}
-
-func (resolver *Resolver) wrapComment_User(value *storage.Comment_User, ok bool, err error) (*comment_UserResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &comment_UserResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapComment_Users(values []*storage.Comment_User, err error) ([]*comment_UserResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*comment_UserResolver, len(values))
-	for i, v := range values {
-		output[i] = &comment_UserResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *comment_UserResolver) Email(ctx context.Context) string {
-	value := resolver.data.GetEmail()
-	return value
-}
-
-func (resolver *comment_UserResolver) Id(ctx context.Context) graphql.ID {
-	value := resolver.data.GetId()
-	return graphql.ID(value)
-}
-
-func (resolver *comment_UserResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
 	return value
 }
 
@@ -9270,24 +9157,6 @@ func (resolver *requestCommentResolver) Message(ctx context.Context) string {
 func (resolver *requestCommentResolver) User(ctx context.Context) (*slimUserResolver, error) {
 	value := resolver.data.GetUser()
 	return resolver.root.wrapSlimUser(value, true, nil)
-}
-
-func toResourceType(value *string) storage.ResourceType {
-	if value != nil {
-		return storage.ResourceType(storage.ResourceType_value[*value])
-	}
-	return storage.ResourceType(0)
-}
-
-func toResourceTypes(values *[]string) []storage.ResourceType {
-	if values == nil {
-		return nil
-	}
-	output := make([]storage.ResourceType, len(*values))
-	for i, v := range *values {
-		output[i] = toResourceType(&v)
-	}
-	return output
 }
 
 type resourcesResolver struct {

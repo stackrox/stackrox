@@ -9,11 +9,9 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/alert/datastore/internal/commentsstore"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
-	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -44,11 +42,10 @@ const (
 // datastoreImpl is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert
 // objects.
 type datastoreImpl struct {
-	storage         store.Store
-	commentsStorage commentsstore.Store
-	indexer         index.Indexer
-	searcher        search.Searcher
-	keyedMutex      *concurrency.KeyedMutex
+	storage    store.Store
+	indexer    index.Indexer
+	searcher   search.Searcher
+	keyedMutex *concurrency.KeyedMutex
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommon.Result, error) {
@@ -219,14 +216,6 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 	errorList := errorhelpers.NewErrorList("deleting alert")
 	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
 		errorList.AddError(err)
-	} else {
-		for _, id := range ids {
-			err := ds.commentsStorage.RemoveAlertComments(id)
-			if err != nil {
-				err = errors.Wrapf(err, "deleting comments of alert %q", id)
-				errorList.AddError(err)
-			}
-		}
 	}
 	if err := ds.indexer.DeleteListAlerts(ids); err != nil {
 		errorList.AddError(err)
@@ -236,80 +225,6 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 	}
 
 	return errorList.ToError()
-}
-
-func (ds *datastoreImpl) GetAlertComments(ctx context.Context, alertID string) (comments []*storage.Comment, err error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "GetAlertComments")
-	_, exists, err := ds.GetAlert(ctx, alertID)
-	if err != nil || !exists {
-		return nil, err
-	}
-
-	return ds.commentsStorage.GetCommentsForAlert(alertID)
-}
-
-func (ds *datastoreImpl) AddAlertComment(ctx context.Context, request *storage.Comment) (string, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "AddAlertComment")
-	alert, exists, err := ds.GetAlert(ctx, request.GetResourceId())
-	if err != nil || !exists {
-		return "", err
-	}
-	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
-		return "", sac.ErrResourceAccessDenied
-	}
-
-	request.User = analystnotes.UserFromContext(ctx)
-	return ds.commentsStorage.AddAlertComment(request)
-}
-
-func (ds *datastoreImpl) UpdateAlertComment(ctx context.Context, request *storage.Comment) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "UpdateAlertComment")
-	alert, exists, err := ds.GetAlert(ctx, request.GetResourceId())
-	if err != nil || !exists {
-		return err
-	}
-	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	user := analystnotes.UserFromContext(ctx)
-	existingComment, err := ds.commentsStorage.GetComment(request.GetResourceId(), request.GetCommentId())
-	if err != nil {
-		return errors.Wrap(err, "failed to get the alert comment")
-	}
-	if existingComment == nil {
-		return errors.Errorf("cannot update comment %q for alert %q: it does not exist", request.GetCommentId(), request.GetResourceId())
-	}
-	if !analystnotes.CommentIsModifiableUser(user, existingComment) {
-		return errors.New("user cannot modify comment: permission denied")
-	}
-	request.User = user
-	return ds.commentsStorage.UpdateAlertComment(request)
-}
-
-func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, alertID, commentID string) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "RemoveAlertComment")
-	alert, exists, err := ds.GetAlert(ctx, alertID)
-	if err != nil || !exists {
-		return err
-	}
-	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	existingComment, err := ds.commentsStorage.GetComment(alertID, commentID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get the alert comment")
-	}
-	if existingComment == nil {
-		// Comment has already been deleted, all good
-		return nil
-	}
-	if !analystnotes.CommentIsDeletable(ctx, existingComment) {
-		return errors.New("user cannot delete comment: permission denied")
-	}
-
-	return ds.commentsStorage.RemoveAlertComment(alertID, commentID)
 }
 
 func (ds *datastoreImpl) AddAlertTags(ctx context.Context, resourceID string, tags []string) ([]string, error) {

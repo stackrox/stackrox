@@ -20,7 +20,6 @@ var (
 			reflect.TypeOf((*storage.ActiveComponent_ActiveContext)(nil)),
 			reflect.TypeOf((*storage.Alert)(nil)),
 			reflect.TypeOf((*storage.Cluster)(nil)),
-			reflect.TypeOf((*storage.Comment)(nil)),
 			reflect.TypeOf((*storage.ComplianceAggregation_Response)(nil)),
 			reflect.TypeOf((*storage.ComplianceControlResult)(nil)),
 			reflect.TypeOf((*storage.CVE)(nil)),
