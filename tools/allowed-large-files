@@ -14,7 +14,7 @@ generated/**/*.swagger.json
 go.sum
 operator/bundle/manifests/*.yaml
 pkg/booleanpolicy/default_policies_test.go
-pkg/branding/files/red-hat-acs-logo-rgb.png
+pkg/branding/files/red_hat_acs_logo_rgb.png
 pkg/docker/types/types_easyjson.go
 pkg/fixtures/image.go
 pkg/mitre/files/mitre.json
