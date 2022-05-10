@@ -29,13 +29,6 @@ var (
 	}()
 )
 
-func getLogoFile() string {
-	if getProductBrandingEnv() == ProductBrandingRHACS {
-		return rhacslogoFile
-	}
-	return stackroxLogoFile
-}
-
 // GetLogoBase64 returns the logo bytes in base64 encoded string.
 func GetLogoBase64() string {
 	if getProductBrandingEnv() == ProductBrandingRHACS {
