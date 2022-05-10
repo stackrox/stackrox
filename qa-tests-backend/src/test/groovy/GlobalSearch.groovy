@@ -2,12 +2,15 @@ import static Services.getSearchResponse
 import static Services.waitForViolation
 
 import objects.Deployment
+import util.Env
 import spock.lang.Unroll
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import org.junit.experimental.categories.Category
 import groups.BAT
 
 class GlobalSearch extends BaseSpecification {
+    static final private List<SearchServiceOuterClass.SearchCategory> EXPECTED_DEPLOYMENT_CATEGORIES = []
+    static final private List<SearchServiceOuterClass.SearchCategory> EXPECTED_IMAGE_CATEGORIES = []
 
     static final private DEPLOYMENT = new Deployment()
             .setName("qaglobalsearch")
@@ -19,6 +22,23 @@ class GlobalSearch extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 30
 
     def setupSpec() {
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            EXPECTED_DEPLOYMENT_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.CLUSTERS,
+                                              SearchServiceOuterClass.SearchCategory.NAMESPACES,
+                                              SearchServiceOuterClass.SearchCategory.IMAGES,
+                                              SearchServiceOuterClass.SearchCategory.DEPLOYMENTS,
+                                              SearchServiceOuterClass.SearchCategory.ALERTS)
+            EXPECTED_IMAGE_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.CLUSTERS,
+                                         SearchServiceOuterClass.SearchCategory.NAMESPACES,
+                                         SearchServiceOuterClass.SearchCategory.IMAGES,
+                                         SearchServiceOuterClass.SearchCategory.DEPLOYMENTS)
+        } else {
+            EXPECTED_DEPLOYMENT_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.IMAGES,
+                                              SearchServiceOuterClass.SearchCategory.DEPLOYMENTS,
+                                              SearchServiceOuterClass.SearchCategory.ALERTS)
+            EXPECTED_IMAGE_CATEGORIES.addAll(SearchServiceOuterClass.SearchCategory.IMAGES,
+                                         SearchServiceOuterClass.SearchCategory.DEPLOYMENTS)
+        }
         orchestrator.createDeployment(DEPLOYMENT)
         assert Services.waitForDeployment(DEPLOYMENT)
         // Wait for the latest tag violation since we try to search by it.
@@ -107,14 +127,10 @@ class GlobalSearch extends BaseSpecification {
 
         // The following two tests make sure that global search gives you all categories
         // when you don't specify a category.
-        "Deployment:qaglobalsearch" | [] | "" |
-                [SearchServiceOuterClass.SearchCategory.IMAGES, SearchServiceOuterClass.SearchCategory.DEPLOYMENTS,
-                SearchServiceOuterClass.SearchCategory.ALERTS]
+        "Deployment:qaglobalsearch" | [] | "" | EXPECTED_DEPLOYMENT_CATEGORIES
 
-        "Image:docker.io/library/busybox:latest" | [] | "" |
-                [SearchServiceOuterClass.SearchCategory.IMAGES, SearchServiceOuterClass.SearchCategory.DEPLOYMENTS]
+        "Image:docker.io/library/busybox:latest" | [] | "" | EXPECTED_IMAGE_CATEGORIES
 
         "Subject:system:auth" | [SearchServiceOuterClass.SearchCategory.SUBJECTS] | "system:authenticated" | []
     }
-
 }
