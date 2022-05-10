@@ -41,7 +41,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - For questions about this change, please contact the Red Hat support team at support@redhat.com.
 - ROX-10018: The policy `OpenShift: Kubeadmin Secret Accessed` will no longer trigger if the request was from the default OpenShift `oauth-apiserver-sa` service account, because this is an expected access pattern for the OpenShift apiserver.
 - Violation tags and process tags are deprecated, and will be removed in version 3.72.0.
-
+- Users who do not want to include the RBAC factor in risk calculation can set
+  the "ROX_INCLUDE_RBAC_IN_RISK" environment variable to "false" in the Central deployment spec.
 
 ## [69.1]
 
