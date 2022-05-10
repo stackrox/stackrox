@@ -32,6 +32,12 @@ func init() {
 		&storage.ReportConfiguration{}:                          resources.VulnerabilityReports,
 		&storage.SimpleAccessScope{}:                            resources.Role,
 		&storage.TokenMetadata{}:                                resources.Integration,
+		&storage.ComplianceOperatorCheckResult{}:                resources.ComplianceOperator,
+		&storage.ComplianceOperatorScan{}:                       resources.ComplianceOperator,
+		&storage.ComplianceOperatorScanSettingBinding{}:         resources.ComplianceOperator,
+		&storage.ComplianceOperatorProfile{}:                    resources.ComplianceOperator,
+		&storage.ComplianceOperatorRule{}:                       resources.ComplianceOperator,
+
 		// Tests
 		&storage.TestMultiKeyStruct{}:  resources.Namespace,
 		&storage.TestSingleKeyStruct{}: resources.Namespace,
