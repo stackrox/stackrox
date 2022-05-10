@@ -3,6 +3,7 @@ package env
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -68,4 +69,14 @@ func TestDurationSetting(t *testing.T) {
 	a.NoError(os.Setenv(name, "1h"))
 	a.Equal(time.Hour, s.DurationSetting())
 	a.Equal("1h0m0s", s.Setting())
+}
+
+func TestSettingEnvVarsStartWithRox(t *testing.T) {
+	for k := range Settings {
+		// This one slipped by, too late to change it, so ignore in the test.
+		if k == NotifyEveryRuntimeEvent.EnvVar() {
+			continue
+		}
+		assert.True(t, strings.HasPrefix(k, "ROX_"), "Env var %s doesn't start with ROX_", k)
+	}
 }
