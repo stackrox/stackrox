@@ -26,7 +26,6 @@ const (
 	getStmt     = "SELECT serialized FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3"
 	deleteStmt  = "DELETE FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3"
 	walkStmt    = "SELECT serialized FROM image_cve_relations"
-	getIDsStmt  = "SELECT Id FROM image_cve_relations"
 	getManyStmt = "SELECT serialized FROM image_cve_relations WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM image_cve_relations WHERE Id = ANY($1::text[])"
@@ -128,20 +127,18 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ImageCVEEdgeIDs")
+	var sacQueryFilter *v1.Query
 
-	rows, err := s.db.Query(ctx, getIDsStmt)
+	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, err
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+
+	ids := make([]string, 0, len(result))
+	for _, entry := range result {
+		ids = append(ids, entry.ID)
 	}
+
 	return ids, nil
 }
 

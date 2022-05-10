@@ -414,8 +414,14 @@ func standardizeFieldNamesInQuery(q *v1.Query) {
 	}
 }
 
-// RunSearchRequest executes a request again the database
-func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) (searchResults []searchPkg.Result, err error) {
+// RunSearchRequest executes a request against the database for given category
+func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) ([]searchPkg.Result, error) {
+	schema := mapping.GetTableFromCategory(category)
+	return RunSearchRequestForSchema(schema, q, db)
+}
+
+// RunSearchRequestForSchema executes a request against the database for given schema
+func RunSearchRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (searchResults []searchPkg.Result, err error) {
 	var query *query
 	// Add this to be safe and convert panics to errors,
 	// since we do a lot of casting and other operations that could potentially panic in this code.
@@ -433,7 +439,6 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool)
 		}
 	}()
 
-	schema := mapping.GetTableFromCategory(category)
 	query, err = standardizeQueryAndPopulatePath(q, schema, GET)
 	if err != nil {
 		return nil, err

@@ -26,7 +26,6 @@ const (
 	getStmt     = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
 	deleteStmt  = "DELETE FROM multikey WHERE Key1 = $1 AND Key2 = $2"
 	walkStmt    = "SELECT serialized FROM multikey"
-	getIDsStmt  = "SELECT Key1 FROM multikey"
 	getManyStmt = "SELECT serialized FROM multikey WHERE Key1 = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM multikey WHERE Key1 = ANY($1::text[])"
@@ -467,20 +466,18 @@ func (s *storeImpl) Delete(ctx context.Context, key1 string, key2 string) error 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.TestMultiKeyStructIDs")
+	var sacQueryFilter *v1.Query
 
-	rows, err := s.db.Query(ctx, getIDsStmt)
+	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, err
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+
+	ids := make([]string, 0, len(result))
+	for _, entry := range result {
+		ids = append(ids, entry.ID)
 	}
+
 	return ids, nil
 }
 
