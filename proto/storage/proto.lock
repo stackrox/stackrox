@@ -9348,12 +9348,24 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"unique\""
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -11865,18 +11877,7 @@
               },
               {
                 "id": 5,
-                "name": "component_operating_system",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(ImageComponent:operating_system)\""
-                  }
-                ]
-              },
-              {
-                "id": 6,
-                "name": "image_cve_id",
+                "name": "cve_id",
                 "type": "string",
                 "options": [
                   {
