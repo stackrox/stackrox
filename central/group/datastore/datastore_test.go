@@ -20,9 +20,10 @@ func TestGroupDataStore(t *testing.T) {
 type groupDataStoreTestSuite struct {
 	suite.Suite
 
-	hasNoneCtx  context.Context
-	hasReadCtx  context.Context
-	hasWriteCtx context.Context
+	hasNoneCtx        context.Context
+	hasReadCtx        context.Context
+	hasWriteCtx       context.Context
+	hasWriteAccessCtx context.Context
 
 	dataStore DataStore
 	storage   *storeMocks.MockStore
@@ -40,6 +41,10 @@ func (s *groupDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Group)))
+	s.hasWriteAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Access)))
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
@@ -64,10 +69,13 @@ func (s *groupDataStoreTestSuite) TestAllowsGet() {
 	_, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{})
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().Get(gomock.Any()).Return(nil, nil)
+	s.storage.EXPECT().Get(gomock.Any()).Return(nil, nil).Times(2)
 
 	_, err = s.dataStore.Get(s.hasWriteCtx, &storage.GroupProperties{})
 	s.NoError(err, "expected no error trying to read with permissions")
+
+	_, err = s.dataStore.Get(s.hasWriteAccessCtx, &storage.GroupProperties{})
+	s.NoError(err, "expected no error trying to read with Access permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesGetAll() {
@@ -84,10 +92,13 @@ func (s *groupDataStoreTestSuite) TestAllowsGetAll() {
 	_, err := s.dataStore.GetAll(s.hasReadCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().GetAll().Return(nil, nil)
+	s.storage.EXPECT().GetAll().Return(nil, nil).Times(2)
 
 	_, err = s.dataStore.GetAll(s.hasWriteCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
+
+	_, err = s.dataStore.GetAll(s.hasWriteAccessCtx)
+	s.NoError(err, "expected no error trying to read with Access permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesWalk() {
@@ -104,10 +115,13 @@ func (s *groupDataStoreTestSuite) TestAllowsWalk() {
 	_, err := s.dataStore.Walk(s.hasReadCtx, "provider", nil)
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil, nil)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil, nil).Times(2)
 
 	_, err = s.dataStore.Walk(s.hasWriteCtx, "provider", nil)
 	s.NoError(err, "expected no error trying to read with permissions")
+
+	_, err = s.dataStore.Walk(s.hasWriteAccessCtx, "provider", nil)
+	s.NoError(err, "expected no error trying to read with Access permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesAdd() {
@@ -121,10 +135,13 @@ func (s *groupDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsAdd() {
-	s.storage.EXPECT().Add(gomock.Any()).Return(nil)
+	s.storage.EXPECT().Add(gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.Add(s.hasWriteCtx, &storage.Group{})
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	err = s.dataStore.Add(s.hasWriteAccessCtx, &storage.Group{})
+	s.NoError(err, "expected no error trying to write with Access permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesUpdate() {
@@ -138,10 +155,13 @@ func (s *groupDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsUpdate() {
-	s.storage.EXPECT().Update(gomock.Any()).Return(nil)
+	s.storage.EXPECT().Update(gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.Update(s.hasWriteCtx, &storage.Group{})
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	err = s.dataStore.Update(s.hasWriteAccessCtx, &storage.Group{})
+	s.NoError(err, "expected no error trying to write with Access permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesUpsert() {
@@ -155,10 +175,13 @@ func (s *groupDataStoreTestSuite) TestEnforcesUpsert() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsUpsert() {
-	s.storage.EXPECT().Upsert(gomock.Any()).Return(nil)
+	s.storage.EXPECT().Upsert(gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.Upsert(s.hasWriteCtx, &storage.Group{})
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	err = s.dataStore.Upsert(s.hasWriteAccessCtx, &storage.Group{})
+	s.NoError(err, "expected no error trying to write with Access permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesMutate() {
@@ -172,10 +195,13 @@ func (s *groupDataStoreTestSuite) TestEnforcesMutate() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsMutate() {
-	s.storage.EXPECT().Mutate(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	s.storage.EXPECT().Mutate(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{})
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	err = s.dataStore.Mutate(s.hasWriteAccessCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{})
+	s.NoError(err, "expected no error trying to write with Access permissions")
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesRemove() {
@@ -189,8 +215,11 @@ func (s *groupDataStoreTestSuite) TestEnforcesRemove() {
 }
 
 func (s *groupDataStoreTestSuite) TestAllowsRemove() {
-	s.storage.EXPECT().Remove(gomock.Any()).Return(nil)
+	s.storage.EXPECT().Remove(gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.Remove(s.hasWriteCtx, &storage.GroupProperties{})
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	err = s.dataStore.Remove(s.hasWriteAccessCtx, &storage.GroupProperties{})
+	s.NoError(err, "expected no error trying to write with Access permissions")
 }
