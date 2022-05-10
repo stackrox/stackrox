@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
@@ -330,7 +329,6 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 	if result.ImageUpdated {
 		if err := l.risk.CalculateRiskAndUpsertImage(image); err != nil {
 			log.Errorf("error upserting image %q into datastore: %v", image.GetName().GetFullName(), err)
-			log.Error(protoutils.NewWrapper(image))
 			return nil, false
 		}
 	}
