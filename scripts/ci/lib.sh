@@ -690,7 +690,7 @@ store_test_results() {
     fi
 
     local from="$1"
-    local to="$2"
+    local to="junit-$2"
 
     info "Copying test results from $from to $to"
 
