@@ -393,7 +393,7 @@ test_upgrade_paths() {
     info "Running smoke tests"
     CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test || touch FAIL
     store_qa_test_results "upgrade-paths-smoke-tests"
-    [[ -f FAIL ]] && die "Smoke tests failed"
+    [[ ! -f FAIL ]] || die "Smoke tests failed"
 
     collect_and_check_stackrox_logs "$log_output_dir" "03_final"
 }
@@ -434,7 +434,7 @@ validate_upgrade() {
         POLICIES_JSON_RELATIVE_PATH="$policies_dir" \
         make -C qa-tests-backend upgrade-test || touch FAIL
     store_qa_test_results "validate-upgrade-tests-${stage_name}"
-    [[ -f FAIL ]] && die "Upgrade tests failed"
+    [[ ! -f FAIL ]] || die "Upgrade tests failed"
 }
 
 force_rollback() {
