@@ -1,18 +1,18 @@
-import { selectors, systemHealthUrl } from '../../constants/SystemHealth';
-import { integrationHealth as integrationHealthApi } from '../../constants/apiEndpoints';
+import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
+import {
+    setClock,
+    visitSystemHealth,
+    visitSystemHealthWithVulnerabilityDefinitionsTimestamp,
+} from '../../helpers/systemHealth';
 
 const nbsp = '\u00A0';
 
-describe('System Health Vulnerability Definitions local deployment', () => {
+describe('System Health Vulnerability Definitions without fixture', () => {
     withAuth();
 
     it('should have widget and up to date text', () => {
-        cy.intercept('GET', integrationHealthApi.vulnDefinitions).as(
-            'GetVulnerabilityDefinitionsInfo'
-        );
-        cy.visit(systemHealthUrl);
-        cy.wait('@GetVulnerabilityDefinitionsInfo');
+        visitSystemHealth();
 
         const { vulnDefinitions } = selectors;
         cy.get(vulnDefinitions.header).should('have.text', 'Vulnerability Definitions');
@@ -23,18 +23,15 @@ describe('System Health Vulnerability Definitions local deployment', () => {
     });
 });
 
-describe('System Health Vulnerability Definitions fixtures', () => {
+describe('System Health Vulnerability Definitions with fixture', () => {
     withAuth();
 
     it('should have widget and out of date text and time', () => {
-        const currentDatetime = new Date('2020-12-10T03:04:59.377369440Z'); // exactly 24 hours
-        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
+        const currentDatetime = new Date('2020-12-10T03:04:59.377369440Z'); // exactly 24 hours after last updated
+        const lastUpdatedTimestamp = '2020-12-09T03:04:59.377369440Z';
 
-        cy.intercept('GET', integrationHealthApi.vulnDefinitions, {
-            body: { lastUpdatedTimestamp: '2020-12-09T03:04:59.377369440Z' },
-        }).as('GetVulnerabilityDefinitionsInfo');
-        cy.visit(systemHealthUrl);
-        cy.wait('@GetVulnerabilityDefinitionsInfo');
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithVulnerabilityDefinitionsTimestamp(lastUpdatedTimestamp);
 
         const { vulnDefinitions } = selectors;
         cy.get(vulnDefinitions.header).should('have.text', 'Vulnerability Definitions');
