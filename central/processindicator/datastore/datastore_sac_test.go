@@ -205,7 +205,7 @@ func (s *processIndicatorDatastoreSACSuite) TestGetProcessIndicator() {
 			found:    true,
 		},
 		"global read-write can get": {
-			scopeKey: sacTestUtils.UnrestrictedReadCtx,
+			scopeKey: sacTestUtils.UnrestrictedReadWriteCtx,
 			found:    true,
 		},
 		"read-write on wrong cluster cannot get": {
