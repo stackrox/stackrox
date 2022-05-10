@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/and"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 )
@@ -53,18 +52,10 @@ func newBackend(store store.Store, certProvider certificate.Provider) Backend {
 
 // CheckAccess returns nil if requested access level is granted in context.
 func CheckAccess(ctx context.Context, access storage.Access) error {
-	var authZ authz.Authorizer
-	switch access {
-	case storage.Access_READ_ACCESS:
-		authZ = and.And(
-			user.With(permissions.View(resources.ServiceIdentity)),
-			user.With(permissions.View(resources.APIToken)),
-		)
-	case storage.Access_READ_WRITE_ACCESS:
-		authZ = and.And(
-			user.With(permissions.Modify(resources.ServiceIdentity)),
-			user.With(permissions.Modify(resources.APIToken)),
-		)
-	}
+	authZ := and.And(
+		user.With(permissions.ResourceWithAccess{Resource: resources.ServiceIdentity, Access: access}),
+		user.With(permissions.ResourceWithAccess{Resource: resources.APIToken, Access: access}),
+	)
+
 	return authZ.Authorized(ctx, "")
 }
