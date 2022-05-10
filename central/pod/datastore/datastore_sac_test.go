@@ -23,8 +23,8 @@ import (
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
