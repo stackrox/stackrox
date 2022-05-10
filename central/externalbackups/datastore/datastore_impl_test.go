@@ -46,6 +46,9 @@ type extBkpDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
+	hasReadIntegrationsCtx  context.Context
+	hasWriteIntegrationsCtx context.Context
+
 	dataStore DataStore
 	storage   *storeMocks.MockStore
 
@@ -58,11 +61,18 @@ func (s *extBkpDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.BackupPlugins)))
+	s.hasReadIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Integrations)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.BackupPlugins)))
-
+	s.hasWriteIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Integrations)))
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.dataStore = New(s.storage)
@@ -79,14 +89,21 @@ func (s *extBkpDataStoreTestSuite) TestUpsertExtBkps() {
 	s.NoError(err)
 	s.Empty(result)
 
-	s.storage.EXPECT().UpsertBackup(NewFakeExtBkp()).Return(nil)
+	s.storage.EXPECT().UpsertBackup(NewFakeExtBkp()).Return(nil).Times(2)
 
 	err = s.dataStore.UpsertBackup(s.hasWriteCtx, NewFakeExtBkp())
 	s.NoError(err)
 
-	s.storage.EXPECT().ListBackups().Return(NewFakeListExtBkps(), nil)
+	err = s.dataStore.UpsertBackup(s.hasWriteIntegrationsCtx, NewFakeExtBkp())
+	s.NoError(err)
+
+	s.storage.EXPECT().ListBackups().Return(NewFakeListExtBkps(), nil).Times(2)
 
 	bkps, err := s.dataStore.ListBackups(s.hasReadCtx)
+	s.Equal(NewFakeListExtBkps(), bkps)
+	s.NoError(err)
+
+	bkps, err = s.dataStore.ListBackups(s.hasReadCtx)
 	s.Equal(NewFakeListExtBkps(), bkps)
 	s.NoError(err)
 }
@@ -100,9 +117,13 @@ func (s *extBkpDataStoreTestSuite) TestEnforcesList() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestAllowsList() {
-	s.storage.EXPECT().ListBackups().Return(NewFakeListExtBkps(), nil)
+	s.storage.EXPECT().ListBackups().Return(NewFakeListExtBkps(), nil).Times(2)
 
 	result, err := s.dataStore.ListBackups(s.hasReadCtx)
+	s.NoError(err, "expected no error, should return nil without access")
+	s.Equal(NewFakeListExtBkps(), result)
+
+	result, err = s.dataStore.ListBackups(s.hasReadIntegrationsCtx)
 	s.NoError(err, "expected no error, should return nil without access")
 	s.Equal(NewFakeListExtBkps(), result)
 }
@@ -116,9 +137,12 @@ func (s *extBkpDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestAllowsGet() {
-	s.storage.EXPECT().GetBackup(gomock.Any()).Return(nil, nil)
+	s.storage.EXPECT().GetBackup(gomock.Any()).Return(nil, nil).Times(2)
 
 	_, err := s.dataStore.GetBackup(s.hasReadCtx, FakeID)
+	s.NoError(err, "expected no error trying to read with permissions")
+
+	_, err = s.dataStore.GetBackup(s.hasReadIntegrationsCtx, FakeID)
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 
@@ -133,10 +157,13 @@ func (s *extBkpDataStoreTestSuite) TestEnforcesUpsert() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestAllowsUpsert() {
-	s.storage.EXPECT().UpsertBackup(gomock.Any()).Return(nil)
+	s.storage.EXPECT().UpsertBackup(gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.UpsertBackup(s.hasWriteCtx, &storage.ExternalBackup{})
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	err = s.dataStore.UpsertBackup(s.hasWriteIntegrationsCtx, &storage.ExternalBackup{})
+	s.NoError(err, "expected no error trying to write with Integrations permissions")
 }
 
 func (s *extBkpDataStoreTestSuite) TestEnforcesRemove() {
@@ -150,8 +177,11 @@ func (s *extBkpDataStoreTestSuite) TestEnforcesRemove() {
 }
 
 func (s *extBkpDataStoreTestSuite) TestAllowsRemove() {
-	s.storage.EXPECT().RemoveBackup(gomock.Any()).Return(nil)
+	s.storage.EXPECT().RemoveBackup(gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.RemoveBackup(s.hasWriteCtx, FakeID)
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	err = s.dataStore.RemoveBackup(s.hasWriteIntegrationsCtx, FakeID)
+	s.NoError(err, "expected no error trying to write with Integrations permissions")
 }
