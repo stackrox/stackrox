@@ -13,6 +13,7 @@ import services.ImageIntegrationService
 import services.ImageService
 import services.RoleService
 import services.SACService
+import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Unroll
 import util.Env
@@ -106,6 +107,7 @@ class VulnMgmtSACTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify role based scoping on vuln mgmt: #roleName #baseQuery"() {
         when:
         "Get Node CVEs and components"
@@ -146,6 +148,7 @@ class VulnMgmtSACTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify permissions on vuln mgmt: role with no CVE permissions is rejected"() {
         when:
         "Get CVEs via GraphQL"
@@ -158,6 +161,7 @@ class VulnMgmtSACTest extends BaseSpecification {
 
     @Retry(count = 0)
     @Unroll
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify SAC on vuln mgmt shared objects: #tokenName #baseQuery"() {
         when:
         "Get Node CVEs and components"

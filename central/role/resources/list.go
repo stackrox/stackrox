@@ -29,15 +29,17 @@ var (
 	// Administration is the new resource grouping all administration-like resources.
 	Administration = newResourceMetadata("Administration", permissions.GlobalScope)
 	Alert          = newResourceMetadata("Alert", permissions.NamespaceScope)
-	CVE            = newResourceMetadata("CVE", permissions.NamespaceScope)
-	Cluster        = newResourceMetadata("Cluster", permissions.ClusterScope)
-	Compliance     = newResourceMetadata("Compliance", permissions.GlobalScope)
-	Deployment     = newResourceMetadata("Deployment", permissions.NamespaceScope)
+	// SAC check is not performed directly on CVE resource. It exists here for postgres sac generation to pass.
+	CVE        = newResourceMetadata("CVE", permissions.NamespaceScope)
+	Cluster    = newResourceMetadata("Cluster", permissions.ClusterScope)
+	Compliance = newResourceMetadata("Compliance", permissions.GlobalScope)
+	Deployment = newResourceMetadata("Deployment", permissions.NamespaceScope)
 	// DeploymentExtensions is the new resource grouping all deployment extending resources.
 	DeploymentExtensions = newResourceMetadata("DeploymentExtensions", permissions.NamespaceScope)
 	Detection            = newResourceMetadata("Detection", permissions.GlobalScope)
 	Image                = newResourceMetadata("Image", permissions.NamespaceScope)
-	ImageComponent       = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
+	// SAC check is not performed directly on ImageComponent resource. It exists here for postgres sac generation to pass.
+	ImageComponent = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
 	// Integrations is the new  resource grouping all integration resources.
 	Integrations                     = newResourceMetadata("Integrations", permissions.GlobalScope)
 	K8sRole                          = newResourceMetadata("K8sRole", permissions.NamespaceScope)

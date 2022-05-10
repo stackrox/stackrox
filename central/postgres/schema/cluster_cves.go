@@ -20,7 +20,6 @@ var (
                create table if not exists cluster_cves (
                    Id varchar,
                    Cve varchar,
-                   OperatingSystem varchar,
                    Cvss numeric,
                    ImpactScore numeric,
                    PublishedOn timestamp,
@@ -29,7 +28,7 @@ var (
                    SuppressExpiry timestamp,
                    Severity integer,
                    serialized bytea,
-                   PRIMARY KEY(Id, Cve, OperatingSystem)
+                   PRIMARY KEY(Id)
                )
                `,
 		Indexes:  []string{},

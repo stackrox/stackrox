@@ -9,14 +9,11 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
-	imgDackBox "github.com/stackrox/rox/central/image/dackbox"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/image/datastore/internal/store/common"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -74,8 +71,11 @@ type storeImpl struct {
 }
 
 func insertIntoImages(ctx context.Context, tx pgx.Tx, obj *storage.Image, scanUpdated bool, iTime *protoTypes.Timestamp) error {
-	cloned := obj.Clone()
-	cloned.Scan.Components = nil
+	cloned := obj
+	if cloned.GetScan().GetComponents() != nil {
+		cloned = obj.Clone()
+		cloned.Scan.Components = nil
+	}
 	serialized, marshalErr := cloned.Marshal()
 	if marshalErr != nil {
 		return marshalErr
@@ -198,7 +198,6 @@ func copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Im
 
 	copyCols := []string{
 		"id",
-		"operatingsystem",
 		"name",
 		"version",
 		"source",
@@ -216,7 +215,6 @@ func copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Im
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			obj.GetOperatingSystem(),
 			obj.GetName(),
 			obj.GetVersion(),
 			obj.GetSource(),
@@ -263,9 +261,6 @@ func copyFromImageComponentRelations(ctx context.Context, tx pgx.Tx, objs ...*st
 		"location",
 		"imageid",
 		"imagecomponentid",
-		"imagecomponentname",
-		"imagecomponentversion",
-		"imagecomponentoperatingsystem",
 		"serialized",
 	}
 
@@ -290,9 +285,6 @@ func copyFromImageComponentRelations(ctx context.Context, tx pgx.Tx, objs ...*st
 			obj.GetLocation(),
 			obj.GetImageId(),
 			obj.GetImageComponentId(),
-			obj.GetImageComponentName(),
-			obj.GetImageComponentVersion(),
-			obj.GetImageComponentOperatingSystem(),
 			serialized,
 		})
 
@@ -322,7 +314,6 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 
 	copyCols := []string{
 		"id",
-		"operatingsystem",
 		"cve",
 		"cvss",
 		"impactscore",
@@ -359,7 +350,6 @@ func copyFromImageCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timesta
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			obj.GetOperatingSystem(),
 			obj.GetCve(),
 			obj.GetCvss(),
 			obj.GetImpactScore(),
@@ -410,12 +400,7 @@ func copyFromImageComponentCVERelations(ctx context.Context, tx pgx.Tx, os strin
 		"isfixable",
 		"fixedby",
 		"imagecomponentid",
-		"imagecomponentname",
-		"imagecomponentversion",
-		"imagecomponentoperatingsystem",
 		"imagecveid",
-		"imagecve",
-		"imagecveoperatingsystem",
 		"serialized",
 	}
 
@@ -430,12 +415,7 @@ func copyFromImageComponentCVERelations(ctx context.Context, tx pgx.Tx, os strin
 			obj.GetIsFixable(),
 			obj.GetFixedBy(),
 			obj.GetImageComponentId(),
-			obj.GetImageComponentName(),
-			obj.GetImageComponentVersion(),
-			obj.GetImageComponentOperatingSystem(),
 			obj.GetImageCveId(),
-			obj.GetImageCve(),
-			obj.GetImageComponentOperatingSystem(),
 			serialized,
 		})
 
@@ -478,8 +458,6 @@ func copyFromImageCVERelations(ctx context.Context, tx pgx.Tx, iTime *protoTypes
 		"state",
 		"imageid",
 		"imagecveid",
-		"imagecve",
-		"imagecveoperatingsystem",
 		"serialized",
 	}
 
@@ -519,8 +497,6 @@ func copyFromImageCVERelations(ctx context.Context, tx pgx.Tx, iTime *protoTypes
 			obj.GetState(),
 			obj.GetImageId(),
 			obj.GetImageCveId(),
-			obj.GetImageCve(),
-			obj.GetImageCveOperatingSystem(),
 			serialized,
 		})
 
@@ -716,12 +692,6 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx pgx.Tx, imageID string)
 		utils.Should(
 			errors.Errorf("Number of component edges (%d) is not equal to number of components (%d) for image %s (imageID=%s)",
 				len(componentEdgeMap), len(componentMap), image.GetName().GetFullName(), image.GetId()),
-		)
-	}
-	if len(componentCVEEdgeMap) != len(cveMap) {
-		utils.Should(
-			errors.Errorf("Number of component-cve edges (%d) is not equal to number of cves (%d) for image %s (imageID=%s)",
-				len(componentCVEEdgeMap), len(cveMap), image.GetName().GetFullName(), image.GetId()),
 		)
 	}
 
@@ -1106,25 +1076,25 @@ func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.I
 	return &msg, true, nil
 }
 
-func (s *storeImpl) UpdateVulnState(_ context.Context, cve string, images []string, state storage.VulnerabilityState) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.UpdateMany, "ImageCVEEdge")
-
-	panic("not implemented")
-}
-
-func getEdgeIDs(cve string, imageIDs ...string) []string {
-	ids := make([]string, 0, len(imageIDs))
-	for _, imgID := range imageIDs {
-		ids = append(ids, edges.EdgeID{ParentID: imgID, ChildID: cve}.ToString())
+func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error {
+	conn, release, err := s.acquireConn(ctx, ops.Get, "UpdateVulnState")
+	if err != nil {
+		return err
 	}
-	return ids
-}
+	defer release()
 
-func gatherKeysForEdge(cve string, imageIDs ...string) [][]byte {
-	allKeys := make([][]byte, 0, len(imageIDs)+1)
-	for _, imgID := range imageIDs {
-		allKeys = append(allKeys, imgDackBox.BucketHandler.GetKey(imgID))
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return err
 	}
-	allKeys = append(allKeys, cveDackBox.BucketHandler.GetKey(cve))
-	return allKeys
+
+	query := "update " + imageCVERelationsTable + " set state = $1 where imagecveid = $2 AND imageid = ANY($3::text[])"
+	_, err = tx.Exec(ctx, query, state, cve, images)
+	if err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	return tx.Commit(ctx)
 }

@@ -1,13 +1,17 @@
 package datastore
 
 import (
+	"context"
+
 	clusterIndexer "github.com/stackrox/rox/central/cluster/index"
+	"github.com/stackrox/rox/central/componentcveedge/datastore/internal/postgres"
 	"github.com/stackrox/rox/central/componentcveedge/index"
 	"github.com/stackrox/rox/central/componentcveedge/search"
 	"github.com/stackrox/rox/central/componentcveedge/store"
 	"github.com/stackrox/rox/central/componentcveedge/store/dackbox"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
+	"github.com/stackrox/rox/central/globaldb"
 	globalDackbox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
@@ -16,6 +20,7 @@ import (
 	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	nodeIndexer "github.com/stackrox/rox/central/node/index"
 	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -32,12 +37,14 @@ func initialize() {
 	var indexer index.Indexer
 	var searcher search.Searcher
 
-	// TODO: Wire up.
-	// if features.PostgresDatastore.Enabled() {
-	//	storage = postgres.New(context.TODO(), globaldb.GetPostgres())
-	//	indexer = postgres.NewIndexer(globaldb.GetPostgres())
-	//	searcher = search.NewV2(storage, indexer)
-	//}
+	if features.PostgresDatastore.Enabled() {
+		storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+		indexer = postgres.NewIndexer(globaldb.GetPostgres())
+		searcher = search.NewV2(storage, indexer)
+		ad, err = New(nil, storage, indexer, searcher)
+		utils.CrashOnError(err)
+		return
+	}
 
 	storage, err = dackbox.New(globalDackbox.GetGlobalDackBox())
 	utils.CrashOnError(err)

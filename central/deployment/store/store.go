@@ -13,7 +13,7 @@ type Store interface {
 	GetManyListDeployments(ctx context.Context, ids ...string) ([]*storage.ListDeployment, []int, error)
 
 	Get(ctx context.Context, id string) (*storage.Deployment, bool, error)
-	GetMany(ctx context.Context, ids ...string) ([]*storage.Deployment, []int, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.Deployment, []int, error)
 
 	Count(ctx context.Context) (int, error)
 	Upsert(ctx context.Context, deployment *storage.Deployment) error

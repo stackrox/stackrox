@@ -7,6 +7,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
+	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	componentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
@@ -19,6 +20,7 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -181,7 +183,12 @@ func (b *serviceBuilder) Build() Service {
 
 // NewService returns a new search service
 func NewService() Service {
-
+	var imageCVEDataStore cveDataStore.DataStore
+	if features.PostgresDatastore.Enabled() {
+		imageCVEDataStore = cveDataStore.Singleton()
+	} else {
+		imageCVEDataStore = legacyImageCVEDataStore.Singleton()
+	}
 	builder := NewBuilder()
 
 	builder = builder.
@@ -198,7 +205,7 @@ func NewService() Service {
 		WithRoleBindingStore(roleBindingDataStore.Singleton()).
 		WithAggregator(aggregation.Singleton()).
 		WithClusterDataStore(clusterDataStore.Singleton()).
-		WithCVEDataStore(cveDataStore.Singleton()).
+		WithCVEDataStore(imageCVEDataStore).
 		WithComponentDataStore(componentDataStore.Singleton())
 
 	return builder.Build()

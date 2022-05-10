@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	pkgPostgres "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -25,11 +24,6 @@ var (
 
 	accessAllCtx = sac.WithAllAccess(context.Background())
 )
-
-type imageCVEPks struct {
-	cve string
-	os  string
-}
 
 type datastoreImpl struct {
 	storage  store.Store
@@ -69,11 +63,11 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 	return ds.searcher.Search(ctx, q)
 }
 
-func (ds *datastoreImpl) SearchImageCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+func (ds *datastoreImpl) SearchCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	return ds.searcher.SearchCVEs(ctx, q)
 }
 
-func (ds *datastoreImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.CVE, error) {
+func (ds *datastoreImpl) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.CVE, error) {
 	cves, err := ds.searcher.SearchRawCVEs(ctx, q)
 	if err != nil {
 		return nil, err
@@ -89,11 +83,7 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.CVE, bool, error) {
-	pks, err := getPKs(id)
-	if err != nil {
-		return nil, false, err
-	}
-	cve, found, err := ds.storage.Get(ctx, id, pks.cve, pks.os)
+	cve, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -101,11 +91,7 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.CVE, bool
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	pks, err := getPKs(id)
-	if err != nil {
-		return false, err
-	}
-	found, err := ds.storage.Exists(ctx, id, pks.cve, pks.os)
+	found, err := ds.storage.Exists(ctx, id)
 	if err != nil || !found {
 		return false, err
 	}
@@ -215,16 +201,4 @@ func getSuppressExpiry(start *types.Timestamp, duration *types.Duration) (*types
 		return nil, err
 	}
 	return &types.Timestamp{Seconds: start.GetSeconds() + int64(d.Seconds())}, nil
-}
-
-func getPKs(id string) (imageCVEPks, error) {
-	parts := pkgPostgres.IDToParts(id)
-	if len(parts) != 2 {
-		return imageCVEPks{}, errors.Errorf("unexpected number of primary keys (%v) found for image cves. Expected 2 parts", parts)
-	}
-
-	return imageCVEPks{
-		cve: parts[0],
-		os:  parts[1],
-	}, nil
 }

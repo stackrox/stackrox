@@ -7,6 +7,7 @@ import (
 	"context"
 	"testing"
 
+	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/image/datastore/internal/store/postgres"
@@ -16,7 +17,9 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
@@ -57,7 +60,9 @@ func (s *ImagePostgresDataStoreTestSuite) SetupSuite() {
 	pool, err := pgxpool.ConnectConfig(s.ctx, config)
 	s.NoError(err)
 	s.db = pool
+}
 
+func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
 	postgres.Destroy(s.ctx, s.db)
 
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
@@ -147,4 +152,65 @@ func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.NoError(err)
 	s.Len(results, 1)
 	s.Equal(newImage.GetId(), results[0].ID)
+}
+
+func (s *ImagePostgresDataStoreTestSuite) TestFixableWithPostgres() {
+	image := fixtures.GetImageWithUniqueComponents()
+	ctx := sac.WithAllAccess(context.Background())
+
+	s.NoError(s.datastore.UpsertImage(ctx, image))
+	_, found, err := s.datastore.GetImage(ctx, image.GetId())
+	s.NoError(err)
+	s.True(found)
+
+	results, err := s.datastore.Search(ctx, pkgSearch.NewQueryBuilder().AddBools(pkgSearch.Fixable, true).ProtoQuery())
+	s.NoError(err)
+	// This should be 1, but until outer join changes to inner join, it is going to be 10 because there are 10 cves in `cloned`.
+	s.Len(results, 10)
+	s.Equal(image.GetId(), results[0].ID)
+
+	image.Scan.ScanTime = protoTypes.TimestampNow()
+	for _, component := range image.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			vuln.SetFixedBy = nil
+		}
+	}
+	s.NoError(s.datastore.UpsertImage(ctx, image))
+	_, found, err = s.datastore.GetImage(ctx, image.GetId())
+	s.NoError(err)
+	s.True(found)
+
+	results, err = s.datastore.Search(ctx, pkgSearch.NewQueryBuilder().AddBools(pkgSearch.Fixable, true).ProtoQuery())
+	s.NoError(err)
+	s.Len(results, 0)
+}
+
+func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
+	image := fixtures.GetImageWithUniqueComponents()
+	ctx := sac.WithAllAccess(context.Background())
+
+	s.NoError(s.datastore.UpsertImage(ctx, image))
+	_, found, err := s.datastore.GetImage(ctx, image.GetId())
+	s.NoError(err)
+	s.True(found)
+
+	cloned := image.Clone()
+	cloned.Id = "cloned"
+	s.NoError(s.datastore.UpsertImage(ctx, cloned))
+	_, found, err = s.datastore.GetImage(ctx, cloned.GetId())
+	s.NoError(err)
+	s.True(found)
+
+	for _, component := range cloned.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			err := s.datastore.UpdateVulnerabilityState(ctx, cve.ID(vuln.GetCve(), cloned.GetScan().GetOperatingSystem()), []string{cloned.GetId()}, storage.VulnerabilityState_DEFERRED)
+			s.NoError(err)
+		}
+	}
+
+	results, err := s.datastore.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.VulnerabilityState, storage.VulnerabilityState_DEFERRED.String()).ProtoQuery())
+	s.NoError(err)
+	// This should be 1, but until outer join changes to inner join, it is going to be 10 because there are 10 cves in `cloned`.
+	s.Len(results, 10)
+	s.Equal(cloned.GetId(), results[0].ID)
 }
