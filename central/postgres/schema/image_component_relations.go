@@ -23,11 +23,8 @@ var (
                    Location varchar,
                    ImageId varchar,
                    ImageComponentId varchar,
-                   ImageComponentName varchar,
-                   ImageComponentVersion varchar,
-                   ImageComponentOperatingSystem varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, ImageId, ImageComponentId, ImageComponentName, ImageComponentVersion, ImageComponentOperatingSystem),
+                   PRIMARY KEY(Id, ImageId, ImageComponentId),
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE
                )
                `,

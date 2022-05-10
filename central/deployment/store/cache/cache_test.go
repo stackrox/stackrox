@@ -53,13 +53,13 @@ func TestDeploymentCache(t *testing.T) {
 	assert.True(t, exists)
 	assert.Equal(t, dep1, dep)
 
-	deployments, missing, err := cacheStore.GetMany(ctx, dep1.GetId(), dep2.GetId())
+	deployments, missing, err := cacheStore.GetMany(ctx, []string{dep1.GetId(), dep2.GetId()})
 	assert.NoError(t, err)
 	assert.Empty(t, missing)
 	assert.Equal(t, deployments, []*storage.Deployment{dep1, dep2})
 
 	baseStore.EXPECT().Get(ctx, "noid").Return(nil, false, nil)
-	deployments, missing, err = cacheStore.GetMany(ctx, dep1.GetId(), "noid", dep2.GetId())
+	deployments, missing, err = cacheStore.GetMany(ctx, []string{dep1.GetId(), "noid", dep2.GetId()})
 	assert.NoError(t, err)
 	assert.Equal(t, []int{1}, missing)
 	assert.Equal(t, deployments, []*storage.Deployment{dep1, dep2})

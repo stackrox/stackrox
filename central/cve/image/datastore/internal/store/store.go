@@ -10,9 +10,9 @@ import (
 //go:generate mockgen-wrapper
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string, cve string, operatingSystem string) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, id string, cve string, operatingSystem string) (*storage.CVE, bool, error)
+	Get(ctx context.Context, id string) (*storage.CVE, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.CVE, []int, error)
 
 	UpsertMany(ctx context.Context, cves []*storage.CVE) error

@@ -18,6 +18,7 @@ var (
 func SingletonManager() OrchestratorIstioCVEManager {
 	var err error
 	once.Do(func() {
+		// TODO: Replace with cluster CVE datastore
 		manager, err = NewOrchestratorIstioCVEManagerImpl(clusterDataStore.Singleton(), cveDataStore.Singleton(), clusterCVEEdgeDataStore.Singleton(), cveMatcher.Singleton())
 		utils.CrashOnError(err)
 	})

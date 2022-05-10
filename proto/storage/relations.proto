@@ -20,9 +20,6 @@ message ImageComponentEdge {
   string    location                          = 3 [(gogoproto.moretags) = 'search:"Component Location,store,hidden"'];
   string    image_id                          = 4 [(gogoproto.moretags) = 'sql:"pk,fk(Image:id)"'];
   string    image_component_id                = 5 [(gogoproto.moretags) = 'sql:"pk,fk(ImageComponent:id),no-fk-constraint"'];
-  string    image_component_name              = 6 [(gogoproto.moretags) = 'sql:"pk,fk(ImageComponent:name),no-fk-constraint"'];
-  string    image_component_version           = 7 [(gogoproto.moretags) = 'sql:"pk,fk(ImageComponent:version),no-fk-constraint"'];
-  string    image_component_operating_system  = 8 [(gogoproto.moretags) = 'sql:"pk,fk(ImageComponent:operating_system),no-fk-constraint"'];
 }
 
 message ComponentCVEEdge {
@@ -36,12 +33,7 @@ message ComponentCVEEdge {
     string  fixed_by                          = 3 [(gogoproto.moretags) = 'search:"Fixed By,store,hidden"'];
   }
   string    image_component_id                = 4 [(gogoproto.moretags) = 'sql:"pk,fk(ImageComponent:id)"'];
-  string    image_component_name              = 5 [(gogoproto.moretags) = 'sql:"pk,fk(ImageComponent:name)"'];
-  string    image_component_version           = 6 [(gogoproto.moretags) = 'sql:"pk,fk(ImageComponent:version)"'];
-  string    image_component_operating_system  = 7 [(gogoproto.moretags) = 'sql:"pk,fk(ImageComponent:operating_system)"'];
-  string    image_cve_id                      = 8 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:id),no-fk-constraint"'];
-  string    image_cve                         = 9 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:cve),no-fk-constraint"'];
-  string    image_cve_operating_system        = 10 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:operating_system),no-fk-constraint"'];
+  string    image_cve_id                      = 5 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:id),no-fk-constraint"'];
 }
 
 message ImageCVEEdge {
@@ -51,7 +43,5 @@ message ImageCVEEdge {
   VulnerabilityState        state                       = 3 [(gogoproto.moretags) = 'search:"Vulnerability State"'];
   string                    image_id                    = 4 [(gogoproto.moretags) = 'sql:"pk,fk(Image:id)"'];
   string                    image_cve_id                = 5 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:id),no-fk-constraint"'];
-  string                    image_cve                   = 6 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:cve),no-fk-constraint"'];
-  string                    image_cve_operating_system  = 7 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:operating_system),no-fk-constraint"'];
 }
 

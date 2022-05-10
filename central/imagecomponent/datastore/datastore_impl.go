@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/imagecomponent/index"
 	sacFilters "github.com/stackrox/rox/central/imagecomponent/sac"
 	"github.com/stackrox/rox/central/imagecomponent/search"
@@ -19,21 +18,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
-	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 var (
 	log = logging.LoggerForModule()
-	// TODO: Need to setup sac for Image Components correctly instead of relying on global access.
-	imagesSAC = sac.ForResource(resources.Image)
-	nodesSac  = sac.ForResource(resources.Node)
 )
-
-type imageComponentPks struct {
-	name    string
-	version string
-	os      string
-}
 
 type datastoreImpl struct {
 	storage       store.Store
@@ -68,21 +57,14 @@ func (ds *datastoreImpl) SearchRawImageComponents(ctx context.Context, q *v1.Que
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComponent, bool, error) {
-	filteredIDs, err := ds.filterReadable(ctx, []string{id})
-	if err != nil || len(filteredIDs) != 1 {
-		return nil, false, err
-	}
-
-	var pks imageComponentPks
-	if features.PostgresDatastore.Enabled() {
-		pks, err = getPKs(id)
-		if err != nil {
+	if !features.PostgresDatastore.Enabled() {
+		filteredIDs, err := ds.filterReadable(ctx, []string{id})
+		if err != nil || len(filteredIDs) != 1 {
 			return nil, false, err
 		}
 	}
-	// For dackbox, we do not need all the primary keys.
 
-	component, found, err := ds.storage.Get(ctx, id, pks.name, pks.version, pks.os)
+	component, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -92,21 +74,14 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComp
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	filteredIDs, err := ds.filterReadable(ctx, []string{id})
-	if err != nil || len(filteredIDs) != 1 {
-		return false, err
-	}
-
-	var pks imageComponentPks
-	if features.PostgresDatastore.Enabled() {
-		pks, err = getPKs(id)
-		if err != nil {
+	if !features.PostgresDatastore.Enabled() {
+		filteredIDs, err := ds.filterReadable(ctx, []string{id})
+		if err != nil || len(filteredIDs) != 1 {
 			return false, err
 		}
 	}
-	// For dackbox, we do not need all the primary keys.
 
-	found, err := ds.storage.Exists(ctx, id, pks.name, pks.version, pks.os)
+	found, err := ds.storage.Exists(ctx, id)
 	if err != nil || !found {
 		return false, err
 	}
@@ -114,12 +89,15 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.ImageComponent, error) {
-	filteredIDs, err := ds.filterReadable(ctx, ids)
-	if err != nil {
-		return nil, err
+	if !features.PostgresDatastore.Enabled() {
+		var err error
+		ids, err = ds.filterReadable(ctx, ids)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	components, _, err := ds.storage.GetMany(ctx, filteredIDs)
+	components, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -140,17 +118,7 @@ func (ds *datastoreImpl) initializeRankers() {
 	}
 
 	for _, id := range pkgSearch.ResultsToIDs(results) {
-		var pks imageComponentPks
-		if features.PostgresDatastore.Enabled() {
-			pks, err = getPKs(id)
-			if err != nil {
-				log.Error(err)
-				continue
-			}
-		}
-		// For dackbox, we do not need all the primary keys.
-
-		component, found, err := ds.storage.Get(readCtx, id, pks.name, pks.version, pks.os)
+		component, found, err := ds.storage.Get(readCtx, id)
 		if err != nil {
 			log.Error(err)
 			continue
@@ -174,17 +142,4 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 		filteredIDs, err = filtered.ApplySACFilter(graphContext, ids, sacFilters.GetSACFilter())
 	})
 	return filteredIDs, err
-}
-
-func getPKs(id string) (imageComponentPks, error) {
-	parts := postgres.IDToParts(id)
-	if len(parts) != 3 {
-		return imageComponentPks{}, errors.Errorf("unexpected number of primary keys (%v) found for image component. Expected 3 parts", parts)
-	}
-
-	return imageComponentPks{
-		name:    parts[0],
-		version: parts[1],
-		os:      parts[2],
-	}, nil
 }

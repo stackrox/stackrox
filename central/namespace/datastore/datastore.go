@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -48,12 +49,16 @@ type DataStore interface {
 // New returns a new DataStore instance using the provided store and indexer
 func New(store store.Store, graphProvider graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker, idMapStorage idmap.Storage) (DataStore, error) {
 	ds := &datastoreImpl{
-		store:             store,
-		indexer:           indexer,
-		formattedSearcher: formatSearcher(indexer, graphProvider, namespaceRanker),
-		deployments:       deploymentDataStore,
-		namespaceRanker:   namespaceRanker,
-		idMapStorage:      idMapStorage,
+		store:           store,
+		indexer:         indexer,
+		deployments:     deploymentDataStore,
+		namespaceRanker: namespaceRanker,
+		idMapStorage:    idMapStorage,
+	}
+	if features.PostgresDatastore.Enabled() {
+		ds.formattedSearcher = formatSearcherV2(indexer, namespaceRanker)
+	} else {
+		ds.formattedSearcher = formatSearcher(indexer, graphProvider, namespaceRanker)
 	}
 	if err := ds.buildIndex(context.TODO()); err != nil {
 		return nil, err
@@ -262,6 +267,12 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 
 // Helper functions which format our searching.
 ///////////////////////////////////////////////
+
+func formatSearcherV2(unsafeSearcher blevesearch.UnsafeSearcher, namespaceRanker *ranking.Ranker) search.Searcher {
+	safeSearcher := namespaceSACSearchHelper.FilteredSearcher(unsafeSearcher)
+	prioritySortedSearcher := sorted.Searcher(safeSearcher, search.NamespacePriority, namespaceRanker)
+	return paginated.WithDefaultSortOption(prioritySortedSearcher, defaultSortOption)
+}
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher, graphProvider graph.Provider, namespaceRanker *ranking.Ranker) search.Searcher {
 	filteredSearcher := namespaceSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.

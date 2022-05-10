@@ -7,29 +7,18 @@ import (
 	sacFilters "github.com/stackrox/rox/central/imagecveedge/sac"
 	"github.com/stackrox/rox/central/imagecveedge/search"
 	"github.com/stackrox/rox/central/imagecveedge/store"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
 	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
-var (
-	log = logging.LoggerForModule()
-
-	imagesSAC = sac.ForResource(resources.Image)
-)
-
 type imageCVEEdgePks struct {
 	imageID string
 	cveID   string
-	cve     string
-	cveOS   string
 }
 
 type datastoreImpl struct {
@@ -55,12 +44,15 @@ func (ds *datastoreImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*st
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageCVEEdge, bool, error) {
-	filteredIDs, err := ds.filterReadable(ctx, []string{id})
-	if err != nil || len(filteredIDs) != 1 {
-		return nil, false, err
+	if !features.PostgresDatastore.Enabled() {
+		filteredIDs, err := ds.filterReadable(ctx, []string{id})
+		if err != nil || len(filteredIDs) != 1 {
+			return nil, false, err
+		}
 	}
 
 	var pks imageCVEEdgePks
+	var err error
 	if features.PostgresDatastore.Enabled() {
 		pks, err = getPKs(id)
 		if err != nil {
@@ -69,7 +61,7 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageCVEE
 	}
 	// For dackbox, we do not need all the primary keys.
 
-	edge, found, err := ds.storage.Get(ctx, id, pks.imageID, pks.cveID, pks.cve, pks.cveOS)
+	edge, found, err := ds.storage.Get(ctx, id, pks.imageID, pks.cveID)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -87,14 +79,15 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 
 func getPKs(id string) (imageCVEEdgePks, error) {
 	parts := postgres.IDToParts(id)
-	if len(parts) != 4 {
-		return imageCVEEdgePks{}, errors.Errorf("unexpected number of primary keys (%v) found for component-cve relation. Expected 4 parts", parts)
+	if len(parts) != 3 {
+		return imageCVEEdgePks{}, errors.Errorf("unexpected number of primary keys (%v) found for component-cve relation. Expected 3 parts", parts)
 	}
 
+	imageID := parts[0]
+	cve := parts[1]
+	cveOS := parts[2]
 	return imageCVEEdgePks{
-		imageID: parts[0],
-		cveID:   parts[4],
-		cve:     parts[5],
-		cveOS:   parts[6],
+		imageID: imageID,
+		cveID:   postgres.IDFromPks([]string{cve, cveOS}),
 	}, nil
 }

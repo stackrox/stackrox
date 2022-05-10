@@ -3796,20 +3796,14 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"CVE,store\"sql:\"pk\""
+                    "value": "search:\"CVE,store\""
                   }
                 ]
               },
               {
                 "id": 21,
                 "name": "operating_system",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
-                  }
-                ]
+                "type": "string"
               },
               {
                 "id": 2,
@@ -6719,7 +6713,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Component,store\"sql:\"pk\""
+                    "value": "search:\"Component,store\""
                   }
                 ]
               },
@@ -6730,7 +6724,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Component Version,store\"sql:\"pk\""
+                    "value": "search:\"Component Version,store\""
                   }
                 ]
               },
@@ -6785,13 +6779,7 @@
               {
                 "id": 10,
                 "name": "operating_system",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
-                  }
-                ]
+                "type": "string"
               }
             ]
           }
@@ -11630,39 +11618,6 @@
                     "value": "sql:\"pk,fk(ImageComponent:id),no-fk-constraint\""
                   }
                 ]
-              },
-              {
-                "id": 6,
-                "name": "image_component_name",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(ImageComponent:name),no-fk-constraint\""
-                  }
-                ]
-              },
-              {
-                "id": 7,
-                "name": "image_component_version",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(ImageComponent:version),no-fk-constraint\""
-                  }
-                ]
-              },
-              {
-                "id": 8,
-                "name": "image_component_operating_system",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(ImageComponent:operating_system),no-fk-constraint\""
-                  }
-                ]
               }
             ]
           },
@@ -11715,67 +11670,12 @@
               },
               {
                 "id": 5,
-                "name": "image_component_name",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(ImageComponent:name)\""
-                  }
-                ]
-              },
-              {
-                "id": 6,
-                "name": "image_component_version",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(ImageComponent:version)\""
-                  }
-                ]
-              },
-              {
-                "id": 7,
-                "name": "image_component_operating_system",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(ImageComponent:operating_system)\""
-                  }
-                ]
-              },
-              {
-                "id": 8,
                 "name": "image_cve_id",
                 "type": "string",
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
                     "value": "sql:\"pk,fk(CVE:id),no-fk-constraint\""
-                  }
-                ]
-              },
-              {
-                "id": 9,
-                "name": "image_cve",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(CVE:cve),no-fk-constraint\""
-                  }
-                ]
-              },
-              {
-                "id": 10,
-                "name": "image_cve_operating_system",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(CVE:operating_system),no-fk-constraint\""
                   }
                 ]
               }
@@ -11836,28 +11736,6 @@
                   {
                     "name": "(gogoproto.moretags)",
                     "value": "sql:\"pk,fk(CVE:id),no-fk-constraint\""
-                  }
-                ]
-              },
-              {
-                "id": 6,
-                "name": "image_cve",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(CVE:cve),no-fk-constraint\""
-                  }
-                ]
-              },
-              {
-                "id": 7,
-                "name": "image_cve_operating_system",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(CVE:operating_system),no-fk-constraint\""
                   }
                 ]
               }
