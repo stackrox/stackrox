@@ -521,7 +521,11 @@ gate_job() {
     local exitstatus="$?"
 
     if [[ "$exitstatus" == "0" ]]; then
-        gate_pr_job "$job_config" "$pr_details"
+        if [[ "$(jq -r .base.repo.full_name <<<"$pr_details")" == "openshift/release" ]]; then
+            gate_openshift_release_rehearse_job "$job" "$pr_details"
+        else
+            gate_pr_job "$job_config" "$pr_details"
+        fi
     elif [[ "$exitstatus" == "1" ]]; then
         gate_merge_job "$job_config"
     else
@@ -628,6 +632,25 @@ gate_merge_job() {
     fi
 
     info "$job will be skipped"
+    exit 0
+}
+
+# gate_openshift_release_rehearse_job() - use the PR description to indicate if
+# the pj-rehearse job should run for configured jobs.
+gate_openshift_release_rehearse_job() {
+    local job="$1"
+    local pr_details="$2"
+
+    if [[ "$(jq -r '.body' <<<"$pr_details")" =~ open.the.gate.*$job ]]; then
+        info "$job will run because the gate was opened"
+        return
+    fi
+
+    cat << _EOH_
+$job will be skipped. If you want to run a gated job during openshift/release pj-rehearsal 
+update the PR description with:
+open the gate: $job
+_EOH_
     exit 0
 }
 

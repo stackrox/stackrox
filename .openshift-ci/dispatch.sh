@@ -27,7 +27,7 @@ fi
 ci_job="$1"
 shift
 
-# gate_job "$ci_job"
+gate_job "$ci_job"
 
 case "$ci_job" in
     style-checks)
