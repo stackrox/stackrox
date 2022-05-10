@@ -5,7 +5,7 @@ import { ResourceName } from 'types/roleResources';
 // Description for permission resource types. 'Read:' and 'Write:' tokens have
 // special meaning and mark parts related to respective operations.
 const resourceDescriptions: Record<ResourceName, string> = {
-    Access: 'Read: View configuration for authentication and authorization, such as authentication services, roles, groups and users. Write: Modify configuration for authentication and authorization',
+    Access: 'Read: View configuration for authentication and authorization, such as authentication services, roles, groups, and users. Write: Modify configuration for authentication and authorization.',
     Administration:
         'Read: View configuration for network, sensor, scanner, and debugging configuration. Write: Modify configuration for network, sensor, scanner, and debugging configuration, delete comments from other users.',
     APIToken: 'Read: View API tokens. Write: Add or revoke API tokens.',
@@ -21,7 +21,7 @@ const resourceDescriptions: Record<ResourceName, string> = {
     CVE: 'Internal use only',
     Cluster: 'Read: View secured clusters. Write: Add, modify, or delete secured clusters.',
     Compliance:
-        'Read: View compliance standards, results and runs. Write: Add, modify or delete scheduled compliance runs',
+        'Read: View compliance standards, results, and runs. Write: Add, modify, or delete scheduled compliance runs',
     ComplianceRunSchedule:
         'Read: View scheduled compliance runs. Write: Add, modify, or delete scheduled compliance runs.',
     ComplianceRuns:
@@ -30,8 +30,8 @@ const resourceDescriptions: Record<ResourceName, string> = {
     DebugLogs:
         "Read: View the current logging verbosity level of all components, including Central, Scanner, Sensor, Collector, and Admission controller. Download diagnostic bundle. Note: The diagnostic bundle contains information about all clusters and namespaces regardless of the user's role and access scope. Don't give this permission to users with limited access scope. Write: Modify the logging verbosity level.",
     Deployment: 'Read: View deployments (workloads) in secured clusters. Write: N/A',
-    DeploymentExtensions:
-        'Read: View risk score and baseline extensions of deployments. Write: Modify the baseline extensions of deployments.',
+    DeploymentExtension:
+        'Read: View risk score, network, and process baseline extensions of deployments. Write: Modify the process and network baseline extensions of deployments.',
     Detection: 'Read: Check build-time policies against images or deployment YAMLs. Write: N/A',
     Group: 'Read: View the RBAC rules that match user metadata to the system roles. Write: Add, modify, or delete RBAC rules.',
     Image: 'Read: View images, their components, and their vulnerabilities. Write: N/A',
@@ -39,7 +39,7 @@ const resourceDescriptions: Record<ResourceName, string> = {
     ImageIntegration:
         'Read: List image registry integrations. Write: Add, edit, or delete image registry integrations.',
     Indicator: 'Read: View process activity in deployments. Write: N/A',
-    Integrations:
+    Integration:
         'Read: View integrations and their configuration. This includes backup, registry, image signature and notification systems. Write: Add, modify, delete integrations and their configuration.',
     K8sRole:
         'Read: View roles for Kubernetes role-based access control in secured clusters. Write: N/A',

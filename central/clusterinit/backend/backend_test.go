@@ -15,8 +15,12 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate/mocks"
 	rocksdbStore "github.com/stackrox/rox/central/clusterinit/store/rocksdb"
 	"github.com/stackrox/rox/central/clusters"
+	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
@@ -378,6 +382,74 @@ func (s *clusterInitBackendTestSuite) TestIssuingAfterRevoking() {
 	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil)
 	_, err = s.backend.Issue(ctx, name)
 	s.Require().NoError(err)
+}
+
+func (s *clusterInitBackendTestSuite) TestCheckAccess() {
+	id := mockIdentity.NewMockIdentity(gomock.NewController(s.T()))
+	ctx := authn.ContextWithIdentity(context.Background(), id, s.T())
+
+	readAccessForBoth := map[string]storage.Access{
+		resources.ServiceIdentity.String(): storage.Access_READ_ACCESS,
+		resources.APIToken.String():        storage.Access_READ_ACCESS,
+	}
+	writeAccessForBoth := map[string]storage.Access{
+		resources.ServiceIdentity.String(): storage.Access_READ_WRITE_ACCESS,
+		resources.APIToken.String():        storage.Access_READ_WRITE_ACCESS,
+	}
+	readAccessServiceIdentity := map[string]storage.Access{
+		resources.ServiceIdentity.String(): storage.Access_READ_ACCESS,
+	}
+	readAccessAPIToken := map[string]storage.Access{
+		resources.APIToken.String(): storage.Access_READ_ACCESS,
+	}
+	writeAccessServiceIdentity := map[string]storage.Access{
+		resources.ServiceIdentity.String(): storage.Access_READ_WRITE_ACCESS,
+	}
+	writeAccessAPIToken := map[string]storage.Access{
+		resources.APIToken.String(): storage.Access_READ_WRITE_ACCESS,
+	}
+
+	// 1. Read access to both ServiceIdentity and APIToken should allow read access.
+	id.EXPECT().Permissions().Return(readAccessForBoth).Times(2)
+	s.NoError(CheckAccess(ctx, storage.Access_READ_ACCESS))
+
+	// 2. Read access to both ServiceIdentity and APIToken should not allow write access.
+	id.EXPECT().Permissions().Return(readAccessForBoth).Times(2)
+	err := CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS)
+	s.Require().Error(err)
+	s.ErrorIs(err, errox.NotAuthorized)
+
+	// 3. Read access to only ServiceIdentity should not allow read access.
+	id.EXPECT().Permissions().Return(readAccessServiceIdentity).Times(2)
+	err = CheckAccess(ctx, storage.Access_READ_ACCESS)
+	s.Require().Error(err)
+	s.ErrorIs(err, errox.NotAuthorized)
+
+	// 4. Read access to only APIToken should not allow read access.
+	id.EXPECT().Permissions().Return(readAccessAPIToken).Times(2)
+	err = CheckAccess(ctx, storage.Access_READ_ACCESS)
+	s.Require().Error(err)
+	s.ErrorIs(err, errox.NotAuthorized)
+
+	// 5. Write access to both should allow read access.
+	id.EXPECT().Permissions().Return(writeAccessForBoth).Times(2)
+	s.NoError(CheckAccess(ctx, storage.Access_READ_ACCESS))
+
+	// 6. Write access to both should allow write access.
+	id.EXPECT().Permissions().Return(writeAccessForBoth).Times(2)
+	s.NoError(CheckAccess(ctx, storage.Access_READ_ACCESS))
+
+	// 7. Write access to only ServiceIdentity should not allow write access.
+	id.EXPECT().Permissions().Return(writeAccessServiceIdentity).Times(2)
+	err = CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS)
+	s.Require().Error(err)
+	s.ErrorIs(err, errox.NotAuthorized)
+
+	// 8. Write access to only APIToken should not allow write access.
+	id.EXPECT().Permissions().Return(writeAccessAPIToken).Times(2)
+	err = CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS)
+	s.Require().Error(err)
+	s.ErrorIs(err, errox.NotAuthorized)
 }
 
 func (s *clusterInitBackendTestSuite) TearDownTest() {

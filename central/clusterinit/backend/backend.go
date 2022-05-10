@@ -9,9 +9,11 @@ import (
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/and"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
 )
 
 // CAConfig is the configuration for the StackRox Service CA.
@@ -51,27 +53,18 @@ func newBackend(store store.Store, certProvider certificate.Provider) Backend {
 
 // CheckAccess returns nil if requested access level is granted in context.
 func CheckAccess(ctx context.Context, access storage.Access) error {
-	// we need access to the API token and service identity resources
-	serviceIdentityScopes := [][]sac.ScopeKey{
-		{sac.AccessModeScopeKey(access), sac.ResourceScopeKey(resources.ServiceIdentity.GetResource())},
-		{sac.AccessModeScopeKey(access), sac.ResourceScopeKey(resources.Administration.GetResource())},
+	var authZ authz.Authorizer
+	switch access {
+	case storage.Access_READ_ACCESS:
+		authZ = and.And(
+			user.With(permissions.View(resources.ServiceIdentity)),
+			user.With(permissions.View(resources.APIToken)),
+		)
+	case storage.Access_READ_WRITE_ACCESS:
+		authZ = and.And(
+			user.With(permissions.Modify(resources.ServiceIdentity)),
+			user.With(permissions.Modify(resources.APIToken)),
+		)
 	}
-	apiTokenScopes := [][]sac.ScopeKey{
-		{sac.AccessModeScopeKey(access), sac.ResourceScopeKey(resources.APIToken.GetResource())},
-		{sac.AccessModeScopeKey(access), sac.ResourceScopeKey(resources.Integrations.GetResource())},
-	}
-
-	svcIdentityAllowed, err := sac.GlobalAccessScopeChecker(ctx).AnyAllowed(ctx, serviceIdentityScopes)
-	if err != nil {
-		return errors.Wrap(err, "checking access")
-	}
-	apiTokenAllowed, err := sac.GlobalAccessScopeChecker(ctx).AnyAllowed(ctx, apiTokenScopes)
-	if err != nil {
-		return errors.Wrap(err, "checking access")
-	}
-	if !apiTokenAllowed || !svcIdentityAllowed {
-		return errox.NotAuthorized
-	}
-
-	return nil
+	return authZ.Authorized(ctx, "")
 }
