@@ -31,6 +31,7 @@ var (
 	fieldsToCompare = []policymigrationhelper.FieldComparator{
 		policymigrationhelper.PolicySectionComparator,
 		policymigrationhelper.NameComparator,
+		policymigrationhelper.DescriptionComparator,
 	}
 
 	policyDiffs = []policymigrationhelper.PolicyDiff{
