@@ -700,7 +700,7 @@ store_qa_test_results() {
 
     info "Copying qa-tests-backend results to $to"
 
-    store_test_results qa-tests-backend/build/junit-xml/test "$to"
+    store_test_results qa-tests-backend/build/test-results/test "$to"
 }
 
 store_test_results() {    
@@ -717,7 +717,7 @@ store_test_results() {
 
     info "Copying test results from $from to $to"
 
-    local dest="${ARTIFACT_DIR}/$to"
+    local dest="${ARTIFACT_DIR}/junit-$to"
 
     cp -a "$from" "$dest" || true # (best effort)
 }
