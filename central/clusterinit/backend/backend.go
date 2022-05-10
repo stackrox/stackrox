@@ -9,10 +9,9 @@ import (
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/authz/and"
-	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 // CAConfig is the configuration for the StackRox Service CA.
@@ -52,10 +51,11 @@ func newBackend(store store.Store, certProvider certificate.Provider) Backend {
 
 // CheckAccess returns nil if requested access level is granted in context.
 func CheckAccess(ctx context.Context, access storage.Access) error {
-	authZ := and.And(
-		user.With(permissions.ResourceWithAccess{Resource: resources.ServiceIdentity, Access: access}),
-		user.With(permissions.ResourceWithAccess{Resource: resources.APIToken, Access: access}),
-	)
-
-	return authZ.Authorized(ctx, "")
+	helper := sac.ForResources(sac.ForResource(resources.ServiceIdentity), sac.ForResource(resources.APIToken))
+	if allowed, err := helper.AccessAllowedToAll(ctx, access); err != nil {
+		return errors.Wrap(err, "checking access")
+	} else if !allowed {
+		return errox.NotAuthorized
+	}
+	return nil
 }
