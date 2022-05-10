@@ -4,6 +4,7 @@ import groups.SensorBounceNext
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
+import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
@@ -15,8 +16,8 @@ import org.junit.experimental.categories.Category
 import services.CVEService
 import services.ClusterService
 import services.ImageIntegrationService
+import services.ImageService
 import services.PolicyService
-import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Timeout
@@ -26,7 +27,7 @@ import util.Env
 import util.Helpers
 import util.Timer
 
-@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
+@Slf4j
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
     private List<PolicyOuterClass.EnforcementAction> latestTagEnforcements
@@ -217,8 +218,20 @@ class AdmissionControllerTest extends BaseSpecification {
 
         when:
         "Suppress CVE and check that the deployment can now launch"
-        CVEService.suppressCVE("CVE-2019-3462")
-        log.info("Suppressing CVE-2019-3462")
+
+        def cveID = "CVE-2019-3462"
+
+        if (Env.CI_JOBNAME.contains("postgres")) {
+            def os = ""
+            ImageOuterClass.Image imageDetails = ImageService.scanImage(image)
+            if (imageDetails.hasScan()) {
+                os = imageDetails.getScan().getOperatingSystem()
+            }
+           cveID = cveID+"#"+os
+        }
+        CVEService.suppressCVE(cveID)
+
+        log.info("Suppressing "+cveID)
         // Allow propagation of CVE suppression and invalidation of cache
         Helpers.sleepWithRetryBackoff(5000 * (ClusterService.isOpenShift4() ? 4 : 1))
         log.info("Expect that the suppression has propagated")
@@ -230,8 +243,8 @@ class AdmissionControllerTest extends BaseSpecification {
 
         and:
         "Unsuppress CVE"
-        CVEService.unsuppressCVE("CVE-2019-3462")
-        log.info("Unsuppress CVE-2019-3462")
+        CVEService.unsuppressCVE(cveID)
+        log.info("Unsuppress "+cveID)
         // Allow propagation of CVE suppression and invalidation of cache
         Helpers.sleepWithRetryBackoff(15000 * (ClusterService.isOpenShift4() ? 4 : 1))
         log.info("Expect that the unsuppression has propagated")
