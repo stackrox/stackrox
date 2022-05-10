@@ -29,7 +29,7 @@ RUN groupadd -g 70 postgres && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
     rpm --import RPM-GPG-KEY-PGDG-14 && \
     dnf upgrade -y && \
-    dnf install -y \
+    dnf install -y --no-best \
         ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
         /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
