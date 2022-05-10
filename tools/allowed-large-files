@@ -7,7 +7,8 @@ central/compliance/checks/fixtures/scraped.go
 central/compliance/standards/metadata/pci_dss_3_2.go
 central/graphql/resolvers/generated.go
 central/networkpolicies/graph/evaluator_test.go
-central/reports/common/files/red-hat-acs-logo-rgb.png
+pkg/branding/files/red-hat-acs-logo-rgb.png
+pkg/branding/files/StackRox_Logo_Wide_DkBlue.png
 central/splunk/violations_test.go
 generated/**/*.pb.go
 generated/**/*.pb.gw.go
