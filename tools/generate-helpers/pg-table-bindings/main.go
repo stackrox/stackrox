@@ -180,8 +180,8 @@ func main() {
 		}
 		if len(schema.PrimaryKeys()) > 1 {
 			for _, pk := range schema.PrimaryKeys() {
-				if pk.Search.FieldName == "" {
-					log.Printf("%s:%s is not searchable and is PK", props.Type, pk.Name)
+				if pk.Search.FieldName == "" && !pk.Options.ID {
+					log.Fatalf("%s:%s is not searchable and is primary key", props.Type, pk.Name)
 				}
 			}
 		}
