@@ -27,6 +27,8 @@ fi
 ci_job="$1"
 shift
 
+touch /tmp/hold || true
+
 gate_job "$ci_job"
 
 case "$ci_job" in
