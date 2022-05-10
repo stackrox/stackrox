@@ -3,6 +3,7 @@ import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
 import {
     visitSystemHealth,
+    visitSystemHealthWithBackupIntegrations,
     visitSystemHealthWithImageIntegrations,
     visitSystemHealthWithNotifierIntegrations,
 } from '../../helpers/systemHealth';
@@ -50,7 +51,7 @@ describe('System Health Integrations local deployment', () => {
 describe('System Health Integrations fixtures', () => {
     withAuth();
     it('should not have count in healthy text for backup integrations', () => {
-        visitSystemHealthWithNotifierIntegrations([], []);
+        visitSystemHealthWithBackupIntegrations([], []);
 
         const { healthyText, widgets } = selectors.integrations;
         cy.get(`${widgets.backupIntegrations} ${healthyText}`).should(
