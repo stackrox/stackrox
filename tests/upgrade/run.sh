@@ -340,14 +340,14 @@ test_upgrade_paths() {
     kubectl -n stackrox set image deploy/central "central=$REGISTRY/main:$(make --quiet tag)"
     wait_for_api
 
-    validate_upgrade "central upgrade to 3.63.x -> current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "00-3-63-x-to-current" "central upgrade to 3.63.x -> current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     force_rollback
     wait_for_api
 
     cd "$REPO_FOR_TIME_TRAVEL"
 
-    validate_upgrade "forced rollback to 3.63.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "01-current-back-to-3-63-x" "forced rollback to 3.63.x from current" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     cd "$TEST_ROOT"
 
@@ -357,21 +357,21 @@ test_upgrade_paths() {
     info "Waiting for scanner to be ready"
     wait_for_scanner_to_be_ready
 
-    validate_upgrade "upgrade after rollback" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "02-after_rollback" "upgrade after rollback" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
 
     collect_and_check_stackrox_logs "$log_output_dir" "00_initial_check"
 
     validate_db_backup_and_restore
     wait_for_api
 
-    validate_upgrade "after DB backup and restore (pre bounce)" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "03-after-DB-backup-restore-pre-bounce" "after DB backup and restore (pre bounce)" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
     collect_and_check_stackrox_logs "$log_output_dir" "01_pre_bounce"
 
     info "Bouncing central"
     kubectl -n stackrox delete po "$(kubectl -n stackrox get po -l app=central -o=jsonpath='{.items[0].metadata.name}')" --grace-period=0
     wait_for_api
 
-    validate_upgrade "after DB backup and restore (post bounce)" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+    validate_upgrade "04-after-DB-backup-restore-post-bounce" "after DB backup and restore (post bounce)" "268c98c6-e983-4f4e-95d2-9793cebddfd7"
     collect_and_check_stackrox_logs "$log_output_dir" "02_post_bounce"
 
     info "Fetching a sensor bundle for cluster 'remote'"
@@ -391,7 +391,9 @@ test_upgrade_paths() {
     wait_for_central_reconciliation
 
     info "Running smoke tests"
-    CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test
+    CLUSTER="$CLUSTER_TYPE_FOR_TEST" make -C qa-tests-backend smoke-test || touch FAIL
+    store_qa_test_results "upgrade-paths-smoke-tests"
+    [[ ! -f FAIL ]] || die "Smoke tests failed"
 
     collect_and_check_stackrox_logs "$log_output_dir" "03_final"
 }
@@ -416,20 +418,23 @@ restore_backup_test() {
 }
 
 validate_upgrade() {
-    if [[ "$#" -ne 2 ]]; then
-        die "missing args. usage: validate_upgrade <stage> <upgrade_cluster_id>"
+    if [[ "$#" -ne 3 ]]; then
+        die "missing args. usage: validate_upgrade <stage name> <stage description> <upgrade_cluster_id>"
     fi
 
-    local stage="$1"
-    local upgrade_cluster_id="$2"
+    local stage_name="$1"
+    local stage_description="$2"
+    local upgrade_cluster_id="$3"
     local policies_dir="../pkg/defaults/policies/files"
 
-    info "Validating the upgrade with upgrade tests: $stage"
+    info "Validating the upgrade with upgrade tests: $stage_description"
 
     CLUSTER="$CLUSTER_TYPE_FOR_TEST" \
         UPGRADE_CLUSTER_ID="$upgrade_cluster_id" \
         POLICIES_JSON_RELATIVE_PATH="$policies_dir" \
-        make -C qa-tests-backend upgrade-test
+        make -C qa-tests-backend upgrade-test || touch FAIL
+    store_qa_test_results "validate-upgrade-tests-${stage_name}"
+    [[ ! -f FAIL ]] || die "Upgrade tests failed"
 }
 
 force_rollback() {
