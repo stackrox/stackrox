@@ -258,9 +258,12 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, name string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "WatchedImage")
-	q := search.NewQueryBuilder().AddDocIDs(name).ProtoQuery()
-	var sacQueryFilter *v1.Query
 
+	q := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddDocIDs(name).ProtoQuery(),
+	)
+
+	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return false, err

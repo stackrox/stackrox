@@ -241,7 +241,11 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestG3GrandChild1")
-	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
+
+	q := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
 	var sacQueryFilter *v1.Query
 
 	count, err := postgres.RunCountRequestForSchema(schema, search.ConjunctionQuery(q, sacQueryFilter), s.db)

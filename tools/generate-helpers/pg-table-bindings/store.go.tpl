@@ -451,18 +451,18 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "{{.TrimmedType}}")
 
-    {{- if eq (len $pks) 1 }}
-    q := search.NewQueryBuilder().AddDocIDs({{template "argList" $pks}}).ProtoQuery()
-    {{- else }}
     q := search.ConjunctionQuery(
-        {{- range $idx, $pk := $pks}}
+    {{- range $idx, $pk := $pks}}
+        {{- if eq $pk.Name $singlePK.Name }}
+        search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        {{- else }}
         search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ $pk.Search.FieldName }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- end}}
+    {{- end}}
     )
-    {{- end }}
-    var sacQueryFilter *v1.Query
 
-    {{ if .PermissionChecker -}}
+    var sacQueryFilter *v1.Query
+    {{- if .PermissionChecker }}
     if ok, err := {{ .PermissionChecker }}.ExistsAllowed(ctx); err != nil || !ok {
         return false, err
     }

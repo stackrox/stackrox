@@ -407,10 +407,12 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, key1 string, key2 string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestMultiKeyStruct")
+
 	q := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Test Key"), key1).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel(""), key2).ProtoQuery(),
+		search.NewQueryBuilder().AddDocIDs(key1).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Test Key 2"), key2).ProtoQuery(),
 	)
+
 	var sacQueryFilter *v1.Query
 
 	count, err := postgres.RunCountRequestForSchema(schema, search.ConjunctionQuery(q, sacQueryFilter), s.db)
