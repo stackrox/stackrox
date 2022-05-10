@@ -23,8 +23,7 @@ import (
 )
 
 const (
-	baseTable  = "signatureintegrations"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM signatureintegrations WHERE Id = $1)"
+	baseTable = "signatureintegrations"
 
 	getStmt     = "SELECT serialized FROM signatureintegrations WHERE Id = $1"
 	deleteStmt  = "DELETE FROM signatureintegrations WHERE Id = $1"
@@ -264,10 +263,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "SignatureIntegration")
 
-	q := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
@@ -276,7 +271,12 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, nil
 	}
 
-	count, err := postgres.RunCountRequestForSchema(schema, search.ConjunctionQuery(q, sacQueryFilter), s.db)
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
 	return count == 1, err
 }
 

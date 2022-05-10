@@ -44,7 +44,6 @@ import (
 
 const (
         baseTable = "{{.Table}}"
-        existsStmt = "SELECT EXISTS(SELECT 1 FROM {{.Table}} WHERE {{template "whereMatch" $pks}})"
 
         getStmt = "SELECT serialized FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
         deleteStmt = "DELETE FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
@@ -451,16 +450,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "{{.TrimmedType}}")
 
-    q := search.ConjunctionQuery(
-    {{- range $idx, $pk := $pks}}
-        {{- if eq $pk.Name $singlePK.Name }}
-        search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
-        {{- else }}
-        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ $pk.Search.FieldName }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
-        {{- end}}
-    {{- end}}
-    )
-
     var sacQueryFilter *v1.Query
     {{- if .PermissionChecker }}
     if ok, err := {{ .PermissionChecker }}.ExistsAllowed(ctx); err != nil || !ok {
@@ -492,7 +481,18 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 	}
     {{- end }}
 
-	count, err := postgres.RunCountRequestForSchema(schema, search.ConjunctionQuery(q, sacQueryFilter), s.db)
+    q := search.ConjunctionQuery(
+        sacQueryFilter,
+    {{- range $idx, $pk := $pks}}
+        {{- if eq $pk.Name $singlePK.Name }}
+        search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        {{- else }}
+        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ $pk.Search.FieldName }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        {{- end}}
+    {{- end}}
+    )
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
 	return count == 1, err
 }
 

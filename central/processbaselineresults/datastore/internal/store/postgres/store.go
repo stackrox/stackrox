@@ -21,8 +21,7 @@ import (
 )
 
 const (
-	baseTable  = "processwhitelistresults"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM processwhitelistresults WHERE DeploymentId = $1)"
+	baseTable = "processwhitelistresults"
 
 	getStmt     = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = $1"
 	deleteStmt  = "DELETE FROM processwhitelistresults WHERE DeploymentId = $1"
@@ -237,13 +236,14 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, deploymentId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ProcessBaselineResults")
 
+	var sacQueryFilter *v1.Query
+
 	q := search.ConjunctionQuery(
+		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
 	)
 
-	var sacQueryFilter *v1.Query
-
-	count, err := postgres.RunCountRequestForSchema(schema, search.ConjunctionQuery(q, sacQueryFilter), s.db)
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
 	return count == 1, err
 }
 

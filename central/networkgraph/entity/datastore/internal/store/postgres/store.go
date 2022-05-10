@@ -21,8 +21,7 @@ import (
 )
 
 const (
-	baseTable  = "networkentity"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkentity WHERE Info_Id = $1)"
+	baseTable = "networkentity"
 
 	getStmt     = "SELECT serialized FROM networkentity WHERE Info_Id = $1"
 	deleteStmt  = "DELETE FROM networkentity WHERE Info_Id = $1"
@@ -242,13 +241,14 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, infoId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NetworkEntity")
 
+	var sacQueryFilter *v1.Query
+
 	q := search.ConjunctionQuery(
+		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(infoId).ProtoQuery(),
 	)
 
-	var sacQueryFilter *v1.Query
-
-	count, err := postgres.RunCountRequestForSchema(schema, search.ConjunctionQuery(q, sacQueryFilter), s.db)
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
 	return count == 1, err
 }
 

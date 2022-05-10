@@ -26,8 +26,7 @@ import (
 )
 
 const (
-	baseTable  = "secrets"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM secrets WHERE Id = $1)"
+	baseTable = "secrets"
 
 	getStmt     = "SELECT serialized FROM secrets WHERE Id = $1"
 	deleteStmt  = "DELETE FROM secrets WHERE Id = $1"
@@ -490,10 +489,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Secret")
 
-	q := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
@@ -508,7 +503,12 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, err
 	}
 
-	count, err := postgres.RunCountRequestForSchema(schema, search.ConjunctionQuery(q, sacQueryFilter), s.db)
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
 	return count == 1, err
 }
 

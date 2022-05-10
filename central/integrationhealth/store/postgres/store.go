@@ -22,8 +22,7 @@ import (
 )
 
 const (
-	baseTable  = "integrationhealth"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM integrationhealth WHERE Id = $1)"
+	baseTable = "integrationhealth"
 
 	getStmt     = "SELECT serialized FROM integrationhealth WHERE Id = $1"
 	deleteStmt  = "DELETE FROM integrationhealth WHERE Id = $1"
@@ -254,16 +253,17 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "IntegrationHealth")
 
-	q := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
 	var sacQueryFilter *v1.Query
 	if ok, err := permissionCheckerSingleton().ExistsAllowed(ctx); err != nil || !ok {
 		return false, err
 	}
 
-	count, err := postgres.RunCountRequestForSchema(schema, search.ConjunctionQuery(q, sacQueryFilter), s.db)
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
 	return count == 1, err
 }
 

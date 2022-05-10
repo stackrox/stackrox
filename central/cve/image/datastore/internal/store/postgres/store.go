@@ -21,8 +21,7 @@ import (
 )
 
 const (
-	baseTable  = "image_cves"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_cves WHERE Id = $1)"
+	baseTable = "image_cves"
 
 	getStmt     = "SELECT serialized FROM image_cves WHERE Id = $1"
 	deleteStmt  = "DELETE FROM image_cves WHERE Id = $1"
@@ -277,13 +276,14 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "CVE")
 
+	var sacQueryFilter *v1.Query
+
 	q := search.ConjunctionQuery(
+		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
 	)
 
-	var sacQueryFilter *v1.Query
-
-	count, err := postgres.RunCountRequestForSchema(schema, search.ConjunctionQuery(q, sacQueryFilter), s.db)
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
 	return count == 1, err
 }
 

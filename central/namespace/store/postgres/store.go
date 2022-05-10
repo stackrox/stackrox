@@ -26,8 +26,7 @@ import (
 )
 
 const (
-	baseTable  = "namespaces"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM namespaces WHERE Id = $1)"
+	baseTable = "namespaces"
 
 	getStmt     = "SELECT serialized FROM namespaces WHERE Id = $1"
 	deleteStmt  = "DELETE FROM namespaces WHERE Id = $1"
@@ -309,10 +308,6 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NamespaceMetadata")
 
-	q := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
-
 	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
@@ -327,7 +322,12 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, err
 	}
 
-	count, err := postgres.RunCountRequestForSchema(schema, search.ConjunctionQuery(q, sacQueryFilter), s.db)
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
 	return count == 1, err
 }
 

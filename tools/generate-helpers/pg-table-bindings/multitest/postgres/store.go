@@ -21,8 +21,7 @@ import (
 )
 
 const (
-	baseTable  = "multikey"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM multikey WHERE Key1 = $1 AND Key2 = $2)"
+	baseTable = "multikey"
 
 	getStmt     = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
 	deleteStmt  = "DELETE FROM multikey WHERE Key1 = $1 AND Key2 = $2"
@@ -408,14 +407,15 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, key1 string, key2 string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestMultiKeyStruct")
 
+	var sacQueryFilter *v1.Query
+
 	q := search.ConjunctionQuery(
+		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(key1).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Test Key 2"), key2).ProtoQuery(),
 	)
 
-	var sacQueryFilter *v1.Query
-
-	count, err := postgres.RunCountRequestForSchema(schema, search.ConjunctionQuery(q, sacQueryFilter), s.db)
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
 	return count == 1, err
 }
 
