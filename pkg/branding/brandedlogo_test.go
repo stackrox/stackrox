@@ -5,9 +5,8 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -27,27 +26,7 @@ var (
 	}()
 )
 
-var _ suite.SetupAllSuite = (*BrandedLogoTestSuite)(nil)
-var _ suite.TearDownTestSuite = (*BrandedLogoTestSuite)(nil)
-
-func TestBrandedLogo(t *testing.T) {
-	suite.Run(t, new(BrandedLogoTestSuite))
-}
-
-type BrandedLogoTestSuite struct {
-	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *BrandedLogoTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *BrandedLogoTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-}
-
-func (s *BrandedLogoTestSuite) TestGetBrandedLogo() {
+func TestGetBrandedLogo(t *testing.T) {
 	tests := map[string]struct {
 		productBrandingEnv string
 		brandedLogo        string
@@ -66,10 +45,10 @@ func (s *BrandedLogoTestSuite) TestGetBrandedLogo() {
 		},
 	}
 	for name, tt := range tests {
-		s.Run(name, func() {
-			s.envIsolator.Setenv("ROX_PRODUCT_BRANDING", tt.productBrandingEnv)
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("ROX_PRODUCT_BRANDING", tt.productBrandingEnv)
 			receivedLogo := GetLogoBase64()
-			s.Equal(tt.brandedLogo, receivedLogo)
+			assert.Equal(t, tt.brandedLogo, receivedLogo)
 		})
 	}
 
