@@ -314,202 +314,8 @@ func (s *processIndicatorDatastoreSACSuite) TestRemoveProcessIndicators() {
 	}
 }
 
-type searchTestCase struct {
-	scopeKey string
-	results  map[string]map[string]int
-}
-
-var scopeSearchCases = map[string]searchTestCase{
-	"Cluster1 read-write access should only see Cluster1 process indicators": {
-		scopeKey: sacTestUtils.Cluster1ReadWriteCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster1: {
-				testconsts.NamespaceA: 3,
-				testconsts.NamespaceB: 3,
-				testconsts.NamespaceC: 3,
-			},
-		},
-	},
-	"Cluster1 and NamespaceA read-write access should only see Cluster1 and NamespaceA process indicators": {
-		scopeKey: sacTestUtils.Cluster1NamespaceAReadWriteCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster1: {
-				testconsts.NamespaceA: 3,
-			},
-		},
-	},
-	"Cluster1 and NamespaceB read-write access should only see Cluster1 and NamespaceB process indicators": {
-		scopeKey: sacTestUtils.Cluster1NamespaceBReadWriteCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster1: {
-				testconsts.NamespaceB: 3,
-			},
-		},
-	},
-	"Cluster1 and NamespaceC read-write access should only see Cluster1 and NamespaceB process indicators": {
-		scopeKey: sacTestUtils.Cluster1NamespaceCReadWriteCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster1: {
-				testconsts.NamespaceC: 3,
-			},
-		},
-	},
-	"Cluster1 and Namespaces A and B read-write access should only see appropriate cluster/namespace " +
-		"process indicators": {
-		scopeKey: sacTestUtils.Cluster1NamespacesABReadWriteCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster1: {
-				testconsts.NamespaceA: 3,
-				testconsts.NamespaceB: 3,
-			},
-		},
-	},
-	"Cluster1 and Namespaces A and C read-write access should only see appropriate cluster/namespace " +
-		"process indicators": {
-		scopeKey: sacTestUtils.Cluster1NamespacesACReadWriteCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster1: {
-				testconsts.NamespaceA: 3,
-				testconsts.NamespaceC: 3,
-			},
-		},
-	},
-	"Cluster1 and Namespaces B and C read-write access should only see appropriate cluster/namespace " +
-		"process indicators": {
-		scopeKey: sacTestUtils.Cluster1NamespacesBCReadWriteCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster1: {
-				testconsts.NamespaceB: 3,
-				testconsts.NamespaceC: 3,
-			},
-		},
-	},
-	"Cluster2 read-write access should only see Cluster2 process indicators": {
-		scopeKey: sacTestUtils.Cluster2ReadWriteCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster2: {
-				testconsts.NamespaceA: 3,
-				testconsts.NamespaceB: 3,
-				testconsts.NamespaceC: 3,
-			},
-		},
-	},
-	"Cluster2 and NamespaceA read-write access should see Cluster2 and NamespaceA process indicators": {
-		scopeKey: sacTestUtils.Cluster2NamespaceAReadWriteCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster2: {
-				testconsts.NamespaceA: 3,
-			},
-		},
-	},
-	"Cluster2 and NamespaceB read-write access should only see Cluster2 and NamespaceB process indicators": {
-		scopeKey: sacTestUtils.Cluster2NamespaceBReadWriteCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster2: {
-				testconsts.NamespaceB: 3,
-			},
-		},
-	},
-	"Cluster2 and NamespaceC read-write access should only see Cluster2 and NamespaceC process indicators": {
-		scopeKey: sacTestUtils.Cluster2NamespaceCReadWriteCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster2: {
-				testconsts.NamespaceC: 3,
-			},
-		},
-	},
-	"Cluster2 and Namespaces A and B read-write access should only see appropriate cluster/namespace " +
-		"process indicators": {
-		scopeKey: sacTestUtils.Cluster2NamespacesABReadWriteCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster2: {
-				testconsts.NamespaceA: 3,
-				testconsts.NamespaceB: 3,
-			},
-		},
-	},
-	"Cluster2 and Namespaces A and C read-write access should only see appropriate cluster/namespace " +
-		"process indicators": {
-		scopeKey: sacTestUtils.Cluster2NamespacesACReadWriteCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster2: {
-				testconsts.NamespaceA: 3,
-				testconsts.NamespaceC: 3,
-			},
-		},
-	},
-	"Cluster2 and Namespaces B and C read-write access should only see appropriate cluster/namespace " +
-		"process indicators": {
-		scopeKey: sacTestUtils.Cluster2NamespacesBCReadWriteCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster2: {
-				testconsts.NamespaceB: 3,
-				testconsts.NamespaceC: 3,
-			},
-		},
-	},
-}
-
-var unrestrictedSearchCases = map[string]searchTestCase{
-	"global read access should see all process indicators": {
-		scopeKey: sacTestUtils.UnrestrictedReadCtx,
-		results: map[string]map[string]int{
-			"": {"": 27},
-		},
-	},
-	"global read-write access should see all process indicators": {
-		scopeKey: sacTestUtils.UnrestrictedReadCtx,
-		results: map[string]map[string]int{
-			"": {"": 27},
-		},
-	},
-}
-
-var unrestrictedRawSearchCases = map[string]searchTestCase{
-	"global read access should see all process indicators": {
-		scopeKey: sacTestUtils.UnrestrictedReadCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster1: {
-				testconsts.NamespaceA: 3,
-				testconsts.NamespaceB: 3,
-				testconsts.NamespaceC: 3,
-			},
-			testconsts.Cluster2: {
-				testconsts.NamespaceA: 3,
-				testconsts.NamespaceB: 3,
-				testconsts.NamespaceC: 3,
-			},
-			testconsts.Cluster3: {
-				testconsts.NamespaceA: 3,
-				testconsts.NamespaceB: 3,
-				testconsts.NamespaceC: 3,
-			},
-		},
-	},
-	"global read-write access should see all process indicators": {
-		scopeKey: sacTestUtils.UnrestrictedReadCtx,
-		results: map[string]map[string]int{
-			testconsts.Cluster1: {
-				testconsts.NamespaceA: 3,
-				testconsts.NamespaceB: 3,
-				testconsts.NamespaceC: 3,
-			},
-			testconsts.Cluster2: {
-				testconsts.NamespaceA: 3,
-				testconsts.NamespaceB: 3,
-				testconsts.NamespaceC: 3,
-			},
-			testconsts.Cluster3: {
-				testconsts.NamespaceA: 3,
-				testconsts.NamespaceB: 3,
-				testconsts.NamespaceC: 3,
-			},
-		},
-	},
-}
-
 func (s *processIndicatorDatastoreSACSuite) TestScopedSearch() {
-	for name, c := range scopeSearchCases {
+	for name, c := range sacTestUtils.GenericScopedSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})
@@ -517,7 +323,7 @@ func (s *processIndicatorDatastoreSACSuite) TestScopedSearch() {
 }
 
 func (s *processIndicatorDatastoreSACSuite) TestUnrestrictedSearch() {
-	for name, c := range unrestrictedSearchCases {
+	for name, c := range sacTestUtils.GenericUnrestrictedSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})
@@ -525,7 +331,7 @@ func (s *processIndicatorDatastoreSACSuite) TestUnrestrictedSearch() {
 }
 
 func (s *processIndicatorDatastoreSACSuite) TestScopeSearchRaw() {
-	for name, c := range scopeSearchCases {
+	for name, c := range sacTestUtils.GenericScopedSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchRawTest(c)
 		})
@@ -533,15 +339,15 @@ func (s *processIndicatorDatastoreSACSuite) TestScopeSearchRaw() {
 }
 
 func (s *processIndicatorDatastoreSACSuite) TestUnrestrictedSearchRaw() {
-	for name, c := range unrestrictedRawSearchCases {
+	for name, c := range sacTestUtils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchRawTest(c)
 		})
 	}
 }
 
-func (s *processIndicatorDatastoreSACSuite) runSearchRawTest(c searchTestCase) {
-	ctx := s.testContexts[c.scopeKey]
+func (s *processIndicatorDatastoreSACSuite) runSearchRawTest(c sacTestUtils.SACSearchTestCase) {
+	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.SearchRawProcessIndicators(ctx, nil)
 	s.Require().NoError(err)
 	resultObjs := make([]sac.NamespaceScopedObject, 0, len(results))
@@ -549,13 +355,13 @@ func (s *processIndicatorDatastoreSACSuite) runSearchRawTest(c searchTestCase) {
 		resultObjs = append(resultObjs, results[i])
 	}
 	resultCounts := sacTestUtils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjs)
-	sacTestUtils.ValidateSACSearchResultDistribution(&s.Suite, c.results, resultCounts)
+	sacTestUtils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
-func (s *processIndicatorDatastoreSACSuite) runSearchTest(c searchTestCase) {
-	ctx := s.testContexts[c.scopeKey]
+func (s *processIndicatorDatastoreSACSuite) runSearchTest(c sacTestUtils.SACSearchTestCase) {
+	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
 	resultCounts := sacTestUtils.CountResultsPerClusterAndNamespace(s.T(), results, mappings.OptionsMap)
-	sacTestUtils.ValidateSACSearchResultDistribution(&s.Suite, c.results, resultCounts)
+	sacTestUtils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
