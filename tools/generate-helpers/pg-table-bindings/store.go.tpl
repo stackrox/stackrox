@@ -45,6 +45,11 @@ import (
 const (
         baseTable = "{{.Table}}"
 
+{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
+{{- if gt (len $pks) 1 }}
+        existsStmt = "SELECT EXISTS(SELECT 1 FROM {{.Table}} WHERE {{template "whereMatch" $pks}})"
+{{- end }}
+
         getStmt = "SELECT serialized FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
         deleteStmt = "DELETE FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
         walkStmt = "SELECT serialized FROM {{.Table}}"
@@ -449,8 +454,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "{{.TrimmedType}}")
-
+{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
+{{- if eq (len $pks) 1 }}
     var sacQueryFilter *v1.Query
+{{- end }}
     {{- if .PermissionChecker }}
     if ok, err := {{ .PermissionChecker }}.ExistsAllowed(ctx); err != nil || !ok {
         return false, err
@@ -481,6 +488,8 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 	}
     {{- end }}
 
+{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
+{{- if eq (len $pks) 1 }}
     q := search.ConjunctionQuery(
         sacQueryFilter,
     {{- range $idx, $pk := $pks}}
@@ -494,6 +503,14 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
 	return count == 1, err
+{{- else }}
+    row := s.db.QueryRow(ctx, existsStmt, {{template "argList" $pks}})
+    var exists bool
+    if err := row.Scan(&exists); err != nil {
+    return false, pgutils.ErrNilIfNoRows(err)
+    }
+    return exists, nil
+{{- end }}
 }
 
 // Get returns the object, if it exists from the store

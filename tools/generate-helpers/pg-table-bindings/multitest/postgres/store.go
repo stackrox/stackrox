@@ -16,12 +16,13 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
 	baseTable = "multikey"
+
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM multikey WHERE Key1 = $1 AND Key2 = $2)"
 
 	getStmt     = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
 	deleteStmt  = "DELETE FROM multikey WHERE Key1 = $1 AND Key2 = $2"
@@ -407,16 +408,12 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, key1 string, key2 string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestMultiKeyStruct")
 
-	var sacQueryFilter *v1.Query
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(key1).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel(""), key2).ProtoQuery(),
-	)
-
-	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
-	return count == 1, err
+	row := s.db.QueryRow(ctx, existsStmt, key1, key2)
+	var exists bool
+	if err := row.Scan(&exists); err != nil {
+		return false, pgutils.ErrNilIfNoRows(err)
+	}
+	return exists, nil
 }
 
 // Get returns the object, if it exists from the store

@@ -16,12 +16,13 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
 	baseTable = "image_component_relations"
+
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_relations WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3)"
 
 	getStmt     = "SELECT serialized FROM image_component_relations WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3"
 	deleteStmt  = "DELETE FROM image_component_relations WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3"
@@ -84,17 +85,12 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string, imageId string, imageComponentId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ImageComponentEdge")
 
-	var sacQueryFilter *v1.Query
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel(""), imageId).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel(""), imageComponentId).ProtoQuery(),
-	)
-
-	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
-	return count == 1, err
+	row := s.db.QueryRow(ctx, existsStmt, id, imageId, imageComponentId)
+	var exists bool
+	if err := row.Scan(&exists); err != nil {
+		return false, pgutils.ErrNilIfNoRows(err)
+	}
+	return exists, nil
 }
 
 // Get returns the object, if it exists from the store
