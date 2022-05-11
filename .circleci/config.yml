@@ -376,6 +376,31 @@ backupCentral: &backupCentral
       mkdir -p central-backup
       roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output central-backup
 
+checkImages: &checkImages
+  run:
+    name: Scan images for policy deviations and vulnerabilities
+    command: |
+      set -euxo pipefail
+      IMAGE_CHECK_CMD() {
+        ./bin/linux/roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" image check --image
+      }
+      REGISTRY="quay.io/stackrox-io"
+      IMAGES=(                               \
+        roxctl:$(make tag)                   \
+        main:$(make tag)                     \
+        docs:$(make tag)                     \
+        operator:$(make tag)                 \
+        scanner-db:$(make scanner-tag)       \
+        scanner:$(make scanner-tag)          \
+        collector:$(make collector-tag)-slim \
+      )
+      for img in "${IMAGES[@]}"
+      do
+        IMAGE_CHECK_CMD $REGISTRY/$img
+      done
+
+
+
 storeCentralBackupArtifact: &storeCentralBackupArtifact
   ci-artifacts/store:
     path: central-backup
@@ -1554,6 +1579,7 @@ commands:
       - get-and-store-diagnostic-bundle
       - get-central-data:
           destination: central-data-part2
+      - *checkImages
       - *backupCentral
       - *storeCentralBackupArtifact
       - *restoreDB
@@ -1883,6 +1909,7 @@ commands:
       - *storeQATestResults
       - *storeQASpockReports
 
+      - *checkImages
       - *backupCentral
       - *storeCentralBackupArtifact
 
@@ -2621,6 +2648,7 @@ jobs:
       - *storeQASpockReports
 
       - collect-k8s-logs
+      - *checkImages
       - *backupCentral
       - *storeCentralBackupArtifact
       - check-stackrox-logs
@@ -3495,6 +3523,7 @@ jobs:
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
+      - *checkImages
       - *backupCentral
       - *storeCentralBackupArtifact
       - check-stackrox-logs
@@ -3592,6 +3621,7 @@ jobs:
       - get-and-store-debug-dump
       - get-and-store-diagnostic-bundle
       - get-central-data
+      - *checkImages
       - *backupCentral
       - *storeCentralBackupArtifact
       - *restoreDB
@@ -3971,6 +4001,7 @@ jobs:
       - *storeQASpockReports
 
       - collect-k8s-logs
+      - *checkImages
       - *backupCentral
       - *storeCentralBackupArtifact
       - *restoreDB
