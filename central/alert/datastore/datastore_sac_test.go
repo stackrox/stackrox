@@ -625,7 +625,7 @@ func (s *alertDatastoreSACTestSuite) runSearchAlertsTest(testparams alertSACSear
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.SearchAlerts(ctx, nil)
 	s.NoError(err)
-	resultsDistribution := testutils.CountSearchResultsPerClusterAndNamespace(searchResults, mappings.OptionsMap)
+	resultsDistribution := testutils.CountSearchResultsPerClusterAndNamespace(s.T(), searchResults, mappings.OptionsMap)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
 }
 
