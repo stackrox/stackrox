@@ -50,7 +50,6 @@ const (
         walkStmt = "SELECT serialized FROM {{.Table}}"
 
 {{- if $singlePK }}
-        getIDsStmt = "SELECT {{$singlePK.ColumnName}} FROM {{.Table}}"
         getManyStmt = "SELECT serialized FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
 
         deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
@@ -568,7 +567,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "{{.Type}}IDs")
-
+    var sacQueryFilter *v1.Query
     {{ if .PermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.GetIDsAllowed(ctx); err != nil || !ok {
         return nil, err
@@ -580,21 +579,34 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
     } else if !ok {
         return nil, nil
     }
-    {{- end}}
-
-	rows, err := s.db.Query(ctx, getIDsStmt)
+    {{- else if .Obj.IsDirectlyScoped }}
+    scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, err
 	}
-	defer rows.Close()
-	var ids []{{$singlePK.Type}}
-	for rows.Next() {
-		var id {{$singlePK.Type}}
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+    {{- if .Obj.IsClusterScope }}
+    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    {{- else}}
+    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    {{- end }}
+	if err != nil {
+		return nil, err
 	}
+    {{- end }}
+    result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0, len(result))
+	for _, entry := range result {
+		ids = append(ids, entry.ID)
+	}
+
 	return ids, nil
 }
 

@@ -24,6 +24,9 @@ type licenseDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
+	hasReadAccessCtx  context.Context
+	hasWriteAccessCtx context.Context
+
 	dataStore DataStore
 	storage   *storeMocks.MockStore
 
@@ -36,10 +39,18 @@ func (s *licenseDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Licenses)))
+	s.hasReadAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Access)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Licenses)))
+	s.hasWriteAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Access)))
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
@@ -68,6 +79,11 @@ func (s *licenseDataStoreTestSuite) TestAllowsList() {
 
 	_, err = s.dataStore.ListLicenseKeys(s.hasReadCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
+
+	s.storage.EXPECT().ListLicenseKeys().Return(nil, nil)
+
+	_, err = s.dataStore.ListLicenseKeys(s.hasReadAccessCtx)
+	s.NoError(err, "expected no error trying to read with permissions")
 }
 
 func (s *licenseDataStoreTestSuite) TestEnforcesUpsert() {
@@ -76,15 +92,21 @@ func (s *licenseDataStoreTestSuite) TestEnforcesUpsert() {
 	err := s.dataStore.UpsertLicenseKeys(s.hasNoneCtx, []*storage.StoredLicenseKey{})
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.UpsertLicenseKeys(s.hasNoneCtx, []*storage.StoredLicenseKey{})
+	err = s.dataStore.UpsertLicenseKeys(s.hasReadCtx, []*storage.StoredLicenseKey{})
+	s.Error(err, "expected an error trying to write without permissions")
+
+	err = s.dataStore.UpsertLicenseKeys(s.hasReadAccessCtx, []*storage.StoredLicenseKey{})
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *licenseDataStoreTestSuite) TestAllowsUpsert() {
-	s.storage.EXPECT().UpsertLicenseKeys(gomock.Any()).Return(nil)
+	s.storage.EXPECT().UpsertLicenseKeys(gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.UpsertLicenseKeys(s.hasWriteCtx, []*storage.StoredLicenseKey{})
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	err = s.dataStore.UpsertLicenseKeys(s.hasWriteAccessCtx, []*storage.StoredLicenseKey{})
+	s.NoError(err, "expected no error trying to write with Access permissions")
 }
 
 func (s *licenseDataStoreTestSuite) TestEnforcesDelete() {
@@ -93,13 +115,19 @@ func (s *licenseDataStoreTestSuite) TestEnforcesDelete() {
 	err := s.dataStore.DeleteLicenseKey(s.hasNoneCtx, "FAKEEID")
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.DeleteLicenseKey(s.hasNoneCtx, "FAKEID")
+	err = s.dataStore.DeleteLicenseKey(s.hasReadCtx, "FAKEID")
+	s.Error(err, "expected an error trying to write without permissions")
+
+	err = s.dataStore.DeleteLicenseKey(s.hasReadAccessCtx, "FAKEID")
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *licenseDataStoreTestSuite) TestAllowsDelete() {
-	s.storage.EXPECT().DeleteLicenseKey(gomock.Any()).Return(nil)
+	s.storage.EXPECT().DeleteLicenseKey(gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.DeleteLicenseKey(s.hasWriteCtx, "FAKEID")
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	err = s.dataStore.DeleteLicenseKey(s.hasWriteAccessCtx, "FAKEID")
+	s.NoError(err, "expected no error trying to write with Access permissions")
 }

@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
+	cveDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"

@@ -24,10 +24,8 @@ var (
                    State integer,
                    ImageId varchar,
                    ImageCveId varchar,
-                   ImageCve varchar,
-                   ImageCveOperatingSystem varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, ImageId, ImageCveId, ImageCve, ImageCveOperatingSystem),
+                   PRIMARY KEY(Id, ImageId, ImageCveId),
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE
                )
                `,

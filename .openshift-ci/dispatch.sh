@@ -12,13 +12,13 @@ done
 
 openshift_ci_mods
 
-if pr_has_label "delay-tests"; then
-    function hold() {
-        info "Holding on for debug"
-        sleep 3600
-    }
-    trap hold EXIT
-fi
+function hold() {
+    while [[ -e /tmp/hold ]]; do
+        info "Holding this job for debug"
+        sleep 60
+    done
+}
+trap hold EXIT
 
 if [[ "$#" -lt 1 ]]; then
     die "usage: dispatch <ci-job> [<...other parameters...>]"
@@ -26,6 +26,8 @@ fi
 
 ci_job="$1"
 shift
+
+gate_job "$ci_job"
 
 case "$ci_job" in
     style-checks)

@@ -18,7 +18,6 @@ require (
 	github.com/RoaringBitmap/roaring v0.9.4
 	github.com/VividCortex/ewma v1.2.0
 	github.com/andygrunwald/go-jira v1.15.1
-	github.com/antihax/optional v1.0.0
 	github.com/aws/aws-sdk-go v1.44.6
 	github.com/blevesearch/bleve v1.0.14
 	github.com/cenkalti/backoff/v3 v3.2.2
@@ -39,7 +38,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-logr/logr v0.4.0
+	github.com/go-logr/logr v1.2.0
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2
@@ -61,8 +60,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgtype v1.11.0
-	github.com/jackc/pgx/v4 v4.15.0
-	github.com/joelanford/helm-operator v0.0.7
+	github.com/jackc/pgx/v4 v4.16.1
 	github.com/joshdk/go-junit v0.0.0-20210226021600-6145f504ca0d
 	github.com/kisielk/sqlstruct v0.0.0-20210630145711-dae28ed37023 // indirect
 	github.com/machinebox/graphql v0.2.2
@@ -79,6 +77,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.3-0.20211202193544-a5463b7f9c84
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
 	github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
+	github.com/operator-framework/helm-operator-plugins v0.0.7
 	github.com/operator-framework/operator-sdk v0.19.4
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.12.1
@@ -91,7 +90,6 @@ require (
 	github.com/sigstore/sigstore v1.1.1-0.20220130134424-bae9b66b8442
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stackrox/anchore-client v0.0.0-20190929180200-981e05834836
 	github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855
 	github.com/stackrox/external-network-pusher v0.0.0-20210419192707-074af92bbfa7
 	github.com/stackrox/helmtest v0.0.0-20220118100812-1ad97c4de347
@@ -121,14 +119,14 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.2
-	k8s.io/api v0.22.9
-	k8s.io/apimachinery v0.22.9
-	k8s.io/apiserver v0.22.9
-	k8s.io/client-go v0.22.9
-	k8s.io/kubectl v0.22.8
+	k8s.io/api v0.23.1
+	k8s.io/apimachinery v0.23.1
+	k8s.io/apiserver v0.23.1
+	k8s.io/client-go v0.23.1
+	k8s.io/kubectl v0.23.1
 	k8s.io/kubelet v0.22.9
 	k8s.io/utils v0.0.0-20211208161948-7d6a63dca704
-	sigs.k8s.io/controller-runtime v0.10.3
+	sigs.k8s.io/controller-runtime v0.11.0
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -144,7 +142,6 @@ replace (
 	github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20220125170349-50dfc2733d10 => github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20211216152112-d1271fea6383
 	github.com/google/go-containerregistry/pkg/authn/kubernetes v0.0.0-20220125170349-50dfc2733d10 => github.com/google/go-containerregistry/pkg/authn/k8schain v0.0.0-20211222182933-7c19fa370dbd
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20220204234128-07f109db0819
-	github.com/joelanford/helm-operator => github.com/stackrox/helm-operator v0.0.8-0.20211217081542-57dfe5d681e3
 	github.com/mattn/goveralls => github.com/viswajithiii/goveralls v0.0.3-0.20190917224517-4dd02c532775
 
 	// github.com/mikefarah/yaml/v2 is a clone of github.com/go-yaml/yaml/v2.
@@ -157,6 +154,7 @@ replace (
 
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9
+	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.8-0.20220506091602-3764c49abfb3
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
 

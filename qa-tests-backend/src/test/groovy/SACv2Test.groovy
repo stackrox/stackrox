@@ -13,8 +13,10 @@ import groups.BAT
 import services.BaseService
 import services.DeploymentService
 import services.RoleService
+import util.Env
 
 import org.junit.experimental.categories.Category
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 
 @Category(BAT)
@@ -109,6 +111,7 @@ class SACv2Test extends SACTest {
                 .build())
     }
 
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "test role aggregation should not combine permissions sets"() {
         when:
         useToken("aggregatedToken")

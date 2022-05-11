@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/blevesearch/bleve"
-	commentsStore "github.com/stackrox/rox/central/alert/datastore/internal/commentsstore"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
@@ -15,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	bolt "go.etcd.io/bbolt"
 )
 
 // DataStore is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert objects.
@@ -37,23 +35,17 @@ type DataStore interface {
 
 	DeleteAlerts(ctx context.Context, ids ...string) error
 
-	GetAlertComments(ctx context.Context, alertID string) (comments []*storage.Comment, err error)
-	AddAlertComment(ctx context.Context, request *storage.Comment) (string, error)
-	UpdateAlertComment(ctx context.Context, request *storage.Comment) error
-	RemoveAlertComment(ctx context.Context, alertID, commentID string) error
-
 	AddAlertTags(ctx context.Context, alertID string, tags []string) ([]string, error)
 	RemoveAlertTags(ctx context.Context, alertID string, tags []string) error
 }
 
 // New returns a new soleInstance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, commentsStorage commentsStore.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
 	ds := &datastoreImpl{
-		storage:         storage,
-		commentsStorage: commentsStorage,
-		indexer:         indexer,
-		searcher:        searcher,
-		keyedMutex:      concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		storage:    storage,
+		indexer:    indexer,
+		searcher:   searcher,
+		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
 	if err := ds.buildIndex(context.TODO()); err != nil {
 		return nil, err
@@ -62,17 +54,15 @@ func New(storage store.Store, commentsStorage commentsStore.Store, indexer index
 }
 
 // NewWithDb returns a new soleInstance of DataStore using the input indexer, and searcher.
-func NewWithDb(db *rocksdbBase.RocksDB, commentsDB *bolt.DB, bIndex bleve.Index) DataStore {
+func NewWithDb(db *rocksdbBase.RocksDB, bIndex bleve.Index) DataStore {
 	store := store.NewFullStore(rocksdb.New(db))
-	commentsStore := commentsStore.New(commentsDB)
 	indexer := index.New(bIndex)
 	searcher := search.New(store, indexer)
 
 	return &datastoreImpl{
-		storage:         store,
-		commentsStorage: commentsStore,
-		indexer:         indexer,
-		searcher:        searcher,
-		keyedMutex:      concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		storage:    store,
+		indexer:    indexer,
+		searcher:   searcher,
+		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
 }

@@ -234,13 +234,12 @@ func generateNodeDataStructures(t *testing.T) nodeGlobalDatastore.GlobalDataStor
 
 func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore) {
 	db, bleveIndex := setupRocksDBAndBleve(t)
-	commentsDB := testutils.DBForT(t)
 
 	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(t, err)
 
 	// Initialize real datastore
-	alerts := alertDatastore.NewWithDb(db, commentsDB, bleveIndex)
+	alerts := alertDatastore.NewWithDb(db, bleveIndex)
 
 	ctrl := gomock.NewController(t)
 

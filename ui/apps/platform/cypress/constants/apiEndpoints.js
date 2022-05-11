@@ -78,7 +78,6 @@ export const alerts = {
         getTags: 'getAlertTags',
         tagsAutocomplete: 'autocomplete',
         bulkAddAlertTags: 'bulkAddAlertTags',
-        getComments: 'getAlertComments',
         removeTags: 'removeAlertTags',
     },
 };
@@ -101,7 +100,6 @@ export const risks = {
     graphqlOps: {
         autocomplete: 'autocomplete',
         getProcessTags: 'getProcessTags',
-        getProcessComments: 'getProcessComments',
         getDeploymentEventTimeline: 'getDeploymentEventTimeline',
         getPodEventTimeline: 'getPodEventTimeline',
     },

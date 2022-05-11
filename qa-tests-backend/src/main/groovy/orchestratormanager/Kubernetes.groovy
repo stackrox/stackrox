@@ -1,15 +1,8 @@
 package orchestratormanager
 
 import static io.fabric8.kubernetes.client.utils.InputStreamPumper.pump
+import common.YamlGenerator
 import groovy.util.logging.Slf4j
-import java.nio.file.Paths
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
-import java.util.stream.Collectors
-
 import io.fabric8.kubernetes.api.model.Capabilities
 import io.fabric8.kubernetes.api.model.ConfigMap as K8sConfigMap
 import io.fabric8.kubernetes.api.model.ConfigMapEnvSource
@@ -18,7 +11,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource
 import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ContainerPort
 import io.fabric8.kubernetes.api.model.ContainerStatus
-import io.fabric8.kubernetes.api.model.Deployment as K8sDeployment
 import io.fabric8.kubernetes.api.model.EnvFromSource
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.EnvVarBuilder
@@ -52,6 +44,7 @@ import io.fabric8.kubernetes.api.model.ServicePort
 import io.fabric8.kubernetes.api.model.ServiceSpec
 import io.fabric8.kubernetes.api.model.Volume
 import io.fabric8.kubernetes.api.model.VolumeMount
+import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration
 import io.fabric8.kubernetes.api.model.apps.DaemonSet as K8sDaemonSet
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
@@ -89,10 +82,13 @@ import io.fabric8.kubernetes.client.dsl.Resource
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource
 import io.fabric8.kubernetes.client.dsl.ScalableResource
 import io.fabric8.kubernetes.client.utils.InputStreamPumper
-import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
-import okhttp3.Response
-
-import common.YamlGenerator
+import java.nio.file.Paths
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
 import objects.ConfigMap
 import objects.ConfigMapKeyRef
 import objects.DaemonSet
@@ -108,6 +104,7 @@ import objects.NetworkPolicyTypes
 import objects.Node
 import objects.Secret
 import objects.SecretKeyRef
+import okhttp3.Response
 import util.Timer
 
 @Slf4j
@@ -159,7 +156,7 @@ class Kubernetes implements OrchestratorMain {
             if (kce.code != 409) {
                 throw kce
             }
-            log.debug("Namespace ${ns} already exists", kce)
+            log.debug("Namespace ${ns} already exists")
         }
     }
 
@@ -2236,7 +2233,7 @@ class Kubernetes implements OrchestratorMain {
         return networkPolicy.endSpec().build()
     }
 
-    V1beta1ValidatingWebhookConfiguration getAdmissionController() {
+    ValidatingWebhookConfiguration getAdmissionController() {
         log.debug "get admission controllers stub"
     }
 
@@ -2244,7 +2241,7 @@ class Kubernetes implements OrchestratorMain {
         log.debug "delete admission controllers stub: ${name}"
     }
 
-    def createAdmissionController(V1beta1ValidatingWebhookConfiguration config) {
+    def createAdmissionController(ValidatingWebhookConfiguration config) {
         log.debug "create admission controllers stub: ${config}"
     }
 

@@ -112,13 +112,9 @@ func (mr *MockStoreMockRecorder) GetListDeployment(ctx, id interface{}) *gomock.
 }
 
 // GetMany mocks base method.
-func (m *MockStore) GetMany(ctx context.Context, ids ...string) ([]*storage.Deployment, []int, error) {
+func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.Deployment, []int, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx}
-	for _, a := range ids {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetMany", varargs...)
+	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
 	ret0, _ := ret[0].([]*storage.Deployment)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
@@ -126,10 +122,9 @@ func (m *MockStore) GetMany(ctx context.Context, ids ...string) ([]*storage.Depl
 }
 
 // GetMany indicates an expected call of GetMany.
-func (mr *MockStoreMockRecorder) GetMany(ctx interface{}, ids ...interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, ids...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
 }
 
 // GetManyListDeployments mocks base method.

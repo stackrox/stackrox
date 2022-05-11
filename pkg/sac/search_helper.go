@@ -32,10 +32,16 @@ type searchHelper struct {
 	resource permissions.Resource
 
 	resultsChecker searchResultsChecker
+
+	scopeCheckerFactory scopeCheckerFactory
 }
 
+// scopeCheckerFactory will be called to create a ScopeChecker.
+type scopeCheckerFactory = func(ctx context.Context, am storage.Access, keys ...ScopeKey) ScopeChecker
+
 // NewSearchHelper returns a new search helper for the given resource.
-func NewSearchHelper(resourceMD permissions.ResourceMetadata, optionsMap search.OptionsMap) (SearchHelper, error) {
+func NewSearchHelper(resourceMD permissions.ResourceMetadata, optionsMap search.OptionsMap,
+	factory scopeCheckerFactory) (SearchHelper, error) {
 	var nsScope bool
 
 	switch resourceMD.GetScope() {
@@ -56,8 +62,9 @@ func NewSearchHelper(resourceMD permissions.ResourceMetadata, optionsMap search.
 	}
 
 	return &searchHelper{
-		resource:       resourceMD.GetResource(),
-		resultsChecker: resultsChecker,
+		resource:            resourceMD.GetResource(),
+		resultsChecker:      resultsChecker,
+		scopeCheckerFactory: factory,
 	}, nil
 }
 
@@ -98,7 +105,7 @@ func (h *searchHelper) FilteredSearcher(searcher blevesearch.UnsafeSearcher) sea
 }
 
 func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) ([]search.Result, error) {
-	scopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(h.resource)
+	scopeChecker := h.scopeCheckerFactory(ctx, storage.Access_READ_ACCESS)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, err
 	} else if ok {
@@ -130,7 +137,7 @@ func (h *searchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher 
 }
 
 func (h *searchHelper) executeCount(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) (int, error) {
-	scopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(h.resource)
+	scopeChecker := h.scopeCheckerFactory(ctx, storage.Access_READ_ACCESS)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return 0, err
 	} else if ok {
@@ -198,15 +205,18 @@ func (h *searchHelper) filterResults(ctx context.Context, resourceScopeChecker S
 // Postgres implementation
 
 type pgSearchHelper struct {
-	resourceMD permissions.ResourceMetadata
-	optionsMap search.OptionsMap
+	resourceMD          permissions.ResourceMetadata
+	optionsMap          search.OptionsMap
+	scopeCheckerFactory scopeCheckerFactory
 }
 
 // NewPgSearchHelper returns a new search helper for the given resource.
-func NewPgSearchHelper(resourceMD permissions.ResourceMetadata, optionsMap search.OptionsMap) (SearchHelper, error) {
+func NewPgSearchHelper(resourceMD permissions.ResourceMetadata, optionsMap search.OptionsMap,
+	factory scopeCheckerFactory) (SearchHelper, error) {
 	return &pgSearchHelper{
-		resourceMD: resourceMD,
-		optionsMap: optionsMap,
+		resourceMD:          resourceMD,
+		optionsMap:          optionsMap,
+		scopeCheckerFactory: factory,
 	}, nil
 }
 
@@ -242,7 +252,7 @@ func (h *pgSearchHelper) FilteredSearcher(searcher blevesearch.UnsafeSearcher) s
 }
 
 func (h *pgSearchHelper) executeSearch(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) ([]search.Result, error) {
-	scopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(h.resourceMD.GetResource())
+	scopeChecker := h.scopeCheckerFactory(ctx, storage.Access_READ_ACCESS)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, err
 	} else if ok {
@@ -294,7 +304,7 @@ func (h *pgSearchHelper) executeSearch(ctx context.Context, q *v1.Query, searche
 }
 
 func (h *pgSearchHelper) executeCount(ctx context.Context, q *v1.Query, searcher blevesearch.UnsafeSearcher) (int, error) {
-	scopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(h.resourceMD.GetResource())
+	scopeChecker := h.scopeCheckerFactory(ctx, storage.Access_READ_ACCESS)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return 0, err
 	} else if ok {

@@ -10,7 +10,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	centralDetection "github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
@@ -78,7 +77,6 @@ type serviceImpl struct {
 	policySet          detection.PolicySet
 	imageEnricher      enricher.ImageEnricher
 	imageDatastore     imageDatastore.DataStore
-	cveDatastore       cveDataStore.DataStore
 	riskManager        manager.Manager
 	deploymentEnricher enrichment.Enricher
 	buildTimeDetector  buildtime.Detector

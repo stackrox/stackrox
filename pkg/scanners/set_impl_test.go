@@ -100,26 +100,26 @@ func TestSetOrdering(t *testing.T) {
 		},
 	}
 
-	scannerFactory.EXPECT().CreateScanner(testutils.PredMatcher("dtr", func(integration *storage.ImageIntegration) bool {
-		return integration.GetType() == "dtr"
-	})).Return(newFakeImageScanner(&fakeScanner{typ: "dtr"}), nil)
+	scannerFactory.EXPECT().CreateScanner(testutils.PredMatcher("ecr", func(integration *storage.ImageIntegration) bool {
+		return integration.GetType() == "ecr"
+	})).Return(newFakeImageScanner(&fakeScanner{typ: "ecr"}), nil)
 
-	dtrIntegration := &storage.ImageIntegration{
-		Id:   "dtr",
-		Type: "dtr",
-		IntegrationConfig: &storage.ImageIntegration_Dtr{
-			Dtr: &storage.DTRConfig{
-				Username: "user",
-				Password: "password",
-				Endpoint: server.URL,
+	ecrIntegration := &storage.ImageIntegration{
+		Id:   "ecr",
+		Type: "ecr",
+		IntegrationConfig: &storage.ImageIntegration_Ecr{
+			Ecr: &storage.ECRConfig{
+				AccessKeyId:     "user",
+				SecretAccessKey: "password",
+				Endpoint:        server.URL,
 			},
 		},
 	}
 	require.NoError(t, scannerSet.UpdateImageIntegration(clairifyIntegration))
-	require.NoError(t, scannerSet.UpdateImageIntegration(dtrIntegration))
+	require.NoError(t, scannerSet.UpdateImageIntegration(ecrIntegration))
 	for i := 0; i < 10000; i++ {
 		scanners := scannerSet.GetAll()
-		assert.Equal(t, "dtr", scanners[0].GetScanner().Type())
+		assert.Equal(t, "ecr", scanners[0].GetScanner().Type())
 		assert.Equal(t, "clairify", scanners[1].GetScanner().Type())
 	}
 }

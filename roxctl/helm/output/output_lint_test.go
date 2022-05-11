@@ -88,15 +88,11 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 		tt := tt
 		for chartName := range common.ChartTemplates {
 			s.Run(fmt.Sprintf("%s-rhacs-%t-flavorProvided-%t-image-defaults-%s", chartName, tt.rhacs, tt.flavorProvided, tt.flavor), func() {
-				outputDir, err := os.MkdirTemp("", "roxctl-helm-output-lint-")
-				s.T().Cleanup(func() {
-					_ = os.RemoveAll(outputDir)
-				})
-				require.NoError(s.T(), err)
+				outputDir := s.T().TempDir()
 				if tt.flavor != "" {
 					tt.flavorProvided = true
 				}
-				err = executeHelpOutputCommand(chartName, outputDir, true, tt.flavor, tt.flavorProvided, tt.rhacs, env)
+				err := executeHelpOutputCommand(chartName, outputDir, true, tt.flavor, tt.flavorProvided, tt.rhacs, env)
 				if tt.wantErr {
 					assert.Error(s.T(), err)
 				} else {
@@ -126,16 +122,12 @@ func (s *HelmChartTestSuite) TestHelmLint() {
 }
 
 func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor string) {
-	outputDir, err := os.MkdirTemp("", "roxctl-helm-output-lint-")
-	t.Cleanup(func() {
-		_ = os.RemoveAll(outputDir)
-	})
-	require.NoError(t, err)
+	outputDir := t.TempDir()
 
 	testIO, _, _, _ := environment.TestIO()
 	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
 
-	err = executeHelpOutputCommand(chartName, outputDir, true, imageFlavor, imageFlavor != "", rhacs, env)
+	err := executeHelpOutputCommand(chartName, outputDir, true, imageFlavor, imageFlavor != "", rhacs, env)
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
 
 	for _, ns := range lintNamespaces {

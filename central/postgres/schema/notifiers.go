@@ -17,6 +17,7 @@ var (
 		Table: `
                create table if not exists notifiers (
                    Id varchar,
+                   Name varchar UNIQUE,
                    serialized bytea,
                    PRIMARY KEY(Id)
                )

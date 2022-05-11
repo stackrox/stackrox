@@ -3,10 +3,8 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
-	"github.com/stackrox/rox/central/processindicator/internal/commentsstore"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
@@ -23,16 +21,10 @@ type DataStore interface {
 	SearchRawProcessIndicators(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error)
 
 	GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error)
+	GetProcessIndicators(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, bool, error)
 	AddProcessIndicators(context.Context, ...*storage.ProcessIndicator) error
 	RemoveProcessIndicatorsByPod(ctx context.Context, id string) error
 	RemoveProcessIndicators(ctx context.Context, ids []string) error
-
-	// Comments-related methods.
-	AddProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, comment *storage.Comment) (string, error)
-	UpdateProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, comment *storage.Comment) error
-	GetCommentsForProcess(ctx context.Context, processKey *analystnotes.ProcessNoteKey) ([]*storage.Comment, error)
-	GetCommentsCountForProcess(ctx context.Context, processKey *analystnotes.ProcessNoteKey) (int, error)
-	RemoveProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, commentID string) error
 
 	WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error
 
@@ -44,10 +36,9 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, commentsStorage commentsstore.Store, indexer index.Indexer, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
+func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
 	d := &datastoreImpl{
 		storage:               storage,
-		commentsStorage:       commentsStorage,
 		indexer:               indexer,
 		searcher:              searcher,
 		prunerFactory:         prunerFactory,

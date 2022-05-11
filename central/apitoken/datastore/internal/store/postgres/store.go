@@ -28,7 +28,6 @@ const (
 	getStmt     = "SELECT serialized FROM apitokens WHERE Id = $1"
 	deleteStmt  = "DELETE FROM apitokens WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM apitokens"
-	getIDsStmt  = "SELECT Id FROM apitokens"
 	getManyStmt = "SELECT serialized FROM apitokens WHERE Id = ANY($1::text[])"
 
 	deleteManyStmt = "DELETE FROM apitokens WHERE Id = ANY($1::text[])"
@@ -44,7 +43,7 @@ const (
 var (
 	log            = logging.LoggerForModule()
 	schema         = pkgSchema.ApitokensSchema
-	targetResource = resources.APIToken
+	targetResource = resources.Integrations
 )
 
 type Store interface {
@@ -339,6 +338,7 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.TokenMetadataIDs")
+	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
@@ -346,20 +346,16 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	} else if !ok {
 		return nil, nil
 	}
-
-	rows, err := s.db.Query(ctx, getIDsStmt)
+	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
 	if err != nil {
-		return nil, pgutils.ErrNilIfNoRows(err)
+		return nil, err
 	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
+
+	ids := make([]string, 0, len(result))
+	for _, entry := range result {
+		ids = append(ids, entry.ID)
 	}
+
 	return ids, nil
 }
 

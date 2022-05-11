@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils
 import org.junit.experimental.categories.Category
 
 import services.ProcessBaselineService
+import spock.lang.Ignore
 import spock.lang.Shared
 import spock.lang.Unroll
 
@@ -28,9 +29,10 @@ class ProcessBaselinesTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_RESOLVE_VIOLATION = "pb-deploymentnginx-violation-resolve"
     static final private String DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION =
             "pb-deploymentnginx-violation-resolve-baseline"
-    static final private String DEPLOYMENTNGINX_SOFTLOCK = "pb-deploymentnginx-softlock"
+    static final private String DEPLOYMENTNGINX_LOCK = "pb-deploymentnginx-lock"
     static final private String DEPLOYMENTNGINX_DELETE = "pb-deploymentnginx-delete"
     static final private String DEPLOYMENTNGINX_DELETE_API = "pb-deploymentnginx-delete-api"
+    static final private String DEPLOYMENTNGINX_POST_DELETE_API = "pb-deploymentnginx-post-delete-api"
 
     static final private String DEPLOYMENTNGINX_REMOVEPROCESS = "pb-deploymentnginx-removeprocess"
     static final private List<Deployment> DEPLOYMENTS =
@@ -57,7 +59,7 @@ class ProcessBaselinesTest extends BaseSpecification {
                      .setEnv(["CLUSTER_NAME": "main"])
                      .addLabel("app", "test"),
              new Deployment()
-                     .setName(DEPLOYMENTNGINX_SOFTLOCK)
+                     .setName(DEPLOYMENTNGINX_LOCK)
                      .setImage(TEST_IMAGE)
                      .addPort(22, "TCP")
                      .addAnnotation("test", "annotation")
@@ -78,6 +80,13 @@ class ProcessBaselinesTest extends BaseSpecification {
                      .setEnv(["CLUSTER_NAME": "main"])
                      .addLabel("app", "test"),
              new Deployment()
+                      .setName(DEPLOYMENTNGINX_POST_DELETE_API)
+                      .setImage(TEST_IMAGE)
+                      .addPort(22, "TCP")
+                      .addAnnotation("test", "annotation")
+                      .setEnv(["CLUSTER_NAME": "main"])
+                      .addLabel("app", "test"),
+             new Deployment()
                      .setName(DEPLOYMENTNGINX_REMOVEPROCESS)
                      .setImage(TEST_IMAGE)
                      .addPort(22, "TCP")
@@ -95,14 +104,15 @@ class ProcessBaselinesTest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    def "Verify processes risk indicators for the given key after soft-lock on #deploymentName"() {
+    def "Verify processes risk indicators for the given key after lock on #deploymentName"() {
         when:
-        "exec into the container and run a process and wait for soft lock to kick in"
+        "exec into the container and run a process and wait for lock to kick in"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
         orchestrator.createDeployment(deployment)
         String deploymentId = deployment.getDeploymentUid()
         assert deploymentId != null
+        orchestrator.execInContainer(deployment, "ls")
 
         String containerName = deployment.getName()
         ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
@@ -111,15 +121,14 @@ class ProcessBaselinesTest extends BaseSpecification {
         assert ((baseline.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
                     (baseline.key.containerName.equalsIgnoreCase(containerName)))
         assert baseline.elementsList.find { it.element.processName == processName } != null
-        // Check that startup processes are not impacted
-        Thread.sleep(10000)
-        orchestrator.execInContainer(deployment, "ls")
-        Thread.sleep(50000)
+
+        // Need to sleep so the baseline has time to lock
+        sleep 70000
         orchestrator.execInContainer(deployment, "pwd")
 
         then:
         "verify for suspicious process in risk indicator"
-        RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 60)
+        RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 120)
         assert (result != null)
         // Check that ls doesn't exist as a risky process
         RiskOuterClass.Risk.Result.Factor lsFactor =  result.factorsList.find { it.message.contains("ls") }
@@ -135,7 +144,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         where:
         "Data inputs are :"
         deploymentName                      |   processName
-        DEPLOYMENTNGINX_SOFTLOCK            |   "/usr/sbin/nginx"
+        DEPLOYMENTNGINX_LOCK                |   "/usr/sbin/nginx"
     }
 
     /* TODO(ROX-3108)
@@ -367,7 +376,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     @Category(BAT)
     def "Delete process baselines via API"() {
         given:
-        "a deployment is deleted"
+        "a baseline is deleted"
         // Get all baselines for our deployment and assert they exist
         def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE_API }
         assert deployment != null
@@ -383,14 +392,65 @@ class ProcessBaselinesTest extends BaseSpecification {
         ProcessBaselineService.deleteProcessBaselines("Deployment Id:${deployment.getDeploymentUid()}")
 
         then:
-        "Verify that all baselines with that deployment ID have been deleted"
-        def baselinesDeleted = ProcessBaselineService.
-                waitForDeploymentBaselinesDeleted(clusterId, deployment, containerName)
-        assert baselinesDeleted
+        "Verify that all baselines with that deployment ID have been deleted (i.e. the baseline contents cleared)"
+        ProcessBaselineOuterClass.ProcessBaseline baselineAfterDelete = ProcessBaselineService.
+                            getProcessBaseline(clusterId, deployment, containerName)
+        // Baseline should still exist but have no elements associated.  Essentially cleared out.
+        assert  ( baselineAfterDelete.elementsList == [] )
 
         cleanup:
         "Remove deployment"
         orchestrator.deleteDeployment(deployment)
     }
 
+    @Category(BAT)
+    // TODO:  ROX-10903
+    @Ignore
+    def "Processes come in after baseline deleted by API"() {
+        when:
+        def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+        assert deployment != null
+        orchestrator.createDeployment(deployment)
+        String deploymentId = deployment.getDeploymentUid()
+        assert deploymentId != null
+        orchestrator.execInContainer(deployment, "ls")
+
+        String containerName = deployment.getName()
+        ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
+                    getProcessBaseline(clusterId, deployment, containerName)
+        assert (baseline != null)
+        assert ((baseline.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
+                    (baseline.key.containerName.equalsIgnoreCase(containerName)))
+        assert baseline.elementsList.find { it.element.processName == processName } != null
+
+        // Delete the baseline
+        ProcessBaselineService.deleteProcessBaselines("Deployment Id:${deploymentId}")
+
+        // Retrieve the cleared out baseline
+        ProcessBaselineOuterClass.ProcessBaseline baselineAfterDelete = ProcessBaselineService.
+                            getProcessBaseline(clusterId, deployment, containerName)
+        // Baseline should still exist but have no elements associated.  Essentially cleared out.
+        assert  ( baselineAfterDelete.elementsList == [] )
+
+        // Give the baseline time to lock again keep in mind process indicators flush every 60 seconds
+        sleep 60000
+        orchestrator.execInContainer(deployment, "pwd")
+
+        then:
+        "verify for suspicious process in risk indicator"
+        RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 120)
+        assert (result != null)
+        // Check that pwd is a risky process
+        RiskOuterClass.Risk.Result.Factor pwdFactor =  result.factorsList.find { it.message.contains("pwd") }
+        assert pwdFactor != null
+
+        cleanup:
+        "Remove deployment"
+        orchestrator.deleteDeployment(deployment)
+
+        where:
+        "Data inputs are :"
+        deploymentName                          |   processName
+        DEPLOYMENTNGINX_POST_DELETE_API         |   "/usr/sbin/nginx"
+    }
 }

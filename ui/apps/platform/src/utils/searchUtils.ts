@@ -1,11 +1,5 @@
 import qs from 'qs';
-import {
-    SearchEntry,
-    GlobalSearchOption,
-    ApiSortOption,
-    GraphQLSortOption,
-    SearchFilter,
-} from 'types/search';
+import { SearchEntry, ApiSortOption, GraphQLSortOption, SearchFilter } from 'types/search';
 
 /**
  *  Checks if the modifier exists in the searchOptions
@@ -90,7 +84,7 @@ export function convertSortToRestFormat(graphqlSort: GraphQLSortOption[]): Parti
  * Function to convert the legacy SearchEntry array format to the
  * SearchFilter format.
  */
-export function searchOptionsToSearchFilter(searchOptions: GlobalSearchOption[]): SearchFilter {
+export function searchOptionsToSearchFilter(searchOptions: SearchEntry[]): SearchFilter {
     const searchFilter = {};
     let currentOption = '';
     searchOptions.forEach(({ value, type }) => {

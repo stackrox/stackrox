@@ -45,4 +45,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_95_to_m_96_alert_scoping_information_at_root"
 	_ "github.com/stackrox/rox/migrator/migrations/m_96_to_m_97_modify_default_vulnreportcreator_role"
 	_ "github.com/stackrox/rox/migrator/migrations/m_97_to_98_exclude_oauth_sa_kubeadmin_pol"
+	_ "github.com/stackrox/rox/migrator/migrations/m_98_to_m_99_process_alert_comments"
 )

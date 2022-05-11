@@ -6,17 +6,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/features"
 )
 
-var (
-	separator = func() string {
-		if features.PostgresDatastore.Enabled() {
-			return "##"
-		}
-		return ":"
-	}()
-)
+// ***********************************************************************************************
+// If postgres is enabled, EdgeID should not be used, instead use postgres.IDFromPKs
+// ***********************************************************************************************
 
 // EdgeID is a synthetic ID generated for a parent child relationship.
 type EdgeID struct {
@@ -26,7 +20,7 @@ type EdgeID struct {
 
 // FromString reads a EdgeID from string form.
 func FromString(str string) (EdgeID, error) {
-	nameAndVersionEncoded := strings.Split(str, separator)
+	nameAndVersionEncoded := strings.Split(str, ":")
 	if len(nameAndVersionEncoded) != 2 {
 		return EdgeID{}, errors.Errorf("invalid id: %s", str)
 	}
@@ -45,5 +39,5 @@ func FromString(str string) (EdgeID, error) {
 func (cID EdgeID) ToString() string {
 	nameEncoded := base64.RawURLEncoding.EncodeToString([]byte(cID.ParentID))
 	versionEncoded := base64.RawURLEncoding.EncodeToString([]byte(cID.ChildID))
-	return fmt.Sprintf("%s%s%s", nameEncoded, separator, versionEncoded)
+	return fmt.Sprintf("%s:%s", nameEncoded, versionEncoded)
 }

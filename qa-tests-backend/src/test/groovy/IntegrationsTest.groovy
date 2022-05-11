@@ -12,7 +12,6 @@ import common.Constants
 import groups.BAT
 import groups.Integration
 import groups.Notifiers
-import objects.AnchoreScannerIntegration
 import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.Deployment
@@ -631,7 +630,6 @@ class IntegrationsTest extends BaseSpecification {
 
         imageIntegration                 | customArgs      | testAspect
         new StackroxScannerIntegration() | [:]             | "default config"
-        new AnchoreScannerIntegration()  | [:]             | "default config"
         new ClairScannerIntegration()    | [:]             | "default config"
         new QuayImageIntegration()       | [:]             | "default config"
         new GCRImageIntegration()        | [:]             | "default config"
@@ -664,15 +662,6 @@ class IntegrationsTest extends BaseSpecification {
                 | expectedError          | expectedMessage      | testAspect
 
         new StackroxScannerIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
-        }       | StatusRuntimeException |
-        /invalid endpoint: endpoint cannot reference localhost/ |
-        "invalid endpoint"
-
-        new AnchoreScannerIntegration() | { [username: Env.mustGet("ANCHORE_USERNAME") + "WRONG",]
-        }       | StatusRuntimeException | /401 UNAUTHORIZED/   | "incorrect user"
-        new AnchoreScannerIntegration() | { [password: Env.mustGet("ANCHORE_PASSWORD") + "WRONG",]
-        }       | StatusRuntimeException | /401 UNAUTHORIZED/   | "incorrect password"
-        new AnchoreScannerIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException |
         /invalid endpoint: endpoint cannot reference localhost/ |
         "invalid endpoint"

@@ -24,6 +24,9 @@ type notifierDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
+	hasReadIntegrationsCtx  context.Context
+	hasWriteIntegrationsCtx context.Context
+
 	dataStore DataStore
 	storage   *storeMocks.MockStore
 
@@ -36,11 +39,18 @@ func (s *notifierDataStoreTestSuite) SetupTest() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Notifier)))
+	s.hasReadIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Integrations)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Notifier)))
-
+	s.hasWriteIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Integrations)))
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.dataStore = New(s.storage)
@@ -60,16 +70,24 @@ func (s *notifierDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (s *notifierDataStoreTestSuite) TestAllowsGet() {
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(2)
 
 	_, exists, err := s.dataStore.GetNotifier(s.hasReadCtx, "notifier")
 	s.NoError(err, "expected no error trying to read with permissions")
 	s.True(exists, "expected exists to be set to false")
 
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil)
+	_, exists, err = s.dataStore.GetNotifier(s.hasReadIntegrationsCtx, "notifier")
+	s.NoError(err, "expected no error trying to read with permissions")
+	s.True(exists, "expected exists to be set to false")
+
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(2)
 
 	_, exists, err = s.dataStore.GetNotifier(s.hasWriteCtx, "notifier")
 	s.NoError(err, "expected no error trying to read with permissions")
+	s.True(exists, "expected exists to be set to false")
+
+	_, exists, err = s.dataStore.GetNotifier(s.hasWriteIntegrationsCtx, "notifier")
+	s.NoError(err, "expected no error trying to read with Integrations permissions")
 	s.True(exists, "expected exists to be set to false")
 }
 
@@ -82,15 +100,21 @@ func (s *notifierDataStoreTestSuite) TestEnforcesGetMany() {
 }
 
 func (s *notifierDataStoreTestSuite) TestAllowsGetMany() {
-	s.storage.EXPECT().GetAll(gomock.Any()).Return(nil, nil)
+	s.storage.EXPECT().GetAll(gomock.Any()).Return(nil, nil).Times(2)
 
 	_, err := s.dataStore.GetNotifiers(s.hasReadCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().GetAll(gomock.Any()).Return(nil, nil)
+	_, err = s.dataStore.GetNotifiers(s.hasReadIntegrationsCtx)
+	s.NoError(err, "expected no error trying to read with permissions")
+
+	s.storage.EXPECT().GetAll(gomock.Any()).Return(nil, nil).Times(2)
 
 	_, err = s.dataStore.GetNotifiers(s.hasWriteCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
+
+	_, err = s.dataStore.GetNotifiers(s.hasWriteIntegrationsCtx)
+	s.NoError(err, "expected no error trying to read with Integrations permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestEnforcesAdd() {
@@ -101,14 +125,20 @@ func (s *notifierDataStoreTestSuite) TestEnforcesAdd() {
 
 	_, err = s.dataStore.AddNotifier(s.hasReadCtx, &storage.Notifier{})
 	s.Error(err, "expected an error trying to write without permissions")
+
+	_, err = s.dataStore.AddNotifier(s.hasReadIntegrationsCtx, &storage.Notifier{})
+	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestAllowsAdd() {
-	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil)
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
+	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil).Times(2)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 
 	_, err := s.dataStore.AddNotifier(s.hasWriteCtx, &storage.Notifier{})
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	_, err = s.dataStore.AddNotifier(s.hasWriteIntegrationsCtx, &storage.Notifier{})
+	s.NoError(err, "expected no error trying to write with Integrations permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestErrorOnAdd() {
@@ -126,14 +156,20 @@ func (s *notifierDataStoreTestSuite) TestEnforcesUpdate() {
 
 	err = s.dataStore.UpdateNotifier(s.hasReadCtx, &storage.Notifier{Id: "id"})
 	s.Error(err, "expected an error trying to write without permissions")
+
+	err = s.dataStore.UpdateNotifier(s.hasReadIntegrationsCtx, &storage.Notifier{Id: "id"})
+	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestAllowsUpdate() {
-	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil)
-	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
+	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(2)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, &storage.Notifier{Id: "id"})
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	err = s.dataStore.UpdateNotifier(s.hasWriteIntegrationsCtx, &storage.Notifier{})
+	s.NoError(err, "expected no error trying to write with Integrations permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestErrorOnUpdate() {
@@ -151,11 +187,17 @@ func (s *notifierDataStoreTestSuite) TestEnforcesRemove() {
 
 	err = s.dataStore.RemoveNotifier(s.hasReadCtx, "notifier")
 	s.Error(err, "expected an error trying to write without permissions")
+
+	err = s.dataStore.RemoveNotifier(s.hasReadIntegrationsCtx, "notifier")
+	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestAllowsRemove() {
-	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil)
+	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.RemoveNotifier(s.hasWriteCtx, "notifier")
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	err = s.dataStore.RemoveNotifier(s.hasWriteIntegrationsCtx, "notifier")
+	s.NoError(err, "expected no error trying to write with Integrations permissions")
 }

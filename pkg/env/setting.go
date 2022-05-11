@@ -66,6 +66,10 @@ func RegisterSetting(envVar string, opts ...SettingOption) Setting {
 	return s
 }
 
+func unregisterSetting(envVar string) {
+	delete(Settings, envVar)
+}
+
 func (s *setting) EnvVar() string {
 	return s.envVar
 }

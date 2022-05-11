@@ -17,15 +17,18 @@ import services.CVEService
 import services.ClusterService
 import services.ImageIntegrationService
 import services.PolicyService
+import spock.lang.IgnoreIf
 import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Timeout
 import spock.lang.Unroll
+import util.Env
 import util.Helpers
 import util.Timer
 import util.ChaosMonkey
 
 @Slf4j
+@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
     private List<PolicyOuterClass.EnforcementAction> latestTagEnforcements

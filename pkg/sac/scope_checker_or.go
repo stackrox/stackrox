@@ -22,6 +22,9 @@ func NewOrScopeChecker(scopeCheckers ...ScopeChecker) ScopeChecker {
 }
 
 func (s orScopeChecker) Core() ScopeCheckerCore {
+	// We can't unambiguously return a ScopeCheckerCore here. The method itself is used only
+	// within verifying interceptor. The verifying interceptor is used within the context of the
+	// external authz plugin. Once this will be fully deprecated, we can eventually also remove this method.
 	if len(s.scopeCheckers) != 0 {
 		return s.scopeCheckers[0].Core()
 	}
@@ -29,25 +32,24 @@ func (s orScopeChecker) Core() ScopeCheckerCore {
 }
 
 func (s orScopeChecker) SubScopeChecker(keys ...ScopeKey) ScopeChecker {
+	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].SubScopeChecker(keys...)
+		checkers = append(checkers, s.scopeCheckers[i].SubScopeChecker(keys...))
 	}
-	return s
+	return &orScopeChecker{
+		scopeCheckers: checkers,
+	}
 }
 
 func (s orScopeChecker) PerformChecks(ctx context.Context) error {
 	var performChecksErrs *multierror.Error
 	for _, checker := range s.scopeCheckers {
 		err := checker.PerformChecks(ctx)
-		// Short-circuit on the first non-error perform check.
 		if err != nil {
 			performChecksErrs = multierror.Append(performChecksErrs, err)
 		}
 	}
-	if performChecksErrs == nil {
-		return nil
-	}
-	return performChecksErrs
+	return performChecksErrs.ErrorOrNil()
 }
 
 func (s orScopeChecker) TryAllowed(subScopeKeys ...ScopeKey) TryAllowedResult {
@@ -73,10 +75,7 @@ func (s orScopeChecker) Allowed(ctx context.Context, subScopeKeys ...ScopeKey) (
 			return allowed, nil
 		}
 	}
-	if allowedErrs != nil {
-		return false, allowedErrs
-	}
-	return false, nil
+	return false, allowedErrs.ErrorOrNil()
 }
 
 func (s orScopeChecker) TryAnyAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult {
@@ -102,10 +101,7 @@ func (s orScopeChecker) AnyAllowed(ctx context.Context, subScopeKeyss [][]ScopeK
 			return allowed, nil
 		}
 	}
-	if anyAllowedErrs != nil {
-		return false, anyAllowedErrs
-	}
-	return false, nil
+	return false, anyAllowedErrs.ErrorOrNil()
 }
 
 func (s orScopeChecker) TryAllAllowed(subScopeKeyss [][]ScopeKey) TryAllowedResult {
@@ -131,52 +127,67 @@ func (s orScopeChecker) AllAllowed(ctx context.Context, subScopeKeyss [][]ScopeK
 			return allowed, nil
 		}
 	}
-	if allAllowedErrs != nil {
-		return false, allAllowedErrs
-	}
-	return false, nil
+	return false, allAllowedErrs.ErrorOrNil()
 }
 
 func (s orScopeChecker) ForClusterScopedObject(obj ClusterScopedObject) ScopeChecker {
+	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].ForClusterScopedObject(obj)
+		checkers = append(checkers, s.scopeCheckers[i].ForClusterScopedObject(obj))
 	}
-	return s
+	return &orScopeChecker{
+		scopeCheckers: checkers,
+	}
 }
 
 func (s orScopeChecker) ForNamespaceScopedObject(obj NamespaceScopedObject) ScopeChecker {
+	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].ForNamespaceScopedObject(obj)
+		checkers = append(checkers, s.scopeCheckers[i].ForNamespaceScopedObject(obj))
 	}
-	return s
+	return &orScopeChecker{
+		scopeCheckers: checkers,
+	}
 }
 
 func (s orScopeChecker) AccessMode(am storage.Access) ScopeChecker {
+	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].AccessMode(am)
+		checkers = append(checkers, s.scopeCheckers[i].AccessMode(am))
 	}
-	return s
+	return &orScopeChecker{
+		scopeCheckers: checkers,
+	}
 }
 
 func (s orScopeChecker) Resource(resource permissions.ResourceHandle) ScopeChecker {
+	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].Resource(resource)
+		checkers = append(checkers, s.scopeCheckers[i].Resource(resource))
 	}
-	return s
+	return &orScopeChecker{
+		scopeCheckers: checkers,
+	}
 }
 
 func (s orScopeChecker) ClusterID(clusterID string) ScopeChecker {
+	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].ClusterID(clusterID)
+		checkers = append(checkers, s.scopeCheckers[i].ClusterID(clusterID))
 	}
-	return s
+	return &orScopeChecker{
+		scopeCheckers: checkers,
+	}
 }
 
 func (s orScopeChecker) Namespace(namespace string) ScopeChecker {
+	var checkers []ScopeChecker
 	for i := range s.scopeCheckers {
-		s.scopeCheckers[i] = s.scopeCheckers[i].Namespace(namespace)
+		checkers = append(checkers, s.scopeCheckers[i].Namespace(namespace))
 	}
-	return s
+	return &orScopeChecker{
+		scopeCheckers: checkers,
+	}
 }
 
 func (s orScopeChecker) Check(ctx context.Context, pred ScopePredicate) (bool, error) {
@@ -190,7 +201,7 @@ func (s orScopeChecker) Check(ctx context.Context, pred ScopePredicate) (bool, e
 		}
 	}
 
-	return false, checkErrs
+	return false, checkErrs.ErrorOrNil()
 }
 
 func (s orScopeChecker) EffectiveAccessScope(

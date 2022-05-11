@@ -315,7 +315,7 @@ func compileQueryToPostgres(
 		switch subBQ := q.GetBaseQuery().Query.(type) {
 		case *v1.BaseQuery_DocIdQuery:
 			return &pgsearch.QueryEntry{Where: pgsearch.WhereClause{
-				Query:  fmt.Sprintf("%s.id = ANY($$::text[])", schema.Table),
+				Query:  fmt.Sprintf("%s.%s = ANY($$::text[])", schema.Table, schema.ID().ColumnName),
 				Values: []interface{}{subBQ.DocIdQuery.GetIds()},
 			}}, nil
 		case *v1.BaseQuery_MatchFieldQuery:
@@ -330,7 +330,7 @@ func compileQueryToPostgres(
 			withJoinClause(qe, queryFields[subBQ.MatchFieldQuery.GetField()], joinMap)
 			return qe, nil
 		case *v1.BaseQuery_MatchNoneQuery:
-			return nil, nil
+			return pgsearch.NewFalseQuery(), nil
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
 			var entries []*pgsearch.QueryEntry
 			for _, q := range subBQ.MatchLinkedFieldsQuery.Query {
@@ -414,8 +414,14 @@ func standardizeFieldNamesInQuery(q *v1.Query) {
 	}
 }
 
-// RunSearchRequest executes a request again the database
-func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) (searchResults []searchPkg.Result, err error) {
+// RunSearchRequest executes a request against the database for given category
+func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool) ([]searchPkg.Result, error) {
+	schema := mapping.GetTableFromCategory(category)
+	return RunSearchRequestForSchema(schema, q, db)
+}
+
+// RunSearchRequestForSchema executes a request against the database for given schema
+func RunSearchRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) (searchResults []searchPkg.Result, err error) {
 	var query *query
 	// Add this to be safe and convert panics to errors,
 	// since we do a lot of casting and other operations that could potentially panic in this code.
@@ -433,7 +439,6 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, db *pgxpool.Pool)
 		}
 	}()
 
-	schema := mapping.GetTableFromCategory(category)
 	query, err = standardizeQueryAndPopulatePath(q, schema, GET)
 	if err != nil {
 		return nil, err

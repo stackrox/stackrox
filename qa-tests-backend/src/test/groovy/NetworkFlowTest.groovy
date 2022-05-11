@@ -26,6 +26,7 @@ import objects.Service
 import services.ClusterService
 import services.NetworkGraphService
 import services.NetworkPolicyService
+import spock.lang.IgnoreIf
 import util.Env
 import util.Helpers
 import util.NetworkGraphUtil
@@ -636,6 +637,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Category([BAT])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify generated network policies"() {
         // ROX-8785 - EKS cannot NetworkPolicy (RS-178)
         Assume.assumeFalse(ClusterService.isEKS())
@@ -690,7 +692,6 @@ class NetworkFlowTest extends BaseSpecification {
             def ingressNamespaceSelectors = it."spec"."ingress".find { it.containsKey("from") } ?
                     it."spec"."ingress".get(0)."from".findAll { it.containsKey("namespaceSelector") } :
                     null
-
             if (allowAllIngress) {
                 println "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
                 assert it."spec"."ingress" == [[:]]
@@ -703,7 +704,10 @@ class NetworkFlowTest extends BaseSpecification {
                 }
                 def sourceNamespacesFromNetworkPolicy = ingressNamespaceSelectors.collect {
                     it."namespaceSelector"."matchLabels"."namespace.metadata.stackrox.io/name"
-                }
+                }.findAll { it != null }
+                sourceNamespacesFromNetworkPolicy.addAll(ingressNamespaceSelectors.collect {
+                    it."namespaceSelector"."matchLabels"."kubernetes.io/metadata.name"
+                }).findAll { it != null }
                 assert sourceDeploymentsFromNetworkPolicy.sort() == sourceDeploymentsFromGraph.sort()
                 if (!deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)) {
                     println "Deployed namespaces do not contain all namespaces found in the network policy"

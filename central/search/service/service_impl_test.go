@@ -275,7 +275,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
 	deploymentDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-	alertsDS := alertDatastore.NewWithDb(s.rocksDB, s.boltDB, idx)
+	alertsDS := alertDatastore.NewWithDb(s.rocksDB, idx)
 
 	deployment := fixtures.GetDeployment()
 	s.NoError(deploymentDS.UpsertDeployment(deploymentAccessCtx, deployment))
@@ -349,7 +349,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
 
 	deploymentDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-	alertsDS := alertDatastore.NewWithDb(s.rocksDB, s.boltDB, idx)
+	alertsDS := alertDatastore.NewWithDb(s.rocksDB, idx)
 
 	deployment := fixtures.GetDeployment()
 	s.NoError(deploymentDS.UpsertDeployment(deploymentAccessCtx, deployment))

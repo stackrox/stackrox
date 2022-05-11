@@ -79,7 +79,7 @@ func NewDispatcherRegistry(
 			rbacUpdater, podLister, processFilter, configHandler, detector, namespaces, credentialsManager),
 
 		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater),
-		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore),
+		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore),
 		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
 		osRouteDispatcher:         newRouteDispatcher(serviceStore, portExposureReconciler),
 		secretDispatcher:          newSecretDispatcher(registryStore),

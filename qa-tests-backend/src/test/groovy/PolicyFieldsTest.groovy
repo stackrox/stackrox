@@ -20,6 +20,7 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
 import services.AlertService
 import services.PolicyService
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
@@ -882,6 +883,7 @@ class PolicyFieldsTest extends BaseSpecification {
     @SuppressWarnings('LineLength')
     @Unroll
     @Category([BAT])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Expect violation for policy field '#fieldName' - #testName"() {
         expect:
         "Verify expected violations are triggered"

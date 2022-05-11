@@ -2,7 +2,6 @@ package service
 
 import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
@@ -22,7 +21,6 @@ func initialize() {
 	as = New(clusterDatastore.Singleton(), enrichment.ImageEnricherSingleton(),
 		imageDatastore.Singleton(),
 		manager.Singleton(),
-		cveDataStore.Singleton(),
 		enrichment.Singleton(),
 		buildTimeDetection.SingletonDetector(),
 		processor.Singleton(),

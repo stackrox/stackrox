@@ -16,7 +16,9 @@ import services.RbacService
 import services.ServiceAccountService
 
 import org.junit.experimental.categories.Category
+import spock.lang.IgnoreIf
 import spock.lang.Stepwise
+import util.Env
 
 @Stepwise
 class K8sRbacTest extends BaseSpecification {
@@ -51,6 +53,7 @@ class K8sRbacTest extends BaseSpecification {
     }
 
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify scraped service accounts"() {
         given:
         List<K8sServiceAccount> orchestratorSAs = null
@@ -152,6 +155,7 @@ class K8sRbacTest extends BaseSpecification {
     }
 
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify scraped roles"() {
         expect:
         "SR should have the same roles"
