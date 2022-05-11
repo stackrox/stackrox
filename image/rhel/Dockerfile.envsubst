@@ -16,7 +16,8 @@ LABEL name="main" \
       summary="The StackRox Kubernetes Security Platform" \
       description="This image contains components required to operate the StackRox Kubernetes Security Platform." \
       version="${LABEL_VERSION}" \
-      release="${LABEL_RELEASE}"
+      release="${LABEL_RELEASE}" \
+      quay.expires-after="${QUAY_TAG_EXPIRATION}"
 
 ARG ROX_IMAGE_FLAVOR
 ARG ROX_PRODUCT_BRANDING
