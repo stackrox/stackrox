@@ -13,17 +13,16 @@ const (
 )
 
 var (
-	//go:embed files/red_hat_acs_logo_rgb.png
-	logoRHACS       embed.FS
+	//go:embed files/*.png
+	logoFS          embed.FS
 	logoRHACSBase64 = func() string {
-		bytes, err := logoRHACS.ReadFile(rhacslogoFile)
+		bytes, err := logoFS.ReadFile(rhacslogoFile)
 		utils.Must(err)
 		return base64.StdEncoding.EncodeToString(bytes)
 	}()
-	//go:embed files/stackrox_logo_wide_dkblue.png
-	logoStackRox       embed.FS
+
 	logoStackRoxBase64 = func() string {
-		bytes, err := logoStackRox.ReadFile(stackroxLogoFile)
+		bytes, err := logoFS.ReadFile(stackroxLogoFile)
 		utils.Must(err)
 		return base64.StdEncoding.EncodeToString(bytes)
 	}()

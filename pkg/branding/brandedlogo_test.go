@@ -11,17 +11,17 @@ import (
 )
 
 var (
-	//go:embed files/red_hat_acs_logo_rgb.png
-	logoRHACStest       embed.FS
+	//go:embed files/*.png
+	logoFStest embed.FS
+
 	logoRHACSBase64test = func() string {
-		bytes, err := logoRHACStest.ReadFile("files/red_hat_acs_logo_rgb.png")
+		bytes, err := logoFStest.ReadFile("files/red_hat_acs_logo_rgb.png")
 		utils.Must(err)
 		return base64.StdEncoding.EncodeToString(bytes)
 	}()
-	//go:embed files/stackrox_logo_wide_dkblue.png
-	logoStackRoxtest       embed.FS
+
 	logoStackRoxBase64test = func() string {
-		bytes, err := logoStackRoxtest.ReadFile("files/stackrox_logo_wide_dkblue.png")
+		bytes, err := logoFStest.ReadFile("files/stackrox_logo_wide_dkblue.png")
 		utils.Must(err)
 		return base64.StdEncoding.EncodeToString(bytes)
 	}()
