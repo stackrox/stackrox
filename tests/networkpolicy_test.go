@@ -144,7 +144,7 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 			// defer function is never registered. In case the code panics and litters the cluster
 			// with stale test data, it's easier to simply delete them before running the test.
 			teardownDeployment(t, netpolDeploymentName)
-			teardownFile(t, testCase.networkPolicyFile)
+			teardownDeploymentFromFile(t, "", testCase.networkPolicyFile)
 
 			policyService := v1.NewPolicyServiceClient(conn)
 			alertService := v1.NewAlertServiceClient(conn)
@@ -165,8 +165,8 @@ func Test_GetViolationForIngressPolicy(t *testing.T) {
 			})
 
 			// NetworkPolicy creation
-			applyFile(t, testCase.networkPolicyFile)
-			defer teardownFile(t, testCase.networkPolicyFile)
+			setupDeploymentFromFile(t, "", testCase.networkPolicyFile)
+			defer teardownDeploymentFromFile(t, "", testCase.networkPolicyFile)
 
 			// NetworkPolicy events do not trigger the immediate evaluation of deployments. The deployments are marked
 			// for reprocessing and will be resynced every minute. To avoid having the tests wait for a minute to check

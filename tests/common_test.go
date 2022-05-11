@@ -215,11 +215,11 @@ func waitForTermination(t testutils.T, deploymentName string) {
 	}
 }
 
-func applyFile(t testutils.T, path string) {
-	cmd := exec.Command(`kubectl`, `create`, `-f`, path)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
-}
+//func applyFile(t testutils.T, path string) {
+//	cmd := exec.Command(`kubectl`, `create`, `-f`, path)
+//	output, err := cmd.CombinedOutput()
+//	require.NoError(t, err, string(output))
+//}
 
 // The deploymentName must be copied form the file path passed in TODO
 func setupDeploymentFromFile(t testutils.T, deploymentName, path string) {
@@ -275,15 +275,25 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 	}, "image updated", time.Minute, 5*time.Second)
 }
 
-func teardownFile(t testutils.T, path string) {
-	cmd := exec.Command(`kubectl`, `delete`, `-f`, path, `--ignore-not-found=true`)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
-}
+//func teardownFile(t testutils.T, path string) {
+//	cmd := exec.Command(`kubectl`, `delete`, `-f`, path, `--ignore-not-found=true`)
+//	output, err := cmd.CombinedOutput()
+//	require.NoError(t, err, string(output))
+//
+//}
 
 func teardownDeploymentFromFile(t testutils.T, deploymentName, path string) {
-	teardownFile(t, path)
-	waitForTermination(t, deploymentName)
+	//teardownFile(t, path)
+	//waitForTermination(t, deploymentName)
+	deployment := getDeploymentFromFile(t, path)
+
+	deletePolicy := metav1.DeletePropagationForeground
+	err := defaultDeploymentClient.Delete(context.Background(), deployment.GetName(), metav1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	})
+	require.NoError(t, err, fmt.Sprintf("Failed to tear down deployment (%s)", deployment.GetName()))
+
+	waitForTermination(t, deployment.GetName())
 }
 
 func teardownDeployment(t *testing.T, deploymentName string) {
