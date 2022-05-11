@@ -28,7 +28,7 @@ function ImageSigningTableModal({ setValue, value, readOnly }) {
 
     return (
         <TableModal
-            typeText="trusted image signers"
+            typeText="trusted image signer"
             setValue={setValue}
             value={value}
             readOnly={readOnly}

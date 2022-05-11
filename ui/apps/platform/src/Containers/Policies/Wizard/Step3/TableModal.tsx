@@ -85,70 +85,80 @@ function TableModal({
             >
                 <ModalBoxBody>
                     <PageSection variant="light">
-                        Select {typeText}s from the table below.
-                        <TableComposable variant="compact" isStickyHeader>
-                            <Thead>
-                                <Tr>
-                                    <Th
-                                        select={{
-                                            onSelect: onSelectAll,
-                                            isSelected: allRowsSelected,
-                                            isHeaderSelectDisabled: readOnly,
-                                        }}
-                                    />
-                                    {columns.map((column) => {
-                                        return (
-                                            <Th key={column.Header} modifier="wrap">
-                                                {column.Header}
-                                            </Th>
-                                        );
-                                    })}
-                                    <Th aria-label="Row actions" />
-                                </Tr>
-                            </Thead>
-                            <Tbody>
-                                {rows.map((row, rowIndex) => {
-                                    const { id, link } = row;
-                                    return (
-                                        <Tr key={id}>
-                                            <Td
-                                                key={id}
+                        {!!rows.length && (
+                            <>
+                                Select {typeText}s from the table below.
+                                <TableComposable variant="compact" isStickyHeader>
+                                    <Thead>
+                                        <Tr>
+                                            <Th
                                                 select={{
-                                                    rowIndex,
-                                                    onSelect,
-                                                    isSelected: selected[rowIndex],
-                                                    disable: readOnly,
+                                                    onSelect: onSelectAll,
+                                                    isSelected: allRowsSelected,
+                                                    isHeaderSelectDisabled: readOnly,
                                                 }}
                                             />
                                             {columns.map((column) => {
-                                                if (column.Header === 'Name') {
-                                                    return (
-                                                        <Td key="name">
-                                                            <Button
-                                                                variant={ButtonVariant.link}
-                                                                isInline
-                                                                component={LinkShim}
-                                                                href={link}
-                                                            >
+                                                return (
+                                                    <Th key={column.Header} modifier="wrap">
+                                                        {column.Header}
+                                                    </Th>
+                                                );
+                                            })}
+                                            <Th aria-label="Row actions" />
+                                        </Tr>
+                                    </Thead>
+                                    <Tbody>
+                                        {rows.map((row, rowIndex) => {
+                                            const { id, link } = row;
+                                            return (
+                                                <Tr key={id}>
+                                                    <Td
+                                                        key={id}
+                                                        select={{
+                                                            rowIndex,
+                                                            onSelect,
+                                                            isSelected: selected[rowIndex],
+                                                            disable: readOnly,
+                                                        }}
+                                                    />
+                                                    {columns.map((column) => {
+                                                        if (column.Header === 'Name') {
+                                                            return (
+                                                                <Td key="name">
+                                                                    <Button
+                                                                        variant={ButtonVariant.link}
+                                                                        isInline
+                                                                        component={LinkShim}
+                                                                        href={link}
+                                                                    >
+                                                                        <TableCellValue
+                                                                            row={row}
+                                                                            column={column}
+                                                                        />
+                                                                    </Button>
+                                                                </Td>
+                                                            );
+                                                        }
+                                                        return (
+                                                            <Td key={column.Header}>
                                                                 <TableCellValue
                                                                     row={row}
                                                                     column={column}
                                                                 />
-                                                            </Button>
-                                                        </Td>
-                                                    );
-                                                }
-                                                return (
-                                                    <Td key={column.Header}>
-                                                        <TableCellValue row={row} column={column} />
-                                                    </Td>
-                                                );
-                                            })}
-                                        </Tr>
-                                    );
-                                })}
-                            </Tbody>
-                        </TableComposable>
+                                                            </Td>
+                                                        );
+                                                    })}
+                                                </Tr>
+                                            );
+                                        })}
+                                    </Tbody>
+                                </TableComposable>
+                            </>
+                        )}
+                        {!rows.length && (
+                            <div>Please configure {typeText}s to add them as policy criteria.</div>
+                        )}
                     </PageSection>
                 </ModalBoxBody>
                 <ModalBoxFooter>
@@ -156,7 +166,9 @@ function TableModal({
                         key="save"
                         variant="primary"
                         onClick={onSaveHandler}
-                        isDisabled={readOnly || isEqual(value.arrayValue, getSelectedIds())}
+                        isDisabled={
+                            readOnly || isEqual(value.arrayValue, getSelectedIds()) || !rows.length
+                        }
                     >
                         Save
                     </Button>
