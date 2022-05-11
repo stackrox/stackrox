@@ -525,7 +525,7 @@ gate_job() {
     fi
 
     local pr_details
-    local exitstatus
+    local exitstatus=0
     pr_details="$(get_pr_details)" || exitstatus="$?"
 
     if [[ "$exitstatus" == "0" ]]; then
