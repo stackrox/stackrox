@@ -1,13 +1,12 @@
 import { url as apidocsUrl } from '../constants/ApiReferencePage';
 import { baseURL as complianceUrl } from '../constants/CompliancePage';
 import { url as dashboardUrl, selectors as dashboardSelectors } from '../constants/DashboardPage';
-import { url as networkUrl } from '../constants/NetworkPage';
 import { url as userUrl } from '../constants/UserPage';
 import { url as violationsUrl } from '../constants/ViolationsPage';
 import selectors from '../constants/GeneralPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
-import { selectNamespaceFilters } from '../helpers/networkGraph';
+import { visitNetworkGraph } from '../helpers/networkGraph';
 
 //
 // Sanity / general checks for UI being up and running
@@ -30,11 +29,7 @@ describe('General sanity checks', () => {
         });
 
         it('for Network Graph', () => {
-            cy.intercept('GET', api.network.networkGraph).as('networkGraph');
-            cy.intercept('GET', api.network.networkPoliciesGraph).as('networkPolicies');
-            cy.visit(networkUrl);
-            selectNamespaceFilters('stackrox');
-            cy.wait(['@networkGraph', '@networkPolicies']);
+            visitNetworkGraph();
 
             cy.title().should('match', new RegExp(`Network Graph | ${productNameRegExp}`));
         });
