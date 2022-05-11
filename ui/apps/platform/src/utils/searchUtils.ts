@@ -1,5 +1,6 @@
 import qs from 'qs';
 import { SearchEntry, ApiSortOption, GraphQLSortOption, SearchFilter } from 'types/search';
+import { isParsedQs } from 'utils/queryStringUtils';
 
 /**
  *  Checks if the modifier exists in the searchOptions
@@ -129,4 +130,29 @@ export function getUrlQueryStringForSearchFilter(
             encodeValuesOnly: true,
         }
     );
+}
+
+export function parseFilter(
+    rawFilter: string | string[] | qs.ParsedQs | qs.ParsedQs[] | undefined
+): SearchFilter {
+    const parsedFilter = {};
+
+    if (!rawFilter || !isParsedQs(rawFilter)) {
+        return parsedFilter;
+    }
+
+    Object.entries(rawFilter).forEach(([searchKey, searchVal]) => {
+        if (typeof searchVal === 'string') {
+            parsedFilter[searchKey] = searchVal;
+        } else if (Array.isArray(searchVal)) {
+            parsedFilter[searchKey] = [];
+            searchVal.forEach((searchArrayEntry) => {
+                if (typeof searchArrayEntry === 'string') {
+                    parsedFilter[searchKey].push(searchArrayEntry);
+                }
+            });
+        }
+    });
+
+    return parsedFilter;
 }

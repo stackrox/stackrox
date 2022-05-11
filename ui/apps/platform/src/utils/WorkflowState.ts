@@ -10,7 +10,7 @@ import entityRelationships from 'utils/entityRelationships';
 import generateURL from 'utils/URLGenerator';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 
-import { GraphQLSortOption } from 'types/search';
+import { GraphQLSortOption, SearchFilter } from 'types/search';
 import WorkflowEntity from './WorkflowEntity';
 
 // Returns true if stack provided makes sense
@@ -125,15 +125,6 @@ function trimStack(stack: WorkflowEntity[]) {
 }
 
 /**
- *  TODO The intended type for `search` is probably just:
- *  Record<string, SearchFilter>
- */
-type WorkflowStateSearch = Record<
-    string,
-    string | string[] | qs.ParsedQs | qs.ParsedQs[] | null | undefined
->;
-
-/**
  * Summary: Class that ensures the shape of a WorkflowState object
  * {
  *   useCase: 'text',
@@ -145,8 +136,10 @@ export class WorkflowState {
 
     stateStack: WorkflowEntity[];
 
-    search: WorkflowStateSearch;
+    // Should the null piece here be removed, and just omit the key instead?
+    search: Record<string, SearchFilter | null>;
 
+    // Should the null piece here be removed, and just omit the key instead?
     sort: Record<string, GraphQLSortOption[] | null>;
 
     paging: Record<string, number>;
@@ -156,7 +149,7 @@ export class WorkflowState {
     constructor(
         useCase: string,
         stateStack: WorkflowEntity[],
-        search?: WorkflowStateSearch | null,
+        search?: Record<string, SearchFilter | null> | null,
         sort?: Record<string, GraphQLSortOption[] | null> | null,
         paging?: Record<string, number> | null
     ) {
@@ -420,8 +413,8 @@ export class WorkflowState {
 
         const newSearch = {
             ...search,
-            [param]: undefined,
         };
+        delete newSearch[param];
 
         return new WorkflowState(useCase, stateStack, newSearch, sort, paging);
     }

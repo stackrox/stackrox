@@ -3,7 +3,7 @@ import { useLocation, useHistory } from 'react-router-dom';
 import isEqual from 'lodash/isEqual';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 
-export type QueryValue = undefined | string | string[] | qs.ParsedQs | qs.ParsedQs[];
+type QueryValue = undefined | string | string[] | qs.ParsedQs | qs.ParsedQs[];
 
 // Note that when we upgrade React Router and 'history' we can probably import a more accurate version of this type
 type Action = 'push' | 'replace';

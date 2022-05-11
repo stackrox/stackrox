@@ -5,6 +5,7 @@ import { Location, LocationState } from 'history';
 import useCases from 'constants/useCaseTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import { GraphQLSortOption } from 'types/search';
+import { parseFilter } from 'utils/searchUtils';
 import WorkflowEntity from './WorkflowEntity';
 import { WorkflowState } from './WorkflowState';
 import {
@@ -190,9 +191,10 @@ function parseURL(location: Location<LocationState>): WorkflowState {
     const workflowState = new WorkflowState(
         params.context,
         [...stateStackFromURLParams, ...stateStack],
+        // TODO Instead of `null` for the search values, can we use an empty object? Or omit the key entirely?
         {
-            [searchParams.page]: pageSearch || null,
-            [searchParams.sidePanel]: sidePanelSearch || null,
+            [searchParams.page]: pageSearch ? parseFilter(pageSearch) : null,
+            [searchParams.sidePanel]: sidePanelSearch ? parseFilter(sidePanelSearch) : null,
         },
         {
             [sortParams.page]: formatSort(pageSort as ParsedQs | ParsedQs[]),
