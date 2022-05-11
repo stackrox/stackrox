@@ -511,8 +511,10 @@ gate_job() {
 
     info "Will determine whether to run: $job"
 
+    set -x
     if [[ "$job_config" == "null" ]]; then
         info "$job will run because there is no gating criteria for $job"
+        set +x
         return
     fi
 
@@ -531,6 +533,7 @@ gate_job() {
     else
         die "Could not determine if this is a PR versus a merge"
     fi
+    set +x
 }
 
 get_var_from_job_config() {
@@ -590,14 +593,17 @@ gate_pr_job() {
         fi
         echo "Diffbase diff:"
         { git diff --name-only "${diff_base}" | cat ; } || true
+        set -x
         ignored_regex="${changed_path_to_ignore}"
         [[ -n "$ignored_regex" ]] || ignored_regex='$^' # regex that matches nothing
         match_regex="${run_with_changed_path}"
         [[ -n "$match_regex" ]] || match_regex='^.*$' # grep -E -q '' returns 0 even on empty input, so we have to specify some pattern
         if grep -E -q "$match_regex" < <({ git diff --name-only "${diff_base}" || echo "???" ; } | grep -E -v "$ignored_regex"); then
             info "$job will run because paths matching $match_regex (and not matching ${ignored_regex}) had changed."
+            set +x
             return
         fi
+        set +x
     fi
 
     info "$job will be skipped"
