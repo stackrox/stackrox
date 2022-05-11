@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -44,10 +45,11 @@ type alertDatastoreSACTestSuite struct {
 
 	pool *pgxpool.Pool
 
-	storage   store.Store
-	indexer   index.Indexer
-	search    search.Searcher
-	datastore DataStore
+	storage    store.Store
+	indexer    index.Indexer
+	search     search.Searcher
+	optionsMap searchPkg.OptionsMap
+	datastore  DataStore
 
 	mockCtrl *gomock.Controller
 
@@ -71,6 +73,7 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 		pgStore.Destroy(ctx, s.pool)
 		s.storage = store.NewFullPgStore(pgStore.New(ctx, s.pool))
 		s.indexer = pgStore.NewIndexWrapper(s.pool)
+		s.optionsMap = mappings.PostgresOptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp(alertObj)
 		s.NoError(err)
@@ -81,6 +84,7 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 
 		s.storage = store.NewFullStore(rocksdbStore.New(s.engine))
 		s.indexer = index.New(*s.index)
+		s.optionsMap = mappings.OptionsMap
 	}
 	s.search = search.New(s.storage, s.indexer)
 
@@ -553,7 +557,7 @@ func (s *alertDatastoreSACTestSuite) runSearchTest(testparams alertSACSearchResu
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.Search(ctx, nil)
 	s.NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), searchResults, mappings.OptionsMap)
+	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), searchResults, s.optionsMap)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultCounts)
 }
 
@@ -625,7 +629,7 @@ func (s *alertDatastoreSACTestSuite) runSearchAlertsTest(testparams alertSACSear
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.SearchAlerts(ctx, nil)
 	s.NoError(err)
-	resultsDistribution := testutils.CountSearchResultsPerClusterAndNamespace(s.T(), searchResults, mappings.OptionsMap)
+	resultsDistribution := testutils.CountSearchResultsPerClusterAndNamespace(s.T(), searchResults, s.optionsMap)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
 }
 
