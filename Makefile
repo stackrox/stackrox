@@ -514,6 +514,7 @@ $(CURDIR)/image/rhel/bundle.tar.gz:
 $(CURDIR)/image/rhel/Dockerfile.gen:
 	LABEL_VERSION=$(TAG) \
 	LABEL_RELEASE=$(TAG) \
+	QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
 	envsubst '$${LABEL_VERSION} $${LABEL_RELEASE} $${QUAY_TAG_EXPIRATION}' \
 	< $(CURDIR)/image/rhel/Dockerfile.envsubst > $(CURDIR)/image/rhel/Dockerfile.gen
 
