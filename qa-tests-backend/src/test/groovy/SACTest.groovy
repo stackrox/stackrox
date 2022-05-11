@@ -67,7 +67,7 @@ class SACTest extends BaseSpecification {
             isRaceBuild() ? 600 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 60)
 
     static final private Integer WAIT_FOR_RISK_RETRIES =
-            isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 50 : 30)
+            isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 80 : 50)
 
     def setupSpec() {
         // Make sure we scan the image initially to make reprocessing faster.
