@@ -442,7 +442,12 @@ pr_has_label() {
 
     local expected_label="$1"
     local pr_details
-    pr_details="${2:-$(get_pr_details)}"
+    local exitstatus=0
+    pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
+    if [[ "$exitstatus" != "0" ]]; then
+        info "Warning: checking for a label in a non PR context"
+        false
+    fi
     jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details" | grep -qx "${expected_label}"
 }
 
@@ -511,6 +516,7 @@ gate_job() {
 
     info "Will determine whether to run: $job"
 
+    # TODO(RS-509) remove once this behaves better
     set -x
     if [[ "$job_config" == "null" ]]; then
         info "$job will run because there is no gating criteria for $job"
@@ -519,8 +525,8 @@ gate_job() {
     fi
 
     local pr_details
-    pr_details="$(get_pr_details)"
-    local exitstatus="$?"
+    local exitstatus=0
+    pr_details="$(get_pr_details)" || exitstatus="$?"
 
     if [[ "$exitstatus" == "0" ]]; then
         if [[ "$(jq -r .base.repo.full_name <<<"$pr_details")" == "openshift/release" ]]; then
@@ -593,6 +599,7 @@ gate_pr_job() {
         fi
         echo "Diffbase diff:"
         { git diff --name-only "${diff_base}" | cat ; } || true
+        # TODO(RS-509) remove once this behaves better
         set -x
         ignored_regex="${changed_path_to_ignore}"
         [[ -n "$ignored_regex" ]] || ignored_regex='$^' # regex that matches nothing
