@@ -32,7 +32,7 @@ var (
 	// SAC check is not performed directly on CVE resource. It exists here for postgres sac generation to pass.
 	CVE        = newResourceMetadata("CVE", permissions.NamespaceScope)
 	Cluster    = newResourceMetadata("Cluster", permissions.ClusterScope)
-	Compliance = newResourceMetadata("Compliance", permissions.GlobalScope)
+	Compliance = newResourceMetadata("Compliance", permissions.ClusterScope)
 	Deployment = newResourceMetadata("Deployment", permissions.NamespaceScope)
 	// DeploymentExtension is the new resource grouping all deployment extending resources.
 	DeploymentExtension = newResourceMetadata("DeploymentExtension", permissions.NamespaceScope)
