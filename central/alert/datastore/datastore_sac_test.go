@@ -87,7 +87,7 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 	s.datastore, err = New(s.storage, s.indexer, s.search)
 	s.NoError(err)
 
-	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), resources.Alert.GetResource())
+	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Alert.GetResource())
 }
 
 func (s *alertDatastoreSACTestSuite) TearDownSuite() {
@@ -107,7 +107,6 @@ func (s *alertDatastoreSACTestSuite) SetupTest() {
 	for _, alert := range alerts {
 		err := s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert)
 		s.NoError(err)
-		s.comments.EXPECT().RemoveAlertComments(alert.Id).AnyTimes().Return(nil)
 		s.testAlertIDs = append(s.testAlertIDs, alert.GetId())
 	}
 }
@@ -134,8 +133,6 @@ func (s *alertDatastoreSACTestSuite) TestUpsertAlert() {
 	alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
 	s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
-	s.comments.EXPECT().RemoveAlertComments(alert1.Id).AnyTimes().Return(nil)
-	s.comments.EXPECT().RemoveAlertComments(alert2.Id).AnyTimes().Return(nil)
 
 	cases := map[string]crudTest{
 		"(full) read-only cannot upsert": {
@@ -257,13 +254,11 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
 		s.Run(name, func() {
 			var err error
 			alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
-			s.comments.EXPECT().RemoveAlertComments(alert1.Id).AnyTimes().Return(nil)
 			s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
 			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert1)
 			defer s.cleanupAlert(alert1.Id)
 			s.NoError(err)
 			alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
-			s.comments.EXPECT().RemoveAlertComments(alert2.Id).AnyTimes().Return(nil)
 			s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
 			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert2)
 			defer s.cleanupAlert(alert2.Id)
@@ -297,12 +292,10 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 	var err error
 	alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert1)
-	s.comments.EXPECT().RemoveAlertComments(alert1.Id).AnyTimes().Return(nil)
 	s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
 	s.NoError(err)
 	alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert2)
-	s.comments.EXPECT().RemoveAlertComments(alert2.Id).AnyTimes().Return(nil)
 	s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
 	s.NoError(err)
 
