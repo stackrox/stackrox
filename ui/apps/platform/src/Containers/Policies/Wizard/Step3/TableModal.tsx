@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     Button,
     ButtonVariant,
@@ -11,34 +11,34 @@ import {
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import isEqual from 'lodash/isEqual';
+import pluralize from 'pluralize';
+
 import LinkShim from 'Components/PatternFly/LinkShim';
-import { integrationsPath } from 'routePaths';
-import { fetchSignatureIntegrations } from 'services/SignatureIntegrationsService';
-import { SignatureIntegration } from 'types/signatureIntegration.proto';
 import useTableSelection from 'hooks/useTableSelection';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
-import tableColumnDescriptor from 'Containers/Integrations/utils/tableColumnDescriptor';
 
-function ImageSignersCriteriaFieldInput({ setValue, value, readOnly = false }): React.ReactElement {
+type TableModalProps = {
+    setValue: (value: any) => void;
+    value: any;
+    readOnly?: boolean;
+    rows: any;
+    columns: any;
+    typeText: string;
+};
+
+function TableModal({
+    setValue,
+    value,
+    readOnly = false,
+    rows,
+    columns,
+    typeText,
+}: TableModalProps): React.ReactElement {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [integrations, setIntegrations] = useState<SignatureIntegration[]>([]);
-    const columns = [...tableColumnDescriptor.signatureIntegrations.signature];
-
-    useEffect(() => {
-        fetchSignatureIntegrations()
-            .then((data) => {
-                setIntegrations(data);
-            })
-            .catch(() => {
-                setIntegrations([]);
-            });
-    }, []);
 
     const { selected, onSelect, onSelectAll, allRowsSelected, onResetAll, getSelectedIds } =
-        useTableSelection<SignatureIntegration>(integrations, (integration) => {
-            return value.arrayValue
-                ? (value.arrayValue.includes(integration.id) as boolean)
-                : false;
+        useTableSelection(rows, (row) => {
+            return value.arrayValue ? (value.arrayValue.includes(row.id) as boolean) : false;
         });
 
     function onCloseModalHandler() {
@@ -54,12 +54,15 @@ function ImageSignersCriteriaFieldInput({ setValue, value, readOnly = false }): 
     return (
         <>
             <TextInput
-                id="image-signers-text-input"
+                id="table-modal-text-input"
                 isDisabled
                 value={
                     value.arrayValue?.length > 0
-                        ? `Selected ${value.arrayValue?.length as number} trusted image signers`
-                        : 'Add trusted image signers'
+                        ? `Selected ${value.arrayValue?.length as string} ${pluralize(
+                              typeText,
+                              value.arrayValue?.length
+                          )}`
+                        : `Add ${typeText}s`
                 }
             />
             <Button
@@ -72,17 +75,17 @@ function ImageSignersCriteriaFieldInput({ setValue, value, readOnly = false }): 
                 {readOnly ? 'View' : 'Select'}
             </Button>
             <Modal
-                title="Add trusted image signers to policy criteria"
+                title={`Add ${typeText}s to policy criteria`}
                 isOpen={isModalOpen}
                 variant={ModalVariant.large}
                 onClose={onCloseModalHandler}
-                data-testid="select-image-signers-modal"
-                aria-label="Select image signers modal"
+                data-testid="select-table-modal"
+                aria-label={`Select ${typeText}s modal`}
                 hasNoBodyWrapper
             >
                 <ModalBoxBody>
                     <PageSection variant="light">
-                        Select trusted image signers from the table below.
+                        Select {typeText}s from the table below.
                         <TableComposable variant="compact" isStickyHeader>
                             <Thead>
                                 <Tr>
@@ -104,12 +107,12 @@ function ImageSignersCriteriaFieldInput({ setValue, value, readOnly = false }): 
                                 </Tr>
                             </Thead>
                             <Tbody>
-                                {integrations.map((integration, rowIndex) => {
-                                    const { id } = integration;
+                                {rows.map((row, rowIndex) => {
+                                    const { id, link } = row;
                                     return (
-                                        <Tr key={integration.id}>
+                                        <Tr key={id}>
                                             <Td
-                                                key={integration.id}
+                                                key={id}
                                                 select={{
                                                     rowIndex,
                                                     onSelect,
@@ -125,10 +128,10 @@ function ImageSignersCriteriaFieldInput({ setValue, value, readOnly = false }): 
                                                                 variant={ButtonVariant.link}
                                                                 isInline
                                                                 component={LinkShim}
-                                                                href={`${integrationsPath}/signatureIntegrations/signature/view/${id}`}
+                                                                href={link}
                                                             >
                                                                 <TableCellValue
-                                                                    row={integration}
+                                                                    row={row}
                                                                     column={column}
                                                                 />
                                                             </Button>
@@ -137,10 +140,7 @@ function ImageSignersCriteriaFieldInput({ setValue, value, readOnly = false }): 
                                                 }
                                                 return (
                                                     <Td key={column.Header}>
-                                                        <TableCellValue
-                                                            row={integration}
-                                                            column={column}
-                                                        />
+                                                        <TableCellValue row={row} column={column} />
                                                     </Td>
                                                 );
                                             })}
@@ -169,4 +169,4 @@ function ImageSignersCriteriaFieldInput({ setValue, value, readOnly = false }): 
     );
 }
 
-export default ImageSignersCriteriaFieldInput;
+export default TableModal;

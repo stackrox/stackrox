@@ -12,7 +12,7 @@ import {
 
 import { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
-import ImageSignersCriteriaFieldInput from './ImageSignersCriteriaFieldInput';
+import TableModalFieldInput from './TableModalFieldInput';
 
 type PolicyCriteriaFieldInputProps = {
     descriptor: Descriptor;
@@ -189,12 +189,13 @@ function PolicyCriteriaFieldInput({
             );
             /* eslint-enable react/no-array-index-key */
         }
-        case 'signaturePolicyCriteria': {
+        case 'tableModal': {
             return (
-                <ImageSignersCriteriaFieldInput
+                <TableModalFieldInput
                     setValue={setValue}
                     value={value}
                     readOnly={readOnly}
+                    tableType={descriptor.tableType}
                 />
             );
         }
