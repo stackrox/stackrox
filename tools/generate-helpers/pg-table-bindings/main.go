@@ -163,13 +163,6 @@ func main() {
 		if schema.NoPrimaryKey() {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
-		if len(schema.PrimaryKeys()) > 1 {
-			for _, pk := range schema.PrimaryKeys() {
-				if pk.Search.FieldName == "" && !pk.Options.ID {
-					log.Fatalf("%s:%s is not searchable and is primary key", props.Type, pk.Name)
-				}
-			}
-		}
 
 		parsedReferences := parseReferencesAndInjectPeerSchemas(schema, props.Refs)
 
@@ -197,6 +190,13 @@ func main() {
 				isJoinTable:              props.JoinTable,
 				schema:                   schema,
 			},
+		}
+		if len(schema.PrimaryKeys()) > 1 {
+			for _, pk := range schema.PrimaryKeys() {
+				if pk.Search.FieldName == "" {
+					log.Printf("%s:%s is not searchable and is PK", props.Type, pk.Name)
+				}
+			}
 		}
 
 		if err := generateSchema(schema, searchCategory, parsedReferences, props.SchemaDirectory); err != nil {

@@ -412,7 +412,7 @@ func (s *storeImpl) Exists(ctx context.Context, key1 string, key2 string) (bool,
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(key1).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Test Key 2"), key2).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.FieldLabel(""), key2).ProtoQuery(),
 	)
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)

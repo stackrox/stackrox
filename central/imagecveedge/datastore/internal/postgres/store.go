@@ -89,8 +89,8 @@ func (s *storeImpl) Exists(ctx context.Context, id string, imageId string, image
 	q := search.ConjunctionQuery(
 		sacQueryFilter,
 		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("Image Sha"), imageId).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.FieldLabel("CVE ID"), imageCveId).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.FieldLabel(""), imageId).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.FieldLabel(""), imageCveId).ProtoQuery(),
 	)
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
