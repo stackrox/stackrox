@@ -511,8 +511,10 @@ gate_job() {
 
     info "Will determine whether to run: $job"
 
+    set -x
     if [[ "$job_config" == "null" ]]; then
         info "$job will run because there is no gating criteria for $job"
+        set +x
         return
     fi
 
@@ -531,6 +533,7 @@ gate_job() {
     else
         die "Could not determine if this is a PR versus a merge"
     fi
+    set +x
 }
 
 get_var_from_job_config() {
