@@ -2,9 +2,11 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/cve/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/cve/index"
@@ -31,7 +33,7 @@ type datastoreImpl struct {
 	searcher search.Searcher
 
 	cveSuppressionLock  sync.RWMutex
-	cveSuppressionCache map[string]suppressionCacheEntry
+	cveSuppressionCache common.CVESuppressionCache
 }
 
 type suppressionCacheEntry struct {
@@ -50,7 +52,7 @@ func (ds *datastoreImpl) buildSuppressedCache() error {
 	ds.cveSuppressionLock.Lock()
 	defer ds.cveSuppressionLock.Unlock()
 	for _, cve := range suppressedCVEs {
-		ds.cveSuppressionCache[cve.GetId()] = suppressionCacheEntry{
+		ds.cveSuppressionCache[cve.GetId()] = common.SuppressionCacheEntry{
 			Suppressed:         cve.GetSuppressed(),
 			SuppressActivation: cve.GetSuppressActivation(),
 			SuppressExpiry:     cve.GetSuppressExpiry(),
@@ -121,7 +123,7 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, d
 		return err
 	}
 
-	cves, _, err := ds.storage.GetMany(ctx, ids)
+	cves, missing, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return err
 	}
@@ -135,16 +137,16 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, d
 		return err
 	}
 
-	ds.cveSuppressionLock.Lock()
-	defer ds.cveSuppressionLock.Unlock()
-	for _, cve := range cves {
-		ds.cveSuppressionCache[cve.GetId()] = suppressionCacheEntry{
-			Suppressed:         cve.Suppressed,
-			SuppressActivation: cve.SuppressActivation,
-			SuppressExpiry:     cve.SuppressExpiry,
-		}
+	ds.updateCache(cves...)
+
+	if len(missing) == 0 {
+		return nil
 	}
-	return nil
+	missingCVEs := make([]string, 0, len(ids))
+	for idx := range ids {
+		missingCVEs = append(missingCVEs, ids[idx])
+	}
+	return errors.Errorf("failed to snooze %d/%d cves. CVEs not found: %s", len(missing), len(ids), strings.Join(missingCVEs, ", "))
 }
 
 func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
@@ -157,7 +159,7 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	cves, _, err := ds.storage.GetMany(ctx, ids)
+	cves, missing, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return err
 	}
@@ -171,12 +173,16 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
 		return err
 	}
 
-	ds.cveSuppressionLock.Lock()
-	defer ds.cveSuppressionLock.Unlock()
-	for _, cve := range cves {
-		delete(ds.cveSuppressionCache, cve.GetId())
+	ds.deleteFromCache(cves...)
+
+	if len(missing) == 0 {
+		return nil
 	}
-	return nil
+	missingCVEs := make([]string, 0, len(ids))
+	for idx := range ids {
+		missingCVEs = append(missingCVEs, ids[idx])
+	}
+	return errors.Errorf("failed to un-snooze %d/%d cves. CVEs not found: %s", len(missing), len(ids), strings.Join(missingCVEs, ", "))
 }
 
 func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
@@ -201,4 +207,26 @@ func getSuppressExpiry(start *types.Timestamp, duration *types.Duration) (*types
 		return nil, err
 	}
 	return &types.Timestamp{Seconds: start.GetSeconds() + int64(d.Seconds())}, nil
+}
+
+func (ds *datastoreImpl) updateCache(cves ...*storage.CVE) {
+	ds.cveSuppressionLock.Lock()
+	defer ds.cveSuppressionLock.Unlock()
+
+	for _, cve := range cves {
+		ds.cveSuppressionCache[cve.GetId()] = common.SuppressionCacheEntry{
+			Suppressed:         cve.Suppressed,
+			SuppressActivation: cve.SuppressActivation,
+			SuppressExpiry:     cve.SuppressExpiry,
+		}
+	}
+}
+
+func (ds *datastoreImpl) deleteFromCache(cves ...*storage.CVE) {
+	ds.cveSuppressionLock.Lock()
+	defer ds.cveSuppressionLock.Unlock()
+
+	for _, cve := range cves {
+		delete(ds.cveSuppressionCache, cve.GetId())
+	}
 }

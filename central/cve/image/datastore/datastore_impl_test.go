@@ -7,6 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/cve/common"
 	searchMocks "github.com/stackrox/rox/central/cve/image/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/cve/image/datastore/internal/store/mocks"
 	indexMocks "github.com/stackrox/rox/central/cve/index/mocks"
@@ -109,7 +110,7 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheImages() {
 		},
 	}, nil)
 	suite.NoError(suite.datastore.buildSuppressedCache())
-	expectedCache := map[string]suppressionCacheEntry{
+	expectedCache := common.CVESuppressionCache{
 		"CVE-ABC": {
 			Suppressed: true,
 		},

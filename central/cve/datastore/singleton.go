@@ -43,7 +43,7 @@ func initialize() {
 		clusterIndexer.New(globalindex.GetGlobalTmpIndex()))
 
 	var err error
-	ds, err = New(globaldb.GetGlobalDackBox(), storage, cveIndexer.New(globalindex.GetGlobalIndex()), searcher)
+	ds, err = New(globaldb.GetGlobalDackBox(), globaldb.GetIndexQueue(), storage, cveIndexer.New(globalindex.GetGlobalIndex()), searcher)
 	utils.CrashOnError(err)
 }
 

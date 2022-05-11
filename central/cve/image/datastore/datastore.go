@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/cve/search"
@@ -36,7 +37,7 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 		indexer:  indexer,
 		searcher: searcher,
 
-		cveSuppressionCache: make(map[string]suppressionCacheEntry),
+		cveSuppressionCache: common.CVESuppressionCache{},
 	}
 	if err := ds.buildSuppressedCache(); err != nil {
 		return nil, err
