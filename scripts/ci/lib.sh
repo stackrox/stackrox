@@ -442,7 +442,12 @@ pr_has_label() {
 
     local expected_label="$1"
     local pr_details
-    pr_details="${2:-$(get_pr_details)}"
+    local exitstatus=0
+    pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
+    if [[ "$exitstatus" != "0" ]]; then
+        info "Warning: checking for a label in a non PR context"
+        false
+    fi
     jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details" | grep -qx "${expected_label}"
 }
 
@@ -519,8 +524,8 @@ gate_job() {
     fi
 
     local pr_details
-    pr_details="$(get_pr_details)"
-    local exitstatus="$?"
+    local exitstatus
+    pr_details="$(get_pr_details)" || exitstatus="$?"
 
     if [[ "$exitstatus" == "0" ]]; then
         if [[ "$(jq -r .base.repo.full_name <<<"$pr_details")" == "openshift/release" ]]; then
