@@ -223,7 +223,7 @@ func (resolver *imageResolver) VulnerabilityCount(ctx context.Context, args RawQ
 }
 
 func (resolver *imageResolver) VulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnerabilityCount")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnerabilityCounter")
 
 	ctx = resolver.vulnQueryScoping(ctx)
 
