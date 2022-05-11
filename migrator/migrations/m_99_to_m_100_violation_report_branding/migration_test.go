@@ -1,4 +1,4 @@
-package m98to99
+package m99to100
 
 import (
 	"testing"
