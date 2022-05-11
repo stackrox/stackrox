@@ -14,6 +14,7 @@ import (
 func MakeImageFlavorForTest(t *testing.T) defaults.ImageFlavor {
 	testutils.MustBeInTest(t)
 	return defaults.ImageFlavor{
+		Name:                   "testflavor",
 		MainRegistry:           "test.registry",
 		MainImageName:          "main",
 		MainImageTag:           "1.2.3",
