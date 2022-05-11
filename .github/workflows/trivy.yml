@@ -15,11 +15,11 @@ on:
     - cron: '22 10 * * 6'
 
 jobs:
-  build:
+  scan:
     permissions:
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-    name: Build
+    name: Scan with Trivy
     runs-on: ubuntu-18.04
     steps:
       - name: Checkout code
