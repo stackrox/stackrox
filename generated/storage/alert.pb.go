@@ -443,11 +443,11 @@ type Alert_Deployment struct {
 	Id                   string                        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,store,hidden" sql:"index=hash"`
 	Name                 string                        `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Deployment,store"`
 	Type                 string                        `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
-	Namespace            string                        `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`
-	NamespaceId          string                        `protobuf:"bytes,16,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty" search:"Namespace ID,hidden"`
+	Namespace            string                        `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	NamespaceId          string                        `protobuf:"bytes,16,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"`
 	Labels               map[string]string             `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	ClusterId            string                        `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden"`
-	ClusterName          string                        `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,hidden"`
+	ClusterId            string                        `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	ClusterName          string                        `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	Containers           []*Alert_Deployment_Container `protobuf:"bytes,11,rep,name=containers,proto3" json:"containers,omitempty"`
 	Annotations          map[string]string             `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Inactive             bool                          `protobuf:"varint,15,opt,name=inactive,proto3" json:"inactive,omitempty" search:"Inactive Deployment"`

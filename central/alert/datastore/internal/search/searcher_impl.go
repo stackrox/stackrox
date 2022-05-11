@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -28,7 +29,8 @@ var (
 		Reversed: true,
 	}
 
-	alertSearchHelper = sac.ForResource(resources.Alert).MustCreateSearchHelper(mappings.OptionsMap)
+	alertSearchHelper           = sac.ForResource(resources.Alert).MustCreateSearchHelper(mappings.OptionsMap)
+	alertPosgresSACSearchHelper = sac.ForResource(resources.Alert).MustCreatePgSearchHelper(mappings.PostgresOptionsMap)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
@@ -135,7 +137,13 @@ func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResu
 ///////////////////////////////////////////////
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	filteredSearcher := alertSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+	var filteredSearcher search.Searcher
+	if features.PostgresDatastore.Enabled() {
+		// Make the UnsafeSearcher safe.
+		filteredSearcher = alertPosgresSACSearchHelper.FilteredSearcher(unsafeSearcher)
+	} else {
+		filteredSearcher = alertSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+	}
 	transformedSortFieldSearcher := sortfields.TransformSortFields(filteredSearcher, mappings.OptionsMap)
 	paginatedSearcher := paginated.Paginated(transformedSortFieldSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)

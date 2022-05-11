@@ -17,11 +17,11 @@ message Alert {
         string                  id                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\" sql:\"index=hash\""];
         string                  name                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
         string                  type                = 4;
-        string                  namespace           = 5 [(gogoproto.moretags) = 'search:"Namespace"'];
-        string                  namespace_id        = 16 [(gogoproto.moretags) = 'search:"Namespace ID,hidden"'];
+        string                  namespace           = 5;  // This field has to be duplicated in Alert for scope management and search.
+        string                  namespace_id        = 16; // This field has to be duplicated in Alert for scope management and search.
         map<string, string>     labels              = 7;
-        string                  cluster_id          = 9  [(gogoproto.moretags) = 'search:"Cluster ID,hidden"'];
-        string                  cluster_name        = 10 [(gogoproto.moretags) = 'search:"Cluster,hidden"'];
+        string                  cluster_id          = 9;  // This field has to be duplicated in Alert for scope management and search.
+        string                  cluster_name        = 10; // This field has to be duplicated in Alert for scope management and search.
         message Container {
             ContainerImage      image               = 3 [(gogoproto.moretags) = 'search:"-" sql:"ignore-fks"'];
             string              name                = 10;
