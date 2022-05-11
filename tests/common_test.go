@@ -56,7 +56,7 @@ func newClientSet() *kubernetes.Clientset {
 }
 
 // getDeploymentFromFile returns a decoded deployment object given a path to a deployment yaml file
-func getDeploymentFromFile(t *testing.T, path string) *appsv1.Deployment {
+func getDeploymentFromFile(t testutils.T, path string) *appsv1.Deployment {
 	file, err := os.Open(path)
 	require.NoError(t, err, fmt.Sprintf("Failed to open deployment yaml (%s)", path))
 	result := &appsv1.Deployment{}
@@ -221,10 +221,18 @@ func applyFile(t testutils.T, path string) {
 	require.NoError(t, err, string(output))
 }
 
-// The deploymentName must be copied form the file path passed in
+// The deploymentName must be copied form the file path passed in TODO
 func setupDeploymentFromFile(t testutils.T, deploymentName, path string) {
-	applyFile(t, path)
-	waitForDeployment(t, deploymentName)
+	//applyFile(t, path)
+	//waitForDeployment(t, deploymentName)
+	deployment := getDeploymentFromFile(t, path)
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	_, err := defaultDeploymentClient.Create(ctx, deployment, metav1.CreateOptions{})
+	cancel()
+	require.NoError(t, err, fmt.Sprintf("Failed to create deployment (%s)", deployment.GetName()))
+
+	waitForDeployment(t, deployment.GetName())
 }
 
 func setupNginxLatestTagDeployment(t *testing.T) {
