@@ -8,7 +8,6 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v4/pgxpool"
-	commentsStoreMocks "github.com/stackrox/rox/central/alert/datastore/internal/commentsstore/mocks"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
@@ -45,7 +44,6 @@ type alertDatastoreSACTestSuite struct {
 
 	pool *pgxpool.Pool
 
-	comments  *commentsStoreMocks.MockStore
 	storage   store.Store
 	indexer   index.Indexer
 	search    search.Searcher
@@ -63,7 +61,6 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 	alertObj := "alertSACTest"
 
 	s.mockCtrl = gomock.NewController(s.T())
-	s.comments = commentsStoreMocks.NewMockStore(s.mockCtrl)
 	if features.PostgresDatastore.Enabled() {
 		ctx := context.Background()
 		source := pgtest.GetConnectionString(s.T())
@@ -87,7 +84,7 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 	}
 	s.search = search.New(s.storage, s.indexer)
 
-	s.datastore, err = New(s.storage, s.comments, s.indexer, s.search)
+	s.datastore, err = New(s.storage, s.indexer, s.search)
 	s.NoError(err)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), resources.Alert.GetResource())
