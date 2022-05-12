@@ -28,6 +28,7 @@ import org.junit.experimental.categories.Category
 import spock.lang.Unroll
 
 @Category(BAT)
+@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
 class SACTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA1 = "sac-deploymentnginx-qa1"
     static final private String NAMESPACE_QA1 = "qa-test1"
