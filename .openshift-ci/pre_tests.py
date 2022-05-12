@@ -15,7 +15,7 @@ class PreSystemTests:
     PreSystemTests - System tests (upgrade, e2e) need images.
     """
 
-    POLL_TIMEOUT = 30 * 60
+    POLL_TIMEOUT = 1 * 60
 
     def run(self):
         subprocess.run(
