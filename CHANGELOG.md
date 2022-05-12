@@ -6,6 +6,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 - ROX-10819: The documentation for API v1/notifiers ("GetNotifiers") previously stated that the request could be filtered by name or type. This is incorrect as this API never allowed filtering. The documentation has been fixed to reflect that.
+- ROX-9928: Policy "OpenShift: Advanced Cluster Security Central Admin Secret Accessed" renamed to "OpenShift: Central Admin Secret Accessed"
 
 ## [70.0]
 
