@@ -86,7 +86,8 @@ class SACTest extends BaseSpecification {
                 WAIT_FOR_VIOLATION_TIMEOUT)
 
         // Make sure each deployment has a risk score.
-        listDeployments().each { DeploymentOuterClass.ListDeployment dep ->
+        def deployments = listDeployments()
+        deployments.each { DeploymentOuterClass.ListDeployment dep ->
             try {
                 withRetry(WAIT_FOR_RISK_RETRIES, 2) {
                     assert DeploymentService.getDeploymentWithRisk(dep.id).hasRisk()
@@ -617,12 +618,10 @@ class SACTest extends BaseSpecification {
     }
 
     private static List<DeploymentOuterClass.ListDeployment> listDeployments() {
-        def list = Services.getDeployments(
+        return Services.getDeployments(
                 SSOC.RawQuery.newBuilder().setQuery("Namespace:"+ NAMESPACE_QA1).build()
-        )
-        list.addAll(Services.getDeployments(
+        ) + Services.getDeployments(
                 SSOC.RawQuery.newBuilder().setQuery("Namespace:"+ NAMESPACE_QA2).build()
-        ))
-        return list
+        )
     }
 }
