@@ -3,7 +3,6 @@ package tests
 import (
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
 	"testing"
 	"time"
@@ -15,10 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
-	apiv1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
@@ -32,66 +27,8 @@ const (
 )
 
 var (
-	log                     = logging.LoggerForModule()
-	clientSet               = newClientSet()
-	defaultDeploymentClient = clientSet.AppsV1().Deployments(apiv1.NamespaceDefault)
+	log = logging.LoggerForModule()
 )
-
-// newClientSet creates a new kubernetes.Clientset object from the default configuration
-func newClientSet() *kubernetes.Clientset {
-	rules := clientcmd.NewDefaultClientConfigLoadingRules()
-	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, &clientcmd.ConfigOverrides{})
-	config, err := kubeConfig.ClientConfig()
-	if err != nil {
-		log.Errorf("Failed to get k8s client config %v", err)
-		return nil
-	}
-
-	result, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		log.Errorf("Failed to create k8s client from config %v", err)
-		return nil
-	}
-	return result
-}
-
-// getDeploymentFromFile returns a decoded deployment object given a path to a deployment yaml file
-func getDeploymentFromFile(t testutils.T, path string) *appsv1.Deployment {
-	file, err := os.Open(path)
-	require.NoError(t, err, fmt.Sprintf("Failed to open deployment yaml (%s)", path))
-	result := &appsv1.Deployment{}
-
-	// bufferSize in this function defines how far into the stream to look for an open brace, but we only expect yaml
-	err = yaml.NewYAMLOrJSONDecoder(file, 0).Decode(result)
-	require.NoError(t, err, fmt.Sprintf("failed to decode yaml file (%s)", path))
-
-	return result
-}
-
-// deleteDeployment deletes the provided deployment
-func deleteDeployment(t *testing.T, deployment *appsv1.Deployment) {
-	deletePolicy := metav1.DeletePropagationForeground
-	err := defaultDeploymentClient.Delete(context.Background(), deployment.GetName(), metav1.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
-	})
-	require.NoError(t, err, fmt.Sprintf("Failed to tear down deployment (%s)", deployment.GetName()))
-
-	waitForTermination(t, deployment.GetName())
-}
-
-// createDeployment creates a deployment from a yaml file at the provided path
-func createDeployment(t *testing.T, path string) *appsv1.Deployment {
-	deployment := getDeploymentFromFile(t, path)
-
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	result, err := defaultDeploymentClient.Create(ctx, deployment, metav1.CreateOptions{})
-	cancel()
-	require.NoError(t, err, fmt.Sprintf("Failed to create deployment (%s)", deployment.GetName()))
-
-	waitForDeployment(t, deployment.GetName())
-
-	return result
-}
 
 //lint:ignore U1000 Ignore unused code check since this function could be useful in future.
 func assumeFeatureFlagHasValue(t *testing.T, featureFlag features.FeatureFlag, assumedValue bool) {
@@ -215,24 +152,16 @@ func waitForTermination(t testutils.T, deploymentName string) {
 	}
 }
 
-//func applyFile(t testutils.T, path string) {
-//	cmd := exec.Command(`kubectl`, `create`, `-f`, path)
-//	output, err := cmd.CombinedOutput()
-//	require.NoError(t, err, string(output))
-//}
+func applyFile(t testutils.T, path string) {
+	cmd := exec.Command(`kubectl`, `create`, `-f`, path)
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err, string(output))
+}
 
-// The deploymentName must be copied form the file path passed in TODO
+// The deploymentName must be copied form the file path passed in
 func setupDeploymentFromFile(t testutils.T, deploymentName, path string) {
-	//applyFile(t, path)
-	//waitForDeployment(t, deploymentName)
-	deployment := getDeploymentFromFile(t, path)
-
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	_, err := defaultDeploymentClient.Create(ctx, deployment, metav1.CreateOptions{})
-	cancel()
-	require.NoError(t, err, fmt.Sprintf("Failed to create deployment (%s)", deployment.GetName()))
-
-	waitForDeployment(t, deployment.GetName())
+	applyFile(t, path)
+	waitForDeployment(t, deploymentName)
 }
 
 func setupNginxLatestTagDeployment(t *testing.T) {
@@ -275,25 +204,15 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 	}, "image updated", time.Minute, 5*time.Second)
 }
 
-//func teardownFile(t testutils.T, path string) {
-//	cmd := exec.Command(`kubectl`, `delete`, `-f`, path, `--ignore-not-found=true`)
-//	output, err := cmd.CombinedOutput()
-//	require.NoError(t, err, string(output))
-//
-//}
+func teardownFile(t testutils.T, path string) {
+	cmd := exec.Command(`kubectl`, `delete`, `-f`, path, `--ignore-not-found=true`)
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err, string(output))
+}
 
 func teardownDeploymentFromFile(t testutils.T, deploymentName, path string) {
-	//teardownFile(t, path)
-	//waitForTermination(t, deploymentName)
-	deployment := getDeploymentFromFile(t, path)
-
-	deletePolicy := metav1.DeletePropagationForeground
-	err := defaultDeploymentClient.Delete(context.Background(), deployment.GetName(), metav1.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
-	})
-	require.NoError(t, err, fmt.Sprintf("Failed to tear down deployment (%s)", deployment.GetName()))
-
-	waitForTermination(t, deployment.GetName())
+	teardownFile(t, path)
+	waitForTermination(t, deploymentName)
 }
 
 func teardownDeployment(t *testing.T, deploymentName string) {
