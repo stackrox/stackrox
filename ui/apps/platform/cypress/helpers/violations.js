@@ -44,6 +44,22 @@ export function visitViolationsWithFixture(fixturePath) {
     });
 }
 
+export function visitViolationsWithAlerts(alerts) {
+    const count = alerts.length;
+
+    cy.intercept('GET', api.alerts.alertsWithQuery, {
+        body: { alerts },
+    }).as('getAlerts');
+    cy.intercept('GET', api.alerts.alertsCountWithQuery, {
+        body: { count },
+    }).as('getAlertsCount');
+
+    visit(url);
+
+    cy.wait(['@getAlerts', '@getAlertsCount']);
+    cy.get('h1:contains("Violations")');
+}
+
 /*
  * Assume that current location is violations table with compatible fixture for alerts.
  */

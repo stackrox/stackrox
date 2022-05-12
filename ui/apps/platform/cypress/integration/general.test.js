@@ -2,12 +2,11 @@ import { url as apidocsUrl } from '../constants/ApiReferencePage';
 import { baseURL as complianceUrl } from '../constants/CompliancePage';
 import { url as dashboardUrl, selectors as dashboardSelectors } from '../constants/DashboardPage';
 import { url as userUrl } from '../constants/UserPage';
-import { url as violationsUrl } from '../constants/ViolationsPage';
 import selectors from '../constants/GeneralPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import { visitNetworkGraph } from '../helpers/networkGraph';
-import { visitViolations } from '../helpers/violations';
+import { visitViolations, visitViolationsWithAlerts } from '../helpers/violations';
 
 //
 // Sanity / general checks for UI being up and running
@@ -120,12 +119,8 @@ describe('General sanity checks', () => {
     });
 
     it('should allow to navigate to another page after exception happens on a page', () => {
-        cy.intercept('GET', api.alerts.alerts, {
-            body: { alerts: [{ id: 'broken one' }] },
-        }).as('alerts');
-
-        cy.visit(violationsUrl);
-        cy.wait('@alerts');
+        // Test fails with uncaught exception in local deployment.
+        visitViolationsWithAlerts([{ id: 'broken one' }]);
 
         cy.get(selectors.errorBoundary).contains(
             "We're sorry — something's gone wrong. The error has been logged."
