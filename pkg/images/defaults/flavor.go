@@ -258,8 +258,8 @@ func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, 
 	if err := CheckImageFlavorName(flavorName, isReleaseBuild); err != nil {
 		return ImageFlavor{}, err
 	}
-	f := imageFlavorMap[flavorName]
-	return f.constructorFunc(), nil
+
+	return getImageFlavorByName(flavorName), nil
 }
 
 // GetImageFlavorNameFromEnv returns the value of the environment variable (ROX_IMAGE_FLAVOR)
@@ -292,13 +292,11 @@ func GetImageFlavorNameFromEnv() string {
 // provide a command-line argument.
 func GetImageFlavorFromEnv() ImageFlavor {
 	envValue := GetImageFlavorNameFromEnv()
-	f, err := GetImageFlavorByName(envValue, buildinfo.ReleaseBuild)
-	if err != nil {
-		// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively
-		// build-time constant.
-		panicImageFlavorEnv(err)
-	}
-	return f
+	return getImageFlavorByName(envValue)
+}
+
+func getImageFlavorByName(name string) ImageFlavor {
+	return imageFlavorMap[name].constructorFunc()
 }
 
 func panicImageFlavorEnv(err error) {
