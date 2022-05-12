@@ -263,7 +263,7 @@ teardown_gke_cluster() {
     require_environment "CLUSTER_NAME"
     require_executable "gcloud"
 
-    "$SCRIPTS_ROOT/scripts/ci/cleanup-deployment.sh" || true
+    "$SCRIPTS_ROOT/scripts/ci/cleanup-deployment.sh" 2>&1 | sed -e 's/^/out: /' || true
 
     gcloud container clusters delete "$CLUSTER_NAME" --async
 
