@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"math/rand"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -72,5 +73,104 @@ func TestEmailMsgNoAttachments(t *testing.T) {
 	assert.NotContains(t, msgStr, "Content-Disposition: attachment;")
 
 	assert.Contains(t, msgStr, "How you doin'?\r\n")
+}
 
+func TestApplyRfc5322LineLengthLimit(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		in       string
+		expected string
+	}{
+		"empty string": {
+			in:       "",
+			expected: "",
+		},
+		"single char": {
+			in:       strings.Repeat("a", 1),
+			expected: strings.Repeat("a", 1),
+		},
+		"77 chars": {
+			in:       strings.Repeat("a", 77),
+			expected: strings.Repeat("a", 77),
+		},
+		"78 chars": {
+			in:       strings.Repeat("a", 78),
+			expected: strings.Repeat("a", 78),
+		},
+		"79 chars": {
+			in:       strings.Repeat("a", 79),
+			expected: strings.Repeat("a", 78) + "\r\n" + strings.Repeat("a", 1),
+		},
+		"2x78 chars": {
+			in:       strings.Repeat("a", 78*2),
+			expected: strings.Repeat("a", 78) + "\r\n" + strings.Repeat("a", 78),
+		},
+		"2x79 chars": {
+			in:       strings.Repeat("a", 79*2),
+			expected: strings.Repeat("a", 78) + "\r\n" + strings.Repeat("a", 78) + "\r\n" + strings.Repeat("a", 2),
+		},
+	}
+
+	for caseName, caseData := range cases {
+		t.Run(caseName, func(t *testing.T) {
+			assert.Equal(t, caseData.expected, applyRfc5322LineLengthLimit(caseData.in))
+		})
+	}
+}
+
+func TestApplyRfc5322TextWordWrap(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		in       string
+		expected string
+	}{
+		"empty string": {
+			in:       "",
+			expected: "",
+		},
+		"single char word": {
+			in:       strings.Repeat("a", 1),
+			expected: strings.Repeat("a", 1),
+		},
+		"77 chars word": {
+			in:       strings.Repeat("a", 77),
+			expected: strings.Repeat("a", 77),
+		},
+		"78 chars word": {
+			in:       strings.Repeat("a", 78),
+			expected: strings.Repeat("a", 78),
+		},
+		"79 chars word": {
+			in:       strings.Repeat("a", 79),
+			expected: strings.Repeat("a", 79),
+		},
+		"2x77 chars word": {
+			in:       strings.Repeat("a", 77) + " " + strings.Repeat("a", 77),
+			expected: strings.Repeat("a", 77) + "\r\n" + strings.Repeat("a", 77),
+		},
+		"2x78 chars word": {
+			in:       strings.Repeat("a", 78) + " " + strings.Repeat("a", 78),
+			expected: strings.Repeat("a", 78) + "\r\n" + strings.Repeat("a", 78),
+		},
+		"2x79 chars word": {
+			in:       strings.Repeat("a", 79) + " " + strings.Repeat("a", 79),
+			expected: strings.Repeat("a", 79) + "\r\n" + strings.Repeat("a", 79),
+		},
+		"text": {
+			in:       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec consectetur interdum nisi. Sed eget nibh quis est commodo venenatis. Nulla.",
+			expected: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec consectetur\r\ninterdum nisi. Sed eget nibh quis est commodo venenatis. Nulla.",
+		},
+		"multi line text": {
+			in:       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec consectetur interdum nisi.\nSed eget nibh quis est commodo venenatis. Nulla.",
+			expected: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec consectetur\r\ninterdum nisi.\r\nSed eget nibh quis est commodo venenatis. Nulla.",
+		},
+	}
+
+	for caseName, caseData := range cases {
+		t.Run(caseName, func(t *testing.T) {
+			assert.Equal(t, caseData.expected, applyRfc5322TextWordWrap(caseData.in))
+		})
+	}
 }
