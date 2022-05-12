@@ -40,6 +40,7 @@ import (
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
+	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
@@ -127,6 +128,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		networkpolicies.NewCommandHandler(client.Kubernetes()),
 		clusterstatus.NewUpdater(client),
 		clusterhealth.NewUpdater(client.Kubernetes(), 0),
+		clustermetrics.New(client.Kubernetes()),
 		complianceCommandHandler,
 		processSignals,
 		telemetry.NewCommandHandler(client.Kubernetes()),
