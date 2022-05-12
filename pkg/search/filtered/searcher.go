@@ -21,7 +21,7 @@ type Filter interface {
 func UnsafeSearcher(searcher blevesearch.UnsafeSearcher, filter Filter) search.Searcher {
 	return search.FuncSearcher{
 		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-			results, err := searcher.Search(q)
+			results, err := searcher.Search(ctx, q)
 			if err != nil {
 				return results, err
 			}
@@ -33,9 +33,9 @@ func UnsafeSearcher(searcher blevesearch.UnsafeSearcher, filter Filter) search.S
 		},
 		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
 			if filter == nil {
-				return searcher.Count(q)
+				return searcher.Count(ctx, q)
 			}
-			result, err := searcher.Search(q)
+			result, err := searcher.Search(ctx, q)
 			if err != nil {
 				return 0, err
 			}

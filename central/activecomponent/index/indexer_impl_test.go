@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -53,14 +54,15 @@ func (suite *ActiveComponentIndexTestSuite) TestIndexing() {
 		},
 	}
 
+	ctx := context.Background()
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
 
-	results, err := suite.indexer.Search(q)
+	results, err := suite.indexer.Search(ctx, q)
 	suite.NoError(err)
 	suite.Len(results, 0)
 
 	suite.NoError(suite.addComponent(ac))
-	results, err = suite.indexer.Search(q)
+	results, err = suite.indexer.Search(ctx, q)
 	suite.NoError(err)
 	suite.Len(results, 1)
 }

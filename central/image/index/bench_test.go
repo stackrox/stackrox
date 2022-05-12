@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -65,7 +66,7 @@ func BenchmarkSearchImage(b *testing.B) {
 	indexer := getImageIndex(b)
 	qb := search.NewQueryBuilder().AddStrings(search.ImageTag, "latest")
 	for i := 0; i < b.N; i++ {
-		_, err := indexer.Search(qb.ProtoQuery())
+		_, err := indexer.Search(context.Background(), qb.ProtoQuery())
 		require.NoError(b, err)
 	}
 }

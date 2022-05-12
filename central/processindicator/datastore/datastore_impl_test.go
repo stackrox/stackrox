@@ -107,7 +107,8 @@ func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks
 }
 
 func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*storage.ProcessIndicator) {
-	indexResults, err := suite.indexer.Search(search.EmptyQuery())
+	ctx := context.Background()
+	indexResults, err := suite.indexer.Search(ctx, search.EmptyQuery())
 	suite.NoError(err)
 	suite.Len(indexResults, len(indicators))
 	resultIDs := make([]string, 0, len(indexResults))

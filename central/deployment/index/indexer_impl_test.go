@@ -135,7 +135,8 @@ func (suite *DeploymentIndexTestSuite) TestHighlighting() {
 	}
 
 	for _, c := range cases {
-		results, err := suite.indexer.Search(c.q)
+		ctx := context.Background()
+		results, err := suite.indexer.Search(ctx, c.q)
 		suite.Require().NoError(err)
 		suite.Len(results, len(c.expectedIdsToMatches), "Results: %+v expected matches: %+v", results, c.expectedIdsToMatches)
 
@@ -329,6 +330,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	}
 
 	for _, c := range cases {
+		ctx := context.Background()
 		qb := search.NewQueryBuilder()
 		for field, value := range c.fieldValues {
 			qb.AddStrings(field, value)
@@ -345,7 +347,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			}
 		}
 		qb.AddDocIDs(c.docIDS...)
-		results, err := suite.indexer.Search(qb.ProtoQuery())
+		results, err := suite.indexer.Search(ctx, qb.ProtoQuery())
 		suite.NoError(err)
 
 		resultIDs := make([]string, 0, len(results))
@@ -367,6 +369,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 }
 
 func (suite *DeploymentIndexTestSuite) TestBatches() {
+	ctx := context.Background()
 	deployments := []*storage.Deployment{
 		fixtures.GetDeployment(),
 		fixtures.GetDeployment(),
@@ -379,13 +382,14 @@ func (suite *DeploymentIndexTestSuite) TestBatches() {
 	err := suite.indexer.AddDeployments(deployments)
 	suite.NoError(err)
 	for _, d := range deployments {
-		results, err := suite.indexer.Search(search.NewQueryBuilder().AddExactMatches(search.DeploymentID, d.GetId()).ProtoQuery())
+		results, err := suite.indexer.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, d.GetId()).ProtoQuery())
 		suite.NoError(err)
 		suite.Len(results, 1)
 	}
 }
 
 func (suite *DeploymentIndexTestSuite) TestCaseInsensitivityOfFieldNames() {
+	ctx := context.Background()
 	dep := fixtures.GetDeployment()
 	suite.NoError(suite.indexer.AddDeployment(dep))
 	ns := dep.GetNamespace()
@@ -395,25 +399,26 @@ func (suite *DeploymentIndexTestSuite) TestCaseInsensitivityOfFieldNames() {
 	lowerCaseQ, err := search.ParseQuery(fmt.Sprintf("namespace:%s", ns))
 	suite.NoError(err)
 	for _, q := range []*v1.Query{upperCaseQ, lowerCaseQ} {
-		results, err := suite.indexer.Search(q)
+		results, err := suite.indexer.Search(ctx, q)
 		suite.NoError(err)
 		suite.Len(results, 1)
 	}
 }
 
 func (suite *DeploymentIndexTestSuite) TestDeploymentDelete() {
+	ctx := context.Background()
 	dep := fixtures.GetDeployment()
 	suite.NoError(suite.indexer.AddDeployment(dep))
 
 	ns := dep.GetNamespace()
 	upperCaseQ, err := search.ParseQuery(fmt.Sprintf("Namespace:%s", ns))
 	suite.NoError(err)
-	results, err := suite.indexer.Search(upperCaseQ)
+	results, err := suite.indexer.Search(ctx, upperCaseQ)
 	suite.NoError(err)
 	suite.Len(results, 1)
 
 	suite.NoError(suite.indexer.DeleteDeployment(dep.GetId()))
-	results, err = suite.indexer.Search(upperCaseQ)
+	results, err = suite.indexer.Search(ctx, upperCaseQ)
 	suite.NoError(err)
 	suite.Len(results, 0)
 }
@@ -580,12 +585,13 @@ func TestEnumComparisonSearch(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s%s-%s", c.prefix, c.queryLevel, c.deploymentLevel), func(t *testing.T) {
+			ctx := context.Background()
 			d := fixtures.GetDeployment()
 			d.ServiceAccountPermissionLevel = c.deploymentLevel
 			require.NoError(t, indexer.AddDeployment(d))
 
 			q := search.NewQueryBuilder().AddStringsHighlighted(search.ServiceAccountPermissionLevel, c.prefix+c.queryLevel.String()).ProtoQuery()
-			results, err := indexer.Search(q)
+			results, err := indexer.Search(ctx, q)
 			require.NoError(t, err)
 			assert.Equal(t, c.expectedMatch, len(results) == 1)
 		})
@@ -651,8 +657,9 @@ func TestMapQueries(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		ctx := context.Background()
 		q := search.NewQueryBuilder().AddMapQuery(search.Label, c.key, c.value).ProtoQuery()
-		results, err := deploymentIndexer.Search(q)
+		results, err := deploymentIndexer.Search(ctx, q)
 		assert.NoError(t, err)
 		assert.ElementsMatch(t, c.expectedIDs, search.ResultsToIDs(results))
 	}

@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -41,8 +42,9 @@ func (suite *NamespaceIndexTestSuite) TestIndexing() {
 
 	suite.NoError(suite.indexer.AddNamespaceMetadata(ns))
 
+	ctx := context.Background()
 	q := search.NewQueryBuilder().AddStrings(search.Namespace, "namespace1").ProtoQuery()
-	results, err := suite.indexer.Search(q)
+	results, err := suite.indexer.Search(ctx, q)
 	suite.NoError(err)
 	suite.Len(results, 1)
 }

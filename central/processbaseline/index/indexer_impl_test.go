@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -45,7 +46,8 @@ func (suite *ProcessBaselineIndexTestSuite) getAndStoreBaseline() *storage.Proce
 }
 
 func (suite *ProcessBaselineIndexTestSuite) search(q *v1.Query, expectedResultSize int) ([]search.Result, error) {
-	results, err := suite.indexer.Search(q)
+	ctx := context.Background()
+	results, err := suite.indexer.Search(ctx, q)
 	suite.NoError(err)
 	suite.Equal(expectedResultSize, len(results))
 	return results, err
@@ -77,6 +79,7 @@ func (suite *ProcessBaselineIndexTestSuite) TestEmptySearch() {
 }
 
 func (suite *ProcessBaselineIndexTestSuite) TestAddSearchDeleteBaseline() {
+	ctx := context.Background()
 	baseline := suite.getAndStoreBaseline()
 	suite.getAndStoreBaseline() // Don't find this one
 
@@ -87,7 +90,7 @@ func (suite *ProcessBaselineIndexTestSuite) TestAddSearchDeleteBaseline() {
 
 	err = suite.indexer.DeleteProcessBaseline(baseline.GetId())
 	suite.NoError(err)
-	results, err = suite.indexer.Search(q)
+	results, err = suite.indexer.Search(ctx, q)
 	suite.NoError(err)
 	suite.Equal(0, len(results))
 }

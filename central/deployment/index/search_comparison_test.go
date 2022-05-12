@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"sort"
 	"testing"
 
@@ -59,13 +60,14 @@ func TestImageSearchResults(t *testing.T) {
 	factory := predicate.NewFactory("image", (*storage.Image)(nil))
 	for _, c := range cases {
 		t.Run("test", func(t *testing.T) {
+			ctx := context.Background()
 			predicate, err := factory.GeneratePredicate(c.query)
 			require.NoError(t, err)
 
 			predResult, matches := predicate.Evaluate(c.image)
 
 			require.NoError(t, index.AddImage(c.image))
-			searchResults, err := index.Search(c.query)
+			searchResults, err := index.Search(ctx, c.query)
 			require.NoError(t, err)
 
 			compareResults(t, matches, predResult, searchResults)
@@ -101,13 +103,14 @@ func TestDeploymentSearchResults(t *testing.T) {
 	factory := predicate.NewFactory("deployment", (*storage.Deployment)(nil))
 	for _, c := range cases {
 		t.Run("test", func(t *testing.T) {
+			ctx := context.Background()
 			predicate, err := factory.GeneratePredicate(c.query)
 			require.NoError(t, err)
 
 			predResult, matches := predicate.Evaluate(c.deployment)
 
 			require.NoError(t, index.AddDeployment(c.deployment))
-			searchResults, err := index.Search(c.query)
+			searchResults, err := index.Search(ctx, c.query)
 			require.NoError(t, err)
 
 			compareResults(t, matches, predResult, searchResults)

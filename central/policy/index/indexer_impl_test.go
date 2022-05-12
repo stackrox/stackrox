@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -144,7 +145,8 @@ func (suite *PolicyIndexTestSuite) TestPolicySearch() {
 
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
-			results, err := suite.indexer.Search(c.q)
+			ctx := context.Background()
+			results, err := suite.indexer.Search(ctx, c.q)
 			if c.expectedErr {
 				require.Error(t, err)
 				return
