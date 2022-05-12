@@ -139,19 +139,23 @@ collect_and_check_stackrox_logs() {
     check_stackrox_logs "$dir"
 }
 
+# remove_existing_stackrox_resources() This exists for smoother repeat runs of
+# system tests against the same cluster.
 remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
 
-    kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait || true
-    # openshift specific:
-    kubectl -n stackrox delete SecurityContextConstraints -l "app.kubernetes.io/name=stackrox" --wait || true
-    kubectl delete -R -f scripts/ci/psp --wait || true
-    kubectl delete ns stackrox --wait || true
-    helm uninstall monitoring || true
-    helm uninstall central || true
-    helm uninstall scanner || true
-    helm uninstall sensor || true
-    kubectl get namespace -o name | grep -E '^namespace/qa' | xargs kubectl delete --wait || true
+    (
+        kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait
+        # openshift specific:
+        kubectl -n stackrox delete SecurityContextConstraints -l "app.kubernetes.io/name=stackrox" --wait
+        kubectl delete -R -f scripts/ci/psp --wait
+        kubectl delete ns stackrox --wait
+        helm uninstall monitoring
+        helm uninstall central
+        helm uninstall scanner
+        helm uninstall sensor
+        kubectl get namespace -o name | grep -E '^namespace/qa' | xargs kubectl delete --wait
+    ) 2>&1 | sed -e 's/^/out: /' || true
 }
 
 # When working as expected it takes less than one minute for the API server to
