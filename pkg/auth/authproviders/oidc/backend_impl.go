@@ -562,18 +562,21 @@ func (p *backendImpl) Validate(context.Context, *tokens.Claims) error {
 // Helpers
 ///////////
 
-type RealmAccess struct {
+// realmAccess is an internal helper struct to represent Keycloak-specific realm_access claim.
+type realmAccess struct {
 	Roles []string `json:"roles"`
 }
 
-// UserInfo is an internal helper struct to unmarshal OIDC token info into.
+// userInfoType is an internal helper struct to unmarshal OIDC token info into.
 type userInfoType struct {
 	Name        string       `json:"name"`
 	EMail       string       `json:"email"`
 	UID         string       `json:"sub"`
 	Groups      []string     `json:"groups"`
-	RealmAccess *RealmAccess `json:"realm_access"`
-	OrgId       string       `json:"account_id"`
+	RealmAccess *realmAccess `json:"realm_access"`
+	// Claim "account_id" is the claim that represents organisation id within sso.redhat.com.
+	// Red Hat users are united in organisations.
+	OrgID string `json:"account_id"`
 }
 
 func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim {
@@ -594,8 +597,8 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 	if realmAccess != nil && len(realmAccess.Roles) > 0 {
 		claim.Attributes[authproviders.RolesAttribute] = realmAccess.Roles
 	}
-	if userInfo.OrgId != "" {
-		claim.Attributes[authproviders.OrgIdAttribute] = []string{userInfo.OrgId}
+	if userInfo.OrgID != "" {
+		claim.Attributes[authproviders.OrgIDAttribute] = []string{userInfo.OrgID}
 	}
 
 	// Add all fields as attributes.

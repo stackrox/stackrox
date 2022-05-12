@@ -15,7 +15,7 @@ const (
 	UseridAttribute = "userid"
 	NameAttribute   = "name"
 	RolesAttribute  = "roles"
-	OrgIdAttribute  = "org_id"
+	OrgIDAttribute  = "org_id"
 )
 
 // AllUIEndpoints returns all UI endpoints for a given auth provider, with the default UI endpoint first.
