@@ -7,6 +7,7 @@ import selectors from '../constants/GeneralPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import { visitNetworkGraph } from '../helpers/networkGraph';
+import { visitViolations } from '../helpers/violations';
 
 //
 // Sanity / general checks for UI being up and running
@@ -35,20 +36,9 @@ describe('General sanity checks', () => {
         });
 
         it('for Violations', () => {
-            cy.intercept('GET', api.alerts.alerts).as('alerts');
-            cy.intercept('GET', api.alerts.alertscount).as('alertsCount');
-            cy.visit(violationsUrl);
-            cy.wait(['@alerts', '@alertsCount']);
+            visitViolations();
 
             cy.title().should('match', new RegExp(`Violations | ${productNameRegExp}`));
-        });
-
-        it('for Violations with side panel open', () => {
-            cy.intercept('GET', api.alerts.alertById).as('alertById');
-            cy.visit('/main/violations/1234');
-            cy.wait('@alertById'); // 404
-
-            cy.title().should('match', new RegExp(`Violations | ${productNameRegExp}`)); // Violation not found.
         });
 
         it('for Compliance Dashboard', () => {
