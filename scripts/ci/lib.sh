@@ -683,6 +683,27 @@ openshift_ci_mods() {
 
     # For gradle
     export GRADLE_USER_HOME="${HOME}"
+
+    # Prow tests PRs rebased against master. This is a pain during migration
+    # because Circle CI does not and so images built in Circle CI have different
+    # tags.
+    local pr_details
+    local exitstatus=0
+    pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
+    if [[ "$exitstatus" == "0"  && "$(jq -r .base.repo.full_name <<<"$pr_details")" == "stackrox/stackrox" ]]; then
+        info "Will switch to the PR branch"
+
+        # Clone the target repo
+        cd ..
+        mv stackrox stackrox-osci
+        git clone https://github.com/stackrox/stackrox.git
+        cd stackrox
+
+        # Checkout the PR branch
+        head_ref="$(jq -r '.head.ref' <<<"$pr_details")"
+        info "Will try to checkout a matching PR branch using: $head_ref"
+        git checkout "$head_ref"
+    fi
 }
 
 validate_expected_go_version() {
