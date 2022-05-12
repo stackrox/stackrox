@@ -1,6 +1,3 @@
-import io.stackrox.proto.api.v1.DeploymentServiceOuterClass
-import io.stackrox.proto.api.v1.SearchServiceOuterClass
-
 import static Services.waitForViolation
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
 
@@ -620,10 +617,10 @@ class SACTest extends BaseSpecification {
 
     private static List<DeploymentOuterClass.ListDeployment> listDeployments() {
         def list = Services.getDeployments(
-                SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Namespace:"+ NAMESPACE_QA1).build()
+                SSOC.RawQuery.newBuilder().setQuery("Namespace:"+ NAMESPACE_QA1).build()
         )
         list.addAll(Services.getDeployments(
-                SearchServiceOuterClass.RawQuery.newBuilder().setQuery("Namespace:"+ NAMESPACE_QA2).build()
+                SSOC.RawQuery.newBuilder().setQuery("Namespace:"+ NAMESPACE_QA2).build()
         ))
         return list
     }
