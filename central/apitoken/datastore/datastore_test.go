@@ -47,11 +47,11 @@ func (s *apiTokenDataStoreTestSuite) SetupTest() {
 	s.hasReadIntegrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Integrations)))
+			sac.ResourceScopeKeys(resources.Integration)))
 	s.hasWriteIntegrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Integrations)))
+			sac.ResourceScopeKeys(resources.Integration)))
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)

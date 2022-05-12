@@ -1,6 +1,5 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import { generatePath } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { HashLink } from 'react-router-hash-link';
 
@@ -9,7 +8,7 @@ import SearchFilterInput from 'Components/SearchFilterInput';
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
-import { clustersBasePath, clustersPathWithParam, integrationsPath } from 'routePaths';
+import { integrationsPath } from 'routePaths';
 import useURLSearch from 'hooks/useURLSearch';
 import parseURL from 'utils/URLParser';
 
@@ -49,16 +48,6 @@ const ClustersPage = ({
     const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
     const searchOptions = (searchData && searchData.searchOptions) || [];
 
-    // When the selected cluster changes, update the URL.
-    useEffect(() => {
-        const newPath = selectedClusterId
-            ? generatePath(clustersPathWithParam, { clusterId: selectedClusterId })
-            : clustersBasePath;
-        history.push({
-            pathname: newPath,
-            search,
-        });
-    }, [history, search, selectedClusterId]);
     const headerText = 'Clusters';
     const subHeaderText = 'Resource list';
 

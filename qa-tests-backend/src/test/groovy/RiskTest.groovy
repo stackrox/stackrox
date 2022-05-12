@@ -125,7 +125,7 @@ class RiskTest extends BaseSpecification {
                     .collect { it.deployment.name }
 
             if (!deploymentNamesWithoutRisk.isEmpty()) {
-                print "not yet ready to tst - risks not found ${deploymentNamesWithoutRisk}"
+                print "not yet ready to test - risks not found ${deploymentNamesWithoutRisk}"
                 continue
             }
 

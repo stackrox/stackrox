@@ -45,7 +45,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 	suite.hasReadIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Integrations)))
+			sac.ResourceScopeKeys(resources.Integration)))
 	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -53,7 +53,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 	suite.hasWriteIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Integrations)))
+			sac.ResourceScopeKeys(resources.Integration)))
 
 	db, err := bolthelper.NewTemp(testutils.DBFileName(suite))
 	if err != nil {
@@ -223,7 +223,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsGet() {
 	suite.True(exists)
 
 	gotInt, exists, err = suite.datastore.GetImageIntegration(suite.hasWriteIntegrationsCtx, integration.GetId())
-	suite.NoError(err, "expected no error trying to read with Integrations permissions")
+	suite.NoError(err, "expected no error trying to read with Integration permissions")
 	suite.Equal(integration, gotInt)
 	suite.True(exists)
 }
@@ -253,7 +253,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestAllowsGetBatch() {
 	suite.ElementsMatch(integrationList, gotImages)
 
 	gotImages, err = suite.datastore.GetImageIntegrations(suite.hasWriteIntegrationsCtx, getRequest)
-	suite.NoError(err, "expected no error trying to read with Integrations permissions")
+	suite.NoError(err, "expected no error trying to read with Integration permissions")
 	suite.ElementsMatch(integrationList, gotImages)
 }
 

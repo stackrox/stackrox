@@ -33,7 +33,7 @@ func TestContainerInstances(testT *testing.T) {
 		pod := pods[0]
 
 		// Retry to ensure all processes start up.
-		testutils.Retry(retryT, 20, 3*time.Second, func(retryEventsT testutils.T) {
+		testutils.Retry(retryT, 20, 4*time.Second, func(retryEventsT testutils.T) {
 			// Get the container groups.
 			groupedContainers := getGroupedContainerInstances(retryEventsT, string(pod.ID))
 

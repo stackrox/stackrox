@@ -29,7 +29,7 @@ func init() {
 		&storage.ProcessIndicator{}:       resources.Indicator,
 		&storage.ReportConfiguration{}:    resources.VulnerabilityReports,
 		&storage.SimpleAccessScope{}:      resources.Role,
-		&storage.TokenMetadata{}:          resources.Integrations,
+		&storage.TokenMetadata{}:          resources.Integration,
 		// Tests
 		&storage.TestMultiKeyStruct{}:  resources.Namespace,
 		&storage.TestSingleKeyStruct{}: resources.Namespace,

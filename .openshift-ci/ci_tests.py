@@ -8,6 +8,7 @@ import subprocess
 
 from common import popen_graceful_kill
 
+# Where the QA tests store failure logs: qa-tests-backend/src/main/groovy/common/Constants.groovy
 QA_TESTS_OUTPUT_DIR = "/tmp/qa-tests-backend-logs"
 
 

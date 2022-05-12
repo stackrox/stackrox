@@ -7,7 +7,7 @@ import useURLParameter from './useURLParameter';
 
 type WrapperProps = {
     children: ReactNode;
-    onRouteRender: ({ location: any }) => void;
+    onRouteRender: (renderResult: { history: any; location: any }) => void;
     initialEntries: string[];
 };
 
@@ -15,7 +15,10 @@ type WrapperProps = {
 // URL bar in JSDom via the MemoryRouter
 function Wrapper({ children, onRouteRender, initialEntries = [] }: WrapperProps) {
     return (
-        <MemoryRouter initialEntries={initialEntries}>
+        <MemoryRouter
+            initialEntries={initialEntries}
+            initialIndex={Math.max(0, initialEntries.length - 1)}
+        >
             <Route path="*" render={onRouteRender} />
             {children}
         </MemoryRouter>
@@ -26,7 +29,7 @@ test('should read/write scoped string value in URL parameter without changing ex
     let params;
     let testLocation;
 
-    const { result } = renderHook(() => useURLParameter<string | undefined>('testKey', undefined), {
+    const { result } = renderHook(() => useURLParameter('testKey', undefined), {
         initialProps: {
             children: [],
             onRouteRender: ({ location }) => {
@@ -83,7 +86,7 @@ test('should read/write scoped complex object in URL parameter without changing 
     };
 
     const emptyState: StateObject = { clusters: [] };
-    const { result } = renderHook(() => useURLParameter<StateObject>('testKey', emptyState), {
+    const { result } = renderHook(() => useURLParameter('testKey', emptyState), {
         initialProps: {
             children: [],
             onRouteRender: ({ location }) => {
@@ -94,8 +97,15 @@ test('should read/write scoped complex object in URL parameter without changing 
         wrapper: Wrapper,
     });
 
+    function isStateObject(obj: unknown): obj is StateObject {
+        return typeof obj === 'object' && obj !== null && 'clusters' in obj;
+    }
+
     // Check new and existing values before setter function is called
     params = new URLSearchParams(testLocation.search);
+    if (!isStateObject(result.current[0])) {
+        return;
+    }
     expect(result.current[0].clusters).toHaveLength(0);
     expect(params.get('testKey')).toBeNull();
     expect(params.get('oldKey')).toBe('test');
@@ -141,4 +151,48 @@ test('should read/write scoped complex object in URL parameter without changing 
     expect(params.get('testKey')).toBeNull();
     expect(params.get('oldKey')).toBe('test');
     expect(Array.from(params.entries())).toHaveLength(1);
+});
+
+test('should implement push and replace state for history', async () => {
+    let testHistory;
+    let testLocation;
+
+    const { result } = renderHook(() => useURLParameter('testKey', undefined), {
+        initialProps: {
+            children: [],
+            onRouteRender: ({ history, location }) => {
+                testHistory = history;
+                testLocation = location;
+            },
+            initialIndex: 1,
+            initialEntries: ['/main/dashboard', '/main/clusters?oldKey=test'],
+        },
+        wrapper: Wrapper,
+    });
+
+    // Test the the default behavior is to push URL parameter changes to the history stack
+    act(() => {
+        const [, setParam] = result.current;
+        setParam('testValue');
+    });
+    expect(testLocation.pathname).toBe('/main/clusters');
+    expect(testLocation.search).toBe('?oldKey=test&testKey=testValue');
+    act(() => {
+        testHistory.goBack();
+    });
+    expect(testLocation.pathname).toBe('/main/clusters');
+    expect(testLocation.search).toBe('?oldKey=test');
+
+    // Test that specifying a history action of 'replace' changes the history entry in-place
+    act(() => {
+        const [, setParam] = result.current;
+        setParam('newTestValue', 'replace');
+    });
+    expect(testLocation.pathname).toBe('/main/clusters');
+    expect(testLocation.search).toBe('?oldKey=test&testKey=newTestValue');
+    act(() => {
+        testHistory.goBack();
+    });
+    expect(testLocation.pathname).toBe('/main/dashboard');
+    expect(testLocation.search).toBe('');
 });

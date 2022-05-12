@@ -5,7 +5,10 @@ import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 
 export type QueryValue = undefined | string | string[] | qs.ParsedQs | qs.ParsedQs[];
 
-type UseURLParameterResult = [QueryValue, (newValue: QueryValue) => void];
+// Note that when we upgrade React Router and 'history' we can probably import a more accurate version of this type
+type Action = 'push' | 'replace';
+
+type UseURLParameterResult = [QueryValue, (newValue: QueryValue, historyAction?: Action) => void];
 
 /**
  * Hook to handle reading and writing of a piece of state in the page's URL query parameters.
@@ -32,7 +35,7 @@ function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLPar
     // memoize the setter function to retain referential equality as long
     // as the URL parameters do not change
     const setValue = useCallback(
-        (newValue: QueryValue) => {
+        (newValue: QueryValue, historyAction: Action = 'push') => {
             const previousQuery = getQueryObject(location.search) || {};
             const newQueryString = getQueryString({
                 ...previousQuery,
@@ -44,9 +47,10 @@ function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLPar
                 delete newQueryString[keyPrefix];
             }
 
-            history.replace({
-                search: newQueryString,
-            });
+            // Do not change history states if setter is called with current value
+            if (!isEqual(previousQuery[keyPrefix], newValue)) {
+                history[historyAction]({ search: newQueryString });
+            }
         },
         [keyPrefix, history, location.search]
     );
