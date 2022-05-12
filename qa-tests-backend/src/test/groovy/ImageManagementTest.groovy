@@ -17,7 +17,6 @@ import util.Env
 class ImageManagementTest extends BaseSpecification {
     @Unroll
     @Category([BAT, Integration])
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry #note"() {
         when:
         "Update Policy to build time"
@@ -60,7 +59,6 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Category(BAT)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify two consecutive latest tag image have different scans"() {
         given:
         // Scan an ubuntu 14:04 image we're pretending is latest
