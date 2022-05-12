@@ -19,7 +19,6 @@ import (
 	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/reports/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -202,7 +201,7 @@ func (m message) Bytes() []byte {
 		buf.WriteString("Content-Disposition: inline; filename=logo.png\r\n")
 		buf.WriteString("Content-ID: <logo.png>\r\n")
 		buf.WriteString("X-Attachment-Id: logo.png\r\n")
-		buf.WriteString(fmt.Sprintf("\r\n%s\r\n", common.GetLogoBase64()))
+		buf.WriteString(fmt.Sprintf("\r\n%s\r\n", branding.GetLogoBase64()))
 		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
 		buf.WriteString("Content-Type: text/html; charset=\"utf-8\"\r\n\r\n")
 		buf.WriteString("<img src=\"cid:logo.png\" width=\"20%\" height=\"20%\"><br><br>")
