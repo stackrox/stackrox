@@ -16,6 +16,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/mitchellh/go-wordwrap"
 	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/notifiers"
@@ -34,6 +35,7 @@ var (
 
 const (
 	connectTimeout = 5 * time.Second
+	mailLineLength = 78
 )
 
 // email notifier plugin
@@ -181,6 +183,34 @@ type message struct {
 	EmbedLogo   bool
 }
 
+// This function does not support UTF-8 strings.
+func applyRfc5322LengthLimit(s string) string {
+	sLen := len(s)
+
+	startPos := 0
+	numOfChunks := sLen / mailLineLength
+
+	var sb strings.Builder
+	for numOfChunks > 0 && startPos+mailLineLength < sLen {
+		sb.WriteString(s[startPos : startPos+mailLineLength])
+		sb.WriteString("\r\n")
+
+		numOfChunks--
+		startPos += mailLineLength
+	}
+	sb.WriteString(s[startPos:sLen])
+
+	return sb.String()
+}
+
+func applyRfc5322LengthLimitWordWrap(s string) string {
+	wrapped := wordwrap.WrapString(s, mailLineLength)
+	wrapped = strings.TrimSpace(wrapped)
+	wrapped = strings.Replace(wrapped, "\n", "\r\n", -1)
+
+	return wrapped
+}
+
 func (m message) Bytes() []byte {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString(fmt.Sprintf("From: %s\r\n", m.From))
@@ -201,14 +231,15 @@ func (m message) Bytes() []byte {
 		buf.WriteString("Content-Disposition: inline; filename=logo.png\r\n")
 		buf.WriteString("Content-ID: <logo.png>\r\n")
 		buf.WriteString("X-Attachment-Id: logo.png\r\n")
-		buf.WriteString(fmt.Sprintf("\r\n%s\r\n", branding.GetLogoBase64()))
+		buf.WriteString(fmt.Sprintf("\r\n%s\r\n", applyRfc5322LengthLimit(branding.GetLogoBase64())))
 		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
 		buf.WriteString("Content-Type: text/html; charset=\"utf-8\"\r\n\r\n")
-		buf.WriteString("<img src=\"cid:logo.png\" width=\"20%\" height=\"20%\"><br><br>")
-		buf.WriteString(fmt.Sprintf("\r\n<div>%s</div>\r\n", m.Body))
+		buf.WriteString("<img src=\"cid:logo.png\" width=\"20%\" height=\"20%\"><br><br><div>\r\n")
+		buf.WriteString(fmt.Sprintf("%s\r\n", applyRfc5322LengthLimitWordWrap(m.Body)))
+		buf.WriteString("</div>\r\n")
 	} else {
 		buf.WriteString("Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n")
-		buf.WriteString(fmt.Sprintf("%s\r\n", m.Body))
+		buf.WriteString(fmt.Sprintf("%s\r\n", applyRfc5322LengthLimitWordWrap(m.Body)))
 	}
 
 	for k, v := range m.Attachments {
@@ -216,7 +247,7 @@ func (m message) Bytes() []byte {
 		buf.WriteString("Content-Type: application/zip\r\n")
 		buf.WriteString("Content-Transfer-Encoding: base64\r\n")
 		buf.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=%s\r\n", k))
-		buf.WriteString(fmt.Sprintf("\r\n%s\r\n", base64.StdEncoding.EncodeToString(v)))
+		buf.WriteString(fmt.Sprintf("\r\n%s\r\n", applyRfc5322LengthLimit(base64.StdEncoding.EncodeToString(v))))
 		buf.WriteString(fmt.Sprintf("\n--%s\r\n", boundary))
 	}
 	return buf.Bytes()
