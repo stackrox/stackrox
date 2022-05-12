@@ -83,7 +83,7 @@ export function visitViolationWithFixture(fixturePath) {
     });
 }
 
-// interactions
+// interact
 
 /*
  * Assume that current location is violations table without fixture.
