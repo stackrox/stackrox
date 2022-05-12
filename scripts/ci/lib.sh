@@ -552,7 +552,7 @@ get_var_from_job_config() {
         die "$var_name is not defined in this jobs config"
     fi
     if [[ "${value:0:1}" == "[" ]]; then
-        value="$(jq -r .[] <<<"$value")"
+        value="$(jq -cr '.[]' <<<"$value")"
     fi
     echo "$value"
 }
