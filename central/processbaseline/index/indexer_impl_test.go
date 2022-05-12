@@ -83,6 +83,7 @@ func (suite *ProcessBaselineIndexTestSuite) TestEmptySearch() {
 }
 
 func (suite *ProcessBaselineIndexTestSuite) TestAddSearchDeleteBaseline() {
+	ctx := context.Background()
 	baseline := suite.getAndStoreBaseline()
 	suite.getAndStoreBaseline() // Don't find this one
 

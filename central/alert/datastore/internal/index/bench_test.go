@@ -74,6 +74,7 @@ func BenchmarkAddAlertsThen1(b *testing.B) {
 }
 
 func BenchmarkSearchAlert(b *testing.B) {
+	ctx := context.Background()
 	indexer := getAlertIndex()
 	qb := search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster")
 	for i := 0; i < b.N; i++ {

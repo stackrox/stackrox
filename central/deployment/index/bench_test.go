@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -62,6 +63,7 @@ func BenchmarkAddDeploymentsThen1(b *testing.B) {
 }
 
 func BenchmarkSearchDeployment(b *testing.B) {
+	ctx := context.Background()
 	indexer := getDeploymentIndex(b)
 	qb := search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster")
 	for i := 0; i < b.N; i++ {

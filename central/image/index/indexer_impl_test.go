@@ -1,6 +1,7 @@
 package index
 
 import (
+	"context"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -73,6 +74,7 @@ func (suite *ImageIndexTestSuite) TearDownSuite() {
 }
 
 func (suite *ImageIndexTestSuite) TestSearchImages() {
+	ctx := context.Background()
 	// No filter on either => should return everything.
 	results, err := suite.indexer.Search(ctx, search.EmptyQuery())
 	suite.NoError(err)

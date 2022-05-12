@@ -47,6 +47,7 @@ func (suite *NodeIndexTestSuite) TestIndexing() {
 
 	suite.NoError(suite.indexer.AddNode(node))
 
+	ctx := context.Background()
 	q := search.NewQueryBuilder().AddStrings(search.Node, "node").ProtoQuery()
 	results, err := suite.indexer.Search(ctx, q)
 	suite.NoError(err)

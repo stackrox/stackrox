@@ -49,6 +49,7 @@ func (suite *ClusterIndexTestSuite) TestIndexing() {
 
 	suite.NoError(suite.indexer.AddCluster(cluster))
 
+	ctx := context.Background()
 	q := search.NewQueryBuilder().AddStrings(search.Cluster, "cluster1").ProtoQuery()
 	results, err := suite.indexer.Search(ctx, q)
 	suite.NoError(err)

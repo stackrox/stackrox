@@ -329,6 +329,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	}
 
 	for _, c := range cases {
+		ctx := context.Background()
 		qb := search.NewQueryBuilder()
 		for field, value := range c.fieldValues {
 			qb.AddStrings(field, value)
@@ -367,6 +368,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 }
 
 func (suite *DeploymentIndexTestSuite) TestBatches() {
+	ctx := context.Background()
 	deployments := []*storage.Deployment{
 		fixtures.GetDeployment(),
 		fixtures.GetDeployment(),
@@ -386,6 +388,7 @@ func (suite *DeploymentIndexTestSuite) TestBatches() {
 }
 
 func (suite *DeploymentIndexTestSuite) TestCaseInsensitivityOfFieldNames() {
+	ctx := context.Background()
 	dep := fixtures.GetDeployment()
 	suite.NoError(suite.indexer.AddDeployment(dep))
 	ns := dep.GetNamespace()
@@ -402,6 +405,7 @@ func (suite *DeploymentIndexTestSuite) TestCaseInsensitivityOfFieldNames() {
 }
 
 func (suite *DeploymentIndexTestSuite) TestDeploymentDelete() {
+	ctx := context.Background()
 	dep := fixtures.GetDeployment()
 	suite.NoError(suite.indexer.AddDeployment(dep))
 
@@ -580,6 +584,7 @@ func TestEnumComparisonSearch(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s%s-%s", c.prefix, c.queryLevel, c.deploymentLevel), func(t *testing.T) {
+			ctx := context.Background()
 			d := fixtures.GetDeployment()
 			d.ServiceAccountPermissionLevel = c.deploymentLevel
 			require.NoError(t, indexer.AddDeployment(d))
@@ -651,6 +656,7 @@ func TestMapQueries(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		ctx := context.Background()
 		q := search.NewQueryBuilder().AddMapQuery(search.Label, c.key, c.value).ProtoQuery()
 		results, err := deploymentIndexer.Search(ctx, q)
 		assert.NoError(t, err)

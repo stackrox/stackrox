@@ -65,6 +65,7 @@ func TestImageSearchResults(t *testing.T) {
 	factory := predicate.NewFactory("image", (*storage.Image)(nil))
 	for _, c := range cases {
 		t.Run("test", func(t *testing.T) {
+			ctx := context.Background()
 			predicate, err := factory.GeneratePredicate(c.query)
 			require.NoError(t, err)
 
@@ -107,6 +108,7 @@ func TestDeploymentSearchResults(t *testing.T) {
 	factory := predicate.NewFactory("deployment", (*storage.Deployment)(nil))
 	for _, c := range cases {
 		t.Run("test", func(t *testing.T) {
+			ctx := context.Background()
 			predicate, err := factory.GeneratePredicate(c.query)
 			require.NoError(t, err)
 
