@@ -37,8 +37,8 @@ const (
 
 	userInfoExpiration = 5 * time.Minute
 
-	RolesAttribute = "roles"
-	OrgidAttribute = "orgid"
+	rolesAttribute = "roles"
+	orgidAttribute = "orgid"
 )
 
 type nonceVerificationSetting int
@@ -600,10 +600,10 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 	claim.Attributes = make(map[string][]string)
 	realmAccess := userInfo.RealmAccess
 	if realmAccess != nil && len(realmAccess.Roles) > 0 {
-		claim.Attributes[RolesAttribute] = realmAccess.Roles
+		claim.Attributes[rolesAttribute] = realmAccess.Roles
 	}
 	if userInfo.OrgID != "" {
-		claim.Attributes[OrgidAttribute] = []string{userInfo.OrgID}
+		claim.Attributes[orgidAttribute] = []string{userInfo.OrgID}
 	}
 
 	// Add all fields as attributes.
