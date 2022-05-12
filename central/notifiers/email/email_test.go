@@ -46,8 +46,7 @@ func TestEmailMsgWithAttachment(t *testing.T) {
 	assert.Contains(t, msgStr, "X-Attachment-Id: logo.png\r\n")
 
 	assert.Contains(t, msgStr, base64.StdEncoding.EncodeToString(attachBuf.Bytes()))
-	assert.Contains(t, msgStr, "<div>How you doin'?</div>\r\n")
-
+	assert.Contains(t, msgStr, "<div>\r\nHow you doin'?\r\n</div>\r\n")
 }
 
 func TestEmailMsgNoAttachments(t *testing.T) {
