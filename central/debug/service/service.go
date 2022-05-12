@@ -234,17 +234,16 @@ func (s *serviceImpl) StreamAuthzTraces(_ *v1.Empty, stream v1.DebugService_Stre
 	}
 }
 
-func getJSONToZipWithLogging(zipWriter *zip.Writer, fileName string) func(interface{}, error) {
-	return func(jsonObj interface{}, err error) {
-		if err != nil {
-			log.Error(err)
+func getJSONToZipWithLogging(ctx context.Context, zipWriter *zip.Writer, fileName string, fetchData func(ctx context.Context) (interface{}, error)) {
+	jsonObj, errFetchData := fetchData(ctx)
+	if errFetchData != nil {
+		log.Error(errFetchData)
 
-			return
-		}
+		return
+	}
 
-		if errAddToZip := addJSONToZip(zipWriter, fileName, jsonObj); errAddToZip != nil {
-			log.Error(errAddToZip)
-		}
+	if errAddToZip := addJSONToZip(zipWriter, fileName, jsonObj); errAddToZip != nil {
+		log.Error(errAddToZip)
 	}
 }
 
@@ -374,7 +373,7 @@ func (s *serviceImpl) getLogImbue(zipWriter *zip.Writer) error {
 	return err
 }
 
-func (s *serviceImpl) getAuthProviders() ([]*storage.AuthProvider, error) {
+func (s *serviceImpl) getAuthProviders(_ context.Context) (interface{}, error) {
 	authProviders := s.authProviderRegistry.GetProviders(nil, nil)
 
 	var storageAuthProviders []*storage.AuthProvider
@@ -385,7 +384,7 @@ func (s *serviceImpl) getAuthProviders() ([]*storage.AuthProvider, error) {
 	return storageAuthProviders, nil
 }
 
-func (s *serviceImpl) getGroups(ctx context.Context) ([]*storage.Group, error) {
+func (s *serviceImpl) getGroups(ctx context.Context) (interface{}, error) {
 	// We will elevate the user rights in order to get all groups
 	accessGroupsCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
@@ -401,7 +400,7 @@ type diagResolvedRole struct {
 	AccessScope   *storage.SimpleAccessScope `json:"access_scope,omitempty"`
 }
 
-func (s *serviceImpl) getRoles(ctx context.Context) ([]*diagResolvedRole, error) {
+func (s *serviceImpl) getRoles(ctx context.Context) (interface{}, error) {
 	// We will elevate the user rights in order to get all roles
 	accessRolesCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
@@ -435,7 +434,7 @@ func (s *serviceImpl) getRoles(ctx context.Context) ([]*diagResolvedRole, error)
 	return resolvedRoles, nil
 }
 
-func (s *serviceImpl) getNotifiers(ctx context.Context) ([]*storage.Notifier, error) {
+func (s *serviceImpl) getNotifiers(ctx context.Context) (interface{}, error) {
 	// We will elevate the user rights in order to get notifiers
 	accessNotifierCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
@@ -453,7 +452,7 @@ func (s *serviceImpl) getNotifiers(ctx context.Context) ([]*storage.Notifier, er
 	return notifiers, nil
 }
 
-func (s *serviceImpl) getConfig(ctx context.Context) (*storage.Config, error) {
+func (s *serviceImpl) getConfig(ctx context.Context) (interface{}, error) {
 	// We will elevate the user rights in order to get config
 	accessConfigCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
@@ -559,16 +558,16 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	}
 
 	if opts.withAccessControl {
-		getJSONToZipWithLogging(zipWriter, "auth-providers.json")(s.getAuthProviders())
-		getJSONToZipWithLogging(zipWriter, "auth-provider-groups.json")(s.getGroups(ctx))
-		getJSONToZipWithLogging(zipWriter, "access-control-roles.json")(s.getRoles(ctx))
+		getJSONToZipWithLogging(ctx, zipWriter, "auth-providers.json", s.getAuthProviders)
+		getJSONToZipWithLogging(ctx, zipWriter, "auth-provider-groups.json", s.getGroups)
+		getJSONToZipWithLogging(ctx, zipWriter, "access-control-roles.json", s.getRoles)
 	}
 
 	if opts.withNotifiers {
-		getJSONToZipWithLogging(zipWriter, "notifiers.json")(s.getNotifiers(ctx))
+		getJSONToZipWithLogging(ctx, zipWriter, "notifiers.json", s.getNotifiers)
 	}
 
-	getJSONToZipWithLogging(zipWriter, "system-configuration.json")(s.getConfig(ctx))
+	getJSONToZipWithLogging(ctx, zipWriter, "system-configuration.json", s.getConfig)
 
 	// Get logs last to also catch logs made during creation of diag bundle
 	if opts.logs == localLogs {
