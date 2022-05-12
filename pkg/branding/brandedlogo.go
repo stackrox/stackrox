@@ -9,7 +9,7 @@ import (
 
 const (
 	rhacslogoFile    = "files/red_hat_acs_logo_rgb.png"
-	stackroxLogoFile = "files/stackrox_logo_wide_dkblue.png"
+	stackroxLogoFile = "files/stackrox_integration_logo.png"
 )
 
 var (

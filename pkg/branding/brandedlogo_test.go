@@ -13,7 +13,7 @@ const (
 	// or where base64 doesn't support a -w0 option (eg. MacOS)
 	// run "find pkg/branding/files -type f -print -exec bash -c 'base64 {} | tr -d \\n | sha256sum' \;" instead
 	logoRHACSBase64hash    = "7f3e82963a705c41cac096b516dee068ec1e8693d55ec6d836546b12c617e195"
-	logoStackRoxBase64hash = "545fa092c7241ec87f1c2b7f7a798e350727f03fffe523cc7b6898f72cf5bce8"
+	logoStackRoxBase64hash = "318908997d28eb54a31305290ded071bdd61d5dc8718b75dfb4a7a6ba4c162d8"
 )
 
 func TestGetBrandedLogo(t *testing.T) {
