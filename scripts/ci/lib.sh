@@ -68,7 +68,9 @@ setup_deployment_env() {
 
     ci_export REGISTRY_USERNAME "$QUAY_RHACS_ENG_RO_USERNAME"
     ci_export REGISTRY_PASSWORD "$QUAY_RHACS_ENG_RO_PASSWORD"
-    ci_export MAIN_IMAGE_TAG "$(make --quiet tag)"
+    if [[ -z "${MAIN_IMAGE_TAG:-}" ]]; then
+        ci_export MAIN_IMAGE_TAG "$(make --quiet tag)"
+    fi
 
     REPO=rhacs-eng
     ci_export MAIN_IMAGE_REPO "quay.io/$REPO/main"
@@ -435,6 +437,28 @@ mark_collector_release() {
     /scripts/create_update_pr.sh "${branch_name}" collector "Update RELEASED_VERSIONS" "Add entry into the RELEASED_VERSIONS file"
 }
 
+is_tagged() {
+    local tags
+    tags="$(git tag --contains)"
+    [[ -n "$tags" ]]
+}
+
+is_nightly_tag() {
+    local tags
+    tags="$(git tag --contains)"
+    [[ "$tags" =~ nightly ]]
+}
+
+get_base_ref() {
+    if is_CIRCLECI; then
+        echo "${CIRCLE_BRANCH}"
+    elif is_OPENSHIFT_CI; then
+        jq -r '.refs[0].base_ref' <<<"$CLONEREFS_OPTIONS"
+    else
+        die "unsupported"
+    fi
+}
+
 pr_has_label() {
     if [[ -z "${1:-}" ]]; then
         die "usage: pr_has_label <expected label> [<pr details>]"
@@ -620,20 +644,14 @@ gate_merge_job() {
     run_on_tags="$(get_var_from_job_config run_on_tags "$job_config")"
 
     local base_ref
-    if is_CIRCLECI; then
-        base_ref="${CIRCLE_BRANCH}"
-    elif is_OPENSHIFT_CI; then
-        base_ref="$(jq -r '.refs[0].base_ref' <<<"$CLONEREFS_OPTIONS")"
-    else
-        die "unsupported"
-    fi
+    base_ref="$(get_base_ref)"
 
     if [[ "${base_ref}" == "master" && "${run_on_master}" == "true" ]]; then
         info "$job will run because this is master and run_on_master==true"
         return
     fi
 
-    if [[ -n "$(git tag --contains)" && "${run_on_tags}" == "true" ]]; then
+    if is_tagged && [[ "${run_on_tags}" == "true" ]]; then
         info "$job will run because the head of this branch is tagged and run_on_tags==true"
         return
     fi

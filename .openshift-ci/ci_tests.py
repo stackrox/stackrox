@@ -16,6 +16,18 @@ class BaseTest:
     def __init__(self):
         self.test_output_dirs = []
 
+    def run_with_graceful_kill(self, args, timeout, post_start_hook=None):
+        with subprocess.Popen(args) as cmd:
+            if post_start_hook is not None:
+                post_start_hook()
+            try:
+                exitstatus = cmd.wait(timeout)
+                if exitstatus != 0:
+                    raise RuntimeError(f"Test failed: exit {exitstatus}")
+            except subprocess.TimeoutExpired as err:
+                popen_graceful_kill(cmd)
+                raise err
+
 
 class NullTest(BaseTest):
     def run(self):
@@ -29,16 +41,34 @@ class UpgradeTest(BaseTest):
     def run(self):
         print("Executing the Upgrade Test")
 
-        with subprocess.Popen(
-            ["tests/upgrade/run.sh", UpgradeTest.TEST_OUTPUT_DIR]
-        ) as cmd:
-
+        def set_dirs_after_start():
+            # let post test know where logs are
             self.test_output_dirs = [UpgradeTest.TEST_OUTPUT_DIR, QA_TESTS_OUTPUT_DIR]
 
-            try:
-                exitstatus = cmd.wait(UpgradeTest.TEST_TIMEOUT)
-                if exitstatus != 0:
-                    raise RuntimeError(f"Test failed: exit {exitstatus}")
-            except subprocess.TimeoutExpired as err:
-                popen_graceful_kill(cmd)
-                raise err
+        self.run_with_graceful_kill(
+            ["tests/upgrade/run.sh", UpgradeTest.TEST_OUTPUT_DIR],
+            UpgradeTest.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )
+
+
+class QaE2eTestPart1(BaseTest):
+    TEST_TIMEOUT = 240 * 60
+
+    def run(self):
+        print("Executing qa-tests-backend tests (part I)")
+
+        self.run_with_graceful_kill(
+            ["qa-tests-backend/scripts/run-part-1.sh"], QaE2eTestPart1.TEST_TIMEOUT
+        )
+
+
+class QaE2eTestPart2(BaseTest):
+    TEST_TIMEOUT = 30 * 60
+
+    def run(self):
+        print("Executing qa-tests-backend tests (part II)")
+
+        self.run_with_graceful_kill(
+            ["qa-tests-backend/scripts/run-part-2.sh"], QaE2eTestPart2.TEST_TIMEOUT
+        )

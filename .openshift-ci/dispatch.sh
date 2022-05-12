@@ -36,6 +36,9 @@ case "$ci_job" in
     push-images)
         "$ROOT/scripts/ci/jobs/push-images.sh"
         ;;
+    gke-qa-e2e-tests)
+        "$ROOT/.openshift-ci/gke_qa_e2e_test.py"
+        ;;
     gke-upgrade-tests)
         "$ROOT/.openshift-ci/gke_upgrade_test.py"
         ;;

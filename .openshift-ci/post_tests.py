@@ -8,7 +8,7 @@ import subprocess
 from typing import List
 
 
-class NullPost:
+class NullPostTest:
     def run(self, test_output_dirs=None):
         pass
 
