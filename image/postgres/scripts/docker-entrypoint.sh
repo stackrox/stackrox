@@ -310,9 +310,9 @@ _main() {
 		# setup data directories and permissions (when run as root)
 		docker_create_db_directories
 		if [ "$(id -u)" = '0' ]; then
-      ### STACKROX MODIFIED - gosu is not installed in our
-      ### image, but we use the postgres user, so this line
-      ### will not be reached.
+			### STACKROX MODIFIED - gosu is not installed in our
+			### image, but we use the postgres user, so this line
+			### will not be reached.
 			# then restart script as postgres user
 			exec gosu postgres "$BASH_SOURCE" "$@"
 		fi
