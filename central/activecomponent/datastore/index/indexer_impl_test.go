@@ -57,6 +57,7 @@ func (suite *ActiveComponentIndexTestSuite) TestIndexing() {
 		},
 	}
 
+	ctx := context.Background()
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
 
 	results, err := suite.indexer.Search(suite.ctx, q)
