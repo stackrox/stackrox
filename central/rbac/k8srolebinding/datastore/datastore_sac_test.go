@@ -152,6 +152,11 @@ func (s *k8sRoleBindingSACSuite) TestUpsertRoleBinding() {
 			expectFail:  true,
 			expectedErr: sac.ErrResourceAccessDenied,
 		},
+		"read-write on matching cluster and no namespace should not be able to add": {
+			scopeKey:    testutils.Cluster2ReadWriteCtx,
+			expectFail:  true,
+			expectedErr: sac.ErrResourceAccessDenied,
+		},
 		"read-write on matching cluster and at least one matching namespace should be able to add": {
 			scopeKey:    testutils.Cluster2NamespacesABReadWriteCtx,
 			expectFail:  true,
