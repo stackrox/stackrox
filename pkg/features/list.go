@@ -46,6 +46,6 @@ var (
 	// NewPolicyCategories enables new policy categories as first-class entities.
 	NewPolicyCategories = registerFeature("Enable new policy categories as first-class entities", "ROX_NEW_POLICY_CATEGORIES", false)
 
-	// NewMetricsDashboard enables the PatternFly version of the main dashboard with Action Widgets. (used in the front-end app only)
-	NewMetricsDashboard = registerFeature("Enable PatternFly version of New Metrics Dashboard", "ROX_NEW_METRICS_DASHBOARD", false)
+	// SecurityMetricsPhaseOne enables the PatternFly version of the main dashboard with Action Widgets. (used in the front-end app only)
+	SecurityMetricsPhaseOne = registerFeature("Enable PatternFly version of Security Metrics Dashboard", "ROX_SECURITY_METRICS_PHASE_ONE", false)
 )
