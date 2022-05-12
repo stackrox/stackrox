@@ -28,6 +28,7 @@ import org.junit.experimental.categories.Category
 import spock.lang.Unroll
 
 @Category(BAT)
+@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
 class SACTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA1 = "sac-deploymentnginx-qa1"
     static final private String NAMESPACE_QA1 = "qa-test1"
@@ -67,7 +68,7 @@ class SACTest extends BaseSpecification {
             isRaceBuild() ? 600 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 60)
 
     static final private Integer WAIT_FOR_RISK_RETRIES =
-            isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 50 : 30)
+            isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 80 : 50)
 
     def setupSpec() {
         // Make sure we scan the image initially to make reprocessing faster.
@@ -85,8 +86,7 @@ class SACTest extends BaseSpecification {
                 WAIT_FOR_VIOLATION_TIMEOUT)
 
         // Make sure each deployment has a risk score.
-        def deployments = DeploymentService.listDeployments()
-        deployments.each { DeploymentOuterClass.ListDeployment dep ->
+        listDeployments().each { DeploymentOuterClass.ListDeployment dep ->
             try {
                 withRetry(WAIT_FOR_RISK_RETRIES, 2) {
                     assert DeploymentService.getDeploymentWithRisk(dep.id).hasRisk()
@@ -614,5 +614,15 @@ class SACTest extends BaseSpecification {
         cleanup:
         "Cleanup"
         BaseService.useBasicAuth()
+    }
+
+    private static List<DeploymentOuterClass.ListDeployment> listDeployments() {
+        def list = Services.getDeployments(
+                SSOC.RawQuery.newBuilder().setQuery("Namespace:"+ NAMESPACE_QA1).build()
+        )
+        list.addAll(Services.getDeployments(
+                SSOC.RawQuery.newBuilder().setQuery("Namespace:"+ NAMESPACE_QA2).build()
+        ))
+        return list
     }
 }
