@@ -20,6 +20,7 @@ import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { SearchEntry } from 'types/search';
 import { SortDirection } from 'types/table';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import { Cluster } from 'types/cluster.proto';
 import RelatedLink from './RelatedLink';
 
 type GlobalSearchResult = {
@@ -41,6 +42,7 @@ interface StateProps {
     globalSearchOptions: SearchEntry[];
     tabs: SearchTab[];
     defaultTab: SearchTab | null;
+    clusters: Cluster[];
 }
 
 interface DispatchProps {
@@ -142,6 +144,7 @@ function SearchResults({
     passthroughGlobalSearchOptions,
     tabs,
     defaultTab = null,
+    clusters,
 }: SearchResultsProps): ReactElement {
     // index of the currently active column
     const [activeSortIndex, setActiveSortIndex] = useState(INITIAL_SORT_INDEX);
@@ -223,12 +226,27 @@ function SearchResults({
         };
 
     const onFilterLinkHandler =
-        (searchCategory: string, category: string, toURL: string, name: string) => () => {
+        (searchCategory: string, category: string, toURL: string, name: string, location: string) =>
+        () => {
             const searchOptions = amendSearchOptions(searchCategory, name);
             passthroughGlobalSearchOptions(searchOptions, category);
             const searchFilter = searchOptionsToSearchFilter(searchOptions);
             const queryString = getUrlQueryStringForSearchFilter(searchFilter);
-            onClose(`${toURL}?${queryString}`);
+            if (category === 'NETWORK') {
+                // Parse the cluster and namespace of the search result in order
+                // to set the correct URL parameters for the Network Graph.
+                // Since the Search API only returns the name of the cluster, we need
+                // to reverse lookup the cluster id by name.
+                // TODO For long term reliability we may want the API to directly return the
+                // cluster ID and namespace, if possible.
+                const regexMatches = /^\/(\w*)\/(\w*).*$/.exec(location) || [];
+                const clusterName = regexMatches[1] || '';
+                const namespace = regexMatches[2] || '';
+                const cluster = clusters.find((c) => c.name === clusterName);
+                onClose(`${toURL}?cluster=${cluster?.id ?? ''}&ns=${namespace}&${queryString}`);
+            } else {
+                onClose(`${toURL}?${queryString}`);
+            }
         };
 
     const contents = sortedRows.length ? (
@@ -340,7 +358,8 @@ function SearchResults({
                                                         category,
                                                         filterOnMapping[item],
                                                         getLink(item),
-                                                        name
+                                                        name,
+                                                        location
                                                     )}
                                                 >
                                                     {item}
@@ -445,6 +464,7 @@ const mapStateToProps = createStructuredSelector({
     globalSearchOptions: selectors.getGlobalSearchOptions,
     tabs: getTabs,
     defaultTab: getDefaultTab,
+    clusters: selectors.getClusters,
 });
 
 const mapDispatchToProps = (dispatch) => ({

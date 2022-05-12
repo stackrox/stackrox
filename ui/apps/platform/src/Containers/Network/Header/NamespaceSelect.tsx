@@ -6,8 +6,6 @@ import { Select, SelectOption, SelectVariant } from '@patternfly/react-core';
 import { actions as graphActions } from 'reducers/network/graph';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import useURLParameter from 'hooks/useURLParameter';
-import { isElement } from 'lodash';
-import { availableSearchOptions } from 'constants/searchOptions';
 import useNamespaceFilters from './useNamespaceFilters';
 
 function filterElementsWithValueProp(
