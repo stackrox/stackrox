@@ -43,6 +43,7 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s entrypoint-wrapper.sh /stackrox/sensor-upgrader && \
     ln -s /assets/downloads/cli/roxctl-linux /stackrox/roxctl && \
     rpm --import RPM-GPG-KEY-CentOS-Official && \
+    microdnf upgrade && \
     rpm -i /tmp/snappy.rpm && \
     microdnf install lz4 bzip2 util-linux && \
     microdnf clean all && \
