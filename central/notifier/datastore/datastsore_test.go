@@ -42,7 +42,7 @@ func (s *notifierDataStoreTestSuite) SetupTest() {
 	s.hasReadIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Integrations)))
+			sac.ResourceScopeKeys(resources.Integration)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -50,7 +50,7 @@ func (s *notifierDataStoreTestSuite) SetupTest() {
 	s.hasWriteIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Integrations)))
+			sac.ResourceScopeKeys(resources.Integration)))
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.dataStore = New(s.storage)
@@ -87,7 +87,7 @@ func (s *notifierDataStoreTestSuite) TestAllowsGet() {
 	s.True(exists, "expected exists to be set to false")
 
 	_, exists, err = s.dataStore.GetNotifier(s.hasWriteIntegrationsCtx, "notifier")
-	s.NoError(err, "expected no error trying to read with Integrations permissions")
+	s.NoError(err, "expected no error trying to read with Integration permissions")
 	s.True(exists, "expected exists to be set to false")
 }
 
@@ -114,7 +114,7 @@ func (s *notifierDataStoreTestSuite) TestAllowsGetMany() {
 	s.NoError(err, "expected no error trying to read with permissions")
 
 	_, err = s.dataStore.GetNotifiers(s.hasWriteIntegrationsCtx)
-	s.NoError(err, "expected no error trying to read with Integrations permissions")
+	s.NoError(err, "expected no error trying to read with Integration permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestEnforcesAdd() {
@@ -138,7 +138,7 @@ func (s *notifierDataStoreTestSuite) TestAllowsAdd() {
 	s.NoError(err, "expected no error trying to write with permissions")
 
 	_, err = s.dataStore.AddNotifier(s.hasWriteIntegrationsCtx, &storage.Notifier{})
-	s.NoError(err, "expected no error trying to write with Integrations permissions")
+	s.NoError(err, "expected no error trying to write with Integration permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestErrorOnAdd() {
@@ -169,7 +169,7 @@ func (s *notifierDataStoreTestSuite) TestAllowsUpdate() {
 	s.NoError(err, "expected no error trying to write with permissions")
 
 	err = s.dataStore.UpdateNotifier(s.hasWriteIntegrationsCtx, &storage.Notifier{})
-	s.NoError(err, "expected no error trying to write with Integrations permissions")
+	s.NoError(err, "expected no error trying to write with Integration permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestErrorOnUpdate() {
@@ -199,5 +199,5 @@ func (s *notifierDataStoreTestSuite) TestAllowsRemove() {
 	s.NoError(err, "expected no error trying to write with permissions")
 
 	err = s.dataStore.RemoveNotifier(s.hasWriteIntegrationsCtx, "notifier")
-	s.NoError(err, "expected no error trying to write with Integrations permissions")
+	s.NoError(err, "expected no error trying to write with Integration permissions")
 }

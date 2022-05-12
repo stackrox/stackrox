@@ -12,6 +12,13 @@ TAG=$(shell cat CI_TAG)
 endif
 endif
 
+# Set expiration on Quay.io for non-release tags.
+ifeq ($(findstring x,$(TAG)),x)
+QUAY_TAG_EXPIRATION=1w
+else
+QUAY_TAG_EXPIRATION=never
+endif
+
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scaner, and collector images.
 # ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs.
 # The value is assigned as following:
@@ -507,7 +514,9 @@ $(CURDIR)/image/rhel/bundle.tar.gz:
 $(CURDIR)/image/rhel/Dockerfile.gen:
 	LABEL_VERSION=$(TAG) \
 	LABEL_RELEASE=$(TAG) \
-	envsubst '$${LABEL_VERSION} $${LABEL_RELEASE}' < $(CURDIR)/image/rhel/Dockerfile.envsubst > $(CURDIR)/image/rhel/Dockerfile.gen
+	QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
+	envsubst '$${LABEL_VERSION} $${LABEL_RELEASE} $${QUAY_TAG_EXPIRATION}' \
+	< $(CURDIR)/image/rhel/Dockerfile.envsubst > $(CURDIR)/image/rhel/Dockerfile.gen
 
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image central-db-image \
@@ -530,6 +539,7 @@ docs-image:
 docker-build-data-image: docs-image
 	docker build -t stackrox-data:$(TAG) \
 	    --build-arg DOCS_IMAGE=$(DOCS_IMAGE) \
+		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
 		image/ \
 		--file image/stackrox-data.Dockerfile
 
@@ -540,6 +550,7 @@ docker-build-roxctl-image:
 		-t stackrox/roxctl:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
 		-f image/roxctl.Dockerfile \
+		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
 		image/
 
 .PHONY: copy-go-binaries-to-image-dir

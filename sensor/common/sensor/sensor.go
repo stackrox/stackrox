@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	serviceAuthn "github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -30,6 +31,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
+	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
 )
 
 const (
@@ -105,16 +107,10 @@ func (s *Sensor) startProfilingServer() *http.Server {
 
 func createKOCacheSource(centralEndpoint string) (probeupload.ProbeSource, error) {
 	kernelObjsBaseURL := "/kernel-objects"
-
-	transport, err := clientconn.AuthenticatedHTTPTransport(centralEndpoint, mtls.CentralSubject, nil, clientconn.UseServiceCertToken(true))
+	kernelObjsClient, err := clientconn.NewHTTPClient(mtls.CentralSubject, centralEndpoint, 0)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating central HTTP transport")
 	}
-
-	kernelObjsClient := &http.Client{
-		Transport: transport,
-	}
-
 	return kocache.New(context.Background(), kernelObjsClient, kernelObjsBaseURL, kocache.Options{}), nil
 }
 
@@ -165,6 +161,15 @@ func (s *Sensor) Start() {
 			Compression:   false, // kernel objects are compressed
 		}
 		customRoutes = append(customRoutes, koCacheRoute)
+	}
+
+	// Enable endpoint to retrieve vulnerability definitions if local image scanning is enabled.
+	if features.LocalImageScanning.Enabled() && env.LocalImageScanningEnabled.BooleanSetting() {
+		route, err := newScannerDefinitionsRoute(s.centralEndpoint)
+		if err != nil {
+			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))
+		}
+		customRoutes = append(customRoutes, *route)
 	}
 
 	// Create grpc server with custom routes
@@ -218,6 +223,21 @@ func (s *Sensor) Start() {
 		return
 	}
 	go s.communicationWithCentral(&centralReachable)
+}
+
+// newScannerDefinitionsRoute returns a custom route that serves scanner
+// definitions retrieved from Central.
+func newScannerDefinitionsRoute(centralEndpoint string) (*routes.CustomRoute, error) {
+	handler, err := scannerdefinitions.NewDefinitionsHandler(centralEndpoint)
+	if err != nil {
+		return nil, err
+	}
+	// We rely on central to handle content encoding negotiation.
+	return &routes.CustomRoute{
+		Route:         "/scanner/definitions",
+		Authorizer:    idcheck.ScannerOnly(),
+		ServerHandler: handler,
+	}, nil
 }
 
 func (s *Sensor) gRPCConnectToCentralWithRetries(signal *concurrency.Signal) {

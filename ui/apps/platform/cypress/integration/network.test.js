@@ -14,7 +14,7 @@ import {
     visitNetworkGraph,
     visitNetworkGraphFromLeftNav,
     visitNetworkGraphWithMockedData,
-    visitNetworkGraphWithNamespaceFilters,
+    visitNetworkGraphWithNamespaceFilter,
 } from '../helpers/networkGraph';
 
 function uploadYAMLFile(fileName, selector) {
@@ -174,7 +174,7 @@ describe('Network Policy Simulator', () => {
             return deployments;
         }
 
-        visitNetworkGraphWithNamespaceFilters('stackrox');
+        visitNetworkGraphWithNamespaceFilter('stackrox');
 
         cy.get(networkPageSelectors.buttons.allowedFilter).click();
         cy.getCytoscape('#cytoscapeContainer').then((cytoscape) => {

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/risk/multipliers/image"
 	saStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -40,8 +41,12 @@ func NewDeploymentScorer(alertGetter getters.AlertGetter, roles roleStore.DataSt
 			deployment.NewImageMultiplier(image.RiskyComponentCountHeading),
 			deployment.NewImageMultiplier(image.ComponentCountHeading),
 			deployment.NewImageMultiplier(image.ImageAgeHeading),
-			deployment.NewSAPermissionsMultiplier(roles, bindings, serviceAccounts),
 		},
+	}
+	if env.IncludeRBACInRisk.BooleanSetting() {
+		scoreImpl.ConfiguredMultipliers = append(scoreImpl.ConfiguredMultipliers,
+			deployment.NewSAPermissionsMultiplier(roles, bindings, serviceAccounts),
+		)
 	}
 
 	return scoreImpl
