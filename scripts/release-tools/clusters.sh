@@ -8,7 +8,8 @@ ARTIFACTS_DIR="artifacts"
 main() {
   local action="${1}"
   local cluster_prefix="${2:-os4-9-demo}"
-  local cluster_name="${cluster_prefix}-${RELEASE//./-}-rc${RC_NUMBER}"
+  local cluster_postfix="${RELEASE//./-}-rc${RC_NUMBER}"
+  local cluster_name="${cluster_prefix}-${cluste_postfix}"
   PS3="Choose action: "
   if [[ -n "$action" ]]; then
     exec_option "$action" "$cluster_prefix"
@@ -19,6 +20,7 @@ main() {
     "Remove kubeconfigs for non-existing clusters"
     "Generate Slack message for cluster '${cluster_name}'"
     "Create new RC OpenShift cluster '${cluster_name}'"
+    "Create new qa GKE demo cluster"
     "Quit"
   )
   RED='\033[0;31m'
@@ -56,6 +58,10 @@ exec_option() {
         create_rc_openshift_cluster "$cluster_prefix"
         exit 0
         ;;
+    "${MENU_OPTIONS[4]}"|5)
+        create_qa_gke_cluster "$cluster_postfix"
+        exit 0
+        ;;
     *) echo "invalid option: '$1'";;
   esac
 }
@@ -63,6 +69,53 @@ exec_option() {
 cluster_ready() {
   local cluster_name="$1"
   infractl get "$cluster_name" | grep -xq "Status:      READY"
+}
+
+check_cluster_status() {
+  local name=$1
+  status="$( infractl get "$name" | awk '{if ($1 == "Status:") print $2}' )"
+
+  echo "$status"
+}
+
+does_cluster_exist() {
+  local name=$1
+  nline="$({ infractl get "$name" 2> /dev/null || true; } | wc -l)"
+  if (("$nline" == 0)); then
+    return 1
+  else
+    status="$(check_cluster_status "$name")"
+    if [[ "$status" == "FINISHED" ]]; then
+      return 1
+    else
+      return 0
+    fi
+  fi
+}
+
+wait_for_cluster_to_be_ready() {
+  local cluster_name=$1
+
+  while ! cluster_ready "${cluster_name}"; do
+    echo "Cluster ${cluster_name} not ready yet. Waiting 15 seconds..."
+    sleep 15
+  done
+}
+
+ensure_cluster_exists() {
+  local cluster_name=$1
+
+  infractl get "${cluster_name}" || die "cluster '${cluster_name}' not found"
+}
+
+fetch_artifacts() {
+  local cluster_name=$1
+
+  infractl artifacts "${cluster_name}" --download-dir "${ARTIFACTS_DIR}/${cluster_name}" > /dev/null 2>&1
+  while ! test -d "${ARTIFACTS_DIR}/${cluster_name}"; do
+    echo "Wainting until artifacts download"
+    sleep 5
+  done
 }
 
 create_rc_openshift_cluster() {
@@ -73,22 +126,11 @@ create_rc_openshift_cluster() {
   [[ -n "${INFRA_TOKEN}" ]] || die "INFRA_TOKEN is not set"
 
   export CLUSTER_NAME="${cluster_prefix}-${RELEASE//./-}-rc${RC_NUMBER}"
-  infractl create openshift-4-demo "${CLUSTER_NAME}" --lifespan 168h --arg openshift-version=ocp/stable-4.9 || echo "Cluster creation already started or the cluster already exists"
-  ## wait
-  while ! cluster_ready "${CLUSTER_NAME}"; do
-    echo "Cluster ${CLUSTER_NAME} not ready yet. Waiting 15 seconds..."
-    sleep 15
-  done
+  infractl create openshift-4-demo "${CLUSTER_NAME}" --lifespan 72h --arg openshift-version=ocp/stable-4.9 || echo "Cluster creation already started or the cluster already exists"
 
-  # ensure cluster exists
-  infractl get "${CLUSTER_NAME}" || die "cluster '${CLUSTER_NAME}' not found"
-  # fetch artifacts
-  infractl artifacts "${CLUSTER_NAME}" -d "${ARTIFACTS_DIR}/${CLUSTER_NAME}" > /dev/null 2>&1
-
-  while ! test -d "${ARTIFACTS_DIR}/${CLUSTER_NAME}"; do
-    echo "Wainting until artifacts download"
-    sleep 5
-  done
+  wait_for_cluster_to_be_ready "$CLUSTER_NAME"
+  ensure_cluster_exists "$CLUSTER_NAME"
+  fetch_artifacts "$CLUSTER_NAME"
 
   merge_kubeconfigs "$cluster_prefix" "$DEFAULT_KUBECONFIG"
   export KUBECONFIG="$DEFAULT_KUBECONFIG"
@@ -110,6 +152,28 @@ create_rc_openshift_cluster() {
   oc -n stackrox set image deploy/admission-control "admission-control=docker.io/stackrox/main:${MAIN_TAG}"
 
   oc -n stackrox get deploy,pods -o wide
+}
+
+create_qa_gke_cluster() {
+  require_binary infractl
+
+  local cluster_postfix="$1"
+  [[ -n "${INFRA_TOKEN}" ]] || die "INFRA_TOKEN is not set"
+
+  export CLUSTER_NAME="qa-demo-${cluster_postfix}"
+  if does_cluster_exist "$CLUSTER_NAME"; then
+    echo "Cluster $CLUSTER_NAME already exists"
+  else
+    infractl create qa-demo "${CLUSTER_NAME}" --arg "main-image=docker.io/stackrox/main:${RELEASE}.${PATCH_NUMBER}-rc.${RC_NUMBER}" --lifespan 72h
+  fi
+
+  wait_for_cluster_to_be_ready "$CLUSTER_NAME"
+  ensure_cluster_exists "$CLUSTER_NAME"
+  fetch_artifacts "$CLUSTER_NAME"
+
+  export KUBECONFIG="${ARTIFACTS_DIR}/${CLUSTER_NAME}/kubeconfig"
+
+  kubectl -n stackrox get pods
 }
 
 cleanup_artifacts() {
