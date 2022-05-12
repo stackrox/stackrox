@@ -32,16 +32,16 @@ var (
 	// SAC check is not performed directly on CVE resource. It exists here for postgres sac generation to pass.
 	CVE        = newResourceMetadata("CVE", permissions.NamespaceScope)
 	Cluster    = newResourceMetadata("Cluster", permissions.ClusterScope)
-	Compliance = newResourceMetadata("Compliance", permissions.GlobalScope)
+	Compliance = newResourceMetadata("Compliance", permissions.ClusterScope)
 	Deployment = newResourceMetadata("Deployment", permissions.NamespaceScope)
-	// DeploymentExtensions is the new resource grouping all deployment extending resources.
-	DeploymentExtensions = newResourceMetadata("DeploymentExtensions", permissions.NamespaceScope)
-	Detection            = newResourceMetadata("Detection", permissions.GlobalScope)
-	Image                = newResourceMetadata("Image", permissions.NamespaceScope)
+	// DeploymentExtension is the new resource grouping all deployment extending resources.
+	DeploymentExtension = newResourceMetadata("DeploymentExtension", permissions.NamespaceScope)
+	Detection           = newResourceMetadata("Detection", permissions.GlobalScope)
+	Image               = newResourceMetadata("Image", permissions.NamespaceScope)
 	// SAC check is not performed directly on ImageComponent resource. It exists here for postgres sac generation to pass.
 	ImageComponent = newResourceMetadata("ImageComponent", permissions.NamespaceScope)
-	// Integrations is the new  resource grouping all integration resources.
-	Integrations                     = newResourceMetadata("Integrations", permissions.GlobalScope)
+	// Integration is the new  resource grouping all integration resources.
+	Integration                      = newResourceMetadata("Integration", permissions.GlobalScope)
 	K8sRole                          = newResourceMetadata("K8sRole", permissions.NamespaceScope)
 	K8sRoleBinding                   = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
 	K8sSubject                       = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
@@ -61,16 +61,19 @@ var (
 
 	// Deprecated resources.
 
-	// Deprecated: APIToken is deprecated, use Integrations.
-	APIToken = newDeprecatedResourceMetadata("APIToken", permissions.GlobalScope, Integrations)
+	// Deprecated: AllComments is deprecated, use Administration.
+	AllComments = newDeprecatedResourceMetadata("AllComments", permissions.GlobalScope,
+		Administration)
+	// Deprecated: APIToken is deprecated, use Integration.
+	APIToken = newDeprecatedResourceMetadata("APIToken", permissions.GlobalScope, Integration)
 	// Deprecated: AuthPlugin is deprecated, use Access.
 	AuthPlugin = newDeprecatedResourceMetadata("AuthPlugin", permissions.GlobalScope, Access)
 	// Deprecated: AuthProvider is deprecated, use Access.
 	AuthProvider = newDeprecatedResourceMetadata("AuthProvider", permissions.GlobalScope,
 		Access)
-	// Deprecated: BackupPlugins is deprecated, use Integrations.
+	// Deprecated: BackupPlugins is deprecated, use Integration.
 	BackupPlugins = newDeprecatedResourceMetadata("BackupPlugins", permissions.GlobalScope,
-		Integrations)
+		Integration)
 	// Deprecated: ComplianceRuns is deprecated, use Compliance.
 	ComplianceRuns = newDeprecatedResourceMetadata("ComplianceRuns", permissions.ClusterScope,
 		Compliance)
@@ -85,32 +88,32 @@ var (
 		Administration)
 	// Deprecated: Group is deprecated, use Access.
 	Group = newDeprecatedResourceMetadata("Group", permissions.GlobalScope, Access)
-	// Deprecated: ImageIntegration is deprecated, use Integrations.
+	// Deprecated: ImageIntegration is deprecated, use Integration.
 	ImageIntegration = newDeprecatedResourceMetadata("ImageIntegration",
-		permissions.GlobalScope, Integrations)
-	// Deprecated: Indicator is deprecated, use DeploymentExtensions.
+		permissions.GlobalScope, Integration)
+	// Deprecated: Indicator is deprecated, use DeploymentExtension.
 	Indicator = newDeprecatedResourceMetadata("Indicator", permissions.NamespaceScope,
-		DeploymentExtensions)
+		DeploymentExtension)
 	// Deprecated: Licenses is deprecated, use Access.
 	Licenses = newDeprecatedResourceMetadata("Licenses", permissions.GlobalScope, Access)
-	// Deprecated: NetworkBaseline is deprecated, use DeploymentExtensions.
+	// Deprecated: NetworkBaseline is deprecated, use DeploymentExtension.
 	NetworkBaseline = newDeprecatedResourceMetadata("NetworkBaseline",
-		permissions.NamespaceScope, DeploymentExtensions)
+		permissions.NamespaceScope, DeploymentExtension)
 	// Deprecated: NetworkGraphConfig is deprecated, use Administration.
 	NetworkGraphConfig = newDeprecatedResourceMetadata("NetworkGraphConfig",
 		permissions.GlobalScope, Administration)
-	// Deprecated: Notifier is deprecated, use Integrations.
+	// Deprecated: Notifier is deprecated, use Integration.
 	Notifier = newDeprecatedResourceMetadata("Notifier", permissions.GlobalScope,
-		Integrations)
+		Integration)
 	// Deprecated: ProbeUpload is deprecated, use Administration.
 	ProbeUpload = newDeprecatedResourceMetadata("ProbeUpload", permissions.GlobalScope,
 		Administration)
-	// Deprecated: ProcessWhitelist is deprecated, use DeploymentExtensions.
+	// Deprecated: ProcessWhitelist is deprecated, use DeploymentExtension.
 	ProcessWhitelist = newDeprecatedResourceMetadata("ProcessWhitelist",
-		permissions.NamespaceScope, DeploymentExtensions)
-	// Deprecated: Risk is deprecated, use DeploymentExtensions.
+		permissions.NamespaceScope, DeploymentExtension)
+	// Deprecated: Risk is deprecated, use DeploymentExtension.
 	Risk = newDeprecatedResourceMetadata("Risk", permissions.NamespaceScope,
-		DeploymentExtensions)
+		DeploymentExtension)
 	// Deprecated: Role is deprecated, use Access.
 	Role = newDeprecatedResourceMetadata("Role", permissions.GlobalScope, Access)
 	// Deprecated: ScannerBundle is deprecated, use Administration.
@@ -125,9 +128,9 @@ var (
 	// Deprecated: ServiceIdentity is deprecated, use Administration.
 	ServiceIdentity = newDeprecatedResourceMetadata("ServiceIdentity",
 		permissions.GlobalScope, Administration)
-	// Deprecated: SignatureIntegration is deprecated, use Integrations.
+	// Deprecated: SignatureIntegration is deprecated, use Integration.
 	SignatureIntegration = newDeprecatedResourceMetadataWithFeatureFlag("SignatureIntegration",
-		permissions.GlobalScope, Integrations, features.ImageSignatureVerification)
+		permissions.GlobalScope, Integration, features.ImageSignatureVerification)
 	// Deprecated: User is deprecated, use Access.
 	User = newDeprecatedResourceMetadata("User", permissions.GlobalScope, Access)
 

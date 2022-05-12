@@ -47,7 +47,7 @@
         "@typescript-eslint/parser": "^4.32.0"
     },
     "devDependencies": {
-        "chalk-cli": "^4.1.0",
+        "chalk-cli": "^5.0.0",
         "lerna": "^3.22.1",
         "postinstall-postinstall": "^2.1.0"
     }

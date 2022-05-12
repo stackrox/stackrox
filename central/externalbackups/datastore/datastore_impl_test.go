@@ -64,7 +64,7 @@ func (s *extBkpDataStoreTestSuite) SetupTest() {
 	s.hasReadIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Integrations)))
+			sac.ResourceScopeKeys(resources.Integration)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -72,7 +72,7 @@ func (s *extBkpDataStoreTestSuite) SetupTest() {
 	s.hasWriteIntegrationsCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Integrations)))
+			sac.ResourceScopeKeys(resources.Integration)))
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.dataStore = New(s.storage)
@@ -163,7 +163,7 @@ func (s *extBkpDataStoreTestSuite) TestAllowsUpsert() {
 	s.NoError(err, "expected no error trying to write with permissions")
 
 	err = s.dataStore.UpsertBackup(s.hasWriteIntegrationsCtx, &storage.ExternalBackup{})
-	s.NoError(err, "expected no error trying to write with Integrations permissions")
+	s.NoError(err, "expected no error trying to write with Integration permissions")
 }
 
 func (s *extBkpDataStoreTestSuite) TestEnforcesRemove() {
@@ -183,5 +183,5 @@ func (s *extBkpDataStoreTestSuite) TestAllowsRemove() {
 	s.NoError(err, "expected no error trying to write with permissions")
 
 	err = s.dataStore.RemoveBackup(s.hasWriteIntegrationsCtx, FakeID)
-	s.NoError(err, "expected no error trying to write with Integrations permissions")
+	s.NoError(err, "expected no error trying to write with Integration permissions")
 }

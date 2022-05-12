@@ -442,7 +442,12 @@ pr_has_label() {
 
     local expected_label="$1"
     local pr_details
-    pr_details="${2:-$(get_pr_details)}"
+    local exitstatus=0
+    pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
+    if [[ "$exitstatus" != "0" ]]; then
+        info "Warning: checking for a label in a non PR context"
+        false
+    fi
     jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details" | grep -qx "${expected_label}"
 }
 
@@ -511,14 +516,17 @@ gate_job() {
 
     info "Will determine whether to run: $job"
 
+    # TODO(RS-509) remove once this behaves better
+    set -x
     if [[ "$job_config" == "null" ]]; then
         info "$job will run because there is no gating criteria for $job"
+        set +x
         return
     fi
 
     local pr_details
-    pr_details="$(get_pr_details)"
-    local exitstatus="$?"
+    local exitstatus=0
+    pr_details="$(get_pr_details)" || exitstatus="$?"
 
     if [[ "$exitstatus" == "0" ]]; then
         if [[ "$(jq -r .base.repo.full_name <<<"$pr_details")" == "openshift/release" ]]; then
@@ -531,6 +539,7 @@ gate_job() {
     else
         die "Could not determine if this is a PR versus a merge"
     fi
+    set +x
 }
 
 get_var_from_job_config() {
@@ -590,14 +599,18 @@ gate_pr_job() {
         fi
         echo "Diffbase diff:"
         { git diff --name-only "${diff_base}" | cat ; } || true
+        # TODO(RS-509) remove once this behaves better
+        set -x
         ignored_regex="${changed_path_to_ignore}"
         [[ -n "$ignored_regex" ]] || ignored_regex='$^' # regex that matches nothing
         match_regex="${run_with_changed_path}"
         [[ -n "$match_regex" ]] || match_regex='^.*$' # grep -E -q '' returns 0 even on empty input, so we have to specify some pattern
         if grep -E -q "$match_regex" < <({ git diff --name-only "${diff_base}" || echo "???" ; } | grep -E -v "$ignored_regex"); then
             info "$job will run because paths matching $match_regex (and not matching ${ignored_regex}) had changed."
+            set +x
             return
         fi
+        set +x
     fi
 
     info "$job will be skipped"
