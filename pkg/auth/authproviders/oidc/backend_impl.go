@@ -36,6 +36,9 @@ const (
 	modeConfigKey                = "mode"
 
 	userInfoExpiration = 5 * time.Minute
+
+	RolesAttribute = "roles"
+	OrgidAttribute = "orgid"
 )
 
 type nonceVerificationSetting int
@@ -562,7 +565,7 @@ func (p *backendImpl) Validate(context.Context, *tokens.Claims) error {
 // Helpers
 ///////////
 
-// realmAccess is an internal helper struct to represent Keycloak-specific realm_access claim.
+// realmAccess is an internal helper struct to unmarshal the keycloak-specific realm_access claim into.
 type realmAccess struct {
 	Roles []string `json:"roles"`
 }
@@ -576,6 +579,8 @@ type userInfoType struct {
 	RealmAccess *realmAccess `json:"realm_access"`
 	// Claim "account_id" is the claim that represents organisation id within sso.redhat.com.
 	// Red Hat users are united in organisations.
+	// See more on the claims here:
+	// https://source.redhat.com/groups/public/it-user/it_user_team_wiki/topic_external_sso_enablements#attributes-needed
 	OrgID string `json:"account_id"`
 }
 
@@ -595,10 +600,10 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 	claim.Attributes = make(map[string][]string)
 	realmAccess := userInfo.RealmAccess
 	if realmAccess != nil && len(realmAccess.Roles) > 0 {
-		claim.Attributes[authproviders.RolesAttribute] = realmAccess.Roles
+		claim.Attributes[RolesAttribute] = realmAccess.Roles
 	}
 	if userInfo.OrgID != "" {
-		claim.Attributes[authproviders.OrgIDAttribute] = []string{userInfo.OrgID}
+		claim.Attributes[OrgidAttribute] = []string{userInfo.OrgID}
 	}
 
 	// Add all fields as attributes.
