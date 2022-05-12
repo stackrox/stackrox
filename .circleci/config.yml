@@ -2319,27 +2319,6 @@ jobs:
 
       - *storeUITestReports
 
-  style-checks:
-    executor: custom
-    resource_class: xlarge
-    steps:
-      - checkout
-
-      - setup-go-build-env
-      - *restoreGoLintCache
-      - *restoreGradle
-      - restore-npm-deps-cache
-
-      - run:
-          name: Run style checks
-          command: make style
-
-      - ci-artifacts/store:
-          path: qa-tests-backend/build/reports/codenarc
-          destination: reports/codenarc
-
-      - *saveGoLintCache
-
   # This job checks that the docs/content submodule is pointing to the correct branch in the openshift-docs repo,
   # and that it is up-to-date. It only runs on RC builds, and is primarily intended as a reminder for the release
   # manager to inquire about docs and, if available, update the submodule pointer.
@@ -4776,8 +4755,6 @@ workflows:
       - slack-notify:
           <<: *runOnTagsOnly
           context: custom-executor-pull
-      - style-checks:
-          <<: *runOnAllTagsWithQuayIOPullCtx
       - check-generated-files-up-to-date:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - check-policy-files-up-to-date:
