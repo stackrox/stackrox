@@ -86,8 +86,7 @@ class SACTest extends BaseSpecification {
                 WAIT_FOR_VIOLATION_TIMEOUT)
 
         // Make sure each deployment has a risk score.
-        def deployments = listDeployments()
-        deployments.each { DeploymentOuterClass.ListDeployment dep ->
+        listDeployments().each { DeploymentOuterClass.ListDeployment dep ->
             try {
                 withRetry(WAIT_FOR_RISK_RETRIES, 2) {
                     assert DeploymentService.getDeploymentWithRisk(dep.id).hasRisk()
