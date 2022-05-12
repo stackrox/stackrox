@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useCallback, useEffect } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { Select, SelectOption } from '@patternfly/react-core';
@@ -9,6 +9,7 @@ import { actions as pageActions } from 'reducers/network/page';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { Cluster } from 'types/cluster.proto';
+import useURLParameter from 'hooks/useURLParameter';
 
 type ClusterSelectProps = {
     id?: string;
@@ -19,6 +20,24 @@ type ClusterSelectProps = {
     isDisabled?: boolean;
 };
 
+// TODO Are there use cases where we want the possibility of multiple selected clusters,
+// and should that be rolled into this hook?
+// TODO extract
+function useURLCluster(defaultClusterId: string) {
+    const [cluster, setClusterInternal] = useURLParameter('cluster', defaultClusterId || undefined);
+    const setCluster = useCallback(
+        (clusterId?: string) => {
+            setClusterInternal(clusterId);
+        },
+        [setClusterInternal]
+    );
+
+    return {
+        cluster: typeof cluster === 'string' ? cluster : undefined,
+        setCluster,
+    };
+}
+
 const ClusterSelect = ({
     id,
     selectClusterId,
@@ -28,10 +47,17 @@ const ClusterSelect = ({
     isDisabled = false,
 }: ClusterSelectProps): ReactElement => {
     const { closeSelect, isOpen, onToggle } = useSelectToggle();
+    const { cluster, setCluster } = useURLCluster(selectedClusterId);
+
+    useEffect(() => {
+        selectClusterId(cluster || '');
+    }, [cluster, selectClusterId]);
+
     function changeCluster(_e, clusterId) {
         selectClusterId(clusterId);
         closeSelect();
         closeSidePanel();
+        setCluster(clusterId);
     }
 
     return (
@@ -45,9 +71,13 @@ const ClusterSelect = ({
             onSelect={changeCluster}
         >
             {clusters
-                .filter((cluster) => networkGraphClusters[cluster.type])
+                .filter((c) => networkGraphClusters[c.type])
                 .map(({ id: clusterId, name }) => (
-                    <SelectOption key={clusterId} value={clusterId}>
+                    <SelectOption
+                        isSelected={clusterId === cluster}
+                        key={clusterId}
+                        value={clusterId}
+                    >
                         {name}
                     </SelectOption>
                 ))}
