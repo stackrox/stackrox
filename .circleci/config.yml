@@ -4776,8 +4776,6 @@ workflows:
       - slack-notify:
           <<: *runOnTagsOnly
           context: custom-executor-pull
-      - style-checks:
-          <<: *runOnAllTagsWithQuayIOPullCtx
       - check-generated-files-up-to-date:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - check-policy-files-up-to-date:
