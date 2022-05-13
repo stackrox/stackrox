@@ -99,7 +99,7 @@ class BaseSpecification extends Specification {
             try {
                 def metadata = MetadataService.getMetadataServiceClient().getMetadata()
                 LOG.info "Testing against:"
-                LOG.info metadata
+                LOG.info metadata.toString()
                 LOG.info "isGKE: ${orchestrator.isGKE()}"
                 LOG.info "isEKS: ${ClusterService.isEKS()}"
                 LOG.info "isOpenShift3: ${ClusterService.isOpenShift3()}"
