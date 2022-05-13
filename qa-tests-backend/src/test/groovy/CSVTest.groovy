@@ -132,18 +132,18 @@ class CSVTest extends BaseSpecification {
             reader = new CSVReader(new InputStreamReader(response.body().asInputStream()))
             lines = reader.readAll()
         } catch (Exception e) {
-            e.printStackTrace()
+            log.warn("exception", e)
         } finally {
             try {
                 if (reader != null) {
                     reader.close()
                 }
             } catch (IOException e) {
-                e.printStackTrace()
+                log.warn("exception", e)
             }
         }
 
-        println "Number of CVEs received from CSV endpoint: " + lines.size()
+        log.info "Number of CVEs received from CSV endpoint: " + lines.size()
 
         def csvCVEs = new ArrayList<CVE>()
         for (int i = 1; i < lines.size(); i++) {

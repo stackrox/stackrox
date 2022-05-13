@@ -116,7 +116,7 @@ class CertRotationTest extends BaseSpecification {
         def admissionControlTLSSecret = orchestrator.getSecret("admission-control-tls", "stackrox")
         // Admission control secret may or may not be present, depending on how the cluster was deployed.
         def admissionControlSecretPresent = (admissionControlTLSSecret != null)
-        println "Admission control secret present: ${admissionControlSecretPresent}"
+        log.info "Admission control secret present: ${admissionControlSecretPresent}"
         def cluster = ClusterService.getCluster()
         assert cluster
         def reqObject = new JsonObject()

@@ -141,7 +141,7 @@ class TLSChallengeTest extends BaseSpecification {
         }
 
         log.error("Could not establish connection to central ${CENTRAL_PROXY_ENDPOINT}")
-        println logs
+        log.info logs
         return false
     }
 

@@ -110,7 +110,7 @@ class K8sEventDetectionTest extends BaseSpecification {
             if (violatingDeploymentNames.any { it == deploymentName }) {
                 continue
             }
-            println "Checking that deployment ${deploymentName} does NOT have a violation"
+            log.info "Checking that deployment ${deploymentName} does NOT have a violation"
             def deployment = DEPLOYMENTS.find { it.name == deploymentName }
             assert deployment
             assert Services.checkForNoViolationsByDeploymentID(deployment.deploymentUid, policyName)

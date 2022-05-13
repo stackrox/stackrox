@@ -843,7 +843,7 @@ class PolicyFieldsTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS) {
             if (deployment.namespace != Constants.ORCHESTRATOR_NAMESPACE &&
                     !newNamespaces.contains(deployment.namespace)) {
-                println "Creating the test namespace ${deployment.namespace} with pull rights before deployment"
+                log.info "Creating the test namespace ${deployment.namespace} with pull rights before deployment"
                 orchestrator.ensureNamespaceExists(deployment.namespace)
                 addStackroxImagePullSecret(deployment.namespace)
                 addGCRImagePullSecret(deployment.namespace)

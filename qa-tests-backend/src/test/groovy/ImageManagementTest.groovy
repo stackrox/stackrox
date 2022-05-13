@@ -310,7 +310,7 @@ class ImageManagementTest extends BaseSpecification {
         assert scanResults.getAlertsList().findAll { it.getPolicy().name == policyName }.size() == 1
         withRetry(2, 3) {
             def genericViolation = GenericNotifier.getMostRecentViolationAndValidateCommonFields()
-            println "Most recent violation sent: ${genericViolation}"
+            log.info "Most recent violation sent: ${genericViolation}"
             def alert = genericViolation["data"]["alert"]
             assert alert != null
             assert alert["policy"]["name"] == policyName

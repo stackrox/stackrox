@@ -173,7 +173,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             PolicyService.patchPolicy(
                     PolicyServiceOuterClass.PatchPolicyRequest.newBuilder().setId(policy.id).setDisabled(false).build()
             )
-            println "Temporarily enabled policy '${policyName}'"
+            log.info "Temporarily enabled policy '${policyName}'"
             policyEnabled = true
         }
 
@@ -188,7 +188,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             PolicyService.patchPolicy(
                     PolicyServiceOuterClass.PatchPolicyRequest.newBuilder().setId(policy.id).setDisabled(true).build()
             )
-            println "Re-disabled policy '${policyName}'"
+            log.info "Re-disabled policy '${policyName}'"
         }
 
         where:
@@ -237,7 +237,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         def violations = AlertService.getViolations(
                 ListAlertsRequest.newBuilder().setQuery("Namespace:stackrox,Violation State:*").build()
         )
-        println "${violations.size()} violation(s) were found in the stackrox namespace"
+        log.info "${violations.size()} violation(s) were found in the stackrox namespace"
         def unexpectedViolations = violations.findAll {
             def deploymentName = it.deployment.name
             def policyName = it.policy.name
@@ -246,7 +246,7 @@ class DefaultPoliciesTest extends BaseSpecification {
                     !Constants.VIOLATIONS_ALLOWLIST.get(deploymentName).contains(policyName)) &&
                     !Constants.VIOLATIONS_BY_POLICY_ALLOWLIST.contains(policyName)
         }
-        println "${unexpectedViolations.size()} violation(s) were not expected"
+        log.info "${unexpectedViolations.size()} violation(s) were not expected"
         if (unexpectedViolations.isEmpty()) {
             return
         }
@@ -282,7 +282,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             }
             catch (Exception e) {
                 hadGetErrors = true
-                println "Could not get the deployment with id ${it.deployment.id}, name ${it.deployment.name}: ${e}"
+                log.info "Could not get the deployment with id ${it.deployment.id}, name ${it.deployment.name}: ${e}"
                 return it
             }
 
@@ -303,7 +303,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         }
         if (imageFixableVulnMap.isEmpty()) {
             assert !hadGetErrors
-            println "There are no fixable vulns to report"
+            log.info "There are no fixable vulns to report"
             return
         }
 
@@ -361,7 +361,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             sleep 2000
         }
         riskResult != null
-        println "Risk Factor found in ${System.currentTimeMillis() - start}ms: ${riskFactor}"
+        log.info "Risk Factor found in ${System.currentTimeMillis() - start}ms: ${riskFactor}"
         riskResult.score <= maxScore
         riskResult.score >= 1.0f
 
@@ -422,8 +422,8 @@ class DefaultPoliciesTest extends BaseSpecification {
                     exists = true
                 }
                 catch (StatusRuntimeException e) {
-                    println "Cannot get the policy associated with the alert: ${e}"
-                    println violation
+                    log.info "Cannot get the policy associated with the alert: ${e}"
+                    log.info violation
                 }
                  exists
              }.filter { alert ->
@@ -451,10 +451,10 @@ class DefaultPoliciesTest extends BaseSpecification {
         if (nonWhitelistedKubeSystemViolations.size() != 0) {
             nonWhitelistedKubeSystemViolations.forEach {
                 violation ->
-                println "An unexpected kube-system violation:"
-                println violation
-                println "The policy details:"
-                println Services.getPolicy(violation.policy.id)
+                log.info "An unexpected kube-system violation:"
+                log.info violation
+                log.info "The policy details:"
+                log.info Services.getPolicy(violation.policy.id)
             }
         }
 

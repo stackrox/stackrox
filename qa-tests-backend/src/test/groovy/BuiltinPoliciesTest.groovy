@@ -65,7 +65,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
         getPolicies().forEach {
             policy ->
             if (policy.disabled) {
-                println "Temporarily enabling a disabled policy for testing: ${policy.name}"
+                log.info "Temporarily enabling a disabled policy for testing: ${policy.name}"
                 PolicyService.patchPolicy(
                         PatchPolicyRequest.newBuilder().setId(policy.id).setDisabled(false).build()
                 )
@@ -76,13 +76,13 @@ class BuiltinPoliciesTest extends BaseSpecification {
         orchestrator.createSecret(TEST_PASSWORD)
 
         for (Deployment deployment : NO_WAIT_DEPLOYMENTS) {
-            println("Starting ${deployment.name} without waiting for deployment")
+            log.info("Starting ${deployment.name} without waiting for deployment")
             orchestrator.createDeploymentNoWait(deployment)
         }
 
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
-            println("Waiting for ${deployment.name}")
+            log.info("Waiting for ${deployment.name}")
             assert Services.waitForDeployment(deployment)
         }
     }
@@ -90,7 +90,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
     def cleanupSpec() {
         disabledPolicyIds.forEach {
             id ->
-            println "Re-disabling a policy after test"
+            log.info "Re-disabling a policy after test"
             PolicyService.patchPolicy(
                     PatchPolicyRequest.newBuilder().setId(id).setDisabled(true).build()
             )

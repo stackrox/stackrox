@@ -268,7 +268,7 @@ class ProcessBaselinesTest extends BaseSpecification {
                 break
              }
          }
-        System.out.println("numAlertsAfterResolve .. " + numAlertsAfterResolve)
+        log.info("numAlertsAfterResolve .. " + numAlertsAfterResolve)
         assert (numAlertsAfterResolve  == expectedViolationsCount)
 
         cleanup:
@@ -399,7 +399,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         when:
         "delete the baselines"
-        println "ID: ${deployment.getDeploymentUid()}"
+        log.info "ID: ${deployment.getDeploymentUid()}"
         ProcessBaselineService.deleteProcessBaselines("Deployment Id:${deployment.getDeploymentUid()}")
 
         then:

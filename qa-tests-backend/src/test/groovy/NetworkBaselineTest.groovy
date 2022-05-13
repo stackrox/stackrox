@@ -121,7 +121,7 @@ class NetworkBaselineTest extends BaseSpecification {
 
         def anomalousClientDeploymentID = ANOMALOUS_CLIENT_DEP.deploymentUid
         assert anomalousClientDeploymentID != null
-        println "Deployment IDs Server: ${serverDeploymentID}, " +
+        log.info "Deployment IDs Server: ${serverDeploymentID}, " +
             "Baselined client: ${baselinedClientDeploymentID}, Anomalous client: ${anomalousClientDeploymentID}"
 
         assert NetworkGraphUtil.checkForEdge(baselinedClientDeploymentID, serverDeploymentID, null, 180)

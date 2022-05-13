@@ -144,7 +144,7 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     def cleanup() {
-        println "Post test cleanup:"
+        log.info "Post test cleanup:"
         if (secret != null) {
             orchestrator.deleteSecret(secret.name, secret.namespace)
         }
@@ -156,12 +156,12 @@ class ImageScanningTest extends BaseSpecification {
             ImageService.clearImageCaches()
             try {
                 // Sleep for 20s in order to avoid race condition with processing that is currently in progress
-                println "Sleeping to avoid race condition with reprocessing"
+                log.info "Sleeping to avoid race condition with reprocessing"
                 sleep(SLEEP_DURING_PROCESSING)
                 ImageService.deleteImagesWithRetry(SearchServiceOuterClass.RawQuery.newBuilder()
                         .setQuery("Image:${imageToCleanup}").build(), true)
             } catch (e) {
-                println "Image delete threw an exception: ${e}, this is OK for some retry cases."
+                log.info "Image delete threw an exception: ${e}, this is OK for some retry cases."
             }
         }
         integrationIds.each { ImageIntegrationService.deleteImageIntegration(it) }
@@ -242,7 +242,7 @@ class ImageScanningTest extends BaseSpecification {
         "validate scan results for the image"
         Timer t = new Timer(20, 3)
         while (imageDetail?.scan?.componentsCount == 0 && t.IsValid()) {
-            println "waiting on scan details..."
+            log.info "waiting on scan details..."
             sleep 3000
             ImageService.scanImage(deployment.image)
             imageDetail = ImageService.getImage(ImageService.getImages().find { it.name == deployment.image }?.id)
@@ -263,7 +263,7 @@ class ImageScanningTest extends BaseSpecification {
         and:
         "validate the existence of expected CVEs"
         for (String cve : cves) {
-            println "Validating existence of ${cve} cve..."
+            log.info "Validating existence of ${cve} cve..."
             ImageOuterClass.EmbeddedImageScanComponent component = imageDetail.scan.componentsList.find {
                 component -> component.vulnsList.find { vuln -> vuln.cve == cve }
             }
@@ -656,10 +656,10 @@ class ImageScanningTest extends BaseSpecification {
                 }
             }
             if (missingValues.containsKey(imageDetails.name)) {
-                println "Failing image: ${imageDetails}"
+                log.info "Failing image: ${imageDetails}"
             }
         }
-        println missingValues
+        log.info missingValues
         assert missingValues.size() == 0
     }
 

@@ -12,7 +12,7 @@ class ImageService extends BaseService {
         return ImageServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getImages(RawQuery request = RawQuery.newBuilder().build()) {
+    static List<ImageOuterClass.ListImage> getImages(RawQuery request = RawQuery.newBuilder().build()) {
         return getImageClient().listImages(request).imagesList
     }
 

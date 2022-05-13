@@ -45,8 +45,8 @@ class GlobalSearch extends BaseSpecification {
         def foundViolation = waitForViolation(DEPLOYMENT.getName(), "Latest tag", WAIT_FOR_VIOLATION_TIMEOUT)
         if (!foundViolation) {
             def policy = Services.getPolicyByName("Latest tag")
-            println "'Latest tag' policy:"
-            println policy
+            log.info "'Latest tag' policy:"
+            log.info policy
         }
         assert foundViolation
     }
@@ -79,7 +79,7 @@ class GlobalSearch extends BaseSpecification {
         withRetry(30, 1) {
             searchResponse = getSearchResponse(query, searchCategories)
             searchResponse.countsList.forEach {
-                count -> println "Category: ${count.category}: ${count.count}"
+                count -> log.info "Category: ${count.category}: ${count.count}"
             }
             presentCategories = searchResponse.countsList.collectMany {
                 count -> count.count > 0 ? [count.category] : [] } .toSet()

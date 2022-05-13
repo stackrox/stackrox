@@ -5,6 +5,7 @@ import io.stackrox.proto.api.v1.ImageServiceGrpc
 import io.stackrox.proto.api.v1.ImageServiceOuterClass
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
 import io.stackrox.proto.api.v1.MetadataServiceGrpc
+import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.DeploymentOuterClass.Pod
 import io.stackrox.proto.storage.DeploymentOuterClass.ContainerImage
 import io.stackrox.proto.storage.RiskOuterClass
@@ -40,41 +41,41 @@ import util.Timer
 @CompileStatic
 class Services extends BaseService {
 
-    static final Logger log = LoggerFactory.getLogger("test." + Services.getClass().getSimpleName())
+    static final Logger log = LoggerFactory.getLogger("test." + Services.getSimpleName())
 
     static ResourceByID getResourceByID(String id) {
         return ResourceByID.newBuilder().setId(id).build()
     }
 
-    static getMetadataClient() {
+    static MetadataServiceGrpc.MetadataServiceBlockingStub getMetadataClient() {
         return MetadataServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getClusterClient() {
+    static ClustersServiceGrpc.ClustersServiceBlockingStub getClusterClient() {
         return ClustersServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getImageClient() {
+    static ImageServiceGrpc.ImageServiceBlockingStub getImageClient() {
         return ImageServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getDetectionClient() {
+    static DetectionServiceGrpc.DetectionServiceBlockingStub getDetectionClient() {
         return DetectionServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getPolicyClient() {
+    static PolicyServiceGrpc.PolicyServiceBlockingStub getPolicyClient() {
         return PolicyServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getDeploymentClient() {
+    static DeploymentServiceGrpc.DeploymentServiceBlockingStub getDeploymentClient() {
         return DeploymentServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getPodClient() {
+    static PodServiceGrpc.PodServiceBlockingStub getPodClient() {
         return PodServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getSearchServiceClient() {
+    static SearchServiceGrpc.SearchServiceBlockingStub getSearchServiceClient() {
         return SearchServiceGrpc.newBlockingStub(getChannel())
     }
 
@@ -114,10 +115,6 @@ class Services extends BaseService {
         return getDeploymentClient().listDeployments(query).deploymentsList
     }
 
-    static Deployment getDeployment(String id) {
-        return getDeploymentClient().getDeployment(getResourceByID(id))
-    }
-
     static DeploymentServiceOuterClass.GetDeploymentWithRiskResponse getDeploymentWithRisk(String id) {
         return getDeploymentClient().getDeploymentWithRisk(getResourceByID(id))
     }
@@ -152,7 +149,7 @@ class Services extends BaseService {
     }
 
     static waitForViolation(String deploymentName, String policyName, int timeoutSeconds = 30) {
-        def violations = getViolationsWithTimeout(deploymentName, policyName, timeoutSeconds)
+        List<AlertOuterClass.ListAlert> violations = getViolationsWithTimeout(deploymentName, policyName, timeoutSeconds)
         if (violations == null || violations.size() == 0) {
             return false // still return false pending debate
         }
@@ -161,14 +158,14 @@ class Services extends BaseService {
 
     static waitForResolvedViolation(String deploymentName, String policyName, int timeoutSeconds = 30) {
         def query = "Deployment:${deploymentName}+Policy:${policyName}+Violation State:resolved"
-        def violations = getViolationsHelper(query, policyName, timeoutSeconds)
+        List<AlertOuterClass.ListAlert> violations = getViolationsHelper(query, policyName, timeoutSeconds)
         if (violations == null || violations.size() == 0) {
             return false // still return false pending debate
         }
         return violations != null && violations.size() > 0
     }
 
-    private static getViolationsHelper(String query, String policyName, int timeoutSeconds) {
+    private static List<AlertOuterClass.ListAlert> getViolationsHelper(String query, String policyName, int timeoutSeconds) {
         int intervalSeconds = 3
         int retries = (timeoutSeconds / intervalSeconds).intValue()
 
@@ -186,7 +183,7 @@ class Services extends BaseService {
         return []
     }
 
-    static getViolationsWithTimeout(String deploymentName, String policyName, int timeoutSeconds) {
+    static List<AlertOuterClass.ListAlert> getViolationsWithTimeout(String deploymentName, String policyName, int timeoutSeconds) {
         return getViolationsHelper("Deployment:${deploymentName}+Policy:${policyName}", policyName, timeoutSeconds)
     }
 
@@ -218,9 +215,9 @@ class Services extends BaseService {
         return violations == null || violations.size() == 0
     }
 
-    static checkForNoViolationsByDeploymentID(String deploymentID, String policyName, int checkSeconds = 5) {
+    static boolean checkForNoViolationsByDeploymentID(String deploymentID, String policyName, int checkSeconds = 5) {
         def violations = getViolationsByDeploymentID(deploymentID, policyName, false, checkSeconds)
-        return violations == null || violations.size() == 0
+        return violations
     }
 
     static scanImage(String image) {
@@ -333,7 +330,7 @@ class Services extends BaseService {
     static updatePolicyImageExclusion(String policyName, List<String> images) {
         Policy policyMeta = getPolicyByName(policyName)
 
-        def builder = Policy.newBuilder(policyMeta).clearExclusions()
+        Policy.Builder builder = Policy.newBuilder(policyMeta).clearExclusions()
         for (String image: images) {
             builder.addExclusions(
                     Exclusion.newBuilder()
@@ -360,7 +357,7 @@ class Services extends BaseService {
                                                            Boolean waitForPropagation = true) {
         Policy policyMeta = getPolicyByName(policyName)
 
-        def builder = Policy.newBuilder(policyMeta).clearEnforcementActions()
+        Policy.Builder builder = Policy.newBuilder(policyMeta).clearEnforcementActions()
         if (enforcementActions != null && !enforcementActions.isEmpty()) {
             builder.addAllEnforcementActions(enforcementActions)
         } else {
@@ -389,7 +386,7 @@ class Services extends BaseService {
 
     static boolean roxDetectedDeployment(String deploymentID, String name) {
         try {
-            def deployment = getDeploymentClient().
+            Deployment deployment = getDeploymentClient().
                     getDeployment(ResourceByID.newBuilder().setId(deploymentID).build())
             if (deployment.getContainersList().size() == 0) {
                 log.info("Deployment ${name} found but it had no containers...")

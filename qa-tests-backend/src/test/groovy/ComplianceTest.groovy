@@ -222,7 +222,7 @@ class ComplianceTest extends BaseSpecification {
             def standardId = result.aggregationKeysList.find { it.scope == Scope.STANDARD }?.id
 
             ComplianceRunResults run = BASE_RESULTS.get(standardId)
-            println "Verifying aggregate counts for ${standardId}"
+            log.info "Verifying aggregate counts for ${standardId}"
             run.clusterResults.controlResultsMap.each {
                 counts.get(it.value.overallState) ?
                         counts.get(it.value.overallState).add(it.key) :
@@ -438,7 +438,7 @@ class ComplianceTest extends BaseSpecification {
                     it.name == normalizedControlName
                 }
                 if (!control) {
-                    println "Couldn't find ${normalizedControlName} (row " +
+                    log.info "Couldn't find ${normalizedControlName} (row " +
                             "was ${row.cluster} ${row.standard} ${row.control}"
                 }
                 assert control
@@ -473,9 +473,9 @@ class ComplianceTest extends BaseSpecification {
                         break
                 }
                 if (!value) {
-                    println "Control: ${control} StandardId: ${standardId}" +
+                    log.info "Control: ${control} StandardId: ${standardId}" +
                             "Row: ${row.cluster}, ${row.standard}, ${row.objectType}, ${row.control}, ${row.evidence}"
-                    println result.clusterResults.controlResultsMap.keySet()
+                    log.info result.clusterResults.controlResultsMap.keySet()
                 }
                 assert value
                 assert convertStringState(row.state) ?
@@ -489,9 +489,9 @@ class ComplianceTest extends BaseSpecification {
                         .withZone(ZoneId.of("UTC"))
                 assert row.timestamp == formatter.format(i)
             }
-            println "Verified ${verifiedRows} out of ${rowNumber} total rows"
+            log.info "Verified ${verifiedRows} out of ${rowNumber} total rows"
         } catch (Exception e) {
-            println e.printStackTrace()
+            log.warn("exception", e)
         }
     }
 
@@ -664,7 +664,7 @@ class ComplianceTest extends BaseSpecification {
 
         and:
         "verify standard started on schedule"
-        println "Waiting for schedule to start..."
+        log.info "Waiting for schedule to start..."
         while (now.get(Calendar.MINUTE) < minute) {
             sleep 1000
             now = Calendar.getInstance(TimeZone.getTimeZone("GMT"))
@@ -742,7 +742,7 @@ class ComplianceTest extends BaseSpecification {
         def missingControls = []
         for (Control control : controls) {
             if (clusterResults.keySet().contains(control.id)) {
-                println "Validating ${control.id}"
+                log.info "Validating ${control.id}"
                 ComplianceResultValue value = clusterResults.get(control.id)
                 assert value.overallState == control.state
                 assert value.evidenceList*.message.containsAll(control.evidenceMessages)
@@ -839,7 +839,7 @@ class ComplianceTest extends BaseSpecification {
             if (receivedProcessPaths.size() > 1) {
                 break
             }
-            println "Didn't find all the expected processes, retrying..."
+            log.info "Didn't find all the expected processes, retrying..."
         }
         assert receivedProcessPaths.size() > 1
 
@@ -859,7 +859,7 @@ class ComplianceTest extends BaseSpecification {
         def missingControls = []
         for (Control control : controls) {
             if (deploymentResults.keySet().contains(control.id)) {
-                println "Validating deployment control ${control.id}"
+                log.info "Validating deployment control ${control.id}"
                 ComplianceResultValue value = deploymentResults.get(control.id)
                 assert value.overallState == control.state
                 assert value.evidenceList*.message.containsAll(control.evidenceMessages)
@@ -981,7 +981,7 @@ class ComplianceTest extends BaseSpecification {
         def missingControls = []
         for (Control control : controls) {
             if (clusterResults.keySet().contains(control.id)) {
-                println "Validating deployment control ${control.id}"
+                log.info "Validating deployment control ${control.id}"
                 ComplianceResultValue value = clusterResults.get(control.id)
                 assert value.overallState == control.state
                 assert value.evidenceList*.message.containsAll(control.evidenceMessages)
@@ -1039,7 +1039,7 @@ class ComplianceTest extends BaseSpecification {
         def missingControls = []
         for (Control control : controls) {
             if (clusterResults.keySet().contains(control.id)) {
-                println "Validating cluster control ${control.id}"
+                log.info "Validating cluster control ${control.id}"
                 ComplianceResultValue value = clusterResults.get(control.id)
                 assert value.overallState == control.state
                 assert value.evidenceList*.message.containsAll(control.evidenceMessages)
@@ -1058,7 +1058,7 @@ class ComplianceTest extends BaseSpecification {
         Assume.assumeTrue(ClusterService.isOpenShift4())
         Assume.assumeTrue(Env.CI_JOBNAME == "openshift-4-api-e2e-tests")
 
-        println "Getting compliance results for ${standard}"
+        log.info "Getting compliance results for ${standard}"
         ComplianceRunResults run = BASE_RESULTS.get(standard)
 
         expect:
@@ -1068,7 +1068,7 @@ class ComplianceTest extends BaseSpecification {
         def machineConfigsWithResults = 0
         def numErrors = 0
         for (def entry in run.machineConfigResultsMap) {
-            println "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
+            log.info "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
             if (entry.value.controlResultsMap.size()  > 0) {
                 machineConfigsWithResults++
             }
@@ -1107,7 +1107,7 @@ class ComplianceTest extends BaseSpecification {
         def machineConfigsWithResults = 0
         def numErrors = 0
         for (def entry in run.machineConfigResultsMap) {
-            println "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
+            log.info "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
             if (entry.value.controlResultsMap.size()  > 0) {
                 machineConfigsWithResults++
             }
@@ -1125,7 +1125,7 @@ class ComplianceTest extends BaseSpecification {
         Assume.assumeTrue(ClusterService.isOpenShift4())
         Assume.assumeTrue(Env.CI_JOBNAME == "openshift-4-api-e2e-tests")
 
-        println "Getting compliance results for ocp4-cis"
+        log.info "Getting compliance results for ocp4-cis"
         ComplianceRunResults run = BASE_RESULTS.get("ocp4-cis")
 
         expect:
@@ -1174,12 +1174,12 @@ class ComplianceTest extends BaseSpecification {
         ImageOuterClass.ListImage image = null
 
         while (!image?.fixableCves && timer.IsValid()) {
-            println "Image not found or not scanned: ${image}"
+            log.info "Image not found or not scanned: ${image}"
             image = ImageService.getImages(imageQuery).find { it.name == cveDeployment.image }
         }
         assert image?.fixableCves
 
-        println "Found scanned image ${image}"
+        log.info "Found scanned image ${image}"
 
         when:
         "trigger compliance runs"
@@ -1195,7 +1195,7 @@ class ComplianceTest extends BaseSpecification {
         def missingControls = []
         for (Control control : controls) {
             if (clusterResults.keySet().contains(control.id)) {
-                println "Validating ${control.id}"
+                log.info "Validating ${control.id}"
                 ComplianceResultValue value = clusterResults.get(control.id)
                 assert value.overallState == control.state
 
@@ -1277,7 +1277,7 @@ class ComplianceTest extends BaseSpecification {
         "wait for sensor to come back up"
         def start = System.currentTimeMillis()
         orchestrator.waitForSensor()
-        println "waited ${System.currentTimeMillis() - start}ms for sensor to come back online"
+        log.info "waited ${System.currentTimeMillis() - start}ms for sensor to come back online"
     }
 
     @Category([BAT])
@@ -1311,7 +1311,7 @@ class ComplianceTest extends BaseSpecification {
                     break
                 }
             }
-            println "Didn't find an SSH processes, retrying..."
+            log.info "Didn't find an SSH processes, retrying..."
         }
         assert foundSSHProcess
 

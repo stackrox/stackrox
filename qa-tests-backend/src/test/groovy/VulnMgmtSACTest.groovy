@@ -67,7 +67,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         def testRole = RoleService.createRoleWithScopeAndPermissionSet(name,
             UNRESTRICTED_SCOPE_ID, resourceToAccess)
         assert RoleService.getRole(testRole.name)
-        println "Created Role:\n${testRole}"
+        log.info "Created Role:\n${testRole}"
     }
 
     def setupSpec() {

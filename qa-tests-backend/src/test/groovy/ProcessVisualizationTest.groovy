@@ -98,9 +98,9 @@ class ProcessVisualizationTest extends BaseSpecification {
             if (receivedProcessPaths.containsAll(expectedFilePaths)) {
                 break
             }
-            println "Didn't find all the expected processes, retrying..."
+            log.info "Didn't find all the expected processes, retrying..."
         }
-        println "ProcessVisualizationTest: Dep: " + depName + " Processes: " + receivedProcessPaths
+        log.info "ProcessVisualizationTest: Dep: " + depName + " Processes: " + receivedProcessPaths
 
         then:
         "Verify process in added : : #depName"
@@ -157,10 +157,10 @@ class ProcessVisualizationTest extends BaseSpecification {
             if (containsAllProcessInfo(processToUserAndGroupIds, expectedFilePathAndUIDs)) {
                 break
             }
-            println "Didn't find all the expected processes in " + depName +
+            log.info "Didn't find all the expected processes in " + depName +
                     ", retrying... " + processToUserAndGroupIds
         }
-        println "ProcessVisualizationTest: Dep: " + depName +
+        log.info "ProcessVisualizationTest: Dep: " + depName +
                 " Processes and UIDs: " + processToUserAndGroupIds
 
         then:

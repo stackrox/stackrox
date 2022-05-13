@@ -431,7 +431,7 @@ class AdmissionControllerTest extends BaseSpecification {
                 orchestrator.deleteDeployment(deployment)
                 deleted = true
             } catch (NullPointerException ignore) {
-                println "Caught NPE while deleting deployment, retrying in 1s..."
+                log.info "Caught NPE while deleting deployment, retrying in 1s..."
             }
         }
         if (!deleted) {

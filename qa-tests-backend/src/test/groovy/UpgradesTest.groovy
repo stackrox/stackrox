@@ -72,7 +72,7 @@ class UpgradesTest extends BaseSpecification {
         def gqlService = new GraphQLService()
         def resultRet = gqlService.Call(getQuery(resourceType), [ query: searchQuery ])
         assert resultRet.getCode() == 200
-        println "return code " + resultRet.getCode()
+        log.info "return code " + resultRet.getCode()
 
         then:
         "Check that we got the correct number of #resourceType from GraphQL "
@@ -109,7 +109,7 @@ class UpgradesTest extends BaseSpecification {
         def gqlService = new GraphQLService()
         def resultRet = gqlService.Call(COMPLIANCE_QUERY, [ groupBy: groupBy, unit: unit ])
         assert resultRet.getCode() == 200
-        println "return code " + resultRet.getCode()
+        log.info "return code " + resultRet.getCode()
 
         then:
         "Check that we got the correct number of #unit from GraphQL "
@@ -207,15 +207,15 @@ class UpgradesTest extends BaseSpecification {
         "Upgraded default policies are fetched from central"
         def upgradedPolicies
         try {
-            println("Exporting policies: ${defaultPolicies.keySet().join(", ")}")
+            log.info("Exporting policies: ${defaultPolicies.keySet().join(", ")}")
             upgradedPolicies = PolicyService.getPolicyClient().exportPolicies(
                     PolicyServiceOuterClass.ExportPoliciesRequest.newBuilder().
                             addAllPolicyIds(defaultPolicies.keySet()).
                             build()
             ).getPoliciesList()
         } catch (StatusRuntimeException e) {
-            println "Exception in exportPolicies(): ${e.getStatus()}"
-            println "See central log for more details."
+            log.info "Exception in exportPolicies(): ${e.getStatus()}"
+            log.info "See central log for more details."
             throw(e)
         }
 

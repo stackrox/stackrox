@@ -210,7 +210,7 @@ class CVETest extends BaseSpecification {
         def resultRet = gqlService.Call(GET_CVES_QUERY,
                 [query: "Image:${image}+CVE:${cve}", scopeQuery: ""])
         assert resultRet.getCode() == 200
-        println "return code " + resultRet.getCode()
+        log.info "return code " + resultRet.getCode()
 
         then:
         "Verify specific CVE data"
@@ -256,7 +256,7 @@ class CVETest extends BaseSpecification {
 
         def resultRet = gqlService.Call(GET_CVES_QUERY, [query: "${query}", scopeQuery: ""])
         assert resultRet.getCode() == 200
-        println "return code " + resultRet.getCode()
+        log.info "return code " + resultRet.getCode()
 
         then:
         "Verify specific CVE data"

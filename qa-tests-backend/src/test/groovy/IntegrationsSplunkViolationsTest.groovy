@@ -105,7 +105,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         boolean hasProcessViolation = false
         def port = splunkDeployment.splunkPortForward.getLocalPort()
         for (int i = 0; i < 20; i++) {
-            println "Attempt ${i} to get violations from Splunk"
+            log.info "Attempt ${i} to get violations from Splunk"
             def searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
             TimeUnit.SECONDS.sleep(10)
             Response response = SplunkUtil.getSearchResults(port, searchId)
@@ -118,7 +118,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                         hasProcessViolation |= isProcessViolation(result)
                     }
                     if (hasNetworkViolation && hasProcessViolation) {
-                        println "Success!"
+                        log.info "Success!"
                         break
                     }
                 }

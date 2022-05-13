@@ -240,7 +240,7 @@ class Enforcement extends BaseSpecification {
             assert CREATED_POLICIES[label], "${label} policy should have been created"
         }
 
-        println "Waiting for policies to propagate..."
+        log.info "Waiting for policies to propagate..."
         sleep 10000
 
         orchestrator.batchCreateDeployments(DEPLOYMENTS.collect {
@@ -290,11 +290,11 @@ class Enforcement extends BaseSpecification {
         def startTime = System.currentTimeMillis()
         assert d.pods.size() > 0
         assert d.pods.collect {
-            it -> println "checking if ${it.name} was killed"
+            it -> log.info "checking if ${it.name} was killed"
             orchestrator.wasContainerKilled(it.name)
         }.find { it == true }
         assert alert.enforcement.action == EnforcementAction.KILL_POD_ENFORCEMENT
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert Services.getAlertEnforcementCount(KILL_ENFORCEMENT, KILL_ENFORCEMENT) > 0
     }
 
@@ -326,7 +326,7 @@ class Enforcement extends BaseSpecification {
             sleep 1000
         }
         assert replicaCount == 0
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         assert Services.getAlertEnforcementCount(
                 SCALE_DOWN_ENFORCEMENT,
@@ -362,7 +362,7 @@ class Enforcement extends BaseSpecification {
             sleep 1000
         }
         assert replicaCount == 0
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         assert Services.getAlertEnforcementCount(
                 d.name,
@@ -398,7 +398,7 @@ class Enforcement extends BaseSpecification {
             sleep 1000
         }
         assert replicaCount == 0
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         assert Services.getAlertEnforcementCount(
                 d.name,
@@ -433,7 +433,7 @@ class Enforcement extends BaseSpecification {
             sleep 1000
         }
         assert nodeSelectors != null
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert orchestrator.getDeploymentUnavailableReplicaCount(d) >=
                 orchestrator.getDeploymentReplicaCount(d)
         assert alert.enforcement.action == EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
@@ -502,7 +502,7 @@ class Enforcement extends BaseSpecification {
             sleep 1000
         }
         assert replicaCount == 0
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         //Node Constraint should have been ignored
         assert orchestrator.getDeploymentNodeSelectors(d) == null
@@ -541,7 +541,7 @@ class Enforcement extends BaseSpecification {
             sleep 1000
         }
         assert nodeSelectors != null
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert orchestrator.getDaemonSetUnavailableReplicaCount(d) ==
                 orchestrator.getDaemonSetReplicaCount(d)
         assert alert.enforcement.action == EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
@@ -684,7 +684,7 @@ class Enforcement extends BaseSpecification {
         ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
                 getProcessBaseline(clusterId, d)
         assert (baseline != null)
-        println baseline
+        log.info baseline
         List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessBaselines = ProcessBaselineService.
                 lockProcessBaselines(clusterId, d, "", true)
         assert lockProcessBaselines.size() ==  1
@@ -707,11 +707,11 @@ class Enforcement extends BaseSpecification {
         def startTime = System.currentTimeMillis()
         assert d.pods.collect {
             it ->
-            println "checking if ${it.name} was killed"
+            log.info "checking if ${it.name} was killed"
             orchestrator.wasContainerKilled(it.name)
         }.find { it == true }
         assert alert.enforcement.action == EnforcementAction.KILL_POD_ENFORCEMENT
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert Services.getAlertEnforcementCount(d.name, ALERT_AND_KILL_ENFORCEMENT_BASELINE_PROCESS) > 0
 
         cleanup:
@@ -761,7 +761,7 @@ class Enforcement extends BaseSpecification {
         // Wait for 10s to ensure that the deployment was not scaled down
 
         Timer t = new Timer(10, 1)
-        println "Verifying that enforcement action was not taken"
+        log.info "Verifying that enforcement action was not taken"
         while (t.IsValid()) {
             assert orchestrator.getDeploymentReplicaCount(d) != 0
         }
