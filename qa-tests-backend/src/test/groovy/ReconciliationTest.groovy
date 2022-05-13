@@ -1,21 +1,19 @@
 import static Services.getViolationsWithTimeout
-
+import groups.SensorBounce
 import io.stackrox.proto.storage.AlertOuterClass
-import services.AlertService
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
+import org.junit.Assume
+import org.junit.experimental.categories.Category
+import services.AlertService
 import services.ClusterService
 import services.DevelopmentService
 import services.MetadataService
 import services.NamespaceService
 import services.NetworkPolicyService
 import services.SecretService
-
 import spock.lang.Retry
-import org.junit.Assume
-import org.junit.experimental.categories.Category
-import groups.SensorBounce
 import util.Timer
 
 @Retry(count = 0)

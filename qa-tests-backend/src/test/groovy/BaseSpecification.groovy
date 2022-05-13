@@ -176,7 +176,7 @@ class BaseSpecification extends Specification {
     String coreImageIntegrationId = null
 
     @Shared
-    private long testStartTimeMillis
+    long testStartTimeMillis
 
     @Shared
     private String pluginConfigID

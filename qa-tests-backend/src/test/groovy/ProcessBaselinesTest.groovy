@@ -1,21 +1,15 @@
-import static Services.waitForViolation
 import static Services.waitForSuspiciousProcessInRiskIndicators
-
-import io.stackrox.proto.storage.RiskOuterClass
+import static Services.waitForViolation
+import groups.BAT
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass
+import io.stackrox.proto.storage.ProcessBaselineOuterClass
+import io.stackrox.proto.storage.RiskOuterClass
+import objects.Deployment
+import org.apache.commons.lang3.StringUtils
+import org.junit.experimental.categories.Category
 import services.AlertService
 import services.ClusterService
-
-import groups.BAT
-
-import io.stackrox.proto.storage.ProcessBaselineOuterClass
-import objects.Deployment
-
-import org.apache.commons.lang3.StringUtils
-
-import org.junit.experimental.categories.Category
-
 import services.ProcessBaselineService
 import spock.lang.Ignore
 import spock.lang.Shared

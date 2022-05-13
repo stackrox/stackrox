@@ -1,13 +1,11 @@
 import static Services.getPolicies
 import static Services.waitForViolation
-
 import groups.GraphQL
-import objects.Deployment
-import services.GraphQLService
-import org.junit.experimental.categories.Category
-import util.Timer
-
 import java.util.stream.Collectors
+import objects.Deployment
+import org.junit.experimental.categories.Category
+import services.GraphQLService
+import util.Timer
 
 class DeploymentEventGraphQLTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "eventnginx"

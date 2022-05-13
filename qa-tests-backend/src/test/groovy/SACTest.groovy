@@ -1,14 +1,14 @@
 import static Services.waitForViolation
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
-
+import groups.BAT
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
 import io.stackrox.proto.storage.DeploymentOuterClass
-
-import groups.BAT
 import objects.Deployment
 import orchestratormanager.OrchestratorTypes
+import org.junit.AssumptionViolatedException
+import org.junit.experimental.categories.Category
 import services.AlertService
 import services.ApiTokenService
 import services.BaseService
@@ -19,13 +19,10 @@ import services.NetworkGraphService
 import services.SearchService
 import services.SecretService
 import services.SummaryService
-import util.NetworkGraphUtil
-
-import util.Env
 import spock.lang.IgnoreIf
-import org.junit.AssumptionViolatedException
-import org.junit.experimental.categories.Category
 import spock.lang.Unroll
+import util.Env
+import util.NetworkGraphUtil
 
 @Category(BAT)
 @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })

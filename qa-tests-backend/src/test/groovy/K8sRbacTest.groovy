@@ -1,21 +1,18 @@
 import com.google.common.base.CaseFormat
-
+import common.Constants
+import groups.BAT
 import io.stackrox.proto.api.v1.RbacServiceOuterClass
 import io.stackrox.proto.api.v1.ServiceAccountServiceOuterClass
 import io.stackrox.proto.storage.Rbac
-
-import common.Constants
-import groups.BAT
 import objects.Deployment
 import objects.K8sPolicyRule
 import objects.K8sRole
 import objects.K8sRoleBinding
 import objects.K8sServiceAccount
 import objects.K8sSubject
+import org.junit.experimental.categories.Category
 import services.RbacService
 import services.ServiceAccountService
-
-import org.junit.experimental.categories.Category
 import spock.lang.IgnoreIf
 import spock.lang.Stepwise
 import util.Env

@@ -1,14 +1,13 @@
 import com.google.protobuf.Timestamp
 import groups.NetworkFlowVisualization
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntity
+import java.util.concurrent.TimeUnit
 import objects.Deployment
 import objects.Edge
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.NetworkGraphService
 import util.NetworkGraphUtil
-
-import java.util.concurrent.TimeUnit
 
 class ExternalNetworkSourcesTest extends BaseSpecification {
     // One of the outputs of: dig storage.googleapis.com

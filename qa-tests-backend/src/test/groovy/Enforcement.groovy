@@ -1,5 +1,4 @@
 import static Services.waitForViolation
-
 import groups.BAT
 import groups.Integration
 import groups.PolicyEnforcement

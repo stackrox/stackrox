@@ -1,14 +1,12 @@
+import groups.NetworkBaseline
 import io.stackrox.proto.storage.NetworkBaselineOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass
-
-import groups.NetworkBaseline
 import objects.Deployment
-import services.NetworkBaselineService
-import util.NetworkGraphUtil
-
 import org.junit.experimental.categories.Category
+import services.NetworkBaselineService
 import spock.lang.Ignore
 import spock.lang.Retry
+import util.NetworkGraphUtil
 
 @Retry(count = 0)
 class NetworkBaselineTest extends BaseSpecification {

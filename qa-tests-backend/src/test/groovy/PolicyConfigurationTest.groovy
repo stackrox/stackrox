@@ -1,35 +1,34 @@
 import static Services.checkForNoViolations
 import static Services.waitForViolation
-
-import services.ImageService
-import util.Timer
+import common.Constants
+import groups.BAT
+import groups.SMOKE
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.DryRunResponse
+import io.stackrox.proto.storage.DeploymentOuterClass
+import io.stackrox.proto.storage.NodeOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
+import io.stackrox.proto.storage.PolicyOuterClass.Policy
+import io.stackrox.proto.storage.Rbac
+import io.stackrox.proto.storage.ScopeOuterClass.Scope
+import objects.Deployment
 import objects.K8sPolicyRule
 import objects.K8sRole
 import objects.K8sRoleBinding
 import objects.K8sServiceAccount
 import objects.K8sSubject
-import io.stackrox.proto.storage.DeploymentOuterClass
-import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Service
-import common.Constants
 import objects.Volume
-import io.stackrox.proto.storage.Rbac
-import io.stackrox.proto.storage.NodeOuterClass
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass.DryRunResponse
-import io.stackrox.proto.storage.PolicyOuterClass.Policy
-import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
-import io.stackrox.proto.storage.ScopeOuterClass.Scope
-import groups.BAT
-import groups.SMOKE
-import objects.Deployment
-import org.junit.experimental.categories.Category
 import org.junit.Assume
+import org.junit.experimental.categories.Category
 import services.ClusterService
-import services.PolicyService
+import services.ImageService
 import services.NodeService
-import spock.lang.Unroll
+import services.PolicyService
 import spock.lang.Shared
+import spock.lang.Unroll
 import util.Env
+import util.Timer
 
 class PolicyConfigurationTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX = "deploymentnginx"

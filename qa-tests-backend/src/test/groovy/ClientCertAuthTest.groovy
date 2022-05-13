@@ -1,7 +1,8 @@
 import groups.BAT
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.GroupServiceOuterClass
-
+import java.nio.file.Files
+import java.nio.file.Paths
 import org.junit.experimental.categories.Category
 import services.AuthProviderService
 import services.AuthService
@@ -11,9 +12,6 @@ import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Unroll
 import util.Env
-
-import java.nio.file.Files
-import java.nio.file.Paths
 
 @Category(BAT)
 @Stepwise

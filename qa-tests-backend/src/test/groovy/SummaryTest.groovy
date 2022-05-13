@@ -2,6 +2,7 @@ import common.Constants
 import groups.BAT
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
+import io.stackrox.proto.storage.NodeOuterClass.Node
 import objects.Namespace
 import org.javers.core.Javers
 import org.javers.core.JaversBuilder
@@ -12,7 +13,6 @@ import services.ClusterService
 import services.NamespaceService
 import services.NodeService
 import services.SummaryService
-import io.stackrox.proto.storage.NodeOuterClass.Node
 import spock.lang.IgnoreIf
 import util.Env
 

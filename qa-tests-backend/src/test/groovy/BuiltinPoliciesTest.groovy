@@ -1,15 +1,14 @@
 import static Services.getPolicies
 import static Services.waitForViolation
-
 import groups.BAT
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PatchPolicyRequest
 import objects.Deployment
 import objects.SecretKeyRef
 import objects.Volume
 import org.junit.experimental.categories.Category
+import services.PolicyService
 import spock.lang.Shared
 import spock.lang.Unroll
-import services.PolicyService
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PatchPolicyRequest
 
 class BuiltinPoliciesTest extends BaseSpecification {
     static final private String TRIGGER_MOST = "trigger-most"

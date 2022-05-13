@@ -1,10 +1,9 @@
-import services.ProcessService
-
 import groups.BAT
 import groups.RUNTIME
-import spock.lang.Unroll
 import objects.Deployment
 import org.junit.experimental.categories.Category
+import services.ProcessService
+import spock.lang.Unroll
 import util.Timer
 
 class ProcessVisualizationTest extends BaseSpecification {

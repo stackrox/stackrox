@@ -1,14 +1,14 @@
 import static Services.getPolicies
-import static Services.waitForViolation
 import static Services.waitForResolvedViolation
-import io.stackrox.proto.storage.PolicyOuterClass
-import services.PolicyService
+import static Services.waitForViolation
 import groups.BAT
 import groups.SMOKE
+import io.stackrox.proto.storage.PolicyOuterClass
+import java.util.stream.Collectors
 import objects.Deployment
 import org.junit.experimental.categories.Category
+import services.PolicyService
 import spock.lang.Unroll
-import java.util.stream.Collectors
 
 class RuntimePolicyTest extends BaseSpecification  {
     static final private String DEPLOYMENTAPTGET = "runtimenginx"

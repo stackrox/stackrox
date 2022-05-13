@@ -3,6 +3,7 @@ import groups.Integration
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import objects.Deployment
 import objects.GenericNotifier
 import org.junit.experimental.categories.Category
@@ -11,7 +12,6 @@ import services.ImageService
 import services.PolicyService
 import spock.lang.IgnoreIf
 import spock.lang.Unroll
-import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import util.Env
 
 class ImageManagementTest extends BaseSpecification {

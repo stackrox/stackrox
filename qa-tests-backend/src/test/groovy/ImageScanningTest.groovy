@@ -1,5 +1,4 @@
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
-
 import common.Constants
 import groups.BAT
 import groups.Integration
@@ -8,9 +7,9 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.Vulnerability
+import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.Deployment
-import objects.AzureRegistryIntegration
 import objects.ECRRegistryIntegration
 import objects.GCRImageIntegration
 import objects.GoogleArtifactRegistry

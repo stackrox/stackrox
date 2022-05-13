@@ -1,23 +1,18 @@
 import static Services.getPolicies
 import static Services.waitForViolation
-
-import io.grpc.StatusRuntimeException
-
-import spock.lang.IgnoreIf
-import spock.lang.Retry
-import spock.lang.Shared
-import services.AlertService
-import services.PolicyService
-import services.FeatureFlagService
-import services.ImageIntegrationService
 import common.Constants
+import groups.BAT
+import groups.SMOKE
+import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
+import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
+import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
+import io.stackrox.proto.storage.DeploymentOuterClass
+import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
@@ -25,25 +20,26 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.RiskOuterClass
 import io.stackrox.proto.storage.RiskOuterClass.Risk.Result
-import io.stackrox.proto.storage.DeploymentOuterClass
-import io.stackrox.proto.storage.ImageOuterClass
-import services.DeploymentService
-import services.ImageService
-import util.Env
-import util.Helpers
-import util.SlackUtil
-
-import org.junit.Assume
-
-import groups.BAT
-import groups.SMOKE
-import org.junit.experimental.categories.Category
-import spock.lang.Stepwise
-import spock.lang.Unroll
+import java.util.stream.Collectors
 import objects.Deployment
 import objects.GCRImageIntegration
 import objects.Service
-import java.util.stream.Collectors
+import org.junit.Assume
+import org.junit.experimental.categories.Category
+import services.AlertService
+import services.DeploymentService
+import services.FeatureFlagService
+import services.ImageIntegrationService
+import services.ImageService
+import services.PolicyService
+import spock.lang.IgnoreIf
+import spock.lang.Retry
+import spock.lang.Shared
+import spock.lang.Stepwise
+import spock.lang.Unroll
+import util.Env
+import util.Helpers
+import util.SlackUtil
 
 @Stepwise // We need to verify all of the expected alerts are present before other tests.
 class DefaultPoliciesTest extends BaseSpecification {

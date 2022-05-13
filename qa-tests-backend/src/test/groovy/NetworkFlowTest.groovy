@@ -1,21 +1,16 @@
 import static com.jayway.restassured.RestAssured.given
-
 import com.jayway.restassured.response.Response
+import common.Constants
+import groups.BAT
+import groups.NetworkFlowVisualization
+import groups.RUNTIME
 import io.grpc.StatusRuntimeException
-import orchestratormanager.OrchestratorTypes
-import org.yaml.snakeyaml.Yaml
-
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraph
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkNode
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
 import io.stackrox.proto.storage.NetworkFlowOuterClass.L4Protocol
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
-
-import common.Constants
-import groups.BAT
-import groups.NetworkFlowVisualization
-import groups.RUNTIME
 import objects.DaemonSet
 import objects.Deployment
 import objects.Edge
@@ -23,21 +18,22 @@ import objects.K8sServiceAccount
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Service
+import orchestratormanager.OrchestratorTypes
+import org.junit.Assume
+import org.junit.experimental.categories.Category
+import org.yaml.snakeyaml.Yaml
 import services.ClusterService
 import services.NetworkGraphService
 import services.NetworkPolicyService
+import spock.lang.Ignore
 import spock.lang.IgnoreIf
+import spock.lang.Shared
+import spock.lang.Stepwise
+import spock.lang.Unroll
 import util.Env
 import util.Helpers
 import util.NetworkGraphUtil
 import util.Timer
-
-import org.junit.Assume
-import org.junit.experimental.categories.Category
-import spock.lang.Ignore
-import spock.lang.Shared
-import spock.lang.Stepwise
-import spock.lang.Unroll
 
 @Stepwise
 class NetworkFlowTest extends BaseSpecification {
@@ -480,14 +476,14 @@ class NetworkFlowTest extends BaseSpecification {
 
         when:
         "ping the target deployment"
-        Response response
+        Response response = null
         Timer t = new Timer(12, 5)
         while (response?.statusCode() != 200 && t.IsValid()) {
             try {
                 log.info "trying ${targetUrl}..."
                 response = given().get(targetUrl)
             } catch (Exception e) {
-                log.info "Failure calling ${targetUrl}. Trying again in 5 sec..."
+                log.warn("Failure calling ${targetUrl}. Trying again in 5 sec...", e)
             }
         }
         assert response?.getStatusCode() == 200
@@ -744,14 +740,14 @@ class NetworkFlowTest extends BaseSpecification {
         and:
         "Get existing network policies from orchestrator"
         def preExistingNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
-        log.info preExistingNetworkPolicies
+        log.info preExistingNetworkPolicies.join(", ")
 
         expect:
         "actual policies should exist in generated response depending on delete mode"
         def modification = NetworkPolicyService.generateNetworkPolicies(deleteMode, "Namespace:r/qa.*")
         assert !(NetworkPolicyService.applyGeneratedNetworkPolicy(modification) instanceof StatusRuntimeException)
         def appliedNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
-        log.info appliedNetworkPolicies
+        log.info appliedNetworkPolicies.join(", ")
 
         Yaml parser = new Yaml()
         List yamls = []
@@ -807,7 +803,7 @@ class NetworkFlowTest extends BaseSpecification {
                         instanceof StatusRuntimeException
         )
         def undoNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
-        log.info undoNetworkPolicies
+        log.info undoNetworkPolicies.join(", ")
         assert undoNetworkPolicies == preExistingNetworkPolicies
 
         cleanup:

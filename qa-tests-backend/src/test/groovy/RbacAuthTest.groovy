@@ -1,8 +1,10 @@
 import groups.BAT
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.storage.NetworkPolicyOuterClass
+import io.stackrox.proto.storage.RoleOuterClass
 import org.junit.experimental.categories.Category
 import services.ApiTokenService
 import services.AuthProviderService
@@ -11,8 +13,6 @@ import services.ClusterService
 import services.NetworkPolicyService
 import services.ProcessService
 import services.RoleService
-import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
-import io.stackrox.proto.storage.RoleOuterClass
 import spock.lang.Shared
 import spock.lang.Unroll
 

@@ -2,16 +2,13 @@ import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceCon
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandard
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import com.google.protobuf.util.Timestamps
 import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
+import common.Constants
+import groups.BAT
+import groups.SensorBounceNext
 import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunScheduleInfo
@@ -27,9 +24,12 @@ import io.stackrox.proto.storage.NodeOuterClass.Node
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
-import common.Constants
-import groups.BAT
-import groups.SensorBounceNext
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import objects.Control
 import objects.CsvRow
 import objects.Deployment
@@ -38,6 +38,8 @@ import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Service
 import objects.SlackNotifier
+import org.junit.Assume
+import org.junit.experimental.categories.Category
 import services.BaseService
 import services.ClusterService
 import services.ComplianceManagementService
@@ -48,14 +50,11 @@ import services.NetworkPolicyService
 import services.NodeService
 import services.PolicyService
 import services.ProcessService
-import util.Env
-import util.Timer
-
-import org.junit.Assume
-import org.junit.experimental.categories.Category
 import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Unroll
+import util.Env
+import util.Timer
 
 class ComplianceTest extends BaseSpecification {
     @Shared

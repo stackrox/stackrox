@@ -7,7 +7,6 @@ import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.ImageIntegrationService
 import spock.lang.Shared
-import spock.lang.Unroll
 import util.Timer
 
 class AdmissionControllerNoImageScanTest extends BaseSpecification {

@@ -1,17 +1,13 @@
-import java.util.concurrent.TimeUnit
-
-import io.grpc.StatusRuntimeException
-import org.apache.commons.lang3.RandomStringUtils
-
-import io.stackrox.proto.storage.ClusterOuterClass
-import io.stackrox.proto.storage.NotifierOuterClass
-import io.stackrox.proto.storage.PolicyOuterClass
-import io.stackrox.proto.storage.ScopeOuterClass
-
 import common.Constants
 import groups.BAT
 import groups.Integration
 import groups.Notifiers
+import io.grpc.StatusRuntimeException
+import io.stackrox.proto.storage.ClusterOuterClass
+import io.stackrox.proto.storage.NotifierOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.ScopeOuterClass
+import java.util.concurrent.TimeUnit
 import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.Deployment
@@ -26,23 +22,22 @@ import objects.QuayImageIntegration
 import objects.SlackNotifier
 import objects.SplunkNotifier
 import objects.StackroxScannerIntegration
-import objects.SyslogNotifier
+import org.apache.commons.lang3.RandomStringUtils
+import org.junit.Assume
+import org.junit.AssumptionViolatedException
+import org.junit.Rule
+import org.junit.experimental.categories.Category
+import org.junit.rules.Timeout
 import services.ClusterService
 import services.ExternalBackupService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
 import services.NotifierService
 import services.PolicyService
-import util.Env
-import util.SplunkUtil
-
-import org.junit.Assume
-import org.junit.AssumptionViolatedException
-import org.junit.Rule
-import org.junit.experimental.categories.Category
-import org.junit.rules.Timeout
 import spock.lang.Ignore
 import spock.lang.Unroll
+import util.Env
+import util.SplunkUtil
 
 class IntegrationsTest extends BaseSpecification {
     static final private String NOTIFIERDEPLOYMENT = "netpol-notification-test-deployment"
