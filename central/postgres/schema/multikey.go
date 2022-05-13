@@ -69,7 +69,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestMultiKeyStruct)(nil)), "multikey")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "multikey", (*storage.TestMultiKeyStruct)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "testmultikeystruct", (*storage.TestMultiKeyStruct)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

@@ -59,7 +59,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.K8SRoleBinding)(nil)), "rolebindings")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ROLEBINDINGS, "rolebindings", (*storage.K8SRoleBinding)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ROLEBINDINGS, "k8srolebinding", (*storage.K8SRoleBinding)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()
