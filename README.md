@@ -1,6 +1,6 @@
 [![CircleCI][circleci-badge]][circleci-link]
 
-# Hello, I'm a readme change
+# Hello, I'm a fancy readme change
 
 Blah, some text here.
 
