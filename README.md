@@ -3,6 +3,7 @@
 # Hello, I'm a readme change
 
 Blah, some text here.
+Some more text here.
 
 # StackRox Kubernetes Security Platform
 
