@@ -62,7 +62,7 @@ class BaseSpecification extends Specification {
 
     Map<String, List<String>> resourceRecord = [:]
 
-    private static globalSetup() {
+    private globalSetup() {
         if (globalSetupDone) {
             return
         }
@@ -230,7 +230,7 @@ class BaseSpecification extends Specification {
             )
         }
         if (!coreImageIntegrationId) {
-            println "WARNING: Could not create the core image integration."
+            log.warn "Could not create the core image integration."
             println "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
         }
 
@@ -324,7 +324,7 @@ class BaseSpecification extends Specification {
         Helpers.resetRetryAttempts()
     }
 
-    static addStackroxImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
+    def addStackroxImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
         // Add an image pull secret to the qa namespace and also the default service account so the qa namespace can
         // pull stackrox images from dockerhub
 
@@ -332,7 +332,7 @@ class BaseSpecification extends Specification {
                            Env.get("REGISTRY_PASSWORD", null) == null)) {
             // Arguably this should be fatal but for tests that don't pull from docker.io/stackrox it is not strictly
             // necessary.
-            println "WARNING: The REGISTRY_USERNAME and/or REGISTRY_PASSWORD env var is missing. " +
+            log.warn "The REGISTRY_USERNAME and/or REGISTRY_PASSWORD env var is missing. " +
                     "(this is ok if your test does not use images from docker.io/stackrox)"
             return
         }
@@ -366,7 +366,7 @@ class BaseSpecification extends Specification {
     static addGCRImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
         if (!Env.IN_CI && Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER", null) == null) {
             // Arguably this should be fatal but for tests that don't pull from us.gcr.io it is not strictly necessary
-            println "WARNING: The GOOGLE_CREDENTIALS_GCR_SCANNER env var is missing. "+
+            log.warn "The GOOGLE_CREDENTIALS_GCR_SCANNER env var is missing. "+
                     "(this is ok if your test does not use images on us.gcr.io)"
             return
         }

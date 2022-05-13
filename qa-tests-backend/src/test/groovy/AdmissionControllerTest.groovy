@@ -435,7 +435,7 @@ class AdmissionControllerTest extends BaseSpecification {
             }
         }
         if (!deleted) {
-            println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
+            log.warn "failed to delete deployment. Subsequent tests may be affected ..."
         }
     }
 
