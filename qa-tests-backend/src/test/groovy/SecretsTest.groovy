@@ -1,8 +1,8 @@
-import services.SecretService
-import org.junit.experimental.categories.Category
 import groups.BAT
-import objects.Deployment
 import io.stackrox.proto.storage.SecretOuterClass.Secret
+import objects.Deployment
+import org.junit.experimental.categories.Category
+import services.SecretService
 import spock.lang.Unroll
 import util.Timer
 

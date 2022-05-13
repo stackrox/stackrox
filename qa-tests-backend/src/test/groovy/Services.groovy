@@ -372,7 +372,7 @@ class Services extends BaseService {
             getPolicyClient().putPolicy(policyDef)
         } catch (Exception e) {
             LOG.warn("updating policy failed", e)
-            return []
+            throw e
         }
 
         if (waitForPropagation) {

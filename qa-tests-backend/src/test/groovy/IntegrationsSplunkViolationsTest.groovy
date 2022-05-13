@@ -1,26 +1,21 @@
 import static util.SplunkUtil.SPLUNK_ADMIN_PASSWORD
 import static util.SplunkUtil.postToSplunk
 import static util.SplunkUtil.tearDownSplunk
-
+import com.jayway.restassured.path.json.JsonPath
+import com.jayway.restassured.response.Response
 import groups.Integration
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
+import java.nio.file.Paths
+import java.util.concurrent.TimeUnit
+import org.junit.Rule
+import org.junit.experimental.categories.Category
+import org.junit.rules.Timeout
 import services.AlertService
-import services.NetworkBaselineService
 import services.ApiTokenService
+import services.NetworkBaselineService
 import spock.lang.Unroll
 import util.SplunkUtil
 import util.Timer
-
-import java.nio.file.Paths
-import java.time.LocalDateTime
-import java.util.concurrent.TimeUnit
-
-import org.junit.Rule
-import org.junit.rules.Timeout
-import org.junit.experimental.categories.Category
-
-import com.jayway.restassured.path.json.JsonPath
-import com.jayway.restassured.response.Response
 
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Rule
@@ -46,7 +41,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     private void configureSplunkTA(SplunkUtil.SplunkDeployment splunkDeployment, String centralHost) {
-        println "${LocalDateTime.now()} Starting Splunk TA configuration"
+        log.info "Starting Splunk TA configuration"
         def podName = orchestrator
                 .getPods(TEST_NAMESPACE, splunkDeployment.deployment.getName())
                 .get(0)
@@ -54,13 +49,13 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                 .getName()
         int port = splunkDeployment.splunkPortForward.getLocalPort()
 
-        println "${LocalDateTime.now()} Copying TA and CIM app files to splunk pod"
+        log.info "Copying TA and CIM app files to splunk pod"
         orchestrator.copyFileToPod(PATH_TO_SPLUNK_TA_SPL, TEST_NAMESPACE, podName, STACKROX_REMOTE_LOCATION)
         orchestrator.copyFileToPod(PATH_TO_CIM_TA_TGZ, TEST_NAMESPACE, podName, CIM_REMOTE_LOCATION)
-        println "${LocalDateTime.now()} Installing TA"
+        log.info "Installing TA"
         postToSplunk(port, "/services/apps/local",
                 ["name": STACKROX_REMOTE_LOCATION, "filename": "true"])
-        println "${LocalDateTime.now()} Installing CIM app"
+        log.info "Installing CIM app"
         postToSplunk(port, "/services/apps/local",
                 ["name": CIM_REMOTE_LOCATION, "filename": "true"])
         // fix minimum free disk space parameter
@@ -72,7 +67,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         // Splunk needs to be restarted after TA installation
         postToSplunk(splunkDeployment.splunkPortForward.getLocalPort(), "/services/server/control/restart", [:])
 
-        println("${LocalDateTime.now()} Configuring Stackrox TA")
+        log.info("Configuring Stackrox TA")
         def tokenResp = ApiTokenService.generateToken("splunk-token-${splunkDeployment.uid}", "Analyst")
         postToSplunk(port, "/servicesNS/nobody/TA-stackrox/configs/conf-ta_stackrox_settings/additional_parameters",
                 ["central_endpoint": "${centralHost}:443",
@@ -105,7 +100,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         boolean hasProcessViolation = false
         def port = splunkDeployment.splunkPortForward.getLocalPort()
         for (int i = 0; i < 20; i++) {
-            println "Attempt ${i} to get violations from Splunk"
+            log.info "Attempt ${i} to get violations from Splunk"
             def searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
             TimeUnit.SECONDS.sleep(10)
             Response response = SplunkUtil.getSearchResults(port, searchId)
@@ -118,7 +113,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                         hasProcessViolation |= isProcessViolation(result)
                     }
                     if (hasNetworkViolation && hasProcessViolation) {
-                        println "Success!"
+                        log.info "Success!"
                         break
                     }
                 }

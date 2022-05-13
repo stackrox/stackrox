@@ -50,8 +50,8 @@ class BaseSpecification extends Specification {
         String idStr
         try {
             idStr = new File("/proc/self").getCanonicalFile().getName()
-        } catch (Exception ignored) {
-            println "Could not determine pid, using a random ID"
+        } catch (Exception e) {
+            LOG.warn("Could not determine pid, using a random ID", e)
             idStr = new SecureRandom().nextInt().toString()
         }
         RUN_ID = idStr
@@ -70,12 +70,12 @@ class BaseSpecification extends Specification {
             return
         }
 
-        println "Performing global setup"
+        LOG.info "Performing global setup"
 
         if (!Env.IN_CI || Env.get("CIRCLE_TAG")) {
             // Strictly test integration with external services when running in
             // a dev environment or in CI against tagged builds (e.g. nightly builds).
-            println "Will perform strict integration testing (if any is required)"
+            LOG.info "Will perform strict integration testing (if any is required)"
             strictIntegrationTesting = true
         }
 
@@ -99,16 +99,16 @@ class BaseSpecification extends Specification {
             assert ClusterService.getClusterId(), "There is no default cluster. Check if all pods are running"
             try {
                 def metadata = MetadataService.getMetadataServiceClient().getMetadata()
-                println "Testing against:"
-                println metadata
-                println "isGKE: ${orchestrator.isGKE()}"
-                println "isEKS: ${ClusterService.isEKS()}"
-                println "isOpenShift3: ${ClusterService.isOpenShift3()}"
-                println "isOpenShift4: ${ClusterService.isOpenShift4()}"
+                LOG.info "Testing against:"
+                LOG.info metadata.toString()
+                LOG.info "isGKE: ${orchestrator.isGKE()}"
+                LOG.info "isEKS: ${ClusterService.isEKS()}"
+                LOG.info "isOpenShift3: ${ClusterService.isOpenShift3()}"
+                LOG.info "isOpenShift4: ${ClusterService.isOpenShift4()}"
             }
             catch (Exception ex) {
-                println "Cannot connect to central : ${ex.message}"
-                println "Check the test target deployment, auth credentials, kube service proxy, etc."
+                LOG.info "Cannot connect to central : ${ex.message}"
+                LOG.info "Check the test target deployment, auth credentials, kube service proxy, etc."
                 throw(ex)
             }
         }
@@ -139,7 +139,7 @@ class BaseSpecification extends Specification {
         allAccessToken = tokenResp.token
 
         addShutdownHook {
-            println "Performing global shutdown"
+            LOG.info "Performing global shutdown"
             BaseService.useBasicAuth()
             BaseService.setUseClientCert(false)
             withRetry(30, 1) {
@@ -211,7 +211,7 @@ class BaseSpecification extends Specification {
             try {
                 def response = SACService.addAuthPlugin()
                 pluginConfigID = response.getId()
-                println response.toString()
+                log.info response.toString()
             } catch (StatusRuntimeException e) {
                 log.error("Unable to enable the authz plugin, defaulting to basic auth", e)
             }
@@ -220,7 +220,7 @@ class BaseSpecification extends Specification {
         coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
                 Constants.CORE_IMAGE_INTEGRATION_NAME)
         if (!coreImageIntegrationId) {
-            println "Adding core image integration"
+            log.info "Adding core image integration"
             coreImageIntegrationId = ImageIntegrationService.createImageIntegration(
                     ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                             .setName(Constants.CORE_IMAGE_INTEGRATION_NAME)
@@ -282,13 +282,13 @@ class BaseSpecification extends Specification {
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
 
-        println "Removing integration"
+        log.info "Removing integration"
         ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
 
         try {
             orchestrator.cleanup()
         } catch (Exception e) {
-            println "Error to clean up orchestrator: ${e.message}"
+            log.error("Error to clean up orchestrator", e)
             throw e
         }
         disableAuthzPlugin()
@@ -307,8 +307,8 @@ class BaseSpecification extends Specification {
         List<String> namespaces = orchestrator.getNamespaces()
         Diff diff = javers.compare(resourceRecord["namespaces"], namespaces)
         if (diff.hasChanges()) {
-            println "There is a difference in namespaces between the start and end of this test spec:"
-            println diff.prettyPrint()
+            log.info "There is a difference in namespaces between the start and end of this test spec:"
+            log.info diff.prettyPrint()
             throw new TestSpecRuntimeException("Namespaces have changed. Ensure that any namespace created " +
                     "in a test spec is deleted in that test spec.")
         }
@@ -317,8 +317,8 @@ class BaseSpecification extends Specification {
                 orchestrator.getDeployments(Constants.ORCHESTRATOR_NAMESPACE)
         diff = javers.compare(resourceRecord["deployments"], deployments)
         if (diff.hasChanges()) {
-            println "There is a difference in deployments between the start and end of this test spec"
-            println diff.prettyPrint()
+            log.info "There is a difference in deployments between the start and end of this test spec"
+            log.info diff.prettyPrint()
             throw new TestSpecRuntimeException("Deployments have changed. Ensure that any deployments created " +
                     "in a test spec are destroyed in that test spec.")
         }

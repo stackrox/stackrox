@@ -1,13 +1,11 @@
 import static Services.getPolicies
 import static Services.waitForViolation
-
 import groups.GraphQL
-import objects.Deployment
-import services.GraphQLService
-import org.junit.experimental.categories.Category
-import util.Timer
-
 import java.util.stream.Collectors
+import objects.Deployment
+import org.junit.experimental.categories.Category
+import services.GraphQLService
+import util.Timer
 
 class DeploymentEventGraphQLTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "eventnginx"
@@ -121,7 +119,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
         while (t.IsValid()) {
             def depEvents = gqlService.Call(GET_DEPLOYMENT_EVENTS_OVERVIEW, [deploymentId: deploymentUid])
             assert depEvents.getCode() == 200
-            println "return code " + depEvents.getCode()
+            log.info "return code " + depEvents.getCode()
             assert depEvents.getValue().result != null
             def events = depEvents.getValue().result
             assert events.numPolicyViolations == 1
@@ -134,7 +132,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
 
             return true
         }
-        println "Unable to get deployment event for $deploymentUid in ${t.SecondsSince()} seconds"
+        log.info "Unable to get deployment event for $deploymentUid in ${t.SecondsSince()} seconds"
         return false
     }
 
@@ -143,7 +141,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
         while (t.IsValid()) {
             def podEvents = gqlService.Call(GET_POD_EVENTS, [podsQuery: "Deployment ID: " + deploymentUid])
             assert podEvents.getCode() == 200
-            println "return code " + podEvents.getCode()
+            log.info "return code " + podEvents.getCode()
             assert podEvents.getValue().result != null
             assert podEvents.getValue().result.size() == 1
             def event = podEvents.getValue().result.get(0)
@@ -159,7 +157,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
 
             return event.id
         }
-        println "Unable to get pod events for deployment $deploymentUid in ${t.SecondsSince()} seconds"
+        log.info "Unable to get pod events for deployment $deploymentUid in ${t.SecondsSince()} seconds"
         return null
     }
 
@@ -168,7 +166,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
         while (t.IsValid()) {
             def containerEvents = gqlService.Call(GET_CONTAINER_EVENTS, [containersQuery: "Pod ID: " + podUid])
             assert containerEvents.getCode() == 200
-            println "return code " + containerEvents.getCode()
+            log.info "return code " + containerEvents.getCode()
             assert containerEvents.getValue().result != null
             assert containerEvents.getValue().result.size() == 1
             def event = containerEvents.getValue().result.get(0)
@@ -181,7 +179,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
 
             return true
         }
-        println "Unable to get container events for pod $podUid in ${t.SecondsSince()} seconds"
+        log.info "Unable to get container events for pod $podUid in ${t.SecondsSince()} seconds"
         return false
     }
 }

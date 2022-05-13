@@ -98,7 +98,7 @@ interface OrchestratorMain {
     def createImagePullSecret(String name, String username, String password, String namespace, String server)
     def createImagePullSecret(Secret secret)
     def deleteSecret(String name, String namespace)
-    def getSecretCount(String ns)
+    int getSecretCount(String ns)
     io.fabric8.kubernetes.api.model.Secret getSecret(String name, String namespace)
     def updateSecret(io.fabric8.kubernetes.api.model.Secret secret)
 

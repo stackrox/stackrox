@@ -1,14 +1,12 @@
+import groups.NetworkBaseline
 import io.stackrox.proto.storage.NetworkBaselineOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass
-
-import groups.NetworkBaseline
 import objects.Deployment
-import services.NetworkBaselineService
-import util.NetworkGraphUtil
-
 import org.junit.experimental.categories.Category
+import services.NetworkBaselineService
 import spock.lang.Ignore
 import spock.lang.Retry
+import util.NetworkGraphUtil
 
 @Retry(count = 0)
 class NetworkBaselineTest extends BaseSpecification {
@@ -121,7 +119,7 @@ class NetworkBaselineTest extends BaseSpecification {
 
         def anomalousClientDeploymentID = ANOMALOUS_CLIENT_DEP.deploymentUid
         assert anomalousClientDeploymentID != null
-        println "Deployment IDs Server: ${serverDeploymentID}, " +
+        log.info "Deployment IDs Server: ${serverDeploymentID}, " +
             "Baselined client: ${baselinedClientDeploymentID}, Anomalous client: ${anomalousClientDeploymentID}"
 
         assert NetworkGraphUtil.checkForEdge(baselinedClientDeploymentID, serverDeploymentID, null, 180)
