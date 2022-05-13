@@ -1,10 +1,10 @@
 import { url as apidocsUrl } from '../constants/ApiReferencePage';
 import { baseURL as complianceUrl } from '../constants/CompliancePage';
-import { url as dashboardUrl, selectors as dashboardSelectors } from '../constants/DashboardPage';
 import { url as userUrl } from '../constants/UserPage';
 import selectors from '../constants/GeneralPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
+import { visitMainDashboard, visitMainDashboardFromLeftNav } from '../helpers/main';
 import { visitNetworkGraph } from '../helpers/networkGraph';
 import { visitViolations, visitViolationsWithAlertsForErrorBoundary } from '../helpers/violations';
 
@@ -21,9 +21,7 @@ describe('General sanity checks', () => {
         const productNameRegExp = '(Red Hat Advanced Cluster Security|StackRox)';
 
         it('for Dashboard', () => {
-            cy.intercept('POST', api.dashboard.summaryCounts).as('summaryCounts');
-            cy.visit(dashboardUrl);
-            cy.wait('@summaryCounts');
+            visitMainDashboard();
 
             cy.title().should('match', new RegExp(`Dashboard | ${productNameRegExp}`));
         });
@@ -79,37 +77,7 @@ describe('General sanity checks', () => {
         });
     });
 
-    it('should render navbar with Dashboard selected', () => {
-        cy.intercept('POST', api.dashboard.summaryCounts).as('summaryCounts');
-        cy.visit('/');
-        cy.wait('@summaryCounts');
-
-        // redirect should happen
-        cy.location('pathname').should('eq', dashboardUrl);
-
-        // Dashboard is selected
-        cy.get(selectors.navLinks.first).should('have.class', 'pf-m-current');
-        cy.get(selectors.navLinks.first).contains('Dashboard');
-
-        // nothing else is selected
-        cy.get(selectors.navLinks.others).should('not.have.class', 'pf-m-current');
-    });
-
-    it('should have the summary counts in the top header', () => {
-        cy.intercept('POST', api.dashboard.summaryCounts).as('summaryCounts');
-        cy.visit(dashboardUrl);
-        cy.wait('@summaryCounts');
-
-        const { summaryCount: summaryCountSelector } = dashboardSelectors;
-        cy.get(`${summaryCountSelector}:nth-child(1):contains("Cluster")`);
-        cy.get(`${summaryCountSelector}:nth-child(2):contains("Node")`);
-        cy.get(`${summaryCountSelector}:nth-child(3):contains("Violation")`);
-        cy.get(`${summaryCountSelector}:nth-child(4):contains("Deployment")`);
-        cy.get(`${summaryCountSelector}:nth-child(5):contains("Image")`);
-        cy.get(`${summaryCountSelector}:nth-child(6):contains("Secret")`);
-    });
-
-    // TODO: Fix for ROX-6826
+    // TODO: Fix interactive steps for ROX-6826 and merge with the preceding tests to replace visit with assertion about apidocsUrl.
     xit('should go to API docs', () => {
         cy.visit('/');
         cy.get(selectors.navLinks.apidocs).as('apidocs');
@@ -126,7 +94,7 @@ describe('General sanity checks', () => {
             "We're sorry — something's gone wrong. The error has been logged."
         );
 
-        cy.get(selectors.navLinks.first).click();
+        visitMainDashboardFromLeftNav();
         cy.get(selectors.errorBoundary).should('not.exist'); // error screen should be gone
     });
 });
