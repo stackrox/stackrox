@@ -690,7 +690,7 @@ openshift_ci_mods() {
     local pr_details
     local exitstatus=0
     pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
-    if [[ "$exitstatus" == "0"  && "$(jq -r .base.repo.full_name <<<"$pr_details")" == "stackrox/stackrox" ]]; then
+    if [[ "$exitstatus" == "0" && "$(jq -r .base.repo.full_name <<<"$pr_details")" == "stackrox/stackrox" ]]; then
         info "Will switch to the PR branch"
 
         # Clone the target repo
