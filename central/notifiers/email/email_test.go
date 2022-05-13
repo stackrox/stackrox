@@ -166,6 +166,14 @@ func TestApplyRfc5322TextWordWrap(t *testing.T) {
 			in:       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec consectetur interdum nisi.\nSed eget nibh quis est commodo venenatis. Nulla.",
 			expected: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec consectetur\r\ninterdum nisi.\r\nSed eget nibh quis est commodo venenatis. Nulla.",
 		},
+		"leading tabs": {
+			in:       "\t\t\tLorem ipsum dolor sit amet, consectetur adipiscing elit. Donec consectetur interdum nisi.\n\t\t\tSed eget nibh quis est commodo venenatis. Nulla.",
+			expected: "\t\t\tLorem ipsum dolor sit amet, consectetur adipiscing elit. Donec consectetur\r\ninterdum nisi.\r\n\t\t\tSed eget nibh quis est commodo venenatis. Nulla.",
+		},
+		"preformatted text": {
+			in:       "Lorem ipsum dolor sit amet,\r\nconsectetur adipiscing elit.\r\nDonec consectetur interdum nisi.\r\nSed eget nibh quis est commodo venenatis.\r\nNulla.",
+			expected: "Lorem ipsum dolor sit amet,\r\nconsectetur adipiscing elit.\r\nDonec consectetur interdum nisi.\r\nSed eget nibh quis est commodo venenatis.\r\nNulla.",
+		},
 	}
 
 	for caseName, caseData := range cases {

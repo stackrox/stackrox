@@ -205,7 +205,9 @@ func applyRfc5322LineLengthLimit(str string) string {
 
 func applyRfc5322TextWordWrap(text string) string {
 	wrappedText := wordwrap.WrapString(text, emailLineLength)
-	wrappedText = strings.TrimSpace(wrappedText)
+
+	// Avoid problems with already email formatted text.
+	wrappedText = strings.Replace(wrappedText, "\r\n", "\n", -1)
 	wrappedText = strings.Replace(wrappedText, "\n", "\r\n", -1)
 
 	return wrappedText
