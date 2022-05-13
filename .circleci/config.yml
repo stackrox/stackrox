@@ -929,6 +929,7 @@ commands:
         default: stackrox
       image_flavor:
         type: string
+        default: ""
     steps:
       - checkout-with-submodules
       - check-docs-step:
