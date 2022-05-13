@@ -1,22 +1,20 @@
 import static io.stackrox.proto.storage.ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel
-import groovy.util.logging.Slf4j
-import io.fabric8.kubernetes.api.model.EnvVar
-import orchestratormanager.OrchestratorManagerException
-import spock.lang.Shared
 import groups.SensorBounceNext
+import io.fabric8.kubernetes.api.model.EnvVar
 import io.stackrox.proto.storage.ClusterOuterClass
+import java.nio.file.Files
+import java.nio.file.Paths
 import objects.ConfigMap
 import objects.Deployment
 import objects.Secret
-import services.ClusterService
+import orchestratormanager.OrchestratorManagerException
 import org.junit.experimental.categories.Category
+import services.ClusterService
 import spock.lang.Retry
+import spock.lang.Shared
 import util.ApplicationHealth
 import util.Timer
-import java.nio.file.Files
-import java.nio.file.Paths
 
-@Slf4j
 @Retry(count = 1)
 class TLSChallengeTest extends BaseSpecification {
     @Shared
