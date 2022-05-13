@@ -149,8 +149,8 @@ class ComplianceTest extends BaseSpecification {
                 new Control(
                         "HIPAA_164:310_d",
                         ["Runtime support is enabled (or collector service is running) for cluster "
-                                + DEFAULT_CLUSTER_NAME
-                                + ". Network visualization for active network connections is possible."],
+                                 + DEFAULT_CLUSTER_NAME
+                                 + ". Network visualization for active network connections is possible."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
                 new Control(
                         "HIPAA_164:310_d",
@@ -161,7 +161,7 @@ class ComplianceTest extends BaseSpecification {
                 new Control(
                         "NIST_SP_800_53_Rev_4:RA_3",
                         ['StackRox is installed in cluster "' + DEFAULT_CLUSTER_NAME +
-                                '", and provides continuous risk assessment.'],
+                                 '", and provides continuous risk assessment.'],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
         ]
         if (!ClusterService.isAKS()) { // ROX-6993
@@ -192,16 +192,16 @@ class ComplianceTest extends BaseSpecification {
                 case Control.ControlType.DEPLOYMENT:
                     result.deploymentResultsMap.each {
                         k, v ->
-                        assert v.controlResultsMap.get(control.id)?.overallState == control.state
-                        assert v.controlResultsMap.get(control.id)?.evidenceList*.message
+                            assert v.controlResultsMap.get(control.id)?.overallState == control.state
+                            assert v.controlResultsMap.get(control.id)?.evidenceList*.message
                                     .containsAll(control.evidenceMessages)
                     }
                     break
                 case Control.ControlType.NODE:
                     result.nodeResultsMap.each {
                         k, v ->
-                        assert v.controlResultsMap.get(control.id)?.overallState == control.state
-                        assert v.controlResultsMap.get(control.id)?.evidenceList*.message
+                            assert v.controlResultsMap.get(control.id)?.overallState == control.state
+                            assert v.controlResultsMap.get(control.id)?.evidenceList*.message
                                     .containsAll(control.evidenceMessages)
                     }
                     break
@@ -394,105 +394,101 @@ class ComplianceTest extends BaseSpecification {
 
         then:
         "parse and verify export file"
-        try {
-            HeaderColumnNameTranslateMappingStrategy<CsvRow> strategy =
-                    new HeaderColumnNameTranslateMappingStrategy<CsvRow>()
-            strategy.setType(CsvRow)
-            strategy.setColumnMapping(Constants.CSV_COLUMN_MAPPING)
+        HeaderColumnNameTranslateMappingStrategy<CsvRow> strategy =
+                new HeaderColumnNameTranslateMappingStrategy<CsvRow>()
+        strategy.setType(CsvRow)
+        strategy.setColumnMapping(Constants.CSV_COLUMN_MAPPING)
 
-            Reader reader = Files.newBufferedReader(Paths.get(exportFile), StandardCharsets.UTF_8)
-            reader.mark(1)
-            def index = reader.readLine().indexOf("Standard")
-            reader.reset()
-            for (int i = 0; i < index; i++) {
-                reader.read()
-            }
-            CsvToBean<CsvRow> csvToBean = new CsvToBeanBuilder(reader)
-                    .withType(CsvRow)
-                    .withIgnoreLeadingWhiteSpace(true)
-                    .withMappingStrategy(strategy)
-                    .build()
-
-            Iterator<CsvRow> csvUserIterator = csvToBean.iterator()
-            int rowNumber = 0
-            int verifiedRows = 0
-
-            Map<String, ComplianceStandard> sDetails = ComplianceService.getComplianceStandards().collectEntries {
-                [(it.id): ComplianceService.getComplianceStandardDetails(it.id)]
-            }
-
-            while (csvUserIterator.hasNext()) {
-                CsvRow row = csvUserIterator.next()
-                rowNumber++
-
-                def standardId = standardsByName.get(row.standard)
-                ComplianceRunResults result = BASE_RESULTS.get(standardId)
-                assert result
-
-                // The control name is formatted with `fmt.Sprintf(`=("%s")`, controlName)` in Go.
-                // Just undo this to get the name.
-                assert row.control.length() > 5
-                def normalizedControlName = row.control[3..(row.control.length() - 3)]
-
-                ComplianceControl control = sDetails.get(standardId).controlsList.find {
-                    it.name == normalizedControlName
-                }
-                if (!control) {
-                    println "Couldn't find ${normalizedControlName} (row " +
-                            "was ${row.cluster} ${row.standard} ${row.control}"
-                }
-                assert control
-
-                ComplianceResultValue value
-                switch (row.objectType.toLowerCase()) {
-                    case "cluster":
-                        value = result.clusterResults.controlResultsMap.find {
-                            it.key == control.id
-                        }?.value
-                        break
-                    case "node":
-                        value = result.nodeResultsMap.get(
-                                result.domain.nodesMap.find { it.value.name == row.objectName }?.key
-                        )?.controlResultsMap?.find {
-                            it.key == control.id
-                        }?.value
-                        break
-                    case "machineconfig":
-                        value = result.machineConfigResultsMap.get(row.objectName).controlResultsMap?.find {
-                            it.key == control.id
-                        }?.value
-                        break
-                    default:
-                        value = result.deploymentResultsMap.get(
-                                result.domain.deploymentsMap.find {
-                            it.value.name == row.objectName && it.value.namespace == row.namespace
-                                }?.key
-                        )?.controlResultsMap?.find {
-                            it.key == control.id
-                        }?.value
-                        break
-                }
-                if (!value) {
-                    println "Control: ${control} StandardId: ${standardId}" +
-                            "Row: ${row.cluster}, ${row.standard}, ${row.objectType}, ${row.control}, ${row.evidence}"
-                    println result.clusterResults.controlResultsMap.keySet()
-                }
-                assert value
-                assert convertStringState(row.state) ?
-                            convertStringState(row.state) == value.overallState :
-                            row.state == "Unknown"
-                verifiedRows++
-                assert row.controlDescription == control.description
-                assert row.cluster == result.domain.cluster.name
-                Instant i = Instant.parse(Timestamps.toString(result.runMetadata.finishTimestamp))
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'UTC'")
-                        .withZone(ZoneId.of("UTC"))
-                assert row.timestamp == formatter.format(i)
-            }
-            println "Verified ${verifiedRows} out of ${rowNumber} total rows"
-        } catch (Exception e) {
-            println e.printStackTrace()
+        Reader reader = Files.newBufferedReader(Paths.get(exportFile), StandardCharsets.UTF_8)
+        reader.mark(1)
+        def index = reader.readLine().indexOf("Standard")
+        reader.reset()
+        for (int i = 0; i < index; i++) {
+            reader.read()
         }
+        CsvToBean<CsvRow> csvToBean = new CsvToBeanBuilder(reader)
+                .withType(CsvRow)
+                .withIgnoreLeadingWhiteSpace(true)
+                .withMappingStrategy(strategy)
+                .build()
+
+        Iterator<CsvRow> csvUserIterator = csvToBean.iterator()
+        int rowNumber = 0
+        int verifiedRows = 0
+
+        Map<String, ComplianceStandard> sDetails = ComplianceService.getComplianceStandards().collectEntries {
+            [(it.id): ComplianceService.getComplianceStandardDetails(it.id)]
+        }
+
+        while (csvUserIterator.hasNext()) {
+            CsvRow row = csvUserIterator.next()
+            rowNumber++
+
+            def standardId = standardsByName.get(row.standard)
+            ComplianceRunResults result = BASE_RESULTS.get(standardId)
+            assert result
+
+            // The control name is formatted with `fmt.Sprintf(`=("%s")`, controlName)` in Go.
+            // Just undo this to get the name.
+            assert row.control.length() > 5
+            def normalizedControlName = row.control[3..(row.control.length() - 3)]
+
+            ComplianceControl control = sDetails.get(standardId).controlsList.find {
+                it.name == normalizedControlName
+            }
+            if (!control) {
+                println "Couldn't find ${normalizedControlName} (row " +
+                        "was ${row.cluster} ${row.standard} ${row.control}"
+            }
+            assert control
+
+            ComplianceResultValue value
+            switch (row.objectType.toLowerCase()) {
+                case "cluster":
+                    value = result.clusterResults.controlResultsMap.find {
+                        it.key == control.id
+                    }?.value
+                    break
+                case "node":
+                    value = result.nodeResultsMap.get(
+                            result.domain.nodesMap.find { it.value.name == row.objectName }?.key
+                    )?.controlResultsMap?.find {
+                        it.key == control.id
+                    }?.value
+                    break
+                case "machineconfig":
+                    value = result.machineConfigResultsMap.get(row.objectName).controlResultsMap?.find {
+                        it.key == control.id
+                    }?.value
+                    break
+                default:
+                    value = result.deploymentResultsMap.get(
+                            result.domain.deploymentsMap.find {
+                                it.value.name == row.objectName && it.value.namespace == row.namespace
+                            }?.key
+                    )?.controlResultsMap?.find {
+                        it.key == control.id
+                    }?.value
+                    break
+            }
+            if (!value) {
+                println "Control: ${control} StandardId: ${standardId}" +
+                        "Row: ${row.cluster}, ${row.standard}, ${row.objectType}, ${row.control}, ${row.evidence}"
+                println result.clusterResults.controlResultsMap.keySet()
+            }
+            assert value
+            assert convertStringState(row.state) ?
+                    convertStringState(row.state) == value.overallState :
+                    row.state == "Unknown"
+            verifiedRows++
+            assert row.controlDescription == control.description
+            assert row.cluster == result.domain.cluster.name
+            Instant i = Instant.parse(Timestamps.toString(result.runMetadata.finishTimestamp))
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'UTC'")
+                    .withZone(ZoneId.of("UTC"))
+            assert row.timestamp == formatter.format(i)
+        }
+        println "Verified ${verifiedRows} out of ${rowNumber} total rows"
     }
 
     @Category([BAT])
@@ -1069,7 +1065,7 @@ class ComplianceTest extends BaseSpecification {
         def numErrors = 0
         for (def entry in run.machineConfigResultsMap) {
             println "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
-            if (entry.value.controlResultsMap.size()  > 0) {
+            if (entry.value.controlResultsMap.size() > 0) {
                 machineConfigsWithResults++
             }
             for (def ctrlResults : entry.value.controlResultsMap.values()) {
@@ -1083,10 +1079,10 @@ class ComplianceTest extends BaseSpecification {
 
         where:
         "Data inputs are: "
-        standard                     | _
-        "ocp4-cis-node"              | _
-        "rhcos4-moderate"            | _
-        "rhcos4-moderate-modified"   | _
+        standard                   | _
+        "ocp4-cis-node"            | _
+        "rhcos4-moderate"          | _
+        "rhcos4-moderate-modified" | _
     }
 
     @Category(BAT)
@@ -1108,7 +1104,7 @@ class ComplianceTest extends BaseSpecification {
         def numErrors = 0
         for (def entry in run.machineConfigResultsMap) {
             println "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
-            if (entry.value.controlResultsMap.size()  > 0) {
+            if (entry.value.controlResultsMap.size() > 0) {
                 machineConfigsWithResults++
             }
             assert !entry.value.controlResultsMap.keySet().contains(
