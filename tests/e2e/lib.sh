@@ -155,6 +155,7 @@ remove_existing_stackrox_resources() {
         helm uninstall scanner
         helm uninstall sensor
         kubectl get namespace -o name | grep -E '^namespace/qa' | xargs kubectl delete --wait
+    # (prefix output to avoid triggering prow log focus)
     ) 2>&1 | sed -e 's/^/out: /' || true
 }
 
