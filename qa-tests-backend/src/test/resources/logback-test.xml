@@ -28,6 +28,7 @@
     <logger name="util" level="DEBUG"/>
     <logger name="objects" level="DEBUG"/>
     <logger name="common" level="DEBUG"/>
+    <logger name="test" level="DEBUG"/>
 
     <!-- control the level of output here -->
     <root level="ERROR">

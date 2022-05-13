@@ -1,5 +1,4 @@
 import common.Constants
-import groovy.util.logging.Slf4j
 import groups.BAT
 import groups.SensorBounceNext
 import io.stackrox.proto.api.v1.Common
@@ -22,12 +21,11 @@ import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Timeout
 import spock.lang.Unroll
+import util.ChaosMonkey
 import util.Env
 import util.Helpers
 import util.Timer
-import util.ChaosMonkey
 
-@Slf4j
 @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
