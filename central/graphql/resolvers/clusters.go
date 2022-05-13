@@ -1101,6 +1101,7 @@ func (resolver *clusterResolver) PlottedNodeVulnerabilities(ctx context.Context,
 
 	if !features.PostgresDatastore.Enabled() {
 		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+		query = withNodeTypeFiltering(query)
 		return newPlottedNodeVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
