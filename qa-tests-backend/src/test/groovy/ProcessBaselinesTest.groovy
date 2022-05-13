@@ -228,12 +228,15 @@ class ProcessBaselinesTest extends BaseSpecification {
         List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessBaselines = ProcessBaselineService.
                  lockProcessBaselines(clusterId, deployment, containerName, true)
         assert (!StringUtils.isEmpty(lockProcessBaselines.get(0).getElements(0).getElement().processName))
-        // sleep 15 seconds to allow for propagation to sensor
-        sleep 15000
+        // sleep 5 seconds to allow for propagation to sensor
+        sleep 5000
         orchestrator.execInContainer(deployment, "pwd")
 
+        // Give the process indicators time to roll off the queue
+        sleep 60000
+
         // check for process baseline violation
-        assert waitForViolation(containerName, "Unauthorized Process Execution", 15)
+        assert waitForViolation(containerName, "Unauthorized Process Execution", 45)
         List<AlertOuterClass.ListAlert> alertList = AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest
                  .newBuilder().build())
         String alertId
