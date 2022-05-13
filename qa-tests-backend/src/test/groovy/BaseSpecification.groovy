@@ -198,7 +198,7 @@ class BaseSpecification extends Specification {
             orchestrator.setup()
         } catch (Exception e) {
             e.printStackTrace()
-            println "Error setting up orchestrator: ${e.message}"
+            log.error("Error setting up orchestrator", e)
             throw e
         }
         BaseService.useBasicAuth()
@@ -208,7 +208,7 @@ class BaseSpecification extends Specification {
             pluginConfigID = response.getId()
             println response.toString()
         } catch (StatusRuntimeException e) {
-            println("Unable to enable the authz plugin, defaulting to basic auth: ${e.message}")
+            log.error("Unable to enable the authz plugin, defaulting to basic auth", e)
         }
 
         coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
@@ -282,7 +282,7 @@ class BaseSpecification extends Specification {
         try {
             orchestrator.cleanup()
         } catch (Exception e) {
-            println "Error to clean up orchestrator: ${e.message}"
+            log.error "Error to clean up orchestrator: ${e.message}"
             throw e
         }
         disableAuthzPlugin()
