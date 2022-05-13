@@ -10,8 +10,8 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("PlottedNodeVulnerabilities", []string{
-			"basicVulnerabilityCounter: VulnerabilityCounter!",
-			"vulnerabilities(pagination: Pagination): [NodeVulnerability]!",
+			"basicNodeVulnerabilityCounter: VulnerabilityCounter!",
+			"nodeVulnerabilities(pagination: Pagination): [NodeVulnerability]!",
 		}),
 	)
 }
@@ -36,8 +36,8 @@ func newPlottedNodeVulnerabilitiesResolver(ctx context.Context, root *Resolver, 
 	}, nil
 }
 
-// BasicVulnerabilityCounter returns the vulnCounter for scatter-plot with only total and fixable
-func (pvr *PlottedNodeVulnerabilitiesResolver) BasicVulnerabilityCounter(ctx context.Context) (*VulnerabilityCounterResolver, error) {
+// BasicNodeVulnerabilityCounter returns the NodeVulnerabilityCounter for scatter-plot with only total and fixable
+func (pvr *PlottedNodeVulnerabilitiesResolver) BasicNodeVulnerabilityCounter(ctx context.Context) (*VulnerabilityCounterResolver, error) {
 	return &VulnerabilityCounterResolver{
 		all: &VulnerabilityFixableCounterResolver{
 			total:   int32(len(pvr.all)),
@@ -46,8 +46,8 @@ func (pvr *PlottedNodeVulnerabilitiesResolver) BasicVulnerabilityCounter(ctx con
 	}, nil
 }
 
-// Vulnerabilities returns the node vulnerabilities for top risky nodes scatter-plot
-func (pvr *PlottedNodeVulnerabilitiesResolver) Vulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+// NodesVulnerabilities returns the node vulnerabilities for top risky nodes scatter-plot
+func (pvr *PlottedNodeVulnerabilitiesResolver) NodesVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	vulnResolvers, err := unwrappedPlottedVulnerabilities(ctx, pvr.root, pvr.all, args)
 	if err != nil {
 		return nil, err
