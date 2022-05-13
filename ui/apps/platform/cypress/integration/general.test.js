@@ -6,7 +6,7 @@ import selectors from '../constants/GeneralPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import { visitNetworkGraph } from '../helpers/networkGraph';
-import { visitViolations, visitViolationsWithAlerts } from '../helpers/violations';
+import { visitViolations, visitViolationsWithAlertsForErrorBoundary } from '../helpers/violations';
 
 //
 // Sanity / general checks for UI being up and running
@@ -120,7 +120,7 @@ describe('General sanity checks', () => {
 
     it('should allow to navigate to another page after exception happens on a page', () => {
         // Test fails with uncaught exception in local deployment.
-        visitViolationsWithAlerts([{ id: 'broken one' }]);
+        visitViolationsWithAlertsForErrorBoundary([{ id: 'broken one' }]);
 
         cy.get(selectors.errorBoundary).contains(
             "We're sorry — something's gone wrong. The error has been logged."

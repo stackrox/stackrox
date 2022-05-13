@@ -44,7 +44,7 @@ export function visitViolationsWithFixture(fixturePath) {
     });
 }
 
-export function visitViolationsWithAlerts(alerts) {
+export function visitViolationsWithAlertsForErrorBoundary(alerts) {
     const count = alerts.length;
 
     cy.intercept('GET', api.alerts.alertsWithQuery, {
@@ -57,7 +57,7 @@ export function visitViolationsWithAlerts(alerts) {
     visit(url);
 
     cy.wait(['@getAlerts', '@getAlertsCount']);
-    cy.get('h1:contains("Violations")');
+    // Do not get h1 because goal of this function is to render error boundary.
 }
 
 /*
