@@ -406,7 +406,7 @@ endif
 
 .PHONY: main-build-nodeps
 main-build-nodeps:
-	$(GOBUILD) central migrator sensor/kubernetes sensor/admission-control compliance/collection
+	DEBUG_BUILD="$(DEBUG_BUILD)" $(GOBUILD) central migrator sensor/kubernetes sensor/admission-control compliance/collection
 	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 ifndef CI
     CGO_ENABLED=0 $(GOBUILD) roxctl
