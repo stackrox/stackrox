@@ -712,7 +712,7 @@ class NetworkFlowTest extends BaseSpecification {
                 if (!deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)) {
                     log.info "Deployed namespaces do not contain all namespaces found in the network policy"
                     log.info "The network policy:"
-                    print modification
+                    log.info modification.toString()
                 }
                 assert deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)
             } else {

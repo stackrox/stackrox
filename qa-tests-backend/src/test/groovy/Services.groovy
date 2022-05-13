@@ -41,7 +41,7 @@ import util.Timer
 @CompileStatic
 class Services extends BaseService {
 
-    static final Logger log = LoggerFactory.getLogger("test." + Services.getSimpleName())
+    private static final Logger LOG = LoggerFactory.getLogger("test." + Services.getSimpleName())
 
     static ResourceByID getResourceByID(String id) {
         return ResourceByID.newBuilder().setId(id).build()
@@ -99,10 +99,10 @@ class Services extends BaseService {
 
     static deletePolicy(String policyID) {
         getPolicyClient().deletePolicy(
-                        ResourceByID.newBuilder()
-                                    .setId(policyID)
-                                    .build()
-            )
+                ResourceByID.newBuilder()
+                        .setId(policyID)
+                        .build()
+        )
     }
 
     static int getAlertEnforcementCount(String deploymentName, String policyName) {
@@ -124,11 +124,11 @@ class Services extends BaseService {
     }
 
     static SearchServiceOuterClass.SearchResponse getSearchResponse(
-                  String query, List<SearchServiceOuterClass.SearchCategory> categories) {
+            String query, List<SearchServiceOuterClass.SearchCategory> categories) {
         def rawSearchRequest = SearchServiceOuterClass.RawSearchRequest.newBuilder()
-                        .addAllCategories(categories)
-                        .setQuery(query)
-                        .build()
+                .addAllCategories(categories)
+                .setQuery(query)
+                .build()
         return getSearchServiceClient().search(rawSearchRequest)
     }
 
@@ -144,12 +144,13 @@ class Services extends BaseService {
                 return result
             }
         }
-        log.info "No suspicious process executions found in risk indicator after waiting ${t.SecondsSince()} seconds"
+        LOG.info "No suspicious process executions found in risk indicator after waiting ${t.SecondsSince()} seconds"
         return null
     }
 
     static waitForViolation(String deploymentName, String policyName, int timeoutSeconds = 30) {
-        List<AlertOuterClass.ListAlert> violations = getViolationsWithTimeout(deploymentName, policyName, timeoutSeconds)
+        List<AlertOuterClass.ListAlert> violations = getViolationsWithTimeout(
+                deploymentName, policyName, timeoutSeconds)
         if (violations == null || violations.size() == 0) {
             return false // still return false pending debate
         }
@@ -165,7 +166,8 @@ class Services extends BaseService {
         return violations != null && violations.size() > 0
     }
 
-    private static List<AlertOuterClass.ListAlert> getViolationsHelper(String query, String policyName, int timeoutSeconds) {
+    private static List<AlertOuterClass.ListAlert> getViolationsHelper(
+            String query, String policyName, int timeoutSeconds) {
         int intervalSeconds = 3
         int retries = (timeoutSeconds / intervalSeconds).intValue()
 
@@ -174,27 +176,28 @@ class Services extends BaseService {
             def violations = AlertService.getViolations(ListAlertsRequest.newBuilder()
                     .setQuery(query).build())
             if (violations.size() > 0) {
-                log.info "violation size is: ${violations.size()}"
-                log.info "${policyName} triggered after waiting ${t.SecondsSince()} seconds"
+                LOG.info "violation size is: ${violations.size()}"
+                LOG.info "${policyName} triggered after waiting ${t.SecondsSince()} seconds"
                 return violations
             }
         }
-        log.info "Failed to trigger ${policyName} after waiting ${t.SecondsSince()} seconds"
+        LOG.info "Failed to trigger ${policyName} after waiting ${t.SecondsSince()} seconds"
         return []
     }
 
-    static List<AlertOuterClass.ListAlert> getViolationsWithTimeout(String deploymentName, String policyName, int timeoutSeconds) {
+    static List<AlertOuterClass.ListAlert> getViolationsWithTimeout(
+            String deploymentName, String policyName, int timeoutSeconds) {
         return getViolationsHelper("Deployment:${deploymentName}+Policy:${policyName}", policyName, timeoutSeconds)
     }
 
     static getAllResourceViolationsWithTimeout(String resourceType,
-                                            String policyName, int timeoutSeconds) {
+                                               String policyName, int timeoutSeconds) {
         return getViolationsHelper("Resource Type:${resourceType}+Policy:${policyName}",
                 policyName, timeoutSeconds)
     }
 
     static getResourceViolationsWithTimeout(String resourceType, String resourceName,
-                                           String policyName, int timeoutSeconds) {
+                                            String policyName, int timeoutSeconds) {
         return getViolationsHelper("Resource Type:${resourceType}+Resource:${resourceName}+Policy:${policyName}",
                 policyName, timeoutSeconds)
     }
@@ -223,14 +226,14 @@ class Services extends BaseService {
     static scanImage(String image) {
         return getImageClient().scanImage(
                 ImageServiceOuterClass.ScanImageRequest.newBuilder()
-                         .setImageName(image).build()
+                        .setImageName(image).build()
         )
     }
 
     static String getImageIdByName(String imageName) {
         String id = null
         Timer t = new Timer(10, 1)
-        while (id == null &&  t.IsValid()) {
+        while (id == null && t.IsValid()) {
             id = ImageService.getImages().find { it?.name == imageName }?.id
         }
         return id
@@ -241,28 +244,28 @@ class Services extends BaseService {
     }
 
     static requestBuildImageScan(String registry, String remote, String tag, Boolean sendNotifications = false) {
-        log.info "Request scan of ${registry}/${remote}:${tag} with sendNotifications=${sendNotifications}"
+        LOG.info "Request scan of ${registry}/${remote}:${tag} with sendNotifications=${sendNotifications}"
         return getDetectionClient().detectBuildTime(
-            BuildDetectionRequest.newBuilder().
-            setImage(
-               ContainerImage.newBuilder()
-                    .setName(ImageOuterClass.ImageName.newBuilder()
-                    .setRegistry(registry)
-                    .setRemote(remote)
-                    .setTag(tag)
-                    .build()
-                )
-            ).
-            setSendNotifications(sendNotifications).
-            build()
+                BuildDetectionRequest.newBuilder().
+                        setImage(
+                                ContainerImage.newBuilder()
+                                        .setName(ImageOuterClass.ImageName.newBuilder()
+                                                .setRegistry(registry)
+                                                .setRemote(remote)
+                                                .setTag(tag)
+                                                .build()
+                                        )
+                        ).
+                        setSendNotifications(sendNotifications).
+                        build()
         )
-      }
+    }
 
     static updatePolicy(Policy policyDef) {
         try {
             getPolicyClient().putPolicy(policyDef)
         } catch (Exception e) {
-            log.warn("exception", e)
+            LOG.warn("exception", e)
         }
     }
 
@@ -279,7 +282,7 @@ class Services extends BaseService {
             getPolicyClient().putPolicy(policyDef)
             return true
         } catch (Exception e) {
-            log.warn("exception", e)
+            LOG.warn("exception", e)
             return false
         }
     }
@@ -288,23 +291,23 @@ class Services extends BaseService {
         Policy policyMeta = getPolicyByName(policyName)
 
         def policyDef = Policy.
-            newBuilder(policyMeta).
-            addExclusions(Exclusion.newBuilder().
-                setDeployment(Exclusion.Deployment.newBuilder().
-                    setName(deployment.getName()).
-                    setScope(ScopeOuterClass.Scope.newBuilder().
-                        setNamespace(deployment.getNamespace())
-                    ).
-                    build()).
-                build()).
-            build()
+                newBuilder(policyMeta).
+                addExclusions(Exclusion.newBuilder().
+                        setDeployment(Exclusion.Deployment.newBuilder().
+                                setName(deployment.getName()).
+                                setScope(ScopeOuterClass.Scope.newBuilder().
+                                        setNamespace(deployment.getNamespace())
+                                ).
+                                build()).
+                        build()).
+                build()
 
         try {
             getPolicyClient().putPolicy(policyDef)
         } catch (Exception e) {
-            log.warn("exception", e)
+            LOG.warn("exception", e)
         }
-        log.info "Updated ${policyName} to excluded scope ${deployment.getName()}"
+        LOG.info "Updated ${policyName} to excluded scope ${deployment.getName()}"
         return policyMeta
     }
 
@@ -320,10 +323,10 @@ class Services extends BaseService {
         try {
             getPolicyClient().putPolicy(policyDef)
         } catch (Exception e) {
-            log.warn("exception", e)
+            LOG.warn("exception", e)
             return []
         }
-        log.info "Updated lifecycleStage of '${policyName}' to ${stages}"
+        LOG.info "Updated lifecycleStage of '${policyName}' to ${stages}"
         return policyMeta.getLifecycleStagesList()
     }
 
@@ -331,13 +334,13 @@ class Services extends BaseService {
         Policy policyMeta = getPolicyByName(policyName)
 
         Policy.Builder builder = Policy.newBuilder(policyMeta).clearExclusions()
-        for (String image: images) {
+        for (String image : images) {
             builder.addExclusions(
                     Exclusion.newBuilder()
                             .setImage(
-                                Exclusion.Image.newBuilder()
-                                        .setName(image)
-                                        .build()
+                                    Exclusion.Image.newBuilder()
+                                            .setName(image)
+                                            .build()
                             ).build())
         }
         def policyDef = builder.build()
@@ -345,10 +348,10 @@ class Services extends BaseService {
         try {
             getPolicyClient().putPolicy(policyDef)
         } catch (Exception e) {
-            log.warn("exception", e)
+            LOG.warn("exception", e)
             return []
         }
-        log.info "Updated exclusions of '${policyName}' to ${images}"
+        LOG.info "Updated exclusions of '${policyName}' to ${images}"
         return images
     }
 
@@ -368,7 +371,7 @@ class Services extends BaseService {
         try {
             getPolicyClient().putPolicy(policyDef)
         } catch (Exception e) {
-            log.warn("exception", e)
+            LOG.warn("exception", e)
             return []
         }
 
@@ -377,9 +380,9 @@ class Services extends BaseService {
         }
 
         if (enforcementActions != null && !enforcementActions.isEmpty()) {
-            log.info "Updated enforcement of '${policyName}' to ${enforcementActions}"
+            LOG.info "Updated enforcement of '${policyName}' to ${enforcementActions}"
         } else {
-            log.info "Updated enforcement of '${policyName}' to have no enforcement actions"
+            LOG.info "Updated enforcement of '${policyName}' to have no enforcement actions"
         }
         return policyMeta.getEnforcementActionsList()
     }
@@ -389,16 +392,16 @@ class Services extends BaseService {
             Deployment deployment = getDeploymentClient().
                     getDeployment(ResourceByID.newBuilder().setId(deploymentID).build())
             if (deployment.getContainersList().size() == 0) {
-                log.info("Deployment ${name} found but it had no containers...")
+                LOG.info("Deployment ${name} found but it had no containers...")
                 return false
             }
             if (deployment.getContainers(0).getImage() == null) {
-                log.info("Deployment ${name} found by SR, but images not correlated yet... ")
+                LOG.info("Deployment ${name} found by SR, but images not correlated yet... ")
                 return false
             }
             return true
         } catch (Exception e) {
-            log.info "SR does not detect the deployment ${name} yet: ${e}"
+            LOG.info "SR does not detect the deployment ${name} yet: ${e}"
             return false
         }
     }
@@ -422,10 +425,10 @@ class Services extends BaseService {
 
     static waitForDeployment(objects.Deployment deployment, int retries = 30, int interval = 2) {
         if (deployment.deploymentUid == null) {
-            log.info "deploymentID for [${deployment.name}] is null, checking orchestrator directly for deployment ID"
+            LOG.info "deploymentID for [${deployment.name}] is null, checking orchestrator directly for deployment ID"
             deployment.deploymentUid = OrchestratorType.orchestrator.getDeploymentId(deployment)
             if (deployment.deploymentUid == null) {
-                log.info "deployment does not exist in orchestrator"
+                LOG.info "deployment does not exist in orchestrator"
                 return false
             }
         }
@@ -436,12 +439,12 @@ class Services extends BaseService {
         Timer t = new Timer(retries, interval)
         while (t.IsValid()) {
             if (roxDetectedDeployment(id, name)) {
-                log.info "SR found deployment ${name} within ${t.SecondsSince()}s"
+                LOG.info "SR found deployment ${name} within ${t.SecondsSince()}s"
                 return true
             }
-            log.info "SR has not found deployment ${name} yet"
+            LOG.info "SR has not found deployment ${name} yet"
         }
-        log.info "SR did not detect the deployment ${name} in ${t.SecondsSince()} seconds"
+        LOG.info "SR did not detect the deployment ${name} in ${t.SecondsSince()} seconds"
         return false
     }
 
@@ -450,12 +453,12 @@ class Services extends BaseService {
         Timer t = new Timer(retries, interval)
         while (t.IsValid()) {
             if (ImageService.getImages().find { it.name.endsWith(imageName) }) {
-                log.info "SR found image ${imageName} within ${t.SecondsSince()}s"
+                LOG.info "SR found image ${imageName} within ${t.SecondsSince()}s"
                 return true
             }
-            log.info "SR has not found image ${imageName} yet"
+            LOG.info "SR has not found image ${imageName} yet"
         }
-        log.info "SR did not detect the image ${imageName} in ${t.SecondsSince()} seconds"
+        LOG.info "SR did not detect the image ${imageName} in ${t.SecondsSince()} seconds"
         return false
     }
 

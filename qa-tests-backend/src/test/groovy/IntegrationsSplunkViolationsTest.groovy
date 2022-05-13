@@ -1,26 +1,21 @@
 import static util.SplunkUtil.SPLUNK_ADMIN_PASSWORD
 import static util.SplunkUtil.postToSplunk
 import static util.SplunkUtil.tearDownSplunk
-
+import com.jayway.restassured.path.json.JsonPath
+import com.jayway.restassured.response.Response
 import groups.Integration
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
+import java.nio.file.Paths
+import java.util.concurrent.TimeUnit
+import org.junit.Rule
+import org.junit.experimental.categories.Category
+import org.junit.rules.Timeout
 import services.AlertService
-import services.NetworkBaselineService
 import services.ApiTokenService
+import services.NetworkBaselineService
 import spock.lang.Unroll
 import util.SplunkUtil
 import util.Timer
-
-import java.nio.file.Paths
-import java.time.LocalDateTime
-import java.util.concurrent.TimeUnit
-
-import org.junit.Rule
-import org.junit.rules.Timeout
-import org.junit.experimental.categories.Category
-
-import com.jayway.restassured.path.json.JsonPath
-import com.jayway.restassured.response.Response
 
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Rule
