@@ -927,6 +927,8 @@ commands:
       branding:
         type: string
         default: stackrox
+      image_flavor:
+        type: string
     steps:
       - checkout-with-submodules
       - check-docs-step:
@@ -959,7 +961,7 @@ commands:
 
       - run:
           name: Build main image
-          command: make docker-build-main-image ROX_PRODUCT_BRANDING="<< parameters.branding >>"
+          command: make docker-build-main-image ROX_PRODUCT_BRANDING="<< parameters.branding >>" ROX_IMAGE_FLAVOR="<< parameters.image_flavor >>"
 
       - run:
           name: Check debugger presence in the main image
@@ -2765,6 +2767,7 @@ jobs:
     steps:
       - build:
           branding: STACKROX_BRANDING
+          image_flavor: opensource
 
   build-rhacs:
     executor: custom
