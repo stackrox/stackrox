@@ -21,11 +21,6 @@ var (
                    Id varchar,
                    Name varchar UNIQUE,
                    Labels jsonb,
-                   HealthStatus_SensorHealthStatus integer,
-                   HealthStatus_CollectorHealthStatus integer,
-                   HealthStatus_OverallHealthStatus integer,
-                   HealthStatus_AdmissionControlHealthStatus integer,
-                   HealthStatus_ScannerHealthStatus integer,
                    serialized bytea,
                    PRIMARY KEY(Id)
                )
