@@ -251,7 +251,7 @@ If you would like to debug local or even remote deployment, follow the procedure
         ```yaml
         ...DEBUG_BUILD=yes make main-build...
         ```
-      * **Make sure to reset the `.circleci/config.yml` to its previous state before mering your branch to master**.
+      * **Make sure to reset the `.circleci/config.yml` to its previous state before merging your branch into master**.
     * Alternatively, debug build will also be created when the branch name contains `-debug` substring. This works locally with `make image` and in CircleCI.
  2. Deploy the image using instructions from this README file. Works both with `deploy-local.sh` and `deploy.sh`.
  3. Start the debugger (and port forwarding) in the target pod using `roxdebug` command from `workflow` repo.
