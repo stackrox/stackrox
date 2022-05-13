@@ -36,7 +36,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ReportConfiguration)(nil)), "reportconfigs")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_REPORT_CONFIGURATIONS, "reportconfigs", (*storage.ReportConfiguration)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_REPORT_CONFIGURATIONS, "reportconfiguration", (*storage.ReportConfiguration)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()
