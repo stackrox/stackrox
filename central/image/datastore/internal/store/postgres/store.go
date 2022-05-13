@@ -233,13 +233,7 @@ func copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Im
 			if err != nil {
 				return err
 			}
-			log.Infof("image components to delete: %v", deletes)
 
-			ids, err := getImgCompIDs(ctx, tx, deletes)
-			if err != nil {
-				return err
-			}
-			log.Infof("image components after delete: %v", ids)
 			// clear the inserts for the next batch
 			deletes = nil
 
@@ -255,23 +249,6 @@ func copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Im
 	}
 
 	return err
-}
-
-func getImgCompIDs(ctx context.Context, tx pgx.Tx, deletes []string) ([]string, error) {
-	rows, err := tx.Query(ctx, "SELECT id FROM image_components WHERE id = ANY($1::text[])", deletes)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	ids := set.NewStringSet()
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids.Add(id)
-	}
-	return ids.AsSlice(), nil
 }
 
 func copyFromImageComponentRelations(ctx context.Context, tx pgx.Tx, objs ...*storage.ImageComponentEdge) error {
