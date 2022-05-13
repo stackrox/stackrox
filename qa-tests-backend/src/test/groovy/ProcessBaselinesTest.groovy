@@ -122,8 +122,19 @@ class ProcessBaselinesTest extends BaseSpecification {
                     (baseline.key.containerName.equalsIgnoreCase(containerName)))
         assert baseline.elementsList.find { it.element.processName == processName } != null
 
-        // Need to sleep so the baseline has time to lock
-        sleep 70000
+        // wait for baseline to come out of observation
+        baseline = evaluateWithRetry(30, 3) {
+            def tmpBaseline = ProcessBaselineService.getProcessBaseline(clusterId, deployment, containerName)
+            def now = System.currentTimeSeconds()
+            if (tmpBaseline.getStackRoxLockedTimestamp().getSeconds() > now) {
+                throw new RuntimeException(
+                    "Baseline ${deployment} is not out of observation yet. Baseline is ${tmpBaseline}.  Current time ${now}"
+                )
+            }
+            return tmpBaseline
+        }
+        assert baseline
+
         orchestrator.execInContainer(deployment, "pwd")
 
         then:
@@ -217,8 +228,8 @@ class ProcessBaselinesTest extends BaseSpecification {
         List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessBaselines = ProcessBaselineService.
                  lockProcessBaselines(clusterId, deployment, containerName, true)
         assert (!StringUtils.isEmpty(lockProcessBaselines.get(0).getElements(0).getElement().processName))
-        // sleep 5 seconds to allow for propagation to sensor
-        sleep 5000
+        // sleep 15 seconds to allow for propagation to sensor
+        sleep 15000
         orchestrator.execInContainer(deployment, "pwd")
 
         // check for process baseline violation
