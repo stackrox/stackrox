@@ -2729,7 +2729,7 @@ jobs:
           name: Build the main Go binaries
           command: |
             if .circleci/pr_has_label.sh ci-race-tests; then
-              RACE=true DEBUG_BUILD=yes make main-build
+              RACE=true make main-build
             else
               make main-build
             fi
