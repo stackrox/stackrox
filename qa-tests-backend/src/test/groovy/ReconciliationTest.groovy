@@ -149,7 +149,7 @@ class ReconciliationTest extends BaseSpecification {
             try {
                 createOrchestratorDeployment(sensor)
             } catch (Exception e) {
-                println "Error re-creating the sensor: " + e
+                log.error("Error re-creating the sensor: ", e)
                 throw e
             }
         }
