@@ -559,12 +559,12 @@ class SACTest extends BaseSpecification {
         def networkGraphWithAllAccess = NetworkGraphService.getNetworkGraph(null, "Namespace:stackrox")
         def allAccessFlows = NetworkGraphUtil.flowStrings(networkGraphWithAllAccess)
         allAccessFlows.removeAll(UNSTABLE_FLOWS)
-        log.info allAccessFlows
+        log.info "${allAccessFlows}"
 
         def allAccessFlowsWithoutNeighbors = allAccessFlows.findAll {
             it.matches("(stackrox/.*|INTERNET) -> (stackrox/.*|INTERNET)")
         }
-        log.info allAccessFlowsWithoutNeighbors
+        log.info "${allAccessFlowsWithoutNeighbors}"
 
         and:
         "Obtaining the network graph for the StackRox namespace with a SAC restricted token"
@@ -572,14 +572,14 @@ class SACTest extends BaseSpecification {
         def networkGraphWithSAC = NetworkGraphService.getNetworkGraph(null, "Namespace:stackrox")
         def sacFlows = NetworkGraphUtil.flowStrings(networkGraphWithSAC)
         sacFlows.removeAll(UNSTABLE_FLOWS)
-        log.info sacFlows
+        log.info "${sacFlows}"
 
         and:
         "Obtaining the network graph for the StackRox namespace with a SAC restricted token and no query"
         def networkGraphWithSACNoQuery = NetworkGraphService.getNetworkGraph()
         def sacFlowsNoQuery = NetworkGraphUtil.flowStrings(networkGraphWithSACNoQuery)
         sacFlowsNoQuery.removeAll(UNSTABLE_FLOWS)
-        log.info sacFlowsNoQuery
+        log.info "${sacFlowsNoQuery}"
 
         then:
         "Query-restricted and non-restricted flows should be equal under SAC"

@@ -1081,7 +1081,7 @@ class Kubernetes implements OrchestratorMain {
         log.debug name + ": Secret removed."
     }
 
-    def getSecretCount(String ns = null) {
+    int getSecretCount(String ns = null) {
         return evaluateWithRetry(2, 3) {
             return client.secrets().inNamespace(ns).list().getItems().findAll {
                 !it.type.startsWith("kubernetes.io/service-account-token")

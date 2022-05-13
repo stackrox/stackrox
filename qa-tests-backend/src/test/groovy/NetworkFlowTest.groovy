@@ -740,14 +740,14 @@ class NetworkFlowTest extends BaseSpecification {
         and:
         "Get existing network policies from orchestrator"
         def preExistingNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
-        log.info preExistingNetworkPolicies.join(", ")
+        log.info "${preExistingNetworkPolicies}"
 
         expect:
         "actual policies should exist in generated response depending on delete mode"
         def modification = NetworkPolicyService.generateNetworkPolicies(deleteMode, "Namespace:r/qa.*")
         assert !(NetworkPolicyService.applyGeneratedNetworkPolicy(modification) instanceof StatusRuntimeException)
         def appliedNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
-        log.info appliedNetworkPolicies.join(", ")
+        log.info "${appliedNetworkPolicies}"
 
         Yaml parser = new Yaml()
         List yamls = []
@@ -803,7 +803,7 @@ class NetworkFlowTest extends BaseSpecification {
                         instanceof StatusRuntimeException
         )
         def undoNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
-        log.info undoNetworkPolicies.join(", ")
+        log.info "${undoNetworkPolicies}"
         assert undoNetworkPolicies == preExistingNetworkPolicies
 
         cleanup:
