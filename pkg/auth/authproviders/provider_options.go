@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -116,6 +117,14 @@ func WithActive(active bool) ProviderOption {
 func WithConfig(config map[string]string) ProviderOption {
 	return func(pr *providerImpl) error {
 		pr.storedInfo.Config = config
+		return nil
+	}
+}
+
+// WithAttributeChecker adds an attribute checker to the provider.
+func WithAttributeChecker(checker user.AttributeChecker) ProviderOption {
+	return func(pr *providerImpl) error {
+		pr.attributeChecker = checker
 		return nil
 	}
 }
