@@ -74,7 +74,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.VulnerabilityRequest)(nil)), "vulnreq")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_VULN_REQUEST, "vulnreq", (*storage.VulnerabilityRequest)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_VULN_REQUEST, "vulnerabilityrequest", (*storage.VulnerabilityRequest)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()
