@@ -46,7 +46,7 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_COMPONENT_EDGE, "nodes_to_components", (*storage.NodeComponentEdge)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_COMPONENT_EDGE, "nodecomponentedge", (*storage.NodeComponentEdge)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

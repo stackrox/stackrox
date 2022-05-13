@@ -37,7 +37,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ProcessBaseline)(nil)), "processbaselines")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_BASELINES, "processbaselines", (*storage.ProcessBaseline)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_BASELINES, "processbaseline", (*storage.ProcessBaseline)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

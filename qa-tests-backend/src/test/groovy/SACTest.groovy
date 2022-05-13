@@ -617,12 +617,10 @@ class SACTest extends BaseSpecification {
     }
 
     private static List<DeploymentOuterClass.ListDeployment> listDeployments() {
-        def list = Services.getDeployments(
+        return Services.getDeployments(
                 SSOC.RawQuery.newBuilder().setQuery("Namespace:"+ NAMESPACE_QA1).build()
-        )
-        list.addAll(Services.getDeployments(
+        ) + Services.getDeployments(
                 SSOC.RawQuery.newBuilder().setQuery("Namespace:"+ NAMESPACE_QA2).build()
-        ))
-        return list
+        )
     }
 }

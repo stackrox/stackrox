@@ -47,7 +47,7 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NAMESPACES, "namespaces", (*storage.NamespaceMetadata)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NAMESPACES, "namespacemetadata", (*storage.NamespaceMetadata)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

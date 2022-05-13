@@ -5,6 +5,7 @@ import { PageSection } from '@patternfly/react-core';
 import {
     mainPath,
     dashboardPath,
+    dashboardPathPF,
     networkPath,
     violationsPath,
     compliancePath,
@@ -44,6 +45,11 @@ function NotFoundPage(): ReactElement {
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
+// TODO Rename this and replace AsyncDashboardPage once Sec Metrics Phase One is complete
+// Jira: https://issues.redhat.com/browse/ROX-10650
+const AsyncDashboardPagePF = asyncComponent(
+    () => import('Containers/Dashboard/PatternFly/DashboardPage')
+);
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
 const AsyncClustersPage = asyncComponent(() => import('Containers/Clusters/ClustersPage'));
 const AsyncPFClustersPage = asyncComponent(() => import('Containers/Clusters/PF/ClustersPage'));
@@ -86,6 +92,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const { isDarkMode } = useTheme();
 
     const isSystemHealthPatternFlyEnabled = isFeatureFlagEnabled('ROX_SYSTEM_HEALTH_PF');
+    const isDashboardPatternFlyEnabled = isFeatureFlagEnabled('ROX_SECURITY_METRICS_PHASE_ONE');
 
     const hasVulnerabilityReportsPermission = hasReadAccess('VulnerabilityReports');
 
@@ -100,6 +107,9 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={dashboardPath} component={AsyncDashboardPage} />
+                    {isDashboardPatternFlyEnabled && (
+                        <Route path={dashboardPathPF} component={AsyncDashboardPagePF} />
+                    )}
                     <Route path={networkPath} component={AsyncNetworkPage} />
                     <Route path={violationsPath} component={AsyncViolationsPage} />
                     <Route path={compliancePath} component={AsyncCompliancePage} />
