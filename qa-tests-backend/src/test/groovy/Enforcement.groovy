@@ -683,7 +683,7 @@ class Enforcement extends BaseSpecification {
         ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
                 getProcessBaseline(clusterId, d)
         assert (baseline != null)
-        log.info baseline
+        log.info baseline.toString()
         List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessBaselines = ProcessBaselineService.
                 lockProcessBaselines(clusterId, d, "", true)
         assert lockProcessBaselines.size() ==  1

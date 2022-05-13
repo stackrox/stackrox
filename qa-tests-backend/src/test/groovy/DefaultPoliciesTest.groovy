@@ -419,7 +419,7 @@ class DefaultPoliciesTest extends BaseSpecification {
                 }
                 catch (StatusRuntimeException e) {
                     log.info "Cannot get the policy associated with the alert: ${e}"
-                    log.info violation
+                    log.info violation.toString()
                 }
                  exists
              }.filter { alert ->
@@ -448,9 +448,9 @@ class DefaultPoliciesTest extends BaseSpecification {
             nonWhitelistedKubeSystemViolations.forEach {
                 violation ->
                 log.info "An unexpected kube-system violation:"
-                log.info violation
+                log.info violation.toString()
                 log.info "The policy details:"
-                log.info Services.getPolicy(violation.policy.id)
+                log.info Services.getPolicy(violation.policy.id).toString()
             }
         }
 

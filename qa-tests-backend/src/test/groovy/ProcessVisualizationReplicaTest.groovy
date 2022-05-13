@@ -85,7 +85,7 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
 
         processContainerMap = ProcessService.getProcessContainerMap(uid, expectedFilePaths)
 
-        log.info processContainerMap
+        log.info processContainerMap.toString()
 
         processContainerMap.each { k, v ->
             // check that every path has k*REPLICACOUNT containerId's

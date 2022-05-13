@@ -474,7 +474,7 @@ class ComplianceTest extends BaseSpecification {
                 if (!value) {
                     log.info "Control: ${control} StandardId: ${standardId}" +
                             "Row: ${row.cluster}, ${row.standard}, ${row.objectType}, ${row.control}, ${row.evidence}"
-                    log.info result.clusterResults.controlResultsMap.keySet()
+                    log.info result.clusterResults.controlResultsMap.keySet().join(", ")
                 }
                 assert value
                 assert convertStringState(row.state) ?

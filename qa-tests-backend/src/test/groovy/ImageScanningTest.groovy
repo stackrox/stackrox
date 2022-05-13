@@ -658,7 +658,7 @@ class ImageScanningTest extends BaseSpecification {
                 log.info "Failing image: ${imageDetails}"
             }
         }
-        log.info missingValues
+        log.info missingValues.toString()
         assert missingValues.size() == 0
     }
 
