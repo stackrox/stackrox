@@ -2,6 +2,8 @@
 
 # Hello, I'm a readme change
 
+Blah, some text here.
+
 # StackRox Kubernetes Security Platform
 
 The StackRox Kubernetes Security Platform performs a risk analysis of the
