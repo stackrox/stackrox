@@ -128,7 +128,7 @@ class AdmissionControllerNoImageScanTest extends BaseSpecification {
                 }
             }
             if (!deleted) {
-                println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
+                log.warn "Failed to delete deployment. Subsequent tests may be affected ..."
             }
             orchestrator.waitForDeploymentDeletion(deployment)
         }
