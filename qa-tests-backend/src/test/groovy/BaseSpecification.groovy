@@ -98,16 +98,16 @@ class BaseSpecification extends Specification {
             assert ClusterService.getClusterId(), "There is no default cluster. Check if all pods are running"
             try {
                 def metadata = MetadataService.getMetadataServiceClient().getMetadata()
-                log.info "Testing against:"
-                log.info metadata.toString()
-                log.info "isGKE: ${orchestrator.isGKE()}"
-                log.info "isEKS: ${ClusterService.isEKS()}"
-                log.info "isOpenShift3: ${ClusterService.isOpenShift3()}"
-                log.info "isOpenShift4: ${ClusterService.isOpenShift4()}"
+                LOG.info "Testing against:"
+                LOG.info metadata.toString()
+                LOG.info "isGKE: ${orchestrator.isGKE()}"
+                LOG.info "isEKS: ${ClusterService.isEKS()}"
+                LOG.info "isOpenShift3: ${ClusterService.isOpenShift3()}"
+                LOG.info "isOpenShift4: ${ClusterService.isOpenShift4()}"
             }
             catch (Exception ex) {
-                log.info "Cannot connect to central : ${ex.message}"
-                log.info "Check the test target deployment, auth credentials, kube service proxy, etc."
+                LOG.info "Cannot connect to central : ${ex.message}"
+                LOG.info "Check the test target deployment, auth credentials, kube service proxy, etc."
                 throw(ex)
             }
         }
@@ -138,7 +138,7 @@ class BaseSpecification extends Specification {
         allAccessToken = tokenResp.token
 
         addShutdownHook {
-            log.info "Performing global shutdown"
+            LOG.info "Performing global shutdown"
             BaseService.useBasicAuth()
             BaseService.setUseClientCert(false)
             withRetry(30, 1) {
@@ -189,7 +189,7 @@ class BaseSpecification extends Specification {
     }
 
     def setupSpec() {
-        log.info("Starting testsuite")
+        LOG.info("Starting testsuite")
 
         testStartTimeMillis = System.currentTimeMillis()
 
@@ -199,7 +199,7 @@ class BaseSpecification extends Specification {
         try {
             orchestrator.setup()
         } catch (Exception e) {
-            log.error("Error setting up orchestrator", e)
+            LOG.error("Error setting up orchestrator", e)
             throw e
         }
         BaseService.useBasicAuth()
@@ -207,15 +207,15 @@ class BaseSpecification extends Specification {
         try {
             def response = SACService.addAuthPlugin()
             pluginConfigID = response.getId()
-            log.info response.toString()
+            LOG.info response.toString()
         } catch (StatusRuntimeException e) {
-            log.error("Unable to enable the authz plugin, defaulting to basic auth", e)
+            LOG.error("Unable to enable the authz plugin, defaulting to basic auth", e)
         }
 
         coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
                 Constants.CORE_IMAGE_INTEGRATION_NAME)
         if (!coreImageIntegrationId) {
-            log.info "Adding core image integration"
+            LOG.info "Adding core image integration"
             coreImageIntegrationId = ImageIntegrationService.createImageIntegration(
                     ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                             .setName(Constants.CORE_IMAGE_INTEGRATION_NAME)
@@ -231,8 +231,8 @@ class BaseSpecification extends Specification {
             )
         }
         if (!coreImageIntegrationId) {
-            log.warn "Could not create the core image integration."
-            log.info "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
+            LOG.warn "Could not create the core image integration."
+            LOG.info "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
         }
 
         recordResourcesAtSpecStart()
@@ -256,7 +256,7 @@ class BaseSpecification extends Specification {
     }
 
     def setup() {
-        log.info("Starting testcase")
+        LOG.info("Starting testcase")
 
         //Always make sure to revert back to the allAccessToken before each test
         resetAuth()
@@ -272,18 +272,18 @@ class BaseSpecification extends Specification {
     }
 
     def cleanupSpec() {
-        log.info("Ending testsuite")
+        LOG.info("Ending testsuite")
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
 
-        log.info "Removing integration"
+        LOG.info "Removing integration"
         ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
 
         try {
             orchestrator.cleanup()
         } catch (Exception e) {
-            log.error("Error to clean up orchestrator", e)
+            LOG.error("Error to clean up orchestrator", e)
             throw e
         }
         disableAuthzPlugin()
@@ -302,8 +302,8 @@ class BaseSpecification extends Specification {
         List<String> namespaces = orchestrator.getNamespaces()
         Diff diff = javers.compare(resourceRecord["namespaces"], namespaces)
         if (diff.hasChanges()) {
-            log.info "There is a difference in namespaces between the start and end of this test spec:"
-            log.info diff.prettyPrint()
+            LOG.info "There is a difference in namespaces between the start and end of this test spec:"
+            LOG.info diff.prettyPrint()
             throw new TestSpecRuntimeException("Namespaces have changed. Ensure that any namespace created " +
                     "in a test spec is deleted in that test spec.")
         }
@@ -312,20 +312,20 @@ class BaseSpecification extends Specification {
                 orchestrator.getDeployments(Constants.ORCHESTRATOR_NAMESPACE)
         diff = javers.compare(resourceRecord["deployments"], deployments)
         if (diff.hasChanges()) {
-            log.info "There is a difference in deployments between the start and end of this test spec"
-            log.info diff.prettyPrint()
+            LOG.info "There is a difference in deployments between the start and end of this test spec"
+            LOG.info diff.prettyPrint()
             throw new TestSpecRuntimeException("Deployments have changed. Ensure that any deployments created " +
                     "in a test spec are destroyed in that test spec.")
         }
     }
 
     def cleanup() {
-        log.info("Ending testcase")
+        LOG.info("Ending testcase")
 
         Helpers.resetRetryAttempts()
     }
 
-    def addStackroxImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
+    static addStackroxImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
         // Add an image pull secret to the qa namespace and also the default service account so the qa namespace can
         // pull stackrox images from dockerhub
 
@@ -333,7 +333,7 @@ class BaseSpecification extends Specification {
                            Env.get("REGISTRY_PASSWORD", null) == null)) {
             // Arguably this should be fatal but for tests that don't pull from docker.io/stackrox it is not strictly
             // necessary.
-            log.warn "The REGISTRY_USERNAME and/or REGISTRY_PASSWORD env var is missing. " +
+            LOG.warn "The REGISTRY_USERNAME and/or REGISTRY_PASSWORD env var is missing. " +
                     "(this is ok if your test does not use images from docker.io/stackrox)"
             return
         }
@@ -364,10 +364,10 @@ class BaseSpecification extends Specification {
         orchestrator.createServiceAccount(sa)
     }
 
-    def addGCRImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
+    static addGCRImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
         if (!Env.IN_CI && Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER", null) == null) {
             // Arguably this should be fatal but for tests that don't pull from us.gcr.io it is not strictly necessary
-            log.warn "The GOOGLE_CREDENTIALS_GCR_SCANNER env var is missing. "+
+            LOG.warn "The GOOGLE_CREDENTIALS_GCR_SCANNER env var is missing. "+
                     "(this is ok if your test does not use images on us.gcr.io)"
             return
         }
