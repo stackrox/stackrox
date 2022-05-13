@@ -701,7 +701,7 @@ openshift_ci_mods() {
 
         # Checkout the PR branch
         head_ref="$(jq -r '.head.ref' <<<"$pr_details")"
-        info "Will try to checkout a matching PR branch using: $head_ref"
+        info "Checking out a matching PR branch using: $head_ref"
         git checkout "$head_ref"
     fi
 }
