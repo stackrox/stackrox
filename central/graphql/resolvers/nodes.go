@@ -42,6 +42,7 @@ func init() {
 			"nodeVulnerabilityCount(query: String): Int!",
 			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"passingControls(query: String): [ComplianceControl!]!",
+			"plottedVulnerabilities(query: String): PlottedNodeVulnerabilities!",
 			"plottedVulns(query: String): PlottedVulnerabilities!",
 			"topNodeVulnerability(query: String): NodeVulnerability",
 			"unusedVarSink(query: String): Int",
@@ -520,6 +521,21 @@ func (resolver *nodeResolver) NodeVulnerabilityCounter(ctx context.Context, args
 func (resolver *nodeResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
+}
+
+func (resolver *nodeResolver) PlottedVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "PlottedVulnerabilities")
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+
+	ctx = resolver.nodeScopeContext(ctx)
+
+	if !features.PostgresDatastore.Enabled() {
+		return newPlottedNodeVulnerabilitiesResolver(ctx, resolver.root, args)
+	}
+	// TODO : Add postgres support
+	return nil, errors.New("Sub-resolver PlottedVulnerabilities in nodeResolver does not support postgres yet")
 }
 
 func (resolver *nodeResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
