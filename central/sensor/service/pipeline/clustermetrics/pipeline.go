@@ -3,6 +3,7 @@ package clustermetrics
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -10,9 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -35,9 +34,15 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	// NodeCount: msg.GetClusterMetrics().NodeCount
-	// CoreCapacity: msg.GetClusterMetrics().CoreCapacity
+func (p *pipelineImpl) Run(
+	ctx context.Context,
+	clusterID string,
+	msg *central.MsgFromSensor,
+	_ common.MessageInjector,
+) error {
+	if cm := msg.GetClusterMetrics(); cm != nil {
+		metrics.SetClusterMetrics(clusterID, cm)
+	}
 	return nil
 }
 
