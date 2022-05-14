@@ -122,9 +122,12 @@ func WithConfig(config map[string]string) ProviderOption {
 }
 
 // WithAttributeChecker adds an attribute checker to the provider.
-func WithAttributeChecker(checker user.AttributeChecker) ProviderOption {
+func WithAttributeChecker(stored *storage.AuthProvider) ProviderOption {
 	return func(pr *providerImpl) error {
-		pr.attributeChecker = checker
+		if stored.GetRequiredAttributes() == nil {
+			return nil
+		}
+		pr.attributeChecker = user.NewRequiredAttributesChecker(stored.GetRequiredAttributes())
 		return nil
 	}
 }

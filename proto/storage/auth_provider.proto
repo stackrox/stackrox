@@ -24,4 +24,14 @@ message AuthProvider {
     // not ui_endpoint.
     repeated string extra_ui_endpoints = 9;
     bool active                 = 10;
+
+    // RequiredAttribute allows to specify a set of attributes which are required to be returned
+    // by the auth provider. If required attributes are not set, the user will *not* be associated
+    // with any role and return access forbidden.
+    message RequiredAttribute {
+        string attribute_name  = 1;
+        string attribute_value = 2;
+        bool read_only         = 3;
+    }
+    repeated RequiredAttribute required_attributes = 11;
 }

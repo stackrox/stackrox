@@ -35,6 +35,21 @@
     }
   },
   "definitions": {
+    "AuthProviderRequiredAttribute": {
+      "type": "object",
+      "properties": {
+        "attributeName": {
+          "type": "string"
+        },
+        "attributeValue": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        }
+      },
+      "description": "RequiredAttribute allows to specify a set of attributes which are required to be returned\nby the auth provider. If required attributes are not set, the user will *not* be associated\nwith any role and return access forbidden."
+    },
     "UserInfoResourceToAccess": {
       "type": "object",
       "properties": {
@@ -132,6 +147,12 @@
         },
         "active": {
           "type": "boolean"
+        },
+        "requiredAttributes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuthProviderRequiredAttribute"
+          }
         }
       },
       "title": "Next Tag: 9"
