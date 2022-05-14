@@ -28,7 +28,6 @@ import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import { AuthProvider } from 'services/AuthService';
-
 import ConfigurationFormFields from './ConfigurationFormFields';
 import RuleGroups, { RuleGroupErrors } from './RuleGroups';
 import {
@@ -454,7 +453,7 @@ function AuthProviderForm({
                     </div>
                     {selectedAuthProvider.requiredAttributes && (
                         <FormSection
-                            title="Required attributes for the authentication provider."
+                            title="Required attributes for the authentication provider"
                             titleElement="h3"
                         >
                             {selectedAuthProvider.requiredAttributes.map(
@@ -481,6 +480,18 @@ function AuthProviderForm({
                                     </Flex>
                                 )
                             )}
+                            <div id="required-attributes-description">
+                                <Alert isInline variant="info" title="">
+                                    <p>
+                                        The required attributes can be used to require attributes
+                                        being returned from the authentication provider.
+                                    </p>
+                                    <p>
+                                        In case a required attribute is not set, the login will fail
+                                        and no role will be set to the user.
+                                    </p>
+                                </Alert>
+                            </div>
                         </FormSection>
                     )}
                     <FormSection title="Rules" titleElement="h3" className="pf-u-mt-0">
@@ -495,18 +506,6 @@ function AuthProviderForm({
                             ruleAttributes={ruleAttributes}
                         />
                     </FormSection>
-                    <div id="required-attributes-description">
-                        <Alert isInline variant="info" title="">
-                            <p>
-                                The required attributes can be used to require attributes being
-                                returned from the authentication provider.
-                            </p>
-                            <p>
-                                In case a required attribute is not set, the login will fail and no
-                                role will be set to the user.
-                            </p>
-                        </Alert>
-                    </div>
                 </FormSection>
             </FormikProvider>
         </Form>

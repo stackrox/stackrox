@@ -29,7 +29,7 @@ message AuthProvider {
     // by the auth provider. If required attributes are not set, the user will *not* be associated
     // with any role and return access forbidden.
     message RequiredAttribute {
-        string attribute_name  = 1;
+        string attribute_key   = 1;
         string attribute_value = 2;
         bool read_only         = 3;
     }

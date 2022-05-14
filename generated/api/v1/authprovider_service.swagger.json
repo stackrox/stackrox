@@ -288,7 +288,7 @@
     "AuthProviderRequiredAttribute": {
       "type": "object",
       "properties": {
-        "attributeName": {
+        "attributeKey": {
           "type": "string"
         },
         "attributeValue": {

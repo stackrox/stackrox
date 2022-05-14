@@ -19,7 +19,7 @@ func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 	}{
 		"required attribute set should not fail": {
 			attributes: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeName: "required-attribute", AttributeValue: "some-value"},
+				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
 			},
 			userDesc: &permissions.UserDescriptor{
 				Attributes: map[string][]string{"required-attribute": {"some-value"}},
@@ -27,7 +27,7 @@ func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 		},
 		"required attribute not set should fail": {
 			attributes: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeName: "required-attribute", AttributeValue: "some-value"},
+				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
 			},
 			userDesc: &permissions.UserDescriptor{
 				Attributes: map[string][]string{"other-attribute": {"some-value"}},
@@ -37,7 +37,7 @@ func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 		},
 		"no attribute set should fail": {
 			attributes: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeName: "required-attribute", AttributeValue: "some-value"},
+				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
 			},
 			userDesc: &permissions.UserDescriptor{
 				Attributes: nil,
@@ -47,8 +47,8 @@ func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 		},
 		"multiple required attributes set should not fail": {
 			attributes: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeName: "required-attribute", AttributeValue: "some-value"},
-				{AttributeName: "another-required-attribute", AttributeValue: "another-value"},
+				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
+				{AttributeKey: "another-required-attribute", AttributeValue: "another-value"},
 			},
 			userDesc: &permissions.UserDescriptor{
 				Attributes: map[string][]string{
@@ -59,7 +59,7 @@ func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 		},
 		"only some required attributes set should fail": {
 			attributes: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeName: "required-attribute", AttributeValue: "some-value"},
+				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
 			},
 			userDesc: &permissions.UserDescriptor{
 				Attributes: map[string][]string{
@@ -71,7 +71,7 @@ func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 		},
 		"required attribute in map but nil value should fail": {
 			attributes: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeName: "required-attribute", AttributeValue: "some-value"},
+				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
 			},
 			userDesc: &permissions.UserDescriptor{
 				Attributes: map[string][]string{

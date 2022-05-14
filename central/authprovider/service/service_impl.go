@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -165,8 +166,13 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 	if providerReq.GetLoginUrl() != "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider loginUrl field is not empty")
 	}
+	if providerReq.GetRequiredAttributes() != nil {
+		return nil, errox.InvalidArgs.CausedBy("auth provider required attributes is set, this is not allowed " +
+			"for providers created via API.")
+	}
 
-	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq), authproviders.WithValidateCallback(datastore.Singleton()))
+	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq),
+		authproviders.WithValidateCallback(datastore.Singleton()), authproviders.WithAttributeChecker(providerReq))
 	if err != nil {
 		return nil, errox.InvalidArgs.New("unable to create an auth provider instance").CausedBy(err)
 	}
@@ -186,6 +192,14 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 	// Attempt to merge configs.
 	request.Config = provider.MergeConfigInto(request.GetConfig())
 
+	// Verify whether there were any changes made to the provider's required attributes. This is currently not allowed
+	// to be done via API.
+	if !protoutils.EqualStorageAuthProvider_RequiredAttributeSlices(
+		provider.StorageView().GetRequiredAttributes(), request.GetRequiredAttributes()) {
+		return nil, errox.InvalidArgs.CausedBy("auth provider's required attributes are not allowed to be " +
+			"modified via API.")
+	}
+
 	if err := s.registry.ValidateProvider(ctx, authproviders.WithStorageView(request)); err != nil {
 		return nil, errox.InvalidArgs.New("auth provider validation check failed").CausedBy(err)
 	}
@@ -195,7 +209,9 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 		return nil, err
 	}
 
-	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(request), authproviders.WithValidateCallback(datastore.Singleton()))
+	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(request),
+		authproviders.WithAttributeChecker(request),
+		authproviders.WithValidateCallback(datastore.Singleton()))
 	if err != nil {
 		return nil, errox.InvalidArgs.New("unable to create an auth provider instance").CausedBy(err)
 	}

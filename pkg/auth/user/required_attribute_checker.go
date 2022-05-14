@@ -1,14 +1,16 @@
 package user
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
+
+var log = logging.LoggerForModule()
 
 // NewRequiredAttributesChecker returns an AttributeChecker that will verify all
 // attributes of a user and return an error if any of the required attributes are missing.
@@ -25,25 +27,16 @@ type checkRequiredAttributesImpl struct {
 func (c checkRequiredAttributesImpl) Check(userDescriptor *permissions.UserDescriptor) error {
 	// User attributes do not _specifically_ have to be set, handle this explicitly.
 	if userDescriptor.Attributes == nil {
-		return errox.NoCredentials.CausedByf("none of the required attributes [%s] set",
-			formatRequiredAttributes(c.attributes))
+		return errox.NoCredentials.CausedBy("none of the required attributes set")
 	}
 
 	for _, attribute := range c.attributes {
-		if userAttributes, ok := userDescriptor.Attributes[attribute.AttributeName]; !ok || userAttributes == nil ||
+		if userAttributes, ok := userDescriptor.Attributes[attribute.AttributeKey]; !ok || userAttributes == nil ||
 			sliceutils.StringFind(userAttributes, attribute.AttributeValue) == -1 {
-			// Explicitly return 403, as we do not want clients to be issued a token.
-			return errox.NoCredentials.CausedByf("missing required attribute %s=%s", attribute.AttributeName,
-				attribute.AttributeValue)
+			log.Infof("Missing attribute %q; available attributes: %q", attribute.AttributeKey, strings.Join(userAttributes, ", "))
+			// Explicitly return 401, as we do not want clients to be issued a token.
+			return errox.NoCredentials.CausedBy("missing required attribute(s)")
 		}
 	}
 	return nil
-}
-
-func formatRequiredAttributes(attributes []*storage.AuthProvider_RequiredAttribute) string {
-	attrKeyValue := make([]string, 0, len(attributes))
-	for _, attr := range attributes {
-		attrKeyValue = append(attrKeyValue, fmt.Sprintf("%s=%s", attr.AttributeName, attr.AttributeValue))
-	}
-	return strings.Join(attrKeyValue, ",")
 }

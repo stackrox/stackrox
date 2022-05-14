@@ -264,20 +264,6 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationIssuesTokenForUser
 		"callback activated for user with valid roles should issue a token")
 }
 
-func (s *registryProviderCallbackTestSuite) TestAuthenticationRejectsUserWithMissingRequiredAttributes() {
-	urlPrefix := s.registry.providersURLPrefix()
-	req, _ := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
-	clientState := idputil.AttachTestStateOrEmpty("", false)
-	testAuthProviderBackendFactory.registerProcessResponse(dummyProviderType, clientState, nil)
-	authRsp := generateAuthResponse(testUserWithAdminRole, nil)
-	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
-	s.registry.providersHTTPHandler(s.writer, req)
-}
-
-func (s *registryProviderCallbackTestSuite) TestAuthenticationIssuesTokenForUserWithRequiredAttributes() {
-
-}
-
 /*****************************************************
 * Elements needed for the tests                      *
 * - AuthResponse generator                           *
