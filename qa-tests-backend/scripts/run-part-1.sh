@@ -110,7 +110,7 @@ deploy_webhook_server() {
 
     local certs_dir
     certs_dir="$(mktemp -d)"
-    NAMESPACE="" "${ROOT}/scripts/ci/create-webhookserver.sh" "${certs_dir}"
+    (unset NAMESPACE; "${ROOT}/scripts/ci/create-webhookserver.sh" "${certs_dir}")
     ci_export GENERIC_WEBHOOK_SERVER_CA_CONTENTS "$(cat "${certs_dir}/ca.crt")"
 }
 
