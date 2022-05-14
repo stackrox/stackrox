@@ -1,3 +1,4 @@
+/* eslint-disable react/no-array-index-key */
 import React, { ReactElement } from 'react';
 import { useHistory, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
@@ -7,6 +8,7 @@ import * as yup from 'yup';
 import {
     Alert,
     Button,
+    Flex,
     Form,
     FormGroup,
     FormSection,
@@ -450,6 +452,37 @@ function AuthProviderForm({
                             </p>
                         </Alert>
                     </div>
+                    {selectedAuthProvider.requiredAttributes && (
+                        <FormSection
+                            title="Required attributes for the authentication provider."
+                            titleElement="h3"
+                        >
+                            {selectedAuthProvider.requiredAttributes.map(
+                                (attribute, index: number) => (
+                                    <Flex
+                                        key={`${attribute.attributeKey}_required_attribute_${index}`}
+                                    >
+                                        <FormGroup label="Key" fieldId={attribute.attributeKey}>
+                                            <TextInput
+                                                type="text"
+                                                id={attribute.attributeKey}
+                                                value={attribute.attributeKey}
+                                                isDisabled={attribute.readOnly}
+                                            />
+                                        </FormGroup>
+                                        <FormGroup label="Value" fieldId={attribute.attributeValue}>
+                                            <TextInput
+                                                type="text"
+                                                id={attribute.attributeValue}
+                                                value={attribute.attributeValue}
+                                                isDisabled={attribute.readOnly}
+                                            />
+                                        </FormGroup>
+                                    </Flex>
+                                )
+                            )}
+                        </FormSection>
+                    )}
                     <FormSection title="Rules" titleElement="h3" className="pf-u-mt-0">
                         <RuleGroups
                             authProviderId={selectedAuthProvider.id}
@@ -462,6 +495,18 @@ function AuthProviderForm({
                             ruleAttributes={ruleAttributes}
                         />
                     </FormSection>
+                    <div id="required-attributes-description">
+                        <Alert isInline variant="info" title="">
+                            <p>
+                                The required attributes can be used to require attributes being
+                                returned from the authentication provider.
+                            </p>
+                            <p>
+                                In case a required attribute is not set, the login will fail and no
+                                role will be set to the user.
+                            </p>
+                        </Alert>
+                    </div>
                 </FormSection>
             </FormikProvider>
         </Form>
