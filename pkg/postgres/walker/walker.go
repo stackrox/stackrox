@@ -103,6 +103,7 @@ func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 				Type:       parentPrimaryKey.Type,
 				DataType:   parentPrimaryKey.DataType,
 				SQLType:    parentPrimaryKey.SQLType,
+				ModelType:  parentPrimaryKey.ModelType,
 				Options: PostgresOptions{
 					PrimaryKey: true,
 					Reference: &foreignKeyRef{

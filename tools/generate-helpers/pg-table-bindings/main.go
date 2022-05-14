@@ -43,12 +43,16 @@ var indexFile string
 //go:embed permission_checker.go.tpl
 var permissionCheckerFile string
 
+//go:embed model.go.tpl
+var gormModelFile string
+
 var (
 	schemaTemplate            = newTemplate(schemaFile)
 	storeTemplate             = newTemplate(storeFile)
 	storeTestTemplate         = newTemplate(storeTestFile)
 	indexTemplate             = newTemplate(indexFile)
 	permissionCheckerTemplate = newTemplate(permissionCheckerFile)
+	gormModelTemplate         = newTemplate(gormModelFile)
 )
 
 type properties struct {
@@ -195,6 +199,10 @@ func main() {
 		if err := generateSchema(schema, searchCategory, parsedReferences, props.SchemaDirectory); err != nil {
 			return err
 		}
+
+		if err := generateModel(schema, searchCategory, parsedReferences); err != nil {
+			return err
+		}
 		if props.SchemaOnly {
 			return nil
 		}
@@ -222,6 +230,20 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func generateModel(s *walker.Schema, searchCategory string, parsedReferences []parsedReference) error {
+	templateMap := map[string]interface{}{
+		"Schema":         s,
+		"SearchCategory": searchCategory,
+		"References":     parsedReferences,
+	}
+
+	if err := renderFile(templateMap, gormModelTemplate, getSchemaFileName("/Users/cong/go/src/github.com/stackrox/rox/central/postgres/dbmodel", s.Table)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func generateSchema(s *walker.Schema, searchCategory string, parsedReferences []parsedReference, dir string) error {
