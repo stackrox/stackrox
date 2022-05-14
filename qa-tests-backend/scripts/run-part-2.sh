@@ -8,7 +8,7 @@ source "$ROOT/scripts/ci/lib.sh"
 set -euo pipefail
 
 run_tests_part_2() {
-    info "QA Automation Platform Part 1"
+    info "QA Automation Platform Part 2"
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
