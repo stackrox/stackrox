@@ -696,6 +696,13 @@ openshift_ci_mods() {
     # For gradle
     export GRADLE_USER_HOME="${HOME}"
 
+    # NAMESPACE is injected by OpenShift CI for the cluster running tests but
+    # can have side effects for stackrox tests e.g. with helm.
+    if [[ -n "$NAMESPACE" ]]; then
+        export OPENSHIFT_CI_NAMESPACE="$NAMESPACE"
+        unset NAMESPACE
+    fi
+
     # Prow tests PRs rebased against master. This is a pain during migration
     # because Circle CI does not and so images built in Circle CI have different
     # tags.
