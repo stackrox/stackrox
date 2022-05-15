@@ -1,26 +1,27 @@
 #!/usr/bin/env bash
+set -eou pipefail
 
 DEFAULT_KUBECONFIG="$HOME/.kube/config"
+DEMO_LIFESPAN=72h
 
 MENU_OPTIONS=()
 ARTIFACTS_DIR="artifacts"
 
 main() {
   local action="${1}"
-  local cluster_prefix="${2:-os4-9-demo}"
-  local cluster_postfix="${RELEASE//./-}-rc${RC_NUMBER}"
-  local cluster_name="${cluster_prefix}-${cluster_postfix}"
   PS3="Choose action: "
   if [[ -n "$action" ]]; then
-    exec_option "$action" "$cluster_prefix"
+    exec_option "$action"
     exit 0
   fi
   MENU_OPTIONS=(
-    "Merge kubeconfigs"
+    "Merge kubeconfigs for RC OpenShift cluster"
+    "Merge kubeconfigs for qa GKE cluster"
     "Remove kubeconfigs for non-existing clusters"
-    "Generate Slack message for cluster '${cluster_name}'"
-    "Create new RC OpenShift cluster '${cluster_name}'"
-    "Create new qa GKE demo cluster '${cluster_name}'"
+    "Generate Slack message for RC OpenShift cluster"
+    "Generate Slack message for qa GKE cluster"
+    "Create new RC OpenShift cluster"
+    "Create new qa GKE cluster"
     "Quit"
   )
   RED='\033[0;31m'
@@ -28,38 +29,42 @@ main() {
   echo -e "${RED}WARNING:${NC} some of these scripts may be outdated, bleeding-edge, or not working. Read the code before you run them to be on the safe side."
   select ans in "${MENU_OPTIONS[@]}"
   do
-    exec_option "$ans" "$cluster_prefix"
+    exec_option "$ans"
   done
 }
 
 exec_option() {
   local num_options="${#MENU_OPTIONS[@]}"
-  local cluster_prefix="$2"
   local last_option="$((num_options-1))"
   case "$1" in
     "${MENU_OPTIONS[$last_option]}"|"$((last_option+1))"|q|Q) exit 0;;&
     "${MENU_OPTIONS[0]}"|1)
-        [[ -n "$cluster_prefix" ]] || die "cluster_prefix required"
-        merge_kubeconfigs "$cluster_prefix" "$DEFAULT_KUBECONFIG"
+	cluster_name="$(get_cluster_name openshift)"
+        merge_kubeconfigs "$cluster_name" "$DEFAULT_KUBECONFIG"
         exit 0
         ;;
     "${MENU_OPTIONS[1]}"|2)
-        [[ -n "$cluster_prefix" ]] || die "cluster_prefix required"
-        cleanup_artifacts "$DEFAULT_KUBECONFIG"
+	cluster_name="$(get_cluster_name gke)"
+        merge_kubeconfigs "$cluster_name" "$DEFAULT_KUBECONFIG"
         exit 0
-        ;;
     "${MENU_OPTIONS[2]}"|3)
-        [[ -n "$cluster_prefix" ]] || die "cluster_prefix required"
-        generate_slack_message "$cluster_prefix"
+        cleanup_artifacts  "$DEFAULT_KUBECONFIG"
         exit 0
         ;;
     "${MENU_OPTIONS[3]}"|4)
-        [[ -n "$cluster_prefix" ]] || die "cluster_prefix required"
-        create_rc_openshift_cluster "$cluster_prefix"
+        generate_slack_message_for_openshift
         exit 0
         ;;
     "${MENU_OPTIONS[4]}"|5)
-        create_qa_gke_cluster "$cluster_postfix"
+        generate_slack_message_for_gke
+        exit 0
+        ;;
+    "${MENU_OPTIONS[5]}"|6)
+        create_rc_openshift_cluster
+        exit 0
+        ;;
+    "${MENU_OPTIONS[6]}"|7)
+        create_qa_gke_cluster
         exit 0
         ;;
     *) echo "invalid option: '$1'";;
@@ -72,19 +77,19 @@ cluster_ready() {
 }
 
 check_cluster_status() {
-  local name="$1"
-  status="$( infractl get "$name" | awk '{if ($1 == "Status:") print $2}' )"
+  local cluster_name="$1"
+  status="$( infractl get "$cluster_name" | awk '{if ($1 == "Status:") print $2}' )"
 
   echo "$status"
 }
 
 does_cluster_exist() {
-  local name="$1"
-  nline="$({ infractl get "$name" 2> /dev/null || true; } | wc -l)"
+  local cluster_name="$1"
+  nline="$({ infractl get "$cluster_name" 2> /dev/null || true; } | wc -l)"
   if (("$nline" == 0)); then
     return 1
   else
-    status="$(check_cluster_status "$name")"
+    status="$(check_cluster_status "$cluster_name")"
     if [[ "$status" == "FINISHED" ]]; then
       return 1
     else
@@ -113,28 +118,53 @@ fetch_artifacts() {
 
   infractl artifacts "${cluster_name}" --download-dir "${ARTIFACTS_DIR}/${cluster_name}" > /dev/null 2>&1
   while ! test -d "${ARTIFACTS_DIR}/${cluster_name}"; do
-    echo "Wainting until artifacts download"
+    echo "Waiting until artifacts download"
     sleep 5
   done
+}
+
+get_cluster_postfix() {
+  echo "${RELEASE//./-}-rc${RC_NUMBER}"
+}
+
+get_cluster_prefix() {
+  local cluster_type="$1"
+
+  if [[ "$cluster_type" == "openshift" ]]; then
+    echo "os4-9-demo"
+  elif [[ "$cluster_type" == "qa-demo" ]]; then
+    echo "qa-demo"
+  else
+    die "Unknown cluster type: $cluster_type"
+  fi
+}
+
+get_cluster_name() {
+  local cluster_type="$1"
+
+  cluster_prefix="$(get_cluster_prefix "$cluster_type")"
+  cluster_postfix="$(get_cluster_postfix)"
+  cluster_name="${cluster_prefix}-${cluster_postfix}"
+
+  echo "$cluster_name"
 }
 
 create_rc_openshift_cluster() {
   require_binary infractl
   require_binary oc
 
-  local cluster_prefix="$1"
   [[ -n "${INFRA_TOKEN}" ]] || die "INFRA_TOKEN is not set"
   [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
   [[ -n "$RELEASE" ]] || die "RELEASE undefined"
 
-  export CLUSTER_NAME="${cluster_prefix}-${RELEASE//./-}-rc${RC_NUMBER}"
-  infractl create openshift-4-demo "${CLUSTER_NAME}" --lifespan 72h --arg openshift-version=ocp/stable-4.9 || echo "Cluster creation already started or the cluster already exists"
+  export CLUSTER_NAME="$(get_cluster_name openshift)"
+  infractl create openshift-4-demo "${CLUSTER_NAME}" --lifespan "$DEMO_LIFESPAN" --arg openshift-version=ocp/stable-4.9 || echo "Cluster creation already started or the cluster already exists"
 
   wait_for_cluster_to_be_ready "$CLUSTER_NAME"
   ensure_cluster_exists "$CLUSTER_NAME"
   fetch_artifacts "$CLUSTER_NAME"
 
-  merge_kubeconfigs "$cluster_prefix" "$DEFAULT_KUBECONFIG"
+  merge_kubeconfigs "$CLUSTER_NAME" "$DEFAULT_KUBECONFIG"
   export KUBECONFIG="$DEFAULT_KUBECONFIG"
   kubectl config use-context "ctx-${CLUSTER_NAME}" || die "cannot switch kubectl context to ctx-${CLUSTER_NAME}"
 
@@ -159,14 +189,14 @@ create_rc_openshift_cluster() {
 create_qa_gke_cluster() {
   require_binary infractl
 
-  local cluster_postfix="$1"
+  cluster_postfix="$(get_cluster_postfix)"
   [[ -n "${INFRA_TOKEN}" ]] || die "INFRA_TOKEN is not set"
 
-  export CLUSTER_NAME="qa-demo-${cluster_postfix}"
+  export CLUSTER_NAME="$(get_cluster_name gke)"
   if does_cluster_exist "$CLUSTER_NAME"; then
     echo "Cluster $CLUSTER_NAME already exists"
   else
-    infractl create qa-demo "${CLUSTER_NAME}" --arg "main-image=docker.io/stackrox/main:${RELEASE}.${PATCH_NUMBER}-rc.${RC_NUMBER}" --lifespan 72h
+    infractl create qa-demo "${CLUSTER_NAME}" --arg "main-image=docker.io/stackrox/main:${RELEASE}.${PATCH_NUMBER}-rc.${RC_NUMBER}" --lifespan "$DEMO_LIFESPAN"
   fi
 
   wait_for_cluster_to_be_ready "$CLUSTER_NAME"
@@ -197,8 +227,7 @@ cleanup_artifacts() {
 }
 
 merge_kubeconfigs() {
-  local DIR_PREFIX="${1:-os4-9-demo}"
-  [[ -n "$DIR_PREFIX" ]] || die "DIR_PREFIX missing. Usage: merge_kubeconfigs <DIR_PREFIX> <KUBECONFIG_PATH>"
+  local cluster_name="$1"
 
   local kubeconfig_location="${2:-"$DEFAULT_KUBECONFIG"}"
     # remove ':' from prefix and suffix
@@ -219,8 +248,7 @@ merge_kubeconfigs() {
 
   [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
   [[ -n "$RELEASE" ]] || die "RELEASE undefined"
-  CLUSTER_NAME="${DIR_PREFIX}-${RELEASE//./-}-rc${RC_NUMBER}"
-  DIR="${ARTIFACTS_DIR}/${CLUSTER_NAME}"
+  DIR="${ARTIFACTS_DIR}/${cluster_name}"
   [[ -d "$DIR" ]] || die "DIR not found: '$DIR'"
 
   # KUBECONFIGS_STR contains list of paths (concatenated with ':') to kubeconfig files
@@ -275,17 +303,16 @@ merge_kubeconfigs() {
   kubectl config get-contexts
 }
 
-generate_slack_message() {
-  local DIR_PREFIX="${1:-os4-9-demo}"
+generate_slack_message_for_openshift() {
+  local cluster_name="$(get_cluster_name openshift)"
   [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
   [[ -n "$RELEASE" ]] || die "RELEASE undefined"
 
-  DIR="${ARTIFACTS_DIR}/$DIR_PREFIX-${RELEASE//./-}-rc${RC_NUMBER}"
+  DIR="${ARTIFACTS_DIR}/$cluster_name"
   [[ -d "$DIR" ]] || die "DIR not found: '$DIR'"
 
   . "${DIR}/dotenv"
 
-  [[ -n "$CLUSTER_NAME" ]] || die "CLUSTER_NAME undefined"
   [[ -n "$OPENSHIFT_CONSOLE_USERNAME" ]] || die "OPENSHIFT_CONSOLE_USERNAME undefined"
   [[ -n "$OPENSHIFT_CONSOLE_PASSWORD" ]] || die "OPENSHIFT_CONSOLE_PASSWORD undefined"
   [[ -n "$OPENSHIFT_VERSION" ]] || die "OPENSHIFT_VERSION undefined"
@@ -303,6 +330,25 @@ Password: \`${OPENSHIFT_CONSOLE_PASSWORD}\`
 :computer: Central: $(cat "${DIR}/url-stackrox")
 Username: \`admin\`
 Password: \`$(cat "${DIR}/admin-password")\`
+EOF
+}
+
+generate_slack_message_for_gke() {
+  local cluster_name="$(get_cluster_name gke)"
+  [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
+  [[ -n "$RELEASE" ]] || die "RELEASE undefined"
+
+  DIR="${ARTIFACTS_DIR}/$cluster_name"
+  [[ -d "$DIR" ]] || die "DIR not found: '$DIR'"
+
+  . "${DIR}/dotenv"
+
+  [[ -f "${DIR}/url" ]] || die "url file not found in ${DIR}"
+
+  cat <<-EOF
+:qke: GKE cluster with \`${RELEASE}-rc${RC_NUMBER}\`
+
+url: \`$(cat "${DIR}/url")\`
 EOF
 }
 
