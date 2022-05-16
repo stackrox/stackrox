@@ -11,7 +11,7 @@ import {
 } from '../constants/CompliancePage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
-import { visitMainDashboard } from '../helpers/main';
+import { visitMainDashboard, visitMainDashboardViaRedirectFromUrl } from '../helpers/main';
 import baseSelectors from '../selectors/index';
 
 // For future redesign of main dashboard, separate tests for these requests into a separate file.
@@ -59,6 +59,24 @@ describe('Dashboard page', () => {
         visitMainDashboard();
 
         cy.get(selectors.navLink).should('have.class', 'pf-m-current');
+    });
+
+    it('should render navbar with Dashboard selected', () => {
+        visitMainDashboardViaRedirectFromUrl('/');
+
+        cy.get(selectors.navLink).should('have.class', 'pf-m-current');
+    });
+
+    it('should have the summary counts in the top header', () => {
+        visitMainDashboard();
+
+        const { summaryCount: summaryCountSelector } = selectors;
+        cy.get(`${summaryCountSelector}:nth-child(1):contains("Cluster")`);
+        cy.get(`${summaryCountSelector}:nth-child(2):contains("Node")`);
+        cy.get(`${summaryCountSelector}:nth-child(3):contains("Violation")`);
+        cy.get(`${summaryCountSelector}:nth-child(4):contains("Deployment")`);
+        cy.get(`${summaryCountSelector}:nth-child(5):contains("Image")`);
+        cy.get(`${summaryCountSelector}:nth-child(6):contains("Secret")`);
     });
 
     it('should display system violations tiles', () => {
