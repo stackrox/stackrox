@@ -35,7 +35,7 @@ ROX_IMAGE_FLAVOR ?= $(shell \
 BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
 
 DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
-ifneq ($(ROX_PRODUCT_BRANDING),STACKROX_BRANDING)
+ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
 	DEFAULT_IMAGE_REGISTRY := quay.io/rhacs-eng
 endif
 

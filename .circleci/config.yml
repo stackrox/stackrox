@@ -942,7 +942,7 @@ commands:
           name: Ensure product branding is set
           command: |
             if [[ -z "${ROX_PRODUCT_BRANDING}" ]]; then
-              echo >&2 "Will not proceed until product branding env variable is defined"
+              echo >&2 "Will not proceed until ROX_PRODUCT_BRANDING env variable is defined"
               exit 2
             fi
 
