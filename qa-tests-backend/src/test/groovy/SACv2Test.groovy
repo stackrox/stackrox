@@ -20,6 +20,7 @@ import spock.lang.IgnoreIf
 import spock.lang.Shared
 
 @Category(BAT)
+@IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
 class SACv2Test extends SACTest {
 
     @Shared

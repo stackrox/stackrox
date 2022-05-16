@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NYTimes/gziphandler"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
@@ -167,6 +168,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 )
 
@@ -658,19 +660,29 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	})
 
 	scannerDefinitionsRoute := "/api/extensions/scannerdefinitions"
+	// Only grant compression to well-known content types. It should capture files
+	// worthy of compression in definition's bundle. Ignore all other types (e.g.,
+	// `.zip` for the bundle itself).
+	definitionsFileGzipHandler, err := gziphandler.GzipHandlerWithOpts(gziphandler.ContentTypes([]string{
+		"application/json",
+		"application/yaml",
+		"text/plain",
+	}))
+	utils.CrashOnError(err)
 	customRoutes = append(customRoutes,
 		routes.CustomRoute{
 			Route: scannerDefinitionsRoute,
 			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
-				or.ScannerOr(user.With(permissions.View(resources.ScannerDefinitions))): {
+				or.SensorOrAuthorizer(
+					or.ScannerOr(
+						user.With(permissions.View(resources.ScannerDefinitions)))): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodGet),
 				},
 				user.With(permissions.Modify(resources.ScannerDefinitions)): {
 					routes.RPCNameForHTTP(scannerDefinitionsRoute, http.MethodPost),
 				},
 			}),
-			ServerHandler: scannerDefinitionsHandler.Singleton(),
-			Compression:   false,
+			ServerHandler: definitionsFileGzipHandler(scannerDefinitionsHandler.Singleton()),
 		},
 	)
 

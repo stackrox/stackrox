@@ -72,42 +72,4 @@ func (s *ClusterHealthStatusStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundClusterHealthStatus)
 
-	s.NoError(store.Upsert(ctx, clusterHealthStatus))
-	foundClusterHealthStatus, exists, err = store.Get(ctx, clusterHealthStatus.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(clusterHealthStatus, foundClusterHealthStatus)
-
-	clusterHealthStatusCount, err := store.Count(ctx)
-	s.NoError(err)
-	s.Equal(1, clusterHealthStatusCount)
-
-	clusterHealthStatusExists, err := store.Exists(ctx, clusterHealthStatus.GetId())
-	s.NoError(err)
-	s.True(clusterHealthStatusExists)
-	s.NoError(store.Upsert(ctx, clusterHealthStatus))
-
-	foundClusterHealthStatus, exists, err = store.Get(ctx, clusterHealthStatus.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(clusterHealthStatus, foundClusterHealthStatus)
-
-	s.NoError(store.Delete(ctx, clusterHealthStatus.GetId()))
-	foundClusterHealthStatus, exists, err = store.Get(ctx, clusterHealthStatus.GetId())
-	s.NoError(err)
-	s.False(exists)
-	s.Nil(foundClusterHealthStatus)
-
-	var clusterHealthStatuss []*storage.ClusterHealthStatus
-	for i := 0; i < 200; i++ {
-		clusterHealthStatus := &storage.ClusterHealthStatus{}
-		s.NoError(testutils.FullInit(clusterHealthStatus, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		clusterHealthStatuss = append(clusterHealthStatuss, clusterHealthStatus)
-	}
-
-	s.NoError(store.UpsertMany(ctx, clusterHealthStatuss))
-
-	clusterHealthStatusCount, err = store.Count(ctx)
-	s.NoError(err)
-	s.Equal(200, clusterHealthStatusCount)
 }

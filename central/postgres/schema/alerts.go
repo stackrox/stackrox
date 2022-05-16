@@ -73,7 +73,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Alert)(nil)), "alerts")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ALERTS, "alerts", (*storage.ListAlert)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ALERTS, "alert", (*storage.ListAlert)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

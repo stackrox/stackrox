@@ -99,7 +99,7 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 	return nil, errors.New("Resolver ImageVulnerability does not support postgres yet")
 }
 
-// ImageVulnerabilities resolves a set of image vulnerabilities based on a query.
+// ImageVulnerabilities resolves a set of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
 	if !features.PostgresDatastore.Enabled() {
@@ -110,7 +110,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 	return nil, errors.New("Resolver ImageVulnerabilities does not support postgres yet")
 }
 
-// ImageVulnerabilityCount returns count of all image vulnerabilities across infrastructure
+// ImageVulnerabilityCount returns count of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCount")
 	if !features.PostgresDatastore.Enabled() {
@@ -121,9 +121,9 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 	return 0, errors.New("Resolver ImageVulnerabilityCount does not support postgres yet")
 }
 
-// ImageVulnCounter returns a VulnerabilityCounterResolver for the input query.s
-func (resolver *Resolver) ImageVulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnCounter")
+// ImageVulnerabilityCounter returns a VulnerabilityCounterResolver for the input query
+func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnCounter")
 	if !features.PostgresDatastore.Enabled() {
 		query := withImageTypeFiltering(args.String())
 		return resolver.vulnCounterV2(ctx, RawQuery{Query: &query})
@@ -132,7 +132,8 @@ func (resolver *Resolver) ImageVulnCounter(ctx context.Context, args RawQuery) (
 	return nil, errors.New("Resolver ImageVulnCounter does not support postgres yet")
 }
 
-// withImageTypeFiltering adds a conjunction as a raw query to filter vuln type by image
+// withImageTypeFiltering adds a conjunction as a raw query to filter vulnerability type by image
+// this is needed to support pre postgres requests
 func withImageTypeFiltering(q string) string {
 	return search.AddRawQueriesAsConjunction(q,
 		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_IMAGE_CVE.String()).Query())
