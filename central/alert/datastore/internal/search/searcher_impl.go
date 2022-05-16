@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/central/alert/mappings"
+	"github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -30,7 +31,7 @@ var (
 	}
 
 	alertSearchHelper           = sac.ForResource(resources.Alert).MustCreateSearchHelper(mappings.OptionsMap)
-	alertPosgresSACSearchHelper = sac.ForResource(resources.Alert).MustCreatePgSearchHelper(mappings.PostgresOptionsMap)
+	alertPosgresSACSearchHelper = sac.ForResource(resources.Alert).MustCreatePgSearchHelper(schema.AlertsSchema.OptionsMap)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
