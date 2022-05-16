@@ -92,9 +92,9 @@ func (s *processIndicatorDatastoreSACSuite) TearDownSuite() {
 	} else {
 		err := rocksdb.CloseAndRemove(s.engine)
 		s.Require().NoError(err)
+		s.Require().NoError(s.index.Close())
 	}
 
-	s.Require().NoError(s.index.Close())
 }
 
 func (s *processIndicatorDatastoreSACSuite) SetupTest() {
