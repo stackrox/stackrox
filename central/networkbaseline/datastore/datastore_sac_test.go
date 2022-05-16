@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -156,6 +157,73 @@ func (s *networkBaselineDatastoreSACTestSuite) TestGetNetworkBaseline() {
 				s.Equal(testNB, readNetworkBaseline)
 			} else {
 				s.Nil(readNetworkBaseline)
+			}
+		})
+	}
+}
+
+func (s *networkBaselineDatastoreSACTestSuite) TestWalkNetworkBaseline() {
+	var err error
+	testNB := fixtures.GetScopedNetworkBaseline(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
+	err = s.datastore.UpsertNetworkBaselines(s.testContexts[testutils.UnrestrictedReadWriteCtx], []*storage.NetworkBaseline{testNB})
+	s.testNBIDs = append(s.testNBIDs, testNB.GetDeploymentId())
+	s.NoError(err)
+
+	cases := map[string]crudTest{
+		"(full) read-only can walk": {
+			scopeKey:    testutils.UnrestrictedReadCtx,
+			expectFound: true,
+		},
+		"full read-write can walk": {
+			scopeKey:    testutils.UnrestrictedReadCtx,
+			expectFound: true,
+		},
+		"full read-write on wrong cluster cannot walk": {
+			scopeKey:    testutils.Cluster1ReadWriteCtx,
+			expectFound: false,
+		},
+		"read-write on wrong cluster and wrong namespace cannot walk": {
+			scopeKey:    testutils.Cluster1NamespaceAReadWriteCtx,
+			expectFound: false,
+		},
+		"read-write on wrong cluster and matching namespace cannot walk": {
+			scopeKey:    testutils.Cluster1NamespaceBReadWriteCtx,
+			expectFound: false,
+		},
+		"read-write on right cluster but wrong namespaces cannot walk": {
+			scopeKey:    testutils.Cluster2NamespacesACReadWriteCtx,
+			expectFound: false,
+		},
+		"full read-write on right cluster cannot walk": {
+			scopeKey:    testutils.Cluster2ReadWriteCtx,
+			expectFound: false,
+		},
+		"read-write on the right cluster and namespace cannot walk": {
+			scopeKey:    testutils.Cluster2NamespaceBReadWriteCtx,
+			expectFound: false,
+		},
+		"read-write on the right cluster and at least the right namespace cannot walk": {
+			scopeKey:    testutils.Cluster2NamespacesABReadWriteCtx,
+			expectFound: false,
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.scopeKey]
+			var found []string
+			err := s.datastore.Walk(ctx, func(baseline *storage.NetworkBaseline) error {
+				found = append(found, baseline.GetDeploymentId())
+				if !c.expectFound {
+					return errors.New(baseline.GetDeploymentId())
+				}
+				return nil
+			})
+			s.NoError(err)
+			if c.expectFound {
+				s.ElementsMatch([]string{testNB.GetDeploymentId()}, found)
+			} else {
+				s.Empty(found)
 			}
 		})
 	}
