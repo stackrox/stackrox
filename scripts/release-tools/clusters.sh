@@ -8,12 +8,7 @@ MENU_OPTIONS=()
 ARTIFACTS_DIR="artifacts"
 
 main() {
-  local action="${1}"
-  PS3="Choose action: "
-  if [[ -n "$action" ]]; then
-    exec_option "$action"
-    exit 0
-  fi
+  local action="${1:-}"
   MENU_OPTIONS=(
     "Merge kubeconfigs for RC OpenShift cluster"
     "Merge kubeconfigs for qa GKE cluster"
@@ -24,6 +19,11 @@ main() {
     "Create new qa GKE cluster"
     "Quit"
   )
+  if [[ -n "$action" ]]; then
+    exec_option "$action"
+    exit 0
+  fi
+  PS3="Choose action: "
   RED='\033[0;31m'
   NC='\033[0m' # No Color
   echo -e "${RED}WARNING:${NC} some of these scripts may be outdated, bleeding-edge, or not working. Read the code before you run them to be on the safe side."
@@ -47,6 +47,7 @@ exec_option() {
 	cluster_name="$(get_cluster_name gke)"
         merge_kubeconfigs "$cluster_name" "$DEFAULT_KUBECONFIG"
         exit 0
+        ;;
     "${MENU_OPTIONS[2]}"|3)
         cleanup_artifacts  "$DEFAULT_KUBECONFIG"
         exit 0
@@ -124,7 +125,7 @@ fetch_artifacts() {
 }
 
 get_cluster_postfix() {
-  echo "${RELEASE//./-}-rc${RC_NUMBER}"
+  echo "${RELEASE//./-}-rc${RC_NUMBER}-test"
 }
 
 get_cluster_prefix() {
@@ -132,7 +133,7 @@ get_cluster_prefix() {
 
   if [[ "$cluster_type" == "openshift" ]]; then
     echo "os4-9-demo"
-  elif [[ "$cluster_type" == "qa-demo" ]]; then
+  elif [[ "$cluster_type" == "gke" ]]; then
     echo "qa-demo"
   else
     die "Unknown cluster type: $cluster_type"
@@ -340,8 +341,6 @@ generate_slack_message_for_gke() {
 
   DIR="${ARTIFACTS_DIR}/$cluster_name"
   [[ -d "$DIR" ]] || die "DIR not found: '$DIR'"
-
-  . "${DIR}/dotenv"
 
   [[ -f "${DIR}/url" ]] || die "url file not found in ${DIR}"
 
