@@ -959,7 +959,12 @@ commands:
 
       - run:
           name: Build main image
-          command: make docker-build-main-image ROX_PRODUCT_BRANDING="<< parameters.branding >>"
+          command: |
+            PARAMS=(ROX_PRODUCT_BRANDING="<< parameters.branding >>")
+            if [[ "<< parameters.branding >>" == "STACKROX_BRANDING" ]]; then
+              PARAMS+=(ROX_IMAGE_FLAVOR="opensource")
+            fi
+            make docker-build-main-image "${PARAMS[@]}"
 
       - run:
           name: Check debugger presence in the main image
@@ -3981,6 +3986,7 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_BASELINE_GENERATION_DURATION: 1m
 
     steps:
       - run-qa-tests:
@@ -4017,6 +4023,7 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_BASELINE_GENERATION_DURATION: 1m
 
     steps:
       - run-qa-tests:
@@ -4590,6 +4597,7 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_BASELINE_GENERATION_DURATION: 1m
 
     steps:
       - run-qa-tests:
@@ -4629,6 +4637,7 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_BASELINE_GENERATION_DURATION: 1m
 
     steps:
       - run-qa-tests:
@@ -4670,6 +4679,7 @@ jobs:
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_BASELINE_GENERATION_DURATION: 1m
       - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
@@ -4715,6 +4725,7 @@ jobs:
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_BASELINE_GENERATION_DURATION: 1m
       - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
