@@ -4,7 +4,9 @@
 Run qa-tests-backend in a GKE cluster
 """
 import os
+from pre_tests import PreSystemTests
 from ci_tests import QaE2eTestPart1, QaE2eTestPart2
+from post_tests import PostClusterTest
 from clusters import GKECluster
 from runners import ClusterTestSetsRunner
 
@@ -23,5 +25,22 @@ os.environ["SCANNER_SUPPORT"] = "true"
 
 ClusterTestSetsRunner(
     cluster=GKECluster("qa-e2e-test"),
-    sets=[{"test": QaE2eTestPart1()}, {"test": QaE2eTestPart2()}],
+    sets=[
+        {
+            "pre_test": PreSystemTests(),
+            "test": QaE2eTestPart1(),
+            "post_test": PostClusterTest(
+                check_stackrox_logs=True, artifact_destination="part-1"
+            ),
+        },
+        {
+            "test": QaE2eTestPart2(),
+            "post_test": PostClusterTest(
+                check_stackrox_logs=True,
+                store_qa_test_debug_logs=True,
+                store_qa_spock_results=True,
+                artifact_destination="part-2",
+            ),
+        },
+    ],
 ).run()

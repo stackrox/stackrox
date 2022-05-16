@@ -29,6 +29,13 @@ class TestClusterTestRunner(unittest.TestCase):
         ClusterTestRunner(cluster=cluster).run()
         cluster.teardown.assert_called_once()
 
+    def test_post_gets_output_from_test(self):
+        test = Mock()
+        test.test_output_dirs = ["a", "b"]
+        post_test = Mock()
+        ClusterTestRunner(test=test, post_test=post_test).run()
+        post_test.run.assert_called_with(test_output_dirs=["a", "b"])
+
     def test_provision_failure(self):
         cluster = Mock()
         test = Mock()

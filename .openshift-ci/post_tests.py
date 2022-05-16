@@ -13,17 +13,33 @@ class NullPostTest:
         pass
 
 
+# pylint: disable=too-many-instance-attributes
 class PostClusterTest:
     API_TIMEOUT = 5 * 60
     COLLECT_TIMEOUT = 5 * 60
+    CHECK_TIMEOUT = 5 * 60
     STORE_TIMEOUT = 5 * 60
+    # Where the QA tests store failure logs:
+    # qa-tests-backend/src/main/groovy/common/Constants.groovy
+    QA_TEST_DEBUG_LOGS = "/tmp/qa-tests-backend-logs"
+    QA_SPOCK_RESULTS = "qa-tests-backend/build/spock-reports"
     K8S_LOG_DIR = "/tmp/k8s-service-logs"
     COLLECTOR_METRICS_DIR = "/tmp/collector-metrics"
     DEBUG_OUTPUT = "debug-dump"
     DIAGNOSTIC_OUTPUT = "diagnostic-bundle"
     CENTRAL_DATA_OUTPUT = "central-data"
 
-    def __init__(self):
+    def __init__(
+        self,
+        check_stackrox_logs=False,
+        store_qa_test_debug_logs=False,
+        store_qa_spock_results=False,
+        artifact_destination=None,
+    ):
+        self._check_stackrox_logs = check_stackrox_logs
+        self._store_qa_test_debug_logs = store_qa_test_debug_logs
+        self._store_qa_spock_results = store_qa_spock_results
+        self.artifact_destination = artifact_destination
         self.exitstatus = 0
         self.failed_commands: List[List[str]] = []
         self.k8s_namespaces = ["stackrox", "stackrox-operator", "proxies", "squid"]
@@ -36,6 +52,10 @@ class PostClusterTest:
         ]
         self.central_is_responsive = False
         self.data_to_store = []
+        if self._store_qa_test_debug_logs:
+            self.data_to_store.append(PostClusterTest.QA_TEST_DEBUG_LOGS)
+        if self._store_qa_spock_results:
+            self.data_to_store.append(PostClusterTest.QA_SPOCK_RESULTS)
 
     def run(self, test_output_dirs=None):
         self.central_is_responsive = self.wait_for_central_api()
@@ -45,7 +65,9 @@ class PostClusterTest:
             self.get_central_debug_dump()
             self.get_central_diagnostics()
             self.grab_central_data()
-        self.store_test_output(test_output_dirs)
+        if self._check_stackrox_logs:
+            self.check_stackrox_logs()
+        self.store_artifacts(test_output_dirs)
         self.fixup_artifacts_content_type()
         self.make_artifacts_help()
         if self.exitstatus != 0:
@@ -73,7 +95,7 @@ class PostClusterTest:
             ["scripts/ci/collect-infrastructure-logs.sh", PostClusterTest.K8S_LOG_DIR],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
         )
-        self.data_to_store += PostClusterTest.K8S_LOG_DIR
+        self.data_to_store.append(PostClusterTest.K8S_LOG_DIR)
 
     def collect_collector_metrics(self):
         self._run_with_best_effort(
@@ -84,7 +106,7 @@ class PostClusterTest:
             ],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
         )
-        self.data_to_store += PostClusterTest.COLLECTOR_METRICS_DIR
+        self.data_to_store.append(PostClusterTest.COLLECTOR_METRICS_DIR)
 
     def get_central_debug_dump(self):
         self._run_with_best_effort(
@@ -95,7 +117,7 @@ class PostClusterTest:
             ],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
         )
-        self.data_to_store += PostClusterTest.DEBUG_OUTPUT
+        self.data_to_store.append(PostClusterTest.DEBUG_OUTPUT)
 
     def get_central_diagnostics(self):
         self._run_with_best_effort(
@@ -106,19 +128,28 @@ class PostClusterTest:
             ],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
         )
-        self.data_to_store += PostClusterTest.DIAGNOSTIC_OUTPUT
+        self.data_to_store.append(PostClusterTest.DIAGNOSTIC_OUTPUT)
 
     def grab_central_data(self):
         self._run_with_best_effort(
             ["scripts/grab-data-from-central.sh", PostClusterTest.CENTRAL_DATA_OUTPUT],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
         )
-        self.data_to_store += PostClusterTest.CENTRAL_DATA_OUTPUT
+        self.data_to_store.append(PostClusterTest.CENTRAL_DATA_OUTPUT)
 
-    def store_test_output(self, test_output_dirs):
-        for output in test_output_dirs + self.data_to_store:
+    def check_stackrox_logs(self):
+        self._run_with_best_effort(
+            ["tests/e2e/lib.sh", "check_stackrox_logs", PostClusterTest.K8S_LOG_DIR],
+            timeout=PostClusterTest.CHECK_TIMEOUT,
+        )
+
+    def store_artifacts(self, test_output_dirs):
+        for source in test_output_dirs + self.data_to_store:
+            args = ["scripts/ci/store-artifacts.sh", "store_artifacts", source]
+            if self.artifact_destination:
+                args.append(self.artifact_destination)
             self._run_with_best_effort(
-                ["scripts/ci/store-artifacts.sh", "store_artifacts", output],
+                args,
                 timeout=PostClusterTest.STORE_TIMEOUT,
             )
 

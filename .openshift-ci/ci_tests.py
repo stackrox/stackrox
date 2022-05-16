@@ -8,9 +8,6 @@ import subprocess
 
 from common import popen_graceful_kill
 
-# Where the QA tests store failure logs: qa-tests-backend/src/main/groovy/common/Constants.groovy
-QA_TESTS_OUTPUT_DIR = "/tmp/qa-tests-backend-logs"
-
 
 class BaseTest:
     def __init__(self):
@@ -43,7 +40,7 @@ class UpgradeTest(BaseTest):
 
         def set_dirs_after_start():
             # let post test know where logs are
-            self.test_output_dirs = [UpgradeTest.TEST_OUTPUT_DIR, QA_TESTS_OUTPUT_DIR]
+            self.test_output_dirs = [UpgradeTest.TEST_OUTPUT_DIR]
 
         self.run_with_graceful_kill(
             ["tests/upgrade/run.sh", UpgradeTest.TEST_OUTPUT_DIR],
