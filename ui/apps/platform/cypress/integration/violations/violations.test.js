@@ -44,7 +44,7 @@ describe('Violations page', () => {
 
     it('should go to the detail page on row click', () => {
         visitViolationsWithFixture('alerts/alerts.json');
-        visitViolationFromTableWithFixture('alerts/alert0.json');
+        visitViolationFromTableWithFixture('alerts/alertFirstInAlerts.json');
 
         cy.get(ViolationsPageSelectors.details.page);
         cy.get(ViolationsPageSelectors.details.title).should('have.text', 'Misuse of iptables');
@@ -76,7 +76,7 @@ describe('Violations page', () => {
     });
 
     it('should have 4 tabs in the sidepanel', () => {
-        visitViolationWithFixture('alerts/alert0.json');
+        visitViolationWithFixture('alerts/alertFirstInAlerts.json');
 
         cy.get(ViolationsPageSelectors.details.tabs).should('have.length', 4);
         cy.get(ViolationsPageSelectors.details.violationTab).should('exist');
@@ -86,7 +86,7 @@ describe('Violations page', () => {
     });
 
     it('should have runtime violation information in the Violations tab', () => {
-        visitViolationWithFixture('alerts/alert0.json');
+        visitViolationWithFixture('alerts/alertFirstInAlerts.json');
 
         cy.get(ViolationsPageSelectors.details.violationTab);
         // TODO Violation Events and so on
@@ -128,7 +128,7 @@ describe('Violations page', () => {
     // TODO mock no-op request for any action which would prevent repeatable test runs in local deployment
 
     it('should have enforcement information in the Enforcement tab', () => {
-        visitViolationWithFixture('alerts/alert0.json');
+        visitViolationWithFixture('alerts/alertFirstInAlerts.json');
 
         cy.get(ViolationsPageSelectors.details.enforcementTab).click();
         cy.get(ViolationsPageSelectors.enforcement.detailMessage).should('contain', 'Kill Pod');
@@ -139,8 +139,8 @@ describe('Violations page', () => {
     });
 
     it('should have deployment information in the Deployment tab', () => {
-        visitViolationWithFixture('alerts/alert0.json');
-        clickDeploymentTabWithFixture('alerts/deployment0.json');
+        visitViolationWithFixture('alerts/alertFirstInAlerts.json');
+        clickDeploymentTabWithFixture('alerts/deploymentForAlertFirstInAlerts.json');
 
         cy.get(ViolationsPageSelectors.deployment.overview);
         cy.get(ViolationsPageSelectors.deployment.containerConfiguration);
@@ -163,7 +163,7 @@ describe('Violations page', () => {
     });
 
     it('should have policy information in the Policy Details tab', () => {
-        visitViolationWithFixture('alerts/alert0.json');
+        visitViolationWithFixture('alerts/alertFirstInAlerts.json');
 
         cy.get(ViolationsPageSelectors.details.policyTab).click();
         cy.get(PoliciesPageSelectors.policyDetailsPanel.detailsSection);
