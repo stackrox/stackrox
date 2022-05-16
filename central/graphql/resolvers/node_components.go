@@ -5,7 +5,7 @@ import "github.com/stackrox/rox/pkg/utils"
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddType("NodeScanComponent", []string{
+		schema.AddType("EmbeddedNodeScanComponent", []string{
 			"license: License",
 			"id: ID!",
 			"name: String!",
@@ -16,7 +16,6 @@ func init() {
 			"vulnCounter(query: String): VulnerabilityCounter!",
 			"plottedVulns(query: String): PlottedVulnerabilities!",
 			"lastScanned: Time",
-			"activeState(query: String): ActiveState",
 			"nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!",
 			"nodeCount(query: String, scopeQuery: String): Int!",
 			"priority: Int!",
