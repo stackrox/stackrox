@@ -128,7 +128,7 @@ class ProcessBaselinesTest extends BaseSpecification {
             def now = System.currentTimeSeconds()
             if (tmpBaseline.getStackRoxLockedTimestamp().getSeconds() > now) {
                 throw new RuntimeException(
-                    "Baseline ${deployment} is not out of observation yet. Baseline is ${tmpBaseline}.  Current time ${now}"
+                    "Baseline ${deployment} is still in observation. Baseline is ${tmpBaseline}."
                 )
             }
             return tmpBaseline
@@ -232,11 +232,8 @@ class ProcessBaselinesTest extends BaseSpecification {
         sleep 5000
         orchestrator.execInContainer(deployment, "pwd")
 
-        // Give the process indicators time to roll off the queue
-        sleep 60000
-
         // check for process baseline violation
-        assert waitForViolation(containerName, "Unauthorized Process Execution", 45)
+        assert waitForViolation(containerName, "Unauthorized Process Execution", 90)
         List<AlertOuterClass.ListAlert> alertList = AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest
                  .newBuilder().build())
         String alertId
