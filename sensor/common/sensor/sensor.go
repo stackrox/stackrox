@@ -60,14 +60,13 @@ type Sensor struct {
 
 	centralConnection    *grpcUtil.LazyClientConn
 	centralCommunication CentralCommunication
-	//centralRestClient    *centralclient.Client
-	connectionFactory connection.ConnectionFactory
+	connectionFactory    connection.GRPCConnectionFactory
 
 	stoppedSig concurrency.ErrorSignal
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, factory connection.ConnectionFactory, components ...common.SensorComponent) *Sensor {
+func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, factory connection.GRPCConnectionFactory, components ...common.SensorComponent) *Sensor {
 	return &Sensor{
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
@@ -118,8 +117,6 @@ func (s *Sensor) Start() {
 	// Start up connections.
 	log.Infof("Connecting to Central server %s", s.centralEndpoint)
 
-	//centralConnSignal := concurrency.NewSignal()
-	//go s.gRPCConnectToCentralWithRetries(&centralConnSignal)
 	go s.connectionFactory.SetCentralConnectionWithRetries(s.centralConnection)
 
 	for _, c := range s.components {

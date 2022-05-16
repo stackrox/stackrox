@@ -57,7 +57,7 @@ var (
 )
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
-func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager, connFactory connection.ConnectionFactory) (*sensor.Sensor, error) {
+func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager, connFactory connection.GRPCConnectionFactory) (*sensor.Sensor, error) {
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
 
 	var helmManagedConfig *central.HelmManagedConfigInit

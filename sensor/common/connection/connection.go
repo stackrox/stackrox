@@ -21,18 +21,15 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// This package is responsible for establishing a gRPC connection between sensor
-// and Central. The code here was previously part of sensor. Sensor used to
-// receive an HTTP client as a parameter and create the gRPC connection internally.
-// The idea here is to extract this behavior to outside of sensor so mocking becomes
-// easier.
-
-type ConnectionFactory interface {
+// GRPCConnectionFactory is responsible for establishing a gRPC connection between sensor
+// and Central. Sensor used to receive an HTTP client as a parameter which was used to create
+// a gRPC stream internally. This factory is now passed to sensor creation, and it can be
+// more easily mocked when writing unit/integration tests.
+type GRPCConnectionFactory interface {
 	SetCentralConnectionWithRetries(ptr *util.LazyClientConn)
 	StopSignal() concurrency.ErrorSignal
 	OkSignal() concurrency.Signal
 }
-
 
 type connectionFactoryImpl struct {
 	endpoint   string
@@ -42,7 +39,8 @@ type connectionFactoryImpl struct {
 	okSignal   concurrency.Signal
 }
 
-func NewConnectionFactor(endpoint string) (*connectionFactoryImpl, error) {
+// NewConnectionFactory returns a factory that can create a gRPC stream between Sensor and Central.
+func NewConnectionFactory(endpoint string) (*connectionFactoryImpl, error) {
 	centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())
 	if err != nil {
 		return nil, errors.Wrap(err, "creating central client")
@@ -85,7 +83,6 @@ func (f *connectionFactoryImpl) waitUntilCentralIsReady() {
 		log.Infof("Check Central status failed: %s. Retrying after %s...", err, d.Round(time.Millisecond))
 	})
 
-	// TODO: handle error
 	if err != nil {
 		f.stopSignal.SignalWithErrorWrapf(err, "checking central status failed after %s", exponential.GetElapsedTime())
 	}
@@ -118,9 +115,7 @@ func (f *connectionFactoryImpl) SetCentralConnectionWithRetries(ptr *util.LazyCl
 		log.Infof("Did not add central CA cert to gRPC connection")
 	}
 
-	// NOTE: This creates the gRPC connection used for the messages exchanges between sensor and central
 	centralConnection, err := clientconn.AuthenticatedGRPCConnection(env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
-	// TODO: Handle error
 	if err != nil {
 		f.stopSignal.SignalWithErrorWrap(err, "Error connecting to central")
 		return

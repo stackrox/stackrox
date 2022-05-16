@@ -45,7 +45,7 @@ func main() {
 	} else {
 		sharedClientInterface = client.MustCreateInterface()
 	}
-	connFactory, err := connection.NewConnectionFactor(env.CentralEndpoint.Setting())
+	connFactory, err := connection.NewConnectionFactory(env.CentralEndpoint.Setting())
 	if err != nil {
 		log.Fatalf("Failed to create connection factory: %v", err)
 	}
