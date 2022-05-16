@@ -33,8 +33,7 @@ ROX_IMAGE_FLAVOR ?= $(shell \
 	fi)
 
 DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
-BUILD_IMAGE_VERSION=$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
-BUILD_IMAGE := $(DEFAULT_IMAGE_REGISTRY)/apollo-ci:$(BUILD_IMAGE_VERSION)
+BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
 DOCS_IMAGE_BASE := $(DEFAULT_IMAGE_REGISTRY)/docs
 
 ifdef CI
