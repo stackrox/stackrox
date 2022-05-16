@@ -949,7 +949,7 @@ commands:
       - run:
           name: Restore the branded UI
           command: |
-            cp -au "ui-${ROX_PRODUCT_BRANDING}/*" ui
+            cp -au ui-${ROX_PRODUCT_BRANDING}/* ui
 
       - *refreshAlpineBaseImage
 
