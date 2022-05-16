@@ -941,10 +941,10 @@ commands:
       - run:
           name: Ensure product branding is set
           command: |
-            [[ -n "${ROX_PRODUCT_BRANDING}" ]] || {
+            if [[ -z "${ROX_PRODUCT_BRANDING}" ]]; then
               echo >&2 "Will not proceed until product branding env variable is defined"
               exit 2
-            }
+            fi
 
       - run:
           name: Restore the branded UI
@@ -2769,7 +2769,7 @@ jobs:
       EKS_AUTOMATION_VERSION: 0.2.17
       ROX_PRODUCT_BRANDING: "STACKROX_BRANDING"
     steps:
-      - build:
+      - build
 
   build-rhacs:
     executor: custom
@@ -2778,7 +2778,7 @@ jobs:
       EKS_AUTOMATION_VERSION: 0.2.17
       ROX_PRODUCT_BRANDING: "RHACS_BRANDING"
     steps:
-      - build:
+      - build
 
   build-race-condition-debug-image:
     executor: custom
