@@ -76,7 +76,8 @@ func NewSensor(configHandler config.Handler, detector detector.Detector, imageSe
 		detector:      detector,
 		imageService:  imageService,
 		components:    append(components, detector, configHandler), // Explicitly add the config handler
-		// centralRestClient: centralClient,
+
+		connectionFactory: factory,
 		centralConnection: grpcUtil.NewLazyClientConn(),
 
 		stoppedSig: concurrency.NewErrorSignal(),
