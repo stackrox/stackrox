@@ -923,12 +923,6 @@ commands:
       - cleanup-clusters-on-fail
 
   build:
-    parameters:
-      branding:
-        type: string
-        default: stackrox
-    environment:
-      ROX_PRODUCT_BRANDING: "<< parameters.branding >>"
     steps:
       - checkout-with-submodules
       - check-docs-step:
@@ -945,9 +939,17 @@ commands:
           at: /go/src/github.com/stackrox/rox
 
       - run:
+          name: Ensure product branding is set
+          command: |
+            [[ -n "${ROX_PRODUCT_BRANDING}" ]] || {
+              echo >&2 "Will not proceed until product branding env variable is defined"
+              exit 2
+            }
+
+      - run:
           name: Restore the branded UI
           command: |
-            cp -au ui-<< parameters.branding >>/* ui
+            cp -au "ui-${ROX_PRODUCT_BRANDING}/*" ui
 
       - *refreshAlpineBaseImage
 
@@ -976,18 +978,18 @@ commands:
           name: Push new Docker image
           command: |
             source ./scripts/ci/lib.sh
-            push_main_image_set "${CIRCLE_BRANCH}" "<< parameters.branding >>"
+            push_main_image_set "${CIRCLE_BRANCH}" "${ROX_PRODUCT_BRANDING}"
 
       - run:
           name: Push collector & scanner images tagged with main-version to registries
           command: |
             source ./scripts/ci/lib.sh
-            push_matching_collector_scanner_images "<< parameters.branding >>"
+            push_matching_collector_scanner_images "${ROX_PRODUCT_BRANDING}"
 
       - run:
           name: Publish new versions of NPM packages if any
           command: |
-            if [[ "${CIRCLE_BRANCH}" == "master" && "<< parameters.branding >>" == "STACKROX_BRANDING" ]]; then
+            if [[ "${CIRCLE_BRANCH}" == "master" && "${ROX_PRODUCT_BRANDING}" == "STACKROX_BRANDING" ]]; then
               echo "//npm.pkg.github.com/:_authToken=\"$GITHUB_PACKAGES_PUBLISH_TOKEN\"" > ~/.npmrc
               make ui-publish-packages
             else
@@ -1007,7 +1009,7 @@ commands:
       - run:
           name: Comment on PR
           command: |
-            if [[ "<< parameters.branding >>" == "STACKROX_BRANDING" ]]; then
+            if [[ "${ROX_PRODUCT_BRANDING}" == "STACKROX_BRANDING" ]]; then
               wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
               echo "2a2640f44737873dfe30da0d5b8453419d48a494f277a70fd9108e4204fc4a53 hub-comment_linux_amd64" | sha256sum -c -
               sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
@@ -2765,18 +2767,18 @@ jobs:
     resource_class: medium
     environment:
       EKS_AUTOMATION_VERSION: 0.2.17
+      ROX_PRODUCT_BRANDING: "STACKROX_BRANDING"
     steps:
       - build:
-          branding: STACKROX_BRANDING
 
   build-rhacs:
     executor: custom
     resource_class: medium
     environment:
       EKS_AUTOMATION_VERSION: 0.2.17
+      ROX_PRODUCT_BRANDING: "RHACS_BRANDING"
     steps:
       - build:
-          branding: RHACS_BRANDING
 
   build-race-condition-debug-image:
     executor: custom
