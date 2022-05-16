@@ -7,6 +7,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
 	pgStore "github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store/postgres"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -43,6 +45,8 @@ type k8sRoleBindingSACSuite struct {
 	indexer index.Indexer
 	search  search.Searcher
 
+	optionsMap searchPkg.OptionsMap
+
 	testContexts          map[string]context.Context
 	testK8sRoleBindingIDs []string
 }
@@ -60,6 +64,7 @@ func (s *k8sRoleBindingSACSuite) SetupSuite() {
 		pgStore.Destroy(ctx, s.pool)
 		s.storage = pgStore.New(ctx, s.pool)
 		s.indexer = pgStore.NewIndexer(s.pool)
+		s.optionsMap = schema.RolebindingsSchema.OptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp("k8sRoleBindingSACTest")
 		s.Require().NoError(err)
@@ -69,6 +74,7 @@ func (s *k8sRoleBindingSACSuite) SetupSuite() {
 
 		s.storage = rdbStore.New(s.engine)
 		s.indexer = index.New(s.index)
+		s.optionsMap = mappings.OptionsMap
 	}
 
 	s.search = search.New(s.storage, s.indexer)
@@ -333,7 +339,7 @@ func (s *k8sRoleBindingSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, mappings.OptionsMap)
+	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
