@@ -158,7 +158,8 @@ create_rc_openshift_cluster() {
   [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
   [[ -n "$RELEASE" ]] || die "RELEASE undefined"
 
-  export CLUSTER_NAME="$(get_cluster_name openshift)"
+  CLUSTER_NAME="$(get_cluster_name openshift)"
+  export CLUSTER_NAME
   infractl create openshift-4-demo "${CLUSTER_NAME}" --lifespan "$DEMO_LIFESPAN" --arg openshift-version=ocp/stable-4.9 || echo "Cluster creation already started or the cluster already exists"
 
   wait_for_cluster_to_be_ready "$CLUSTER_NAME"
@@ -193,7 +194,9 @@ create_qa_gke_cluster() {
   cluster_postfix="$(get_cluster_postfix)"
   [[ -n "${INFRA_TOKEN}" ]] || die "INFRA_TOKEN is not set"
 
-  export CLUSTER_NAME="$(get_cluster_name gke)"
+  CLUSTER_NAME="$(get_cluster_name gke)"
+  export CLUSTER_NAME
+
   if does_cluster_exist "$CLUSTER_NAME"; then
     echo "Cluster $CLUSTER_NAME already exists"
   else
@@ -305,7 +308,8 @@ merge_kubeconfigs() {
 }
 
 generate_slack_message_for_openshift() {
-  local cluster_name="$(get_cluster_name openshift)"
+  local cluster_name
+  cluster_name="$(get_cluster_name openshift)"
   [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
   [[ -n "$RELEASE" ]] || die "RELEASE undefined"
 
@@ -335,7 +339,8 @@ EOF
 }
 
 generate_slack_message_for_gke() {
-  local cluster_name="$(get_cluster_name gke)"
+  local cluster_name
+  cluster_name="$(get_cluster_name gke)"
   [[ -n "$RC_NUMBER" ]] || die "RC_NUMBER undefined"
   [[ -n "$RELEASE" ]] || die "RELEASE undefined"
 
