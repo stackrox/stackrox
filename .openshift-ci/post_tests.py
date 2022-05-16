@@ -34,14 +34,17 @@ class PostClusterTest:
             "openshift-etcd",
             "openshift-controller-manager",
         ]
+        self.central_is_responsive = False
+        self.data_to_store = []
 
     def run(self, test_output_dirs=None):
-        self.wait_for_central_api()
+        self.central_is_responsive = self.wait_for_central_api()
         self.collect_service_logs()
         self.collect_collector_metrics()
-        self.get_central_debug_dump()
-        self.get_central_diagnostics()
-        self.grab_central_data()
+        if self.central_is_responsive:
+            self.get_central_debug_dump()
+            self.get_central_diagnostics()
+            self.grab_central_data()
         self.store_test_output(test_output_dirs)
         self.fixup_artifacts_content_type()
         self.make_artifacts_help()
@@ -51,7 +54,7 @@ class PostClusterTest:
             raise RuntimeError(f"Post failed: exit {self.exitstatus}")
 
     def wait_for_central_api(self):
-        self._run_with_best_effort(
+        return self._run_with_best_effort(
             ["tests/e2e/lib.sh", "wait_for_api"],
             timeout=PostClusterTest.API_TIMEOUT,
         )
@@ -70,14 +73,7 @@ class PostClusterTest:
             ["scripts/ci/collect-infrastructure-logs.sh", PostClusterTest.K8S_LOG_DIR],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
         )
-        self._run_with_best_effort(
-            [
-                "scripts/ci/store-artifacts.sh",
-                "store_artifacts",
-                PostClusterTest.K8S_LOG_DIR,
-            ],
-            timeout=PostClusterTest.STORE_TIMEOUT,
-        )
+        self.data_to_store += PostClusterTest.K8S_LOG_DIR
 
     def collect_collector_metrics(self):
         self._run_with_best_effort(
@@ -88,14 +84,7 @@ class PostClusterTest:
             ],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
         )
-        self._run_with_best_effort(
-            [
-                "scripts/ci/store-artifacts.sh",
-                "store_artifacts",
-                PostClusterTest.COLLECTOR_METRICS_DIR,
-            ],
-            timeout=PostClusterTest.STORE_TIMEOUT,
-        )
+        self.data_to_store += PostClusterTest.COLLECTOR_METRICS_DIR
 
     def get_central_debug_dump(self):
         self._run_with_best_effort(
@@ -106,14 +95,7 @@ class PostClusterTest:
             ],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
         )
-        self._run_with_best_effort(
-            [
-                "scripts/ci/store-artifacts.sh",
-                "store_artifacts",
-                PostClusterTest.DEBUG_OUTPUT,
-            ],
-            timeout=PostClusterTest.STORE_TIMEOUT,
-        )
+        self.data_to_store += PostClusterTest.DEBUG_OUTPUT
 
     def get_central_diagnostics(self):
         self._run_with_best_effort(
@@ -124,28 +106,21 @@ class PostClusterTest:
             ],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
         )
-        self._run_with_best_effort(
-            [
-                "scripts/ci/store-artifacts.sh",
-                "store_artifacts",
-                PostClusterTest.DIAGNOSTIC_OUTPUT,
-            ],
-            timeout=PostClusterTest.STORE_TIMEOUT,
-        )
+        self.data_to_store += PostClusterTest.DIAGNOSTIC_OUTPUT
 
     def grab_central_data(self):
         self._run_with_best_effort(
             ["scripts/grab-data-from-central.sh", PostClusterTest.CENTRAL_DATA_OUTPUT],
             timeout=PostClusterTest.COLLECT_TIMEOUT,
         )
-        self._run_with_best_effort(
-            [
-                "scripts/ci/store-artifacts.sh",
-                "store_artifacts",
-                PostClusterTest.CENTRAL_DATA_OUTPUT,
-            ],
-            timeout=PostClusterTest.STORE_TIMEOUT,
-        )
+        self.data_to_store += PostClusterTest.CENTRAL_DATA_OUTPUT
+
+    def store_test_output(self, test_output_dirs):
+        for output in test_output_dirs + self.data_to_store:
+            self._run_with_best_effort(
+                ["scripts/ci/store-artifacts.sh", "store_artifacts", output],
+                timeout=PostClusterTest.STORE_TIMEOUT,
+            )
 
     def fixup_artifacts_content_type(self):
         self._run_with_best_effort(
@@ -159,22 +134,18 @@ class PostClusterTest:
             timeout=PostClusterTest.STORE_TIMEOUT,
         )
 
-    def store_test_output(self, test_output_dirs):
-        for output in test_output_dirs:
-            self._run_with_best_effort(
-                ["scripts/ci/store-artifacts.sh", "store_artifacts", output],
-                timeout=PostClusterTest.STORE_TIMEOUT,
-            )
-
     def _run_with_best_effort(self, args: List[str], timeout: int):
         print(f"Running post command: {args}")
+        runs_ok = False
         try:
             subprocess.run(
                 args,
                 check=True,
                 timeout=timeout,
             )
+            runs_ok = True
         except Exception as err:
             print(f"Exception raised in {args}, {err}")
             self.failed_commands.append(args)
             self.exitstatus = 1
+        return runs_ok
