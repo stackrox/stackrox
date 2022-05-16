@@ -39,12 +39,12 @@ exec_option() {
   case "$1" in
     "${MENU_OPTIONS[$last_option]}"|"$((last_option+1))"|q|Q) exit 0;;&
     "${MENU_OPTIONS[0]}"|1)
-	cluster_name="$(get_cluster_name openshift)"
+        cluster_name="$(get_cluster_name openshift)"
         merge_kubeconfigs "$cluster_name" "$DEFAULT_KUBECONFIG"
         exit 0
         ;;
     "${MENU_OPTIONS[1]}"|2)
-	cluster_name="$(get_cluster_name gke)"
+        cluster_name="$(get_cluster_name gke)"
         merge_kubeconfigs "$cluster_name" "$DEFAULT_KUBECONFIG"
         exit 0
         ;;
