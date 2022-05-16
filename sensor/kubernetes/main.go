@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -47,7 +48,7 @@ func main() {
 	}
 	connFactory, err := connection.NewConnectionFactory(env.CentralEndpoint.Setting())
 	if err != nil {
-		log.Fatalf("Failed to create connection factory: %v", err)
+		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing gRPC client to endpoint %s", env.CentralEndpoint.Setting()))
 	}
 
 	s, err := sensor.CreateSensor(sharedClientInterface, workloadManager, connFactory)
