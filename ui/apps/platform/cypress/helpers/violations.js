@@ -44,7 +44,8 @@ export function visitViolationsWithFixture(fixturePath) {
     });
 }
 
-export function visitViolationsWithAlertsForErrorBoundary(alerts) {
+export function visitViolationsWithUncaughtException() {
+    const alerts = [{ id: 'broken one' }];
     const count = alerts.length;
 
     cy.intercept('GET', api.alerts.alertsWithQuery, {
