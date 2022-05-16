@@ -54,7 +54,7 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 			expectedFlavor: RHACSReleaseImageFlavor(),
 		},
 		"opensource": {
-			expectedFlavor: OpenSourceReleaseImageFlavor(),
+			expectedFlavor: OpenSourceImageFlavor(),
 		},
 		"wrong_value": {
 			shouldPanicAlways: true,
@@ -101,7 +101,7 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorByName() {
 			expectedFlavor: RHACSReleaseImageFlavor(),
 		},
 		"opensource": {
-			expectedFlavor: OpenSourceReleaseImageFlavor(),
+			expectedFlavor: OpenSourceImageFlavor(),
 		},
 		"wrong_value": {
 			expectedErrorRelease:    "unexpected value 'wrong_value'",
