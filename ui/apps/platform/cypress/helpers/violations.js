@@ -72,7 +72,7 @@ export function visitViolationFromTableWithFixture(fixturePath) {
             body: alert,
         }).as('getAlert');
 
-        // Assume table has only one row which has the policy name.
+        // Make sure the policy name matches only one row in the table.
         cy.get(`td[data-label="Policy"] a:contains("${name}")`).click();
 
         cy.wait('@getAlert');
