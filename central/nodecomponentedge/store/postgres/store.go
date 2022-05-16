@@ -24,8 +24,8 @@ const (
 
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM nodes_to_components WHERE Id = $1 AND NodeId = $2 AND NodeComponentId = $3)"
 	getStmt    = "SELECT serialized FROM nodes_to_components WHERE Id = $1 AND NodeId = $2 AND NodeComponentId = $3"
+	deleteStmt = "DELETE FROM nodes_to_components WHERE Id = $1 AND NodeId = $2 AND NodeComponentId = $3"
 
-	deleteStmt  = "DELETE FROM nodes_to_components WHERE Id = $1 AND NodeId = $2 AND NodeComponentId = $3"
 	walkStmt    = "SELECT serialized FROM nodes_to_components"
 	getManyStmt = "SELECT serialized FROM nodes_to_components WHERE Id = ANY($1::text[])"
 

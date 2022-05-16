@@ -25,7 +25,6 @@ import (
 const (
 	baseTable = "apitokens"
 
-	deleteStmt  = "DELETE FROM apitokens WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM apitokens"
 	getManyStmt = "SELECT serialized FROM apitokens WHERE Id = ANY($1::text[])"
 
@@ -138,8 +137,7 @@ func (s *storeImpl) copyFromApitokens(ctx context.Context, tx pgx.Tx, objs ...*s
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
@@ -317,6 +315,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TokenMetadata")
 
+	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
@@ -324,16 +323,12 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "TokenMetadata")
-	if err != nil {
-		return err
-	}
-	defer release()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
 
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
-		return err
-	}
-	return nil
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -419,22 +414,20 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Token
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "TokenMetadata")
 
+	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return sac.ErrResourceAccessDenied
+		return nil
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "TokenMetadata")
-	if err != nil {
-		return err
-	}
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
-		return err
-	}
-	return nil
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure

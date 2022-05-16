@@ -23,7 +23,6 @@ import (
 const (
 	baseTable = "image_components"
 
-	deleteStmt  = "DELETE FROM image_components WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM image_components"
 	getManyStmt = "SELECT serialized FROM image_components WHERE Id = ANY($1::text[])"
 
@@ -160,8 +159,7 @@ func (s *storeImpl) copyFromImageComponents(ctx context.Context, tx pgx.Tx, objs
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
@@ -307,16 +305,14 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ImageComponent")
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "ImageComponent")
-	if err != nil {
-		return err
-	}
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
-		return err
-	}
-	return nil
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -389,15 +385,14 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ImageComponent")
 
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "ImageComponent")
-	if err != nil {
-		return err
-	}
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
-		return err
-	}
-	return nil
+	var sacQueryFilter *v1.Query
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure

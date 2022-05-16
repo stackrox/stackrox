@@ -28,7 +28,6 @@ import (
 const (
 	baseTable = "alerts"
 
-	deleteStmt  = "DELETE FROM alerts WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM alerts"
 	getManyStmt = "SELECT serialized FROM alerts WHERE Id = ANY($1::text[])"
 
@@ -316,8 +315,7 @@ func (s *storeImpl) copyFromAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
@@ -519,16 +517,23 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Alert")
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "Alert")
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
 	if err != nil {
 		return err
 	}
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
 		return err
 	}
-	return nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -610,15 +615,23 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Alert
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Alert")
 
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "Alert")
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
 	if err != nil {
 		return err
 	}
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
 		return err
 	}
-	return nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
