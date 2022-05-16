@@ -31,7 +31,7 @@ class ClusterTestRunner:
             self.cluster.provision()
             self.log_significant_event("provisioned")
         except Exception as err:
-            self.log_significant_event("provision failed")
+            self.log_significant_event("ERROR: provision failed")
             hold = err
         if hold is None:
             try:
@@ -39,7 +39,7 @@ class ClusterTestRunner:
                 self.pre_test.run()
                 self.log_significant_event("pre test completed")
             except Exception as err:
-                self.log_significant_event("pre test failed")
+                self.log_significant_event("ERROR: pre test failed")
                 hold = err
         if hold is None:
             try:
@@ -47,14 +47,14 @@ class ClusterTestRunner:
                 self.test.run()
                 self.log_significant_event("test completed")
             except Exception as err:
-                self.log_significant_event("test failed")
+                self.log_significant_event("ERROR: test failed")
                 hold = err
             try:
                 self.log_significant_event("About to post")
                 self.post.run(test_output_dirs=self.test.test_output_dirs)
                 self.log_significant_event("post completed")
             except Exception as err:
-                self.log_significant_event("post failed")
+                self.log_significant_event("ERROR: post failed")
                 if hold is None:
                     hold = err
 
@@ -63,7 +63,7 @@ class ClusterTestRunner:
             self.cluster.teardown()
             self.log_significant_event("teardown completed")
         except Exception as err:
-            self.log_significant_event("teardown failed")
+            self.log_significant_event("ERROR: teardown failed")
             if hold is None:
                 hold = err
 

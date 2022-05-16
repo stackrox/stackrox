@@ -27,63 +27,68 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("PolicyStatus", []string{"status: String!", "failingPolicies: [Policy!]!"}),
+		schema.AddExtraResolvers("Cluster", []string{
+			"alerts(query: String, pagination: Pagination): [Alert!]!",
+			"alertCount(query: String): Int!",
+			"latestViolation(query: String): Time",
+			"failingPolicyCounter(query: String): PolicyCounter",
+			"deployments(query: String, pagination: Pagination): [Deployment!]!",
+			"deploymentCount(query: String): Int!",
+			"nodes(query: String, pagination: Pagination): [Node!]!",
+			"nodeCount(query: String): Int!",
+			"node(node: ID!): Node",
+			"namespaces(query: String, pagination: Pagination): [Namespace!]!",
+			"namespace(name: String!): Namespace",
+			"namespaceCount(query: String): Int!",
+			"complianceResults(query: String): [ControlResult!]!",
+			"k8sRoles(query: String, pagination: Pagination): [K8SRole!]!",
+			"k8sRole(role: ID!): K8SRole",
+			"k8sRoleCount(query: String): Int!",
+			"serviceAccounts(query: String, pagination: Pagination): [ServiceAccount!]!",
+			"serviceAccount(sa: ID!): ServiceAccount",
+			"serviceAccountCount(query: String): Int!",
+			"subjects(query: String, pagination: Pagination): [Subject!]!",
+			"subject(name: String!): Subject",
+			"subjectCount(query: String): Int!",
+			"images(query: String, pagination: Pagination): [Image!]!",
+			"imageCount(query: String): Int!",
+			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
+			"componentCount(query: String): Int!",
+			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!",
+			"vulnCount(query: String): Int!",
+			"vulnCounter(query: String): VulnerabilityCounter!",
+			`nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!`,
+			`nodeVulnerabilityCount(query: String): Int!`,
+			`nodeVulnerabilityCounter(query: String): VulnerabilityCounter!`,
+			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!",
+			"imageVulnerabilityCount(query: String): Int!",
+			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
+			"k8sVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!",
+			"k8sVulnCount(query: String): Int!",
+			"istioVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!",
+			"istioVulnCount(query: String): Int!",
+			"openShiftVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!",
+			"openShiftVulnCount(query: String): Int!",
+			"policies(query: String, pagination: Pagination): [Policy!]!",
+			"policyCount(query: String): Int!",
+			"policyStatus(query: String): PolicyStatus!",
+			"secrets(query: String, pagination: Pagination): [Secret!]!",
+			"secretCount(query: String): Int!",
+			"controlStatus(query: String): String!",
+			"controls(query: String): [ComplianceControl!]!",
+			"failingControls(query: String): [ComplianceControl!]!",
+			"passingControls(query: String): [ComplianceControl!]!",
+			"complianceControlCount(query: String): ComplianceControlCount!",
+			"risk: Risk",
+			"isGKECluster: Boolean!",
+			"isOpenShiftCluster: Boolean!",
+			"unusedVarSink(query: String): Int",
+			"istioEnabled: Boolean!",
+			"plottedVulns(query: String): PlottedVulnerabilities!",
+		}),
 		schema.AddQuery("clusters(query: String, pagination: Pagination): [Cluster!]!"),
 		schema.AddQuery("clusterCount(query: String): Int!"),
 		schema.AddQuery("cluster(id: ID!): Cluster"),
-		schema.AddExtraResolver("Cluster", `alerts(query: String, pagination: Pagination): [Alert!]!`),
-		schema.AddExtraResolver("Cluster", `alertCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `latestViolation(query: String): Time`),
-		schema.AddExtraResolver("Cluster", `failingPolicyCounter(query: String): PolicyCounter`),
-		schema.AddExtraResolver("Cluster", `deployments(query: String, pagination: Pagination): [Deployment!]!`),
-		schema.AddExtraResolver("Cluster", `deploymentCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `nodes(query: String, pagination: Pagination): [Node!]!`),
-		schema.AddExtraResolver("Cluster", `nodeCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `node(node: ID!): Node`),
-		schema.AddExtraResolver("Cluster", `namespaces(query: String, pagination: Pagination): [Namespace!]!`),
-		schema.AddExtraResolver("Cluster", `namespace(name: String!): Namespace`),
-		schema.AddExtraResolver("Cluster", `namespaceCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", "complianceResults(query: String): [ControlResult!]!"),
-		schema.AddExtraResolver("Cluster", `k8sRoles(query: String, pagination: Pagination): [K8SRole!]!`),
-		schema.AddExtraResolver("Cluster", `k8sRole(role: ID!): K8SRole`),
-		schema.AddExtraResolver("Cluster", `k8sRoleCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `serviceAccounts(query: String, pagination: Pagination): [ServiceAccount!]!`),
-		schema.AddExtraResolver("Cluster", `serviceAccount(sa: ID!): ServiceAccount`),
-		schema.AddExtraResolver("Cluster", `serviceAccountCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `subjects(query: String, pagination: Pagination): [Subject!]!`),
-		schema.AddExtraResolver("Cluster", `subject(name: String!): Subject`),
-		schema.AddExtraResolver("Cluster", `subjectCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `images(query: String, pagination: Pagination): [Image!]!`),
-		schema.AddExtraResolver("Cluster", `imageCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!`),
-		schema.AddExtraResolver("Cluster", `componentCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
-		schema.AddExtraResolver("Cluster", `vulnCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `vulnCounter(query: String): VulnerabilityCounter!`),
-		schema.AddExtraResolver("Cluster", `nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!`),
-		schema.AddExtraResolver("Cluster", `nodeVulnerabilityCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `nodeVulnerabilityCounter(query: String): VulnerabilityCounter!`),
-		schema.AddExtraResolver("Cluster", `k8sVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
-		schema.AddExtraResolver("Cluster", `k8sVulnCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `istioVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
-		schema.AddExtraResolver("Cluster", `istioVulnCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `openShiftVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
-		schema.AddExtraResolver("Cluster", `openShiftVulnCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `policies(query: String, pagination: Pagination): [Policy!]!`),
-		schema.AddExtraResolver("Cluster", `policyCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `policyStatus(query: String): PolicyStatus!`),
-		schema.AddExtraResolver("Cluster", `secrets(query: String, pagination: Pagination): [Secret!]!`),
-		schema.AddExtraResolver("Cluster", `secretCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `controlStatus(query: String): String!`),
-		schema.AddExtraResolver("Cluster", `controls(query: String): [ComplianceControl!]!`),
-		schema.AddExtraResolver("Cluster", `failingControls(query: String): [ComplianceControl!]!`),
-		schema.AddExtraResolver("Cluster", `passingControls(query: String): [ComplianceControl!]!`),
-		schema.AddExtraResolver("Cluster", `complianceControlCount(query: String): ComplianceControlCount!`),
-		schema.AddExtraResolver("Cluster", `risk: Risk`),
-		schema.AddExtraResolver("Cluster", `isGKECluster: Boolean!`),
-		schema.AddExtraResolver("Cluster", `isOpenShiftCluster: Boolean!`),
-		schema.AddExtraResolver("Cluster", `unusedVarSink(query: String): Int`),
-		schema.AddExtraResolver("Cluster", `istioEnabled: Boolean!`),
-		schema.AddExtraResolver("Cluster", "plottedVulns(query: String): PlottedVulnerabilities!"),
 		schema.AddExtraResolver("OrchestratorMetadata", `openshiftVersion: String!`),
 	)
 }
@@ -588,6 +593,39 @@ func (resolver *clusterResolver) NodeVulnerabilityCounter(ctx context.Context, a
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver NodeVulnerabilityCounter in clusterResolver does not support postgres yet")
+}
+
+func (resolver *clusterResolver) vulnQueryScoping(ctx context.Context, query string) (context.Context, string) {
+	ctx = scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_CLUSTERS,
+		ID:    resolver.data.GetId(),
+	})
+
+	return ctx, query
+}
+
+func (resolver *clusterResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageVulnerabilities")
+
+	ctx, query := resolver.vulnQueryScoping(ctx, args.String())
+
+	return resolver.root.ImageVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+}
+
+func (resolver *clusterResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageVulnerabilityCount")
+
+	ctx, query := resolver.vulnQueryScoping(ctx, args.String())
+
+	return resolver.root.ImageVulnerabilityCount(ctx, RawQuery{Query: &query})
+}
+
+func (resolver *clusterResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageVulnerabilityCounter")
+
+	ctx, query := resolver.vulnQueryScoping(ctx, args.String())
+
+	return resolver.root.ImageVulnerabilityCounter(ctx, RawQuery{Query: &query})
 }
 
 func (resolver *clusterResolver) K8sVulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
