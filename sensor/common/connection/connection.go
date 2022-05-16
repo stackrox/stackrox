@@ -7,7 +7,6 @@ import (
 
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -54,10 +53,13 @@ func NewConnectionFactory(endpoint string) (*connectionFactoryImpl, error) {
 	}, nil
 }
 
+// OkSignal returns a concurrency.Signal that is sends signal once connection object is successfully established
+// and the util.LazyClientConn pointer is swapped.
 func (f *connectionFactoryImpl) OkSignal() concurrency.Signal {
 	return f.okSignal
 }
 
+// StopSignal returns a concurrency.Signal that alerts if there is an error trying to establish gRPC connection.
 func (f *connectionFactoryImpl) StopSignal() concurrency.ErrorSignal {
 	return f.stopSignal
 }
@@ -66,7 +68,7 @@ func (f *connectionFactoryImpl) pollMetadata() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	// Metadata result doesn't matter, as long as central is reachable.
-	_, err := s.centralRestClient.GetMetadata(ctx)
+	_, err := f.httpClient.GetMetadata(ctx)
 	return err
 }
 
