@@ -4,7 +4,9 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
+	"github.com/lib/pq"
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -79,3 +81,40 @@ var (
 		return schema
 	}()
 )
+
+const (
+	VulnreqTableName          = "vulnreq"
+	VulnreqApproversTableName = "vulnreq_Approvers"
+	VulnreqCommentsTableName  = "vulnreq_Comments"
+)
+
+// VulnerabilityRequest holds the Gorm model for Postgres table `vulnreq`.
+type Vulnreq struct {
+	Id                                  string                     `gorm:"column:id;type:varchar;primaryKey"`
+	TargetState                         storage.VulnerabilityState `gorm:"column:targetstate;type:integer"`
+	Status                              storage.RequestStatus      `gorm:"column:status;type:integer"`
+	Expired                             bool                       `gorm:"column:expired;type:bool"`
+	Requestor_Name                      string                     `gorm:"column:requestor_name;type:varchar"`
+	CreatedAt                           *time.Time                 `gorm:"column:createdat;type:timestamp"`
+	LastUpdated                         *time.Time                 `gorm:"column:lastupdated;type:timestamp"`
+	DeferralReq_Expiry_ExpiresWhenFixed bool                       `gorm:"column:deferralreq_expiry_expireswhenfixed;type:bool"`
+	DeferralReq_Expiry_ExpiresOn        *time.Time                 `gorm:"column:deferralreq_expiry_expireson;type:timestamp"`
+	Cves_Ids                            *pq.StringArray            `gorm:"column:cves_ids;type:text[]"`
+	serialized                          []byte                     `gorm:"column:serialized;type:bytea"`
+}
+
+// SlimUser holds the Gorm model for Postgres table `vulnreq_Approvers`.
+type VulnreqApprovers struct {
+	vulnreq_Id string  `gorm:"column:vulnreq_id;type:varchar;primaryKey"`
+	idx        int     `gorm:"column:idx;type:integer;primaryKey;index:vulnreqApprovers_idx,type:btree"`
+	Name       string  `gorm:"column:name;type:varchar"`
+	VulnreqRef Vulnreq `gorm:"foreignKey:vulnreq_Id;references:Id;constraint:OnDelete:CASCADE"`
+}
+
+// RequestComment holds the Gorm model for Postgres table `vulnreq_Comments`.
+type VulnreqComments struct {
+	vulnreq_Id string  `gorm:"column:vulnreq_id;type:varchar;primaryKey"`
+	idx        int     `gorm:"column:idx;type:integer;primaryKey;index:vulnreqComments_idx,type:btree"`
+	User_Name  string  `gorm:"column:user_name;type:varchar"`
+	VulnreqRef Vulnreq `gorm:"foreignKey:vulnreq_Id;references:Id;constraint:OnDelete:CASCADE"`
+}

@@ -67,3 +67,26 @@ var (
 		return schema
 	}()
 )
+
+const (
+	PodsTableName              = "pods"
+	PodsLiveInstancesTableName = "pods_LiveInstances"
+)
+
+// Pod holds the Gorm model for Postgres table `pods`.
+type Pods struct {
+	Id           string `gorm:"column:id;type:varchar;primaryKey"`
+	Name         string `gorm:"column:name;type:varchar"`
+	DeploymentId string `gorm:"column:deploymentid;type:varchar"`
+	Namespace    string `gorm:"column:namespace;type:varchar"`
+	ClusterId    string `gorm:"column:clusterid;type:varchar"`
+	serialized   []byte `gorm:"column:serialized;type:bytea"`
+}
+
+// ContainerInstance holds the Gorm model for Postgres table `pods_LiveInstances`.
+type PodsLiveInstances struct {
+	pods_Id     string `gorm:"column:pods_id;type:varchar;primaryKey"`
+	idx         int    `gorm:"column:idx;type:integer;primaryKey;index:podsLiveInstances_idx,type:btree"`
+	ImageDigest string `gorm:"column:imagedigest;type:varchar"`
+	PodsRef     Pods   `gorm:"foreignKey:pods_Id;references:Id;constraint:OnDelete:CASCADE"`
+}

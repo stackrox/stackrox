@@ -36,3 +36,13 @@ var (
 		return schema
 	}()
 )
+
+const (
+	WatchedimagesTableName = "watchedimages"
+)
+
+// WatchedImage holds the Gorm model for Postgres table `watchedimages`.
+type Watchedimages struct {
+	Name       string `gorm:"column:name;type:varchar;primaryKey"`
+	serialized []byte `gorm:"column:serialized;type:bytea"`
+}

@@ -4,7 +4,9 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
+	"github.com/lib/pq"
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -75,3 +77,42 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ImagesTableName       = "images"
+	ImagesLayersTableName = "images_Layers"
+)
+
+// Image holds the Gorm model for Postgres table `images`.
+type Images struct {
+	Id                     string            `gorm:"column:id;type:varchar;primaryKey"`
+	Name_Registry          string            `gorm:"column:name_registry;type:varchar"`
+	Name_Remote            string            `gorm:"column:name_remote;type:varchar"`
+	Name_Tag               string            `gorm:"column:name_tag;type:varchar"`
+	Name_FullName          string            `gorm:"column:name_fullname;type:varchar"`
+	Metadata_V1_Created    *time.Time        `gorm:"column:metadata_v1_created;type:timestamp"`
+	Metadata_V1_User       string            `gorm:"column:metadata_v1_user;type:varchar"`
+	Metadata_V1_Command    *pq.StringArray   `gorm:"column:metadata_v1_command;type:text[]"`
+	Metadata_V1_Entrypoint *pq.StringArray   `gorm:"column:metadata_v1_entrypoint;type:text[]"`
+	Metadata_V1_Volumes    *pq.StringArray   `gorm:"column:metadata_v1_volumes;type:text[]"`
+	Metadata_V1_Labels     map[string]string `gorm:"column:metadata_v1_labels;type:jsonb"`
+	Scan_ScanTime          *time.Time        `gorm:"column:scan_scantime;type:timestamp"`
+	Scan_OperatingSystem   string            `gorm:"column:scan_operatingsystem;type:varchar"`
+	Signature_Fetched      *time.Time        `gorm:"column:signature_fetched;type:timestamp"`
+	Components             int32             `gorm:"column:components;type:integer"`
+	Cves                   int32             `gorm:"column:cves;type:integer"`
+	FixableCves            int32             `gorm:"column:fixablecves;type:integer"`
+	LastUpdated            *time.Time        `gorm:"column:lastupdated;type:timestamp"`
+	RiskScore              float32           `gorm:"column:riskscore;type:numeric"`
+	TopCvss                float32           `gorm:"column:topcvss;type:numeric"`
+	serialized             []byte            `gorm:"column:serialized;type:bytea"`
+}
+
+// ImageLayer holds the Gorm model for Postgres table `images_Layers`.
+type ImagesLayers struct {
+	images_Id   string `gorm:"column:images_id;type:varchar;primaryKey"`
+	idx         int    `gorm:"column:idx;type:integer;primaryKey;index:imagesLayers_idx,type:btree"`
+	Instruction string `gorm:"column:instruction;type:varchar"`
+	Value       string `gorm:"column:value;type:varchar"`
+	ImagesRef   Images `gorm:"foreignKey:images_Id;references:Id;constraint:OnDelete:CASCADE"`
+}

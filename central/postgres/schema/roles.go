@@ -36,3 +36,13 @@ var (
 		return schema
 	}()
 )
+
+const (
+	RolesTableName = "roles"
+)
+
+// Role holds the Gorm model for Postgres table `roles`.
+type Roles struct {
+	Name       string `gorm:"column:name;type:varchar;primaryKey"`
+	serialized []byte `gorm:"column:serialized;type:bytea"`
+}

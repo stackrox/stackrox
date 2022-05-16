@@ -64,3 +64,31 @@ var (
 		return schema
 	}()
 )
+
+const (
+	RolebindingsTableName         = "rolebindings"
+	RolebindingsSubjectsTableName = "rolebindings_Subjects"
+)
+
+// K8SRoleBinding holds the Gorm model for Postgres table `rolebindings`.
+type Rolebindings struct {
+	Id          string            `gorm:"column:id;type:varchar;primaryKey"`
+	Name        string            `gorm:"column:name;type:varchar"`
+	Namespace   string            `gorm:"column:namespace;type:varchar"`
+	ClusterId   string            `gorm:"column:clusterid;type:varchar"`
+	ClusterName string            `gorm:"column:clustername;type:varchar"`
+	ClusterRole bool              `gorm:"column:clusterrole;type:bool"`
+	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
+	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
+	RoleId      string            `gorm:"column:roleid;type:varchar"`
+	serialized  []byte            `gorm:"column:serialized;type:bytea"`
+}
+
+// Subject holds the Gorm model for Postgres table `rolebindings_Subjects`.
+type RolebindingsSubjects struct {
+	rolebindings_Id string              `gorm:"column:rolebindings_id;type:varchar;primaryKey"`
+	idx             int                 `gorm:"column:idx;type:integer;primaryKey;index:rolebindingsSubjects_idx,type:btree"`
+	Kind            storage.SubjectKind `gorm:"column:kind;type:integer"`
+	Name            string              `gorm:"column:name;type:varchar"`
+	RolebindingsRef Rolebindings        `gorm:"foreignKey:rolebindings_Id;references:Id;constraint:OnDelete:CASCADE"`
+}

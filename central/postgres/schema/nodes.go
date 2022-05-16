@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -118,3 +119,49 @@ var (
 		return schema
 	}()
 )
+
+const (
+	NodesTableName           = "nodes"
+	NodesTaintsTableName     = "nodes_Taints"
+	NodesComponentsTableName = "nodes_Components"
+)
+
+// Node holds the Gorm model for Postgres table `nodes`.
+type Nodes struct {
+	Id                       string            `gorm:"column:id;type:varchar;primaryKey"`
+	Name                     string            `gorm:"column:name;type:varchar"`
+	ClusterId                string            `gorm:"column:clusterid;type:varchar"`
+	ClusterName              string            `gorm:"column:clustername;type:varchar"`
+	Labels                   map[string]string `gorm:"column:labels;type:jsonb"`
+	Annotations              map[string]string `gorm:"column:annotations;type:jsonb"`
+	JoinedAt                 *time.Time        `gorm:"column:joinedat;type:timestamp"`
+	ContainerRuntime_Version string            `gorm:"column:containerruntime_version;type:varchar"`
+	OsImage                  string            `gorm:"column:osimage;type:varchar"`
+	LastUpdated              *time.Time        `gorm:"column:lastupdated;type:timestamp"`
+	Scan_ScanTime            *time.Time        `gorm:"column:scan_scantime;type:timestamp"`
+	Components               int32             `gorm:"column:components;type:integer"`
+	Cves                     int32             `gorm:"column:cves;type:integer"`
+	FixableCves              int32             `gorm:"column:fixablecves;type:integer"`
+	RiskScore                float32           `gorm:"column:riskscore;type:numeric"`
+	TopCvss                  float32           `gorm:"column:topcvss;type:numeric"`
+	serialized               []byte            `gorm:"column:serialized;type:bytea"`
+}
+
+// Taint holds the Gorm model for Postgres table `nodes_Taints`.
+type NodesTaints struct {
+	nodes_Id    string              `gorm:"column:nodes_id;type:varchar;primaryKey"`
+	idx         int                 `gorm:"column:idx;type:integer;primaryKey;index:nodesTaints_idx,type:btree"`
+	Key         string              `gorm:"column:key;type:varchar"`
+	Value       string              `gorm:"column:value;type:varchar"`
+	TaintEffect storage.TaintEffect `gorm:"column:tainteffect;type:integer"`
+	NodesRef    Nodes               `gorm:"foreignKey:nodes_Id;references:Id;constraint:OnDelete:CASCADE"`
+}
+
+// EmbeddedNodeScanComponent holds the Gorm model for Postgres table `nodes_Components`.
+type NodesComponents struct {
+	nodes_Id string `gorm:"column:nodes_id;type:varchar;primaryKey"`
+	idx      int    `gorm:"column:idx;type:integer;primaryKey;index:nodesComponents_idx,type:btree"`
+	Name     string `gorm:"column:name;type:varchar"`
+	Version  string `gorm:"column:version;type:varchar"`
+	NodesRef Nodes  `gorm:"foreignKey:nodes_Id;references:Id;constraint:OnDelete:CASCADE"`
+}

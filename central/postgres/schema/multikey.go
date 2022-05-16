@@ -4,7 +4,9 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
+	"github.com/lib/pq"
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -74,3 +76,41 @@ var (
 		return schema
 	}()
 )
+
+const (
+	MultikeyTableName       = "multikey"
+	MultikeyNestedTableName = "multikey_Nested"
+)
+
+// TestMultiKeyStruct holds the Gorm model for Postgres table `multikey`.
+type Multikey struct {
+	Key1               string                          `gorm:"column:key1;type:varchar;primaryKey"`
+	Key2               string                          `gorm:"column:key2;type:varchar;primaryKey"`
+	StringSlice        *pq.StringArray                 `gorm:"column:stringslice;type:text[]"`
+	Bool               bool                            `gorm:"column:bool;type:bool"`
+	Uint64             uint64                          `gorm:"column:uint64;type:integer"`
+	Int64              int64                           `gorm:"column:int64;type:integer"`
+	Float              float32                         `gorm:"column:float;type:numeric"`
+	Labels             map[string]string               `gorm:"column:labels;type:jsonb"`
+	Timestamp          *time.Time                      `gorm:"column:timestamp;type:timestamp"`
+	Enum               storage.TestMultiKeyStruct_Enum `gorm:"column:enum;type:integer"`
+	Enums              *pq.Int32Array                  `gorm:"column:enums;type:int[]"`
+	String_            string                          `gorm:"column:string_;type:varchar"`
+	IntSlice           *pq.Int32Array                  `gorm:"column:intslice;type:int[]"`
+	Oneofnested_Nested string                          `gorm:"column:oneofnested_nested;type:varchar"`
+	serialized         []byte                          `gorm:"column:serialized;type:bytea"`
+}
+
+// TestMultiKeyStruct_Nested holds the Gorm model for Postgres table `multikey_Nested`.
+type MultikeyNested struct {
+	multikey_Key1    string   `gorm:"column:multikey_key1;type:varchar;primaryKey"`
+	multikey_Key2    string   `gorm:"column:multikey_key2;type:varchar;primaryKey"`
+	idx              int      `gorm:"column:idx;type:integer;primaryKey;index:multikeyNested_idx,type:btree"`
+	Nested           string   `gorm:"column:nested;type:varchar"`
+	IsNested         bool     `gorm:"column:isnested;type:bool"`
+	Int64            int64    `gorm:"column:int64;type:integer"`
+	Nested2_Nested2  string   `gorm:"column:nested2_nested2;type:varchar"`
+	Nested2_IsNested bool     `gorm:"column:nested2_isnested;type:bool"`
+	Nested2_Int64    int64    `gorm:"column:nested2_int64;type:integer"`
+	MultikeyRef      Multikey `gorm:"foreignKey:multikey_Key1, multikey_Key2;references:Key1, Key2;constraint:OnDelete:CASCADE"`
+}

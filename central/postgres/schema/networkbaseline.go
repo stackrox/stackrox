@@ -36,3 +36,13 @@ var (
 		return schema
 	}()
 )
+
+const (
+	NetworkbaselineTableName = "networkbaseline"
+)
+
+// NetworkBaseline holds the Gorm model for Postgres table `networkbaseline`.
+type Networkbaseline struct {
+	DeploymentId string `gorm:"column:deploymentid;type:varchar;primaryKey"`
+	serialized   []byte `gorm:"column:serialized;type:bytea"`
+}

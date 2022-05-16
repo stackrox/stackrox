@@ -41,3 +41,18 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ClusterHealthStatusTableName = "cluster_health_status"
+)
+
+// ClusterHealthStatus holds the Gorm model for Postgres table `cluster_health_status`.
+type ClusterHealthStatus struct {
+	Id                           string                                        `gorm:"column:id;type:varchar;primaryKey"`
+	SensorHealthStatus           storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:sensorhealthstatus;type:integer"`
+	CollectorHealthStatus        storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:collectorhealthstatus;type:integer"`
+	OverallHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:overallhealthstatus;type:integer"`
+	AdmissionControlHealthStatus storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:admissioncontrolhealthstatus;type:integer"`
+	ScannerHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:scannerhealthstatus;type:integer"`
+	serialized                   []byte                                        `gorm:"column:serialized;type:bytea"`
+}

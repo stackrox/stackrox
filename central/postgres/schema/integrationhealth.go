@@ -36,3 +36,13 @@ var (
 		return schema
 	}()
 )
+
+const (
+	IntegrationhealthTableName = "integrationhealth"
+)
+
+// IntegrationHealth holds the Gorm model for Postgres table `integrationhealth`.
+type Integrationhealth struct {
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	serialized []byte `gorm:"column:serialized;type:bytea"`
+}

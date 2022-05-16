@@ -37,3 +37,14 @@ var (
 		return schema
 	}()
 )
+
+const (
+	SimpleaccessscopesTableName = "simpleaccessscopes"
+)
+
+// SimpleAccessScope holds the Gorm model for Postgres table `simpleaccessscopes`.
+type Simpleaccessscopes struct {
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Name       string `gorm:"column:name;type:varchar;unique"`
+	serialized []byte `gorm:"column:serialized;type:bytea"`
+}

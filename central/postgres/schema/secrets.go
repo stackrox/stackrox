@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -78,3 +79,28 @@ var (
 		return schema
 	}()
 )
+
+const (
+	SecretsTableName      = "secrets"
+	SecretsFilesTableName = "secrets_Files"
+)
+
+// Secret holds the Gorm model for Postgres table `secrets`.
+type Secrets struct {
+	Id          string     `gorm:"column:id;type:varchar;primaryKey"`
+	Name        string     `gorm:"column:name;type:varchar"`
+	ClusterId   string     `gorm:"column:clusterid;type:varchar"`
+	ClusterName string     `gorm:"column:clustername;type:varchar"`
+	Namespace   string     `gorm:"column:namespace;type:varchar"`
+	CreatedAt   *time.Time `gorm:"column:createdat;type:timestamp"`
+	serialized  []byte     `gorm:"column:serialized;type:bytea"`
+}
+
+// SecretDataFile holds the Gorm model for Postgres table `secrets_Files`.
+type SecretsFiles struct {
+	secrets_Id   string             `gorm:"column:secrets_id;type:varchar;primaryKey"`
+	idx          int                `gorm:"column:idx;type:integer;primaryKey;index:secretsFiles_idx,type:btree"`
+	Type         storage.SecretType `gorm:"column:type;type:integer"`
+	Cert_EndDate *time.Time         `gorm:"column:cert_enddate;type:timestamp"`
+	SecretsRef   Secrets            `gorm:"foreignKey:secrets_Id;references:Id;constraint:OnDelete:CASCADE"`
+}

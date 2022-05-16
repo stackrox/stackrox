@@ -73,3 +73,23 @@ var (
 		return schema
 	}()
 )
+
+const (
+	TestgrandparentTableName         = "testgrandparent"
+	TestgrandparentEmbeddedTableName = "testgrandparent_Embedded"
+)
+
+// TestGrandparent holds the Gorm model for Postgres table `testgrandparent`.
+type Testgrandparent struct {
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Val        string `gorm:"column:val;type:varchar"`
+	serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+// TestGrandparent_Embedded holds the Gorm model for Postgres table `testgrandparent_Embedded`.
+type TestgrandparentEmbedded struct {
+	testgrandparent_Id string          `gorm:"column:testgrandparent_id;type:varchar;primaryKey"`
+	idx                int             `gorm:"column:idx;type:integer;primaryKey;index:testgrandparentEmbedded_idx,type:btree"`
+	Val                string          `gorm:"column:val;type:varchar"`
+	TestgrandparentRef Testgrandparent `gorm:"foreignKey:testgrandparent_Id;references:Id;constraint:OnDelete:CASCADE"`
+}

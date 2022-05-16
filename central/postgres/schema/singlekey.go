@@ -4,7 +4,9 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
+	"github.com/lib/pq"
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -51,3 +53,23 @@ var (
 		return schema
 	}()
 )
+
+const (
+	SinglekeyTableName = "singlekey"
+)
+
+// TestSingleKeyStruct holds the Gorm model for Postgres table `singlekey`.
+type Singlekey struct {
+	Key         string                           `gorm:"column:key;type:varchar;primaryKey;index:singlekey_Key,type:hash"`
+	Name        string                           `gorm:"column:name;type:varchar;unique"`
+	StringSlice *pq.StringArray                  `gorm:"column:stringslice;type:text[]"`
+	Bool        bool                             `gorm:"column:bool;type:bool"`
+	Uint64      uint64                           `gorm:"column:uint64;type:integer"`
+	Int64       int64                            `gorm:"column:int64;type:integer"`
+	Float       float32                          `gorm:"column:float;type:numeric"`
+	Labels      map[string]string                `gorm:"column:labels;type:jsonb"`
+	Timestamp   *time.Time                       `gorm:"column:timestamp;type:timestamp"`
+	Enum        storage.TestSingleKeyStruct_Enum `gorm:"column:enum;type:integer"`
+	Enums       *pq.Int32Array                   `gorm:"column:enums;type:int[]"`
+	serialized  []byte                           `gorm:"column:serialized;type:bytea"`
+}

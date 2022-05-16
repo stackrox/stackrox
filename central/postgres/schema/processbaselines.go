@@ -42,3 +42,16 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ProcessbaselinesTableName = "processbaselines"
+)
+
+// ProcessBaseline holds the Gorm model for Postgres table `processbaselines`.
+type Processbaselines struct {
+	Id               string `gorm:"column:id;type:varchar;primaryKey"`
+	Key_DeploymentId string `gorm:"column:key_deploymentid;type:varchar"`
+	Key_ClusterId    string `gorm:"column:key_clusterid;type:varchar"`
+	Key_Namespace    string `gorm:"column:key_namespace;type:varchar"`
+	serialized       []byte `gorm:"column:serialized;type:bytea"`
+}

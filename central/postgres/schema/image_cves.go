@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -47,3 +48,21 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ImageCvesTableName = "image_cves"
+)
+
+// CVE holds the Gorm model for Postgres table `image_cves`.
+type ImageCves struct {
+	Id             string                        `gorm:"column:id;type:varchar;primaryKey"`
+	Cve            string                        `gorm:"column:cve;type:varchar"`
+	Cvss           float32                       `gorm:"column:cvss;type:numeric"`
+	ImpactScore    float32                       `gorm:"column:impactscore;type:numeric"`
+	PublishedOn    *time.Time                    `gorm:"column:publishedon;type:timestamp"`
+	CreatedAt      *time.Time                    `gorm:"column:createdat;type:timestamp"`
+	Suppressed     bool                          `gorm:"column:suppressed;type:bool"`
+	SuppressExpiry *time.Time                    `gorm:"column:suppressexpiry;type:timestamp"`
+	Severity       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
+	serialized     []byte                        `gorm:"column:serialized;type:bytea"`
+}

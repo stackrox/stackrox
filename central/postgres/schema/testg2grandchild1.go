@@ -52,3 +52,17 @@ var (
 		return schema
 	}()
 )
+
+const (
+	Testg2grandchild1TableName = "testg2grandchild1"
+)
+
+// TestG2GrandChild1 holds the Gorm model for Postgres table `testg2grandchild1`.
+type Testg2grandchild1 struct {
+	Id                  string           `gorm:"column:id;type:varchar;primaryKey"`
+	ParentId            string           `gorm:"column:parentid;type:varchar"`
+	ChildId             string           `gorm:"column:childid;type:varchar"`
+	Val                 string           `gorm:"column:val;type:varchar"`
+	serialized          []byte           `gorm:"column:serialized;type:bytea"`
+	Testggrandchild1Ref Testggrandchild1 `gorm:"foreignKey:ParentId;references:Id;constraint:OnDelete:CASCADE"`
+}

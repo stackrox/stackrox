@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -53,3 +54,18 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ImageCveRelationsTableName = "image_cve_relations"
+)
+
+// ImageCVEEdge holds the Gorm model for Postgres table `image_cve_relations`.
+type ImageCveRelations struct {
+	Id                   string                     `gorm:"column:id;type:varchar;primaryKey"`
+	FirstImageOccurrence *time.Time                 `gorm:"column:firstimageoccurrence;type:timestamp"`
+	State                storage.VulnerabilityState `gorm:"column:state;type:integer"`
+	ImageId              string                     `gorm:"column:imageid;type:varchar;primaryKey"`
+	ImageCveId           string                     `gorm:"column:imagecveid;type:varchar;primaryKey"`
+	serialized           []byte                     `gorm:"column:serialized;type:bytea"`
+	ImagesRef            Images                     `gorm:"foreignKey:ImageId;references:Id;constraint:OnDelete:CASCADE"`
+}

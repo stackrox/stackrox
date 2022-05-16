@@ -4,7 +4,9 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
+	"github.com/lib/pq"
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -78,3 +80,48 @@ var (
 		return schema
 	}()
 )
+
+const (
+	AlertsTableName = "alerts"
+)
+
+// Alert holds the Gorm model for Postgres table `alerts`.
+type Alerts struct {
+	Id                        string                              `gorm:"column:id;type:varchar;primaryKey"`
+	Policy_Id                 string                              `gorm:"column:policy_id;type:varchar"`
+	Policy_Name               string                              `gorm:"column:policy_name;type:varchar"`
+	Policy_Description        string                              `gorm:"column:policy_description;type:varchar"`
+	Policy_Disabled           bool                                `gorm:"column:policy_disabled;type:bool"`
+	Policy_Categories         *pq.StringArray                     `gorm:"column:policy_categories;type:text[]"`
+	Policy_LifecycleStages    *pq.Int32Array                      `gorm:"column:policy_lifecyclestages;type:int[]"`
+	Policy_Severity           storage.Severity                    `gorm:"column:policy_severity;type:integer"`
+	Policy_EnforcementActions *pq.Int32Array                      `gorm:"column:policy_enforcementactions;type:int[]"`
+	Policy_LastUpdated        *time.Time                          `gorm:"column:policy_lastupdated;type:timestamp"`
+	Policy_SORTName           string                              `gorm:"column:policy_sortname;type:varchar"`
+	Policy_SORTLifecycleStage string                              `gorm:"column:policy_sortlifecyclestage;type:varchar"`
+	Policy_SORTEnforcement    bool                                `gorm:"column:policy_sortenforcement;type:bool"`
+	LifecycleStage            storage.LifecycleStage              `gorm:"column:lifecyclestage;type:integer;index:alerts_LifecycleStage,type:btree"`
+	ClusterId                 string                              `gorm:"column:clusterid;type:varchar"`
+	ClusterName               string                              `gorm:"column:clustername;type:varchar"`
+	Namespace                 string                              `gorm:"column:namespace;type:varchar"`
+	NamespaceId               string                              `gorm:"column:namespaceid;type:varchar"`
+	Deployment_Id             string                              `gorm:"column:deployment_id;type:varchar;index:alerts_Deployment_Id,type:hash"`
+	Deployment_Name           string                              `gorm:"column:deployment_name;type:varchar"`
+	Deployment_Namespace      string                              `gorm:"column:deployment_namespace;type:varchar"`
+	Deployment_NamespaceId    string                              `gorm:"column:deployment_namespaceid;type:varchar"`
+	Deployment_ClusterId      string                              `gorm:"column:deployment_clusterid;type:varchar"`
+	Deployment_ClusterName    string                              `gorm:"column:deployment_clustername;type:varchar"`
+	Deployment_Inactive       bool                                `gorm:"column:deployment_inactive;type:bool"`
+	Image_Id                  string                              `gorm:"column:image_id;type:varchar"`
+	Image_Name_Registry       string                              `gorm:"column:image_name_registry;type:varchar"`
+	Image_Name_Remote         string                              `gorm:"column:image_name_remote;type:varchar"`
+	Image_Name_Tag            string                              `gorm:"column:image_name_tag;type:varchar"`
+	Image_Name_FullName       string                              `gorm:"column:image_name_fullname;type:varchar"`
+	Resource_ResourceType     storage.Alert_Resource_ResourceType `gorm:"column:resource_resourcetype;type:integer"`
+	Resource_Name             string                              `gorm:"column:resource_name;type:varchar"`
+	Enforcement_Action        storage.EnforcementAction           `gorm:"column:enforcement_action;type:integer"`
+	Time                      *time.Time                          `gorm:"column:time;type:timestamp"`
+	State                     storage.ViolationState              `gorm:"column:state;type:integer;index:alerts_State,type:btree"`
+	Tags                      *pq.StringArray                     `gorm:"column:tags;type:text[]"`
+	serialized                []byte                              `gorm:"column:serialized;type:bytea"`
+}

@@ -5,7 +5,9 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"time"
 
+	"github.com/lib/pq"
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -188,3 +190,62 @@ var (
 		return schema
 	}()
 )
+
+const (
+	DeploymentsTableName           = "deployments"
+	DeploymentsContainersTableName = "deployments_Containers"
+	DeploymentsPortsTableName      = "deployments_Ports"
+)
+
+// Deployment holds the Gorm model for Postgres table `deployments`.
+type Deployments struct {
+	Id                            string                  `gorm:"column:id;type:varchar;primaryKey"`
+	Name                          string                  `gorm:"column:name;type:varchar"`
+	Type                          string                  `gorm:"column:type;type:varchar"`
+	Namespace                     string                  `gorm:"column:namespace;type:varchar"`
+	NamespaceId                   string                  `gorm:"column:namespaceid;type:varchar"`
+	OrchestratorComponent         bool                    `gorm:"column:orchestratorcomponent;type:bool"`
+	Labels                        map[string]string       `gorm:"column:labels;type:jsonb"`
+	PodLabels                     map[string]string       `gorm:"column:podlabels;type:jsonb"`
+	Created                       *time.Time              `gorm:"column:created;type:timestamp"`
+	ClusterId                     string                  `gorm:"column:clusterid;type:varchar"`
+	ClusterName                   string                  `gorm:"column:clustername;type:varchar"`
+	Annotations                   map[string]string       `gorm:"column:annotations;type:jsonb"`
+	Priority                      int64                   `gorm:"column:priority;type:integer"`
+	ImagePullSecrets              *pq.StringArray         `gorm:"column:imagepullsecrets;type:text[]"`
+	ServiceAccount                string                  `gorm:"column:serviceaccount;type:varchar"`
+	ServiceAccountPermissionLevel storage.PermissionLevel `gorm:"column:serviceaccountpermissionlevel;type:integer"`
+	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric"`
+	ProcessTags                   *pq.StringArray         `gorm:"column:processtags;type:text[]"`
+	serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
+}
+
+// Container holds the Gorm model for Postgres table `deployments_Containers`.
+type DeploymentsContainers struct {
+	deployments_Id                         string          `gorm:"column:deployments_id;type:varchar;primaryKey"`
+	idx                                    int             `gorm:"column:idx;type:integer;primaryKey;index:deploymentsContainers_idx,type:btree"`
+	Image_Id                               string          `gorm:"column:image_id;type:varchar"`
+	Image_Name_Registry                    string          `gorm:"column:image_name_registry;type:varchar"`
+	Image_Name_Remote                      string          `gorm:"column:image_name_remote;type:varchar"`
+	Image_Name_Tag                         string          `gorm:"column:image_name_tag;type:varchar"`
+	Image_Name_FullName                    string          `gorm:"column:image_name_fullname;type:varchar"`
+	SecurityContext_Privileged             bool            `gorm:"column:securitycontext_privileged;type:bool"`
+	SecurityContext_DropCapabilities       *pq.StringArray `gorm:"column:securitycontext_dropcapabilities;type:text[]"`
+	SecurityContext_AddCapabilities        *pq.StringArray `gorm:"column:securitycontext_addcapabilities;type:text[]"`
+	SecurityContext_ReadOnlyRootFilesystem bool            `gorm:"column:securitycontext_readonlyrootfilesystem;type:bool"`
+	Resources_CpuCoresRequest              float32         `gorm:"column:resources_cpucoresrequest;type:numeric"`
+	Resources_CpuCoresLimit                float32         `gorm:"column:resources_cpucoreslimit;type:numeric"`
+	Resources_MemoryMbRequest              float32         `gorm:"column:resources_memorymbrequest;type:numeric"`
+	Resources_MemoryMbLimit                float32         `gorm:"column:resources_memorymblimit;type:numeric"`
+	DeploymentsRef                         Deployments     `gorm:"foreignKey:deployments_Id;references:Id;constraint:OnDelete:CASCADE"`
+}
+
+// PortConfig holds the Gorm model for Postgres table `deployments_Ports`.
+type DeploymentsPorts struct {
+	deployments_Id string                           `gorm:"column:deployments_id;type:varchar;primaryKey"`
+	idx            int                              `gorm:"column:idx;type:integer;primaryKey;index:deploymentsPorts_idx,type:btree"`
+	ContainerPort  int32                            `gorm:"column:containerport;type:integer"`
+	Protocol       string                           `gorm:"column:protocol;type:varchar"`
+	Exposure       storage.PortConfig_ExposureLevel `gorm:"column:exposure;type:integer"`
+	DeploymentsRef Deployments                      `gorm:"foreignKey:deployments_Id;references:Id;constraint:OnDelete:CASCADE"`
+}
