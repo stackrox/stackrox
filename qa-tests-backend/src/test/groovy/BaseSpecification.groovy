@@ -1,10 +1,11 @@
 import com.jayway.restassured.RestAssured
 import common.Constants
-import groovy.util.logging.Slf4j
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
+import java.security.SecureRandom
+import java.util.concurrent.TimeUnit
 import objects.K8sServiceAccount
 import objects.Secret
 import orchestratormanager.OrchestratorMain
@@ -17,6 +18,8 @@ import org.javers.core.diff.ListCompareAlgorithm
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import services.BaseService
 import services.ClusterService
 import services.ImageIntegrationService
@@ -30,10 +33,6 @@ import util.Env
 import util.Helpers
 import util.OnFailure
 
-import java.security.SecureRandom
-import java.util.concurrent.TimeUnit
-
-@Slf4j
 @Retry(condition = { Helpers.determineRetry(failure) })
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
@@ -158,6 +157,9 @@ class BaseSpecification extends Specification {
     )
     @Rule
     TestName name = new TestName()
+
+    @Shared
+    Logger log = LoggerFactory.getLogger("test." + this.getClass().getSimpleName())
 
     @Shared
     OrchestratorMain orchestrator = OrchestratorType.create(
