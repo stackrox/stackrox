@@ -927,6 +927,8 @@ commands:
       branding:
         type: string
         default: stackrox
+    environment:
+      ROX_PRODUCT_BRANDING: "<< parameters.branding >>"
     steps:
       - checkout-with-submodules
       - check-docs-step:
@@ -960,7 +962,7 @@ commands:
       - run:
           name: Build main image
           command: |
-            make docker-build-main-image ROX_PRODUCT_BRANDING="<< parameters.branding >>"
+            make docker-build-main-image
 
       - run:
           name: Check debugger presence in the main image
