@@ -517,10 +517,8 @@ gate_job() {
     info "Will determine whether to run: $job"
 
     # TODO(RS-509) remove once this behaves better
-    set -x
     if [[ "$job_config" == "null" ]]; then
         info "$job will run because there is no gating criteria for $job"
-        set +x
         return
     fi
 
@@ -539,7 +537,6 @@ gate_job() {
     else
         die "Could not determine if this is a PR versus a merge"
     fi
-    set +x
 }
 
 get_var_from_job_config() {
@@ -552,7 +549,7 @@ get_var_from_job_config() {
         die "$var_name is not defined in this jobs config"
     fi
     if [[ "${value:0:1}" == "[" ]]; then
-        value="$(jq -r .[] <<<"$value")"
+        value="$(jq -cr '.[]' <<<"$value")"
     fi
     echo "$value"
 }
@@ -600,17 +597,14 @@ gate_pr_job() {
         echo "Diffbase diff:"
         { git diff --name-only "${diff_base}" | cat ; } || true
         # TODO(RS-509) remove once this behaves better
-        set -x
         ignored_regex="${changed_path_to_ignore}"
         [[ -n "$ignored_regex" ]] || ignored_regex='$^' # regex that matches nothing
         match_regex="${run_with_changed_path}"
         [[ -n "$match_regex" ]] || match_regex='^.*$' # grep -E -q '' returns 0 even on empty input, so we have to specify some pattern
         if grep -E -q "$match_regex" < <({ git diff --name-only "${diff_base}" || echo "???" ; } | grep -E -v "$ignored_regex"); then
             info "$job will run because paths matching $match_regex (and not matching ${ignored_regex}) had changed."
-            set +x
             return
         fi
-        set +x
     fi
 
     info "$job will be skipped"
@@ -683,6 +677,27 @@ openshift_ci_mods() {
 
     # For gradle
     export GRADLE_USER_HOME="${HOME}"
+
+    # Prow tests PRs rebased against master. This is a pain during migration
+    # because Circle CI does not and so images built in Circle CI have different
+    # tags.
+    local pr_details
+    local exitstatus=0
+    pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
+    if [[ "$exitstatus" == "0" && "$(jq -r .base.repo.full_name <<<"$pr_details")" == "stackrox/stackrox" ]]; then
+        info "Switching to the PR branch"
+
+        # Clone the target repo
+        cd ..
+        mv stackrox stackrox-osci
+        git clone https://github.com/stackrox/stackrox.git
+        cd stackrox
+
+        # Checkout the PR branch
+        head_ref="$(jq -r '.head.ref' <<<"$pr_details")"
+        info "Checking out a matching PR branch using: $head_ref"
+        git checkout "$head_ref"
+    fi
 }
 
 validate_expected_go_version() {

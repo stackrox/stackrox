@@ -42,7 +42,7 @@ class RiskTest extends BaseSpecification {
     private List<DeploymentWithProcessInfo> whenOneHasRisk
 
     static final private int RETRIES = isRaceBuild() ? 120 : (
-            (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 50 : 24)
+            (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 70 : 35)
     static final private int RETRY_DELAY = 5
     static final private List<Deployment> DEPLOYMENTS = []
     static final private String TEST_NAMESPACE = "qa-risk-${UUID.randomUUID()}"

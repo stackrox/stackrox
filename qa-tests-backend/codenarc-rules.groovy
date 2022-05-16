@@ -297,8 +297,8 @@ ruleset {
     UseAssertTrueInsteadOfNegation 
     
     // rulesets/logging.xml
-    LoggerForDifferentClass 
-    LoggerWithWrongModifiers 
+    // LoggerForDifferentClass
+    // LoggerWithWrongModifiers
     LoggingSwallowsStacktrace 
     MultipleLoggers 
     // PrintStackTrace

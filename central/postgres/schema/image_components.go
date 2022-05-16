@@ -39,7 +39,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ImageComponent)(nil)), "image_components")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_COMPONENTS, "image_components", (*storage.ImageComponent)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_COMPONENTS, "imagecomponent", (*storage.ImageComponent)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

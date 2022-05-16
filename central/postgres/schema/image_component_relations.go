@@ -47,7 +47,7 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_COMPONENT_EDGE, "image_component_relations", (*storage.ImageComponentEdge)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_COMPONENT_EDGE, "imagecomponentedge", (*storage.ImageComponentEdge)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

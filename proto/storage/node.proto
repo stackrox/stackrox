@@ -16,12 +16,12 @@ package storage;
 // next available tag: 28
 message Node {
     // A unique ID identifying this node.
-    string id                              = 1 [(gogoproto.moretags) = "search:\"Node ID,store\""];
+    string id                              = 1 [(gogoproto.moretags) = 'search:"Node ID,store" sql:"pk"'];
     // The (host)name of the node. Might or might not be the same as ID.
     string name                            = 2 [(gogoproto.moretags) = "search:\"Node,store\""];
     // Taints on the host
     repeated Taint taints                  = 3;
-    string cluster_id                      = 4 [(gogoproto.moretags) = "search:\"Cluster ID,store\""];
+    string cluster_id                      = 4 [(gogoproto.moretags) = 'search:"Cluster ID,store" sql:"fk(Cluster:id),no-fk-constraint"'];
     string cluster_name                    = 5 [(gogoproto.moretags) = "search:\"Cluster,store\""];
     // TODO(ROX-6895): "Label" search term is ambiguous.
     map<string, string> labels             = 6 [(gogoproto.moretags) = "search:\"Label\""];
@@ -92,15 +92,4 @@ message EmbeddedNodeScanComponent {
         float                      top_cvss   = 5;
     }
     float                          risk_score = 6;
-}
-
-message NodeComponentEdge {
-    // base 64 encoded Node:Component ids.
-    string id = 1;
-}
-
-message NodeCVEEdge {
-    // base 64 encoded Node:CVE ids.
-    string                    id                    = 1;
-    google.protobuf.Timestamp first_node_occurrence = 2;
 }

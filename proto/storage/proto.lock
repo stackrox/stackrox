@@ -8801,7 +8801,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Node ID,store\\\""
+                    "value": "search:\"Node ID,store\"sql:\"pk\""
                   }
                 ]
               },
@@ -8829,7 +8829,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster ID,store\\\""
+                    "value": "search:\"Cluster ID,store\"sql:\"fk(Cluster:id),no-fk-constraint\""
                   }
                 ]
               },
@@ -9123,31 +9123,6 @@
                 "id": 6,
                 "name": "risk_score",
                 "type": "float"
-              }
-            ]
-          },
-          {
-            "name": "NodeComponentEdge",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              }
-            ]
-          },
-          {
-            "name": "NodeCVEEdge",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "first_node_occurrence",
-                "type": "google.protobuf.Timestamp"
               }
             ]
           }
@@ -11695,6 +11670,119 @@
               {
                 "id": 5,
                 "name": "image_cve_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,fk(CVE:id),no-fk-constraint\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "NodeComponentEdge",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,id\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "node_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,fk(Node:id)\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "node_component_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,fk(ImageComponent:id),no-fk-constraint\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "NodeCVEEdge",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "first_node_occurrence",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          },
+          {
+            "name": "NodeComponentCVEEdge",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,id\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "is_fixable",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Fixable,store\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "fixed_by",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Fixed By,store,hidden\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "component_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,fk(ImageComponent:id)\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "cve_id",
                 "type": "string",
                 "options": [
                   {

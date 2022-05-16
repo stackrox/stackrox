@@ -21,11 +21,6 @@ var (
                    Id varchar,
                    Name varchar UNIQUE,
                    Labels jsonb,
-                   HealthStatus_SensorHealthStatus integer,
-                   HealthStatus_CollectorHealthStatus integer,
-                   HealthStatus_OverallHealthStatus integer,
-                   HealthStatus_AdmissionControlHealthStatus integer,
-                   HealthStatus_ScannerHealthStatus integer,
                    serialized bytea,
                    PRIMARY KEY(Id)
                )
@@ -41,7 +36,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Cluster)(nil)), "clusters")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTERS, "clusters", (*storage.Cluster)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTERS, "cluster", (*storage.Cluster)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()
