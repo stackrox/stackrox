@@ -43,9 +43,9 @@ var (
 			constructorFunc:         RHACSReleaseImageFlavor,
 		},
 		{
-			imageFlavorName:         ImageFlavorNameOpenSourceRelease,
+			imageFlavorName:         ImageFlavorNameOpenSource,
 			isAllowedInReleaseBuild: true,
-			constructorFunc:         OpenSourceReleaseImageFlavor,
+			constructorFunc:         OpenSourceImageFlavor,
 		},
 	}
 
@@ -195,8 +195,8 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 	}
 }
 
-// OpenSourceReleaseImageFlavor returns image values for `opensource` flavor.
-func OpenSourceReleaseImageFlavor() ImageFlavor {
+// OpenSourceImageFlavor returns image values for `opensource` flavor.
+func OpenSourceImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
 		MainRegistry:       "quay.io/stackrox-io",

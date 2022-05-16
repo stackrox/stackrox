@@ -959,7 +959,12 @@ commands:
 
       - run:
           name: Build main image
-          command: make docker-build-main-image ROX_PRODUCT_BRANDING="<< parameters.branding >>"
+          command: |
+            PARAMS=(ROX_PRODUCT_BRANDING="<< parameters.branding >>")
+            if [[ "<< parameters.branding >>" == "STACKROX_BRANDING" ]]; then
+              PARAMS+=(ROX_IMAGE_FLAVOR="opensource")
+            fi
+            make docker-build-main-image "${PARAMS[@]}"
 
       - run:
           name: Check debugger presence in the main image
