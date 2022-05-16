@@ -206,7 +206,10 @@ func applyRfc5322LineLengthLimit(str string) string {
 func applyRfc5322TextWordWrap(text string) string {
 	wrappedText := wordwrap.WrapString(text, emailLineLength)
 
-	// Avoid problems with already email formatted text.
+	// In case when text is formatted with \r\n and additionally wrapped,
+	// we have a combination of \n and \r\n. First, we must normalize the text.
+	// Otherwise, we will have wrong formatting if we replace \n with \r\n.
+	// If not normalized, we can get results with double \r. i.e. \r\r\n
 	wrappedText = strings.Replace(wrappedText, "\r\n", "\n", -1)
 	wrappedText = strings.Replace(wrappedText, "\n", "\r\n", -1)
 
