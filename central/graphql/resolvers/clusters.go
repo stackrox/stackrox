@@ -27,7 +27,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("PolicyStatus", []string{"status: String!", "failingPolicies: [Policy!]!"}),
-		schema.AddExtraResolvers("Cluster", []string{
+		schema.AddExtraResolvers("Cluster", []string{ // note: alphabetically ordered
 			"alerts(query: String, pagination: Pagination): [Alert!]!",
 			"alertCount(query: String): Int!",
 			"latestViolation(query: String): Time",
@@ -54,9 +54,6 @@ func init() {
 			"imageCount(query: String): Int!",
 			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
 			"componentCount(query: String): Int!",
-			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!",
-			"vulnCount(query: String): Int!",
-			"vulnCounter(query: String): VulnerabilityCounter!",
 			`nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!`,
 			`nodeVulnerabilityCount(query: String): Int!`,
 			`nodeVulnerabilityCounter(query: String): VulnerabilityCounter!`,
@@ -85,6 +82,12 @@ func init() {
 			"unusedVarSink(query: String): Int",
 			"istioEnabled: Boolean!",
 			"plottedVulns(query: String): PlottedVulnerabilities!",
+		}),
+		// deprecated fields
+		schema.AddExtraResolvers("Cluster", []string{
+			"vulnCount(query: String): Int! @deprecated(reason: \"use 'imageVulnerabilityCount' or 'nodeVulnerabilityCount'\")",
+			"vulnCounter(query: String): VulnerabilityCounter! @deprecated(reason: \"use 'imageVulnerabilityCounter' or 'nodeVulnerabilityCounter'\")",
+			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! @deprecated(reason: \"use 'imageVulnerabilities' or 'nodeVulnerabilities'\")",
 		}),
 		schema.AddQuery("clusters(query: String, pagination: Pagination): [Cluster!]!"),
 		schema.AddQuery("clusterCount(query: String): Int!"),
