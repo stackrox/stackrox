@@ -18,6 +18,7 @@ type PermissionChecker interface {
     CountAllowed(ctx context.Context) (bool, error)
     ExistsAllowed(ctx context.Context) (bool, error)
     GetAllowed(ctx context.Context) (bool, error)
+    WalkAllowed(ctx context.Context) (bool, error)
 {{- if not .JoinTable }}
     UpsertAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error)
     UpsertManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error)

@@ -28,8 +28,6 @@ const (
 	getStmt    = "SELECT serialized FROM test_multi_key_structs WHERE Key1 = $1 AND Key2 = $2"
 	deleteStmt = "DELETE FROM test_multi_key_structs WHERE Key1 = $1 AND Key2 = $2"
 
-	walkStmt = "SELECT serialized FROM test_multi_key_structs"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
@@ -545,16 +543,12 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestMultiKeyStruct) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
+	var sacQueryFilter *v1.Query
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
-		}
+	for _, data := range rows {
 		var msg storage.TestMultiKeyStruct
 		if err := proto.Unmarshal(data, &msg); err != nil {
 			return err

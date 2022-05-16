@@ -183,6 +183,39 @@ func (s *DeploymentsStoreSuite) TestSACCount() {
 	}
 }
 
+func (s *DeploymentsStoreSuite) TestSACWalk() {
+	objA := &storage.Deployment{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.Deployment{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	s.store.Upsert(withAllAccessCtx, objA)
+	s.store.Upsert(withAllAccessCtx, objB)
+
+	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
+	for name, expectedIds := range map[string][]string{
+		withAllAccess:           []string{objA.GetId(), objB.GetId()},
+		withNoAccess:            []string{},
+		withNoAccessToCluster:   []string{},
+		withAccessToDifferentNs: []string{},
+		withAccess:              []string{objA.GetId()},
+		withAccessToCluster:     []string{objA.GetId()},
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			ids := []string{}
+			getIds := func(obj *storage.Deployment) error {
+				ids = append(ids, obj.GetId())
+				return nil
+			}
+			err := s.store.Walk(ctxs[name], getIds)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedIds, ids)
+		})
+	}
+}
+
 func (s *DeploymentsStoreSuite) TestSACGetIDs() {
 	objA := &storage.Deployment{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))

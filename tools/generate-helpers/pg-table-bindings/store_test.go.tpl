@@ -215,6 +215,40 @@ func (s *{{$namePrefix}}StoreSuite) TestSACCount() {
 	}
 }
 
+func (s *{{$namePrefix}}StoreSuite) TestSACWalk() {
+	objA := &{{.Type}}{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &{{.Type}}{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	s.store.Upsert(withAllAccessCtx, objA)
+	s.store.Upsert(withAllAccessCtx, objB)
+
+	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
+	for name, expectedIds := range map[string][]string{
+		withAllAccess:           []string{ {{ (index .Schema.PrimaryKeys 0).Getter "objA"}}, {{ (index .Schema.PrimaryKeys 0).Getter "objB"}} },
+		withNoAccess:            []string{},
+		withNoAccessToCluster:   []string{},
+		withAccessToDifferentNs: []string{},
+		withAccess:              []string{ {{ (index .Schema.PrimaryKeys 0).Getter "objA"}} },
+		withAccessToCluster:     []string{ {{ (index .Schema.PrimaryKeys 0).Getter "objA"}} },
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			ids := []string{}
+			getIds := func(obj *{{.Type}}) error {
+				ids = append(ids,  {{ (index .Schema.PrimaryKeys 0).Getter "obj" }} )
+				return nil
+			}
+			err := s.store.Walk(ctxs[name], getIds)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedIds, ids)
+		})
+	}
+}
+
+
 
 func (s *{{$namePrefix}}StoreSuite) TestSACGetIDs() {
 	objA := &{{.Type}}{}
