@@ -250,7 +250,7 @@ func getJSONToZipWithLogging(ctx context.Context, zipWriter *zip.Writer, fileNam
 func addJSONToZip(zipWriter *zip.Writer, fileName string, jsonObj interface{}) error {
 	w, err := zipWriter.Create(fileName)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "unable to create zip file: %q", fileName)
 	}
 
 	jsonEnc := json.NewEncoder(w)
