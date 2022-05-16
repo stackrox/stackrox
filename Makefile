@@ -32,15 +32,14 @@ ROX_IMAGE_FLAVOR ?= $(shell \
 	  echo "development_build"; \
 	fi)
 
-DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
 BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
 
-DOCS_IMAGE_BASE := $(DEFAULT_IMAGE_REGISTRY)
-ifdef CI
-    DOCS_IMAGE_BASE := quay.io/rhacs-eng
+DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
+ifneq ($(ROX_PRODUCT_BRANDING),STACKROX_BRANDING)
+	DEFAULT_IMAGE_REGISTRY := quay.io/rhacs-eng
 endif
 
-DOCS_IMAGE = $(DOCS_IMAGE_BASE)/docs:$(shell make --quiet --no-print-directory docs-tag)
+DOCS_IMAGE = $(DEFAULT_IMAGE_REGISTRY)/docs:$(shell make --quiet --no-print-directory docs-tag)
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 
