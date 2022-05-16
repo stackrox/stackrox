@@ -37,8 +37,7 @@ BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMA
 DOCS_IMAGE_BASE := $(DEFAULT_IMAGE_REGISTRY)/docs
 
 ifdef CI
-    CI_QUAY_REPO := rhacs-eng
-    DOCS_IMAGE_BASE := quay.io/$(CI_QUAY_REPO)/docs
+    DOCS_IMAGE_BASE := quay.io/rhacs-eng/docs
 endif
 
 DOCS_IMAGE = $(DOCS_IMAGE_BASE):$(shell make --quiet --no-print-directory docs-tag)
@@ -595,21 +594,27 @@ scale-image: scale-build clean-image
 	cp bin/linux/profiler scale/image/bin/profiler
 	cp bin/linux/chaos scale/image/bin/chaos
 	chmod +w scale/image/bin/*
-	docker build -t stackrox/scale:$(TAG) -f scale/image/Dockerfile scale
-	docker tag stackrox/scale:$(TAG) quay.io/$(CI_QUAY_REPO)/scale:$(TAG)
+	docker build \
+		-t stackrox/scale:$(TAG) \
+		-t quay.io/rhacs-eng/scale:$(TAG) \
+		-f scale/image/Dockerfile scale
 
 webhookserver-image: webhookserver-build
 	-mkdir webhookserver/bin
 	cp bin/linux/webhookserver webhookserver/bin/webhookserver
 	chmod +w webhookserver/bin/webhookserver
-	docker build -t stackrox/webhookserver:1.2 -f webhookserver/Dockerfile webhookserver
-	docker tag stackrox/webhookserver:1.2 quay.io/$(CI_QUAY_REPO)/webhookserver:1.2
+	docker build \
+		-t stackrox/webhookserver:1.2 \
+		-t quay.io/rhacs-eng/webhookserver:1.2 \
+		-f webhookserver/Dockerfile webhookserver
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image
 	cp bin/linux/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
-	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
-	docker tag stackrox/grpc-server:$(TAG) quay.io/$(CI_QUAY_REPO)/grpc-server:$(TAG)
+	docker build \
+		-t stackrox/grpc-server:$(TAG) \
+		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
+		integration-tests/mock-grpc-server/image
 
 $(CURDIR)/image/postgres/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
