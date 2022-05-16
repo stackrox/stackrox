@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 
 import capitalize from 'lodash/capitalize';
 import ColorPicker from 'Components/ColorPicker';
-import { PublicConfig } from 'Containers/SystemConfig/SystemConfigTypes';
+import { PublicConfig } from 'types/config.proto';
 import {
     Card,
     CardActions,
@@ -22,7 +22,7 @@ type BannerType = 'header' | 'footer';
 
 export type ConfigBannerDetailWidgetProps = {
     type: BannerType;
-    publicConfig: PublicConfig;
+    publicConfig: PublicConfig | null;
 };
 
 const ConfigBannerDetailWidget = ({

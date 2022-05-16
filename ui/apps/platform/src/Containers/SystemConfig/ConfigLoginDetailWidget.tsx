@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 
-import { PublicConfig } from 'Containers/SystemConfig/SystemConfigTypes';
+import { PublicConfig } from 'types/config.proto';
 import {
     Card,
     CardActions,
@@ -17,7 +17,7 @@ import {
 } from '@patternfly/react-core';
 
 export type ConfigLoginDetailWidgetProps = {
-    publicConfig: PublicConfig;
+    publicConfig: PublicConfig | null;
 };
 
 const ConfigLoginDetailWidget = ({ publicConfig }: ConfigLoginDetailWidgetProps): ReactElement => {
