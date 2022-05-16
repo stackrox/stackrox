@@ -25,6 +25,7 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
 	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
+	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
@@ -84,7 +85,7 @@ func run() error {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	mgr, err := ctrl.NewManager(utils.GetRHACSConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
