@@ -69,3 +69,21 @@ class QaE2eTestPart2(BaseTest):
         self.run_with_graceful_kill(
             ["qa-tests-backend/scripts/run-part-2.sh"], QaE2eTestPart2.TEST_TIMEOUT
         )
+
+
+class QaE2eDBBackupRestoreTest(BaseTest):
+    TEST_TIMEOUT = 30 * 60
+    TEST_OUTPUT_DIR = "/tmp/db-backup-restore-test"
+
+    def run(self):
+        print("Executing qa-tests-backend tests (part II)")
+
+        def set_dirs_after_start():
+            # let post test know where logs are
+            self.test_output_dirs = [UpgradeTest.TEST_OUTPUT_DIR]
+
+        self.run_with_graceful_kill(
+            ["tests/e2e/lib.sh", "db_backup_and_restore_test"],
+            QaE2eDBBackupRestoreTest.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )

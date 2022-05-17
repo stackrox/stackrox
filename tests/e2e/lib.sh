@@ -257,6 +257,24 @@ restore_56_1_backup() {
         central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 }
 
+db_backup_and_restore_test() {
+    info "Running a backup and restore test"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: db_backup_and_restore_test <output dir>"
+    fi
+
+    local output_dir="$1/central-backup"
+    info "Backing up to $1/central-backup"
+    mkdir -p "$output_dir"
+    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "$output_dir"
+
+    info "Restoring from $1/central-backup"
+    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_*
+
+    collect_and_check_stackrox_logs "$1" "stackrox-logs"
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         usage
