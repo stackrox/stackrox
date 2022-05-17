@@ -65,7 +65,7 @@ class StoreArtifacts(RunWithBestEffortMixin):
                 args.append(self.artifact_destination)
             self.run_with_best_effort(
                 args,
-                timeout=PostClusterTest.STORE_TIMEOUT,
+                timeout=StoreArtifacts.STORE_TIMEOUT,
             )
 
 
@@ -74,7 +74,6 @@ class PostClusterTest(StoreArtifacts):
     API_TIMEOUT = 5 * 60
     COLLECT_TIMEOUT = 5 * 60
     CHECK_TIMEOUT = 5 * 60
-    STORE_TIMEOUT = 5 * 60
     # Where the QA tests store failure logs:
     # qa-tests-backend/src/main/groovy/common/Constants.groovy
     QA_TEST_DEBUG_LOGS = "/tmp/qa-tests-backend-logs"
@@ -121,8 +120,6 @@ class PostClusterTest(StoreArtifacts):
         if self._check_stackrox_logs:
             self.check_stackrox_logs()
         self.store_artifacts(test_output_dirs)
-        self.fixup_artifacts_content_type()
-        self.make_artifacts_help()
         self.handle_run_failure()
 
     def wait_for_central_api(self):
@@ -193,14 +190,23 @@ class PostClusterTest(StoreArtifacts):
             timeout=PostClusterTest.CHECK_TIMEOUT,
         )
 
+
+class FinalPost(RunWithBestEffortMixin):
+    FIXUP_TIMEOUT = 5 * 60
+
+    def run(self):
+        self.fixup_artifacts_content_type()
+        self.make_artifacts_help()
+        self.handle_run_failure()
+
     def fixup_artifacts_content_type(self):
         self.run_with_best_effort(
             ["scripts/ci/store-artifacts.sh", "fixup_artifacts_content_type"],
-            timeout=PostClusterTest.STORE_TIMEOUT,
+            timeout=FinalPost.FIXUP_TIMEOUT,
         )
 
     def make_artifacts_help(self):
         self.run_with_best_effort(
             ["scripts/ci/store-artifacts.sh", "make_artifacts_help"],
-            timeout=PostClusterTest.STORE_TIMEOUT,
+            timeout=FinalPost.FIXUP_TIMEOUT,
         )

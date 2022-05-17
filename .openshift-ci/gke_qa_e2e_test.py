@@ -6,7 +6,7 @@ Run qa-tests-backend in a GKE cluster
 import os
 from pre_tests import PreSystemTests
 from ci_tests import QaE2eTestPart1, QaE2eTestPart2, QaE2eDBBackupRestoreTest
-from post_tests import PostClusterTest, StoreArtifacts
+from post_tests import PostClusterTest, StoreArtifacts, FinalPost
 from clusters import GKECluster
 from runners import ClusterTestSetsRunner
 
@@ -47,4 +47,5 @@ ClusterTestSetsRunner(
             "post_test": StoreArtifacts(),
         },
     ],
+    final_post=FinalPost(),
 ).run()

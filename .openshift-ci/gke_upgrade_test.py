@@ -8,7 +8,7 @@ from runners import ClusterTestRunner
 from clusters import GKECluster
 from pre_tests import PreSystemTests
 from ci_tests import UpgradeTest
-from post_tests import PostClusterTest
+from post_tests import PostClusterTest, FinalPost
 
 os.environ["LOAD_BALANCER"] = "lb"
 ClusterTestRunner(
@@ -16,4 +16,5 @@ ClusterTestRunner(
     pre_test=PreSystemTests(),
     test=UpgradeTest(),
     post_test=PostClusterTest(),
+    final_post=FinalPost(),
 ).run()
