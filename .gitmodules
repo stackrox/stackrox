@@ -6,4 +6,3 @@
 	path = docs/tools
 	url = https://github.com/stackrox/docs-tools.git
 	branch = main
-	shallow = true
