@@ -19,6 +19,9 @@ func init() {
 	utils.Must(
 		schema.AddType("ImageVulnerability",
 			append(commonVulnerabilitySubResolvers,
+				"activeState(query: String): ActiveState",
+				"componentCount(query: String): Int!",
+				"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
 				"effectiveVulnerabilityRequest: VulnerabilityRequest",
 				"deploymentCount(query: String): Int!",
 				"deployments(query: String, pagination: Pagination): [Deployment!]!",
@@ -33,9 +36,13 @@ func init() {
 }
 
 // ImageVulnerabilityResolver represents the supported API on image vulnerabilities
-type ImageVulnerabilityResolver interface { // note: alphabetically ordered
+//  NOTE: This list is and should remain alphabetically ordered
+type ImageVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
+	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
+	Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error)
+	ComponentCount(ctx context.Context, args RawQuery) (int32, error)
 	EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)

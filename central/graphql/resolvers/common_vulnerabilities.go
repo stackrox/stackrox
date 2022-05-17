@@ -6,10 +6,13 @@ import (
 	"github.com/graph-gophers/graphql-go"
 )
 
-var commonVulnerabilitySubResolvers = []string{ // note: alphabetically ordered
-	"activeState(query: String): ActiveState",
-	"componentCount(query: String): Int!",
-	"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
+/*
+ * This represents a list of common resolvers between vulnerability GraphQL types.
+ * It should be kept in sync with the interface definition below.
+ *
+ * NOTE: This list is and should remain alphabetically ordered
+ */
+var commonVulnerabilitySubResolvers = []string{
 	"createdAt: Time", // Discovered At System
 	"cve: String!",
 	"cvss: Float!",
@@ -33,11 +36,9 @@ var commonVulnerabilitySubResolvers = []string{ // note: alphabetically ordered
 	"vulnerabilityState: String!",
 }
 
-// CommonVulnerabilityResolver represents the supported API on image vulnerabilities
-type CommonVulnerabilityResolver interface { // note: alphabetically ordered
-	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
-	ComponentCount(ctx context.Context, args RawQuery) (int32, error)
-	Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error)
+// CommonVulnerabilityResolver represents the supported API on all vulnerabilities
+//  NOTE: This list is and should remain alphabetically ordered
+type CommonVulnerabilityResolver interface {
 	CreatedAt(ctx context.Context) (*graphql.Time, error)
 	CVE(ctx context.Context) string
 	Cvss(ctx context.Context) float64

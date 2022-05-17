@@ -28,6 +28,7 @@ func init() {
 }
 
 // NodeVulnerabilityResolver represents the supported API on node vulnerabilities
+//  NOTE: This list is and should remain alphabetically ordered
 type NodeVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
