@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -189,16 +188,12 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 		return nil, errox.NotFound.Newf("auth provider with id %q does not exist", request.GetId())
 	}
 
+	// Use the stored provider's required attributes values, if there are any, during creation. This way we
+	// can skip checks regarding required attributes and deliberately ignore values send from UI.
+	storedProvider := provider.StorageView()
+
 	// Attempt to merge configs.
 	request.Config = provider.MergeConfigInto(request.GetConfig())
-
-	// Verify whether there were any changes made to the provider's required attributes. This is currently not allowed
-	// to be done via API.
-	if !protoutils.EqualStorageAuthProvider_RequiredAttributeSlices(
-		provider.StorageView().GetRequiredAttributes(), request.GetRequiredAttributes()) {
-		return nil, errox.InvalidArgs.CausedBy("auth provider's required attributes are not allowed to be " +
-			"modified via API")
-	}
 
 	if err := s.registry.ValidateProvider(ctx, authproviders.WithStorageView(request)); err != nil {
 		return nil, errox.InvalidArgs.New("auth provider validation check failed").CausedBy(err)
@@ -210,7 +205,7 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 	}
 
 	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(request),
-		authproviders.WithAttributeVerifier(request),
+		authproviders.WithAttributeVerifier(storedProvider),
 		authproviders.WithValidateCallback(datastore.Singleton()))
 	if err != nil {
 		return nil, errox.InvalidArgs.New("unable to create an auth provider instance").CausedBy(err)

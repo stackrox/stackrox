@@ -6,7 +6,6 @@ import (
 
 // ProtoSliceType represents a generic type that we use in the function below.
 //go:generate genny -in=$GOFILE -imp=github.com/stackrox/rox/generated/storage -out=gen-$GOFILE gen "ProtoSliceType=*storage.Alert_Violation"
-//go:generate genny -in=$GOFILE -imp=github.com/stackrox/rox/generated/storage -out=gen-attributes-$GOFILE gen "ProtoSliceType=*storage.AuthProvider_RequiredAttribute"
 type ProtoSliceType generic.Type
 
 // EqualProtoSliceTypeSlices returns whether the given two slices of proto objects (generically) have equal values.
