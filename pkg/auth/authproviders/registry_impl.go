@@ -160,12 +160,11 @@ func (r *registryImpl) ValidateProvider(ctx context.Context, options ...Provider
 	options = append(options, DefaultBackend(ctx, r.backendFactories))
 
 	// Create provider to validate backend creation
-	p, err := NewProvider(options...)
+	_, err := NewProvider(options...)
 	if err != nil {
 		return err
 	}
 
-	p.ID()
 	return nil
 }
 
