@@ -42,6 +42,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Violation tags and process tags are deprecated, and will be removed in version 3.72.0.
 - Users who do not want to include the RBAC factor in risk calculation can set
   the "ROX_INCLUDE_RBAC_IN_RISK" environment variable to "false" in the Central deployment spec.
+- Kubernetes' PodSecurityPolicy API is deprecated which is why installation of PodSecurityPolicies will be disabled with version 3.71.0.
 
 ## [69.1]
 
