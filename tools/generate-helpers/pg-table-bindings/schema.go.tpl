@@ -89,7 +89,7 @@ var (
     // {{$schema.TypeName}} holds the Gorm model for Postgres table `{{$schema.Table}}`.
     type {{$schema.Table|upperCamelCase}} struct {
     {{- range $idx, $field := $schema.DBColumnFields }}
-        {{$field.ColumnName}} {{$field.ModelType}} `gorm:"column:{{$field.ColumnName|lowerCase}};type:{{$field.SQLType}}{{if $field.Options.Unique}};unique{{end}}{{if $field.Options.PrimaryKey}};primaryKey{{end}}{{if $field.Options.Index}};index:{{$schema.Table|lowerCamelCase}}_{{$field.ColumnName}},type:{{$field.Options.Index}}{{end}}"`
+        {{$field.ColumnName|upperCamelCase}} {{$field.ModelType}} `gorm:"column:{{$field.ColumnName|lowerCase}};type:{{$field.SQLType}}{{if $field.Options.Unique}};unique{{end}}{{if $field.Options.PrimaryKey}};primaryKey{{end}}{{if $field.Options.Index}};index:{{$schema.Table|lowerCase}}_{{$field.ColumnName|lowerCase}},type:{{$field.Options.Index}}{{end}}"`
     {{- end}}
     {{- range $idx, $rel := $schema.RelationshipsToDefineAsForeignKeys }}
         {{$rel.OtherSchema.Table|upperCamelCase}}Ref {{$rel.OtherSchema.Table|upperCamelCase}} `gorm:"foreignKey:{{template "commaSeparatedColumnsInThisTable" $rel.MappedColumnNames}};references:{{template "commaSeparatedColumnsInOtherTable" $rel.MappedColumnNames}};constraint:OnDelete:CASCADE"`
