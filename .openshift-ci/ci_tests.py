@@ -80,10 +80,14 @@ class QaE2eDBBackupRestoreTest(BaseTest):
 
         def set_dirs_after_start():
             # let post test know where logs are
-            self.test_output_dirs = [UpgradeTest.TEST_OUTPUT_DIR]
+            self.test_output_dirs = [QaE2eDBBackupRestoreTest.TEST_OUTPUT_DIR]
 
         self.run_with_graceful_kill(
-            ["tests/e2e/lib.sh", "db_backup_and_restore_test"],
+            [
+                "tests/e2e/lib.sh",
+                "db_backup_and_restore_test",
+                QaE2eDBBackupRestoreTest.TEST_OUTPUT_DIR,
+            ],
             QaE2eDBBackupRestoreTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )

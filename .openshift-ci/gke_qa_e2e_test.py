@@ -30,7 +30,10 @@ ClusterTestSetsRunner(
             "pre_test": PreSystemTests(),
             "test": QaE2eTestPart1(),
             "post_test": PostClusterTest(
-                check_stackrox_logs=True, artifact_destination="part-1"
+                check_stackrox_logs=True,
+                store_qa_test_debug_logs=False,
+                store_qa_spock_results=False,
+                artifact_destination="part-1",
             ),
         },
         {
