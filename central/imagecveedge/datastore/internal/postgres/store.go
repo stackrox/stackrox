@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	baseTable  = "image_cve_relations"
+	baseTable = "image_cve_relations"
+
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3)"
 
 	getStmt     = "SELECT serialized FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3"

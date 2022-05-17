@@ -244,6 +244,33 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetIDs() {
 	}
 }
 
+{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
+{{- if eq (len .Schema.PrimaryKeys) 1 }}
+func (s *{{$namePrefix}}StoreSuite) TestSACExists() {
+	objA := &{{.Type}}{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	s.store.Upsert(withAllAccessCtx, objA)
+
+	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
+	for name, expected := range map[string]bool{
+		withAllAccess:           true,
+		withNoAccess:            false,
+		withNoAccessToCluster:   false,
+		withAccessToDifferentNs: false,
+		withAccess:              true,
+		withAccessToCluster:     true,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			exists, err := s.store.Exists(ctxs[name], objA.GetId())
+			assert.NoError(t, err)
+			assert.Equal(t, expected, exists)
+		})
+	}
+}
+{{- end }}
+
 const (
 	withAllAccess = "AllAccess"
 	withNoAccess = "NoAccess"
