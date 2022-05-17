@@ -37,8 +37,8 @@ const (
 
 	userInfoExpiration = 5 * time.Minute
 
-	rolesAttribute = "roles"
 	orgidAttribute = "orgid"
+	orgAdminGroup  = "org_admin"
 )
 
 type nonceVerificationSetting int
@@ -565,23 +565,19 @@ func (p *backendImpl) Validate(context.Context, *tokens.Claims) error {
 // Helpers
 ///////////
 
-// realmAccess is an internal helper struct to unmarshal the keycloak-specific realm_access claim into.
-type realmAccess struct {
-	Roles []string `json:"roles"`
-}
-
 // userInfoType is an internal helper struct to unmarshal OIDC token info into.
 type userInfoType struct {
-	Name        string       `json:"name"`
-	EMail       string       `json:"email"`
-	UID         string       `json:"sub"`
-	Groups      []string     `json:"groups"`
-	RealmAccess *realmAccess `json:"realm_access"`
+	Name   string   `json:"name"`
+	EMail  string   `json:"email"`
+	UID    string   `json:"sub"`
+	Groups []string `json:"groups"`
 	// Claim "account_id" is the claim that represents organisation id within sso.redhat.com.
 	// Red Hat users are united in organisations.
 	// See more on the claims here:
 	// https://source.redhat.com/groups/public/it-user/it_user_team_wiki/topic_external_sso_enablements#attributes-needed
 	OrgID string `json:"account_id"`
+	// Claim "is_org_admin" is the claim that identifies organisation admins within sso.redhat.com.
+	IsOrgAdmin bool `json:"is_org_admin"`
 }
 
 func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim {
@@ -596,17 +592,8 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 		claim.UserID = userInfo.EMail
 	}
 
-	// Add sso.redhat.com attributes.
-	claim.Attributes = make(map[string][]string)
-	realmAccess := userInfo.RealmAccess
-	if realmAccess != nil && len(realmAccess.Roles) > 0 {
-		claim.Attributes[rolesAttribute] = realmAccess.Roles
-	}
-	if userInfo.OrgID != "" {
-		claim.Attributes[orgidAttribute] = []string{userInfo.OrgID}
-	}
-
 	// Add all fields as attributes.
+	claim.Attributes = make(map[string][]string)
 	if claim.UserID != "" {
 		claim.Attributes[authproviders.UseridAttribute] = []string{claim.UserID}
 	}
@@ -620,6 +607,14 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 	// If using non-standard group information add them.
 	if len(userInfo.Groups) > 0 {
 		claim.Attributes[authproviders.GroupsAttribute] = userInfo.Groups
+	}
+
+	// Add sso.redhat.com attributes.
+	if userInfo.OrgID != "" {
+		claim.Attributes[orgidAttribute] = []string{userInfo.OrgID}
+	}
+	if userInfo.IsOrgAdmin {
+		claim.Attributes[authproviders.GroupsAttribute] = append(claim.Attributes[authproviders.GroupsAttribute], orgAdminGroup)
 	}
 	return claim
 }
