@@ -2,11 +2,9 @@
 all: style test
 
 GRADLE := ./gradlew
-fail_fast = ""
+GRADLE_TEST_ARGS =
 ifdef FAIL_FAST
-GRADLE_TEST := ./gradlew test --fail-fast
-else
-GRADLE_TEST := ./gradlew test
+GRADLE_TEST_ARGS = --fail-fast
 endif
 
 ###########
@@ -52,55 +50,55 @@ clean-generated-srcs:
 .PHONY: test
 test: compile
 	@echo "+ $@"
-	$(GRADLE_TEST) -Dgroups=-Upgrade,-SensorBounce,-SensorBounceNext
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=-Upgrade,-SensorBounce,-SensorBounceNext
 
 .PHONY: bat-test
 bat-test: compile
 	@echo "+ $@"
-	$(GRADLE_TEST) -Dgroups=BAT
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=BAT
 
 .PHONY: smoke-test
 smoke-test: compile
 	@echo "+ $@"
-	$(GRADLE_TEST) -Dgroups=SMOKE
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=SMOKE
 
 .PHONY: runtime-test
 runtime-test: compile
 	@echo "+ $@"
-	$(GRADLE_TEST) -Dgroups=RUNTIME
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=RUNTIME
 
 .PHONY: enforcement-test
 enforcement-test: compile
 	@echo "+ $@"
-	$(GRADLE_TEST) -Dgroups=PolicyEnforcement
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=PolicyEnforcement
 
 .PHONY: integration-test
 integration-test: compile
 	@echo "+ $@"
-	$(GRADLE_TEST) -Dgroups=Integration
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=Integration
 
 .PHONY: networkpolicy-simulator-test
 networkpolicy-simulator-test: compile
 	@echo "+ $@"
-	$(GRADLE_TEST) -Dgroups=NetworkPolicySimulation
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=NetworkPolicySimulation
 
 .PHONY: non-bat-test
 non-bat-test: compile
 	@echo "+ $@"
-	$(GRADLE_TEST) -Dgroups=-BAT,-Upgrade,-SensorBounce,-SensorBounceNext
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=-BAT,-Upgrade,-SensorBounce,-SensorBounceNext
 
 .PHONY: upgrade-test
 upgrade-test: compile
 	@echo "+ $@"
-	$(GRADLE_TEST) -Dgroups=Upgrade
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=Upgrade
 
 .PHONY: graphql-test
 graphql-test: compile
 	@echo "+ $@"
-	$(GRADLE_TEST) -Dgroups=GraphQL
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=GraphQL
 
 .PHONY: sensor-bounce-test
 sensor-bounce-test: compile
 	@echo "+ $@"
-	$(GRADLE_TEST) -Dgroups=SensorBounce
-	$(GRADLE_TEST) -Dgroups=SensorBounceNext
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=SensorBounce
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=SensorBounceNext
