@@ -210,7 +210,7 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 	}
 
 	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(request),
-		authproviders.WithAttributeChecker(request),
+		authproviders.WithAttributeVerifier(request),
 		authproviders.WithValidateCallback(datastore.Singleton()))
 	if err != nil {
 		return nil, errox.InvalidArgs.New("unable to create an auth provider instance").CausedBy(err)

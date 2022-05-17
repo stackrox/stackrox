@@ -67,7 +67,7 @@ func (r *registryImpl) Init() error {
 		// Construct the options for the provider, using the stored definition, and the defaults for previously stored objects.
 		options := []ProviderOption{
 			WithStorageView(storedValue),
-			WithAttributeChecker(storedValue),
+			WithAttributeVerifier(storedValue),
 		}
 		options = append(options, DefaultOptionsForStoredProvider(r.backendFactories, r.issuerFactory, r.roleMapperFactory, r.loginURL)...)
 
