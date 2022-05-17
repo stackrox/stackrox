@@ -215,12 +215,8 @@ func (s *RolebindingsStoreSuite) TestSACExists() {
 	objA := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
-	objB := &storage.K8SRoleBinding{}
-	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
 	withAllAccessCtx := sac.WithAllAccess(context.Background())
 	s.store.Upsert(withAllAccessCtx, objA)
-	s.store.Upsert(withAllAccessCtx, objB)
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
 	for name, expected := range map[string]bool{
