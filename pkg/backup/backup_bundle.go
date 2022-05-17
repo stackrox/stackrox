@@ -9,6 +9,7 @@ import (
 const (
 	BoltFileName     = "bolt.db"
 	RocksFileName    = "rocks.db"
+	PostgresFileName = "postgres.db.tar"
 	KeysBaseFolder   = "keys"
 	CaKeyPem         = mtls.CAKeyFileName
 	CaCertPem        = mtls.CACertFileName
