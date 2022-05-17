@@ -8,8 +8,7 @@ COPY tools tools
 COPY Makefile ./
 
 RUN npm install -g npm@8.10.0 && npm install -g yarn@1.22.18
-RUN make
-RUN find . -name yarn-error.log -print -exec cat {} \;
+RUN make || find . -name yarn-error.log -print -exec cat {} \;
 RUN exit 1
 
 FROM registry.access.redhat.com/ubi8/nginx-120:latest
