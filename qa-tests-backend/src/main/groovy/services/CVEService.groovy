@@ -16,23 +16,23 @@ class CVEService extends BaseService {
 
     static suppressCVE(String cve) {
         return getCVEClient().suppressCVEs(CveService.SuppressCVERequest.newBuilder()
-                .addCves(cve)
+                .addIds(cve)
                 .setDuration(Duration.newBuilder().setSeconds(1000).build())
                 .build())
     }
 
     static unsuppressCVE(String cve) {
-        return getCVEClient().unsuppressCVEs(CveService.UnsuppressCVERequest.newBuilder().addCves(cve).build())
+        return getCVEClient().unsuppressCVEs(CveService.UnsuppressCVERequest.newBuilder().addIds(cve).build())
     }
 
     static suppressImageCVE(String cve) {
         return getImageCVEClient().suppressCVEs(CveService.SuppressCVERequest.newBuilder()
-                .addCves(cve)
+                .addIds(cve)
                 .setDuration(Duration.newBuilder().setSeconds(1000).build())
                 .build())
     }
 
     static unsuppressImageCVE(String cve) {
-        return getImageCVEClient().unsuppressCVEs(CveService.UnsuppressCVERequest.newBuilder().addCves(cve).build())
+        return getImageCVEClient().unsuppressCVEs(CveService.UnsuppressCVERequest.newBuilder().addIds(cve).build())
     }
 }

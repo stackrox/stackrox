@@ -2,7 +2,6 @@ package service
 
 import (
 	cveDataStore "github.com/stackrox/rox/central/cve/image/datastore"
-	"github.com/stackrox/rox/central/globaldb/dackbox"
 	vulReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -14,7 +13,7 @@ var (
 )
 
 func initialize() {
-	as = New(cveDataStore.Singleton(), dackbox.GetIndexQueue(), vulReqMgr.Singleton())
+	as = New(cveDataStore.Singleton(), vulReqMgr.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

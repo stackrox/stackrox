@@ -213,6 +213,7 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			if entry, ok := ds.cveSuppressionCache[vuln.GetCve()]; ok {
+				vuln.Suppressed = true
 				vuln.SuppressActivation = entry.SuppressActivation
 				vuln.SuppressExpiry = entry.SuppressExpiry
 
@@ -228,6 +229,7 @@ func (ds *datastoreImpl) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
 	for _, component := range node.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			if entry, ok := ds.cveSuppressionCache[vuln.GetCve()]; ok {
+				vuln.Suppressed = true
 				vuln.SuppressActivation = entry.SuppressActivation
 				vuln.SuppressExpiry = entry.SuppressExpiry
 			}

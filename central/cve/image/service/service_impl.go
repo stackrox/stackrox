@@ -11,7 +11,6 @@ import (
 	vulnReqMgr "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/and"
@@ -38,17 +37,16 @@ var (
 type serviceImpl struct {
 	cves       datastore.DataStore
 	vulnReqMgr vulnReqMgr.Manager
-	indexQ     queue.WaitableQueue
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
-	v1.RegisterCVEServiceServer(grpcServer, s)
+	v1.RegisterImageCVEServiceServer(grpcServer, s)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return v1.RegisterCVEServiceHandler(ctx, mux, conn)
+	return v1.RegisterImageCVEServiceHandler(ctx, mux, conn)
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.
@@ -59,10 +57,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // SuppressCVEs suppresses CVEs from policy workflow and API endpoints that include cve in the responses.
 func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVERequest) (*v1.Empty, error) {
 	createdAt := types.TimestampNow()
-	if len(request.GetCves()) == 0 {
+	if len(request.GetIds()) == 0 {
 		return nil, errox.InvalidArgs.CausedBy("no cves provided to un-snooze")
 	}
-	result, err := s.cves.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.CVE, request.GetCves()...).ProtoQuery())
+	result, err := s.cves.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.CVE, request.GetIds()...).ProtoQuery())
 	if err != nil {
 		return nil, err
 	}
@@ -78,10 +76,10 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 
 // UnsuppressCVEs un-suppresses given image CVEs.
 func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.UnsuppressCVERequest) (*v1.Empty, error) {
-	if len(request.GetCves()) == 0 {
+	if len(request.GetIds()) == 0 {
 		return nil, errox.InvalidArgs.CausedBy("no cves provided to un-snooze")
 	}
-	result, err := s.cves.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.CVE, request.GetCves()...).ProtoQuery())
+	result, err := s.cves.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.CVE, request.GetIds()...).ProtoQuery())
 	if err != nil {
 		return nil, err
 	}

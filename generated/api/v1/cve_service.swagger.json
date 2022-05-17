@@ -187,11 +187,12 @@
     "v1SuppressCVERequest": {
       "type": "object",
       "properties": {
-        "cves": {
+        "ids": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.\nFor example, CVE-2021-44832."
         },
         "duration": {
           "type": "string"
@@ -201,11 +202,12 @@
     "v1UnsuppressCVERequest": {
       "type": "object",
       "properties": {
-        "cves": {
+        "ids": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.\nFor example, CVE-2021-44832."
         }
       }
     }
