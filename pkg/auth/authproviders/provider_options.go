@@ -127,7 +127,7 @@ func WithAttributeVerifier(stored *storage.AuthProvider) ProviderOption {
 		if stored.GetRequiredAttributes() == nil {
 			return nil
 		}
-		pr.attributeChecker = user.NewRequiredAttributesVerifier(stored.GetRequiredAttributes())
+		pr.attributeVerifier = user.NewRequiredAttributesVerifier(stored.GetRequiredAttributes())
 		return nil
 	}
 }

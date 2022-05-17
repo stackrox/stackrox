@@ -38,9 +38,9 @@ type providerImpl struct {
 	backendCreationDone        concurrency.ErrorSignal
 	lastBackendCreationAttempt time.Time
 
-	roleMapper       permissions.RoleMapper
-	issuer           tokens.Issuer
-	attributeChecker user.AttributeVerifier
+	roleMapper        permissions.RoleMapper
+	issuer            tokens.Issuer
+	attributeVerifier user.AttributeVerifier
 
 	doNotStore bool
 
@@ -204,7 +204,7 @@ func (p *providerImpl) AttributeVerifier() user.AttributeVerifier {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 
-	return p.attributeChecker
+	return p.attributeVerifier
 }
 
 // Modifier functions.
