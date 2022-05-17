@@ -43,7 +43,7 @@ class RunWithBestEffortMixin:
             raise RuntimeError(f"Post failed: exit {self.exitstatus}")
 
 
-class PostStoreArtifacts(RunWithBestEffortMixin):
+class StoreArtifacts(RunWithBestEffortMixin):
     STORE_TIMEOUT = 5 * 60
 
     def __init__(
@@ -70,7 +70,7 @@ class PostStoreArtifacts(RunWithBestEffortMixin):
 
 
 # pylint: disable=too-many-instance-attributes
-class PostClusterTest(PostStoreArtifacts):
+class PostClusterTest(StoreArtifacts):
     API_TIMEOUT = 5 * 60
     COLLECT_TIMEOUT = 5 * 60
     CHECK_TIMEOUT = 5 * 60
