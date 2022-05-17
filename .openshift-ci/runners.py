@@ -20,9 +20,11 @@ class ClusterTestSetsRunner:
     def __init__(
         self,
         cluster=NullCluster(),
+        final_post=NullPostTest(),
         sets=None,
     ):
         self.cluster = cluster
+        self.final_post = final_post
         if sets is None:
             sets = []
         self.sets = sets
@@ -65,6 +67,15 @@ class ClusterTestSetsRunner:
             self.log_event("teardown completed")
         except Exception as err:
             self.log_event("ERROR: teardown failed")
+            if hold is None:
+                hold = err
+
+        try:
+            self.log_event("About to run final post")
+            self.final_post.run()
+            self.log_event("final post completed")
+        except Exception as err:
+            self.log_event("ERROR: final post failed")
             if hold is None:
                 hold = err
 
@@ -113,6 +124,7 @@ class ClusterTestSetsRunner:
         print(marker)
 
 
+# pylint: disable=too-many-arguments
 class ClusterTestRunner(ClusterTestSetsRunner):
     """A simple cluster test runner that:
     . provisions a cluster
@@ -127,9 +139,11 @@ class ClusterTestRunner(ClusterTestSetsRunner):
         pre_test=NullPreTest(),
         test=NullTest(),
         post_test=NullPostTest(),
+        final_post=NullPostTest(),
     ):
         super().__init__(
             cluster=cluster,
+            final_post=final_post,
             sets=[
                 {
                     "name": None,

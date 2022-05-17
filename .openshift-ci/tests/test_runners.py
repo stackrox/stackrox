@@ -24,6 +24,11 @@ class TestClusterTestRunner(unittest.TestCase):
         ClusterTestRunner(post_test=post_test).run()
         post_test.run.assert_called_once()
 
+    def test_runs_final_post(self):
+        post_test = Mock()
+        ClusterTestRunner(final_post=post_test).run()
+        post_test.run.assert_called_once()
+
     def test_tearsdown(self):
         cluster = Mock()
         ClusterTestRunner(cluster=cluster).run()
@@ -40,12 +45,16 @@ class TestClusterTestRunner(unittest.TestCase):
         cluster = Mock()
         test = Mock()
         post_test = Mock()
+        final_post = Mock()
         cluster.provision.side_effect = Exception("oops")
         with self.assertRaisesRegex(Exception, "oops"):
-            ClusterTestRunner(cluster=cluster, test=test, post_test=post_test).run()
+            ClusterTestRunner(
+                cluster=cluster, test=test, post_test=post_test, final_post=final_post
+            ).run()
         test.run.assert_not_called()  # skips test
         post_test.run.assert_not_called()  # skips post test
         cluster.teardown.assert_called_once()  # still tearsdown
+        final_post.run.assert_called_once()  # still runs the final post
 
     def test_pre_test_failure(self):
         cluster = Mock()
@@ -136,6 +145,16 @@ class TestClusterTestRunner(unittest.TestCase):
             ClusterTestRunner(
                 cluster=cluster, pre_test=pre_test, test=test, post_test=post_test
             ).run()
+
+    def test_teardown_and_final_post_failure(self):
+        cluster = Mock()
+        cluster.teardown.side_effect = Exception("teardown oops")
+        final_post = Mock()
+        final_post.run.side_effect = Exception("final post oops")
+        with self.assertRaisesRegex(
+            Exception, "teardown oops"
+        ):  # the teardown error is #1
+            ClusterTestRunner(cluster=cluster, final_post=final_post).run()
 
 
 class TestClusterTestSetsRunner(unittest.TestCase):
