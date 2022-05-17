@@ -4,7 +4,6 @@ import groups.SensorBounceNext
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
-import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
@@ -16,7 +15,6 @@ import org.junit.experimental.categories.Category
 import services.CVEService
 import services.ClusterService
 import services.ImageIntegrationService
-import services.ImageService
 import services.PolicyService
 import spock.lang.Retry
 import spock.lang.Shared
@@ -27,7 +25,6 @@ import util.Env
 import util.Helpers
 import util.Timer
 
-@Slf4j
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
     private List<PolicyOuterClass.EnforcementAction> latestTagEnforcements
