@@ -27,6 +27,7 @@ ClusterTestSetsRunner(
     cluster=GKECluster("qa-e2e-test"),
     sets=[
         {
+            "name": "QA tests part I",
             "pre_test": PreSystemTests(),
             "test": QaE2eTestPart1(),
             "post_test": PostClusterTest(
@@ -37,6 +38,7 @@ ClusterTestSetsRunner(
             ),
         },
         {
+            "name": "QA tests part II",
             "test": QaE2eTestPart2(),
             "post_test": PostClusterTest(
                 check_stackrox_logs=True,
@@ -46,6 +48,7 @@ ClusterTestSetsRunner(
             ),
         },
         {
+            "name": "DB backup and restore",
             "test": QaE2eDBBackupRestoreTest(),
             "post_test": StoreArtifacts(),
         },
