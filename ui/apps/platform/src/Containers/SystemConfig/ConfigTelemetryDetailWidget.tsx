@@ -12,7 +12,7 @@ import {
 } from '@patternfly/react-core';
 
 import ReduxToggleField from 'Components/forms/ReduxToggleField';
-import { TelemetryConfig } from 'Containers/SystemConfig/SystemConfigTypes';
+import { TelemetryConfig } from 'types/telemetry.proto';
 
 export type ConfigTelemetryDetailWidgetProps = {
     telemetryConfig: TelemetryConfig;

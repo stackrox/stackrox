@@ -2,7 +2,8 @@ import React, { ReactElement } from 'react';
 import { Grid, GridItem } from '@patternfly/react-core';
 
 import { getProductBranding } from 'constants/productBranding';
-import { SystemConfig, TelemetryConfig } from 'Containers/SystemConfig/SystemConfigTypes';
+import { SystemConfig } from 'types/config.proto';
+import { TelemetryConfig } from 'types/telemetry.proto';
 import ConfigBannerDetailWidget from './ConfigBannerDetailWidget';
 import ConfigLoginDetailWidget from './ConfigLoginDetailWidget';
 import ConfigDataRetentionDetailWidget from './ConfigDataRetentionDetailWidget';

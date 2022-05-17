@@ -20,8 +20,9 @@ import {
 
 import ColorPicker from 'Components/ColorPicker';
 import { getProductBranding } from 'constants/productBranding';
+import { PrivateConfig, PublicConfig } from 'types/config.proto';
+import { TelemetryConfig } from 'types/telemetry.proto';
 import { ConfigTelemetryDetailContent } from '../ConfigTelemetryDetailWidget';
-import { PrivateConfig, PublicConfig, TelemetryConfig } from '../SystemConfigTypes';
 import FormSelect from './FormSelect';
 
 export type SystemConfigFormProps = {
@@ -258,7 +259,9 @@ const SystemConfigForm = ({
                                         >
                                             <FormSelect
                                                 id="publicConfig.header.size"
-                                                value={values?.publicConfig?.header.size}
+                                                value={
+                                                    values?.publicConfig?.header?.size ?? 'UNSET'
+                                                }
                                                 onChange={onCustomChange}
                                             >
                                                 <SelectOption key={0} value="SMALL" />
@@ -343,7 +346,9 @@ const SystemConfigForm = ({
                                         >
                                             <FormSelect
                                                 id="publicConfig.footer.size"
-                                                value={values?.publicConfig?.footer.size}
+                                                value={
+                                                    values?.publicConfig?.footer?.size ?? 'UNSET'
+                                                }
                                                 onChange={onCustomChange}
                                             >
                                                 <SelectOption key={0} value="SMALL" />
