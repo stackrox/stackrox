@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	baseTable  = "node_components_to_cves"
+	baseTable = "node_components_to_cves"
+
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_components_to_cves WHERE Id = $1 AND ComponentId = $2 AND CveId = $3)"
 
 	getStmt     = "SELECT serialized FROM node_components_to_cves WHERE Id = $1 AND ComponentId = $2 AND CveId = $3"
