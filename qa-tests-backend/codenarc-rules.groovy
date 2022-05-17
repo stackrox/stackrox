@@ -300,7 +300,7 @@ ruleset {
     // LoggerForDifferentClass
     // LoggerWithWrongModifiers
     LoggingSwallowsStacktrace 
-    MultipleLoggers 
+    // MultipleLoggers
     // PrintStackTrace
     // Println
     // SystemErrPrint
