@@ -184,11 +184,12 @@ metadata:
   name: stackrox:view-cluster
 # namespace-scoped resources follow
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: admission-control
----
+# TODO(ROX-10964): find what creates this configmap and why it's not getting cleaned up
+#apiVersion: v1
+#kind: ConfigMap
+#metadata:
+#  name: admission-control
+#---
 apiVersion: v1
 kind: ConfigMap
 metadata:

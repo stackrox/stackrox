@@ -1,20 +1,3 @@
-# Names of cluster-scoped resources contain the name of the (dynamically-generated) kuttl namespace,
-# so we cannot list them directly here. Instead, we parameterize them using envsubst and invoke a nested kuttl.
-apiVersion: kuttl.dev/v1beta1
-kind: TestAssert
-commands:
-- script: |
-    set -eu # shell in CI does not grok -o pipefail
-    errors_file=$(mktemp)
-    # Note: apparently $PWD is NOT set to directory of this file for TestAssert but it is for TestStep
-    env - PATH=$PATH NAMESPACE=$NAMESPACE envsubst < tests/common/delete-central-errors-cluster.envsubst.yaml > $errors_file
-    # Note: As of kuttl 0.11.0 the timeout value actually means "the number of attempts".
-    # With 6 objects in the assert file, each attempt typically takes ~22 seconds (including the 1s sleep between attempts),
-    # although it can occasionally take significantly longer, see https://github.com/kudobuilder/kuttl/issues/321
-    # So we specify a timeout value of 13, aiming for under 5 minutes.
-    ${KUTTL:-kubectl-kuttl} errors --timeout 13 $errors_file
-    rm $errors_file
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -27,7 +10,7 @@ metadata:
 # 4. kubectl get "${ns_kinds}" -n kuttl-ns -o yaml > ns_resources_before.yaml
 # 5. deploy a Central to that namespace and wait for it to become healthy
 # 6. kubectl get "${ns_kinds}" -n kuttl-ns -o yaml > ns_resources_after.yaml
-# 7. ./operator/bin/yq-* --null-input  '[load("ns_resources_after.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})] - [load("ns_resources_before.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})]| .[]| select(.kind != "Event" and .kind != "Pod" and .kind != "PodMetrics" and .kind != "ReplicaSet" and .kind != "EndpointSlice") | split_doc'
+# 7. ./operator/bin/yq-* --null-input  '[load("ns_resources_after.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})] - [load("ns_resources_before.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})]| .[]| select(.kind != "PersistentVolumeClaim" and .kind != "Event" and .kind != "Pod" and .kind != "PodMetrics" and .kind != "ReplicaSet" and .kind != "EndpointSlice") | split_doc'
 # 8. Massage the output to omit those few Secrets whose names are unpredictable
 apiVersion: v1
 kind: ConfigMap
@@ -63,11 +46,6 @@ apiVersion: v1
 kind: Endpoints
 metadata:
   name: scanner-db
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: stackrox-db
 ---
 apiVersion: v1
 kind: Secret
