@@ -2958,8 +2958,8 @@ jobs:
       - check-backend-changes
       - check-to-run:
           label: ci-postgres-tests
-          run-on-master: false
-          run-on-tags: false
+          run-on-master: true
+          run-on-tags: true
       - provision-gke-cluster:
           cluster-id: postgres-api-e2e-tests
 
@@ -3634,8 +3634,8 @@ jobs:
           determine-whether-to-run:
             - check-to-run:
                 label: ci-postgres-tests
-                run-on-master: false
-                run-on-tags: false
+                run-on-master: true
+                run-on-tags: true
           use-websocket: true
 
   gke-kernel-api-e2e-tests:
