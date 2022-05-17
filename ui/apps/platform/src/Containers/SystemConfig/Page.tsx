@@ -7,10 +7,11 @@ import { useFormik } from 'formik';
 import { selectors } from 'reducers';
 import { actions } from 'reducers/systemConfig';
 import { actions as telemetryActions } from 'reducers/telemetryConfig';
+import { PublicConfig, PrivateConfig, SystemConfig } from 'types/config.proto';
+import { TelemetryConfig } from 'types/telemetry.proto';
 
 import SystemConfigForm from './SystemConfigForm';
 import Details from './Details';
-import { PublicConfig, PrivateConfig, SystemConfig, TelemetryConfig } from './SystemConfigTypes';
 
 export type PageProps = {
     systemConfig: SystemConfig;
@@ -29,8 +30,8 @@ function getInitialValues(
     systemConfig: SystemConfig,
     telemetryConfig: TelemetryConfig
 ): InitialValues {
-    const modifiedSystemConfig = { ...systemConfig };
-    modifiedSystemConfig.publicConfig = {
+    const { privateConfig } = systemConfig;
+    const publicConfig: PublicConfig = {
         header: {
             color: systemConfig?.publicConfig?.header?.color || '#000000',
             backgroundColor: systemConfig?.publicConfig?.header?.backgroundColor || '#FFFFFF',
@@ -51,7 +52,8 @@ function getInitialValues(
         },
     };
     return {
-        ...modifiedSystemConfig,
+        privateConfig,
+        publicConfig,
         telemetryConfig,
     };
 }
