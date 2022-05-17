@@ -115,6 +115,6 @@ func (s *sourceImpl) MarkAsActive() error {
 	return nil
 }
 
-func (s *sourceImpl) AttributeChecker() user.AttributeChecker {
+func (s *sourceImpl) AttributeChecker() user.AttributeVerifier {
 	return nil
 }

@@ -40,7 +40,7 @@ type providerImpl struct {
 
 	roleMapper       permissions.RoleMapper
 	issuer           tokens.Issuer
-	attributeChecker user.AttributeChecker
+	attributeChecker user.AttributeVerifier
 
 	doNotStore bool
 
@@ -200,7 +200,7 @@ func (p *providerImpl) Issuer() tokens.Issuer {
 	return p.issuer
 }
 
-func (p *providerImpl) AttributeChecker() user.AttributeChecker {
+func (p *providerImpl) AttributeChecker() user.AttributeVerifier {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 

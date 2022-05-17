@@ -34,7 +34,7 @@ func CreateRoleBasedIdentity(ctx context.Context, provider Provider, authResp *A
 
 	// The attribute checker is not required for every provider, only check if set.
 	if provider.AttributeChecker() != nil {
-		if err := provider.AttributeChecker().Check(ud); err != nil {
+		if err := provider.AttributeChecker().Verify(ud.Attributes); err != nil {
 			return nil, err
 		}
 	}

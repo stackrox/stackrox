@@ -168,11 +168,11 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 	}
 	if providerReq.GetRequiredAttributes() != nil {
 		return nil, errox.InvalidArgs.CausedBy("auth provider required attributes is set, this is not allowed " +
-			"for providers created via API.")
+			"for providers created via API")
 	}
 
 	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq),
-		authproviders.WithValidateCallback(datastore.Singleton()), authproviders.WithAttributeChecker(providerReq))
+		authproviders.WithValidateCallback(datastore.Singleton()))
 	if err != nil {
 		return nil, errox.InvalidArgs.New("unable to create an auth provider instance").CausedBy(err)
 	}
@@ -197,7 +197,7 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 	if !protoutils.EqualStorageAuthProvider_RequiredAttributeSlices(
 		provider.StorageView().GetRequiredAttributes(), request.GetRequiredAttributes()) {
 		return nil, errox.InvalidArgs.CausedBy("auth provider's required attributes are not allowed to be " +
-			"modified via API.")
+			"modified via API")
 	}
 
 	if err := s.registry.ValidateProvider(ctx, authproviders.WithStorageView(request)); err != nil {
