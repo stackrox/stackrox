@@ -1,4 +1,4 @@
-import { selectors as ViolationsPageSelectors } from '../../constants/ViolationsPage';
+import { selectors } from '../../constants/ViolationsPage';
 import { selectors as PoliciesPageSelectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
 import {
@@ -21,22 +21,38 @@ describe('Violations page', () => {
     it('should select item in left nav', () => {
         visitViolations();
 
-        cy.get(ViolationsPageSelectors.navLink).should('have.class', 'pf-m-current');
+        cy.get(selectors.navLink).should('have.class', 'pf-m-current');
     });
 
     it('should have violations in table', () => {
         visitViolationsWithFixture('alerts/alerts.json');
 
         const count = 2;
-        cy.get(ViolationsPageSelectors.resultsFoundHeader(count));
-        cy.get(ViolationsPageSelectors.table.rows).should('have.length', count);
+        cy.get(selectors.resultsFoundHeader(count));
+        cy.get(selectors.table.rows).should('have.length', count);
     });
 
-    it('should have Lifecycle column in table', () => {
+    it('should have columns in table', () => {
         visitViolationsWithFixture('alerts/alerts.json');
 
-        cy.get(ViolationsPageSelectors.table.column.lifecycle);
-        cy.get(`${ViolationsPageSelectors.firstTableRow} td[data-label="Lifecycle"]`).should(
+        cy.get('th[scope="col"]:contains("Policy")');
+        cy.get('th[scope="col"]:contains("Entity")');
+        cy.get('th[scope="col"]:contains("Type")');
+        cy.get('th[scope="col"]:contains("Enforced")');
+        cy.get('th[scope="col"]:contains("Severity")');
+        cy.get('th[scope="col"]:contains("Categories")');
+        cy.get('th[scope="col"]:contains("Lifecycle")');
+        cy.get('th[scope="col"]:contains("Time")');
+
+        cy.get(`${selectors.firstTableRow} td[data-label="Entity"]`).should(
+            'contain',
+            'ip-masq-agent'
+        ); // table cell also has cluster/namespace
+        cy.get(`${selectors.firstTableRow} td[data-label="Type"]`).should(
+            'have.text',
+            'deployment'
+        );
+        cy.get(`${selectors.firstTableRow} td[data-label="Lifecycle"]`).should(
             'have.text',
             'Runtime'
         );
@@ -46,49 +62,25 @@ describe('Violations page', () => {
         visitViolationsWithFixture('alerts/alerts.json');
         visitViolationFromTableWithFixture('alerts/alertFirstInAlerts.json');
 
-        cy.get(ViolationsPageSelectors.details.page);
-        cy.get(ViolationsPageSelectors.details.title).should('have.text', 'Misuse of iptables');
-        cy.get(ViolationsPageSelectors.details.subtitle).should(
-            'have.text',
-            'in "ip-masq-agent" deployment'
-        );
-    });
-
-    it('should have Entity column in table', () => {
-        visitViolationsWithFixture('alerts/alerts.json');
-
-        cy.get(ViolationsPageSelectors.table.column.entity);
-        cy.get(`${ViolationsPageSelectors.firstTableRow} td[data-label="Entity"]`).should(
-            'contain',
-            'ip-masq-agent'
-        );
-        // Table cell also has cluster/namespace.
-    });
-
-    it('should have Type column in table', () => {
-        visitViolationsWithFixture('alerts/alerts.json');
-
-        cy.get(ViolationsPageSelectors.table.column.type);
-        cy.get(`${ViolationsPageSelectors.firstTableRow} td[data-label="Type"]`).should(
-            'have.text',
-            'deployment'
-        );
+        cy.get(selectors.details.page);
+        cy.get(selectors.details.title).should('have.text', 'Misuse of iptables');
+        cy.get(selectors.details.subtitle).should('have.text', 'in "ip-masq-agent" deployment');
     });
 
     it('should have 4 tabs in the sidepanel', () => {
         visitViolationWithFixture('alerts/alertFirstInAlerts.json');
 
-        cy.get(ViolationsPageSelectors.details.tabs).should('have.length', 4);
-        cy.get(ViolationsPageSelectors.details.violationTab).should('exist');
-        cy.get(ViolationsPageSelectors.details.enforcementTab).should('exist');
-        cy.get(ViolationsPageSelectors.details.deploymentTab).should('exist');
-        cy.get(ViolationsPageSelectors.details.policyTab).should('exist');
+        cy.get(selectors.details.tabs).should('have.length', 4);
+        cy.get(selectors.details.violationTab);
+        cy.get(selectors.details.enforcementTab);
+        cy.get(selectors.details.deploymentTab);
+        cy.get(selectors.details.policyTab);
     });
 
     it('should have runtime violation information in the Violations tab', () => {
         visitViolationWithFixture('alerts/alertFirstInAlerts.json');
 
-        cy.get(ViolationsPageSelectors.details.violationTab);
+        cy.get(selectors.details.violationTab);
         // TODO Violation Events and so on
     });
 
@@ -96,30 +88,26 @@ describe('Violations page', () => {
         visitViolationsWithFixture('alerts/alerts.json');
 
         // Lifecycle: Runtime
-        cy.get(
-            `${ViolationsPageSelectors.firstTableRow} ${ViolationsPageSelectors.actions.btn}`
-        ).click();
-        cy.get(ViolationsPageSelectors.firstTableRow)
-            .get(ViolationsPageSelectors.actions.excludeDeploymentBtn)
+        cy.get(`${selectors.firstTableRow} ${selectors.actions.btn}`).click();
+        cy.get(selectors.firstTableRow)
+            .get(selectors.actions.excludeDeploymentBtn)
             .should('exist')
-            .get(ViolationsPageSelectors.actions.resolveBtn)
+            .get(selectors.actions.resolveBtn)
             .should('exist')
-            .get(ViolationsPageSelectors.actions.resolveAndAddToBaselineBtn)
+            .get(selectors.actions.resolveAndAddToBaselineBtn)
             .should('exist');
 
         // to click out and reset the actions dropdown
         cy.get('body').type('{esc}');
 
         // Lifecycle: Deploy
-        cy.get(
-            `${ViolationsPageSelectors.lastTableRow} ${ViolationsPageSelectors.actions.btn}`
-        ).click();
-        cy.get(ViolationsPageSelectors.lastTableRow)
-            .get(ViolationsPageSelectors.actions.resolveBtn)
+        cy.get(`${selectors.lastTableRow} ${selectors.actions.btn}`).click();
+        cy.get(selectors.lastTableRow)
+            .get(selectors.actions.resolveBtn)
             .should('not.exist')
-            .get(ViolationsPageSelectors.actions.resolveAndAddToBaselineBtn)
+            .get(selectors.actions.resolveAndAddToBaselineBtn)
             .should('not.exist')
-            .get(ViolationsPageSelectors.actions.excludeDeploymentBtn)
+            .get(selectors.actions.excludeDeploymentBtn)
             .should('exist');
     });
 
@@ -130,9 +118,9 @@ describe('Violations page', () => {
     it('should have enforcement information in the Enforcement tab', () => {
         visitViolationWithFixture('alerts/alertFirstInAlerts.json');
 
-        cy.get(ViolationsPageSelectors.details.enforcementTab).click();
-        cy.get(ViolationsPageSelectors.enforcement.detailMessage).should('contain', 'Kill Pod');
-        cy.get(ViolationsPageSelectors.enforcement.explanationMessage).should(
+        cy.get(selectors.details.enforcementTab).click();
+        cy.get(selectors.enforcement.detailMessage).should('contain', 'Kill Pod');
+        cy.get(selectors.enforcement.explanationMessage).should(
             'contain',
             'Runtime data was evaluated against this security policy'
         );
@@ -142,30 +130,30 @@ describe('Violations page', () => {
         visitViolationWithFixture('alerts/alertFirstInAlerts.json');
         clickDeploymentTabWithFixture('alerts/deploymentForAlertFirstInAlerts.json');
 
-        cy.get(ViolationsPageSelectors.deployment.overview);
-        cy.get(ViolationsPageSelectors.deployment.containerConfiguration);
-        cy.get(
-            `${ViolationsPageSelectors.deployment.containerConfiguration} [data-testid="commands"]`
-        ).should('not.exist');
-        cy.get(ViolationsPageSelectors.deployment.securityContext);
-        cy.get(ViolationsPageSelectors.deployment.portConfiguration);
+        cy.get(selectors.deployment.overview);
+        cy.get(selectors.deployment.containerConfiguration);
+        cy.get(`${selectors.deployment.containerConfiguration} [data-testid="commands"]`).should(
+            'not.exist'
+        );
+        cy.get(selectors.deployment.securityContext);
+        cy.get(selectors.deployment.portConfiguration);
     });
 
     it('should show deployment information in the Deployment Details tab with no container configuration values', () => {
         visitViolationWithFixture('alerts/alertWithEmptyContainerConfig.json');
         clickDeploymentTabWithFixture('alerts/deploymentWithEmptyContainerConfig.json');
 
-        cy.get(ViolationsPageSelectors.deployment.containerConfiguration);
+        cy.get(selectors.deployment.containerConfiguration);
         // TODO need more positive and negative assertions to contrast deployments in this and the previous test.
-        cy.get(
-            `${ViolationsPageSelectors.deployment.containerConfiguration} [data-testid="commands"]`
-        ).should('not.exist');
+        cy.get(`${selectors.deployment.containerConfiguration} [data-testid="commands"]`).should(
+            'not.exist'
+        );
     });
 
     it('should have policy information in the Policy Details tab', () => {
         visitViolationWithFixture('alerts/alertFirstInAlerts.json');
 
-        cy.get(ViolationsPageSelectors.details.policyTab).click();
+        cy.get(selectors.details.policyTab).click();
         cy.get(PoliciesPageSelectors.policyDetailsPanel.detailsSection);
     });
 
