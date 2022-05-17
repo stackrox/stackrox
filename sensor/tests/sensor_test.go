@@ -1,62 +1,29 @@
-package integration_tests
+package tests
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
+	"github.com/stackrox/rox/sensor/tests/message"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/test/bufconn"
 )
 
-
-type fakeService struct{
-	stream central.SensorService_CommunicateServer
-	connectionStarted concurrency.Signal
-}
-
-func (s *fakeService) Communicate(msg central.SensorService_CommunicateServer) error {
-	fmt.Println("@ Received Communicate call")
-	md := metautils.NiceMD{}
-	md.Set(centralsensor.SensorHelloMetadataKey, "true")
-	err := msg.SetHeader(metadata.MD(md))
-	if err != nil {
-		return err
-	}
-
-	go func () {
-		if received, err := msg.Recv(); err != nil {
-			fmt.Printf("Error: %s\n", err)
-		} else {
-			fmt.Printf("MESSAGE RECEIVED FROM CENTRAL: %s\n", received.String())
-		}
-	}()
-
-	// s.stream = msg
-	return nil
-}
-
-func createConnectionAndStartServer(t *testing.T) (*grpc.ClientConn, *fakeService, func()) {
+func createConnectionAndStartServer(t *testing.T, fakeCentral *fakeService) (*grpc.ClientConn, *fakeService, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
-
 	server := grpc.NewServer()
-	fakeCentral := &fakeService{
-		connectionStarted: concurrency.NewSignal(),
-	}
 	central.RegisterSensorServiceServer(server, fakeCentral)
 
 	go func() {
@@ -75,8 +42,20 @@ func createConnectionAndStartServer(t *testing.T) (*grpc.ClientConn, *fakeServic
 		server.Stop()
 	}
 
-
 	return conn, fakeCentral, closeF
+}
+
+func isHello(m *central.MsgFromSensor) bool {
+	return m.GetHello() != nil
+}
+
+func atLeastOneMessage(t *testing.T, messages []*central.MsgFromSensor, match func(m *central.MsgFromSensor) bool, msg string) {
+	for _, m := range messages {
+		if match(m) {
+			return
+		}
+	}
+	t.Errorf("No matches: %s", msg)
 }
 
 func Test_Sensor(t *testing.T) {
@@ -88,7 +67,13 @@ func Test_Sensor(t *testing.T) {
 	isolator.Setenv("ROX_MTLS_CA_FILE", "certs/caCert.pem")
 	isolator.Setenv("ROX_MTLS_CA_KEY_FILE", "certs/caKey.pem")
 
-	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(t)
+	fakeCentral := makeFakeCentralWithInitialMessages(
+		message.SensorHello("1234"),
+		message.ClusterConfig(),
+		message.PolicySync([]*storage.Policy{}),
+		message.BaselineSync([]*storage.ProcessBaseline{}))
+
+	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(t, fakeCentral)
 	defer shutdownFakeServer()
 	fakeClient := makeFakeClient()
 	fakeConnectionFactory := makeFakeConnectionFactory(conn)
@@ -98,18 +83,15 @@ func Test_Sensor(t *testing.T) {
 	s, err := sensor.CreateSensor(fakeClient, nil, fakeConnectionFactory, true)
 	require.NoError(t, err)
 
-	fmt.Println("Starting sensor")
 	go s.Start()
-	go func() {
-		if b := fakeConnectionFactory.okSig.Signal(); !b {
-			t.Fatal("Couldn't send signal to okSig from connection factory")
-		}
-	}()
+	defer s.Stop()
+
 	spyCentral.connectionStarted.Wait()
-	fmt.Println("Received first communication")
-	time.Sleep(20 * time.Second)
-	//msg, err := spyCentral.stream.Recv()
-	//require.NoError(t, err)
-	//require.Equal(t, msg.String(), "asd")
-	s.Stop()
+
+	time.Sleep(15 * time.Second)
+	allMessages := fakeCentral.GetAllMessages()
+	assert.GreaterOrEqual(t, len(allMessages), 5)
+	atLeastOneMessage(t, allMessages, isHello, "Message is Hello")
+
+	spyCentral.killSwitch.Signal()
 }

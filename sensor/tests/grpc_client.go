@@ -1,4 +1,4 @@
-package integration_tests
+package tests
 
 import (
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -6,10 +6,10 @@ import (
 	"google.golang.org/grpc"
 )
 
-type fakeGRPCClient struct{
-	okSig concurrency.Signal
+type fakeGRPCClient struct {
+	okSig   concurrency.Signal
 	stopSig concurrency.ErrorSignal
-	conn *grpc.ClientConn
+	conn    *grpc.ClientConn
 }
 
 func makeFakeConnectionFactory(c *grpc.ClientConn) *fakeGRPCClient {
@@ -22,6 +22,7 @@ func makeFakeConnectionFactory(c *grpc.ClientConn) *fakeGRPCClient {
 
 func (f *fakeGRPCClient) SetCentralConnectionWithRetries(ptr *util.LazyClientConn) {
 	ptr.Set(f.conn)
+	f.okSig.Signal()
 }
 
 func (f *fakeGRPCClient) StopSignal() concurrency.ErrorSignal {
@@ -31,5 +32,3 @@ func (f *fakeGRPCClient) StopSignal() concurrency.ErrorSignal {
 func (f *fakeGRPCClient) OkSignal() concurrency.Signal {
 	return f.okSig
 }
-
-

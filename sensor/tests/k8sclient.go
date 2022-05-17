@@ -1,4 +1,4 @@
-package integration_tests
+package tests
 
 import (
 	"context"
@@ -14,7 +14,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 )
-
 
 func makeFakeClient() *clientSet {
 	return &clientSet{
@@ -32,14 +31,14 @@ type clientSet struct {
 
 func (c *clientSet) setupTestEnvironment(t *testing.T) {
 	_, err := c.Kubernetes().CoreV1().Nodes().Create(context.Background(), &v1.Node{
-		Spec:       v1.NodeSpec{
-			PodCIDR:            "",
-			PodCIDRs:           nil,
-			ProviderID:         "",
-			Unschedulable:      false,
-			Taints:             nil,
+		Spec: v1.NodeSpec{
+			PodCIDR:       "",
+			PodCIDRs:      nil,
+			ProviderID:    "",
+			Unschedulable: false,
+			Taints:        nil,
 		},
-		Status:     v1.NodeStatus{
+		Status: v1.NodeStatus{
 			Capacity:        nil,
 			Allocatable:     nil,
 			Phase:           "",
