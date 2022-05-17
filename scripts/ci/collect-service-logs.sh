@@ -49,7 +49,7 @@ main() {
     for object in deployments services pods secrets serviceaccounts validatingwebhookconfigurations catalogsources subscriptions clusterserviceversions; do
         # A feel good command before pulling logs
         echo ">>> ${object} <<<"
-        kubectl -n "${namespace}" get "${object}" -o wide
+        kubectl -n "${namespace}" get "${object}" -o wide 2>&1 | sed -e 's/^/out: /' # (prefix output to avoid triggering prow log focus)
 
         mkdir -p "${log_dir}/${object}"
 
