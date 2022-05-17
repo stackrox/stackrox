@@ -40,16 +40,16 @@ keyUsage = critical, digitalSignature, cRLSign, keyCertSign
     openssl req -nodes -config <(echo "$root_ca_exts") -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Root ${ca_name}"
 
     # Intermediate CA
-    openssl genrsa -out intermediate.key 2048
+    openssl genrsa -out intermediate.key 4096
     openssl req -new -key intermediate.key -subj "/CN=Intermediate ${ca_name}" |
-        openssl x509 -extfile <(echo "$intermediate_ca_exts") -req -CA ca.crt -CAkey ca.key -CAcreateserial -out intermediate.crt
+        openssl x509 -sha256 -extfile <(echo "$intermediate_ca_exts") -req -CA ca.crt -CAkey ca.key -CAcreateserial -out intermediate.crt
 
     leaf_ca_exts="subjectAltName=DNS:${cn}"
 
     # Leaf cert
-    openssl genrsa -out leaf.key 2048
+    openssl genrsa -out leaf.key 4096
     openssl req -new -key leaf.key -subj "/CN=${cn}" |
-        openssl x509 -extfile <(echo "$leaf_ca_exts") -req -CA intermediate.crt -CAkey intermediate.key -CAcreateserial -out leaf.crt
+        openssl x509 -sha256 -extfile <(echo "$leaf_ca_exts") -req -CA intermediate.crt -CAkey intermediate.key -CAcreateserial -out leaf.crt
 
     cat leaf.crt intermediate.crt ca.crt >tls.crt
     cp leaf.key tls.key
