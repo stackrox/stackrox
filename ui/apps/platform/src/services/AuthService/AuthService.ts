@@ -82,7 +82,6 @@ export type AuthProviderInfo = {
 export type AuthProviderRequiredAttributes = {
     attributeKey: string;
     attributeValue: string;
-    readOnly: boolean;
 };
 
 /**

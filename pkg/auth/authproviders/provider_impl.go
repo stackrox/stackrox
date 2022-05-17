@@ -200,7 +200,7 @@ func (p *providerImpl) Issuer() tokens.Issuer {
 	return p.issuer
 }
 
-func (p *providerImpl) AttributeChecker() user.AttributeVerifier {
+func (p *providerImpl) AttributeVerifier() user.AttributeVerifier {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 

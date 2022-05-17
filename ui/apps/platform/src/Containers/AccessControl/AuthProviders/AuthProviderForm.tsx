@@ -479,7 +479,7 @@ function AuthProviderForm({
                                                 type="text"
                                                 id={attribute.attributeKey}
                                                 value={attribute.attributeKey}
-                                                isDisabled={attribute.readOnly}
+                                                isDisabled
                                             />
                                         </FormGroup>
                                         <FormGroup label="Value" fieldId={attribute.attributeValue}>
@@ -487,7 +487,7 @@ function AuthProviderForm({
                                                 type="text"
                                                 id={attribute.attributeValue}
                                                 value={attribute.attributeValue}
-                                                isDisabled={attribute.readOnly}
+                                                isDisabled
                                             />
                                         </FormGroup>
                                     </Flex>

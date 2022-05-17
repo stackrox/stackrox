@@ -13,7 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
-// CreateRoleBasedIdentity builds v1.AuthStatus containing identity and its role information from auth response
+// CreateRoleBasedIdentity builds v1.AuthStatus containing identity and its role information from auth response.
+// In addition, the AuthResponse will be verified for conformity.
 func CreateRoleBasedIdentity(ctx context.Context, provider Provider, authResp *AuthResponse) (*v1.AuthStatus, error) {
 	if authResp == nil || authResp.Claims == nil {
 		return nil, errors.New("authentication response is empty")
@@ -33,8 +34,8 @@ func CreateRoleBasedIdentity(ctx context.Context, provider Provider, authResp *A
 	}
 
 	// The attribute checker is not required for every provider, only check if set.
-	if provider.AttributeChecker() != nil {
-		if err := provider.AttributeChecker().Verify(ud.Attributes); err != nil {
+	if provider.AttributeVerifier() != nil {
+		if err := provider.AttributeVerifier().Verify(ud.Attributes); err != nil {
 			return nil, err
 		}
 	}

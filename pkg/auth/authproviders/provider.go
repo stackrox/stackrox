@@ -39,7 +39,7 @@ type Provider interface {
 	RoleMapper() permissions.RoleMapper
 	Issuer() tokens.Issuer
 
-	AttributeChecker() user.AttributeVerifier
+	AttributeVerifier() user.AttributeVerifier
 
 	ApplyOptions(options ...ProviderOption) error
 	Active() bool
