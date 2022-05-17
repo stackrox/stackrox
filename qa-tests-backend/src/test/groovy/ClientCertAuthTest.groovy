@@ -54,20 +54,20 @@ class ClientCertAuthTest extends BaseSpecification {
         }
     }
 
-    private static getAuthProviderType() {
+    private getAuthProviderType() {
         try {
             return AuthService.getAuthStatus().authProvider.type
         } catch (StatusRuntimeException ex) {
-            println "Error getting auth status: ${ex}"
+            log.error("Error getting auth status", ex)
             return "error"
         }
     }
 
-    private static getAuthProviderID() {
+    private getAuthProviderID() {
         try {
             return AuthService.getAuthStatus().authProvider.id
         } catch (StatusRuntimeException ex) {
-            println "Error getting auth status: ${ex}"
+            log.error("Error getting auth status", ex)
             return ""
         }
     }
