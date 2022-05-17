@@ -63,7 +63,7 @@ describe('Vulnmanagement reports', () => {
             visit(`${url.reporting.list}?action=create`);
             cy.wait(['@getSimpleAccessScopes', '@getNotifiers']);
 
-            cy.get('h1:contains("Create a vulnerability report")');
+            cy.get('h1:contains("Create an image vulnerability report")');
 
             // Step 0, should start out with disabled Save button
             cy.get(selectors.reportSection.buttons.create).should('be.disabled');
