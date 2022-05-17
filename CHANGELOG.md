@@ -9,7 +9,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-10819: The documentation for API v1/notifiers ("GetNotifiers") previously stated that the request could be filtered by name or type. This is incorrect as this API never allowed filtering. The documentation has been fixed to reflect that.
 - ROX-9614: Add `file` query parameter to Central's `/api/extensions/scannerdefinitions`, allowing retrieval of individual files (not directories) from Scanner's Definition bundle using their full path within the archive. Add `sensorEndpoint` to Scanner's configmap, so Scanner in slim mode knows how to reach Sensor from its cluster.
 - ROX-9928: Policy "OpenShift: Advanced Cluster Security Central Admin Secret Accessed" renamed to "OpenShift: Central Admin Secret Accessed"
-- ROX-8277: changed UserAgent Header for all requests from stackrox operator to kubernetes API server to show appropriate version of the operator for example: `rhacs-operator/v3.70.0 opensource (linux/amd64)`
+- ROX-8277: changed UserAgent Header for all requests from stackrox operator to kubernetes API server to show appropriate version of the operator, for example: `rhacs-operator/v3.70.0 opensource (linux/amd64)`
 
 ## [70.0]
 
