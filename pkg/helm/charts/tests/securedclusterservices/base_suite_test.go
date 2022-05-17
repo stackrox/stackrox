@@ -94,6 +94,9 @@ config:
 enableOpenShiftMonitoring: true
 scanner:
   disable: false
+
+system:
+    enableDeprecatedPodSecurityPolicies: true
 `
 )
 

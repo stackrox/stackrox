@@ -83,7 +83,7 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		ReleaseBuild:             buildinfo.ReleaseBuild,
 		FeatureFlags:             getFeatureFlags(),
 
-		EnablePodSecurityPolicies: true,
+		EnablePodSecurityPolicies: false,
 	}
 
 	return &metaValues

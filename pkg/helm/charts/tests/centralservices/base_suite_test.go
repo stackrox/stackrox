@@ -75,6 +75,8 @@ scanner:
     cert: "scanner-db tls cert pem"
     key: "scanner-db tls key pem"
 enableOpenShiftMonitoring: true
+system:
+    enableDeprecatedPodSecurityPolicies: true
 `
 	autogenerateAll = `
 licenseKey: "my license key"
@@ -98,6 +100,8 @@ central:
       enabled: true
   enableCentralDB: true
 enableOpenShiftMonitoring: true
+system:
+    enableDeprecatedPodSecurityPolicies: true
 `
 )
 
