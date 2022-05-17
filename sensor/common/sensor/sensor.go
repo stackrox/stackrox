@@ -317,7 +317,7 @@ func (s *Sensor) waitUntilCentralIsReady() {
 func (s *Sensor) pollMetadata() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	// Metadata result doesn't matter, as long as central is reachable
+	// Metadata result doesn't matter, as long as central is reachable.
 	if _, err := s.centralRestClient.GetMetadata(ctx); err != nil {
 		return errors.Wrap(err, "polling metadata")
 	}
