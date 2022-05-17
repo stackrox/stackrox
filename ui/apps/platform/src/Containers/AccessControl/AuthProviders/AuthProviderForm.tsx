@@ -452,49 +452,53 @@ function AuthProviderForm({
                             </p>
                         </Alert>
                     </div>
-                    {selectedAuthProvider.requiredAttributes && (
-                        <FormSection
-                            title="Required attributes for the authentication provider"
-                            titleElement="h3"
-                        >
-                            {selectedAuthProvider.requiredAttributes.map(
-                                (attribute, index: number) => (
-                                    <Flex
-                                        key={`${attribute.attributeKey}_required_attribute_${index}`}
-                                    >
-                                        <FormGroup label="Key" fieldId={attribute.attributeKey}>
-                                            <TextInput
-                                                type="text"
-                                                id={attribute.attributeKey}
-                                                value={attribute.attributeKey}
-                                                isDisabled
-                                            />
-                                        </FormGroup>
-                                        <FormGroup label="Value" fieldId={attribute.attributeValue}>
-                                            <TextInput
-                                                type="text"
-                                                id={attribute.attributeValue}
-                                                value={attribute.attributeValue}
-                                                isDisabled
-                                            />
-                                        </FormGroup>
-                                    </Flex>
-                                )
-                            )}
-                            <div id="required-attributes-description">
-                                <Alert isInline variant="info" title="">
-                                    <p>
-                                        The required attributes are used to require attributes being
-                                        returned from the authentication provider.
-                                    </p>
-                                    <p>
-                                        In case a required attribute is not set, the login will fail
-                                        and no role will be set to the user.
-                                    </p>
-                                </Alert>
-                            </div>
-                        </FormSection>
-                    )}
+                    {selectedAuthProvider.requiredAttributes &&
+                        selectedAuthProvider.requiredAttributes.length > 0 && (
+                            <FormSection
+                                title="Required attributes for the authentication provider"
+                                titleElement="h3"
+                            >
+                                {selectedAuthProvider.requiredAttributes.map(
+                                    (attribute, index: number) => (
+                                        <Flex
+                                            key={`${attribute.attributeKey}_required_attribute_${index}`}
+                                        >
+                                            <FormGroup label="Key" fieldId={attribute.attributeKey}>
+                                                <TextInput
+                                                    type="text"
+                                                    id={attribute.attributeKey}
+                                                    value={attribute.attributeKey}
+                                                    isDisabled
+                                                />
+                                            </FormGroup>
+                                            <FormGroup
+                                                label="Value"
+                                                fieldId={attribute.attributeValue}
+                                            >
+                                                <TextInput
+                                                    type="text"
+                                                    id={attribute.attributeValue}
+                                                    value={attribute.attributeValue}
+                                                    isDisabled
+                                                />
+                                            </FormGroup>
+                                        </Flex>
+                                    )
+                                )}
+                                <div id="required-attributes-description">
+                                    <Alert isInline variant="info" title="">
+                                        <p>
+                                            The required attributes are used to require attributes
+                                            being returned from the authentication provider.
+                                        </p>
+                                        <p>
+                                            In case a required attribute is not set, the login will
+                                            fail and no role will be set to the user.
+                                        </p>
+                                    </Alert>
+                                </div>
+                            </FormSection>
+                        )}
                     <FormSection title="Rules" titleElement="h3" className="pf-u-mt-0">
                         <RuleGroups
                             authProviderId={selectedAuthProvider.id}
