@@ -114,6 +114,26 @@ rpm_suffix="el8.x86_64.rpm"
 
 curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-3.${rpm_suffix}"
 
+# Install Postgres Client so central can initiate backups/restores
+# Get postgres RPMs directly
+postgres_major="14"
+pg_rhel_version="8.5"
+postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_version}-x86_64"
+#postgres_repo_url="https://ftp.postgresql.org/pub/repos/yum/14/redhat/rhel-8-x86_64/"
+#postgres_rpm_suffix="rhel8.x86_64.rpm"
+#postgres_major="14"
+postgres_minor="14.2-1PGDG.rhel8.x86_64"
+
+#curl -s -f -o "${bundle_root}/postgresql14-libs.rpm" "${postgres_repo_url}/postgresql14-libs-14.2-1PGDG.${postgres_rpm_suffix}"
+#curl -s -f -o "${bundle_root}/postgresql14.rpm" "${postgres_repo_url}/postgresql14-contrib-14.2-1PGDG.${postgres_rpm_suffix}"
+echo "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
+echo "${postgres_url}/postgresql${postgres_major}-libs-${postgres_minor}.rpm"
+
+curl -sS --fail -o "${bundle_root}/postgres.rpm" \
+    "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
+curl -sS --fail -o "${bundle_root}/postgres-libs.rpm" \
+    "${postgres_url}/postgresql${postgres_major}-libs-${postgres_minor}.rpm"
+
 # =============================================================================
 
 # Files should have owner/group equal to root:root
