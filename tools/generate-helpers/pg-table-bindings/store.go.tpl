@@ -430,10 +430,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
     }
     {{- else if .Obj.IsDirectlyScoped }}
     scopeChecker := sac.GlobalAccessScopeChecker(ctx)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return 0, err
 	}
@@ -471,10 +468,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
     }
     {{- else if .Obj.IsDirectlyScoped }}
     scopeChecker := sac.GlobalAccessScopeChecker(ctx)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return false, err
 	}
@@ -623,10 +617,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
     }
     {{- else if .Obj.IsDirectlyScoped }}
     scopeChecker := sac.GlobalAccessScopeChecker(ctx)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return nil, err
 	}
