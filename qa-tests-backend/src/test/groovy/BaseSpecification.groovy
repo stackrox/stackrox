@@ -37,6 +37,8 @@ import util.OnFailure
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
+    static final Logger LOG = LoggerFactory.getLogger("test." + BaseSpecification.getSimpleName())
+
     static final String TEST_IMAGE = "quay.io/rhacs-eng/qa:nginx-1-7-9"
 
     static final String RUN_ID
@@ -62,7 +64,7 @@ class BaseSpecification extends Specification {
 
     Map<String, List<String>> resourceRecord = [:]
 
-    private globalSetup() {
+    private static globalSetup() {
         if (globalSetupDone) {
             return
         }
@@ -282,7 +284,7 @@ class BaseSpecification extends Specification {
         try {
             orchestrator.cleanup()
         } catch (Exception e) {
-            log.error "Error to clean up orchestrator: ${e.message}"
+            log.error("Error to clean up orchestrator", e)
             throw e
         }
         disableAuthzPlugin()
@@ -324,7 +326,7 @@ class BaseSpecification extends Specification {
         Helpers.resetRetryAttempts()
     }
 
-    def addStackroxImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
+    static addStackroxImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
         // Add an image pull secret to the qa namespace and also the default service account so the qa namespace can
         // pull stackrox images from dockerhub
 
@@ -332,7 +334,7 @@ class BaseSpecification extends Specification {
                            Env.get("REGISTRY_PASSWORD", null) == null)) {
             // Arguably this should be fatal but for tests that don't pull from docker.io/stackrox it is not strictly
             // necessary.
-            log.warn "The REGISTRY_USERNAME and/or REGISTRY_PASSWORD env var is missing. " +
+            LOG.warn "The REGISTRY_USERNAME and/or REGISTRY_PASSWORD env var is missing. " +
                     "(this is ok if your test does not use images from docker.io/stackrox)"
             return
         }
@@ -366,7 +368,7 @@ class BaseSpecification extends Specification {
     static addGCRImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
         if (!Env.IN_CI && Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER", null) == null) {
             // Arguably this should be fatal but for tests that don't pull from us.gcr.io it is not strictly necessary
-            log.warn "The GOOGLE_CREDENTIALS_GCR_SCANNER env var is missing. "+
+            LOG.warn "The GOOGLE_CREDENTIALS_GCR_SCANNER env var is missing. "+
                     "(this is ok if your test does not use images on us.gcr.io)"
             return
         }
