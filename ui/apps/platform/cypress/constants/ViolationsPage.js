@@ -52,12 +52,6 @@ export const selectors = {
     },
     table: {
         rows: 'tbody tr',
-        column: {
-            lifecycle: 'th:contains("Lifecycle")',
-            entity: 'th:contains("Entity")',
-            type: 'th:contains("Type")',
-            policy: 'th:contains("Policy")',
-        },
     },
     modal: {
         excludeConfirmation: '[data-testid="exclude-confirmation-modal"]',
