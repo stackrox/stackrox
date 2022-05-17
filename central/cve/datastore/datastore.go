@@ -44,7 +44,7 @@ func New(graphProvider graph.Provider, indexQ queue.WaitableQueue, storage store
 		graphProvider: graphProvider,
 		indexQ:        indexQ,
 
-		cveSuppressionCache: common.CVESuppressionCache{},
+		cveSuppressionCache: make(common.CVESuppressionCache),
 	}
 	if err := ds.buildSuppressedCache(); err != nil {
 		return nil, err

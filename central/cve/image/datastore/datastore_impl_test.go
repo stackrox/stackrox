@@ -111,12 +111,8 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheImages() {
 	}, nil)
 	suite.NoError(suite.datastore.buildSuppressedCache())
 	expectedCache := common.CVESuppressionCache{
-		"CVE-ABC": {
-			Suppressed: true,
-		},
-		"CVE-DEF": {
-			Suppressed: true,
-		},
+		"CVE-ABC": {},
+		"CVE-DEF": {},
 	}
 	suite.Equal(expectedCache, suite.datastore.cveSuppressionCache)
 

@@ -46,7 +46,7 @@
     },
     "/v1/cves/unsuppress": {
       "patch": {
-        "summary": "UnsuppressCVE unsuppresse    s cves.",
+        "summary": "UnsuppressCVE unsuppresses cves.",
         "operationId": "CVEService_UnsuppressCVEs",
         "responses": {
           "200": {
@@ -74,6 +74,72 @@
         ],
         "tags": [
           "CVEService"
+        ]
+      }
+    },
+    "/v1/imagecves/suppress": {
+      "patch": {
+        "summary": "SuppressCVE suppresses cves.",
+        "operationId": "ImageCVEService_SuppressCVEs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1SuppressCVERequest"
+            }
+          }
+        ],
+        "tags": [
+          "ImageCVEService"
+        ]
+      }
+    },
+    "/v1/imagecves/unsuppress": {
+      "patch": {
+        "summary": "UnsuppressCVE unsuppresse    s cves.",
+        "operationId": "ImageCVEService_UnsuppressCVEs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UnsuppressCVERequest"
+            }
+          }
+        ],
+        "tags": [
+          "ImageCVEService"
         ]
       }
     }
@@ -121,7 +187,7 @@
     "v1SuppressCVERequest": {
       "type": "object",
       "properties": {
-        "ids": {
+        "cves": {
           "type": "array",
           "items": {
             "type": "string"
@@ -135,7 +201,7 @@
     "v1UnsuppressCVERequest": {
       "type": "object",
       "properties": {
-        "ids": {
+        "cves": {
           "type": "array",
           "items": {
             "type": "string"

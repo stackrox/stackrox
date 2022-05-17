@@ -36,12 +36,6 @@ type datastoreImpl struct {
 	cveSuppressionCache common.CVESuppressionCache
 }
 
-type suppressionCacheEntry struct {
-	Suppressed         bool
-	SuppressActivation *types.Timestamp
-	SuppressExpiry     *types.Timestamp
-}
-
 func (ds *datastoreImpl) buildSuppressedCache() error {
 	query := searchPkg.NewQueryBuilder().AddBools(searchPkg.CVESuppressed, true).ProtoQuery()
 	suppressedCVEs, err := ds.searcher.SearchRawCVEs(accessAllCtx, query)
@@ -53,7 +47,6 @@ func (ds *datastoreImpl) buildSuppressedCache() error {
 	defer ds.cveSuppressionLock.Unlock()
 	for _, cve := range suppressedCVEs {
 		ds.cveSuppressionCache[cve.GetId()] = common.SuppressionCacheEntry{
-			Suppressed:         cve.GetSuppressed(),
 			SuppressActivation: cve.GetSuppressActivation(),
 			SuppressExpiry:     cve.GetSuppressExpiry(),
 		}
@@ -191,10 +184,9 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			if entry, ok := ds.cveSuppressionCache[vuln.GetCve()]; ok {
-				vuln.Suppressed = entry.Suppressed
+				vuln.Suppressed = true
 				vuln.SuppressActivation = entry.SuppressActivation
 				vuln.SuppressExpiry = entry.SuppressExpiry
-
 				vuln.State = storage.VulnerabilityState_DEFERRED
 			}
 		}
@@ -215,7 +207,6 @@ func (ds *datastoreImpl) updateCache(cves ...*storage.CVE) {
 
 	for _, cve := range cves {
 		ds.cveSuppressionCache[cve.GetId()] = common.SuppressionCacheEntry{
-			Suppressed:         cve.Suppressed,
 			SuppressActivation: cve.SuppressActivation,
 			SuppressExpiry:     cve.SuppressExpiry,
 		}

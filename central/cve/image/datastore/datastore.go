@@ -37,7 +37,7 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 		indexer:  indexer,
 		searcher: searcher,
 
-		cveSuppressionCache: common.CVESuppressionCache{},
+		cveSuppressionCache: make(common.CVESuppressionCache),
 	}
 	if err := ds.buildSuppressedCache(); err != nil {
 		return nil, err

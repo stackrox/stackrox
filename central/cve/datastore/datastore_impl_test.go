@@ -31,8 +31,6 @@ import (
 
 var (
 	testSuppressionQuery = searchPkg.NewQueryBuilder().AddBools(searchPkg.CVESuppressed, true).ProtoQuery()
-	ctx, _               = context.WithTimeout(context.Background(), 1*time.Second)
-	testAllAccessContext = sac.WithAllAccess(ctx)
 )
 
 func TestCVEDataStore(t *testing.T) {
@@ -154,12 +152,8 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheImages() {
 	}, nil)
 	suite.NoError(suite.datastore.buildSuppressedCache())
 	expectedCache := common.CVESuppressionCache{
-		"CVE-ABC": {
-			Suppressed: true,
-		},
-		"CVE-DEF": {
-			Suppressed: true,
-		},
+		"CVE-ABC": {},
+		"CVE-DEF": {},
 	}
 	suite.Equal(expectedCache, suite.datastore.cveSuppressionCache)
 
@@ -174,13 +168,16 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheImages() {
 	expiry, err := getSuppressExpiry(start, duration)
 	suite.NoError(err)
 
-	suite.storage.EXPECT().GetMany(testAllAccessContext, []string{"CVE-GHI"}).Return([]*storage.CVE{{Id: "CVE-GHI"}}, nil, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"CVE-GHI"}).Return([]*storage.CVE{{Id: "CVE-GHI"}}, nil, nil)
 	storedCVE := &storage.CVE{
 		Id:                 "CVE-GHI",
 		Suppressed:         true,
 		SuppressActivation: start,
 		SuppressExpiry:     expiry,
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	testAllAccessContext := sac.WithAllAccess(ctx)
 	suite.storage.EXPECT().Upsert(testAllAccessContext, storedCVE).Return(nil)
 
 	// Clear image before suppressing
@@ -193,9 +190,12 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheImages() {
 
 	// Clear image before unsupressing
 	img = getImageWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
-	suite.storage.EXPECT().GetMany(testAllAccessContext, []string{"CVE-GHI"}).Return([]*storage.CVE{storedCVE}, nil, nil)
-	suite.storage.EXPECT().Upsert(testAllAccessContext, &storage.CVE{Id: "CVE-GHI"}).Return(nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"CVE-GHI"}).Return([]*storage.CVE{storedCVE}, nil, nil)
+	suite.storage.EXPECT().Upsert(gomock.Any(), &storage.CVE{Id: "CVE-GHI"}).Return(nil)
 	suite.indexQ.EXPECT().PushSignal(gomock.Any())
+	ctx, cancel = context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	testAllAccessContext = sac.WithAllAccess(ctx)
 	err = suite.datastore.Unsuppress(testAllAccessContext, "CVE-GHI")
 	suite.Equal("timed out waiting for indexing", err.Error())
 	suite.datastore.EnrichImageWithSuppressedCVEs(img)
@@ -216,12 +216,8 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheNodes() {
 	}, nil)
 	suite.NoError(suite.datastore.buildSuppressedCache())
 	expectedCache := common.CVESuppressionCache{
-		"CVE-ABC": {
-			Suppressed: true,
-		},
-		"CVE-DEF": {
-			Suppressed: true,
-		},
+		"CVE-ABC": {},
+		"CVE-DEF": {},
 	}
 	suite.Equal(expectedCache, suite.datastore.cveSuppressionCache)
 
@@ -236,18 +232,21 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheNodes() {
 	expiry, err := getSuppressExpiry(start, duration)
 	suite.NoError(err)
 
-	suite.storage.EXPECT().GetMany(testAllAccessContext, []string{"CVE-GHI"}).Return([]*storage.CVE{{Id: "CVE-GHI"}}, nil, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"CVE-GHI"}).Return([]*storage.CVE{{Id: "CVE-GHI"}}, nil, nil)
 	storedCVE := &storage.CVE{
 		Id:                 "CVE-GHI",
 		Suppressed:         true,
 		SuppressActivation: start,
 		SuppressExpiry:     expiry,
 	}
-	suite.storage.EXPECT().Upsert(testAllAccessContext, storedCVE).Return(nil)
+	suite.storage.EXPECT().Upsert(gomock.Any(), storedCVE).Return(nil)
 
 	// Clear node before suppressing
 	node = getNodeWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
 	suite.indexQ.EXPECT().PushSignal(gomock.Any())
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	testAllAccessContext := sac.WithAllAccess(ctx)
 	err = suite.datastore.Suppress(testAllAccessContext, start, duration, "CVE-GHI")
 	suite.Equal("timed out waiting for indexing", err.Error())
 	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
@@ -255,9 +254,12 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheNodes() {
 
 	// Clear node before unsupressing
 	node = getNodeWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
-	suite.storage.EXPECT().GetMany(testAllAccessContext, []string{"CVE-GHI"}).Return([]*storage.CVE{storedCVE}, nil, nil)
-	suite.storage.EXPECT().Upsert(testAllAccessContext, &storage.CVE{Id: "CVE-GHI"}).Return(nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"CVE-GHI"}).Return([]*storage.CVE{storedCVE}, nil, nil)
+	suite.storage.EXPECT().Upsert(gomock.Any(), &storage.CVE{Id: "CVE-GHI"}).Return(nil)
 	suite.indexQ.EXPECT().PushSignal(gomock.Any())
+	ctx, cancel = context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	testAllAccessContext = sac.WithAllAccess(ctx)
 	err = suite.datastore.Unsuppress(testAllAccessContext, "CVE-GHI")
 	suite.Equal("timed out waiting for indexing", err.Error())
 	suite.datastore.EnrichNodeWithSuppressedCVEs(node)

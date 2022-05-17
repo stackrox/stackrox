@@ -10,13 +10,13 @@ import "api/v1/empty.proto";
 package v1;
 
 message SuppressCVERequest {
-    repeated string             ids         = 1;
+    repeated string          cves     = 1;
     reserved 2;
-    google.protobuf.Duration    duration    = 3;
+    google.protobuf.Duration duration = 3;
 }
 
 message UnsuppressCVERequest {
-    repeated string             ids         = 1;
+    repeated string cves  = 1;
 }
 
 // CVEService APIs can be used to manage cves.
@@ -28,10 +28,28 @@ service CVEService {
             body: "*"
         };
     }
-    // UnsuppressCVE unsuppresse    s cves.
+    // UnsuppressCVE unsuppresses cves.
     rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
         option (google.api.http) = {
             patch: "/v1/cves/unsuppress"
+            body: "*"
+        };
+    }
+}
+
+// ImageCVEService APIs can be used to manage image cves.
+service ImageCVEService {
+    // SuppressCVE suppresses cves.
+    rpc SuppressCVEs (SuppressCVERequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/imagecves/suppress"
+            body: "*"
+        };
+    }
+    // UnsuppressCVE unsuppresse    s cves.
+    rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/imagecves/unsuppress"
             body: "*"
         };
     }

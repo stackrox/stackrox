@@ -27,7 +27,7 @@ var (
                    LastUpdated timestamp,
                    DeferralReq_Expiry_ExpiresWhenFixed bool,
                    DeferralReq_Expiry_ExpiresOn timestamp,
-                   Cves_Ids text[],
+                   Cves_Cves text[],
                    serialized bytea,
                    PRIMARY KEY(Id)
                )

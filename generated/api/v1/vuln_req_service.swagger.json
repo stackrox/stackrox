@@ -350,7 +350,7 @@
     "VulnerabilityRequestCVEs": {
       "type": "object",
       "properties": {
-        "ids": {
+        "cves": {
           "type": "array",
           "items": {
             "type": "string"

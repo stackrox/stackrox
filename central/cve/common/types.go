@@ -7,7 +7,6 @@ type CVESuppressionCache map[string]SuppressionCacheEntry
 
 // SuppressionCacheEntry represents cache entry for suppressed resources.
 type SuppressionCacheEntry struct {
-	Suppressed         bool
 	SuppressActivation *types.Timestamp
 	SuppressExpiry     *types.Timestamp
 }

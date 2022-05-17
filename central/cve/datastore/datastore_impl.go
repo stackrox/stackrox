@@ -55,7 +55,6 @@ func (ds *datastoreImpl) buildSuppressedCache() error {
 	defer ds.cveSuppressionLock.Unlock()
 	for _, cve := range suppressedCVEs {
 		ds.cveSuppressionCache[cve.GetId()] = common.SuppressionCacheEntry{
-			Suppressed:         cve.GetSuppressed(),
 			SuppressActivation: cve.GetSuppressActivation(),
 			SuppressExpiry:     cve.GetSuppressExpiry(),
 		}
@@ -214,7 +213,6 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			if entry, ok := ds.cveSuppressionCache[vuln.GetCve()]; ok {
-				vuln.Suppressed = entry.Suppressed
 				vuln.SuppressActivation = entry.SuppressActivation
 				vuln.SuppressExpiry = entry.SuppressExpiry
 
@@ -230,7 +228,6 @@ func (ds *datastoreImpl) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
 	for _, component := range node.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			if entry, ok := ds.cveSuppressionCache[vuln.GetCve()]; ok {
-				vuln.Suppressed = entry.Suppressed
 				vuln.SuppressActivation = entry.SuppressActivation
 				vuln.SuppressExpiry = entry.SuppressExpiry
 			}
@@ -291,7 +288,6 @@ func (ds *datastoreImpl) updateCache(cves ...*storage.CVE) {
 
 	for _, cve := range cves {
 		ds.cveSuppressionCache[cve.GetId()] = common.SuppressionCacheEntry{
-			Suppressed:         cve.Suppressed,
 			SuppressActivation: cve.SuppressActivation,
 			SuppressExpiry:     cve.SuppressExpiry,
 		}

@@ -49,7 +49,7 @@ message FalsePositiveRequest { }
 // VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
 message VulnerabilityRequest {
     message CVEs {
-        repeated string ids = 1 [(gogoproto.moretags) = "search:\"CVE\""];
+        repeated string cves = 1 [(gogoproto.moretags) = "search:\"CVE\""];
     }
     message Scope {
         message Image {
