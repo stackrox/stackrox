@@ -220,7 +220,7 @@ class Services extends BaseService {
 
     static boolean checkForNoViolationsByDeploymentID(String deploymentID, String policyName, int checkSeconds = 5) {
         def violations = getViolationsByDeploymentID(deploymentID, policyName, false, checkSeconds)
-        return violations
+        return violations == null || violations.size() == 0
     }
 
     static scanImage(String image) {
