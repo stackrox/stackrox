@@ -5,4 +5,5 @@
 [submodule "docs/tools"]
 	path = docs/tools
 	url = https://github.com/stackrox/docs-tools.git
-	branch = misha/try-bump-deps
+	branch = main
+	shallow = true
