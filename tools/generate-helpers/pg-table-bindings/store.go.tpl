@@ -840,7 +840,7 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) err
         return nil
     }
 {{- else if .Obj.IsDirectlyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+    {{ template "defineScopeChecker" "READ" }}
     scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
         Resource: targetResource,
         Access:   storage.Access_READ_ACCESS,
