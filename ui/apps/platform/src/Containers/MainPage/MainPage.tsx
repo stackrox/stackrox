@@ -13,12 +13,13 @@ import NavigationSideBar from 'Containers/Navigation/NavigationSideBar';
 import SearchModal from 'Containers/Search/SearchModal';
 import UnreachableWarning from 'Containers/UnreachableWarning';
 import AppWrapper from 'Containers/AppWrapper';
-import CredentialExpiryBanners from 'Containers/CredentialExpiryBanners/CredentialExpiryBanners';
 import VersionOutOfDate from 'Containers/VersionOutOfDate';
 import Body from 'Containers/MainPage/Body';
 import Masthead from 'Containers/MainPage/Masthead';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
+
+import CredentialExpiryBanner from './CredentialExpiryBanner';
 
 const mainPageSelector = createStructuredSelector({
     isGlobalSearchView: selectors.getGlobalSearchView,
@@ -48,19 +49,28 @@ function MainPage(): ReactElement {
     }
 
     const { isFeatureFlagEnabled, isLoadingFeatureFlags } = useFeatureFlags();
-    const { hasReadAccess, isLoadingPermissions } = usePermissions();
+    const { hasReadAccess, hasReadWriteAccess, isLoadingPermissions } = usePermissions();
 
     // Render Body and NavigationSideBar only when feature flags and permissions are available.
     if (isLoadingFeatureFlags || isLoadingPermissions) {
         return <LoadingSection message="Loading..." />;
     }
 
+    const hasServiceIdentityWritePermission = hasReadWriteAccess('ServiceIdentity');
+
     return (
         <AppWrapper publicConfig={publicConfig}>
             <div className="flex flex-1 flex-col h-full relative">
                 <UnreachableWarning serverState={serverState} />
                 <Notifications />
-                <CredentialExpiryBanners />
+                <CredentialExpiryBanner
+                    component="CENTRAL"
+                    hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
+                />
+                <CredentialExpiryBanner
+                    component="SCANNER"
+                    hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
+                />
                 {metadata?.stale && <VersionOutOfDate />}
                 <Page
                     mainContainerId="main-page-container"
