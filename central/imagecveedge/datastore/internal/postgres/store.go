@@ -29,8 +29,6 @@ const (
 	walkStmt    = "SELECT serialized FROM image_cve_relations"
 	getManyStmt = "SELECT serialized FROM image_cve_relations WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM image_cve_relations WHERE Id = ANY($1::text[])"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler

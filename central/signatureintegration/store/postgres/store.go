@@ -28,8 +28,6 @@ const (
 	walkStmt    = "SELECT serialized FROM signatureintegrations"
 	getManyStmt = "SELECT serialized FROM signatureintegrations WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM signatureintegrations WHERE Id = ANY($1::text[])"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler

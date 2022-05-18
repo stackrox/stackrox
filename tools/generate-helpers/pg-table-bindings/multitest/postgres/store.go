@@ -30,8 +30,6 @@ const (
 	walkStmt    = "SELECT serialized FROM multikey"
 	getManyStmt = "SELECT serialized FROM multikey WHERE Key1 = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM multikey WHERE Key1 = ANY($1::text[])"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler

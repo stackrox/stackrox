@@ -27,8 +27,6 @@ const (
 	walkStmt    = "SELECT serialized FROM integrationhealth"
 	getManyStmt = "SELECT serialized FROM integrationhealth WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM integrationhealth WHERE Id = ANY($1::text[])"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler

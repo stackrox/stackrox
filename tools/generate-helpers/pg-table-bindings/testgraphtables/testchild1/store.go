@@ -26,8 +26,6 @@ const (
 	walkStmt    = "SELECT serialized FROM testchild1"
 	getManyStmt = "SELECT serialized FROM testchild1 WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM testchild1 WHERE Id = ANY($1::text[])"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler

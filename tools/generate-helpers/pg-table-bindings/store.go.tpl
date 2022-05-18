@@ -56,8 +56,6 @@ const (
 
 {{- if $singlePK }}
         getManyStmt = "SELECT serialized FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
-
-        deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
 {{- end }}
 
         batchAfter = 100
@@ -621,7 +619,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
         return sac.ErrResourceAccessDenied
     }
     {{- else if .Obj.IsDirectlyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+    {{ template "defineScopeChecker" "READ_WRITE" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
 	if err != nil {
 		return err
@@ -791,7 +789,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
         return nil
     }
 {{- else if .Obj.IsDirectlyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+    {{ template "defineScopeChecker" "READ_WRITE" }}
     scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
     if err != nil {
         return err

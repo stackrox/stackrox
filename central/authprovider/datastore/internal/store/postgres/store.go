@@ -28,8 +28,6 @@ const (
 	walkStmt    = "SELECT serialized FROM authproviders"
 	getManyStmt = "SELECT serialized FROM authproviders WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM authproviders WHERE Id = ANY($1::text[])"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
