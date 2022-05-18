@@ -176,8 +176,6 @@ func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 		// Round the timestamps to the microsecond
 		t1 = t1.Truncate(1000)
 		t2 = t2.Truncate(1000)
-		//t1 = time.Date(t1.Year(), t1.Month(), t1.Day(), t1.Hour(), t1.Minute(), t1.Second(), (t1.Nanosecond()/1000)*1000, t1.Location())
-		//t2 = time.Date(t2.Year(), t2.Month(), t2.Day(), t2.Hour(), t2.Minute(), t2.Second(), (t2.Nanosecond()/1000)*1000, t2.Location())
 	}
 	flows := []*storage.NetworkFlow{
 		{
