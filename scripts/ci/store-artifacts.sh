@@ -44,7 +44,11 @@ store_artifacts() {
     gs_destination=$(get_unique_gs_destination "${destination}")
 
     info "Writing to $gs_destination"
-    gsutil -m cp -r "$path" "$gs_destination"
+    local exitstatus=0
+    local tmp_out
+    tmp_out="$(mktemp)"
+    gsutil -m cp -r "$path" "$gs_destination" > "${tmp_out}" 2>&1 || exitstatus=$?
+    [[ $exitstatus -eq 0 ]] || { info "gsutil cp failed:"; cat "${tmp_out}"; exit $exitstatus; }
 }
 
 _artifacts_preamble() {
@@ -129,7 +133,7 @@ make_artifacts_help() {
     local help_file
     if is_OPENSHIFT_CI; then
         require_environment "ARTIFACT_DIR"
-        help_file="$ARTIFACT_DIR/howto-locate-artifacts.html"
+        help_file="$ARTIFACT_DIR/howto-locate-other-artifacts.html"
     elif is_CIRCLECI; then
         help_file="/tmp/howto-locate-artifacts.html"
     else
