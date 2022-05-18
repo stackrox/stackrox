@@ -5,6 +5,7 @@ Common steps to run when e2e tests are complete. All post steps are run in spite
 of prior failures. This models existing CI behavior from Circle CI.
 """
 
+import os
 import subprocess
 from typing import List
 
@@ -51,10 +52,10 @@ class StoreArtifacts(RunWithBestEffortMixin):
 
     def __init__(
         self,
-        artifact_destination=None,
+        artifact_destination_prefix=None,
     ):
         super().__init__()
-        self.artifact_destination = artifact_destination
+        self.artifact_destination_prefix = artifact_destination_prefix
         self.data_to_store = []
 
     def run(self, test_output_dirs=None):
@@ -64,8 +65,12 @@ class StoreArtifacts(RunWithBestEffortMixin):
     def store_artifacts(self, test_output_dirs):
         for source in test_output_dirs + self.data_to_store:
             args = ["scripts/ci/store-artifacts.sh", "store_artifacts", source]
-            if self.artifact_destination:
-                args.append(self.artifact_destination)
+            if self.artifact_destination_prefix:
+                args.append(
+                    os.path.join(
+                        self.artifact_destination_prefix, os.path.basename(source)
+                    )
+                )
             self.run_with_best_effort(
                 args,
                 timeout=StoreArtifacts.STORE_TIMEOUT,
@@ -94,9 +99,9 @@ class PostClusterTest(StoreArtifacts):
         check_stackrox_logs=False,
         store_qa_test_debug_logs=False,
         store_qa_spock_results=False,
-        artifact_destination=None,
+        artifact_destination_prefix=None,
     ):
-        super().__init__(artifact_destination=artifact_destination)
+        super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._check_stackrox_logs = check_stackrox_logs
         self._store_qa_test_debug_logs = store_qa_test_debug_logs
         self._store_qa_spock_results = store_qa_spock_results

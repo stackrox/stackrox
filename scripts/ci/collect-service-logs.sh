@@ -51,7 +51,7 @@ main() {
         echo ">>> ${object} <<<"
         out="$(mktemp)"
         if ! kubectl -n "${namespace}" get "${object}" -o wide > "$out" 2>&1; then
-            echo "Cannot get $object in $namespace: $out"
+            echo "Cannot get $object in $namespace: $(cat "$out")"
             continue
         fi
 

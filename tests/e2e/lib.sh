@@ -107,7 +107,7 @@ check_stackrox_logs() {
     if [[ -n "$previous_logs" ]]; then
         echo >&2 "Previous logs found"
         # shellcheck disable=SC2086
-        if ! scripts/ci/logcheck/check-restart-logs.sh upgrade-tests $previous_logs; then
+        if ! scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME}" $previous_logs; then
             exit 1
         fi
     fi
@@ -274,7 +274,7 @@ db_backup_and_restore_test() {
         roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_* || touch DB_TEST_FAIL
     fi
 
-    collect_and_check_stackrox_logs "$1" "stackrox-logs"
+    ./scripts/ci/collect-service-logs.sh stackrox "$1/service-logs"
 
     [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
 }
