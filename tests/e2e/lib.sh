@@ -258,7 +258,7 @@ restore_56_1_backup() {
 }
 
 db_backup_and_restore_test() {
-    info "Running a backup and restore test"
+    info "Running a central database backup and restore test"
 
     if [[ "$#" -ne 1 ]]; then
         die "missing args. usage: db_backup_and_restore_test <output dir>"
@@ -267,12 +267,16 @@ db_backup_and_restore_test() {
     local output_dir="$1/central-backup"
     info "Backing up to $1/central-backup"
     mkdir -p "$output_dir"
-    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "$output_dir"
+    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "$output_dir" || touch DB_TEST_FAIL
 
-    info "Restoring from $1/central-backup"
-    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_*
+    if [[ ! -e DB_TEST_FAIL ]]; then
+        info "Restoring from $1/central-backup"
+        roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_* || touch DB_TEST_FAIL
+    fi
 
     collect_and_check_stackrox_logs "$1" "stackrox-logs"
+
+    [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
