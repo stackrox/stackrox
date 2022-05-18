@@ -80,6 +80,8 @@ func (bu *PostgresBackup) WriteDirectory(ctx context.Context) (string, error) {
 		"-Fd",
 		"-f",
 		backupPath,
+		"-j",
+		"5",
 	}
 
 	cmd := exec.Command("pg_dump", options...)
