@@ -234,7 +234,7 @@ func (s *serviceImpl) StreamAuthzTraces(_ *v1.Empty, stream v1.DebugService_Stre
 	}
 }
 
-func getJSONToZipWithLogging(ctx context.Context, zipWriter *zip.Writer, fileName string, fetchData func(ctx context.Context) (interface{}, error)) {
+func fetchAndAddJSONToZip(ctx context.Context, zipWriter *zip.Writer, fileName string, fetchData func(ctx context.Context) (interface{}, error)) {
 	jsonObj, errFetchData := fetchData(ctx)
 	if errFetchData != nil {
 		log.Error(errFetchData)
@@ -554,16 +554,16 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	}
 
 	if opts.withAccessControl {
-		getJSONToZipWithLogging(ctx, zipWriter, "auth-providers.json", s.getAuthProviders)
-		getJSONToZipWithLogging(ctx, zipWriter, "auth-provider-groups.json", s.getGroups)
-		getJSONToZipWithLogging(ctx, zipWriter, "access-control-roles.json", s.getRoles)
+		fetchAndAddJSONToZip(ctx, zipWriter, "auth-providers.json", s.getAuthProviders)
+		fetchAndAddJSONToZip(ctx, zipWriter, "auth-provider-groups.json", s.getGroups)
+		fetchAndAddJSONToZip(ctx, zipWriter, "access-control-roles.json", s.getRoles)
 	}
 
 	if opts.withNotifiers {
-		getJSONToZipWithLogging(ctx, zipWriter, "notifiers.json", s.getNotifiers)
+		fetchAndAddJSONToZip(ctx, zipWriter, "notifiers.json", s.getNotifiers)
 	}
 
-	getJSONToZipWithLogging(ctx, zipWriter, "system-configuration.json", s.getConfig)
+	fetchAndAddJSONToZip(ctx, zipWriter, "system-configuration.json", s.getConfig)
 
 	// Get logs last to also catch logs made during creation of diag bundle.
 	if opts.logs == localLogs {
