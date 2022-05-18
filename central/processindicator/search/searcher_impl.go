@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	indicatorSACSearchHelper   = sac.ForResource(resources.Indicator).MustCreateSearchHelper(processindicators.OptionsMap)
-	indicatorSACPgSearchHelper = sac.ForResource(resources.Indicator).
-					MustCreatePgSearchHelper(processindicators.OptionsMap)
+	indicatorSACSearchHelper         = sac.ForResource(resources.Indicator).MustCreateSearchHelper(processindicators.OptionsMap)
+	indicatorSACPostgresSearchHelper = sac.ForResource(resources.Indicator).
+						MustCreatePgSearchHelper(processindicators.OptionsMap)
 )
 
 // searcherImpl provides an intermediary implementation layer for ProcessStorage.
@@ -38,7 +38,7 @@ func (s *searcherImpl) SearchRawProcessIndicators(ctx context.Context, q *v1.Que
 
 func (s *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	if features.PostgresDatastore.Enabled() {
-		return indicatorSACPgSearchHelper.Apply(s.indexer.Search)(ctx, q)
+		return indicatorSACPostgresSearchHelper.Apply(s.indexer.Search)(ctx, q)
 	}
 	return indicatorSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
 }
@@ -46,7 +46,7 @@ func (s *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result
 // Count returns the number of search results from the query
 func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if features.PostgresDatastore.Enabled() {
-		return indicatorSACPgSearchHelper.ApplyCount(s.indexer.Count)(ctx, q)
+		return indicatorSACPostgresSearchHelper.ApplyCount(s.indexer.Count)(ctx, q)
 	}
 	return indicatorSACSearchHelper.ApplyCount(s.indexer.Count)(ctx, q)
 }
