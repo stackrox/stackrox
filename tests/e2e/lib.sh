@@ -99,7 +99,22 @@ check_stackrox_logs() {
     local dir="$1"
 
     if [[ ! -d "$dir/stackrox/pods" ]]; then
-        die "StackRox logs were not collected. (See ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+    fi
+
+    check_for_stackrox_restarts "$dir"
+    check_for_errors_in_stackrox_logs "$dir"
+}
+
+check_for_stackrox_restarts() {
+        if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: check_for_stackrox_restarts <dir>"
+    fi
+
+    local dir="$1"
+
+    if [[ ! -d "$dir/stackrox/pods" ]]; then
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
     fi
 
     local previous_logs
@@ -110,6 +125,18 @@ check_stackrox_logs() {
         if ! scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME}" $previous_logs; then
             exit 1
         fi
+    fi
+}
+
+check_for_errors_in_stackrox_logs() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: check_for_errors_in_stackrox_logs <dir>"
+    fi
+
+    local dir="$1"
+
+    if [[ ! -d "$dir/stackrox/pods" ]]; then
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
     fi
 
     local logs

@@ -6,7 +6,7 @@ Run qa-tests-backend in a GKE cluster
 import os
 from pre_tests import PreSystemTests
 from ci_tests import QaE2eTestPart1, QaE2eTestPart2, QaE2eDBBackupRestoreTest
-from post_tests import PostClusterTest, StoreArtifacts, FinalPost
+from post_tests import PostClusterTest, CheckStackroxLogs, FinalPost
 from clusters import GKECluster
 from runners import ClusterTestSetsRunner
 
@@ -43,7 +43,10 @@ ClusterTestSetsRunner(
         {
             "name": "DB backup and restore",
             "test": QaE2eDBBackupRestoreTest(),
-            "post_test": StoreArtifacts(),
+            "post_test": CheckStackroxLogs(
+                check_for_errors_in_stackrox_logs=True,
+                artifact_destination_prefix="db-test",
+            ),
             "always_run": False,
         },
     ],
