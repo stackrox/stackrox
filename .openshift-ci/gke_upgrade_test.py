@@ -10,7 +10,9 @@ from pre_tests import PreSystemTests
 from ci_tests import UpgradeTest
 from post_tests import PostClusterTest, FinalPost
 
+# Override test env defaults here:
 os.environ["LOAD_BALANCER"] = "lb"
+
 ClusterTestRunner(
     cluster=GKECluster("upgrade-test"),
     pre_test=PreSystemTests(),

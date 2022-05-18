@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 """
-Common steps when tests complete
+Common steps to run when e2e tests are complete. All post steps are run in spite
+of prior failures. This models existing CI behavior from Circle CI.
 """
 
 import subprocess
@@ -44,6 +45,8 @@ class RunWithBestEffortMixin:
 
 
 class StoreArtifacts(RunWithBestEffortMixin):
+    """For tests that only need to store artifacts"""
+
     STORE_TIMEOUT = 5 * 60
 
     def __init__(
@@ -71,6 +74,8 @@ class StoreArtifacts(RunWithBestEffortMixin):
 
 # pylint: disable=too-many-instance-attributes
 class PostClusterTest(StoreArtifacts):
+    """The standard cluster test suite of debug gathering and analysis"""
+
     API_TIMEOUT = 5 * 60
     COLLECT_TIMEOUT = 5 * 60
     CHECK_TIMEOUT = 5 * 60

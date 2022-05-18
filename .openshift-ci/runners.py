@@ -131,7 +131,7 @@ class ClusterTestRunner(ClusterTestSetsRunner):
     . runs any pre_test (if provision was successful)
     . runs the test (if provisioned and any pre_test was successful)
     . runs post_test (if the test ran)
-    . tearsdown the cluster"""
+    . tears down the cluster"""
 
     def __init__(
         self,

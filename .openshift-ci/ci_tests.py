@@ -76,7 +76,7 @@ class QaE2eDBBackupRestoreTest(BaseTest):
     TEST_OUTPUT_DIR = "/tmp/db-backup-restore-test"
 
     def run(self):
-        print("Executing qa-tests-backend tests (part II)")
+        print("Executing DB backup and restore test")
 
         def set_dirs_after_start():
             # let post test know where logs are

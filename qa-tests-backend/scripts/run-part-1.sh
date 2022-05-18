@@ -16,6 +16,8 @@ test_part_1() {
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
 
+    export_test_environment
+
     if is_OPENSHIFT_CI; then
         # TODO(RS-494) may provide roxctl
         make cli-linux
@@ -46,6 +48,23 @@ test_part_1() {
     get_ECR_docker_pull_password
 
     run_tests_part_1
+}
+
+# export_test_environment() - Persist environment variables for the remainder of
+# this context (context == whatever pod or VM this test is running in)
+# Existing settings are maintained to allow override for different test flavors.
+export_test_environment() {
+    ci_export ADMISSION_CONTROLLER_UPDATES "${ADMISSION_CONTROLLER_UPDATES:-true}"
+    ci_export ADMISSION_CONTROLLER "${ADMISSION_CONTROLLER:-true}"
+    ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-ebpf}"
+    ci_export GCP_IMAGE_TYPE "${GCP_IMAGE_TYPE:-COS}"
+    ci_export LOAD_BALANCER "${LOAD_BALANCER:-none}"
+    ci_export LOCAL_PORT "${LOCAL_PORT:-443}"
+    ci_export MONITORING_SUPPORT "${MONITORING_SUPPORT:-false}"
+    ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
+    ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
+    ci_export ROX_NEW_POLICY_CATEGORIES "${ROX_NEW_POLICY_CATEGORIES:-true}"
+    ci_export SCANNER_SUPPORT "${SCANNER_SUPPORT:-true}"
 }
 
 deploy_central() {
