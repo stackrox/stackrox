@@ -1369,6 +1369,7 @@ class ComplianceTest extends BaseSpecification {
     }
 
     @Category([BAT])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify ComplianceRuns with SAC on clusters with wildcard"() {
         def otherClusterName = "disallowedCluster"
 
