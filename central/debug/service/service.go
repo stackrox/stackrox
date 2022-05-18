@@ -417,7 +417,7 @@ func (s *serviceImpl) getRoles(_ context.Context) (interface{}, error) {
 		}
 
 		if resolvedRole, err := s.roleDataStore.GetAndResolveRole(accessRolesCtx, role.Name); err == nil {
-			// Get better formatting of permission sets
+			// Get better formatting of permission sets.
 			diagRole.PermissionSet = map[string]string{}
 			for permName, accessRight := range resolvedRole.GetPermissions() {
 				diagRole.PermissionSet[permName] = accessRight.String()
@@ -483,8 +483,9 @@ func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 type debugDumpOptions struct {
 	logs logsMode
 	// telemetryMode specifies how to use sensor/central telemetry to gather diagnostics.
-	// 0 - don't collect any telemetry data, 1 - collect telemetry data for central only,
-	// 2 - collect telemetry data from sensors and central.
+	// 0 - don't collect any telemetry data
+	// 1 - collect telemetry data for central only
+	// 2 - collect telemetry data from sensors and central
 	telemetryMode     int
 	withCPUProfile    bool
 	withLogImbue      bool
@@ -564,7 +565,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 
 	getJSONToZipWithLogging(ctx, zipWriter, "system-configuration.json", s.getConfig)
 
-	// Get logs last to also catch logs made during creation of diag bundle
+	// Get logs last to also catch logs made during creation of diag bundle.
 	if opts.logs == localLogs {
 		if err := getLogs(zipWriter); err != nil {
 			log.Error(err)
