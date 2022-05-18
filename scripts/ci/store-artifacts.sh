@@ -43,12 +43,13 @@ store_artifacts() {
     local gs_destination
     gs_destination=$(get_unique_gs_destination "${destination}")
 
-    info "Writing to $gs_destination"
+    info "Writing to $gs_destination..."
     local exitstatus=0
     local tmp_out
     tmp_out="$(mktemp)"
     gsutil -m cp -r "$path" "$gs_destination" > "${tmp_out}" 2>&1 || exitstatus=$?
     [[ $exitstatus -eq 0 ]] || { info "gsutil cp failed:"; cat "${tmp_out}"; exit $exitstatus; }
+    [[ ${TEST_OUTPUT:-0} -eq 0 ]] || cat "${tmp_out}"
 }
 
 _artifacts_preamble() {
