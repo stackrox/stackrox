@@ -22,8 +22,8 @@ var (
 		Field: search.CreatedTime.String(),
 	}
 
-	secretSACSearchHelper   = sac.ForResource(resources.Secret).MustCreateSearchHelper(mappings.OptionsMap)
-	secretSACPgSearchHelper = sac.ForResource(resources.Secret).MustCreatePgSearchHelper(mappings.OptionsMap)
+	secretSACSearchHelper         = sac.ForResource(resources.Secret).MustCreateSearchHelper(mappings.OptionsMap)
+	secretSACPostgresSearchHelper = sac.ForResource(resources.Secret).MustCreatePgSearchHelper(mappings.OptionsMap)
 )
 
 // searcherImpl provides an intermediary implementation layer for secrets
@@ -119,7 +119,7 @@ func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
 	var filteredSearcher search.Searcher
 	if features.PostgresDatastore.Enabled() {
 		// Make the UnsafeSearcher safe.
-		filteredSearcher = secretSACPgSearchHelper.FilteredSearcher(unsafeSearcher)
+		filteredSearcher = secretSACPostgresSearchHelper.FilteredSearcher(unsafeSearcher)
 	} else {
 		filteredSearcher = secretSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
 	}

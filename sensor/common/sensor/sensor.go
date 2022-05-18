@@ -8,7 +8,6 @@ import (
 
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -318,15 +317,9 @@ func (s *Sensor) waitUntilCentralIsReady() {
 func (s *Sensor) pollMetadata() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	md, err := s.centralRestClient.GetMetadata(ctx)
-
-	if err != nil {
-		return err
-	}
-	if md.GetLicenseStatus() != v1.Metadata_VALID {
-		return errors.Errorf("central license status is not VALID but %v", md.GetLicenseStatus())
-	}
-	return nil
+	// Metadata result doesn't matter, as long as central is reachable.
+	_, err := s.centralRestClient.GetMetadata(ctx)
+	return err
 }
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {

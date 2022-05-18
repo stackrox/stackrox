@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	baseTable  = "multikey"
+	baseTable = "multikey"
+
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM multikey WHERE Key1 = $1 AND Key2 = $2)"
 
 	getStmt     = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
