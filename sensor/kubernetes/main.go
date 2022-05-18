@@ -5,11 +5,13 @@ import (
 	"os/signal"
 
 	"github.com/stackrox/rox/pkg/devmode"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/sensor/common/connection"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
@@ -43,7 +45,12 @@ func main() {
 	} else {
 		sharedClientInterface = client.MustCreateInterface()
 	}
-	s, err := sensor.CreateSensor(sharedClientInterface, workloadManager)
+	connFactory, err := connection.NewConnectionFactor(env.CentralEndpoint.Setting())
+	if err != nil {
+		log.Fatalf("Failed to create connection factory: %v", err)
+	}
+
+	s, err := sensor.CreateSensor(sharedClientInterface, workloadManager, connFactory)
 	utils.CrashOnError(err)
 
 	s.Start()

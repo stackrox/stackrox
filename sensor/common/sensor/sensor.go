@@ -2,11 +2,8 @@ package sensor
 
 import (
 	"context"
-	"crypto/x509"
 	"net/http"
-	"time"
 
-	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -26,8 +23,8 @@ import (
 	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/connection"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
@@ -63,22 +60,23 @@ type Sensor struct {
 
 	centralConnection    *grpcUtil.LazyClientConn
 	centralCommunication CentralCommunication
-	centralRestClient    *centralclient.Client
+	//centralRestClient    *centralclient.Client
+	connectionFactory connection.ConnectionFactory
 
 	stoppedSig concurrency.ErrorSignal
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, centralClient *centralclient.Client, components ...common.SensorComponent) *Sensor {
+func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, factory connection.ConnectionFactory, components ...common.SensorComponent) *Sensor {
 	return &Sensor{
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 
-		configHandler:     configHandler,
-		detector:          detector,
-		imageService:      imageService,
-		components:        append(components, detector, configHandler), // Explicitly add the config handler
-		centralRestClient: centralClient,
+		configHandler: configHandler,
+		detector:      detector,
+		imageService:  imageService,
+		components:    append(components, detector, configHandler), // Explicitly add the config handler
+		// centralRestClient: centralClient,
 		centralConnection: grpcUtil.NewLazyClientConn(),
 
 		stoppedSig: concurrency.NewErrorSignal(),
@@ -119,8 +117,9 @@ func (s *Sensor) Start() {
 	// Start up connections.
 	log.Infof("Connecting to Central server %s", s.centralEndpoint)
 
-	centralConnSignal := concurrency.NewSignal()
-	go s.gRPCConnectToCentralWithRetries(&centralConnSignal)
+	//centralConnSignal := concurrency.NewSignal()
+	//go s.gRPCConnectToCentralWithRetries(&centralConnSignal)
+	go s.connectionFactory.SetCentralConnectionWithRetries(s.centralConnection)
 
 	for _, c := range s.components {
 		switch v := c.(type) {
@@ -216,8 +215,14 @@ func (s *Sensor) Start() {
 		}
 	}
 
+	okSig := s.connectionFactory.OkSignal()
+	errSig := s.connectionFactory.StopSignal()
+
 	select {
-	case <-centralConnSignal.Done():
+	case <-errSig.Done():
+		s.stoppedSig.SignalWithErrorWrap(errSig.Err(), "getting connection from connection factory")
+		return
+	case <-okSig.Done():
 	case <-s.stoppedSig.Done():
 		return
 	}
@@ -239,43 +244,6 @@ func newScannerDefinitionsRoute(centralEndpoint string) (*routes.CustomRoute, er
 	}, nil
 }
 
-func (s *Sensor) gRPCConnectToCentralWithRetries(signal *concurrency.Signal) {
-	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
-
-	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
-	s.waitUntilCentralIsReady()
-
-	certs := s.getCentralTLSCerts()
-	if len(certs) != 0 {
-		log.Infof("Add %d central CA certs to gRPC connection", len(certs))
-		for _, c := range certs {
-			log.Infof("Add central CA cert with CommonName: '%s'", c.Subject.CommonName)
-		}
-		opts = append(opts, clientconn.AddRootCAs(certs...))
-	} else {
-		log.Infof("Did not add central CA cert to gRPC connection")
-	}
-
-	centralConnection, err := clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, mtls.CentralSubject, opts...)
-	if err != nil {
-		s.stoppedSig.SignalWithErrorWrap(err, "Error connecting to central")
-		return
-	}
-	s.centralConnection.Set(centralConnection)
-
-	signal.Signal()
-}
-
-// getCentralTLSCerts only logs errors because this feature should not break
-// sensors start-up.
-func (s *Sensor) getCentralTLSCerts() []*x509.Certificate {
-	certs, err := s.centralRestClient.GetTLSTrustedCerts(context.Background())
-	if err != nil {
-		log.Warnf("Error fetching centrals TLS certs: %s", err)
-	}
-	return certs
-}
-
 // Stop shuts down background tasks.
 func (s *Sensor) Stop() {
 	// Stop communication with central.
@@ -294,32 +262,6 @@ func (s *Sensor) Stop() {
 	}
 
 	log.Info("Sensor shutdown complete")
-}
-
-// waitUntilCentralIsReady blocks until central responds with a valid license status on its metadata API,
-// or until the retry budget is exhausted (in which case the sensor is marked as stopped and the program
-// will exit).
-func (s *Sensor) waitUntilCentralIsReady() {
-	exponential := backoff.NewExponentialBackOff()
-	exponential.MaxElapsedTime = 5 * time.Minute
-	exponential.MaxInterval = 32 * time.Second
-	err := backoff.RetryNotify(func() error {
-		return s.pollMetadata()
-	}, exponential, func(err error, d time.Duration) {
-		log.Infof("Check Central status failed: %s. Retrying after %s...", err, d.Round(time.Millisecond))
-	})
-	if err != nil {
-		s.stoppedSig.SignalWithErrorWrapf(err, "checking central status failed after %s", exponential.GetElapsedTime())
-	}
-}
-
-// Ping a service with a timeout of 10 seconds.
-func (s *Sensor) pollMetadata() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	// Metadata result doesn't matter, as long as central is reachable.
-	_, err := s.centralRestClient.GetMetadata(ctx)
-	return err
 }
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {

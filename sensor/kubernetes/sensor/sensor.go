@@ -20,11 +20,11 @@ import (
 	"github.com/stackrox/rox/pkg/satoken"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
-	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/connection"
 	"github.com/stackrox/rox/sensor/common/deployment"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
@@ -57,7 +57,7 @@ var (
 )
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
-func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager) (*sensor.Sensor, error) {
+func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager, connFactory connection.ConnectionFactory) (*sensor.Sensor, error) {
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
 
 	var helmManagedConfig *central.HelmManagedConfigInit
@@ -153,11 +153,6 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(client.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
 	}
 
-	centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())
-	if err != nil {
-		return nil, errors.Wrap(err, "creating central client")
-	}
-
 	// Local scanner can be started even if scanner-tls certs are available in the same namespace because
 	// it ignores secrets not owned by Sensor.
 	if features.LocalImageScanning.Enabled() && securedClusterIsNotManagedManually(helmManagedConfig) && env.LocalImageScanningEnabled.BooleanSetting() {
@@ -170,7 +165,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		configHandler,
 		policyDetector,
 		imageService,
-		centralClient,
+		connFactory,
 		components...,
 	)
 
