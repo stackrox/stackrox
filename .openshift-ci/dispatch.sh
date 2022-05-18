@@ -26,7 +26,7 @@ fi
 
 ci_job="$1"
 shift
-ci_export CI_JOB_NAME="$ci_job"
+ci_export CI_JOB_NAME "$ci_job"
 
 gate_job "$ci_job"
 
