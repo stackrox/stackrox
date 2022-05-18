@@ -17,38 +17,18 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddType("ImageVulnerability", []string{
-			"id: ID!",
-			"cve: String!",
-			"cvss: Float!",
-			"scoreVersion: String!",
-			"vectors: EmbeddedVulnerabilityVectors",
-			"link: String!",
-			"summary: String!",
-			"fixedByVersion: String!",
-			"isFixable(query: String): Boolean!",
-			"lastScanned: Time",
-			"createdAt: Time", // Discovered At System
-			"discoveredAtImage(query: String): Time",
-			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
-			"componentCount(query: String): Int!",
-			"images(query: String, pagination: Pagination): [Image!]!",
-			"imageCount(query: String): Int!",
-			"deployments(query: String, pagination: Pagination): [Deployment!]!",
-			"deploymentCount(query: String): Int!",
-			"envImpact: Float!",
-			"severity: String!",
-			"publishedOn: Time",
-			"lastModified: Time",
-			"impactScore: Float!",
-			"suppressed: Boolean!",
-			"suppressActivation: Time",
-			"suppressExpiry: Time",
-			"activeState(query: String): ActiveState",
-			"vulnerabilityState: String!",
-			"effectiveVulnerabilityRequest: VulnerabilityRequest",
-			"unusedVarSink(query: String): Int",
-		}),
+		schema.AddType("ImageVulnerability",
+			append(commonVulnerabilitySubResolvers,
+				"activeState(query: String): ActiveState",
+				"componentCount(query: String): Int!",
+				"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
+				"effectiveVulnerabilityRequest: VulnerabilityRequest",
+				"deploymentCount(query: String): Int!",
+				"deployments(query: String, pagination: Pagination): [Deployment!]!",
+				"discoveredAtImage(query: String): Time",
+				"imageCount(query: String): Int!",
+				"images(query: String, pagination: Pagination): [Image!]!",
+			)),
 		schema.AddQuery("imageVulnerability(id: ID): ImageVulnerability"),
 		schema.AddQuery("imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!"),
 		schema.AddQuery("imageVulnerabilityCount(query: String): Int!"),
@@ -56,37 +36,19 @@ func init() {
 }
 
 // ImageVulnerabilityResolver represents the supported API on image vulnerabilities
+//  NOTE: This list is and should remain alphabetically ordered
 type ImageVulnerabilityResolver interface {
-	ID(ctx context.Context) graphql.ID
-	CVE(ctx context.Context) string
-	Cvss(ctx context.Context) float64
-	ScoreVersion(ctx context.Context) string
-	Vectors() *EmbeddedVulnerabilityVectorsResolver
-	Link(ctx context.Context) string
-	Summary(ctx context.Context) string
-	FixedByVersion(ctx context.Context) (string, error)
-	IsFixable(ctx context.Context, args RawQuery) (bool, error)
-	LastScanned(ctx context.Context) (*graphql.Time, error)
-	CreatedAt(ctx context.Context) (*graphql.Time, error)
-	DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error)
+	CommonVulnerabilityResolver
+
+	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
 	Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error)
 	ComponentCount(ctx context.Context, args RawQuery) (int32, error)
-	Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error)
-	ImageCount(ctx context.Context, args RawQuery) (int32, error)
-	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
-	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
-	EnvImpact(ctx context.Context) (float64, error)
-	Severity(ctx context.Context) string
-	PublishedOn(ctx context.Context) (*graphql.Time, error)
-	LastModified(ctx context.Context) (*graphql.Time, error)
-	ImpactScore(ctx context.Context) float64
-	Suppressed(ctx context.Context) bool
-	SuppressActivation(ctx context.Context) (*graphql.Time, error)
-	SuppressExpiry(ctx context.Context) (*graphql.Time, error)
-	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
-	VulnerabilityState(ctx context.Context) string
 	EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error)
-	UnusedVarSink(ctx context.Context, args RawQuery) *int32
+	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
+	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
+	DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error)
+	ImageCount(ctx context.Context, args RawQuery) (int32, error)
+	Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error)
 }
 
 // ImageVulnerability returns a vulnerability of the given id
