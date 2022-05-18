@@ -96,9 +96,8 @@ func (s *podDatastoreSACSuite) TearDownSuite() {
 		s.pool.Close()
 	} else {
 		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
+		s.Require().NoError(s.index.Close())
 	}
-
-	s.Require().NoError(s.index.Close())
 }
 
 func (s *podDatastoreSACSuite) SetupTest() {

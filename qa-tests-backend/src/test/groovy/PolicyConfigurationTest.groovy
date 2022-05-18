@@ -27,6 +27,7 @@ import org.junit.Assume
 import services.ClusterService
 import services.PolicyService
 import services.NodeService
+import spock.lang.IgnoreIf
 import spock.lang.Unroll
 import spock.lang.Shared
 import util.Env
@@ -868,6 +869,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify dryRun on a disabled policy generates violations for matching deployments"() {
         when:
         "Initialize a new disabled policy that will match an existing deployment"
