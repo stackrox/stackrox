@@ -7,6 +7,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,9 +41,10 @@ type serviceAccountSACSuite struct {
 	engine *rocksdb.RocksDB
 	index  bleve.Index
 
-	storage store.Store
-	indexer index.Indexer
-	search  search.Searcher
+	storage    store.Store
+	indexer    index.Indexer
+	search     search.Searcher
+	optionsMap searchPkg.OptionsMap
 
 	testContexts          map[string]context.Context
 	testServiceAccountIDs []string
@@ -60,6 +63,7 @@ func (s *serviceAccountSACSuite) SetupSuite() {
 		pgStore.Destroy(ctx, s.pool)
 		s.storage = pgStore.New(ctx, s.pool)
 		s.indexer = pgStore.NewIndexer(s.pool)
+		s.optionsMap = schema.ServiceaccountsSchema.OptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp("serviceAccountSACTest")
 		s.Require().NoError(err)
@@ -69,6 +73,7 @@ func (s *serviceAccountSACSuite) SetupSuite() {
 
 		s.storage = rdbStore.New(s.engine)
 		s.indexer = index.New(s.index)
+		s.optionsMap = mappings.OptionsMap
 	}
 
 	s.search = search.New(s.storage, s.indexer)
@@ -333,7 +338,7 @@ func (s *serviceAccountSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, mappings.OptionsMap)
+	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
