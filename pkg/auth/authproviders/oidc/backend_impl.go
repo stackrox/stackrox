@@ -571,10 +571,9 @@ type userInfoType struct {
 	EMail  string   `json:"email"`
 	UID    string   `json:"sub"`
 	Groups []string `json:"groups"`
-	// Claim "account_id" is the claim that represents organisation id within sso.redhat.com.
-	// Red Hat users are united in organisations.
-	// See more on the claims here:
-	// https://source.redhat.com/groups/public/it-user/it_user_team_wiki/topic_external_sso_enablements#attributes-needed
+	// Every Red Hat SSO user belongs to exactly one organization, claim
+	// "account_id" represents that organisation. See more on the claims here:
+	// 	https://source.redhat.com/groups/public/it-user/it_user_team_wiki/topic_external_sso_enablements#attributes-needed
 	OrgID string `json:"account_id"`
 	// Claim "is_org_admin" is the claim that identifies organisation admins within sso.redhat.com.
 	IsOrgAdmin bool `json:"is_org_admin"`
