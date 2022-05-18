@@ -96,7 +96,10 @@ func (bu *PostgresBackup) WriteDirectory(ctx context.Context) (string, error) {
 	cmd.Env = append(cmd.Env, fmt.Sprintf("PGPASSWORD=%s", config.ConnConfig.Password))
 
 	// Run the command
-	cmd.Start()
+	err = cmd.Start()
+	if err != nil {
+		return "", err
+	}
 	err = cmd.Wait()
 
 	if exitError, ok := err.(*exec.ExitError); ok {
