@@ -1,22 +1,25 @@
 import static Services.getViolationsWithTimeout
 
+import io.fabric8.kubernetes.api.model.apps.Deployment as OrchestratorDeployment
+
 import io.stackrox.proto.storage.AlertOuterClass
-import services.AlertService
+
+import groups.SensorBounce
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
+import services.AlertService
 import services.ClusterService
 import services.DevelopmentService
 import services.MetadataService
 import services.NamespaceService
 import services.NetworkPolicyService
 import services.SecretService
+import util.Timer
 
-import spock.lang.Retry
 import org.junit.Assume
 import org.junit.experimental.categories.Category
-import groups.SensorBounce
-import util.Timer
+import spock.lang.Retry
 
 @Retry(count = 0)
 class ReconciliationTest extends BaseSpecification {
@@ -91,7 +94,11 @@ class ReconciliationTest extends BaseSpecification {
         // whenever the sensor first connected).
         verifyReconciliationStats(false)
 
-        def sensor = orchestrator.getOrchestratorDeployment("stackrox", "sensor")
+        OrchestratorDeployment sensorOrchestratorDeployment =
+                orchestrator.getOrchestratorDeployment("stackrox", "sensor")
+        Deployment sensorDeployment = new Deployment().setNamespace("stackrox").setName("sensor")
+
+        List<AlertOuterClass.ListAlert> violations
 
         def ns = "reconciliation"
         // Deploy a new resource of each type
@@ -102,58 +109,61 @@ class ReconciliationTest extends BaseSpecification {
         def namespaceID = orchestrator.createNamespace(ns)
         NamespaceService.waitForNamespace(namespaceID, 10)
 
-        // Wait is builtin
-        def secretID = orchestrator.createSecret("testing123", ns)
-        SecretService.waitForSecret(secretID, 10)
+        try {
+            addStackroxImagePullSecret(ns)
 
-        Deployment dep = new Deployment()
-                .setNamespace(ns)
-                .setName ("testing123")
-                .setImage ("quay.io/rhacs-eng/qa:busybox")
-                .addPort (22)
-                .addLabel ("app", "testing123")
-                .setCommand(["sleep", "600"])
+            // Wait is builtin
+            def secretID = orchestrator.createSecret("testing123", ns)
+            SecretService.waitForSecret(secretID, 10)
 
-        // Wait is builtin
-        orchestrator.createDeployment(dep)
-        assert Services.waitForDeployment(dep)
-        assert Services.getPods().findAll { it.deploymentId == dep.getDeploymentUid() }.size() == 1
+            Deployment dep = new Deployment()
+                    .setNamespace(ns)
+                    .setName("testing123")
+                    .setImage("quay.io/rhacs-eng/qa:busybox")
+                    .addPort(22)
+                    .addLabel("app", "testing123")
+                    .setCommand(["sleep", "600"])
 
-        def violations = getViolationsWithTimeout("testing123",
-                "Secure Shell (ssh) Port Exposed", 30)
-        assert violations.size() == 1
+            // Wait is builtin
+            orchestrator.createDeployment(dep)
+            assert Services.waitForDeployment(dep)
+            assert Services.getPods().findAll { it.deploymentId == dep.getDeploymentUid() }.size() == 1
 
-        NetworkPolicy policy = new NetworkPolicy("do-nothing")
-                .setNamespace(ns)
-                .addPodSelector()
-                .addPolicyType(NetworkPolicyTypes.INGRESS)
-        def networkPolicyID = orchestrator.applyNetworkPolicy(policy)
-        assert NetworkPolicyService.waitForNetworkPolicy(networkPolicyID)
+            violations = getViolationsWithTimeout("testing123",
+                    "Secure Shell (ssh) Port Exposed", 30)
+            assert violations.size() == 1
 
-        def sensorDeployment = new Deployment().setNamespace("stackrox").setName("sensor")
-        orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
+            NetworkPolicy policy = new NetworkPolicy("do-nothing")
+                    .setNamespace(ns)
+                    .addPodSelector()
+                    .addPolicyType(NetworkPolicyTypes.INGRESS)
+            def networkPolicyID = orchestrator.applyNetworkPolicy(policy)
+            assert NetworkPolicyService.waitForNetworkPolicy(networkPolicyID)
 
-        def labels = ["app":"sensor"]
-        orchestrator.waitForAllPodsToBeRemoved("stackrox", labels)
+            orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
 
-        orchestrator.identity {
-            // Delete objects from k8s
-            deleteDeployment(dep)
-            deleteSecret("testing123", ns)
-            deleteNetworkPolicy(policy)
-            deleteNamespace(ns)
-            // Just wait for the namespace to be deleted which is indicative that all of them have been deleted
-            waitForNamespaceDeletion(ns)
+            def labels = ["app": "sensor"]
+            orchestrator.waitForAllPodsToBeRemoved("stackrox", labels)
 
-            // Recreate sensor
-            try {
-                createOrchestratorDeployment(sensor)
-            } catch (Exception e) {
-                log.error("Error re-creating the sensor: ", e)
-                throw e
+            orchestrator.identity {
+                // Delete objects from k8s
+                deleteDeployment(dep)
+                deleteSecret("testing123", ns)
+                deleteNetworkPolicy(policy)
             }
+        } finally {
+            orchestrator.deleteNamespace(ns)
+            // Just wait for the namespace to be deleted which is indicative that all of them have been deleted
+            orchestrator.waitForNamespaceDeletion(ns)
         }
 
+        // Recreate sensor
+        try {
+            orchestrator.createOrchestratorDeployment(sensorOrchestratorDeployment)
+        } catch (Exception e) {
+            log.error("Error re-creating the sensor: ", e)
+            throw e
+        }
         Services.waitForDeployment(sensorDeployment)
 
         def maxWaitForSync = 100
