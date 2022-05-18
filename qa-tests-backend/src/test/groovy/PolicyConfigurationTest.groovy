@@ -2,6 +2,7 @@ import static Services.checkForNoViolations
 import static Services.waitForViolation
 
 import services.ImageService
+import spock.lang.IgnoreIf
 import util.Timer
 import objects.K8sPolicyRule
 import objects.K8sRole
@@ -866,8 +867,8 @@ class PolicyConfigurationTest extends BaseSpecification {
                          .setImage("nginx:latest"),]
     }
 
-    @Unroll
     @Category(BAT)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify dryRun on a disabled policy generates violations for matching deployments"() {
         when:
         "Initialize a new disabled policy that will match an existing deployment"
