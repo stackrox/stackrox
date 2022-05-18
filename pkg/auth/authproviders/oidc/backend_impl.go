@@ -36,6 +36,9 @@ const (
 	modeConfigKey                = "mode"
 
 	userInfoExpiration = 5 * time.Minute
+
+	orgIDAttribute = "orgid"
+	orgAdminGroup  = "org_admin"
 )
 
 type nonceVerificationSetting int
@@ -562,12 +565,18 @@ func (p *backendImpl) Validate(context.Context, *tokens.Claims) error {
 // Helpers
 ///////////
 
-// UserInfo is an internal helper struct to unmarshal OIDC token info into.
+// userInfoType is an internal helper struct to unmarshal OIDC token info into.
 type userInfoType struct {
 	Name   string   `json:"name"`
 	EMail  string   `json:"email"`
 	UID    string   `json:"sub"`
 	Groups []string `json:"groups"`
+	// Every Red Hat SSO user belongs to exactly one organization, claim
+	// "account_id" represents that organisation. See more on the claims here:
+	// 	https://source.redhat.com/groups/public/it-user/it_user_team_wiki/topic_external_sso_enablements#attributes-needed
+	OrgID string `json:"account_id"`
+	// Claim "is_org_admin" is the claim that identifies organisation admins within sso.redhat.com.
+	IsOrgAdmin bool `json:"is_org_admin"`
 }
 
 func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim {
@@ -597,6 +606,14 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 	// If using non-standard group information add them.
 	if len(userInfo.Groups) > 0 {
 		claim.Attributes[authproviders.GroupsAttribute] = userInfo.Groups
+	}
+
+	// Add sso.redhat.com attributes.
+	if userInfo.OrgID != "" {
+		claim.Attributes[orgIDAttribute] = []string{userInfo.OrgID}
+	}
+	if userInfo.IsOrgAdmin {
+		claim.Attributes[authproviders.GroupsAttribute] = append(claim.Attributes[authproviders.GroupsAttribute], orgAdminGroup)
 	}
 	return claim
 }
