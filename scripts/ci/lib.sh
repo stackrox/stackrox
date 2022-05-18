@@ -449,11 +449,26 @@ is_nightly_tag() {
     [[ "$tags" =~ nightly ]]
 }
 
+is_openshift_CI_rehearse_PR() {
+    [[ "$(get_repo_full_name)" == "openshift/release" ]]
+}
+
 get_base_ref() {
     if is_CIRCLECI; then
         echo "${CIRCLE_BRANCH}"
     elif is_OPENSHIFT_CI; then
         jq -r '.refs[0].base_ref' <<<"$CLONEREFS_OPTIONS"
+    else
+        die "unsupported"
+    fi
+}
+
+get_repo_full_name() {
+    if is_CIRCLECI; then
+        # CIRCLE_REPOSITORY_URL=git@github.com:stackrox/stackrox.git
+        echo "${CIRCLE_REPOSITORY_URL:15:-4}"
+    elif is_OPENSHIFT_CI; then
+        jq -r .base.repo.full_name <<<"$(get_pr_details)"
     else
         die "unsupported"
     fi
@@ -476,10 +491,16 @@ pr_has_label() {
 }
 
 # get_pr_details() from GitHub and display the result. Exits 1 if not run in CI in a PR context.
+_PR_DETAILS=""
 get_pr_details() {
     local pull_request
     local org
     local repo
+
+    if [[ -n "${_PR_DETAILS}" ]]; then
+        echo "${_PR_DETAILS}"
+        return
+    fi
 
     _not_a_PR() {
         echo '{ "msg": "this is not a PR" }'
@@ -524,6 +545,7 @@ get_pr_details() {
         echo "Invalid response from GitHub: $pr_details"
         exit 2
     fi
+    _PR_DETAILS="$pr_details"
     echo "$pr_details"
 }
 
@@ -551,7 +573,7 @@ gate_job() {
     pr_details="$(get_pr_details)" || exitstatus="$?"
 
     if [[ "$exitstatus" == "0" ]]; then
-        if [[ "$(jq -r .base.repo.full_name <<<"$pr_details")" == "openshift/release" ]]; then
+        if is_openshift_CI_rehearse_PR; then
             gate_openshift_release_rehearse_job "$job" "$pr_details"
         else
             gate_pr_job "$job_config" "$pr_details"

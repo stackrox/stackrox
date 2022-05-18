@@ -160,7 +160,10 @@ run_tests_part_1() {
     local base_ref
     base_ref="$(get_base_ref)"
 
-    if [[ "$base_ref" == "master" ]] || is_tagged; then
+    if is_openshift_CI_rehearse_PR; then
+        info "On an openshift rehearse PR, running BAT tests only..."
+        make -C qa-tests-backend bat-test || touch FAIL
+    elif [[ "$base_ref" == "master" ]] || is_tagged; then
         info "On master or tagged, running all QA tests..."
         make -C qa-tests-backend test || touch FAIL
     elif pr_has_label ci-all-qa-tests; then
