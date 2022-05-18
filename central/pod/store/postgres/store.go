@@ -367,7 +367,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return 0, err
@@ -386,7 +386,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Pod")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return false, err
@@ -411,7 +411,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Pod, bool, err
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return nil, false, err
@@ -468,7 +468,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.PodIDs")
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return nil, err

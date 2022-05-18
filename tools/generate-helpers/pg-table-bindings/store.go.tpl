@@ -429,7 +429,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
         return 0, err
     }
     {{- else if .Obj.IsDirectlyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+    {{ template "defineScopeChecker" "READ" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return 0, err
@@ -467,7 +467,7 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
         return false, nil
     }
     {{- else if .Obj.IsDirectlyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+    {{ template "defineScopeChecker" "READ" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return false, err
@@ -526,7 +526,7 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
         return nil, false, nil
     }
     {{- else if .Obj.IsDirectlyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+    {{ template "defineScopeChecker" "READ" }}
     scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
         return nil, false, err
@@ -651,7 +651,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
         return nil, nil
     }
     {{- else if .Obj.IsDirectlyScoped }}
-    scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+    {{ template "defineScopeChecker" "READ" }}
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return nil, err
