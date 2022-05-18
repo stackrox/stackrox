@@ -36,6 +36,7 @@ import (
 	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
+	imageCVEService "github.com/stackrox/rox/central/cve/image/service"
 	cveService "github.com/stackrox/rox/central/cve/service"
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
@@ -343,6 +344,9 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		vulnRequestService.Singleton(),
+	}
+	if features.PostgresDatastore.Enabled() {
+		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
 	}
 
 	if features.ImageSignatureVerification.Enabled() {

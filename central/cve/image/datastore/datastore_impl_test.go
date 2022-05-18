@@ -7,6 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/cve/common"
 	searchMocks "github.com/stackrox/rox/central/cve/image/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/cve/image/datastore/internal/store/mocks"
 	indexMocks "github.com/stackrox/rox/central/cve/index/mocks"
@@ -22,11 +23,11 @@ var (
 	testAllAccessContext = sac.WithAllAccess(context.Background())
 )
 
-func TestCVEDataStore(t *testing.T) {
-	suite.Run(t, new(CVEDataStoreSuite))
+func TestImageCVEDataStore(t *testing.T) {
+	suite.Run(t, new(ImageCVEDataStoreSuite))
 }
 
-type CVEDataStoreSuite struct {
+type ImageCVEDataStoreSuite struct {
 	suite.Suite
 
 	mockCtrl *gomock.Controller
@@ -37,7 +38,7 @@ type CVEDataStoreSuite struct {
 	datastore *datastoreImpl
 }
 
-func (suite *CVEDataStoreSuite) SetupSuite() {
+func (suite *ImageCVEDataStoreSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)
@@ -51,7 +52,7 @@ func (suite *CVEDataStoreSuite) SetupSuite() {
 	suite.datastore = ds.(*datastoreImpl)
 }
 
-func (suite *CVEDataStoreSuite) TearDownSuite() {
+func (suite *ImageCVEDataStoreSuite) TearDownSuite() {
 	suite.mockCtrl.Finish()
 }
 
@@ -73,7 +74,7 @@ func getImageWithCVEs(cves ...string) *storage.Image {
 	}
 }
 
-func (suite *CVEDataStoreSuite) verifySuppressionStateImage(image *storage.Image, suppressedCVEs, unsuppressedCVEs []string) {
+func (suite *ImageCVEDataStoreSuite) verifySuppressionStateImage(image *storage.Image, suppressedCVEs, unsuppressedCVEs []string) {
 	cveMap := make(map[string]bool)
 	for _, comp := range image.GetScan().GetComponents() {
 		for _, vuln := range comp.GetVulns() {
@@ -83,7 +84,7 @@ func (suite *CVEDataStoreSuite) verifySuppressionStateImage(image *storage.Image
 	suite.verifySuppressionState(cveMap, suppressedCVEs, unsuppressedCVEs)
 }
 
-func (suite *CVEDataStoreSuite) verifySuppressionState(cveMap map[string]bool, suppressedCVEs, unsuppressedCVEs []string) {
+func (suite *ImageCVEDataStoreSuite) verifySuppressionState(cveMap map[string]bool, suppressedCVEs, unsuppressedCVEs []string) {
 	for _, cve := range suppressedCVEs {
 		val, ok := cveMap[cve]
 		suite.True(ok)
@@ -96,7 +97,7 @@ func (suite *CVEDataStoreSuite) verifySuppressionState(cveMap map[string]bool, s
 	}
 }
 
-func (suite *CVEDataStoreSuite) TestSuppressionCacheImages() {
+func (suite *ImageCVEDataStoreSuite) TestSuppressionCacheImages() {
 	// Add some results
 	suite.searcher.EXPECT().SearchRawCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.CVE{
 		{
@@ -109,13 +110,9 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheImages() {
 		},
 	}, nil)
 	suite.NoError(suite.datastore.buildSuppressedCache())
-	expectedCache := map[string]suppressionCacheEntry{
-		"CVE-ABC": {
-			Suppressed: true,
-		},
-		"CVE-DEF": {
-			Suppressed: true,
-		},
+	expectedCache := common.CVESuppressionCache{
+		"CVE-ABC": {},
+		"CVE-DEF": {},
 	}
 	suite.Equal(expectedCache, suite.datastore.cveSuppressionCache)
 
