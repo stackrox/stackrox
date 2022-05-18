@@ -76,11 +76,19 @@ func (resolver *Resolver) NodeComponent(ctx context.Context, args IDQuery) (Node
 }
 
 func (resolver *Resolver) NodeComponents(ctx context.Context, q PaginatedQuery) ([]NodeComponentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeComponents")
 	query := search.AddRawQueriesAsConjunction(q.String(),
 		search.NewQueryBuilder().AddRegexes(search.Node, "(Node ID, .+) (Node ID, .*)").Query())
 
 	return resolver.nodeComponentsV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
+}
+
+func (resolver *Resolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeComponentCount")
+	query := search.AddRawQueriesAsConjunction(args.String(),
+		search.NewQueryBuilder().AddRegexes(search.Node, "(Node ID, .+) (Node ID, .*)").Query())
+
+	return resolver.componentCountV2(ctx, RawQuery{Query: &query})
 }
 
 // nodeComponentResolverImpl resolves data about a node component.
