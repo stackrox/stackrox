@@ -7,7 +7,10 @@ import SearchFilterInput from 'Components/SearchFilterInput';
 import DashboardCompliance from 'Containers/Dashboard/DashboardCompliance';
 import TopRiskyDeployments from 'Containers/Dashboard/TopRiskyDeployments';
 import useURLSearch from 'hooks/useURLSearch';
-import { fetchAlertsByTimeseries, fetchSummaryAlertCounts } from 'services/AlertsService';
+import {
+    fetchAlertsByTimeseries,
+    fetchSummaryAlertCountsLegacy as fetchSummaryAlertCounts,
+} from 'services/AlertsService';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { fetchDeployments } from 'services/DeploymentsService';
 import AlertsByTimeseriesChart from './AlertsByTimeseriesChart';

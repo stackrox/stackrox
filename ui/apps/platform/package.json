@@ -12,6 +12,8 @@
     "dependencies": {
         "@apollo/client": "^3.5.5",
         "@lifeomic/axios-fetch": "^3.0.0",
+        "@patternfly/patternfly": "^4.194.4",
+        "@patternfly/react-charts": "^6.67.1",
         "@patternfly/react-core": "^4.202.16",
         "@patternfly/react-icons": "^4.53.16",
         "@patternfly/react-styles": "^4.52.16",
@@ -93,6 +95,7 @@
         "typeface-open-sans": "^1.1.13",
         "typeface-open-sans-condensed": "^1.1.13",
         "use-deep-compare-effect": "^1.8.1",
+        "victory-core": "^36.4.1",
         "yup": "^1.0.0-beta.4"
     },
     "resolutions": {
