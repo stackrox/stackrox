@@ -23,7 +23,7 @@ func init() {
 				"componentCount(query: String): Int!",
 				"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
 				"effectiveVulnerabilityRequest: VulnerabilityRequest",
-				"deploymentCount(query: String): Int!",
+				"deploymentCount(query: String: Int!",
 				"deployments(query: String, pagination: Pagination): [Deployment!]!",
 				"discoveredAtImage(query: String): Time",
 				"imageCount(query: String): Int!",
