@@ -59,14 +59,14 @@ type Sensor struct {
 	profilingServer *http.Server
 
 	centralConnection    *grpcUtil.LazyClientConn
-	centralCommunication CentralCommunication
-	connectionFactory    connection.GRPCConnectionFactory
+	centralCommunication     CentralCommunication
+	centralConnectionFactory connection.GRPCConnectionFactory
 
 	stoppedSig concurrency.ErrorSignal
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, factory connection.GRPCConnectionFactory, components ...common.SensorComponent) *Sensor {
+func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, centralConnectionFactory connection.GRPCConnectionFactory, components ...common.SensorComponent) *Sensor {
 	return &Sensor{
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
@@ -76,8 +76,8 @@ func NewSensor(configHandler config.Handler, detector detector.Detector, imageSe
 		imageService:  imageService,
 		components:    append(components, detector, configHandler), // Explicitly add the config handler
 
-		connectionFactory: factory,
-		centralConnection: grpcUtil.NewLazyClientConn(),
+		centralConnectionFactory: centralConnectionFactory,
+		centralConnection:        grpcUtil.NewLazyClientConn(),
 
 		stoppedSig: concurrency.NewErrorSignal(),
 	}
@@ -117,7 +117,7 @@ func (s *Sensor) Start() {
 	// Start up connections.
 	log.Infof("Connecting to Central server %s", s.centralEndpoint)
 
-	go s.connectionFactory.SetCentralConnectionWithRetries(s.centralConnection)
+	go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection)
 
 	for _, c := range s.components {
 		switch v := c.(type) {
@@ -213,8 +213,8 @@ func (s *Sensor) Start() {
 		}
 	}
 
-	okSig := s.connectionFactory.OkSignal()
-	errSig := s.connectionFactory.StopSignal()
+	okSig := s.centralConnectionFactory.OkSignal()
+	errSig := s.centralConnectionFactory.StopSignal()
 
 	select {
 	case <-errSig.Done():

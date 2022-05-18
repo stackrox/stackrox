@@ -75,7 +75,7 @@ func (f *connectionFactoryImpl) pollMetadata() error {
 // waitUntilCentralIsReady blocks until central responds with a valid license status on its metadata API,
 // or until the retry budget is exhausted (in which case the sensor is marked as stopped and the program
 // will exit).
-func (f *connectionFactoryImpl) waitUntilCentralIsReady() {
+func (f *connectionFactoryImpl) waitUntilCentralIsReady() error {
 	exponential := backoff.NewExponentialBackOff()
 	exponential.MaxElapsedTime = 5 * time.Minute
 	exponential.MaxInterval = 32 * time.Second
@@ -86,8 +86,10 @@ func (f *connectionFactoryImpl) waitUntilCentralIsReady() {
 	})
 
 	if err != nil {
-		f.stopSignal.SignalWithErrorWrapf(err, "checking central status failed after %s", exponential.GetElapsedTime())
+		return errors.Wrapf(err, "checking central status failed after %s", exponential.GetElapsedTime())
 	}
+
+	return nil
 }
 
 // getCentralTLSCerts only logs errors because this feature should not break
@@ -100,11 +102,20 @@ func (f *connectionFactoryImpl) getCentralTLSCerts() []*x509.Certificate {
 	return certs
 }
 
-func (f *connectionFactoryImpl) SetCentralConnectionWithRetries(ptr *util.LazyClientConn) {
+// SetCentralConnectionWithRetries will set conn pointer once the connection is ready.
+// This function is supposed to be called asynchronously and allows sensor components to be
+// started with an empty util.LazyClientConn. The pointer will be swapped once this
+// func finishes.
+// f.okSignal is used if the connection is successful and f.stopSignal if the connection failed to start.
+func (f *connectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn) {
 	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
 
 	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
-	f.waitUntilCentralIsReady()
+	if err := f.waitUntilCentralIsReady(); err != nil {
+		f.stopSignal.SignalWithError(err)
+		return
+	}
+
 
 	certs := f.getCentralTLSCerts()
 	if len(certs) != 0 {
@@ -123,6 +134,6 @@ func (f *connectionFactoryImpl) SetCentralConnectionWithRetries(ptr *util.LazyCl
 		return
 	}
 
-	ptr.Set(centralConnection)
+	conn.Set(centralConnection)
 	f.okSignal.Signal()
 }
