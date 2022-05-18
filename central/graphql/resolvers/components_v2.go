@@ -21,13 +21,7 @@ import (
 ///////////////////////
 
 func (resolver *Resolver) componentV2(ctx context.Context, args IDQuery) (ComponentResolver, error) {
-	component, exists, err := resolver.ImageComponentDataStore.Get(ctx, string(*args.ID))
-	if err != nil {
-		return nil, err
-	} else if !exists {
-		return nil, errors.Errorf("component not found: %s", string(*args.ID))
-	}
-	componentResolver, err := resolver.wrapImageComponent(component, true, nil)
+	componentResolver, err := resolver.imageComponentDataStoreQuery(ctx, args)
 	if err != nil {
 		return nil, err
 	}
@@ -43,13 +37,36 @@ func (resolver *Resolver) componentsV2(ctx context.Context, args PaginatedQuery)
 	return resolver.componentsV2Query(ctx, query)
 }
 
-func (resolver *Resolver) componentsV2Query(ctx context.Context, query *v1.Query) ([]ComponentResolver, error) {
-	componentLoader, err := loaders.GetComponentLoader(ctx)
+func (resolver *Resolver) nodeComponentV2(ctx context.Context, args IDQuery) (NodeComponentResolver, error) {
+	imgComponentResolver, err := resolver.imageComponentDataStoreQuery(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	imgComponentResolver.ctx = ctx
+	return resolver.wrapIntoNodeComponentResolver(imgComponentResolver), nil
+}
+
+func (resolver *Resolver) nodeComponentsV2(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
 
-	compRes, err := resolver.wrapImageComponents(componentLoader.FromQuery(ctx, query))
+	imgCompResolvers, err := resolver.imageComponentsLoaderQuery(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]NodeComponentResolver, 0, len(imgCompResolvers))
+	for _, res := range imgCompResolvers {
+		res.ctx = ctx
+		ret = append(ret, resolver.wrapIntoNodeComponentResolver(res))
+	}
+	return ret, err
+}
+
+func (resolver *Resolver) componentsV2Query(ctx context.Context, query *v1.Query) ([]ComponentResolver, error) {
+	compRes, err := resolver.imageComponentsLoaderQuery(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -60,6 +77,25 @@ func (resolver *Resolver) componentsV2Query(ctx context.Context, query *v1.Query
 		ret = append(ret, resolver)
 	}
 	return ret, err
+}
+
+func (resolver *Resolver) imageComponentDataStoreQuery(ctx context.Context, args IDQuery) (*imageComponentResolver, error) {
+	component, exists, err := resolver.ImageComponentDataStore.Get(ctx, string(*args.ID))
+	if err != nil {
+		return nil, err
+	} else if !exists {
+		return nil, errors.Errorf("component not found: %s", string(*args.ID))
+	}
+	return resolver.wrapImageComponent(component, true, nil)
+}
+
+func (resolver *Resolver) imageComponentsLoaderQuery(ctx context.Context, query *v1.Query) ([]*imageComponentResolver, error) {
+	componentLoader, err := loaders.GetComponentLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return resolver.wrapImageComponents(componentLoader.FromQuery(ctx, query))
 }
 
 func (resolver *Resolver) componentCountV2(ctx context.Context, args RawQuery) (int32, error) {
