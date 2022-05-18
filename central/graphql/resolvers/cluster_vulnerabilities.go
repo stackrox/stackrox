@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,79 +16,24 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddType("ClusterVulnerability", []string{ // TODO pruning
-			"id: ID!",
-			"cve: String!",
-			"cvss: Float!",
-			"scoreVersion: String!",
-			"vectors: EmbeddedVulnerabilityVectors",
-			"link: String!",
-			"summary: String!",
-			"fixedByVersion: String!",
-			"isFixable(query: String): Boolean!",
-			"lastScanned: Time",
-			"createdAt: Time", // Discovered At System
-			"discoveredAtImage(query: String): Time",
-			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
-			"componentCount(query: String): Int!",
-			"images(query: String, pagination: Pagination): [Image!]!",
-			"imageCount(query: String): Int!",
-			"deployments(query: String, pagination: Pagination): [Deployment!]!",
-			"deploymentCount(query: String): Int!",
-			"nodes(query: String, pagination: Pagination): [Node!]!",
-			"nodeCount(query: String): Int!",
-			"envImpact: Float!",
-			"severity: String!",
-			"publishedOn: Time",
-			"lastModified: Time",
-			"impactScore: Float!",
-			"vulnerabilityType: String!",
-			"vulnerabilityTypes: [String!]!",
-			"suppressed: Boolean!",
-			"suppressActivation: Time",
-			"suppressExpiry: Time",
-			"activeState(query: String): ActiveState",
-			"vulnerabilityState: String!",
-			"effectiveVulnerabilityRequest: VulnerabilityRequest",
-		}),
+		schema.AddType("ClusterVulnerability",
+			append(commonVulnerabilitySubResolvers,
+				"vulnerabilityType: String!",
+				"vulnerabilityTypes: [String!]!",
+			)),
 		schema.AddQuery("clusterVulnerability(id: ID): ClusterVulnerability"),
 		schema.AddQuery("clusterVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ClusterVulnerability!]!"),
 		schema.AddQuery("clusterVulnerabilityCount(query: String): Int!"),
 	)
 }
 
-// ClusterVulnerabilityResolver represents the supported API on image vulnerabilities TODO pruning
+// ClusterVulnerabilityResolver represents the supported API on image vulnerabilities
+//  NOTE: This list is and should remain alphabetically ordered
 type ClusterVulnerabilityResolver interface {
-	ID(ctx context.Context) graphql.ID
-	CVE(ctx context.Context) string
-	Cvss(ctx context.Context) float64
-	ScoreVersion(ctx context.Context) string
-	Vectors() *EmbeddedVulnerabilityVectorsResolver
-	Link(ctx context.Context) string
-	Summary(ctx context.Context) string
-	FixedByVersion(ctx context.Context) (string, error)
-	IsFixable(ctx context.Context, args RawQuery) (bool, error)
-	LastScanned(ctx context.Context) (*graphql.Time, error)
-	CreatedAt(ctx context.Context) (*graphql.Time, error)
-	DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error)
-	Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error)
-	ComponentCount(ctx context.Context, args RawQuery) (int32, error)
-	Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error)
-	ImageCount(ctx context.Context, args RawQuery) (int32, error)
-	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
-	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
-	EnvImpact(ctx context.Context) (float64, error)
-	Severity(ctx context.Context) string
-	PublishedOn(ctx context.Context) (*graphql.Time, error)
-	LastModified(ctx context.Context) (*graphql.Time, error)
-	ImpactScore(ctx context.Context) float64
-	Suppressed(ctx context.Context) bool
-	SuppressActivation(ctx context.Context) (*graphql.Time, error)
-	SuppressExpiry(ctx context.Context) (*graphql.Time, error)
-	ActiveState(ctx context.Context, args RawQuery) (*activeStateResolver, error)
-	VulnerabilityState(ctx context.Context) string
-	EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error)
-	UnusedVarSink(ctx context.Context, args RawQuery) *int32
+	CommonVulnerabilityResolver
+
+	VulnerabilityType() string
+	VulnerabilityTypes() []string
 }
 
 // ClusterVulnerability returns a vulnerability of the given id
