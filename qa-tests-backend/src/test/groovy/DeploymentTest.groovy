@@ -19,13 +19,13 @@ class DeploymentTest extends BaseSpecification {
 
     private static final Deployment DEPLOYMENT = new Deployment()
             .setName(DEPLOYMENT_NAME)
-            .setImage("nginx@sha256:204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
+            .setImage("quay.io/rhacs-eng/qa:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
             .addLabel("app", "test")
             .setCommand(["sh", "-c", "apt-get -y update && sleep 600"])
 
     private static final Job JOB = new Job()
             .setName("test-job-pi")
-            .setImage("perl")
+            .setImage("quay.io/rhacs-eng/qa:perl")
             .addLabel("app", "test")
             .setCommand(["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"])
 
@@ -73,15 +73,15 @@ class DeploymentTest extends BaseSpecification {
 
         where:
         "Data inputs are: "
-        query                                                                                                   | _
-        "Image:docker.io/library/nginx@sha256:204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad" | _
-        "Image Sha:sha256:204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad"                     | _
-        "CVE:CVE-2018-18314+Fixable:true"                                                                       | _
-        "Deployment:${DEPLOYMENT_NAME}+Image:r/docker.*"                                                        | _
-        "Image:r/docker.*"                                                                                      | _
-        "Image:!stackrox.io"                                                                                    | _
-        "Deployment:${DEPLOYMENT_NAME}+Image:!stackrox.io"                                                      | _
-        "Image Remote:library/nginx+Image Registry:docker.io"                                                   | _
+        query                                                                                                 | _
+        "Image:quay.io/rhacs-eng/qa@sha256:204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad"  | _
+        "Image Sha:sha256:204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad"                   | _
+        "CVE:CVE-2018-18314+Fixable:true"                                                                     | _
+        "Deployment:${DEPLOYMENT_NAME}+Image:r/quay.*"                                                        | _
+        "Image:r/quay.*"                                                                                      | _
+        "Image:!stackrox.io"                                                                                  | _
+        "Deployment:${DEPLOYMENT_NAME}+Image:!stackrox.io"                                                    | _
+        "Image Remote:rhacs-eng/qa+Image Registry:quay.io"                                                    | _
     }
 
     @Unroll
@@ -106,8 +106,8 @@ class DeploymentTest extends BaseSpecification {
         query                                                                                                   | _
         "Deployment:${DEPLOYMENT_NAME}"                                                                         | _
         "Label:app=test"                                                                                        | _
-        "Image:docker.io/library/nginx@sha256:204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad" | _
-        "Label:app=test+Image:docker.io/library/nginx"                                                          | _
+        "Image:quay.io/rhacs-eng/qa@sha256:204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad"    | _
+        "Label:app=test+Image:quay.io/rhacs-eng/qa"                                                             | _
     }
 
     @Unroll
