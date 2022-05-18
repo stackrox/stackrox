@@ -23,8 +23,8 @@ import (
 	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/config"
-	"github.com/stackrox/rox/sensor/common/connection"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
@@ -58,15 +58,15 @@ type Sensor struct {
 	server          pkgGRPC.API
 	profilingServer *http.Server
 
-	centralConnection    *grpcUtil.LazyClientConn
+	centralConnection        *grpcUtil.LazyClientConn
 	centralCommunication     CentralCommunication
-	centralConnectionFactory connection.GRPCConnectionFactory
+	centralConnectionFactory centralclient.CentralConnectionFactory
 
 	stoppedSig concurrency.ErrorSignal
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, centralConnectionFactory connection.GRPCConnectionFactory, components ...common.SensorComponent) *Sensor {
+func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, centralConnectionFactory centralclient.CentralConnectionFactory, components ...common.SensorComponent) *Sensor {
 	return &Sensor{
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),

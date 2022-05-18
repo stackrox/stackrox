@@ -1,4 +1,4 @@
-package connection
+package centralclient
 
 import (
 	"context"
@@ -11,40 +11,34 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/util"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/sensor/common/centralclient"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
-// GRPCConnectionFactory is responsible for establishing a gRPC connection between sensor
+// CentralConnectionFactory is responsible for establishing a gRPC connection between sensor
 // and Central. Sensor used to receive an HTTP client as a parameter which was used to create
 // a gRPC stream internally. This factory is now passed to sensor creation, and it can be
 // more easily mocked when writing unit/integration tests.
-type GRPCConnectionFactory interface {
+type CentralConnectionFactory interface {
 	SetCentralConnectionWithRetries(ptr *util.LazyClientConn)
 	StopSignal() concurrency.ErrorSignal
 	OkSignal() concurrency.Signal
 }
 
-type connectionFactoryImpl struct {
+type centralConnectionFactoryImpl struct {
 	endpoint   string
-	httpClient *centralclient.Client
+	httpClient *Client
 
 	stopSignal concurrency.ErrorSignal
 	okSignal   concurrency.Signal
 }
 
-// NewConnectionFactory returns a factory that can create a gRPC stream between Sensor and Central.
-func NewConnectionFactory(endpoint string) (*connectionFactoryImpl, error) {
-	centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())
+// NewCentralConnectionFactory returns a factory that can create a gRPC stream between Sensor and Central.
+func NewCentralConnectionFactory(endpoint string) (*centralConnectionFactoryImpl, error) {
+	centralClient, err := NewClient(env.CentralEndpoint.Setting())
 	if err != nil {
 		return nil, errors.Wrap(err, "creating central client")
 	}
-	return &connectionFactoryImpl{
+	return &centralConnectionFactoryImpl{
 		endpoint:   endpoint,
 		httpClient: centralClient,
 
@@ -55,16 +49,16 @@ func NewConnectionFactory(endpoint string) (*connectionFactoryImpl, error) {
 
 // OkSignal returns a concurrency.Signal that is sends signal once connection object is successfully established
 // and the util.LazyClientConn pointer is swapped.
-func (f *connectionFactoryImpl) OkSignal() concurrency.Signal {
+func (f *centralConnectionFactoryImpl) OkSignal() concurrency.Signal {
 	return f.okSignal
 }
 
 // StopSignal returns a concurrency.Signal that alerts if there is an error trying to establish gRPC connection.
-func (f *connectionFactoryImpl) StopSignal() concurrency.ErrorSignal {
+func (f *centralConnectionFactoryImpl) StopSignal() concurrency.ErrorSignal {
 	return f.stopSignal
 }
 
-func (f *connectionFactoryImpl) pollMetadata() error {
+func (f *centralConnectionFactoryImpl) pollMetadata() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	// Metadata result doesn't matter, as long as central is reachable.
@@ -75,7 +69,7 @@ func (f *connectionFactoryImpl) pollMetadata() error {
 // waitUntilCentralIsReady blocks until central responds with a valid license status on its metadata API,
 // or until the retry budget is exhausted (in which case the sensor is marked as stopped and the program
 // will exit).
-func (f *connectionFactoryImpl) waitUntilCentralIsReady() error {
+func (f *centralConnectionFactoryImpl) waitUntilCentralIsReady() error {
 	exponential := backoff.NewExponentialBackOff()
 	exponential.MaxElapsedTime = 5 * time.Minute
 	exponential.MaxInterval = 32 * time.Second
@@ -94,7 +88,7 @@ func (f *connectionFactoryImpl) waitUntilCentralIsReady() error {
 
 // getCentralTLSCerts only logs errors because this feature should not break
 // sensors start-up.
-func (f *connectionFactoryImpl) getCentralTLSCerts() []*x509.Certificate {
+func (f *centralConnectionFactoryImpl) getCentralTLSCerts() []*x509.Certificate {
 	certs, err := f.httpClient.GetTLSTrustedCerts(context.Background())
 	if err != nil {
 		log.Warnf("Error fetching centrals TLS certs: %s", err)
@@ -107,7 +101,7 @@ func (f *connectionFactoryImpl) getCentralTLSCerts() []*x509.Certificate {
 // started with an empty util.LazyClientConn. The pointer will be swapped once this
 // func finishes.
 // f.okSignal is used if the connection is successful and f.stopSignal if the connection failed to start.
-func (f *connectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn) {
+func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn) {
 	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
 
 	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
@@ -115,7 +109,6 @@ func (f *connectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyC
 		f.stopSignal.SignalWithError(err)
 		return
 	}
-
 
 	certs := f.getCentralTLSCerts()
 	if len(certs) != 0 {
