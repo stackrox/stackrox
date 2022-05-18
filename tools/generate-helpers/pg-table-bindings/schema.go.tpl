@@ -89,23 +89,31 @@ var (
     // {{$schema.TypeName}} holds the Gorm model for Postgres table `{{$schema.Table}}`.
     type {{$schema.Table|upperCamelCase}} struct {
     {{- range $idx, $field := $schema.DBColumnFields }}
-        {{$field.ColumnName|upperCamelCase}} {{$field.ModelType}} `gorm:"column:{{$field.ColumnName|lowerCase}};type:{{$field.SQLType}}{{if $field.Options.Unique}};unique{{end}}{{if $field.Options.PrimaryKey}};primaryKey{{end}}{{if $field.Options.Index}};index:{{$schema.Table|lowerCase}}_{{$field.ColumnName|lowerCase}},type:{{$field.Options.Index}}{{end}}"`
+        {{$field.ColumnName|upperCamelCase}} {{$field.ModelType}} `gorm:"column:{{$field.ColumnName|lowerCase}};type:{{$field.SQLType}}{{if $field.Options.Unique}};unique{{end}}{{if $field.Options.PrimaryKey}};primaryKey{{end}}{{if $field.Options.Index}};index:{{$schema.Table|lowerCamelCase|lowerCase}}_{{$field.ColumnName|lowerCase}},type:{{$field.Options.Index}}{{end}}"`
     {{- end}}
     {{- range $idx, $rel := $schema.RelationshipsToDefineAsForeignKeys }}
-        {{$rel.OtherSchema.Table|upperCamelCase}}Ref {{$rel.OtherSchema.Table|upperCamelCase}} `gorm:"foreignKey:{{template "commaSeparatedColumnsInThisTable" $rel.MappedColumnNames}};references:{{template "commaSeparatedColumnsInOtherTable" $rel.MappedColumnNames}};constraint:OnDelete:CASCADE"`
+        {{$rel.OtherSchema.Table|upperCamelCase}}Ref {{$rel.OtherSchema.Table|upperCamelCase}} `gorm:"foreignKey:{{ (concatWith $rel.ThisSchemaColumnNames ",") | lowerCase}};references:{{ (concatWith $rel.OtherSchemaColumnNames ",")|lowerCase}};constraint:OnDelete:CASCADE"`
     {{- end}}
-}
+    }
+    {{- range $idx, $child := $schema.Children }}
+        {{- template "createGormModel" $child }}
+    {{- end }}
+{{- end}}
+{{- define "createTableNames" }}
+	{{.Table|upperCamelCase}}TableName = "{{.Table|lowerCase}}"
+	{{- range $idx, $child := .Children }}
+	   {{- template "createTableNames" $child }}
+    {{- end }}
 {{- end}}
 
 const (
-	{{.Schema.Table|upperCamelCase}}TableName = "{{.Schema.Table}}"
+    {{- template "createTableNames" .Schema }}
+    /*
+	{{.Schema.Table|upperCamelCase}}TableName = "{{.Schema.Table|lowerCase}}"
 	{{- range $idx, $child := .Schema.Children }}
-       {{$child.Table|upperCamelCase}}TableName = "{{$child.Table}}"
+       {{$child.Table|upperCamelCase}}TableName = "{{$child.Table|lowerCase}}"
     {{- end }}
+    */
 )
 
 {{- template "createGormModel" .Schema }}
-
-{{- range $idx, $child := .Schema.Children }}
-   {{- template "createGormModel" $child }}
-{{- end }}

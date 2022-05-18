@@ -121,47 +121,67 @@ var (
 )
 
 const (
-	NodesTableName           = "nodes"
-	NodesTaintsTableName     = "nodes_Taints"
-	NodesComponentsTableName = "nodes_Components"
+	NodesTableName                = "nodes"
+	NodesTaintsTableName          = "nodes_taints"
+	NodesComponentsTableName      = "nodes_components"
+	NodesComponentsVulnsTableName = "nodes_components_vulns"
+	/*
+			NodesTableName = "nodes"
+		       NodesTaintsTableName = "nodes_taints"
+		       NodesComponentsTableName = "nodes_components"
+	*/
 )
 
 // Node holds the Gorm model for Postgres table `nodes`.
 type Nodes struct {
-	Id                       string            `gorm:"column:id;type:varchar;primaryKey"`
-	Name                     string            `gorm:"column:name;type:varchar"`
-	ClusterId                string            `gorm:"column:clusterid;type:varchar"`
-	ClusterName              string            `gorm:"column:clustername;type:varchar"`
-	Labels                   map[string]string `gorm:"column:labels;type:jsonb"`
-	Annotations              map[string]string `gorm:"column:annotations;type:jsonb"`
-	JoinedAt                 *time.Time        `gorm:"column:joinedat;type:timestamp"`
-	ContainerRuntime_Version string            `gorm:"column:containerruntime_version;type:varchar"`
-	OsImage                  string            `gorm:"column:osimage;type:varchar"`
-	LastUpdated              *time.Time        `gorm:"column:lastupdated;type:timestamp"`
-	Scan_ScanTime            *time.Time        `gorm:"column:scan_scantime;type:timestamp"`
-	Components               int32             `gorm:"column:components;type:integer"`
-	Cves                     int32             `gorm:"column:cves;type:integer"`
-	FixableCves              int32             `gorm:"column:fixablecves;type:integer"`
-	RiskScore                float32           `gorm:"column:riskscore;type:numeric"`
-	TopCvss                  float32           `gorm:"column:topcvss;type:numeric"`
-	serialized               []byte            `gorm:"column:serialized;type:bytea"`
+	Id                      string            `gorm:"column:id;type:varchar;primaryKey"`
+	Name                    string            `gorm:"column:name;type:varchar"`
+	ClusterId               string            `gorm:"column:clusterid;type:varchar"`
+	ClusterName             string            `gorm:"column:clustername;type:varchar"`
+	Labels                  map[string]string `gorm:"column:labels;type:jsonb"`
+	Annotations             map[string]string `gorm:"column:annotations;type:jsonb"`
+	JoinedAt                *time.Time        `gorm:"column:joinedat;type:timestamp"`
+	ContainerRuntimeVersion string            `gorm:"column:containerruntime_version;type:varchar"`
+	OsImage                 string            `gorm:"column:osimage;type:varchar"`
+	LastUpdated             *time.Time        `gorm:"column:lastupdated;type:timestamp"`
+	ScanScanTime            *time.Time        `gorm:"column:scan_scantime;type:timestamp"`
+	Components              int32             `gorm:"column:components;type:integer"`
+	Cves                    int32             `gorm:"column:cves;type:integer"`
+	FixableCves             int32             `gorm:"column:fixablecves;type:integer"`
+	RiskScore               float32           `gorm:"column:riskscore;type:numeric"`
+	TopCvss                 float32           `gorm:"column:topcvss;type:numeric"`
+	Serialized              []byte            `gorm:"column:serialized;type:bytea"`
 }
 
 // Taint holds the Gorm model for Postgres table `nodes_Taints`.
 type NodesTaints struct {
-	nodes_Id    string              `gorm:"column:nodes_id;type:varchar;primaryKey"`
-	idx         int                 `gorm:"column:idx;type:integer;primaryKey;index:nodesTaints_idx,type:btree"`
+	NodesId     string              `gorm:"column:nodes_id;type:varchar;primaryKey"`
+	Idx         int                 `gorm:"column:idx;type:integer;primaryKey;index:nodestaints_idx,type:btree"`
 	Key         string              `gorm:"column:key;type:varchar"`
 	Value       string              `gorm:"column:value;type:varchar"`
 	TaintEffect storage.TaintEffect `gorm:"column:tainteffect;type:integer"`
-	NodesRef    Nodes               `gorm:"foreignKey:nodes_Id;references:Id;constraint:OnDelete:CASCADE"`
+	NodesRef    Nodes               `gorm:"foreignKey:nodes_id;references:id;constraint:OnDelete:CASCADE"`
 }
 
 // EmbeddedNodeScanComponent holds the Gorm model for Postgres table `nodes_Components`.
 type NodesComponents struct {
-	nodes_Id string `gorm:"column:nodes_id;type:varchar;primaryKey"`
-	idx      int    `gorm:"column:idx;type:integer;primaryKey;index:nodesComponents_idx,type:btree"`
+	NodesId  string `gorm:"column:nodes_id;type:varchar;primaryKey"`
+	Idx      int    `gorm:"column:idx;type:integer;primaryKey;index:nodescomponents_idx,type:btree"`
 	Name     string `gorm:"column:name;type:varchar"`
 	Version  string `gorm:"column:version;type:varchar"`
-	NodesRef Nodes  `gorm:"foreignKey:nodes_Id;references:Id;constraint:OnDelete:CASCADE"`
+	NodesRef Nodes  `gorm:"foreignKey:nodes_id;references:id;constraint:OnDelete:CASCADE"`
+}
+
+// EmbeddedVulnerability holds the Gorm model for Postgres table `nodes_Components_Vulns`.
+type NodesComponentsVulns struct {
+	NodesId            string                     `gorm:"column:nodes_id;type:varchar;primaryKey"`
+	NodesComponentsIdx int                        `gorm:"column:nodes_components_idx;type:integer;primaryKey"`
+	Idx                int                        `gorm:"column:idx;type:integer;primaryKey;index:nodescomponentsvulns_idx,type:btree"`
+	Cve                string                     `gorm:"column:cve;type:varchar"`
+	Cvss               float32                    `gorm:"column:cvss;type:numeric"`
+	FixedBy            string                     `gorm:"column:fixedby;type:varchar"`
+	PublishedOn        *time.Time                 `gorm:"column:publishedon;type:timestamp"`
+	Suppressed         bool                       `gorm:"column:suppressed;type:bool"`
+	State              storage.VulnerabilityState `gorm:"column:state;type:integer"`
+	NodesComponentsRef NodesComponents            `gorm:"foreignKey:nodes_id,nodes_components_idx;references:nodes_id,idx;constraint:OnDelete:CASCADE"`
 }

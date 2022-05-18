@@ -55,6 +55,9 @@ var (
 
 const (
 	PolicyTableName = "policy"
+	/*
+		PolicyTableName = "policy"
+	*/
 )
 
 // Policy holds the Gorm model for Postgres table `policy`.
@@ -71,5 +74,5 @@ type Policy struct {
 	SORTName           string           `gorm:"column:sortname;type:varchar"`
 	SORTLifecycleStage string           `gorm:"column:sortlifecyclestage;type:varchar"`
 	SORTEnforcement    bool             `gorm:"column:sortenforcement;type:bool"`
-	serialized         []byte           `gorm:"column:serialized;type:bytea"`
+	Serialized         []byte           `gorm:"column:serialized;type:bytea"`
 }

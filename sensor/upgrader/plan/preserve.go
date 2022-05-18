@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	deploymentGVK = schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"}
+	deploymentGVK = schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "DeploymentType"}
 	daemonSetGVK  = schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "DaemonSet"}
 )
 

@@ -40,11 +40,14 @@ var (
 
 const (
 	PermissionsetsTableName = "permissionsets"
+	/*
+		PermissionsetsTableName = "permissionsets"
+	*/
 )
 
 // PermissionSet holds the Gorm model for Postgres table `permissionsets`.
 type Permissionsets struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
-	serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

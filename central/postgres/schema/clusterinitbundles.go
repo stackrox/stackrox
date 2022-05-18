@@ -39,10 +39,13 @@ var (
 
 const (
 	ClusterinitbundlesTableName = "clusterinitbundles"
+	/*
+		ClusterinitbundlesTableName = "clusterinitbundles"
+	*/
 )
 
 // InitBundleMeta holds the Gorm model for Postgres table `clusterinitbundles`.
 type Clusterinitbundles struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
-	serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

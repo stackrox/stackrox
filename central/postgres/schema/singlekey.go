@@ -56,11 +56,14 @@ var (
 
 const (
 	SinglekeyTableName = "singlekey"
+	/*
+		SinglekeyTableName = "singlekey"
+	*/
 )
 
 // TestSingleKeyStruct holds the Gorm model for Postgres table `singlekey`.
 type Singlekey struct {
-	Key         string                           `gorm:"column:key;type:varchar;primaryKey;index:singlekey_Key,type:hash"`
+	Key         string                           `gorm:"column:key;type:varchar;primaryKey;index:singlekey_key,type:hash"`
 	Name        string                           `gorm:"column:name;type:varchar;unique"`
 	StringSlice *pq.StringArray                  `gorm:"column:stringslice;type:text[]"`
 	Bool        bool                             `gorm:"column:bool;type:bool"`
@@ -71,5 +74,5 @@ type Singlekey struct {
 	Timestamp   *time.Time                       `gorm:"column:timestamp;type:timestamp"`
 	Enum        storage.TestSingleKeyStruct_Enum `gorm:"column:enum;type:integer"`
 	Enums       *pq.Int32Array                   `gorm:"column:enums;type:int[]"`
-	serialized  []byte                           `gorm:"column:serialized;type:bytea"`
+	Serialized  []byte                           `gorm:"column:serialized;type:bytea"`
 }

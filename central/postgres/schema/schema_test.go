@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -17,6 +19,11 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+)
+
+var (
+	addConstraintRegex = regexp.MustCompile(`ADD CONSTRAINT (\S+) `)
+	fKConstraintRegex  = regexp.MustCompile(`(\S+); Type: FK CONSTRAINT; `)
 )
 
 type gormTable struct {
@@ -65,10 +72,33 @@ func (s *SchemaTestSuite) SetupTest() {
 }
 
 func (s *SchemaTestSuite) TearDownTest() {
+	_, err := s.pool.Exec(s.ctx, "DROP SCHEMA public CASCADE")
+	s.Require().NoError(err)
+	_, err = s.pool.Exec(s.ctx, "CREATE SCHEMA public")
+	s.Require().NoError(err)
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
+}
+
+type Inner struct {
+	Id        string
+	InnerElse string
+	Kle       int
+}
+type Product struct {
+	Id          string
+	ProductElse string
+	InnerId     string
+	Xpp         Inner `gorm:"foreignKey:InnerId;references:Id;constraint:OnDelete:CASCADE"`
+}
+
+func (s *SchemaTestSuite) TestSQL() {
+	s.Require().NoError(s.gorm.AutoMigrate(&Product{}))
+	s.Require().NoError(s.gorm.Table(DeploymentsTableName).AutoMigrate(&Deployments{}))
+	s.Require().NoError(s.gorm.AutoMigrate(&DeploymentsContainers{}))
+	fmt.Println("")
 }
 
 func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
@@ -87,21 +117,171 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 				},
 			},
 		},
+		{
+			file:        "apitokens.go",
+			createStmts: CreateTableApitokensStmt,
+			gormTables: []gormTable{
+				{
+					name:     ApitokensTableName,
+					instance: Apitokens{},
+				},
+			},
+		},
+		{
+			file:        "authproviders.go",
+			createStmts: CreateTableAuthprovidersStmt,
+			gormTables: []gormTable{
+				{
+					name:     AuthprovidersTableName,
+					instance: Authproviders{},
+				},
+			},
+		},
+		{
+			file:        "cluster_cves.go",
+			createStmts: CreateTableClusterCvesStmt,
+			gormTables: []gormTable{
+				{
+					name:     ClusterCvesTableName,
+					instance: ClusterCves{},
+				},
+			},
+		},
+		{
+			file:        "cluster_health_statuses.go",
+			createStmts: CreateTableClusterHealthStatusesStmt,
+			gormTables: []gormTable{
+				{
+					name:     ClusterHealthStatusesTableName,
+					instance: ClusterHealthStatuses{},
+				},
+			},
+		},
+		{
+			file:        "clusterinitbundles.go",
+			createStmts: CreateTableClusterinitbundlesStmt,
+			gormTables: []gormTable{
+				{
+					name:     ClusterinitbundlesTableName,
+					instance: Clusterinitbundles{},
+				},
+			},
+		},
+		{
+			file:        "clusters.go",
+			createStmts: CreateTableClustersStmt,
+			gormTables: []gormTable{
+				{
+					name:     ClustersTableName,
+					instance: Clusters{},
+				},
+			},
+		},
+		{
+			file:        "deployments.go",
+			createStmts: CreateTableDeploymentsStmt,
+			gormTables: []gormTable{
+				{
+					name:     DeploymentsTableName,
+					instance: Deployments{},
+				},
+				{
+					name:     DeploymentsContainersTableName,
+					instance: DeploymentsContainers{},
+				},
+				{
+					name:     DeploymentsContainersEnvTableName,
+					instance: DeploymentsContainersEnv{},
+				}, /*
+					{
+						name:     DeploymentsContainersVolumesTableName,
+						instance: DeploymentsContainersVolumes{},
+					},
+					{
+						name:     DeploymentsContainersSecretsTableName,
+						instance: DeploymentsContainersSecrets{},
+					},
+					{
+						name:     DeploymentsPortsTableName,
+						instance: DeploymentsPorts{},
+					},
+					{
+						name:     DeploymentsPortsExposureInfosTableName,
+						instance: DeploymentsPortsExposureInfos{},
+					},*/
+			},
+		},
+		{
+			file:        "images",
+			createStmts: CreateTableImagesStmt,
+			gormTables: []gormTable{
+				{
+					name:     ImagesTableName,
+					instance: Images{},
+				},
+				{
+					name:     ImagesLayersTableName,
+					instance: ImagesLayers{},
+				},
+			},
+		}, /*
+			{
+				file:        "image_component_cve_relations.go",
+				createStmts: CreateTableImageComponentCveRelationsStmt,
+				gormTables: []gormTable{
+					{
+						name:     ImageComponentRelationsTableName,
+						instance: ImageComponentRelations{},
+					},
+				},
+			},
+				{
+					file: "",
+					{"image_component_relations.go"},
+					createStmts: CreateTable,
+					gormTables: []gormTable{
+						{
+							name:     TableName,
+							instance: {},
+						},
+					},
+				},
+				{
+					file: {"image_components.go"},
+					"",
+					createStmts: CreateTable,
+					gormTables: []gormTable{
+						{
+							name:     TableName,
+							instance: {},
+						},
+					},
+				},
+				{
+					file: "",
+					{"image_cve_relations.go"},
+					createStmts: CreateTable,
+					gormTables: []gormTable{
+						{
+							name:     TableName,
+							instance: {},
+						},
+					},
+				},
+				{
+					file:        "",
+					createStmts: CreateTable,
+					gormTables: []gormTable{
+						{
+							name:     TableName,
+							instance: {},
+						},
+					},
+				},
+		*/
 	}
 	/*
-		{"apitokens.go"},
-		{"authproviders.go"},
-		{"cluster_cves.go"},
-		{"cluster_health_status.go"},
-		{"clusterinitbundles.go"},
-		{"clusters.go"},
-		{"deployments.go"},
-		{"image_component_cve_relations.go"},
-		{"image_component_relations.go"},
-		{"image_components.go"},
-		{"image_cve_relations.go"},
 		{"image_cves.go"},
-		{"images.go"},
 		{"integrationhealth.go"},
 		{"k8sroles.go"},
 		{"multikey.go"},
@@ -145,23 +325,30 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 	} */
 	for _, testCase := range testCases {
 		s.T().Run(testCase.file, func(t *testing.T) {
-			gormSchema := s.getGormTableSchema(testCase.gormTables[0].name, testCase.gormTables[0].instance)
-			sqlSchema := s.getSQLTableSchema(testCase.gormTables[0].name, testCase.createStmts)
-			s.Require().Equal(sqlSchema, gormSchema)
+			gormSchemas := s.getGormTableSchemas(testCase.gormTables)
+			pgutils.CreateTable(s.ctx, s.pool, testCase.createStmts)
+			for table, gormSchema := range gormSchemas {
+				sqlSchema := s.dumpSchema(table)
+				s.Require().Equal(sqlSchema, gormSchema)
+			}
+			// s.Require().Len(testCase.gormTables, len(testCase.createStmts.Children)+1)
 		})
 	}
 }
 
-func (s *SchemaTestSuite) getGormTableSchema(table string, i interface{}) string {
-	s.Require().NoError(s.gorm.Table(table).AutoMigrate(i))
-	defer s.pool.Exec(s.ctx, fmt.Sprintf("DROP table IF EXISTS %s", table))
-	return s.dumpSchema(table)
-}
+func (s *SchemaTestSuite) getGormTableSchemas(gormTables []gormTable) map[string]string {
+	var tables []string
+	for _, tbl := range gormTables {
+		tables = append(tables, tbl.name)
+		s.Require().NoError(s.gorm.AutoMigrate(tbl.instance))
+	}
+	defer s.pool.Exec(s.ctx, fmt.Sprintf("DROP table IF EXISTS %s", strings.Join(tables, ",")))
 
-func (s *SchemaTestSuite) getSQLTableSchema(table string, stmt *pkgPostgres.CreateStmts) string {
-	pgutils.CreateTable(s.ctx, s.pool, stmt)
-	defer s.pool.Exec(s.ctx, fmt.Sprintf("DROP table IF EXISTS %s", table))
-	return s.dumpSchema(table)
+	tableMap := make(map[string]string, len(gormTables))
+	for _, tbl := range gormTables {
+		tableMap[tbl.name] = s.dumpSchema(tbl.name)
+	}
+	return tableMap
 }
 
 func (s *SchemaTestSuite) dumpSchema(table string) string {
@@ -169,5 +356,5 @@ func (s *SchemaTestSuite) dumpSchema(table string) string {
 	cmd := exec.Command(`pg_dump`, `--schema-only`, `--db`, `postgres`, `-t`, table)
 	out, err := cmd.Output()
 	s.Require().NoError(err)
-	return string(out)
+	return fKConstraintRegex.ReplaceAllString(addConstraintRegex.ReplaceAllString(string(out), ""), "")
 }

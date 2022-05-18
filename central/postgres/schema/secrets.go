@@ -81,8 +81,13 @@ var (
 )
 
 const (
-	SecretsTableName      = "secrets"
-	SecretsFilesTableName = "secrets_Files"
+	SecretsTableName                = "secrets"
+	SecretsFilesTableName           = "secrets_files"
+	SecretsFilesRegistriesTableName = "secrets_files_registries"
+	/*
+			SecretsTableName = "secrets"
+		       SecretsFilesTableName = "secrets_files"
+	*/
 )
 
 // Secret holds the Gorm model for Postgres table `secrets`.
@@ -93,14 +98,23 @@ type Secrets struct {
 	ClusterName string     `gorm:"column:clustername;type:varchar"`
 	Namespace   string     `gorm:"column:namespace;type:varchar"`
 	CreatedAt   *time.Time `gorm:"column:createdat;type:timestamp"`
-	serialized  []byte     `gorm:"column:serialized;type:bytea"`
+	Serialized  []byte     `gorm:"column:serialized;type:bytea"`
 }
 
 // SecretDataFile holds the Gorm model for Postgres table `secrets_Files`.
 type SecretsFiles struct {
-	secrets_Id   string             `gorm:"column:secrets_id;type:varchar;primaryKey"`
-	idx          int                `gorm:"column:idx;type:integer;primaryKey;index:secretsFiles_idx,type:btree"`
-	Type         storage.SecretType `gorm:"column:type;type:integer"`
-	Cert_EndDate *time.Time         `gorm:"column:cert_enddate;type:timestamp"`
-	SecretsRef   Secrets            `gorm:"foreignKey:secrets_Id;references:Id;constraint:OnDelete:CASCADE"`
+	SecretsId   string             `gorm:"column:secrets_id;type:varchar;primaryKey"`
+	Idx         int                `gorm:"column:idx;type:integer;primaryKey;index:secretsfiles_idx,type:btree"`
+	Type        storage.SecretType `gorm:"column:type;type:integer"`
+	CertEndDate *time.Time         `gorm:"column:cert_enddate;type:timestamp"`
+	SecretsRef  Secrets            `gorm:"foreignKey:secrets_id;references:id;constraint:OnDelete:CASCADE"`
+}
+
+// ImagePullSecret_Registry holds the Gorm model for Postgres table `secrets_Files_Registries`.
+type SecretsFilesRegistries struct {
+	SecretsId       string       `gorm:"column:secrets_id;type:varchar;primaryKey"`
+	SecretsFilesIdx int          `gorm:"column:secrets_files_idx;type:integer;primaryKey"`
+	Idx             int          `gorm:"column:idx;type:integer;primaryKey;index:secretsfilesregistries_idx,type:btree"`
+	Name            string       `gorm:"column:name;type:varchar"`
+	SecretsFilesRef SecretsFiles `gorm:"foreignKey:secrets_id,secrets_files_idx;references:secrets_id,idx;constraint:OnDelete:CASCADE"`
 }

@@ -57,6 +57,9 @@ var (
 
 const (
 	ImageCveRelationsTableName = "image_cve_relations"
+	/*
+		ImageCveRelationsTableName = "image_cve_relations"
+	*/
 )
 
 // ImageCVEEdge holds the Gorm model for Postgres table `image_cve_relations`.
@@ -66,6 +69,6 @@ type ImageCveRelations struct {
 	State                storage.VulnerabilityState `gorm:"column:state;type:integer"`
 	ImageId              string                     `gorm:"column:imageid;type:varchar;primaryKey"`
 	ImageCveId           string                     `gorm:"column:imagecveid;type:varchar;primaryKey"`
-	serialized           []byte                     `gorm:"column:serialized;type:bytea"`
-	ImagesRef            Images                     `gorm:"foreignKey:ImageId;references:Id;constraint:OnDelete:CASCADE"`
+	Serialized           []byte                     `gorm:"column:serialized;type:bytea"`
+	ImagesRef            Images                     `gorm:"foreignKey:imageid;references:id;constraint:OnDelete:CASCADE"`
 }

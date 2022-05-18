@@ -54,6 +54,9 @@ var (
 
 const (
 	NodesToComponentsTableName = "nodes_to_components"
+	/*
+		NodesToComponentsTableName = "nodes_to_components"
+	*/
 )
 
 // NodeComponentEdge holds the Gorm model for Postgres table `nodes_to_components`.
@@ -61,6 +64,6 @@ type NodesToComponents struct {
 	Id              string `gorm:"column:id;type:varchar;primaryKey"`
 	NodeId          string `gorm:"column:nodeid;type:varchar;primaryKey"`
 	NodeComponentId string `gorm:"column:nodecomponentid;type:varchar;primaryKey"`
-	serialized      []byte `gorm:"column:serialized;type:bytea"`
-	NodesRef        Nodes  `gorm:"foreignKey:NodeId;references:Id;constraint:OnDelete:CASCADE"`
+	Serialized      []byte `gorm:"column:serialized;type:bytea"`
+	NodesRef        Nodes  `gorm:"foreignKey:nodeid;references:id;constraint:OnDelete:CASCADE"`
 }

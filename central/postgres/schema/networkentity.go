@@ -43,11 +43,14 @@ var (
 
 const (
 	NetworkentityTableName = "networkentity"
+	/*
+		NetworkentityTableName = "networkentity"
+	*/
 )
 
 // NetworkEntity holds the Gorm model for Postgres table `networkentity`.
 type Networkentity struct {
-	Info_Id                     string `gorm:"column:info_id;type:varchar;primaryKey"`
-	Info_ExternalSource_Default bool   `gorm:"column:info_externalsource_default;type:bool"`
-	serialized                  []byte `gorm:"column:serialized;type:bytea"`
+	InfoId                    string `gorm:"column:info_id;type:varchar;primaryKey"`
+	InfoExternalSourceDefault bool   `gorm:"column:info_externalsource_default;type:bool"`
+	Serialized                []byte `gorm:"column:serialized;type:bytea"`
 }

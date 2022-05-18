@@ -80,39 +80,43 @@ var (
 
 const (
 	ImagesTableName       = "images"
-	ImagesLayersTableName = "images_Layers"
+	ImagesLayersTableName = "images_layers"
+	/*
+			ImagesTableName = "images"
+		       ImagesLayersTableName = "images_layers"
+	*/
 )
 
 // Image holds the Gorm model for Postgres table `images`.
 type Images struct {
-	Id                     string            `gorm:"column:id;type:varchar;primaryKey"`
-	Name_Registry          string            `gorm:"column:name_registry;type:varchar"`
-	Name_Remote            string            `gorm:"column:name_remote;type:varchar"`
-	Name_Tag               string            `gorm:"column:name_tag;type:varchar"`
-	Name_FullName          string            `gorm:"column:name_fullname;type:varchar"`
-	Metadata_V1_Created    *time.Time        `gorm:"column:metadata_v1_created;type:timestamp"`
-	Metadata_V1_User       string            `gorm:"column:metadata_v1_user;type:varchar"`
-	Metadata_V1_Command    *pq.StringArray   `gorm:"column:metadata_v1_command;type:text[]"`
-	Metadata_V1_Entrypoint *pq.StringArray   `gorm:"column:metadata_v1_entrypoint;type:text[]"`
-	Metadata_V1_Volumes    *pq.StringArray   `gorm:"column:metadata_v1_volumes;type:text[]"`
-	Metadata_V1_Labels     map[string]string `gorm:"column:metadata_v1_labels;type:jsonb"`
-	Scan_ScanTime          *time.Time        `gorm:"column:scan_scantime;type:timestamp"`
-	Scan_OperatingSystem   string            `gorm:"column:scan_operatingsystem;type:varchar"`
-	Signature_Fetched      *time.Time        `gorm:"column:signature_fetched;type:timestamp"`
-	Components             int32             `gorm:"column:components;type:integer"`
-	Cves                   int32             `gorm:"column:cves;type:integer"`
-	FixableCves            int32             `gorm:"column:fixablecves;type:integer"`
-	LastUpdated            *time.Time        `gorm:"column:lastupdated;type:timestamp"`
-	RiskScore              float32           `gorm:"column:riskscore;type:numeric"`
-	TopCvss                float32           `gorm:"column:topcvss;type:numeric"`
-	serialized             []byte            `gorm:"column:serialized;type:bytea"`
+	Id                   string            `gorm:"column:id;type:varchar;primaryKey"`
+	NameRegistry         string            `gorm:"column:name_registry;type:varchar"`
+	NameRemote           string            `gorm:"column:name_remote;type:varchar"`
+	NameTag              string            `gorm:"column:name_tag;type:varchar"`
+	NameFullName         string            `gorm:"column:name_fullname;type:varchar"`
+	MetadataV1Created    *time.Time        `gorm:"column:metadata_v1_created;type:timestamp"`
+	MetadataV1User       string            `gorm:"column:metadata_v1_user;type:varchar"`
+	MetadataV1Command    *pq.StringArray   `gorm:"column:metadata_v1_command;type:text[]"`
+	MetadataV1Entrypoint *pq.StringArray   `gorm:"column:metadata_v1_entrypoint;type:text[]"`
+	MetadataV1Volumes    *pq.StringArray   `gorm:"column:metadata_v1_volumes;type:text[]"`
+	MetadataV1Labels     map[string]string `gorm:"column:metadata_v1_labels;type:jsonb"`
+	ScanScanTime         *time.Time        `gorm:"column:scan_scantime;type:timestamp"`
+	ScanOperatingSystem  string            `gorm:"column:scan_operatingsystem;type:varchar"`
+	SignatureFetched     *time.Time        `gorm:"column:signature_fetched;type:timestamp"`
+	Components           int32             `gorm:"column:components;type:integer"`
+	Cves                 int32             `gorm:"column:cves;type:integer"`
+	FixableCves          int32             `gorm:"column:fixablecves;type:integer"`
+	LastUpdated          *time.Time        `gorm:"column:lastupdated;type:timestamp"`
+	RiskScore            float32           `gorm:"column:riskscore;type:numeric"`
+	TopCvss              float32           `gorm:"column:topcvss;type:numeric"`
+	Serialized           []byte            `gorm:"column:serialized;type:bytea"`
 }
 
 // ImageLayer holds the Gorm model for Postgres table `images_Layers`.
 type ImagesLayers struct {
-	images_Id   string `gorm:"column:images_id;type:varchar;primaryKey"`
-	idx         int    `gorm:"column:idx;type:integer;primaryKey;index:imagesLayers_idx,type:btree"`
+	ImagesId    string `gorm:"column:images_id;type:varchar;primaryKey"`
+	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:imageslayers_idx,type:btree"`
 	Instruction string `gorm:"column:instruction;type:varchar"`
 	Value       string `gorm:"column:value;type:varchar"`
-	ImagesRef   Images `gorm:"foreignKey:images_Id;references:Id;constraint:OnDelete:CASCADE"`
+	ImagesRef   Images `gorm:"foreignKey:images_id;references:id;constraint:OnDelete:CASCADE"`
 }

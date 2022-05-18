@@ -40,11 +40,14 @@ var (
 
 const (
 	AuthprovidersTableName = "authproviders"
+	/*
+		AuthprovidersTableName = "authproviders"
+	*/
 )
 
 // AuthProvider holds the Gorm model for Postgres table `authproviders`.
 type Authproviders struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
-	serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

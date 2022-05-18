@@ -49,17 +49,20 @@ var (
 
 const (
 	ClustersTableName = "clusters"
+	/*
+		ClustersTableName = "clusters"
+	*/
 )
 
 // Cluster holds the Gorm model for Postgres table `clusters`.
 type Clusters struct {
-	Id                                        string                                        `gorm:"column:id;type:varchar;primaryKey"`
-	Name                                      string                                        `gorm:"column:name;type:varchar;unique"`
-	Labels                                    map[string]string                             `gorm:"column:labels;type:jsonb"`
-	HealthStatus_SensorHealthStatus           storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_sensorhealthstatus;type:integer"`
-	HealthStatus_CollectorHealthStatus        storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_collectorhealthstatus;type:integer"`
-	HealthStatus_OverallHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_overallhealthstatus;type:integer"`
-	HealthStatus_AdmissionControlHealthStatus storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_admissioncontrolhealthstatus;type:integer"`
-	HealthStatus_ScannerHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_scannerhealthstatus;type:integer"`
-	serialized                                []byte                                        `gorm:"column:serialized;type:bytea"`
+	Id                                       string                                        `gorm:"column:id;type:varchar;primaryKey"`
+	Name                                     string                                        `gorm:"column:name;type:varchar;unique"`
+	Labels                                   map[string]string                             `gorm:"column:labels;type:jsonb"`
+	HealthStatusSensorHealthStatus           storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_sensorhealthstatus;type:integer"`
+	HealthStatusCollectorHealthStatus        storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_collectorhealthstatus;type:integer"`
+	HealthStatusOverallHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_overallhealthstatus;type:integer"`
+	HealthStatusAdmissionControlHealthStatus storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_admissioncontrolhealthstatus;type:integer"`
+	HealthStatusScannerHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_scannerhealthstatus;type:integer"`
+	Serialized                               []byte                                        `gorm:"column:serialized;type:bytea"`
 }

@@ -53,6 +53,9 @@ var (
 
 const (
 	Testparent3TableName = "testparent3"
+	/*
+		Testparent3TableName = "testparent3"
+	*/
 )
 
 // TestParent3 holds the Gorm model for Postgres table `testparent3`.
@@ -60,6 +63,6 @@ type Testparent3 struct {
 	Id                 string          `gorm:"column:id;type:varchar;primaryKey"`
 	ParentId           string          `gorm:"column:parentid;type:varchar"`
 	Val                string          `gorm:"column:val;type:varchar"`
-	serialized         []byte          `gorm:"column:serialized;type:bytea"`
-	TestgrandparentRef Testgrandparent `gorm:"foreignKey:ParentId;references:Id;constraint:OnDelete:CASCADE"`
+	Serialized         []byte          `gorm:"column:serialized;type:bytea"`
+	TestgrandparentRef Testgrandparent `gorm:"foreignKey:parentid;references:id;constraint:OnDelete:CASCADE"`
 }

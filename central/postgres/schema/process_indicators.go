@@ -56,21 +56,24 @@ var (
 
 const (
 	ProcessIndicatorsTableName = "process_indicators"
+	/*
+		ProcessIndicatorsTableName = "process_indicators"
+	*/
 )
 
 // ProcessIndicator holds the Gorm model for Postgres table `process_indicators`.
 type ProcessIndicators struct {
-	Id                  string `gorm:"column:id;type:varchar;primaryKey"`
-	DeploymentId        string `gorm:"column:deploymentid;type:varchar;index:processIndicators_DeploymentId,type:hash"`
-	ContainerName       string `gorm:"column:containername;type:varchar"`
-	PodId               string `gorm:"column:podid;type:varchar"`
-	PodUid              string `gorm:"column:poduid;type:varchar;index:processIndicators_PodUid,type:hash"`
-	Signal_ContainerId  string `gorm:"column:signal_containerid;type:varchar"`
-	Signal_Name         string `gorm:"column:signal_name;type:varchar"`
-	Signal_Args         string `gorm:"column:signal_args;type:varchar"`
-	Signal_ExecFilePath string `gorm:"column:signal_execfilepath;type:varchar"`
-	Signal_Uid          uint32 `gorm:"column:signal_uid;type:integer"`
-	ClusterId           string `gorm:"column:clusterid;type:varchar"`
-	Namespace           string `gorm:"column:namespace;type:varchar"`
-	serialized          []byte `gorm:"column:serialized;type:bytea"`
+	Id                 string `gorm:"column:id;type:varchar;primaryKey"`
+	DeploymentId       string `gorm:"column:deploymentid;type:varchar;index:processindicators_deploymentid,type:hash"`
+	ContainerName      string `gorm:"column:containername;type:varchar"`
+	PodId              string `gorm:"column:podid;type:varchar"`
+	PodUid             string `gorm:"column:poduid;type:varchar;index:processindicators_poduid,type:hash"`
+	SignalContainerId  string `gorm:"column:signal_containerid;type:varchar"`
+	SignalName         string `gorm:"column:signal_name;type:varchar"`
+	SignalArgs         string `gorm:"column:signal_args;type:varchar"`
+	SignalExecFilePath string `gorm:"column:signal_execfilepath;type:varchar"`
+	SignalUid          uint32 `gorm:"column:signal_uid;type:integer"`
+	ClusterId          string `gorm:"column:clusterid;type:varchar"`
+	Namespace          string `gorm:"column:namespace;type:varchar"`
+	Serialized         []byte `gorm:"column:serialized;type:bytea"`
 }

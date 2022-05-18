@@ -46,14 +46,17 @@ var (
 
 const (
 	RiskTableName = "risk"
+	/*
+		RiskTableName = "risk"
+	*/
 )
 
 // Risk holds the Gorm model for Postgres table `risk`.
 type Risk struct {
-	Id                string                  `gorm:"column:id;type:varchar;primaryKey"`
-	Subject_Namespace string                  `gorm:"column:subject_namespace;type:varchar"`
-	Subject_ClusterId string                  `gorm:"column:subject_clusterid;type:varchar"`
-	Subject_Type      storage.RiskSubjectType `gorm:"column:subject_type;type:integer"`
-	Score             float32                 `gorm:"column:score;type:numeric"`
-	serialized        []byte                  `gorm:"column:serialized;type:bytea"`
+	Id               string                  `gorm:"column:id;type:varchar;primaryKey"`
+	SubjectNamespace string                  `gorm:"column:subject_namespace;type:varchar"`
+	SubjectClusterId string                  `gorm:"column:subject_clusterid;type:varchar"`
+	SubjectType      storage.RiskSubjectType `gorm:"column:subject_type;type:integer"`
+	Score            float32                 `gorm:"column:score;type:numeric"`
+	Serialized       []byte                  `gorm:"column:serialized;type:bytea"`
 }

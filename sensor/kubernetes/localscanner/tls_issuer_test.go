@@ -344,7 +344,7 @@ func (s *localScannerTLSIssueIntegrationTests) TestUnexpectedOwnerStop() {
 				secretsData: secretsData,
 				secretsOwner: &metav1.OwnerReference{
 					APIVersion: "apps/v1",
-					Kind:       "Deployment",
+					Kind:       "DeploymentType",
 					Name:       "another-deployment",
 					UID:        types.UID(uuid.NewDummy().String()),
 				},

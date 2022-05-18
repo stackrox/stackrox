@@ -31,7 +31,7 @@ var OrderedBundleResourceTypes = []schema.GroupVersionKind{
 
 	// Depends on all of the above
 	{Group: "apps", Version: "v1", Kind: "DaemonSet"},
-	{Group: "apps", Version: "v1", Kind: "Deployment"},
+	{Group: "apps", Version: "v1", Kind: "DeploymentType"},
 
 	// No syntactic dependencies, but semantically depends on deployments and daemonsets
 	{Version: "v1", Kind: "Service"},

@@ -47,6 +47,9 @@ var (
 
 const (
 	ImageComponentsTableName = "image_components"
+	/*
+		ImageComponentsTableName = "image_components"
+	*/
 )
 
 // ImageComponent holds the Gorm model for Postgres table `image_components`.
@@ -57,5 +60,5 @@ type ImageComponents struct {
 	Source     storage.SourceType `gorm:"column:source;type:integer"`
 	RiskScore  float32            `gorm:"column:riskscore;type:numeric"`
 	TopCvss    float32            `gorm:"column:topcvss;type:numeric"`
-	serialized []byte             `gorm:"column:serialized;type:bytea"`
+	Serialized []byte             `gorm:"column:serialized;type:bytea"`
 }

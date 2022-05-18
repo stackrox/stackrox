@@ -49,6 +49,9 @@ var (
 
 const (
 	K8srolesTableName = "k8sroles"
+	/*
+		K8srolesTableName = "k8sroles"
+	*/
 )
 
 // K8SRole holds the Gorm model for Postgres table `k8sroles`.
@@ -61,5 +64,5 @@ type K8sroles struct {
 	ClusterRole bool              `gorm:"column:clusterrole;type:bool"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
-	serialized  []byte            `gorm:"column:serialized;type:bytea"`
+	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
 }

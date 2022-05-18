@@ -55,6 +55,9 @@ var (
 
 const (
 	ImageComponentRelationsTableName = "image_component_relations"
+	/*
+		ImageComponentRelationsTableName = "image_component_relations"
+	*/
 )
 
 // ImageComponentEdge holds the Gorm model for Postgres table `image_component_relations`.
@@ -63,6 +66,6 @@ type ImageComponentRelations struct {
 	Location         string `gorm:"column:location;type:varchar"`
 	ImageId          string `gorm:"column:imageid;type:varchar;primaryKey"`
 	ImageComponentId string `gorm:"column:imagecomponentid;type:varchar;primaryKey"`
-	serialized       []byte `gorm:"column:serialized;type:bytea"`
-	ImagesRef        Images `gorm:"foreignKey:ImageId;references:Id;constraint:OnDelete:CASCADE"`
+	Serialized       []byte `gorm:"column:serialized;type:bytea"`
+	ImagesRef        Images `gorm:"foreignKey:imageid;references:id;constraint:OnDelete:CASCADE"`
 }

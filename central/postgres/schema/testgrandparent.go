@@ -75,21 +75,35 @@ var (
 )
 
 const (
-	TestgrandparentTableName         = "testgrandparent"
-	TestgrandparentEmbeddedTableName = "testgrandparent_Embedded"
+	TestgrandparentTableName                  = "testgrandparent"
+	TestgrandparentEmbeddedTableName          = "testgrandparent_embedded"
+	TestgrandparentEmbeddedEmbedded2TableName = "testgrandparent_embedded_embedded2"
+	/*
+			TestgrandparentTableName = "testgrandparent"
+		       TestgrandparentEmbeddedTableName = "testgrandparent_embedded"
+	*/
 )
 
 // TestGrandparent holds the Gorm model for Postgres table `testgrandparent`.
 type Testgrandparent struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
 	Val        string `gorm:"column:val;type:varchar"`
-	serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }
 
 // TestGrandparent_Embedded holds the Gorm model for Postgres table `testgrandparent_Embedded`.
 type TestgrandparentEmbedded struct {
-	testgrandparent_Id string          `gorm:"column:testgrandparent_id;type:varchar;primaryKey"`
-	idx                int             `gorm:"column:idx;type:integer;primaryKey;index:testgrandparentEmbedded_idx,type:btree"`
+	TestgrandparentId  string          `gorm:"column:testgrandparent_id;type:varchar;primaryKey"`
+	Idx                int             `gorm:"column:idx;type:integer;primaryKey;index:testgrandparentembedded_idx,type:btree"`
 	Val                string          `gorm:"column:val;type:varchar"`
-	TestgrandparentRef Testgrandparent `gorm:"foreignKey:testgrandparent_Id;references:Id;constraint:OnDelete:CASCADE"`
+	TestgrandparentRef Testgrandparent `gorm:"foreignKey:testgrandparent_id;references:id;constraint:OnDelete:CASCADE"`
+}
+
+// TestGrandparent_Embedded_Embedded2 holds the Gorm model for Postgres table `testgrandparent_Embedded_Embedded2`.
+type TestgrandparentEmbeddedEmbedded2 struct {
+	TestgrandparentId          string                  `gorm:"column:testgrandparent_id;type:varchar;primaryKey"`
+	TestgrandparentEmbeddedIdx int                     `gorm:"column:testgrandparent_embedded_idx;type:integer;primaryKey"`
+	Idx                        int                     `gorm:"column:idx;type:integer;primaryKey;index:testgrandparentembeddedembedded2_idx,type:btree"`
+	Val                        string                  `gorm:"column:val;type:varchar"`
+	TestgrandparentEmbeddedRef TestgrandparentEmbedded `gorm:"foreignKey:testgrandparent_id,testgrandparent_embedded_idx;references:testgrandparent_id,idx;constraint:OnDelete:CASCADE"`
 }

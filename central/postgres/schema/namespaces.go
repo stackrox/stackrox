@@ -55,6 +55,9 @@ var (
 
 const (
 	NamespacesTableName = "namespaces"
+	/*
+		NamespacesTableName = "namespaces"
+	*/
 )
 
 // NamespaceMetadata holds the Gorm model for Postgres table `namespaces`.
@@ -65,5 +68,5 @@ type Namespaces struct {
 	ClusterName string            `gorm:"column:clustername;type:varchar"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
-	serialized  []byte            `gorm:"column:serialized;type:bytea"`
+	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
 }

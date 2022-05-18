@@ -44,6 +44,9 @@ var (
 
 const (
 	ReportconfigsTableName = "reportconfigs"
+	/*
+		ReportconfigsTableName = "reportconfigs"
+	*/
 )
 
 // ReportConfiguration holds the Gorm model for Postgres table `reportconfigs`.
@@ -51,5 +54,5 @@ type Reportconfigs struct {
 	Id         string                                 `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string                                 `gorm:"column:name;type:varchar"`
 	Type       storage.ReportConfiguration_ReportType `gorm:"column:type;type:integer"`
-	serialized []byte                                 `gorm:"column:serialized;type:bytea"`
+	Serialized []byte                                 `gorm:"column:serialized;type:bytea"`
 }

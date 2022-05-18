@@ -65,6 +65,24 @@ type SchemaRelationship struct {
 	NoConstraint bool
 }
 
+// ThisSchemaColumnNames generates the sequence of column names for this schema
+func (s *SchemaRelationship) ThisSchemaColumnNames() []string {
+	var seq []string
+	for _, p := range s.MappedColumnNames {
+		seq = append(seq, p.ColumnNameInThisSchema)
+	}
+	return seq
+}
+
+// OtherSchemaColumnNames generates the list of column names for the other schema
+func (s *SchemaRelationship) OtherSchemaColumnNames() []string {
+	var seq []string
+	for _, p := range s.MappedColumnNames {
+		seq = append(seq, p.ColumnNameInOtherSchema)
+	}
+	return seq
+}
+
 // Schema is the go representation of the schema for a table
 // This is derived from walking the go struct
 type Schema struct {

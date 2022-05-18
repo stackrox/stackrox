@@ -39,10 +39,13 @@ var (
 
 const (
 	ProcesswhitelistresultsTableName = "processwhitelistresults"
+	/*
+		ProcesswhitelistresultsTableName = "processwhitelistresults"
+	*/
 )
 
 // ProcessBaselineResults holds the Gorm model for Postgres table `processwhitelistresults`.
 type Processwhitelistresults struct {
 	DeploymentId string `gorm:"column:deploymentid;type:varchar;primaryKey"`
-	serialized   []byte `gorm:"column:serialized;type:bytea"`
+	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }

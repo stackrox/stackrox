@@ -43,11 +43,14 @@ var (
 
 const (
 	Testggrandchild1TableName = "testggrandchild1"
+	/*
+		Testggrandchild1TableName = "testggrandchild1"
+	*/
 )
 
 // TestGGrandChild1 holds the Gorm model for Postgres table `testggrandchild1`.
 type Testggrandchild1 struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
 	Val        string `gorm:"column:val;type:varchar"`
-	serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

@@ -94,7 +94,7 @@ func gvToKindMap(gvks ...schema.GroupVersionKind) map[schema.GroupVersion][]stri
 func TestGetAvailableResources(t *testing.T) {
 	secretGVK := schema.GroupVersionKind{Version: "v1", Kind: "Secret"}
 	pspGVK := schema.GroupVersionKind{Group: "policy", Version: "v1beta1", Kind: "PodSecurityPolicy"}
-	deploymentGVK := schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"}
+	deploymentGVK := schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "DeploymentType"}
 
 	expectedGVKs := map[schema.GroupVersionKind]struct{}{
 		secretGVK:     {},

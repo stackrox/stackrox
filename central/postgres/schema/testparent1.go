@@ -70,7 +70,11 @@ var (
 
 const (
 	Testparent1TableName         = "testparent1"
-	Testparent1ChildrenTableName = "testparent1_Children"
+	Testparent1ChildrenTableName = "testparent1_children"
+	/*
+			Testparent1TableName = "testparent1"
+		       Testparent1ChildrenTableName = "testparent1_children"
+	*/
 )
 
 // TestParent1 holds the Gorm model for Postgres table `testparent1`.
@@ -78,14 +82,14 @@ type Testparent1 struct {
 	Id                 string          `gorm:"column:id;type:varchar;primaryKey"`
 	ParentId           string          `gorm:"column:parentid;type:varchar"`
 	Val                string          `gorm:"column:val;type:varchar"`
-	serialized         []byte          `gorm:"column:serialized;type:bytea"`
-	TestgrandparentRef Testgrandparent `gorm:"foreignKey:ParentId;references:Id;constraint:OnDelete:CASCADE"`
+	Serialized         []byte          `gorm:"column:serialized;type:bytea"`
+	TestgrandparentRef Testgrandparent `gorm:"foreignKey:parentid;references:id;constraint:OnDelete:CASCADE"`
 }
 
 // TestParent1_Child1Ref holds the Gorm model for Postgres table `testparent1_Children`.
 type Testparent1Children struct {
-	testparent1_Id string      `gorm:"column:testparent1_id;type:varchar;primaryKey"`
-	idx            int         `gorm:"column:idx;type:integer;primaryKey;index:testparent1Children_idx,type:btree"`
+	Testparent1Id  string      `gorm:"column:testparent1_id;type:varchar;primaryKey"`
+	Idx            int         `gorm:"column:idx;type:integer;primaryKey;index:testparent1children_idx,type:btree"`
 	ChildId        string      `gorm:"column:childid;type:varchar"`
-	Testparent1Ref Testparent1 `gorm:"foreignKey:testparent1_Id;references:Id;constraint:OnDelete:CASCADE"`
+	Testparent1Ref Testparent1 `gorm:"foreignKey:testparent1_id;references:id;constraint:OnDelete:CASCADE"`
 }

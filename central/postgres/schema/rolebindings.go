@@ -67,7 +67,11 @@ var (
 
 const (
 	RolebindingsTableName         = "rolebindings"
-	RolebindingsSubjectsTableName = "rolebindings_Subjects"
+	RolebindingsSubjectsTableName = "rolebindings_subjects"
+	/*
+			RolebindingsTableName = "rolebindings"
+		       RolebindingsSubjectsTableName = "rolebindings_subjects"
+	*/
 )
 
 // K8SRoleBinding holds the Gorm model for Postgres table `rolebindings`.
@@ -81,14 +85,14 @@ type Rolebindings struct {
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
 	RoleId      string            `gorm:"column:roleid;type:varchar"`
-	serialized  []byte            `gorm:"column:serialized;type:bytea"`
+	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
 }
 
 // Subject holds the Gorm model for Postgres table `rolebindings_Subjects`.
 type RolebindingsSubjects struct {
-	rolebindings_Id string              `gorm:"column:rolebindings_id;type:varchar;primaryKey"`
-	idx             int                 `gorm:"column:idx;type:integer;primaryKey;index:rolebindingsSubjects_idx,type:btree"`
+	RolebindingsId  string              `gorm:"column:rolebindings_id;type:varchar;primaryKey"`
+	Idx             int                 `gorm:"column:idx;type:integer;primaryKey;index:rolebindingssubjects_idx,type:btree"`
 	Kind            storage.SubjectKind `gorm:"column:kind;type:integer"`
 	Name            string              `gorm:"column:name;type:varchar"`
-	RolebindingsRef Rolebindings        `gorm:"foreignKey:rolebindings_Id;references:Id;constraint:OnDelete:CASCADE"`
+	RolebindingsRef Rolebindings        `gorm:"foreignKey:rolebindings_id;references:id;constraint:OnDelete:CASCADE"`
 }

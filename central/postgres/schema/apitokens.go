@@ -39,10 +39,13 @@ var (
 
 const (
 	ApitokensTableName = "apitokens"
+	/*
+		ApitokensTableName = "apitokens"
+	*/
 )
 
 // TokenMetadata holds the Gorm model for Postgres table `apitokens`.
 type Apitokens struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
-	serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

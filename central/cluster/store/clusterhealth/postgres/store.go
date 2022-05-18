@@ -20,15 +20,15 @@ import (
 )
 
 const (
-	baseTable  = "cluster_health_status"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM cluster_health_status WHERE Id = $1)"
+	baseTable  = "cluster_health_statuses"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM cluster_health_statuses WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM cluster_health_status WHERE Id = $1"
-	deleteStmt  = "DELETE FROM cluster_health_status WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM cluster_health_status"
-	getManyStmt = "SELECT serialized FROM cluster_health_status WHERE Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM cluster_health_statuses WHERE Id = $1"
+	deleteStmt  = "DELETE FROM cluster_health_statuses WHERE Id = $1"
+	walkStmt    = "SELECT serialized FROM cluster_health_statuses"
+	getManyStmt = "SELECT serialized FROM cluster_health_statuses WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM cluster_health_status WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM cluster_health_statuses WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -40,7 +40,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.ClusterHealthStatusSchema
+	schema = pkgSchema.ClusterHealthStatusesSchema
 )
 
 type Store interface {
@@ -66,14 +66,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableClusterHealthStatusStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableClusterHealthStatusesStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoClusterHealthStatus(ctx context.Context, tx pgx.Tx, obj *storage.ClusterHealthStatus) error {
+func insertIntoClusterHealthStatuses(ctx context.Context, tx pgx.Tx, obj *storage.ClusterHealthStatus) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -91,7 +91,7 @@ func insertIntoClusterHealthStatus(ctx context.Context, tx pgx.Tx, obj *storage.
 		serialized,
 	}
 
-	finalStr := "INSERT INTO cluster_health_status (Id, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, ScannerHealthStatus, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, ScannerHealthStatus = EXCLUDED.ScannerHealthStatus, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO cluster_health_statuses (Id, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, ScannerHealthStatus, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, ScannerHealthStatus = EXCLUDED.ScannerHealthStatus, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func insertIntoClusterHealthStatus(ctx context.Context, tx pgx.Tx, obj *storage.
 	return nil
 }
 
-func (s *storeImpl) copyFromClusterHealthStatus(ctx context.Context, tx pgx.Tx, objs ...*storage.ClusterHealthStatus) error {
+func (s *storeImpl) copyFromClusterHealthStatuses(ctx context.Context, tx pgx.Tx, objs ...*storage.ClusterHealthStatus) error {
 
 	inputRows := [][]interface{}{}
 
@@ -168,7 +168,7 @@ func (s *storeImpl) copyFromClusterHealthStatus(ctx context.Context, tx pgx.Tx, 
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"cluster_health_status"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"cluster_health_statuses"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -194,7 +194,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ClusterHealth
 		return err
 	}
 
-	if err := s.copyFromClusterHealthStatus(ctx, tx, objs...); err != nil {
+	if err := s.copyFromClusterHealthStatuses(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -219,7 +219,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ClusterHealthSt
 			return err
 		}
 
-		if err := insertIntoClusterHealthStatus(ctx, tx, obj); err != nil {
+		if err := insertIntoClusterHealthStatuses(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -423,13 +423,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ClusterHealth
 
 //// Used for testing
 
-func dropTableClusterHealthStatus(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS cluster_health_status CASCADE")
+func dropTableClusterHealthStatuses(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS cluster_health_statuses CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableClusterHealthStatus(ctx, db)
+	dropTableClusterHealthStatuses(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

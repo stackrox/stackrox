@@ -51,6 +51,9 @@ var (
 
 const (
 	NodeCvesTableName = "node_cves"
+	/*
+		NodeCvesTableName = "node_cves"
+	*/
 )
 
 // CVE holds the Gorm model for Postgres table `node_cves`.
@@ -64,5 +67,5 @@ type NodeCves struct {
 	Suppressed     bool                          `gorm:"column:suppressed;type:bool"`
 	SuppressExpiry *time.Time                    `gorm:"column:suppressexpiry;type:timestamp"`
 	Severity       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
-	serialized     []byte                        `gorm:"column:serialized;type:bytea"`
+	Serialized     []byte                        `gorm:"column:serialized;type:bytea"`
 }

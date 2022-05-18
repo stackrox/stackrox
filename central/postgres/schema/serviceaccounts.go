@@ -48,6 +48,9 @@ var (
 
 const (
 	ServiceaccountsTableName = "serviceaccounts"
+	/*
+		ServiceaccountsTableName = "serviceaccounts"
+	*/
 )
 
 // ServiceAccount holds the Gorm model for Postgres table `serviceaccounts`.
@@ -59,5 +62,5 @@ type Serviceaccounts struct {
 	ClusterId   string            `gorm:"column:clusterid;type:varchar"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
-	serialized  []byte            `gorm:"column:serialized;type:bytea"`
+	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
 }
