@@ -27,7 +27,7 @@ import org.junit.Assume
 import services.ClusterService
 import services.PolicyService
 import services.NodeService
-import spock.laang.IgnoreIf
+import spock.lang.IgnoreIf
 import spock.lang.Unroll
 import spock.lang.Shared
 import util.Env
