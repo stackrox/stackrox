@@ -81,6 +81,10 @@ func main() {
 		message.PolicySync([]*storage.Policy{}),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
 
+	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
+		log.Printf("MESSAGE SENT: %s\n", msg.String())
+	})
+
 	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
 	defer shutdownFakeServer()
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
@@ -109,9 +113,7 @@ func main() {
 		}
 	}
 
-	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
-		log.Printf("MESSAGE SENT: %s\n", msg.String())
-	})
+
 
 	time.Sleep(2 * time.Minute)
 	endTime := time.Now()
