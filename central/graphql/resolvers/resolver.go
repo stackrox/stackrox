@@ -253,3 +253,8 @@ func stringSlice(inputSlice interface{}) []string {
 	}
 	return output
 }
+
+// NewMock returns an empty Resolver for use in testing whether the GraphQL schema can be compiled
+func NewMock() *Resolver {
+	return &Resolver{}
+}
