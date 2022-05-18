@@ -6,20 +6,16 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/config"
-	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
 const (
 	dumpTmpPath    = "pg_backup"
 	dbPasswordFile = "/run/secrets/stackrox.io/db-password/password"
-
-	sizeBufferMargin = 0.5
 )
 
 var (
@@ -58,7 +54,7 @@ func (bu *PostgresBackup) WriteDirectory(ctx context.Context) (string, error) {
 		return "", err
 	}
 	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
-	log.Infof("SHREWS -- %s", source)
+	sourceMap := bu.parseSource(source)
 
 	config, err := pgxpool.ParseConfig(source)
 	if err != nil {
@@ -70,8 +66,6 @@ func (bu *PostgresBackup) WriteDirectory(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	log.Infof("SHREWS -- backup path -- %s", backupPath)
 
 	// Set the options for pg_dump from the connection config
 	options := []string{
@@ -88,72 +82,45 @@ func (bu *PostgresBackup) WriteDirectory(ctx context.Context) (string, error) {
 		backupPath,
 	}
 
-	cmd := exec.Command("/usr/bin/pg_dump", options...)
+	cmd := exec.Command("pg_dump", options...)
 	cmd.Env = os.Environ()
 
-	// TODO:  Try to parse source to set these.
-	// Setup the environment variables specific to the command
-	cmd.Env = append(cmd.Env, "PGSSLMODE=verify-full")
-	cmd.Env = append(cmd.Env, "PGSSLROOTCERT=/run/secrets/stackrox.io/certs/ca.pem")
-	//pwEnv := "PGPASSWORD=" + fmt.Sprintf("%s", pw)
-	pwEnv := "PGPASSWORD=" + fmt.Sprintf("%s", config.ConnConfig.Password)
-	cmd.Env = append(cmd.Env, pwEnv)
-
-	log.Info(cmd.String())
-	log.Info(cmd.Env)
-
-	// Direct the command stdout to the destination io.Writer
-	//cmd.Stdout = out
+	if _, found := sourceMap["sslmode"]; found {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("PGSSLMODE=%s", sourceMap["sslmode"]))
+	}
+	if _, found := sourceMap["sslrootcert"]; found {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("PGSSLROOTCERT=%s", sourceMap["sslrootcert"]))
+	}
+	cmd.Env = append(cmd.Env, fmt.Sprintf("PGPASSWORD=%s", config.ConnConfig.Password))
 
 	// Run the command
 	cmd.Start()
 	err = cmd.Wait()
 
 	if exitError, ok := err.(*exec.ExitError); ok {
-		log.Info(err)
-		log.Info(exitError)
+		log.Error(exitError)
 		return "", err
 	}
 
-	log.Infof("SHREWS -- Config => %s", config)
-	log.Info("Performed Dump")
 	return backupPath, nil
 }
 
 func (bu *PostgresBackup) findScratchPath(ctx context.Context) (string, error) {
 	dbSize, err := bu.getPostgresSize(ctx)
-	log.Infof("SHREWS => %d", dbSize)
 	if err != nil {
 		return "", err
 	}
-	requiredBytes := float64(dbSize) * (1.0 + sizeBufferMargin)
 
-	// Check tmp for space to produce a backup.
-	tmpDir, err := os.MkdirTemp("", dumpTmpPath)
-	if err != nil {
-		return "", err
-	}
-	tmpBytesAvailable, err := fsutils.AvailableBytesIn(tmpDir)
-	if err != nil {
-		return "", errors.Wrapf(err, "unable to calculates size of %s", tmpDir)
-	}
-	if float64(tmpBytesAvailable) > requiredBytes {
-		return tmpDir, nil
+	return findTmpPath(dbSize, dumpTmpPath)
+}
+
+func (bu *PostgresBackup) parseSource(source string) map[string]string {
+	sourceSlice := strings.Split(source, " ")
+	sourceMap := make(map[string]string)
+	for _, pair := range sourceSlice {
+		configSetting := strings.Split(pair, "=")
+		sourceMap[configSetting[0]] = configSetting[1]
 	}
 
-	// If there isn't enough space there, try using PVC to create it.
-	pvcDir, err := os.MkdirTemp(globaldb.PVCPath, dumpTmpPath)
-	if err != nil {
-		return "", err
-	}
-	pvcBytesAvailable, err := fsutils.AvailableBytesIn(pvcDir)
-	if err != nil {
-		return "", errors.Wrapf(err, "unable to calculates size of %s", pvcDir)
-	}
-	if float64(pvcBytesAvailable) > requiredBytes {
-		return pvcDir, nil
-	}
-
-	// If neither had enough space, return an error.
-	return "", errors.Errorf("required %f bytes of space, found %f bytes in %s and %f bytes on PVC, cannot backup", requiredBytes, float64(tmpBytesAvailable), os.TempDir(), float64(pvcBytesAvailable))
+	return sourceMap
 }
