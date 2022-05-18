@@ -12,6 +12,8 @@ type SearchFilterInputProps = {
     searchCategory?: SearchCategory;
     searchFilter: SearchFilter;
     searchOptions: string[]; // differs from searchOptions prop of SearchInput
+    autocompleteQueryPrefix?: string;
+    isDisabled?: boolean;
 };
 
 /*
@@ -31,22 +33,28 @@ function SearchFilterInput({
     searchCategory,
     searchFilter,
     searchOptions,
+    autocompleteQueryPrefix,
+    isDisabled = false,
 }: SearchFilterInputProps) {
     const [autoCompleteValues, setAutoCompleteValues] = useState<string[]>([]);
     const [valuelessOption, setValuelessOption] = useState('');
 
     useEffect(() => {
         if (valuelessOption.length !== 0) {
+            const query = autocompleteQueryPrefix
+                ? `${autocompleteQueryPrefix}+${getEntryValueForOption(valuelessOption)}`
+                : getEntryValueForOption(valuelessOption);
+
             fetchAutoCompleteResults({
                 categories: [searchCategory],
-                query: getEntryValueForOption(valuelessOption),
+                query,
             })
                 .then((values) => {
                     setAutoCompleteValues(values);
                 })
                 .catch(() => {});
         }
-    }, [searchCategory, valuelessOption]);
+    }, [searchCategory, autocompleteQueryPrefix, valuelessOption]);
 
     function handleChangeSearchEntries(searchEntries: SearchEntry[]) {
         setValuelessOption(getValuelessOption(searchEntries));
@@ -68,7 +76,7 @@ function SearchFilterInput({
         <SearchInput
             autoCompleteResults={autoCompleteValues}
             className={className}
-            isDisabled={searchOptions.length === 0}
+            isDisabled={searchOptions.length === 0 || isDisabled}
             isGlobal
             placeholder={placeholder}
             searchModifiers={createSearchModifiers(searchOptions)}
