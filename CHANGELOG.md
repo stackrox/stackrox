@@ -6,11 +6,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
-- ROX-9358: Added additional information to a diagnostic bundle:
-  - Notifiers
-  - Auth providers and auth provider groups
-  - Access control roles with attached permission set and access scope
-  - System configuration
+- ROX-9358: The diagnostic bundle includes notifiers, auth providers and auth provider groups, access control roles with attached permission set and access scope, and system configuration. Users with `DebugLogs` permission will be able to read listed entities from a generated diagnostic bundle regardless of their respective permissions.
 - ROX-10819: The documentation for API v1/notifiers ("GetNotifiers") previously stated that the request could be filtered by name or type. This is incorrect as this API never allowed filtering. The documentation has been fixed to reflect that.
 - ROX-9614: Add `file` query parameter to Central's `/api/extensions/scannerdefinitions`, allowing retrieval of individual files (not directories) from Scanner's Definition bundle using their full path within the archive. Add `sensorEndpoint` to Scanner's configmap, so Scanner in slim mode knows how to reach Sensor from its cluster.
 - ROX-9928: Policy "OpenShift: Advanced Cluster Security Central Admin Secret Accessed" renamed to "OpenShift: Central Admin Secret Accessed"
