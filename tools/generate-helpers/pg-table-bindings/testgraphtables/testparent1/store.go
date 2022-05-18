@@ -16,12 +16,12 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
-	baseTable  = "testparent1"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM testparent1 WHERE Id = $1)"
+	baseTable = "testparent1"
 
 	getStmt     = "SELECT serialized FROM testparent1 WHERE Id = $1"
 	deleteStmt  = "DELETE FROM testparent1 WHERE Id = $1"
@@ -333,12 +333,15 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TestParent1")
 
-	row := s.db.QueryRow(ctx, existsStmt, id)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
-	}
-	return exists, nil
+	var sacQueryFilter *v1.Query
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	return count == 1, err
 }
 
 // Get returns the object, if it exists from the store

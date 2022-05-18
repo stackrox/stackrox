@@ -12,7 +12,7 @@ import {
     HintBody,
 } from '@patternfly/react-core';
 
-import { PrivateConfig } from './SystemConfigTypes';
+import { PrivateConfig } from 'types/config.proto';
 
 const UNKNOWN_FLAG = -1;
 

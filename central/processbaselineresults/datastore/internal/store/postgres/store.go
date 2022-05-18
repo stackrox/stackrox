@@ -16,12 +16,12 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
-	baseTable  = "processwhitelistresults"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM processwhitelistresults WHERE DeploymentId = $1)"
+	baseTable = "processwhitelistresults"
 
 	getStmt     = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = $1"
 	deleteStmt  = "DELETE FROM processwhitelistresults WHERE DeploymentId = $1"
@@ -236,12 +236,15 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, deploymentId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ProcessBaselineResults")
 
-	row := s.db.QueryRow(ctx, existsStmt, deploymentId)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
-	}
-	return exists, nil
+	var sacQueryFilter *v1.Query
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	return count == 1, err
 }
 
 // Get returns the object, if it exists from the store

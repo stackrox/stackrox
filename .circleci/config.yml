@@ -455,6 +455,10 @@ parameters:
     type: string
     # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
     default: "ubuntu-2004:202111-02"
+  docker_version:
+    type: string
+    # https://circleci.com/docs/2.0/building-docker-images/#docker-version
+    default: "20.10.14"
   release_rc_tag_bash_regex:
     type: string
     # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
@@ -923,10 +927,6 @@ commands:
       - cleanup-clusters-on-fail
 
   build:
-    parameters:
-      branding:
-        type: string
-        default: stackrox
     steps:
       - checkout-with-submodules
       - check-docs-step:
@@ -935,7 +935,7 @@ commands:
           fail-on-rc: false
 
       - setup_remote_docker:
-          version: 20.10.7
+          version: << pipeline.parameters.docker_version >>
       - setup-dep-env:
           docker-login: true
 
@@ -943,9 +943,17 @@ commands:
           at: /go/src/github.com/stackrox/rox
 
       - run:
+          name: Ensure product branding is set
+          command: |
+            if [[ -z "${ROX_PRODUCT_BRANDING}" ]]; then
+              echo >&2 "Will not proceed until ROX_PRODUCT_BRANDING env variable is defined"
+              exit 2
+            fi
+
+      - run:
           name: Restore the branded UI
           command: |
-            cp -au ui-<< parameters.branding >>/* ui
+            cp -au ui-${ROX_PRODUCT_BRANDING}/* ui
 
       - *refreshAlpineBaseImage
 
@@ -959,7 +967,8 @@ commands:
 
       - run:
           name: Build main image
-          command: make docker-build-main-image ROX_PRODUCT_BRANDING="<< parameters.branding >>"
+          command: |
+            make docker-build-main-image
 
       - run:
           name: Check debugger presence in the main image
@@ -973,18 +982,18 @@ commands:
           name: Push new Docker image
           command: |
             source ./scripts/ci/lib.sh
-            push_main_image_set "${CIRCLE_BRANCH}" "<< parameters.branding >>"
+            push_main_image_set "${CIRCLE_BRANCH}" "${ROX_PRODUCT_BRANDING}"
 
       - run:
           name: Push collector & scanner images tagged with main-version to registries
           command: |
             source ./scripts/ci/lib.sh
-            push_matching_collector_scanner_images "<< parameters.branding >>"
+            push_matching_collector_scanner_images "${ROX_PRODUCT_BRANDING}"
 
       - run:
           name: Publish new versions of NPM packages if any
           command: |
-            if [[ "${CIRCLE_BRANCH}" == "master" && "<< parameters.branding >>" == "STACKROX_BRANDING" ]]; then
+            if [[ "${CIRCLE_BRANCH}" == "master" && "${ROX_PRODUCT_BRANDING}" == "STACKROX_BRANDING" ]]; then
               echo "//npm.pkg.github.com/:_authToken=\"$GITHUB_PACKAGES_PUBLISH_TOKEN\"" > ~/.npmrc
               make ui-publish-packages
             else
@@ -1004,7 +1013,7 @@ commands:
       - run:
           name: Comment on PR
           command: |
-            if [[ "<< parameters.branding >>" == "STACKROX_BRANDING" ]]; then
+            if [[ "${ROX_PRODUCT_BRANDING}" == "STACKROX_BRANDING" ]]; then
               wget --quiet https://github.com/joshdk/hub-comment/releases/download/0.1.0-rc6/hub-comment_linux_amd64
               echo "2a2640f44737873dfe30da0d5b8453419d48a494f277a70fd9108e4204fc4a53 hub-comment_linux_amd64" | sha256sum -c -
               sudo install hub-comment_linux_amd64 /usr/bin/hub-comment
@@ -2762,18 +2771,18 @@ jobs:
     resource_class: medium
     environment:
       EKS_AUTOMATION_VERSION: 0.2.17
+      ROX_PRODUCT_BRANDING: "STACKROX_BRANDING"
     steps:
-      - build:
-          branding: STACKROX_BRANDING
+      - build
 
   build-rhacs:
     executor: custom
     resource_class: medium
     environment:
       EKS_AUTOMATION_VERSION: 0.2.17
+      ROX_PRODUCT_BRANDING: "RHACS_BRANDING"
     steps:
-      - build:
-          branding: RHACS_BRANDING
+      - build
 
   build-race-condition-debug-image:
     executor: custom
@@ -2789,7 +2798,8 @@ jobs:
             echo "${TAG}-rcd" > CI_TAG
             make --quiet tag
 
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: << pipeline.parameters.docker_version >>
 
       - restore-go-mod-cache
       - setup-go-build-env
@@ -2819,9 +2829,8 @@ jobs:
             ./scripts/ci/push-as-manifest-list.sh "docker.io/stackrox/main:${TAG}" | cat
 
             docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin \<<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
-            QUAY_REPO="rhacs-eng"
-            docker tag "stackrox/main:${TAG}" "quay.io/$QUAY_REPO/main:${TAG}"
-            ./scripts/ci/push-as-manifest-list.sh "quay.io/$QUAY_REPO/main:${TAG}" | cat
+            docker tag "stackrox/main:${TAG}" "quay.io/rhacs-eng/main:${TAG}"
+            ./scripts/ci/push-as-manifest-list.sh "quay.io/rhacs-eng/main:${TAG}" | cat
 
       - run:
           # Apparently builds for race-condition-tests get GOTAGS=release due to explicitly set CIRCLE_TAG value.
@@ -2852,7 +2861,7 @@ jobs:
 
       - setup_remote_docker:
           # Default docker server version isn't new enough therefore we're asking for more recent one to enjoy Buildkit.
-          version: 20.10.2
+          version: << pipeline.parameters.docker_version >>
       - run:
           name: Login to Docker Hub and Quay.io
           command: |
@@ -2953,8 +2962,8 @@ jobs:
       - check-backend-changes
       - check-to-run:
           label: ci-postgres-tests
-          run-on-master: false
-          run-on-tags: false
+          run-on-master: true
+          run-on-tags: true
       - provision-gke-cluster:
           cluster-id: postgres-api-e2e-tests
 
@@ -2972,16 +2981,6 @@ jobs:
 
       - provision-gke-cluster:
           cluster-id: kernel-api-e2e-tests
-
-  provision-gke-api-upgrade-tests:
-    executor: custom
-    resource_class: small
-    steps:
-      - checkout
-      - gate-job:
-          job: gke-upgrade-tests
-      - provision-gke-cluster:
-          cluster-id: upgrade-test
 
   build-scale-monitoring-and-mock-server:
     executor: custom
@@ -3629,8 +3628,8 @@ jobs:
           determine-whether-to-run:
             - check-to-run:
                 label: ci-postgres-tests
-                run-on-master: false
-                run-on-tags: false
+                run-on-master: true
+                run-on-tags: true
           use-websocket: true
 
   gke-kernel-api-e2e-tests:
@@ -3656,41 +3655,6 @@ jobs:
                 label: ci-kernel-module-tests
                 run-on-master: true
                 run-on-tags: true
-
-  gke-api-upgrade-tests:
-    executor: custom
-    environment:
-      LOAD_BALANCER: "lb"
-    steps:
-      - checkout
-      - gate-job:
-          job: gke-upgrade-tests
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-      - restore-go-mod-cache
-
-      - setup-gcp
-      - attach-gke-cluster:
-          cluster-id: upgrade-test
-
-      - run:
-          name: Upgrade tests
-          command: |
-            ./tests/upgrade/run.sh /tmp/upgrade-test-logs
-
-      - ci-artifacts/store:
-          path: /tmp/upgrade-test-logs
-          destination: upgrade-test-logs
-
-      - *alwaysWaitForAPI
-
-      - collect-k8s-logs
-      - get-and-store-debug-dump
-      - get-and-store-diagnostic-bundle
-      - get-central-data
-      - store-k8s-logs
-      - *storeQALogs
-      - teardown-gke
 
   gke-api-scale-tests:
     executor: custom
@@ -3981,6 +3945,7 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_BASELINE_GENERATION_DURATION: 1m
 
     steps:
       - run-qa-tests:
@@ -4017,6 +3982,7 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_BASELINE_GENERATION_DURATION: 1m
 
     steps:
       - run-qa-tests:
@@ -4590,6 +4556,7 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_BASELINE_GENERATION_DURATION: 1m
 
     steps:
       - run-qa-tests:
@@ -4629,6 +4596,7 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_BASELINE_GENERATION_DURATION: 1m
 
     steps:
       - run-qa-tests:
@@ -4670,6 +4638,7 @@ jobs:
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_BASELINE_GENERATION_DURATION: 1m
       - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
@@ -4715,6 +4684,7 @@ jobs:
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_BASELINE_GENERATION_DURATION: 1m
       - ROX_VULN_RISK_MANAGEMENT: true
 
     steps:
@@ -4858,14 +4828,6 @@ workflows:
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-kernel-api-e2e-tests
-      - provision-gke-api-upgrade-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - gke-api-upgrade-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-stackrox
-            - build-rhacs
-            - provision-gke-api-upgrade-tests
       - provision-gke-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - gke-api-scale-tests:

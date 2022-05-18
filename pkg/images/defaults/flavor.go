@@ -43,9 +43,9 @@ var (
 			constructorFunc:         RHACSReleaseImageFlavor,
 		},
 		{
-			imageFlavorName:         ImageFlavorNameOpenSourceRelease,
+			imageFlavorName:         ImageFlavorNameOpenSource,
 			isAllowedInReleaseBuild: true,
-			constructorFunc:         OpenSourceReleaseImageFlavor,
+			constructorFunc:         OpenSourceImageFlavor,
 		},
 	}
 
@@ -195,8 +195,8 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 	}
 }
 
-// OpenSourceReleaseImageFlavor returns image values for `opensource` flavor.
-func OpenSourceReleaseImageFlavor() ImageFlavor {
+// OpenSourceImageFlavor returns image values for `opensource` flavor.
+func OpenSourceImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
 		MainRegistry:       "quay.io/stackrox-io",
@@ -258,8 +258,27 @@ func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, 
 	if err := CheckImageFlavorName(flavorName, isReleaseBuild); err != nil {
 		return ImageFlavor{}, err
 	}
-	f := imageFlavorMap[flavorName]
-	return f.constructorFunc(), nil
+
+	return getImageFlavorByName(flavorName), nil
+}
+
+// GetImageFlavorNameFromEnv returns the value of the environment variable (ROX_IMAGE_FLAVOR)
+// providing development_build as default if no RealeseBuild and environment variable not set
+// This function will panic if running a ReleaseBuild and ROX_IMAGE_FLAVOR is not available
+func GetImageFlavorNameFromEnv() string {
+	envValue := strings.TrimSpace(imageFlavorEnv())
+	if envValue == "" && !buildinfo.ReleaseBuild {
+		envValue = ImageFlavorNameDevelopmentBuild
+		log.Warnf("Environment variable %s not set, this will cause a panic in release build. Assuming this code is executed in unit test session and using '%s' as default.", imageFlavorEnvName, ImageFlavorNameDevelopmentBuild)
+	}
+	err := CheckImageFlavorName(envValue, buildinfo.ReleaseBuild)
+	if err != nil {
+		// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively
+		// build-time constant.
+		panicImageFlavorEnv(err)
+	}
+
+	return envValue
 }
 
 // GetImageFlavorFromEnv returns the flavor based on the environment variable (ROX_IMAGE_FLAVOR).
@@ -272,18 +291,16 @@ func GetImageFlavorByName(flavorName string, isReleaseBuild bool) (ImageFlavor, 
 // roxctl should instead rely on different ways to determine which image defaults to use. Such as asking users to
 // provide a command-line argument.
 func GetImageFlavorFromEnv() ImageFlavor {
-	envValue := strings.TrimSpace(imageFlavorEnv())
-	if envValue == "" && !buildinfo.ReleaseBuild {
-		envValue = ImageFlavorNameDevelopmentBuild
-		log.Warnf("Environment variable %s not set, this will cause a panic in release build. Assuming this code is executed in unit test session and using '%s' as default.", imageFlavorEnvName, ImageFlavorNameDevelopmentBuild)
-	}
-	f, err := GetImageFlavorByName(envValue, buildinfo.ReleaseBuild)
-	if err != nil {
-		// Panic if environment variable's value is incorrect to loudly signal improper configuration of the effectively
-		// build-time constant.
-		log.Panicf("Incorrect image flavor in environment variable %s: %s", imageFlavorEnvName, err)
-	}
-	return f
+	envValue := GetImageFlavorNameFromEnv()
+	return getImageFlavorByName(envValue)
+}
+
+func getImageFlavorByName(name string) ImageFlavor {
+	return imageFlavorMap[name].constructorFunc()
+}
+
+func panicImageFlavorEnv(err error) {
+	log.Panicf("Incorrect image flavor in environment variable %s: %s", imageFlavorEnvName, err)
 }
 
 // IsImageDefaultMain checks if provided image matches main image defined in flavor.

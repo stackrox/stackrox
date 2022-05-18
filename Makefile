@@ -19,26 +19,27 @@ else
 QUAY_TAG_EXPIRATION=never
 endif
 
-# ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scaner, and collector images.
-# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs.
-# The value is assigned as following:
-# 1. Use environment variable if provided.
-# 2. If makefile variable GOTAGS is contains "release", use "stackrox.io".
-# 3. Otherwise set it to "development_build" by default, e.g. for developers running the Makefile locally.
-ROX_IMAGE_FLAVOR ?= $(shell if [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then echo "stackrox.io"; else echo "development_build"; fi)
-
 ROX_PRODUCT_BRANDING ?= STACKROX_BRANDING
-DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
-BUILD_IMAGE_VERSION=$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
-BUILD_IMAGE := $(DEFAULT_IMAGE_REGISTRY)/apollo-ci:$(BUILD_IMAGE_VERSION)
-DOCS_IMAGE_BASE := $(DEFAULT_IMAGE_REGISTRY)/docs
 
-ifdef CI
-    CI_QUAY_REPO := rhacs-eng
-    DOCS_IMAGE_BASE := quay.io/$(CI_QUAY_REPO)/docs
+# ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scaner, and collector images.
+# ROX_IMAGE_FLAVOR valid values are: development_build, stackrox.io, rhacs, opensource.
+ROX_IMAGE_FLAVOR ?= $(shell \
+	if [[ "$(ROX_PRODUCT_BRANDING)" == "STACKROX_BRANDING" ]]; then \
+	  echo "opensource"; \
+	elif [[ "$(GOTAGS)" == *"$(RELEASE_GOTAGS)"* ]]; then \
+	  echo "stackrox.io"; \
+	else \
+	  echo "development_build"; \
+	fi)
+
+BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
+
+DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
+ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
+	DEFAULT_IMAGE_REGISTRY := quay.io/rhacs-eng
 endif
 
-DOCS_IMAGE = $(DOCS_IMAGE_BASE):$(shell make --quiet --no-print-directory docs-tag)
+DOCS_IMAGE = $(DEFAULT_IMAGE_REGISTRY)/docs:$(shell make --quiet --no-print-directory docs-tag)
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 
@@ -592,21 +593,27 @@ scale-image: scale-build clean-image
 	cp bin/linux/profiler scale/image/bin/profiler
 	cp bin/linux/chaos scale/image/bin/chaos
 	chmod +w scale/image/bin/*
-	docker build -t stackrox/scale:$(TAG) -f scale/image/Dockerfile scale
-	docker tag stackrox/scale:$(TAG) quay.io/$(CI_QUAY_REPO)/scale:$(TAG)
+	docker build \
+		-t stackrox/scale:$(TAG) \
+		-t quay.io/rhacs-eng/scale:$(TAG) \
+		-f scale/image/Dockerfile scale
 
 webhookserver-image: webhookserver-build
 	-mkdir webhookserver/bin
 	cp bin/linux/webhookserver webhookserver/bin/webhookserver
 	chmod +w webhookserver/bin/webhookserver
-	docker build -t stackrox/webhookserver:1.2 -f webhookserver/Dockerfile webhookserver
-	docker tag stackrox/webhookserver:1.2 quay.io/$(CI_QUAY_REPO)/webhookserver:1.2
+	docker build \
+		-t stackrox/webhookserver:1.2 \
+		-t quay.io/rhacs-eng/webhookserver:1.2 \
+		-f webhookserver/Dockerfile webhookserver
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image
 	cp bin/linux/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
-	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
-	docker tag stackrox/grpc-server:$(TAG) quay.io/$(CI_QUAY_REPO)/grpc-server:$(TAG)
+	docker build \
+		-t stackrox/grpc-server:$(TAG) \
+		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
+		integration-tests/mock-grpc-server/image
 
 $(CURDIR)/image/postgres/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres

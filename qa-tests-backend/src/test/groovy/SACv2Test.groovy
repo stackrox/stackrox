@@ -91,7 +91,7 @@ class SACv2Test extends SACTest {
                 RoleService.deleteRole(role.name)
                 RoleService.deleteAccessScope(role.accessScopeId)
             } catch (Exception e) {
-                println "Error deleting role ${name}: ${e}"
+                log.error("Error deleting role ${name}", e)
             }
         }
     }

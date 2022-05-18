@@ -40,12 +40,12 @@ describe('Vulnmanagement reports', () => {
             cy.location('pathname').should('eq', url.reporting.list);
             cy.location('search').should('eq', '?action=create');
 
-            cy.get('h1:contains("Create a vulnerability report")');
+            cy.get('h1:contains("Create an image vulnerability report")');
 
             // check the breadcrumbs
             cy.get(selectors.reportSection.breadcrumbItems)
                 .last()
-                .contains('Create a vulnerability report');
+                .contains('Create an image vulnerability report');
 
             // first breadcrumb should be link back to reports table
             cy.get(selectors.reportSection.breadcrumbItems).first().click();
@@ -63,7 +63,7 @@ describe('Vulnmanagement reports', () => {
             visit(`${url.reporting.list}?action=create`);
             cy.wait(['@getSimpleAccessScopes', '@getNotifiers']);
 
-            cy.get('h1:contains("Create a vulnerability report")');
+            cy.get('h1:contains("Create an image vulnerability report")');
 
             // Step 0, should start out with disabled Save button
             cy.get(selectors.reportSection.buttons.create).should('be.disabled');
