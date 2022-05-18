@@ -216,7 +216,7 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         with self.assertRaisesRegex(Exception, "test1 oops"):
             ClusterTestSetsRunner(sets=[{"test": test1}, {"test": test2}]).run()
 
-    def test_can_skip_when_failed(self):
+    def test_can_always_run(self):
         test1 = Mock()
         test1.run.side_effect = Exception("test1 oops")
         test2 = Mock()
@@ -227,7 +227,7 @@ class TestClusterTestSetsRunner(unittest.TestCase):
             ClusterTestSetsRunner(
                 sets=[
                     {"test": test1},
-                    {"test": test2, "post_test": post_test2, "skip_when_failed": True},
+                    {"test": test2, "post_test": post_test2, "always_run": False},
                     {"test": test3, "post_test": post_test3},
                 ]
             ).run()

@@ -44,6 +44,7 @@ ClusterTestSetsRunner(
             "name": "DB backup and restore",
             "test": QaE2eDBBackupRestoreTest(),
             "post_test": StoreArtifacts(),
+            "always_run": False,
         },
     ],
     final_post=FinalPost(),

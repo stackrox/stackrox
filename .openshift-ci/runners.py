@@ -15,7 +15,7 @@ class ClusterTestSetsRunner:
     """A cluster test runner that runs multiple sets of pre, test & post steps
     wrapped by a cluster provision and with similar semantics to
     ClusterTestRunner. Each test set will attempt to run regardless of the outcome of
-    prior sets. This can be overriden on a set by set basis with 'skip_when_failed'"""
+    prior sets. This can be overriden on a set by set basis with 'always_run'"""
 
     def __init__(
         self,
@@ -47,11 +47,11 @@ class ClusterTestSetsRunner:
                         "pre_test": NullPreTest(),
                         "test": NullTest(),
                         "post_test": NullPostTest(),
-                        "skip_when_failed": False,
+                        "always_run": True,
                     },
                     **test_set,
                 }
-                if hold is None or not test_set["skip_when_failed"]:
+                if hold is None or test_set["always_run"]:
                     try:
                         self.log_event("About to run", test_set)
                         self.run_test_set(test_set)
