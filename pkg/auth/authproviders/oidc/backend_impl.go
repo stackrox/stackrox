@@ -37,7 +37,7 @@ const (
 
 	userInfoExpiration = 5 * time.Minute
 
-	orgidAttribute = "orgid"
+	orgIDAttribute = "orgid"
 	orgAdminGroup  = "org_admin"
 )
 
@@ -611,7 +611,7 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 
 	// Add sso.redhat.com attributes.
 	if userInfo.OrgID != "" {
-		claim.Attributes[orgidAttribute] = []string{userInfo.OrgID}
+		claim.Attributes[orgIDAttribute] = []string{userInfo.OrgID}
 	}
 	if userInfo.IsOrgAdmin {
 		claim.Attributes[authproviders.GroupsAttribute] = append(claim.Attributes[authproviders.GroupsAttribute], orgAdminGroup)
