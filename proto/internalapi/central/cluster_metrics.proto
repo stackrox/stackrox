@@ -5,6 +5,6 @@ option go_package = "central";
 package central;
 
 message ClusterMetrics {
-    int64 nodeCount = 1;
-    int64 cpuCapacity = 2;
+    int64 node_count = 1;
+    int64 cpu_capacity = 2;
 }

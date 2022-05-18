@@ -289,7 +289,7 @@ func SetResourceProcessingDuration(event *central.SensorEvent) {
 // SetClusterMetrics sets cluster metrics to the values that have been collected by Sensor.
 func SetClusterMetrics(clusterID string, clusterMetrics *central.ClusterMetrics) {
 	clusterMetricsNodeCountGaugeVec.With(prometheus.Labels{"ClusterID": clusterID}).
-		Set(float64(clusterMetrics.NodeCount))
+		Set(float64(clusterMetrics.GetNodeCount()))
 	clusterMetricsCPUCapacityGaugeVec.With(prometheus.Labels{"ClusterID": clusterID}).
-		Set(float64(clusterMetrics.CpuCapacity))
+		Set(float64(clusterMetrics.GetCpuCapacity()))
 }
