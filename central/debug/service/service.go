@@ -384,12 +384,11 @@ func (s *serviceImpl) getAuthProviders(_ context.Context) (interface{}, error) {
 	return storageAuthProviders, nil
 }
 
-func (s *serviceImpl) getGroups(ctx context.Context) (interface{}, error) {
-	// We will elevate the user rights in order to get all groups
-	accessGroupsCtx := sac.WithGlobalAccessScopeChecker(ctx,
+func (s *serviceImpl) getGroups(_ context.Context) (interface{}, error) {
+	accessGroupsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Group)))
+			sac.ResourceScopeKeys(resources.Access)))
 
 	return s.groupDataStore.GetAll(accessGroupsCtx)
 }
@@ -400,12 +399,11 @@ type diagResolvedRole struct {
 	AccessScope   *storage.SimpleAccessScope `json:"access_scope,omitempty"`
 }
 
-func (s *serviceImpl) getRoles(ctx context.Context) (interface{}, error) {
-	// We will elevate the user rights in order to get all roles
-	accessRolesCtx := sac.WithGlobalAccessScopeChecker(ctx,
+func (s *serviceImpl) getRoles(_ context.Context) (interface{}, error) {
+	accessRolesCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Role)))
+			sac.ResourceScopeKeys(resources.Access)))
 
 	roles, errGetRoles := s.roleDataStore.GetAllRoles(accessRolesCtx)
 	if errGetRoles != nil {
@@ -434,12 +432,11 @@ func (s *serviceImpl) getRoles(ctx context.Context) (interface{}, error) {
 	return resolvedRoles, nil
 }
 
-func (s *serviceImpl) getNotifiers(ctx context.Context) (interface{}, error) {
-	// We will elevate the user rights in order to get notifiers
-	accessNotifierCtx := sac.WithGlobalAccessScopeChecker(ctx,
+func (s *serviceImpl) getNotifiers(_ context.Context) (interface{}, error) {
+	accessNotifierCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Notifier)))
+			sac.ResourceScopeKeys(resources.Integration)))
 
 	notifiers, err := s.notifierDataStore.GetNotifiers(accessNotifierCtx)
 	if err != nil {
@@ -452,12 +449,11 @@ func (s *serviceImpl) getNotifiers(ctx context.Context) (interface{}, error) {
 	return notifiers, nil
 }
 
-func (s *serviceImpl) getConfig(ctx context.Context) (interface{}, error) {
-	// We will elevate the user rights in order to get config
-	accessConfigCtx := sac.WithGlobalAccessScopeChecker(ctx,
+func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
+	accessConfigCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Config)))
+			sac.ResourceScopeKeys(resources.Administration)))
 
 	return s.configDataStore.GetConfig(accessConfigCtx)
 }
