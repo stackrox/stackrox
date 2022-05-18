@@ -49,6 +49,10 @@ message FalsePositiveRequest { }
 // VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
 message VulnerabilityRequest {
     message CVEs {
+        // TODO: Rename this field to cves.
+
+        // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
+        // For example, CVE-2021-44832.
         repeated string ids = 1 [(gogoproto.moretags) = "search:\"CVE\""];
     }
     message Scope {

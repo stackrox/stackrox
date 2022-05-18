@@ -5,9 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/cve/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/cve/image/datastore/internal/store/postgres"
-	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -20,10 +18,10 @@ var (
 
 func initialize() {
 	storage := postgres.New(context.TODO(), globaldb.GetPostgres())
-	searcher := search.New(storage, cveIndexer.New(globalindex.GetGlobalIndex()))
+	indexer := postgres.NewIndexer(globaldb.GetPostgres())
 
 	var err error
-	ds, err = New(storage, cveIndexer.New(globalindex.GetGlobalIndex()), searcher)
+	ds, err = New(storage, indexer, search.New(storage, indexer))
 	utils.CrashOnError(err)
 }
 
