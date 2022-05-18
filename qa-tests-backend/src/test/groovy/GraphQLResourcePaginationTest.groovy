@@ -4,7 +4,9 @@ import objects.SortOption
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.GraphQLService
+import spock.lang.IgnoreIf
 import spock.lang.Unroll
+import util.Env
 
 class GraphQLResourcePaginationTest extends BaseSpecification {
 
@@ -57,6 +59,7 @@ class GraphQLResourcePaginationTest extends BaseSpecification {
 
         "node"       | "" | null | ""
 
+        @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
         "image"      | "Image:main" | null | "deployments"
 
         "secret"     | "Secret:scanner-db-password" | null | "deployments"
