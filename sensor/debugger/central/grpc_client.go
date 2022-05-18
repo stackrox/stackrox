@@ -1,4 +1,4 @@
-package tests
+package central
 
 import (
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -12,7 +12,7 @@ type fakeGRPCClient struct {
 	conn    *grpc.ClientConn
 }
 
-func makeFakeConnectionFactory(c *grpc.ClientConn) *fakeGRPCClient {
+func MakeFakeConnectionFactory(c *grpc.ClientConn) *fakeGRPCClient {
 	return &fakeGRPCClient{
 		conn:    c,
 		stopSig: concurrency.NewErrorSignal(),

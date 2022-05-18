@@ -1,4 +1,4 @@
-package tests
+package central
 
 import (
 	"testing"
@@ -11,10 +11,11 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-type fakeService struct {
+type FakeService struct {
+	ConnectionStarted concurrency.Signal
+	KillSwitch        concurrency.Signal
+
 	stream            central.SensorService_CommunicateServer
-	connectionStarted concurrency.Signal
-	killSwitch        concurrency.Signal
 
 	// initialMessages are messages to be sent to sensor once connection is open
 	initialMessages []*central.MsgToSensor
@@ -24,10 +25,12 @@ type fakeService struct {
 
 	receivedLock sync.RWMutex
 
+	messageCallback func(sensor *central.MsgFromSensor)
+
 	t *testing.T
 }
 
-func (s *fakeService) GetAllMessages() []*central.MsgFromSensor {
+func (s *FakeService) GetAllMessages() []*central.MsgFromSensor {
 	var output []*central.MsgFromSensor
 	s.receivedLock.RLock()
 	defer s.receivedLock.RUnlock()
@@ -37,47 +40,48 @@ func (s *fakeService) GetAllMessages() []*central.MsgFromSensor {
 	return output
 }
 
-func (s *fakeService) ClearReceivedBuffer() {
+func (s *FakeService) ClearReceivedBuffer() {
 	s.receivedLock.Lock()
 	defer s.receivedLock.Unlock()
 	s.receivedMessages = []*central.MsgFromSensor{}
 }
 
-func makeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor) *fakeService {
-	return &fakeService{
-		connectionStarted: concurrency.NewSignal(),
-		killSwitch:        concurrency.NewSignal(),
+func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor) *FakeService {
+	return &FakeService{
+		ConnectionStarted: concurrency.NewSignal(),
+		KillSwitch:        concurrency.NewSignal(),
 		initialMessages:   initialMessages,
 		receivedMessages:  []*central.MsgFromSensor{},
 		receivedLock:      sync.RWMutex{},
 	}
 }
 
-func (s *fakeService) BlockReceive() (*central.MsgFromSensor, error) {
-	s.connectionStarted.Wait()
+func (s *FakeService) BlockReceive() (*central.MsgFromSensor, error) {
+	s.ConnectionStarted.Wait()
 	return s.stream.Recv()
 }
 
-func (s *fakeService) BlockSend(msg *central.MsgToSensor) error {
-	s.connectionStarted.Wait()
+func (s *FakeService) BlockSend(msg *central.MsgToSensor) error {
+	s.ConnectionStarted.Wait()
 	return s.stream.Send(msg)
 }
 
-func (s *fakeService) startInputIngestion() {
+func (s *FakeService) startInputIngestion() {
 	for {
 		// ignore gRPC stream errors for now
 		msg, _ := s.BlockReceive()
-		if s.killSwitch.IsDone() {
+		if s.KillSwitch.IsDone() {
 			return
 		}
 		s.receivedLock.Lock()
 		s.receivedMessages = append(s.receivedMessages, msg)
 		s.receivedLock.Unlock()
+		s.messageCallback(msg.Clone())
 	}
 
 }
 
-func (s *fakeService) Communicate(stream central.SensorService_CommunicateServer) error {
+func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer) error {
 	md := metautils.NiceMD{}
 	md.Set(centralsensor.SensorHelloMetadataKey, "true")
 	err := stream.SetHeader(metadata.MD(md))
@@ -86,7 +90,7 @@ func (s *fakeService) Communicate(stream central.SensorService_CommunicateServer
 		return err
 	}
 
-	s.connectionStarted.Signal()
+	s.ConnectionStarted.Signal()
 
 	for _, msg := range s.initialMessages {
 		if err := stream.Send(msg); err != nil {
@@ -96,6 +100,10 @@ func (s *fakeService) Communicate(stream central.SensorService_CommunicateServer
 
 	s.stream = stream
 	go s.startInputIngestion()
-	s.killSwitch.Wait()
+	s.KillSwitch.Wait()
 	return nil
+}
+
+func (s *FakeService) OnMessage(callback func(sensor *central.MsgFromSensor)) {
+	s.messageCallback = callback
 }
