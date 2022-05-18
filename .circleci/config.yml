@@ -1512,7 +1512,10 @@ commands:
             else
               export CLUSTER=K8S
             fi
-            if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
+            if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
+              echo "On nightly tag, running all QA tests but failing fast..."
+              make -C qa-tests-backend test FAIL_FAST=true || touch FAIL
+            elif [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
               echo "On master, running all QA tests..."
               make -C qa-tests-backend test || touch FAIL
             elif .circleci/pr_has_label.sh ci-all-qa-tests; then
@@ -1852,7 +1855,10 @@ commands:
             export CLUSTER=OPENSHIFT
             export API_HOSTNAME=localhost
             export API_PORT=${LOCAL_PORT}
-            if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
+            if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
+              echo "On nightly tag, running all QA tests but failing fast..."
+              make -C qa-tests-backend test FAIL_FAST=true || touch FAIL
+            elif [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; the
               echo "On master, running all QA tests..."
               make -C qa-tests-backend test || touch FAIL
             elif .circleci/pr_has_label.sh ci-all-qa-tests; then
