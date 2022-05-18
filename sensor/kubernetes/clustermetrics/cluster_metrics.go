@@ -18,6 +18,8 @@ var log = logging.LoggerForModule()
 
 // Interval for querying cluster metrics from Kubernetes and sending to Central.
 var defaultInterval = 5 * time.Minute
+// Timeout for querying cluster metrics from Kubernetes.
+var defaultTimeout = 10 * time.Second
 
 // ClusterMetrics collects metrics from secured clusters and sends them to Central.
 type ClusterMetrics interface {
@@ -30,6 +32,7 @@ func New(k8sClient kubernetes.Interface) ClusterMetrics {
 		output:          make(chan *central.MsgFromSensor),
 		stopper:         concurrency.NewStopper(),
 		pollingInterval: defaultInterval,
+		pollingTimeout:  defaultTimeout,
 		k8sClient:       k8sClient,
 	}
 }
@@ -38,6 +41,7 @@ type clusterMetricsImpl struct {
 	output          chan *central.MsgFromSensor
 	stopper         concurrency.Stopper
 	pollingInterval time.Duration
+	pollingTimeout  time.Duration
 	k8sClient       kubernetes.Interface
 }
 
@@ -90,7 +94,10 @@ func (cm *clusterMetricsImpl) Poll() {
 }
 
 func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) {
-	nodes, err := cm.k8sClient.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), cm.pollingTimeout)
+	defer cancel()
+
+	nodes, err := cm.k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
