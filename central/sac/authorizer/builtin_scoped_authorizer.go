@@ -130,7 +130,7 @@ func (a *accessModeLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey)
 	}
 	filteredRoles := make([]permissions.ResolvedRole, 0, len(a.roles))
 	for _, role := range a.roles {
-		if role.GetPermissions()[string(resource.GetResource())] >= a.access {
+		if permissions.CheckResourceForAccess(resource, role.GetPermissions(), a.access) {
 			filteredRoles = append(filteredRoles, role)
 		}
 	}
@@ -189,9 +189,15 @@ func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(resource permission
 	// 1. Get all roles and filter them to get only roles with desired access level (here: READ_ACCESS)
 	// 2. For every role get it's effective access scope (EAS)
 	// 3. Merge all EAS into a single tree
-	if a.access < resource.Access || a.resource != resource.Resource {
+	if a.access < resource.Access {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
+	// Ensure replaced resources are also taken into account.
+	if a.resource != resource.Resource && (a.resource.ReplacingResource == nil ||
+		a.resource.ReplacingResource != nil && *a.resource.ReplacingResource != resource.Resource) {
+		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+	}
+
 	eas := effectiveaccessscope.DenyAllEffectiveAccessScope()
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
