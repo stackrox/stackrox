@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	podsSACSearchHelper   = sac.ForResource(resources.Deployment).MustCreateSearchHelper(mappings.OptionsMap)
-	podsSACPgSearchHelper = sac.ForResource(resources.Deployment).MustCreatePgSearchHelper(mappings.OptionsMap)
+	podsSACSearchHelper         = sac.ForResource(resources.Deployment).MustCreateSearchHelper(mappings.OptionsMap)
+	podsSACPostgresSearchHelper = sac.ForResource(resources.Deployment).MustCreatePgSearchHelper(mappings.OptionsMap)
 
 	defaultSortOption = &v1.QuerySortOption{
 		Field:    search.DeploymentID.String(),
@@ -55,7 +55,7 @@ func (ds *searcherImpl) SearchRawPods(ctx context.Context, q *v1.Query) ([]*stor
 func formatSearcher(podIndexer blevesearch.UnsafeSearcher) search.Searcher {
 	var filteredSearcher search.Searcher
 	if features.PostgresDatastore.Enabled() {
-		filteredSearcher = podsSACPgSearchHelper.FilteredSearcher(podIndexer) // Make the UnsafeSearcher safe.
+		filteredSearcher = podsSACPostgresSearchHelper.FilteredSearcher(podIndexer) // Make the UnsafeSearcher safe.
 	} else {
 		filteredSearcher = podsSACSearchHelper.FilteredSearcher(podIndexer) // Make the UnsafeSearcher safe.
 	}
