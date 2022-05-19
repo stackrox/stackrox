@@ -20,6 +20,8 @@ type ClusterSelectProps = {
     isDisabled?: boolean;
 };
 
+// TODO We should probably always keep the cluster in the URL for clarity
+//
 // TODO Are there use cases where we want the possibility of multiple selected clusters,
 // and should that be rolled into this hook?
 // TODO extract

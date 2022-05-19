@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, ChangeEvent, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import isEqual from 'lodash/isEqual';
-import { Select, SelectOption, SelectVariant } from '@patternfly/react-core';
+import { Select, SelectOption, SelectOptionObject, SelectVariant } from '@patternfly/react-core';
 
 import { actions as graphActions } from 'reducers/network/graph';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
@@ -73,7 +73,7 @@ function NamespaceSelect({ id, className = '', isDisabled = false }: NamespaceSe
         useNamespaceFilters();
     const { namespaces, setNamespaces } = useURLNamespaces(
         selectedNamespaceFilters,
-        availableNamespaceFilters
+        availableNamespaceFilters.map((ns) => ns.id)
     );
     const dispatch = useDispatch();
 
@@ -81,14 +81,17 @@ function NamespaceSelect({ id, className = '', isDisabled = false }: NamespaceSe
         dispatch(graphActions.setSelectedNamespaceFilters(namespaces));
     }, [dispatch, namespaces]);
 
-    function onSelect(e, selected) {
-        const newSelection = selectedNamespaceFilters.find((nsFilter) => nsFilter === selected)
-            ? selectedNamespaceFilters.filter((nsFilter) => nsFilter !== selected)
-            : selectedNamespaceFilters.concat(selected);
+    function onSelect(e, selected: string | SelectOptionObject) {
+        const selectedString = typeof selected === 'string' ? selected : selected.toString();
+        const newSelection = selectedNamespaceFilters.find(
+            (nsFilter) => nsFilter === selectedString
+        )
+            ? selectedNamespaceFilters.filter((nsFilter) => nsFilter !== selectedString)
+            : selectedNamespaceFilters.concat(selectedString);
 
-        const cleanedSelection = newSelection.filter((ns) =>
-            availableNamespaceFilters.includes(ns)
-        );
+        const cleanedSelection = newSelection
+            .filter((ns) => availableNamespaceFilters.find((nsFilter) => nsFilter.id === ns))
+            .map((ns) => ns);
 
         setNamespaces(cleanedSelection);
         dispatch(graphActions.setSelectedNamespaceFilters(cleanedSelection));
@@ -99,7 +102,9 @@ function NamespaceSelect({ id, className = '', isDisabled = false }: NamespaceSe
             filterElementsWithValueProp(
                 filterValue,
                 availableNamespaceFilters.map((nsFilter) => (
-                    <SelectOption key={nsFilter} value={nsFilter} />
+                    <SelectOption key={nsFilter.id} value={nsFilter.id}>
+                        {nsFilter.name}
+                    </SelectOption>
                 ))
             ),
         [availableNamespaceFilters]
@@ -122,7 +127,9 @@ function NamespaceSelect({ id, className = '', isDisabled = false }: NamespaceSe
             hasInlineFilter
         >
             {availableNamespaceFilters.map((nsFilter) => (
-                <SelectOption key={nsFilter} value={nsFilter} />
+                <SelectOption key={nsFilter.id} value={nsFilter.id}>
+                    {nsFilter.name}
+                </SelectOption>
             ))}
         </Select>
     );

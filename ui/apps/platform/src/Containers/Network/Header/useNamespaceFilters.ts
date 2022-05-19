@@ -13,13 +13,17 @@ const selector = createStructuredSelector<SelectorState, SelectorResult>({
     selectedNamespaceFilters: selectors.getSelectedNamespaceFilters,
 });
 
+// TODO Better reuse of this type elsewhere?
+export type Namespace = {
+    id: string;
+    name: string;
+};
+
 type NamespaceMetadataResp = {
     id: string;
     results: {
         namespaces: {
-            metadata: {
-                name: string;
-            };
+            metadata: Namespace;
         }[];
     };
 };
@@ -30,6 +34,7 @@ export const NAMESPACES_FOR_CLUSTER_QUERY = gql`
             id
             namespaces {
                 metadata {
+                    id
                     name
                 }
             }
@@ -38,7 +43,7 @@ export const NAMESPACES_FOR_CLUSTER_QUERY = gql`
 `;
 
 function useNamespaceFilters() {
-    const [availableNamespaceFilters, setAvailableNamespaceFilters] = useState<string[]>([]);
+    const [availableNamespaceFilters, setAvailableNamespaceFilters] = useState<Namespace[]>([]);
     const { selectedClusterId, selectedNamespaceFilters } = useSelector<
         SelectorState,
         SelectorResult
@@ -58,7 +63,7 @@ function useNamespaceFilters() {
             return;
         }
 
-        const namespaces = data.results.namespaces.map(({ metadata }) => metadata.name);
+        const namespaces = data.results.namespaces.map(({ metadata }) => metadata);
 
         setAvailableNamespaceFilters(namespaces);
     }, [data]);

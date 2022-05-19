@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useLocation, useHistory } from 'react-router-dom';
 import isEqual from 'lodash/isEqual';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';

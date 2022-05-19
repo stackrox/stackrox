@@ -106,12 +106,12 @@ function NetworkPage({
         }
         // If the page is visited with a deployment id, we need to enable that deployment's
         // namespace filter and switch to the correct cluster
-        fetchDeployment(deploymentId).then(({ clusterId, namespace }) => {
+        fetchDeployment(deploymentId).then(({ clusterId, namespaceId }) => {
             if (clusterId !== selectedClusterId) {
                 dispatch(graphActions.selectNetworkClusterId(clusterId));
-                dispatch(graphActions.setSelectedNamespaceFilters([namespace]));
-            } else if (!selectedNamespaceFilters.includes(namespace)) {
-                const newFilters = [...selectedNamespaceFilters, namespace];
+                dispatch(graphActions.setSelectedNamespaceFilters([namespaceId]));
+            } else if (!selectedNamespaceFilters.includes(namespaceId)) {
+                const newFilters = [...selectedNamespaceFilters, namespaceId];
                 dispatch(graphActions.setSelectedNamespaceFilters(newFilters));
             }
         });
