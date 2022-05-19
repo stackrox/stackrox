@@ -388,7 +388,7 @@ func (s *serviceImpl) getGroups(_ context.Context) (interface{}, error) {
 	accessGroupsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Access)))
+			sac.ResourceScopeKeys(resources.Group)))
 
 	return s.groupDataStore.GetAll(accessGroupsCtx)
 }
@@ -403,7 +403,7 @@ func (s *serviceImpl) getRoles(_ context.Context) (interface{}, error) {
 	accessRolesCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Access)))
+			sac.ResourceScopeKeys(resources.Role)))
 
 	roles, errGetRoles := s.roleDataStore.GetAllRoles(accessRolesCtx)
 	if errGetRoles != nil {
@@ -435,7 +435,7 @@ func (s *serviceImpl) getNotifiers(_ context.Context) (interface{}, error) {
 	accessNotifierCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Integration)))
+			sac.ResourceScopeKeys(resources.Notifier)))
 
 	notifiers, err := s.notifierDataStore.GetNotifiers(accessNotifierCtx)
 	if err != nil {
@@ -452,7 +452,7 @@ func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
 	accessConfigCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration)))
+			sac.ResourceScopeKeys(resources.Config)))
 
 	return s.configDataStore.GetConfig(accessConfigCtx)
 }
