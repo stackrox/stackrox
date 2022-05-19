@@ -16,6 +16,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("NodeVulnerability",
 			append(commonVulnerabilitySubResolvers,
 				"nodeCount(query: String): Int!",
@@ -70,7 +71,7 @@ func (resolver *Resolver) NodeVulnerabilityCount(ctx context.Context, args RawQu
 
 // NodeVulnCounter returns a VulnerabilityCounterResolver for the input query.s
 func (resolver *Resolver) NodeVulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnCounter")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilityCounter")
 	if !features.PostgresDatastore.Enabled() {
 		query := withNodeTypeFiltering(args.String())
 		return resolver.vulnCounterV2(ctx, RawQuery{Query: &query})

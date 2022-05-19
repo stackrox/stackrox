@@ -17,6 +17,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("ImageVulnerability",
 			append(commonVulnerabilitySubResolvers,
 				"activeState(query: String): ActiveState",
@@ -85,7 +86,7 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 
 // ImageVulnerabilityCounter returns a VulnerabilityCounterResolver for the input query
 func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnCounter")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCounter")
 	if !features.PostgresDatastore.Enabled() {
 		query := withImageTypeFiltering(args.String())
 		return resolver.vulnCounterV2(ctx, RawQuery{Query: &query})

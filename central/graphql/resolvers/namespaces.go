@@ -22,7 +22,8 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddExtraResolvers("Namespace", []string{ // note: alphabetically ordered
+		// NOTE: This list is and should remain alphabetically ordered
+		schema.AddExtraResolvers("Namespace", []string{
 			"cluster: Cluster!",
 			"complianceResults(query: String): [ControlResult!]!",
 			"componentCount(query: String): Int!",
@@ -32,6 +33,9 @@ func init() {
 			"failingPolicyCounter(query: String): PolicyCounter",
 			"imageCount(query: String): Int!",
 			"images(query: String, pagination: Pagination): [Image!]!",
+			"imageVulnerabilityCount(query: String): Int!",
+			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
+			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!",
 			"k8sRoleCount(query: String): Int!",
 			"k8sRoles(query: String, pagination: Pagination): [K8SRole!]!",
 			"latestViolation(query: String): Time",
@@ -47,16 +51,16 @@ func init() {
 			"serviceAccountCount(query: String): Int!",
 			"serviceAccounts(query: String, pagination: Pagination): [ServiceAccount!]!",
 			"unusedVarSink(query: String): Int",
-			"vulnerabilityCount(query: String): Int!",
-			"vulnerabilityCounter(query: String): VulnerabilityCounter!",
-			"vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!",
 			"risk: Risk",
 		}),
 		// deprecated fields
 		schema.AddExtraResolvers("Namespace", []string{
-			"vulnCount(query: String): Int! @deprecated(reason: \"use 'vulnerabilityCount'\")",
-			"vulnCounter(query: String): VulnerabilityCounter! @deprecated(reason: \"use 'vulnerabilityCounter'\")",
-			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! @deprecated(reason: \"use 'vulnerabilities'\")",
+			"vulnCount(query: String): Int! " +
+				"@deprecated(reason: \"use 'imageVulnerabilityCount'\")",
+			"vulnCounter(query: String): VulnerabilityCounter! " +
+				"@deprecated(reason: \"use 'imageVulnerabilityCounter'\")",
+			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! " +
+				"@deprecated(reason: \"use 'imageVulnerabilities'\")",
 		}),
 		schema.AddQuery("namespaces(query: String, pagination: Pagination): [Namespace!]!"),
 		schema.AddQuery("namespace(id: ID!): Namespace"),
@@ -514,24 +518,24 @@ func (resolver *namespaceResolver) vulnQueryScoping(ctx context.Context) context
 	return ctx
 }
 
-func (resolver *namespaceResolver) Vulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Vulnerabilities")
+func (resolver *namespaceResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageVulnerabilities")
 
 	ctx = resolver.vulnQueryScoping(ctx)
 
 	return resolver.root.ImageVulnerabilities(ctx, args)
 }
 
-func (resolver *namespaceResolver) VulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "VulnerabilityCount")
+func (resolver *namespaceResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageVulnerabilityCount")
 
 	ctx = resolver.vulnQueryScoping(ctx)
 
 	return resolver.root.ImageVulnerabilityCount(ctx, args)
 }
 
-func (resolver *namespaceResolver) VulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "VulnerabilityCounter")
+func (resolver *namespaceResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageVulnerabilityCounter")
 
 	ctx = resolver.vulnQueryScoping(ctx)
 
