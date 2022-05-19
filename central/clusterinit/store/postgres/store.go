@@ -395,8 +395,10 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "InitBundleMeta")
 
 	var sacQueryFilter *v1.Query
-	if ok, err := permissionCheckerSingleton().ExistsAllowed(ctx); err != nil || !ok {
+	if ok, err := permissionCheckerSingleton().DeleteManyAllowed(ctx); err != nil {
 		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
 
 	q := search.ConjunctionQuery(

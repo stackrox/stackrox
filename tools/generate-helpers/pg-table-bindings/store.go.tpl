@@ -777,18 +777,20 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.TrimmedType}}")
 
     var sacQueryFilter *v1.Query
-{{- if .PermissionChecker }}
-    if ok, err := {{ .PermissionChecker }}.ExistsAllowed(ctx); err != nil || !ok {
+    {{ if .PermissionChecker -}}
+    if ok, err := {{ .PermissionChecker }}.DeleteManyAllowed(ctx); err != nil {
         return err
+    } else if !ok {
+        return sac.ErrResourceAccessDenied
     }
-{{- else if .Obj.IsGloballyScoped }}
+    {{- else if .Obj.IsGloballyScoped }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
     if ok, err := scopeChecker.Allowed(ctx); err != nil {
         return err
     } else if !ok {
-        return nil
+        return sac.ErrResourceAccessDenied
     }
-{{- else if .Obj.IsDirectlyScoped }}
+    {{- else if .Obj.IsDirectlyScoped }}
     {{ template "defineScopeChecker" "READ_WRITE" }}
     scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
     if err != nil {
@@ -802,7 +804,7 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
     if err != nil {
         return err
     }
-{{- end }}
+    {{- end }}
 
     q := search.ConjunctionQuery(
     sacQueryFilter,
