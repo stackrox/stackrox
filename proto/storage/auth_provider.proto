@@ -25,14 +25,14 @@ message AuthProvider {
     repeated string extra_ui_endpoints = 9;
     bool active                 = 10;
 
-    // RequiredAttribute allows to specify a set of attributes which are required to be returned
+    // RequiredAttribute allows to specify a set of attributes which ALL are required to be returned
     // by the auth provider.
-    // If attributes listed in RequiredAttribute are not included by the underlying IdP in the
-    // identity response together with the expected values, the authentication request to this IdP
-    // is considered failed.
+    // If any attribute is missing within the external claims of the token issued by Central, the
+    // authentication request to this IdP is considered failed.
     message RequiredAttribute {
         string attribute_key   = 1;
         string attribute_value = 2;
     }
+    // EXPERIMENTAL.
     repeated RequiredAttribute required_attributes = 11;
 }

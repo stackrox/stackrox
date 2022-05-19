@@ -165,13 +165,9 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 	if providerReq.GetLoginUrl() != "" {
 		return nil, errox.InvalidArgs.CausedBy("auth provider loginUrl field is not empty")
 	}
-	if providerReq.GetRequiredAttributes() != nil {
-		return nil, errox.InvalidArgs.CausedBy("auth provider required attributes is set, this is not allowed " +
-			"for providers created via API")
-	}
 
 	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq),
-		authproviders.WithValidateCallback(datastore.Singleton()))
+		authproviders.WithValidateCallback(datastore.Singleton()), authproviders.WithAttributeVerifier(providerReq))
 	if err != nil {
 		return nil, errox.InvalidArgs.New("unable to create an auth provider instance").CausedBy(err)
 	}
@@ -188,10 +184,6 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 		return nil, errox.NotFound.Newf("auth provider with id %q does not exist", request.GetId())
 	}
 
-	// Use the stored provider's required attributes values, if there are any, during creation. This way we
-	// can skip checks regarding required attributes and deliberately ignore values send from UI.
-	storedProvider := provider.StorageView()
-
 	// Attempt to merge configs.
 	request.Config = provider.MergeConfigInto(request.GetConfig())
 
@@ -205,7 +197,7 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 	}
 
 	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(request),
-		authproviders.WithAttributeVerifier(storedProvider),
+		authproviders.WithAttributeVerifier(request),
 		authproviders.WithValidateCallback(datastore.Singleton()))
 	if err != nil {
 		return nil, errox.InvalidArgs.New("unable to create an auth provider instance").CausedBy(err)

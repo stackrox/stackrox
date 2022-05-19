@@ -4,17 +4,14 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 	cases := map[string]struct {
-		shouldFail  bool
-		expectedErr error
-		required    []*storage.AuthProvider_RequiredAttribute
-		attributes  map[string][]string
+		shouldFail bool
+		required   []*storage.AuthProvider_RequiredAttribute
+		attributes map[string][]string
 	}{
 		"required attribute set should not fail": {
 			required: []*storage.AuthProvider_RequiredAttribute{
@@ -26,17 +23,15 @@ func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 			required: []*storage.AuthProvider_RequiredAttribute{
 				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
 			},
-			attributes:  map[string][]string{"other-attribute": {"some-value"}},
-			expectedErr: errox.NoCredentials,
-			shouldFail:  true,
+			attributes: map[string][]string{"other-attribute": {"some-value"}},
+			shouldFail: true,
 		},
 		"no attribute set should fail": {
 			required: []*storage.AuthProvider_RequiredAttribute{
 				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
 			},
-			attributes:  nil,
-			expectedErr: errox.NoCredentials,
-			shouldFail:  true,
+			attributes: nil,
+			shouldFail: true,
 		},
 		"multiple required attributes set should not fail": {
 			required: []*storage.AuthProvider_RequiredAttribute{
@@ -56,8 +51,7 @@ func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 			attributes: map[string][]string{
 				"another-required-attribute": {"another-value"},
 			},
-			expectedErr: errox.NoCredentials,
-			shouldFail:  true,
+			shouldFail: true,
 		},
 		"required attribute in map but nil value should fail": {
 			required: []*storage.AuthProvider_RequiredAttribute{
@@ -66,32 +60,28 @@ func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 			attributes: map[string][]string{
 				"required-attribute": nil,
 			},
-			expectedErr: errox.NoCredentials,
-			shouldFail:  true,
+			shouldFail: true,
 		},
 		"required attribute set but value does not match": {
 			required: []*storage.AuthProvider_RequiredAttribute{
 				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
 			},
-			attributes:  map[string][]string{"required-attribute": {"other-value"}},
-			expectedErr: errox.NoCredentials,
-			shouldFail:  true,
+			attributes: map[string][]string{"required-attribute": {"other-value"}},
+			shouldFail: true,
 		},
 		"required attribute in map but empty array value should fail": {
 			required: []*storage.AuthProvider_RequiredAttribute{
 				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
 			},
-			attributes:  map[string][]string{"required-attribute": {}},
-			expectedErr: errox.NoCredentials,
-			shouldFail:  true,
+			attributes: map[string][]string{"required-attribute": {}},
+			shouldFail: true,
 		},
 		"required attribute in map but empty string value should fail": {
 			required: []*storage.AuthProvider_RequiredAttribute{
 				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
 			},
-			attributes:  map[string][]string{"required-attribute": {""}},
-			expectedErr: errox.NoCredentials,
-			shouldFail:  true,
+			attributes: map[string][]string{"required-attribute": {""}},
+			shouldFail: true,
 		},
 	}
 
@@ -100,8 +90,7 @@ func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 			verifier := NewRequiredAttributesVerifier(c.required)
 			err := verifier.Verify(c.attributes)
 			if c.shouldFail {
-				require.Error(t, err)
-				assert.ErrorIs(t, err, c.expectedErr)
+				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
 			}

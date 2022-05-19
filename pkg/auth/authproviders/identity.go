@@ -33,13 +33,6 @@ func CreateRoleBasedIdentity(ctx context.Context, provider Provider, authResp *A
 		Attributes: authResp.Claims.Attributes,
 	}
 
-	// The attribute checker is not required for every provider, only check if set.
-	if provider.AttributeVerifier() != nil {
-		if err := provider.AttributeVerifier().Verify(ud.Attributes); err != nil {
-			return nil, err
-		}
-	}
-
 	// config might contain semi-sensitive values, so strip it
 	var authProvider *storage.AuthProvider
 	if provider.StorageView() != nil {

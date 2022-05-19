@@ -37,8 +37,9 @@ type AuthProvider struct {
 	// UI endpoints which to allow in addition to `ui_endpoint`. I.e., if a login request
 	// is coming from any of these, the auth request will use these for the callback URL,
 	// not ui_endpoint.
-	ExtraUiEndpoints     []string                          `protobuf:"bytes,9,rep,name=extra_ui_endpoints,json=extraUiEndpoints,proto3" json:"extra_ui_endpoints,omitempty"`
-	Active               bool                              `protobuf:"varint,10,opt,name=active,proto3" json:"active,omitempty"`
+	ExtraUiEndpoints []string `protobuf:"bytes,9,rep,name=extra_ui_endpoints,json=extraUiEndpoints,proto3" json:"extra_ui_endpoints,omitempty"`
+	Active           bool     `protobuf:"varint,10,opt,name=active,proto3" json:"active,omitempty"`
+	// EXPERIMENTAL.
 	RequiredAttributes   []*AuthProvider_RequiredAttribute `protobuf:"bytes,11,rep,name=required_attributes,json=requiredAttributes,proto3" json:"required_attributes,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                          `json:"-"`
 	XXX_unrecognized     []byte                            `json:"-"`
@@ -185,11 +186,10 @@ func (m *AuthProvider) Clone() *AuthProvider {
 	return cloned
 }
 
-// RequiredAttribute allows to specify a set of attributes which are required to be returned
+// RequiredAttribute allows to specify a set of attributes which ALL are required to be returned
 // by the auth provider.
-// If attributes listed in RequiredAttribute are not included by the underlying IdP in the
-// identity response together with the expected values, the authentication request to this IdP
-// is considered failed.
+// If any attribute is missing within the external claims of the token issued by Central, the
+// authentication request to this IdP is considered failed.
 type AuthProvider_RequiredAttribute struct {
 	AttributeKey         string   `protobuf:"bytes,1,opt,name=attribute_key,json=attributeKey,proto3" json:"attribute_key,omitempty"`
 	AttributeValue       string   `protobuf:"bytes,2,opt,name=attribute_value,json=attributeValue,proto3" json:"attribute_value,omitempty"`
