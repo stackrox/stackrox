@@ -18,6 +18,7 @@ var log = logging.LoggerForModule()
 
 // Interval for querying cluster metrics from Kubernetes and sending to Central.
 var defaultInterval = 5 * time.Minute
+
 // Timeout for querying cluster metrics from Kubernetes.
 var defaultTimeout = 10 * time.Second
 
