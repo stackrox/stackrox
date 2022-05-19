@@ -54,6 +54,7 @@ main() {
             echo "Cannot get $object in $namespace: $(cat "$out")"
             continue
         fi
+        cat "$out"
 
         mkdir -p "${log_dir}/${object}"
 
