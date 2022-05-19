@@ -166,7 +166,8 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 		return nil, errox.InvalidArgs.CausedBy("auth provider loginUrl field is not empty")
 	}
 
-	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq), authproviders.WithValidateCallback(datastore.Singleton()))
+	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq),
+		authproviders.WithValidateCallback(datastore.Singleton()), authproviders.WithAttributeVerifier(providerReq))
 	if err != nil {
 		return nil, errox.InvalidArgs.New("unable to create an auth provider instance").CausedBy(err)
 	}
@@ -195,7 +196,9 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 		return nil, err
 	}
 
-	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(request), authproviders.WithValidateCallback(datastore.Singleton()))
+	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(request),
+		authproviders.WithAttributeVerifier(request),
+		authproviders.WithValidateCallback(datastore.Singleton()))
 	if err != nil {
 		return nil, errox.InvalidArgs.New("unable to create an auth provider instance").CausedBy(err)
 	}
@@ -270,7 +273,6 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 		return response, nil
 	}
 
-	// We need all access for retrieving roles.
 	token, refreshCookie, err := s.registry.IssueToken(ctx, provider, authResponse)
 	if err != nil {
 		return nil, err
