@@ -185,8 +185,8 @@ function PermissionSets(): ReactElement {
                     <AccessControlHeaderActionBar
                         displayComponent={
                             <AccessControlDescription>
-                                Add predefined sets of application level permissions that users have
-                                when interacting with the platform
+                                Create predefined sets of application level permissions that users
+                                have when interacting with the platform
                             </AccessControlDescription>
                         }
                         actionComponent={

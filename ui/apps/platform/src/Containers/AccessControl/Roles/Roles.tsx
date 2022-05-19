@@ -233,7 +233,7 @@ function Roles(): ReactElement {
                     <AccessControlHeaderActionBar
                         displayComponent={
                             <AccessControlDescription>
-                                Add user roles by selecting the permission sets and access scopes
+                                Create user roles by selecting the permission sets and access scopes
                                 required for user&apos;s jobs
                             </AccessControlDescription>
                         }

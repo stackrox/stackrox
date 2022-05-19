@@ -158,7 +158,7 @@ function AccessScopes(): ReactElement {
                     <AccessControlHeaderActionBar
                         displayComponent={
                             <AccessControlDescription>
-                                Add predefined sets of authorized Kubernetes resources that users
+                                Create predefined sets of authorized Kubernetes resources that users
                                 should be able to access
                             </AccessControlDescription>
                         }
