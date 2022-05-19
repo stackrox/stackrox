@@ -403,7 +403,7 @@ func (s *serviceImpl) getRoles(_ context.Context) (interface{}, error) {
 	accessRolesCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Access)))
+			sac.ResourceScopeKeys(resources.Role)))
 
 	roles, errGetRoles := s.roleDataStore.GetAllRoles(accessRolesCtx)
 	if errGetRoles != nil {
