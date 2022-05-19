@@ -40,6 +40,7 @@ import (
     "github.com/stackrox/rox/pkg/sac"
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres"
+    "github.com/stackrox/rox/pkg/sync"
 )
 
 const (
