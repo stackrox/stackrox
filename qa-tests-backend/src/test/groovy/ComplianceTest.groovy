@@ -149,8 +149,8 @@ class ComplianceTest extends BaseSpecification {
                 new Control(
                         "HIPAA_164:310_d",
                         ["Runtime support is enabled (or collector service is running) for cluster "
-                                 + DEFAULT_CLUSTER_NAME
-                                 + ". Network visualization for active network connections is possible."],
+                                + DEFAULT_CLUSTER_NAME
+                                + ". Network visualization for active network connections is possible."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
                 new Control(
                         "HIPAA_164:310_d",
@@ -161,7 +161,7 @@ class ComplianceTest extends BaseSpecification {
                 new Control(
                         "NIST_SP_800_53_Rev_4:RA_3",
                         ['StackRox is installed in cluster "' + DEFAULT_CLUSTER_NAME +
-                                 '", and provides continuous risk assessment.'],
+                                '", and provides continuous risk assessment.'],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
         ]
         if (!ClusterService.isAKS()) { // ROX-6993
@@ -192,16 +192,16 @@ class ComplianceTest extends BaseSpecification {
                 case Control.ControlType.DEPLOYMENT:
                     result.deploymentResultsMap.each {
                         k, v ->
-                            assert v.controlResultsMap.get(control.id)?.overallState == control.state
-                            assert v.controlResultsMap.get(control.id)?.evidenceList*.message
+                        assert v.controlResultsMap.get(control.id)?.overallState == control.state
+                        assert v.controlResultsMap.get(control.id)?.evidenceList*.message
                                     .containsAll(control.evidenceMessages)
                     }
                     break
                 case Control.ControlType.NODE:
                     result.nodeResultsMap.each {
                         k, v ->
-                            assert v.controlResultsMap.get(control.id)?.overallState == control.state
-                            assert v.controlResultsMap.get(control.id)?.evidenceList*.message
+                        assert v.controlResultsMap.get(control.id)?.overallState == control.state
+                        assert v.controlResultsMap.get(control.id)?.evidenceList*.message
                                     .containsAll(control.evidenceMessages)
                     }
                     break
@@ -1069,7 +1069,7 @@ class ComplianceTest extends BaseSpecification {
         def numErrors = 0
         for (def entry in run.machineConfigResultsMap) {
             println "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
-            if (entry.value.controlResultsMap.size() > 0) {
+            if (entry.value.controlResultsMap.size()  > 0) {
                 machineConfigsWithResults++
             }
             for (def ctrlResults : entry.value.controlResultsMap.values()) {
@@ -1083,10 +1083,10 @@ class ComplianceTest extends BaseSpecification {
 
         where:
         "Data inputs are: "
-        standard                   | _
-        "ocp4-cis-node"            | _
-        "rhcos4-moderate"          | _
-        "rhcos4-moderate-modified" | _
+        standard                     | _
+        "ocp4-cis-node"              | _
+        "rhcos4-moderate"            | _
+        "rhcos4-moderate-modified"   | _
     }
 
     @Category(BAT)
@@ -1108,7 +1108,7 @@ class ComplianceTest extends BaseSpecification {
         def numErrors = 0
         for (def entry in run.machineConfigResultsMap) {
             println "Found machine config ${entry.key} with ${entry.value.controlResultsMap.size()} results"
-            if (entry.value.controlResultsMap.size() > 0) {
+            if (entry.value.controlResultsMap.size()  > 0) {
                 machineConfigsWithResults++
             }
             assert !entry.value.controlResultsMap.keySet().contains(
