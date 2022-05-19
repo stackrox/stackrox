@@ -491,7 +491,7 @@ class ComplianceTest extends BaseSpecification {
             }
             println "Verified ${verifiedRows} out of ${rowNumber} total rows"
         } catch (Exception e) {
-            println e.printStackTrace()
+            log.error("Exception", e)
         }
     }
 

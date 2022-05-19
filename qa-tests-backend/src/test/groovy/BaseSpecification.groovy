@@ -200,7 +200,6 @@ class BaseSpecification extends Specification {
         try {
             orchestrator.setup()
         } catch (Exception e) {
-            e.printStackTrace()
             log.error("Error setting up orchestrator", e)
             throw e
         }
@@ -238,7 +237,7 @@ class BaseSpecification extends Specification {
         }
         if (!coreImageIntegrationId) {
             log.warn "Could not create the core image integration."
-            println "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
+            log.warn "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
         }
 
         recordResourcesAtSpecStart()
