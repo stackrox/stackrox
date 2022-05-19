@@ -63,7 +63,7 @@ func mustGetCommandLineArgs() (time.Duration, string) {
 	if len(os.Args) != 3 {
 		fmt.Println("USAGE:")
 		fmt.Println("  local-sensor <minutes> <output file path>")
-		log.Fatalf("Incorrect number of arguments, expected 2 but found: %d", len(os.Args) - 1)
+		log.Fatalf("Incorrect number of arguments, expected 2 but found: %d", len(os.Args)-1)
 	}
 
 	i, err := strconv.Atoi(os.Args[1])
@@ -75,7 +75,7 @@ func mustGetCommandLineArgs() (time.Duration, string) {
 }
 
 func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, outfile string) {
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
@@ -85,7 +85,6 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 		os.Exit(0)
 	}()
 }
-
 
 // Args:
 //   local-sensor <minutes> <output file path>
@@ -98,12 +97,13 @@ func main() {
 	scenarioDuration, outfile := mustGetCommandLineArgs()
 
 	fakeClient, err := k8s.MakeOutOfClusterClient()
+	utils.CrashOnError(err)
 
 	startTime := time.Now()
-	os.Setenv("ROX_MTLS_CERT_FILE", "tools/local-sensor/certs/cert.pem")
-	os.Setenv("ROX_MTLS_KEY_FILE", "tools/local-sensor/certs/key.pem")
-	os.Setenv("ROX_MTLS_CA_FILE", "tools/local-sensor/certs/caCert.pem")
-	os.Setenv("ROX_MTLS_CA_KEY_FILE", "tools/local-sensor/certs/caKey.pem")
+	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "tools/local-sensor/certs/cert.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "tools/local-sensor/certs/key.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "tools/local-sensor/certs/caCert.pem"))
+	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", "tools/local-sensor/certs/caKey.pem"))
 
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
 		message.SensorHello("1234"),
@@ -112,7 +112,7 @@ func main() {
 		message.BaselineSync([]*storage.ProcessBaseline{}))
 
 	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
-		// log.Printf("MESSAGE RECEIVED: %s\n", msg.String())
+		log.Printf("MESSAGE RECEIVED: %s\n", msg.String())
 	})
 
 	registerHostKillSignals(startTime, fakeCentral, outfile)
@@ -140,16 +140,16 @@ func main() {
 	spyCentral.KillSwitch.Signal()
 }
 
-type SensorMessagesOut struct {
-	ScenarioStart string `json:"scenario_start"`
-	ScenarioEnd string `json:"scenario_end"`
+type sensorMessagesJSONOutput struct {
+	ScenarioStart      string                   `json:"scenario_start"`
+	ScenarioEnd        string                   `json:"scenario_end"`
 	MessagesFromSensor []*central.MsgFromSensor `json:"messages_from_sensor"`
 }
 
 func dumpMessages(messages []*central.MsgFromSensor, start, end time.Time, outfile string) {
 	dateFormat := "02.01.15 11:06:39"
 	log.Printf("Dumping all sensor messages to file: %s\n", outfile)
-	data, err := json.Marshal(&SensorMessagesOut{
+	data, err := json.Marshal(&sensorMessagesJSONOutput{
 		ScenarioStart:      start.Format(dateFormat),
 		ScenarioEnd:        end.Format(dateFormat),
 		MessagesFromSensor: messages,
@@ -157,4 +157,3 @@ func dumpMessages(messages []*central.MsgFromSensor, start, end time.Time, outfi
 	utils.CrashOnError(err)
 	utils.CrashOnError(ioutil.WriteFile(outfile, data, 0644))
 }
-
