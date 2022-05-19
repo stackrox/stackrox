@@ -16,6 +16,11 @@ function getExpirationMessageType(daysLeft: number): 'info' | 'danger' | 'warnin
     return 'danger';
 }
 
+const nameOfComponent: Record<CertExpiryComponent, string> = {
+    CENTRAL: 'Central',
+    SCANNER: 'Scanner',
+};
+
 type CredentialExpiryProps = {
     component: CertExpiryComponent;
     hasServiceIdentityWritePermission: boolean;
@@ -37,7 +42,7 @@ function CredentialExpiryBanner({
                 // Either way, we don't want to spam the logimbue service
 
                 // eslint-disable-next-line no-console
-                console.warn(`Failed to fetch certification expiration for ${component}.`, e);
+                console.warn(`Failed to fetch certification expiration for ${component}`, e);
             });
     });
 
@@ -54,9 +59,10 @@ function CredentialExpiryBanner({
             download this YAML file
         </Button>
     );
+    const name = nameOfComponent[component];
     const message = (
         <span className="flex-1 text-center">
-            {component} certificate expires in {distanceInWordsStrict(expirationDate, now)} on{' '}
+            {name} certificate expires in {distanceInWordsStrict(expirationDate, now)} on{' '}
             {format(expirationDate, 'MMMM D, YYYY')} (at {format(expirationDate, 'h:mm a')}).{' '}
             {hasServiceIdentityWritePermission ? (
                 <>To use renewed certificates, {downloadLink} and apply it to your cluster.</>
