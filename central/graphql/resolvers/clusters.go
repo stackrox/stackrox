@@ -27,7 +27,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("PolicyStatus", []string{"status: String!", "failingPolicies: [Policy!]!"}),
-		schema.AddExtraResolvers("Cluster", []string{
+		schema.AddExtraResolvers("Cluster", []string{ // note: alphabetically ordered
 			"alerts(query: String, pagination: Pagination): [Alert!]!",
 			"alertCount(query: String): Int!",
 			"latestViolation(query: String): Time",
@@ -54,21 +54,15 @@ func init() {
 			"imageCount(query: String): Int!",
 			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
 			"componentCount(query: String): Int!",
-			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!",
-			"vulnCount(query: String): Int!",
-			"vulnCounter(query: String): VulnerabilityCounter!",
 			`nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!`,
 			`nodeVulnerabilityCount(query: String): Int!`,
 			`nodeVulnerabilityCounter(query: String): VulnerabilityCounter!`,
 			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!",
 			"imageVulnerabilityCount(query: String): Int!",
 			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
-			"k8sVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!",
-			"k8sVulnCount(query: String): Int!",
-			"istioVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!",
-			"istioVulnCount(query: String): Int!",
-			"openShiftVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!",
-			"openShiftVulnCount(query: String): Int!",
+			"clusterVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ClusterVulnerability!]!",
+			"clusterVulnerabilityCount(query: String): Int!",
+			"clusterVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"policies(query: String, pagination: Pagination): [Policy!]!",
 			"policyCount(query: String): Int!",
 			"policyStatus(query: String): PolicyStatus!",
@@ -85,6 +79,27 @@ func init() {
 			"unusedVarSink(query: String): Int",
 			"istioEnabled: Boolean!",
 			"plottedVulns(query: String): PlottedVulnerabilities!",
+		}),
+		// deprecated fields
+		schema.AddExtraResolvers("Cluster", []string{
+			"vulnCount(query: String): Int! " +
+				"@deprecated(reason: \"use 'imageVulnerabilityCount' or 'nodeVulnerabilityCount'\")",
+			"vulnCounter(query: String): VulnerabilityCounter! " +
+				"@deprecated(reason: \"use 'imageVulnerabilityCounter' or 'nodeVulnerabilityCounter'\")",
+			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! " +
+				"@deprecated(reason: \"use 'imageVulnerabilities' or 'nodeVulnerabilities'\")",
+			"k8sVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]! " +
+				"@deprecated(reason: \"use 'clusterVulnerabilities'\")",
+			"k8sVulnCount(query: String): Int! " +
+				"@deprecated(reason: \"use 'clusterVulnerabilityCount'\")",
+			"istioVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]! " +
+				"@deprecated(reason: \"use 'clusterVulnerabilities'\")",
+			"istioVulnCount(query: String): Int!" +
+				"@deprecated(reason: \"use 'clusterVulnerabilityCount'\")",
+			"openShiftVulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]! " +
+				"@deprecated(reason: \"use 'clusterVulnerabilities'\")",
+			"openShiftVulnCount(query: String): Int! " +
+				"@deprecated(reason: \"use 'clusterVulnerabilityCount'\")",
 		}),
 		schema.AddQuery("clusters(query: String, pagination: Pagination): [Cluster!]!"),
 		schema.AddQuery("clusterCount(query: String): Int!"),
@@ -626,6 +641,30 @@ func (resolver *clusterResolver) ImageVulnerabilityCounter(ctx context.Context, 
 	ctx, query := resolver.vulnQueryScoping(ctx, args.String())
 
 	return resolver.root.ImageVulnerabilityCounter(ctx, RawQuery{Query: &query})
+}
+
+func (resolver *clusterResolver) ClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ClusterVulnerabilities")
+
+	ctx, query := resolver.vulnQueryScoping(ctx, args.String())
+
+	return resolver.root.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+}
+
+func (resolver *clusterResolver) ClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ClusterVulnerabilityCount")
+
+	ctx, query := resolver.vulnQueryScoping(ctx, args.String())
+
+	return resolver.root.ClusterVulnerabilityCount(ctx, RawQuery{Query: &query})
+}
+
+func (resolver *clusterResolver) ClusterVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ClusterVulnerabilityCounter")
+
+	ctx, query := resolver.vulnQueryScoping(ctx, args.String())
+
+	return resolver.root.ClusterVulnerabilityCounter(ctx, RawQuery{Query: &query})
 }
 
 func (resolver *clusterResolver) K8sVulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
