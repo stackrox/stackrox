@@ -80,7 +80,9 @@ class StoreArtifacts(RunWithBestEffortMixin):
         self.handle_run_failure()
 
     def store_artifacts(self, test_output_dirs):
-        for source in test_output_dirs + self.data_to_store:
+        if test_output_dirs is not None:
+            self.data_to_store = test_output_dirs + self.data_to_store
+        for source in self.data_to_store:
             args = ["scripts/ci/store-artifacts.sh", "store_artifacts", source]
             if self.artifact_destination_prefix:
                 args.append(
@@ -283,8 +285,8 @@ class FinalPost(StoreArtifacts):
         if self._store_qa_spock_results:
             self.data_to_store.append(PostTestsConstants.QA_SPOCK_RESULTS)
 
-    def run(self, test_output_dirs=None):
-        self.store_artifacts(test_output_dirs)
+    def run(self):
+        self.store_artifacts()
         self.fixup_artifacts_content_type()
         self.make_artifacts_help()
         self.handle_run_failure()
