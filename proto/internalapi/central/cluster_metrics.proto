@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+package central;
+
+message ClusterMetrics {
+    int64 node_count = 1;
+    int64 cpu_capacity = 2;
+}

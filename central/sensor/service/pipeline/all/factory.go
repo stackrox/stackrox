@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/alerts"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/auditlogstateupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterhealthupdate"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/clustermetrics"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterstatusupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorprofiles"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/complianceoperatorresults"
@@ -55,6 +56,7 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		imageintegrations.GetPipeline(),
 		clusterstatusupdate.GetPipeline(),
 		clusterhealthupdate.GetPipeline(),
+		clustermetrics.GetPipeline(),
 		serviceaccounts.GetPipeline(),
 		roles.GetPipeline(),
 		rolebindings.GetPipeline(),
