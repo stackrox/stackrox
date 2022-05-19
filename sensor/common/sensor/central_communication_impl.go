@@ -174,6 +174,7 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	hdr := metautils.NiceMD(rawHdr)
 	if hdr.Get(centralsensor.SensorHelloMetadataKey) == "true" {
 		// Yay, central supports the "sensor hello" protocol!
+		log.Info("@@@@ SENDING THE HELLO MESSAGE @@@@")
 		err := stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: hello}})
 		if err != nil {
 			return errors.Wrap(err, "sending SensorHello message to central")
