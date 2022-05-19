@@ -231,7 +231,7 @@ install_metrics_server_and_deactivate() {
     echo "Waiting for metrics.k8s.io to be in kubectl API resources..."
     local success=0
     for i in $(seq 1 10); do
-        if kubectl api-resources | grep metrics.k8s.io; then
+        if kubectl api-resources 2>&1 | sed -e 's/^/out: /' | grep metrics.k8s.io; then
             success=1
             break
         fi
@@ -253,7 +253,7 @@ install_metrics_server_and_deactivate() {
         fi
         echo "metrics.k8s.io still in API resources. Will try again..."
         cat stdout.out
-        cat stderr.out
+        sed -e 's/^/out: /' < stderr.out # (prefix output to avoid triggering prow log focus)
         sleep 5
     done
     [[ "$success" -eq 1 ]]
