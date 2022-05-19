@@ -66,7 +66,7 @@ describe('Access Control Auth providers', () => {
         cy.get(selectors.navLinkCurrent).should('have.text', h2);
 
         cy.contains(selectors.h2, /^\d+ results? found$/).should('exist');
-        cy.get(selectors.list.addButton).should('have.text', 'Create auth provider');
+        cy.get(selectors.list.createButton).should('have.text', 'Create auth provider');
 
         cy.get(`${selectors.list.th}:contains("Name")`);
         cy.get(`${selectors.list.th}:contains("Type")`);
@@ -79,8 +79,8 @@ describe('Access Control Auth providers', () => {
 
         const type = 'Auth0';
 
-        cy.get(selectors.list.addButton).click();
-        cy.get(`${selectors.list.authProviders.addDropdownItem}:contains("${type}")`).click();
+        cy.get(selectors.list.createButton).click();
+        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
@@ -112,8 +112,8 @@ describe('Access Control Auth providers', () => {
 
         const type = 'OpenID Connect';
 
-        cy.get(selectors.list.addButton).click();
-        cy.get(`${selectors.list.authProviders.addDropdownItem}:contains("${type}")`).click();
+        cy.get(selectors.list.createButton).click();
+        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
@@ -209,8 +209,8 @@ describe('Access Control Auth providers', () => {
 
         const type = 'SAML 2.0';
 
-        cy.get(selectors.list.addButton).click();
-        cy.get(`${selectors.list.authProviders.addDropdownItem}:contains("${type}")`).click();
+        cy.get(selectors.list.createButton).click();
+        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
@@ -262,8 +262,8 @@ describe('Access Control Auth providers', () => {
 
         const type = 'User Certificates';
 
-        cy.get(selectors.list.addButton).click();
-        cy.get(`${selectors.list.authProviders.addDropdownItem}:contains("${type}")`).click();
+        cy.get(selectors.list.createButton).click();
+        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
@@ -306,8 +306,8 @@ describe('Access Control Auth providers', () => {
 
         const type = 'Google IAP';
 
-        cy.get(selectors.list.addButton).click();
-        cy.get(`${selectors.list.authProviders.addDropdownItem}:contains("${type}")`).click();
+        cy.get(selectors.list.createButton).click();
+        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
