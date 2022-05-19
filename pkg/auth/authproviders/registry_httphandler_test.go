@@ -13,12 +13,12 @@ import (
 	"testing"
 	"time"
 
-	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	perm "github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
@@ -63,7 +63,9 @@ func (s *registryProviderCallbackTestSuite) SetupTest() {
 	}
 	s.ctx = context.Background()
 	s.err = s.registry.RegisterBackendFactory(s.ctx, dummyProviderType, newTestAuthProviderBackendFactory)
-	s.assert.Equal(nil, s.err, "backend registration at SetupTest should not trigger errors")
+	s.assert.NoError(s.err, "backend registration at SetupTest should not trigger errors")
+	s.err = s.registry.RegisterBackendFactory(s.ctx, dummyAttributeVerifierProviderType, newTestAuthProviderBackendFactory)
+	s.Assert().NoError(s.err, "backend registration at SetupTest should not trigger errors")
 	s.err = s.registry.Init()
 	s.assert.Equal(nil, s.err, "registry initialization at SetupTest should not trigger errors")
 	s.writer = httptest.NewRecorder()
@@ -137,8 +139,6 @@ func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendParseReturnsE
 	// Explicitely generate an empty auth response to trigger identity creation error
 	var authResponse *AuthResponse
 	testAuthProviderBackend.registerProcessHTTPResponse(authResponse, nil)
-	identityCreationError := errors.New("authentication response is empty")
-	identityCreationError = pkgErrors.Wrap(identityCreationError, "cannot create role based identity")
 	s.registry.providersHTTPHandler(s.writer, req)
 	s.assert.Equal(303, s.writer.Code, "invalid input for identity creation should trigger redirect")
 	responseHeaders := s.writer.Header()
@@ -146,7 +146,7 @@ func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendParseReturnsE
 	redirectURLFragments, _ := url.ParseQuery(redirectURL.Fragment)
 	s.assert.Equal(s.registry.redirectURL, redirectURL.Path, "invalid input for identity creation "+
 		"should redirect to the registry redirect URL")
-	s.assert.Equal(identityCreationError.Error(), redirectURLFragments.Get("error"),
+	s.assert.Equal(errox.NoCredentials.CausedBy("authentication response is empty").Error(), redirectURLFragments.Get("error"),
 		"provider callback should propagate the identity creation error if any")
 }
 
@@ -264,6 +264,54 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationIssuesTokenForUser
 		"callback activated for user with valid roles should issue a token")
 }
 
+func (s *registryProviderCallbackTestSuite) TestAuthenticationVerifyRequiredAttributes() {
+	urlPrefix := s.registry.providersURLPrefix()
+	req, _ := http.NewRequest(http.MethodGet, urlPrefix+dummyAttributeVerifierProviderType+"/callback", strings.NewReader(""))
+	clientState := idputil.AttachTestStateOrEmpty("", false)
+	testAuthProviderBackendFactory.registerProcessResponse(dummyAttributeVerifierProviderType, clientState, nil)
+	authRsp := generateAuthResponse(testUserWithAdminRole, map[string][]string{
+		"name": {"something"},
+	})
+	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
+	adminRole := roletest.NewResolvedRoleWithDenyAll(testUserWithAdminRole, nil)
+	rolemapping := make(map[string][]perm.ResolvedRole)
+	rolemapping[testUserWithAdminRole] = []perm.ResolvedRole{adminRole}
+	testRoleMapper.registerRoleMapping(rolemapping)
+	s.registry.providersHTTPHandler(s.writer, req)
+	s.assert.Equal(303, s.writer.Code, "callback activated for user with valid roles should trigger redirect")
+	responseHeaders := s.writer.Header()
+	redirectURL, _ := url.Parse(responseHeaders.Get("Location"))
+	redirectURLFragments, _ := url.ParseQuery(redirectURL.Fragment)
+	s.assert.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated for user without role "+
+		"should redirect to the registry redirect URL")
+	s.assert.Equal(testDummyTokenData, redirectURLFragments.Get("token"),
+		"callback activated for user with valid roles should issue a token")
+}
+
+func (s *registryProviderCallbackTestSuite) TestAuthenticationMissingRequiredAttributes() {
+	urlPrefix := s.registry.providersURLPrefix()
+	req, _ := http.NewRequest(http.MethodGet, urlPrefix+dummyAttributeVerifierProviderType+"/callback", strings.NewReader(""))
+	clientState := idputil.AttachTestStateOrEmpty("", false)
+	testAuthProviderBackendFactory.registerProcessResponse(dummyAttributeVerifierProviderType, clientState, nil)
+	authRsp := generateAuthResponse(testUserWithAdminRole, map[string][]string{
+		"name": {"something-else"},
+	})
+	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
+	adminRole := roletest.NewResolvedRoleWithDenyAll(testUserWithAdminRole, nil)
+	rolemapping := make(map[string][]perm.ResolvedRole)
+	rolemapping[testUserWithAdminRole] = []perm.ResolvedRole{adminRole}
+	testRoleMapper.registerRoleMapping(rolemapping)
+	s.registry.providersHTTPHandler(s.writer, req)
+	s.assert.Equal(303, s.writer.Code, "callback activated for user with valid roles should trigger redirect")
+	responseHeaders := s.writer.Header()
+	redirectURL, _ := url.Parse(responseHeaders.Get("Location"))
+	redirectURLFragments, _ := url.ParseQuery(redirectURL.Fragment)
+	s.assert.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated for user with valid roles "+
+		"should redirect to the registry redirect URL")
+	s.assert.Equal(errox.NoCredentials.CausedBy("required attribute \"name\" did not have the required value").Error(), redirectURLFragments.Get("error"),
+		"callback activated for user without role should issue an explicit message")
+}
+
 /*****************************************************
 * Elements needed for the tests                      *
 * - AuthResponse generator                           *
@@ -274,6 +322,26 @@ const dummyProviderType = "dummy"
 const testUserWithoutRole = "testUserWithoutRole"
 const testUserWithAdminRole = "testUserWithAdminRole"
 const testDummyTokenData = "dummy test token"
+const dummyAttributeVerifierProviderType = "dummyAttributeVerifier"
+
+var mockAuthProviderWithAttributes = &storage.AuthProvider{
+	Id:               dummyAttributeVerifierProviderType,
+	Name:             "dummy auth provider with attribute verifier",
+	Type:             dummyAttributeVerifierProviderType,
+	UiEndpoint:       "",
+	Enabled:          true,
+	Config:           nil,
+	LoginUrl:         "",
+	Validated:        true,
+	ExtraUiEndpoints: []string{},
+	RequiredAttributes: []*storage.AuthProvider_RequiredAttribute{
+		{
+			AttributeKey:   "name",
+			AttributeValue: "something",
+		},
+	},
+	Active: true,
+}
 
 var mockAuthProvider = &storage.AuthProvider{
 	Id:               dummyProviderType,
@@ -304,7 +372,7 @@ func generateAuthResponse(user string, userAttr map[string][]string) *AuthRespon
 type tstAuthProviderStore struct{}
 
 func (*tstAuthProviderStore) GetAllAuthProviders(_ context.Context) ([]*storage.AuthProvider, error) {
-	return []*storage.AuthProvider{mockAuthProvider}, nil
+	return []*storage.AuthProvider{mockAuthProvider, mockAuthProviderWithAttributes}, nil
 }
 
 func (*tstAuthProviderStore) AddAuthProvider(_ context.Context, _ *storage.AuthProvider) error {

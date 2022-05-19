@@ -1,4 +1,9 @@
-import { AuthProvider, AuthProviderConfig, Group } from 'services/AuthService';
+import {
+    AuthProvider,
+    AuthProviderConfig,
+    AuthProviderRequiredAttributes,
+    Group,
+} from 'services/AuthService';
 
 export type DisplayedAuthProvider = AuthProvider & {
     do_not_use_client_secret?: boolean;
@@ -82,8 +87,26 @@ export function getInitialAuthProviderValues(authProvider: AuthProvider): Displa
 }
 
 export function transformValuesBeforeSaving(
-    values: Record<string, string | string[] | boolean | AuthProviderConfig | Group[] | undefined>
-): Record<string, string | string[] | boolean | AuthProviderConfig | Group[] | undefined> {
+    values: Record<
+        string,
+        | string
+        | string[]
+        | boolean
+        | AuthProviderConfig
+        | AuthProviderRequiredAttributes[]
+        | Group[]
+        | undefined
+    >
+): Record<
+    string,
+    | string
+    | string[]
+    | boolean
+    | AuthProviderConfig
+    | AuthProviderRequiredAttributes[]
+    | Group[]
+    | undefined
+> {
     if (values.type === 'oidc') {
         const alteredConfig = { ...(values.config as AuthProviderConfig) };
 
