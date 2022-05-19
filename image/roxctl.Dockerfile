@@ -1,6 +1,6 @@
 FROM registry.access.redhat.com/ubi8-minimal:latest AS certs
 
-FROM scratch
+FROM registry.access.redhat.com/ubi8-minimal:latest
 
 COPY . .
 RUN ls -l
