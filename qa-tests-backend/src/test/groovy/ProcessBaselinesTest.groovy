@@ -268,7 +268,6 @@ class ProcessBaselinesTest extends BaseSpecification {
                 break
              }
          }
-        System.out.println("numAlertsAfterResolve .. " + numAlertsAfterResolve)
         assert (numAlertsAfterResolve  == expectedViolationsCount)
 
         cleanup:
