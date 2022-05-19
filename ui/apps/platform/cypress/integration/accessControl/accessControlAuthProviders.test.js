@@ -66,7 +66,7 @@ describe('Access Control Auth providers', () => {
         cy.get(selectors.navLinkCurrent).should('have.text', h2);
 
         cy.contains(selectors.h2, /^\d+ results? found$/).should('exist');
-        cy.get(selectors.list.addButton).should('have.text', 'Add auth provider');
+        cy.get(selectors.list.addButton).should('have.text', 'Create auth provider');
 
         cy.get(`${selectors.list.th}:contains("Name")`);
         cy.get(`${selectors.list.th}:contains("Type")`);
@@ -84,12 +84,12 @@ describe('Access Control Auth providers', () => {
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
 
-        cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
+        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -117,12 +117,12 @@ describe('Access Control Auth providers', () => {
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
 
-        cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
+        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -214,12 +214,12 @@ describe('Access Control Auth providers', () => {
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
 
-        cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
+        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -267,12 +267,12 @@ describe('Access Control Auth providers', () => {
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
 
-        cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
+        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
 
         getInputByLabel('Name').should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)
@@ -311,12 +311,12 @@ describe('Access Control Auth providers', () => {
 
         cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
         cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Add auth provider")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
 
-        cy.get(selectors.h2).should('have.text', `Add new ${type} auth provider`);
+        cy.get(selectors.h2).should('have.text', `Create ${type} provider`);
 
         cy.get(selectors.form.inputName).should('be.enabled').should('have.attr', 'required');
         cy.get(selectors.form.authProvider.selectAuthProviderType)

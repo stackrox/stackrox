@@ -239,7 +239,7 @@ function Roles(): ReactElement {
                         }
                         actionComponent={
                             <Button variant="primary" onClick={handleCreate}>
-                                Add role
+                                Create role
                             </Button>
                         }
                     />
@@ -247,7 +247,7 @@ function Roles(): ReactElement {
             ) : (
                 <AccessControlBreadcrumbs
                     entityType={entityType}
-                    entityName={action === 'create' ? 'Add role' : role?.name}
+                    entityName={action === 'create' ? 'Create role' : role?.name}
                     isDisabled={hasAction}
                     isList={isList}
                 />

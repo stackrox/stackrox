@@ -164,7 +164,7 @@ function AccessScopes(): ReactElement {
                         }
                         actionComponent={
                             <Button variant="primary" onClick={handleCreate}>
-                                Add access scope
+                                Create access scope
                             </Button>
                         }
                     />
@@ -172,7 +172,7 @@ function AccessScopes(): ReactElement {
             ) : (
                 <AccessControlBreadcrumbs
                     entityType={entityType}
-                    entityName={action === 'create' ? 'Add access scope' : accessScope?.name}
+                    entityName={action === 'create' ? 'Create access scope' : accessScope?.name}
                     isDisabled={hasAction}
                     isList={isList}
                 />

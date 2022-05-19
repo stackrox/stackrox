@@ -191,7 +191,7 @@ function PermissionSets(): ReactElement {
                         }
                         actionComponent={
                             <Button variant="primary" onClick={handleCreate}>
-                                Add permission set
+                                Create permission set
                             </Button>
                         }
                     />
@@ -199,7 +199,7 @@ function PermissionSets(): ReactElement {
             ) : (
                 <AccessControlBreadcrumbs
                     entityType={entityType}
-                    entityName={action === 'create' ? 'Add permission set' : permissionSet?.name}
+                    entityName={action === 'create' ? 'Create permission set' : permissionSet?.name}
                     isDisabled={hasAction}
                     isList={isList}
                 />

@@ -56,7 +56,7 @@ const authProviderState = createStructuredSelector({
 function getNewAuthProviderTitle(type, availableProviderTypes) {
     const selectedType = availableProviderTypes.find(({ value }) => value === type);
 
-    return `Add new ${selectedType?.label as string} auth provider`;
+    return `Create ${selectedType?.label as string} provider`;
 }
 
 function getRuleAttributes(type, availableProviderTypes) {
