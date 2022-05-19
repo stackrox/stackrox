@@ -122,7 +122,7 @@ check_for_stackrox_restarts() {
     if [[ -n "$previous_logs" ]]; then
         echo >&2 "Previous logs found"
         # shellcheck disable=SC2086
-        if ! scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME}" $previous_logs; then
+        if ! scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME:-${CIRCLE_JOB}}" $previous_logs; then
             exit 1
         fi
     fi
