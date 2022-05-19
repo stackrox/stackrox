@@ -2,7 +2,6 @@ package sensor
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -219,13 +218,10 @@ func (s *Sensor) Start() {
 
 	select {
 	case <-okSig.Done():
-		fmt.Println("Done!")
 	case <-errSig.Done():
 		s.stoppedSig.SignalWithErrorWrap(errSig.Err(), "getting connection from connection factory")
-		fmt.Println("Stopped")
 		return
 	case <-s.stoppedSig.Done():
-		fmt.Println("Stopped")
 		return
 	}
 	go s.communicationWithCentral(&centralReachable)
