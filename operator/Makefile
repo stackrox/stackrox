@@ -227,11 +227,11 @@ validate-crs:
 
 test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test
+	KUTTL=$(KUTTL) ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test
 
 test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on cluster.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	SKIP_MANAGER_START=1 $(KUTTL) test
+	KUTTL=$(KUTTL) SKIP_MANAGER_START=1 $(KUTTL) test
 
 test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
