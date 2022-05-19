@@ -20,33 +20,16 @@ import (
 // 9 *storage.Pod scoped to Cluster2, 3 to each Namespace A / B / C.
 // 9 *storage.Pod scoped to Cluster3, 3 to each Namespace A / B / C.
 func GetSACTestStoragePodSet(scopedStoragePodCreator func(id string, clusterID string, namespace string) *storage.Pod) []*storage.Pod {
-	return []*storage.Pod{
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceC),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceC),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceC),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceA),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceA),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceA),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceA),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceA),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceA),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceC),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceC),
-		scopedStoragePodCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceC),
+	clusters := []string{testconsts.Cluster1, testconsts.Cluster2, testconsts.Cluster3}
+	namespaces := []string{testconsts.NamespaceA, testconsts.NamespaceB, testconsts.NamespaceC}
+	const numberOfAccounts = 3
+	storagePods := make([]*storage.Pod, 0, len(clusters)*len(namespaces)*numberOfAccounts)
+	for _, cluster := range clusters {
+		for _, namespace := range namespaces {
+			for i := 0; i < numberOfAccounts; i++ {
+				storagePods = append(storagePods, scopedStoragePodCreator(uuid.NewV4().String(), cluster, namespace))
+			}
+		}
 	}
+	return storagePods
 }

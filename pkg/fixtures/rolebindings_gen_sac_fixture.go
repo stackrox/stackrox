@@ -20,33 +20,16 @@ import (
 // 9 *storage.K8SRoleBinding scoped to Cluster2, 3 to each Namespace A / B / C.
 // 9 *storage.K8SRoleBinding scoped to Cluster3, 3 to each Namespace A / B / C.
 func GetSACTestStorageK8SRoleBindingSet(scopedStorageK8SRoleBindingCreator func(id string, clusterID string, namespace string) *storage.K8SRoleBinding) []*storage.K8SRoleBinding {
-	return []*storage.K8SRoleBinding{
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceC),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceC),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceC),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceA),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceA),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceA),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceA),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceA),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceA),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceC),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceC),
-		scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceC),
+	clusters := []string{testconsts.Cluster1, testconsts.Cluster2, testconsts.Cluster3}
+	namespaces := []string{testconsts.NamespaceA, testconsts.NamespaceB, testconsts.NamespaceC}
+	const numberOfAccounts = 3
+	storageK8SRoleBindings := make([]*storage.K8SRoleBinding, 0, len(clusters)*len(namespaces)*numberOfAccounts)
+	for _, cluster := range clusters {
+		for _, namespace := range namespaces {
+			for i := 0; i < numberOfAccounts; i++ {
+				storageK8SRoleBindings = append(storageK8SRoleBindings, scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), cluster, namespace))
+			}
+		}
 	}
+	return storageK8SRoleBindings
 }

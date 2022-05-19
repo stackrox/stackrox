@@ -20,33 +20,16 @@ import (
 // 9 *storage.ServiceAccount scoped to Cluster2, 3 to each Namespace A / B / C.
 // 9 *storage.ServiceAccount scoped to Cluster3, 3 to each Namespace A / B / C.
 func GetSACTestStorageServiceAccountSet(scopedStorageServiceAccountCreator func(id string, clusterID string, namespace string) *storage.ServiceAccount) []*storage.ServiceAccount {
-	return []*storage.ServiceAccount{
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceC),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceC),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceC),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceA),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceA),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceA),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceA),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceA),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceA),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceC),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceC),
-		scopedStorageServiceAccountCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceC),
+	clusters := []string{testconsts.Cluster1, testconsts.Cluster2, testconsts.Cluster3}
+	namespaces := []string{testconsts.NamespaceA, testconsts.NamespaceB, testconsts.NamespaceC}
+	const numberOfAccounts = 3
+	storageServiceAccounts := make([]*storage.ServiceAccount, 0, len(clusters)*len(namespaces)*numberOfAccounts)
+	for _, cluster := range clusters {
+		for _, namespace := range namespaces {
+			for i := 0; i < numberOfAccounts; i++ {
+				storageServiceAccounts = append(storageServiceAccounts, scopedStorageServiceAccountCreator(uuid.NewV4().String(), cluster, namespace))
+			}
+		}
 	}
+	return storageServiceAccounts
 }

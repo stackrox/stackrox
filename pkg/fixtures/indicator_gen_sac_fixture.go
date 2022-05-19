@@ -20,33 +20,16 @@ import (
 // 9 *storage.ProcessIndicator scoped to Cluster2, 3 to each Namespace A / B / C.
 // 9 *storage.ProcessIndicator scoped to Cluster3, 3 to each Namespace A / B / C.
 func GetSACTestStorageProcessIndicatorSet(scopedStorageProcessIndicatorCreator func(id string, clusterID string, namespace string) *storage.ProcessIndicator) []*storage.ProcessIndicator {
-	return []*storage.ProcessIndicator{
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceB),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceC),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceC),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceC),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceA),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceA),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceA),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceC),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceA),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceA),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceA),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceC),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceC),
-		scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceC),
+	clusters := []string{testconsts.Cluster1, testconsts.Cluster2, testconsts.Cluster3}
+	namespaces := []string{testconsts.NamespaceA, testconsts.NamespaceB, testconsts.NamespaceC}
+	const numberOfAccounts = 3
+	storageProcessIndicators := make([]*storage.ProcessIndicator, 0, len(clusters)*len(namespaces)*numberOfAccounts)
+	for _, cluster := range clusters {
+		for _, namespace := range namespaces {
+			for i := 0; i < numberOfAccounts; i++ {
+				storageProcessIndicators = append(storageProcessIndicators, scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), cluster, namespace))
+			}
+		}
 	}
+	return storageProcessIndicators
 }
