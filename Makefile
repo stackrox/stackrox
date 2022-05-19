@@ -513,10 +513,11 @@ $(CURDIR)/image/rhel/bundle.tar.gz:
 
 .PHONY: $(CURDIR)/image/rhel/Dockerfile.gen
 $(CURDIR)/image/rhel/Dockerfile.gen:
+	ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 	LABEL_VERSION=$(TAG) \
 	LABEL_RELEASE=$(TAG) \
 	QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
-	envsubst '$${LABEL_VERSION} $${LABEL_RELEASE} $${QUAY_TAG_EXPIRATION}' \
+	envsubst '$${ROX_IMAGE_FLAVOR} $${LABEL_VERSION} $${LABEL_RELEASE} $${QUAY_TAG_EXPIRATION}' \
 	< $(CURDIR)/image/rhel/Dockerfile.envsubst > $(CURDIR)/image/rhel/Dockerfile.gen
 
 .PHONY: docker-build-main-image
@@ -525,7 +526,6 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image cent
 	docker build \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
-		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
 		--file image/rhel/Dockerfile.gen \
 		image/rhel
@@ -618,8 +618,14 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 $(CURDIR)/image/postgres/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
 
+.PHONY: $(CURDIR)/image/postgres/Dockerfile.gen
+$(CURDIR)/image/postgres/Dockerfile.gen:
+	ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
+	envsubst '$${ROX_IMAGE_FLAVOR}' \
+	< $(CURDIR)/image/postgres/Dockerfile.envsubst > $(CURDIR)/image/postgres/Dockerfile.gen
+
 .PHONY: central-db-image
-central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz
+central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz $(CURDIR)/image/postgres/Dockerfile.gen
 	docker build \
 		-t stackrox/central-db:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG) \

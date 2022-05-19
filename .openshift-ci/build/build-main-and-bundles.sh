@@ -118,7 +118,6 @@ cleanup_image() {
 }
 
 build_main_and_bundles() {
-
     # avoid a -dirty tag
     info "Reset to remove Dockerfile modification by OpenShift CI"
     git restore .
@@ -135,6 +134,9 @@ build_main_and_bundles() {
 
     info "Make the main image Dockerfile"
     make "$ROOT/image/rhel/Dockerfile.gen"
+
+    info "Make the central-db image Dockerfile"
+    make "$ROOT/image/postgres/Dockerfile.gen"
 
     background_build_ui
     build_cli
