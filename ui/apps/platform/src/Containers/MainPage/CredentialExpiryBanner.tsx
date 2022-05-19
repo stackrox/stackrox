@@ -44,7 +44,7 @@ function CredentialExpiryBanner({
     if (!expirationDate) {
         return null;
     }
-    const now = new Date();
+    const now = new Date(); // is this an impure side effect?
     const type = getExpirationMessageType(differenceInDays(expirationDate, now));
     if (type === 'info') {
         return null;
