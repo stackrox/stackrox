@@ -22,6 +22,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import services.BaseService
 import services.ClusterService
+import services.FeatureFlagService
 import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
@@ -205,12 +206,16 @@ class BaseSpecification extends Specification {
         }
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-        try {
-            def response = SACService.addAuthPlugin()
-            pluginConfigID = response.getId()
-            println response.toString()
-        } catch (StatusRuntimeException e) {
-            log.error("Unable to enable the authz plugin, defaulting to basic auth", e)
+        if (FeatureFlagService.isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE')) {
+            log.info("Postgres datastore enabled. Do not enable authz plugin. Use built in plugin instead.")
+        } else {
+            try {
+                def response = SACService.addAuthPlugin()
+                pluginConfigID = response.getId()
+                println response.toString()
+            } catch (StatusRuntimeException e) {
+                log.error("Unable to enable the authz plugin, defaulting to basic auth", e)
+            }
         }
 
         coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
