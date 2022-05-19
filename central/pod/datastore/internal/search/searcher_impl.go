@@ -17,7 +17,7 @@ import (
 
 var (
 	podsSACSearchHelper         = sac.ForResource(resources.Deployment).MustCreateSearchHelper(mappings.OptionsMap)
-	podsSACPostgresSearchHelper = sac.ForResource(resources.Deployment).MustCreatePgSearchHelper(mappings.OptionsMap)
+	podsSACPostgresSearchHelper = sac.ForResource(resources.Deployment).MustCreatePgSearchHelper()
 
 	defaultSortOption = &v1.QuerySortOption{
 		Field:    search.DeploymentID.String(),

@@ -211,11 +211,9 @@ type pgSearchHelper struct {
 }
 
 // NewPgSearchHelper returns a new search helper for the given resource.
-func NewPgSearchHelper(resourceMD permissions.ResourceMetadata, optionsMap search.OptionsMap,
-	factory scopeCheckerFactory) (SearchHelper, error) {
+func NewPgSearchHelper(resourceMD permissions.ResourceMetadata, factory scopeCheckerFactory) (SearchHelper, error) {
 	return &pgSearchHelper{
 		resourceMD:          resourceMD,
-		optionsMap:          optionsMap,
 		scopeCheckerFactory: factory,
 	}, nil
 }
