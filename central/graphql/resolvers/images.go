@@ -34,21 +34,24 @@ func registerImageWatchStatus(s string) string {
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddExtraResolvers("Image", []string{
-			"deployments(query: String, pagination: Pagination): [Deployment!]!",
+		schema.AddExtraResolvers("Image", []string{ // note: alphabetically ordered
+			"componentCount(query: String): Int!",
+			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
 			"deploymentCount(query: String): Int!",
+			"deployments(query: String, pagination: Pagination): [Deployment!]!",
+			"plottedVulns(query: String): PlottedVulnerabilities!",
 			"topVuln(query: String): EmbeddedVulnerability",
-			"vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!",
+			"unusedVarSink(query: String): Int",
 			"vulnerabilityCount(query: String): Int!",
 			"vulnerabilityCounter(query: String): VulnerabilityCounter!",
-			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]!",
-			"vulnCount(query: String): Int!",
-			"vulnCounter(query: String): VulnerabilityCounter!",
-			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
-			`componentCount(query: String): Int!`,
-			`unusedVarSink(query: String): Int`,
-			"plottedVulns(query: String): PlottedVulnerabilities!",
+			"vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!",
 			"watchStatus: ImageWatchStatus!",
+		}),
+		// deprecated fields
+		schema.AddExtraResolvers("Image", []string{
+			"vulnCount(query: String): Int! @deprecated(reason: \"use 'vulnerabilityCount'\")",
+			"vulnCounter(query: String): VulnerabilityCounter! @deprecated(reason: \"use 'vulnerabilityCounter'\")",
+			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! @deprecated(reason: \"use 'vulnerabilities'\")",
 		}),
 		schema.AddQuery("images(query: String, pagination: Pagination): [Image!]!"),
 		schema.AddQuery("imageCount(query: String): Int!"),

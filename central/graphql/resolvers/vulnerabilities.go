@@ -50,13 +50,20 @@ func init() {
 			"vulnerabilityState: String!",
 			"effectiveVulnerabilityRequest: VulnerabilityRequest",
 		}),
-		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
-		schema.AddQuery("vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
-		schema.AddQuery("vulnerabilityCount(query: String): Int!"),
-		schema.AddQuery("k8sVulnerability(id: ID): EmbeddedVulnerability"),
-		schema.AddQuery("k8sVulnerabilities(query: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
-		schema.AddQuery("istioVulnerability(id: ID): EmbeddedVulnerability"),
-		schema.AddQuery("istioVulnerabilities(query: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
+		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability "+
+			"@deprecated(reason: \"use 'imageVulnerability' or 'nodeVulnerability'\")"),
+		schema.AddQuery("vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]! "+
+			"@deprecated(reason: \"use 'imageVulnerabilities' or 'nodeVulnerabilities'\")"),
+		schema.AddQuery("vulnerabilityCount(query: String): Int! "+
+			"@deprecated(reason: \"use 'imageVulnerabilityCount' or 'nodeVulnerabilityCount'\")"),
+		schema.AddQuery("k8sVulnerability(id: ID): EmbeddedVulnerability "+
+			"@deprecated(reason: \"use 'clusterVulnerability'\")"),
+		schema.AddQuery("k8sVulnerabilities(query: String, pagination: Pagination): [EmbeddedVulnerability!]! "+
+			"@deprecated(reason: \"use 'clusterVulnerabilities'\")"),
+		schema.AddQuery("istioVulnerability(id: ID): EmbeddedVulnerability "+
+			"@deprecated(reason: \"use 'clusterVulnerability'\")"),
+		schema.AddQuery("istioVulnerabilities(query: String, pagination: Pagination): [EmbeddedVulnerability!]! "+
+			"@deprecated(reason: \"use 'clusterVulnerabilities'\")"),
 		schema.AddExtraResolver("EmbeddedVulnerability", `unusedVarSink(query: String): Int`),
 	)
 }
