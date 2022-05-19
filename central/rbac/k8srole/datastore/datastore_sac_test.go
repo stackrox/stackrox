@@ -2,18 +2,18 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/blevesearch/bleve"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
 	pgStore "github.com/stackrox/rox/central/rbac/k8srole/internal/store/postgres"
 	rdbStore "github.com/stackrox/rox/central/rbac/k8srole/internal/store/rocksdb"
-	"github.com/stackrox/rox/central/rbac/k8srole/mappings"
-	"github.com/stackrox/rox/central/rbac/k8srole/search"
+	k8sRoleMappings "github.com/stackrox/rox/central/rbac/k8srole/mappings"
+	k8sRoleSearch "github.com/stackrox/rox/central/rbac/k8srole/search"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -37,12 +38,13 @@ type k8sRoleSACSuite struct {
 
 	pool *pgxpool.Pool
 
-	engine *rocksdb.RocksDB
-	index  bleve.Index
+	engine     *rocksdb.RocksDB
+	index      bleve.Index
+	optionsMap search.OptionsMap
 
 	storage store.Store
 	indexer index.Indexer
-	search  search.Searcher
+	search  k8sRoleSearch.Searcher
 
 	testContexts   map[string]context.Context
 	testK8sRoleIDs []string
@@ -61,18 +63,19 @@ func (s *k8sRoleSACSuite) SetupSuite() {
 		pgStore.Destroy(ctx, s.pool)
 		s.storage = pgStore.New(ctx, s.pool)
 		s.indexer = pgStore.NewIndexer(s.pool)
+		s.optionsMap = schema.K8srolesSchema.OptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp("k8sRoleSACTest")
 		s.Require().NoError(err)
 		bleveIndex, err := globalindex.MemOnlyIndex()
 		s.Require().NoError(err)
 		s.index = bleveIndex
-
+		s.optionsMap = k8sRoleMappings.OptionsMap
 		s.storage = rdbStore.New(s.engine)
 		s.indexer = index.New(s.index)
 	}
 
-	s.search = search.New(s.storage, s.indexer)
+	s.search = k8sRoleSearch.New(s.storage, s.indexer)
 	s.datastore, err = New(s.storage, s.indexer, s.search)
 	s.Require().NoError(err)
 
@@ -102,8 +105,6 @@ func (s *k8sRoleSACSuite) SetupTest() {
 	for _, rb := range k8sRoles {
 		s.testK8sRoleIDs = append(s.testK8sRoleIDs, rb.GetId())
 	}
-
-	fmt.Println(s.testK8sRoleIDs)
 }
 
 func (s *k8sRoleSACSuite) TearDownTest() {
@@ -336,15 +337,11 @@ func (s *k8sRoleSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, mappings.OptionsMap)
+	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
 func (s *k8sRoleSACSuite) TestScopedSearch() {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Not implemented!")
-	}
-
 	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
@@ -353,10 +350,6 @@ func (s *k8sRoleSACSuite) TestScopedSearch() {
 }
 
 func (s *k8sRoleSACSuite) TestUnrestrictedSearch() {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Not implemented!")
-	}
-
 	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
@@ -365,10 +358,6 @@ func (s *k8sRoleSACSuite) TestUnrestrictedSearch() {
 }
 
 func (s *k8sRoleSACSuite) TestScopeSearchRaw() {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Not implemented!")
-	}
-
 	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchRawTest(c)
@@ -377,10 +366,6 @@ func (s *k8sRoleSACSuite) TestScopeSearchRaw() {
 }
 
 func (s *k8sRoleSACSuite) TestUnrestrictedSearchRaw() {
-	if features.PostgresDatastore.Enabled() {
-		s.T().Skip("Not implemented!")
-	}
-
 	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchRawTest(c)
