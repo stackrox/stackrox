@@ -217,10 +217,10 @@ func (s *Sensor) Start() {
 	errSig := s.centralConnectionFactory.StopSignal()
 
 	select {
-	case <-okSig.Done():
 	case <-errSig.Done():
 		s.stoppedSig.SignalWithErrorWrap(errSig.Err(), "getting connection from connection factory")
 		return
+	case <-okSig.Done():
 	case <-s.stoppedSig.Done():
 		return
 	}
