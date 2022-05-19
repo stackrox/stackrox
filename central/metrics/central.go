@@ -164,6 +164,20 @@ var (
 		Help:      "Time taken to fully process an event from Kubernetes",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Action", "Resource", "Dispatcher"})
+
+	clusterMetricsNodeCountGaugeVec = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "cluster_metrics_node_count",
+		Help:      "Number of nodes in a secured cluster",
+	}, []string{"ClusterID"})
+
+	clusterMetricsCPUCapacityGaugeVec = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "cluster_metrics_cpu_capacity",
+		Help:      "Total Kubernetes cpu capacity of all nodes in a secured cluster",
+	}, []string{"ClusterID"})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -177,12 +191,14 @@ func SetBoltOperationDurationTime(start time.Time, op metrics.Op, t string) {
 
 // SetRocksDBOperationDurationTime times how long a particular rocksdb operation took on a particular resource
 func SetRocksDBOperationDurationTime(start time.Time, op metrics.Op, t string) {
-	rocksDBOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
+	rocksDBOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).
+		Observe(startTimeToMS(start))
 }
 
 // SetPostgresOperationDurationTime times how long a particular postgres operation took on a particular resource
 func SetPostgresOperationDurationTime(start time.Time, op metrics.Op, t string) {
-	postgresOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
+	postgresOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).
+		Observe(startTimeToMS(start))
 }
 
 // SetAcquireDBConnDuration times how long it took the database pool to acquire a connection
@@ -192,12 +208,14 @@ func SetAcquireDBConnDuration(start time.Time, op metrics.Op, t string) {
 
 // SetDackboxOperationDurationTime times how long a particular dackbox operation took on a particular resource
 func SetDackboxOperationDurationTime(start time.Time, op metrics.Op, t string) {
-	dackboxOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
+	dackboxOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).
+		Observe(startTimeToMS(start))
 }
 
 // SetGraphQLOperationDurationTime times how long a particular graphql API took on a particular resource
 func SetGraphQLOperationDurationTime(start time.Time, resolver metrics.Resolver, op string) {
-	graphQLOperationHistogramVec.With(prometheus.Labels{"Resolver": resolver.String(), "Operation": op}).Observe(startTimeToMS(start))
+	graphQLOperationHistogramVec.With(prometheus.Labels{"Resolver": resolver.String(), "Operation": op}).
+		Observe(startTimeToMS(start))
 }
 
 // SetGraphQLQueryDurationTime times how long a particular graphql API took on a particular resource
@@ -212,7 +230,8 @@ func SetSensorEventRunDuration(start time.Time, t, action string) {
 
 // SetIndexOperationDurationTime times how long a particular index operation took on a particular resource
 func SetIndexOperationDurationTime(start time.Time, op metrics.Op, t string) {
-	indexOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
+	indexOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).
+		Observe(startTimeToMS(start))
 }
 
 // IncrementSensorEventQueueCounter increments the counter for the passed operation
@@ -242,7 +261,8 @@ func IncrementTotalNetworkEndpointsReceivedCounter(clusterID string, numberOfEnd
 
 // ObserveRiskProcessingDuration adds an observation for risk processing duration.
 func ObserveRiskProcessingDuration(startTime time.Time, riskObjectType string) {
-	riskProcessingHistogramVec.With(prometheus.Labels{"Risk_Reprocessor": riskObjectType}).Observe(startTimeToMS(startTime))
+	riskProcessingHistogramVec.With(prometheus.Labels{"Risk_Reprocessor": riskObjectType}).
+		Observe(startTimeToMS(startTime))
 }
 
 // IncrementDBCacheCounter is a counter for how many times a DB cache hits and misses
@@ -252,7 +272,8 @@ func IncrementDBCacheCounter(op string, t string) {
 
 // SetDatastoreFunctionDuration is a histogram for datastore function timing
 func SetDatastoreFunctionDuration(start time.Time, resourceType, function string) {
-	datastoreFunctionDurationHistogramVec.With(prometheus.Labels{"Type": resourceType, "Function": function}).Observe(startTimeToMS(start))
+	datastoreFunctionDurationHistogramVec.With(prometheus.Labels{"Type": resourceType, "Function": function}).
+		Observe(startTimeToMS(start))
 }
 
 // SetFunctionSegmentDuration times a specific segment within a function
@@ -263,4 +284,12 @@ func SetFunctionSegmentDuration(start time.Time, segment string) {
 // SetResourceProcessingDuration is the duration from sensor ingestion to Central processing
 func SetResourceProcessingDuration(event *central.SensorEvent) {
 	metrics.SetResourceProcessingDurationForEvent(k8sObjectProcessingDuration, event, "")
+}
+
+// SetClusterMetrics sets cluster metrics to the values that have been collected by Sensor.
+func SetClusterMetrics(clusterID string, clusterMetrics *central.ClusterMetrics) {
+	clusterMetricsNodeCountGaugeVec.With(prometheus.Labels{"ClusterID": clusterID}).
+		Set(float64(clusterMetrics.GetNodeCount()))
+	clusterMetricsCPUCapacityGaugeVec.With(prometheus.Labels{"ClusterID": clusterID}).
+		Set(float64(clusterMetrics.GetCpuCapacity()))
 }
