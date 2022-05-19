@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -56,6 +57,10 @@ type Store interface {
 
 type storeImpl struct {
 	db *pgxpool.Pool
+
+	// Lock since copyFrom requires a delete first before being executed we can get in odd states if
+	// multiple processes are trying to work on the same subsets of rows.
+	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -225,6 +230,9 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TestGrandChild1) er
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestGrandChild1) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "TestGrandChild1")
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
