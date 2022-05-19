@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -16,7 +17,14 @@ func parseReferencesAndInjectPeerSchemas(schema *walker.Schema, refs []string) (
 	schemasByObjType := make(map[string]*walker.Schema, len(refs))
 	parsedRefs = make([]parsedReference, 0, len(refs))
 	for _, ref := range refs {
-		refTable, refObjType := stringutils.Split2(ref, ":")
+		var refTable, refObjType string
+		if strings.Contains(ref, ":") {
+			refTable, refObjType = stringutils.Split2(ref, ":")
+		} else {
+			refObjType = ref
+			refTable = pgutils.NamingStrategy.TableName(stringutils.GetAfter(refObjType, "."))
+		}
+
 		refMsgType := proto.MessageType(refObjType)
 		if refMsgType == nil {
 			log.Fatalf("could not find message for type: %s", refObjType)
