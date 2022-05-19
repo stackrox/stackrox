@@ -99,6 +99,9 @@ class ReconciliationTest extends BaseSpecification {
         Deployment sensorDeployment = new Deployment().setNamespace("stackrox").setName("sensor")
 
         List<AlertOuterClass.ListAlert> violations
+        Deployment busyboxDeployment
+        String secretID
+        String networkPolicyID
 
         def ns = "reconciliation"
         // Deploy a new resource of each type
@@ -113,10 +116,10 @@ class ReconciliationTest extends BaseSpecification {
             addStackroxImagePullSecret(ns)
 
             // Wait is builtin
-            def secretID = orchestrator.createSecret("testing123", ns)
+            secretID = orchestrator.createSecret("testing123", ns)
             SecretService.waitForSecret(secretID, 10)
 
-            Deployment dep = new Deployment()
+            busyboxDeployment = new Deployment()
                     .setNamespace(ns)
                     .setName("testing123")
                     .setImage("quay.io/rhacs-eng/qa:busybox")
@@ -125,9 +128,9 @@ class ReconciliationTest extends BaseSpecification {
                     .setCommand(["sleep", "600"])
 
             // Wait is builtin
-            orchestrator.createDeployment(dep)
-            assert Services.waitForDeployment(dep)
-            assert Services.getPods().findAll { it.deploymentId == dep.getDeploymentUid() }.size() == 1
+            orchestrator.createDeployment(busyboxDeployment)
+            assert Services.waitForDeployment(busyboxDeployment)
+            assert Services.getPods().findAll { it.deploymentId == busyboxDeployment.getDeploymentUid() }.size() == 1
 
             violations = getViolationsWithTimeout("testing123",
                     "Secure Shell (ssh) Port Exposed", 30)
@@ -137,17 +140,16 @@ class ReconciliationTest extends BaseSpecification {
                     .setNamespace(ns)
                     .addPodSelector()
                     .addPolicyType(NetworkPolicyTypes.INGRESS)
-            def networkPolicyID = orchestrator.applyNetworkPolicy(policy)
+            networkPolicyID = orchestrator.applyNetworkPolicy(policy)
             assert NetworkPolicyService.waitForNetworkPolicy(networkPolicyID)
 
             orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
 
-            def labels = ["app": "sensor"]
-            orchestrator.waitForAllPodsToBeRemoved("stackrox", labels)
+            orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"])
 
             orchestrator.identity {
                 // Delete objects from k8s
-                deleteDeployment(dep)
+                deleteDeployment(busyboxDeployment)
                 deleteSecret("testing123", ns)
                 deleteNetworkPolicy(policy)
             }
@@ -176,8 +178,8 @@ class ReconciliationTest extends BaseSpecification {
         Timer t = new Timer(retries, interval)
         int numDeployments, numPods, numNamespaces, numNetworkPolicies, numSecrets
         while (t.IsValid()) {
-            numDeployments = Services.getDeployments().findAll { it.name == dep.getName() }.size()
-            numPods = Services.getPods().findAll { it.deploymentId == dep.getDeploymentUid() }.size()
+            numDeployments = Services.getDeployments().findAll { it.name == busyboxDeployment.getName() }.size()
+            numPods = Services.getPods().findAll { it.deploymentId == busyboxDeployment.getDeploymentUid() }.size()
             numNamespaces = NamespaceService.getNamespaces().findAll { it.metadata.name == ns }.size()
             numNetworkPolicies = NetworkPolicyService.getNetworkPolicies().findAll { it.id == networkPolicyID }.size()
             numSecrets = SecretService.getSecrets().findAll { it.id == secretID }.size()

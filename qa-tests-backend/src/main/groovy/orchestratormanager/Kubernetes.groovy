@@ -2245,6 +2245,10 @@ class Kubernetes implements OrchestratorMain {
         log.debug "create admission controllers stub: ${config}"
     }
 
+    /**
+     * Creates namespace.
+     * Note that createNamespace does not provision service account.
+     */
     String createNamespace(String ns) {
         return evaluateWithRetry(2, 3) {
             Namespace namespace = newNamespace(ns)
