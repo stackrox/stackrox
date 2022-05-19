@@ -553,10 +553,9 @@ func RunDeleteRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.P
 	}
 
 	queryStr := query.String()
-	rows, err := db.Query(context.Background(), replaceVars(queryStr), query.Data...)
+	_, err = db.Exec(context.Background(), replaceVars(queryStr), query.Data...)
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
 	return nil
 }
