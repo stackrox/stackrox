@@ -79,7 +79,7 @@ class StoreArtifacts(RunWithBestEffortMixin):
         self.store_artifacts(test_output_dirs)
         self.handle_run_failure()
 
-    def store_artifacts(self, test_output_dirs):
+    def store_artifacts(self, test_output_dirs=None):
         if test_output_dirs is not None:
             self.data_to_store = test_output_dirs + self.data_to_store
         for source in self.data_to_store:
