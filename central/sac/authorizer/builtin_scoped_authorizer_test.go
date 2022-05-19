@@ -540,28 +540,27 @@ func TestEffectiveAccessScope(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-
 			scc := newGlobalScopeCheckerCore(clusters, namespaces, tc.roles, nil)
 			// Checks on the global level SCC scope extraction
-			globalEAS, err := scc.EffectiveAccessScope(tc.resource)
-			assert.Equal(t, errNoGlobalEffectiveAccessScope, err)
-			assert.Nil(t, globalEAS)
+			checkEffectiveAccessScope(t, scc, tc.resource, tc.resultEAS)
 			// Checks on the access mode level SCC scope extraction
 			scc = scc.SubScopeChecker(sac.AccessModeScopeKey(tc.resource.Access))
-			accessEAS, err := scc.EffectiveAccessScope(tc.resource)
-			assert.Equal(t, errNoGlobalEffectiveAccessScope, err)
-			assert.Nil(t, accessEAS)
+			checkEffectiveAccessScope(t, scc, tc.resource, tc.resultEAS)
 			// Checks on the (access, resource) level SCC scope extraction
-			scc = scc.SubScopeChecker(sac.ResourceScopeKey(tc.resource.Resource.String()))
-			resourceEAS, err := scc.EffectiveAccessScope(tc.resource)
-			assert.Nil(t, err)
-			compactExpectedEAS := tc.resultEAS.Compactify()
-			compactActualEAS := resourceEAS.Compactify()
-			assert.Equal(t, len(compactExpectedEAS), len(compactActualEAS))
-			for clusterID := range compactExpectedEAS {
-				assert.ElementsMatch(t, compactExpectedEAS[clusterID], compactActualEAS[clusterID])
-			}
+			scc = scc.SubScopeChecker(sac.ResourceScopeKey(tc.resource.Resource.GetResource()))
+			checkEffectiveAccessScope(t, scc, tc.resource, tc.resultEAS)
 		})
+	}
+}
+
+func checkEffectiveAccessScope(t *testing.T, scc sac.ScopeCheckerCore, resource permissions.ResourceWithAccess, expectedEas *effectiveaccessscope.ScopeTree) {
+	actualEas, err := scc.EffectiveAccessScope(resource)
+	assert.Nil(t, err)
+	compactExpectedEAS := expectedEas.Compactify()
+	compactActualEAS := actualEas.Compactify()
+	assert.Equal(t, len(compactExpectedEAS), len(compactActualEAS))
+	for clusterID := range compactExpectedEAS {
+		assert.ElementsMatch(t, compactExpectedEAS[clusterID], compactActualEAS[clusterID])
 	}
 }
 
