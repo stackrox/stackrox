@@ -3,6 +3,8 @@ FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.35
 ARG ROX_PRODUCT_BRANDING
 ENV ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
 
-WORKDIR /go/src/github.com/stackrox/stackrox
+RUN pwd
+RUN ls -l
 
-RUN ./.openshift-ci/build/build-main-and-bundles.sh
+RUN cd /go/src/github.com/stackrox/stackrox && \
+    ./.openshift-ci/build/build-main-and-bundles.sh
