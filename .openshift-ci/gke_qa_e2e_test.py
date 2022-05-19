@@ -25,8 +25,6 @@ ClusterTestSetsRunner(
             "test": QaE2eTestPart1(),
             "post_test": PostClusterTest(
                 check_stackrox_logs=True,
-                store_qa_test_debug_logs=False,
-                store_qa_spock_results=False,
                 artifact_destination_prefix="part-1",
             ),
         },
@@ -35,8 +33,6 @@ ClusterTestSetsRunner(
             "test": QaE2eTestPart2(),
             "post_test": PostClusterTest(
                 check_stackrox_logs=True,
-                store_qa_test_debug_logs=True,
-                store_qa_spock_results=True,
                 artifact_destination_prefix="part-2",
             ),
         },
@@ -50,5 +46,8 @@ ClusterTestSetsRunner(
             "always_run": False,
         },
     ],
-    final_post=FinalPost(),
+    final_post=FinalPost(
+        store_qa_test_debug_logs=True,
+        store_qa_spock_results=True,
+    ),
 ).run()

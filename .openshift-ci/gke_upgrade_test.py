@@ -18,5 +18,8 @@ ClusterTestRunner(
     pre_test=PreSystemTests(),
     test=UpgradeTest(),
     post_test=PostClusterTest(),
-    final_post=FinalPost(),
+    final_post=FinalPost(
+        store_qa_test_debug_logs=True,
+        store_qa_spock_results=True,
+    ),
 ).run()

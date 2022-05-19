@@ -101,14 +101,10 @@ class PostClusterTest(StoreArtifacts):
     def __init__(
         self,
         check_stackrox_logs=False,
-        store_qa_test_debug_logs=False,
-        store_qa_spock_results=False,
         artifact_destination_prefix=None,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._check_stackrox_logs = check_stackrox_logs
-        self._store_qa_test_debug_logs = store_qa_test_debug_logs
-        self._store_qa_spock_results = store_qa_spock_results
         self.k8s_namespaces = ["stackrox", "stackrox-operator", "proxies", "squid"]
         self.openshift_namespaces = [
             "openshift-dns",
@@ -118,10 +114,6 @@ class PostClusterTest(StoreArtifacts):
             "openshift-controller-manager",
         ]
         self.central_is_responsive = False
-        if self._store_qa_test_debug_logs:
-            self.data_to_store.append(PostTestsConstants.QA_TEST_DEBUG_LOGS)
-        if self._store_qa_spock_results:
-            self.data_to_store.append(PostTestsConstants.QA_SPOCK_RESULTS)
 
     def run(self, test_output_dirs=None):
         self.central_is_responsive = self.wait_for_central_api()
@@ -274,8 +266,25 @@ class CheckStackroxLogs(StoreArtifacts):
         )
 
 
-class FinalPost(RunWithBestEffortMixin):
-    def run(self):
+class FinalPost(StoreArtifacts):
+    """Collect logs that accumulate over multiple tests and other final steps"""
+
+    def __init__(
+        self,
+        store_qa_test_debug_logs=False,
+        store_qa_spock_results=False,
+        artifact_destination_prefix="final",
+    ):
+        super().__init__(artifact_destination_prefix=artifact_destination_prefix)
+        self._store_qa_test_debug_logs = store_qa_test_debug_logs
+        self._store_qa_spock_results = store_qa_spock_results
+        if self._store_qa_test_debug_logs:
+            self.data_to_store.append(PostTestsConstants.QA_TEST_DEBUG_LOGS)
+        if self._store_qa_spock_results:
+            self.data_to_store.append(PostTestsConstants.QA_SPOCK_RESULTS)
+
+    def run(self, test_output_dirs=None):
+        self.store_artifacts(test_output_dirs)
         self.fixup_artifacts_content_type()
         self.make_artifacts_help()
         self.handle_run_failure()
