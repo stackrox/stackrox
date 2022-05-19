@@ -1,14 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
+import React, { ReactElement, useEffect, useState } from 'react';
 import { differenceInDays, distanceInWordsStrict, format } from 'date-fns';
 import { Banner, Button } from '@patternfly/react-core';
 
-import { selectors } from 'reducers';
-import { getHasReadWritePermission } from 'reducers/roles';
+import { generateCertSecretForComponent } from 'services/CertGenerationService';
+import { fetchCertExpiryForComponent } from 'services/CredentialExpiryService';
+import { CertExpiryComponent } from 'types/credentialExpiryService.proto';
 
-const getExpirationMessageType = (daysLeft) => {
+function getExpirationMessageType(daysLeft: number): 'info' | 'danger' | 'warning' {
     if (daysLeft > 14) {
         return 'info';
     }
@@ -16,17 +14,25 @@ const getExpirationMessageType = (daysLeft) => {
         return 'warning';
     }
     return 'danger';
+}
+
+const nameOfComponent: Record<CertExpiryComponent, string> = {
+    CENTRAL: 'Central',
+    SCANNER: 'Scanner',
 };
 
-const CredentialExpiry = ({
+type CredentialExpiryProps = {
+    component: CertExpiryComponent;
+    hasServiceIdentityWritePermission: boolean;
+};
+
+function CredentialExpiryBanner({
     component,
-    expiryFetchFunc,
-    userRolePermissions,
-    downloadYAMLFunc,
-}) => {
-    const [expirationDate, setExpirationDate] = useState(null);
+    hasServiceIdentityWritePermission,
+}: CredentialExpiryProps): ReactElement | null {
+    const [expirationDate, setExpirationDate] = useState('');
     useEffect(() => {
-        expiryFetchFunc()
+        fetchCertExpiryForComponent(component)
             .then((expiry) => {
                 setExpirationDate(expiry);
             })
@@ -36,30 +42,27 @@ const CredentialExpiry = ({
                 // Either way, we don't want to spam the logimbue service
 
                 // eslint-disable-next-line no-console
-                console.warn(`Problem checking the certification expiration for ${component}.`, e);
+                console.warn(`Failed to fetch certification expiration for ${component}`, e);
             });
-    }, [expiryFetchFunc, component]);
+    });
 
     if (!expirationDate) {
         return null;
     }
-    const now = new Date();
+    const now = new Date(); // is this an impure side effect?
     const type = getExpirationMessageType(differenceInDays(expirationDate, now));
     if (type === 'info') {
         return null;
     }
-    const hasServiceIdentityWritePermission = getHasReadWritePermission(
-        'ServiceIdentity',
-        userRolePermissions
-    );
     const downloadLink = (
-        <Button variant="link" isInline onClick={downloadYAMLFunc}>
+        <Button variant="link" isInline onClick={() => generateCertSecretForComponent(component)}>
             download this YAML file
         </Button>
     );
+    const name = nameOfComponent[component];
     const message = (
         <span className="flex-1 text-center">
-            {component} certificate expires in {distanceInWordsStrict(expirationDate, now)} on{' '}
+            {name} certificate expires in {distanceInWordsStrict(expirationDate, now)} on{' '}
             {format(expirationDate, 'MMMM D, YYYY')} (at {format(expirationDate, 'h:mm a')}).{' '}
             {hasServiceIdentityWritePermission ? (
                 <>To use renewed certificates, {downloadLink} and apply it to your cluster.</>
@@ -74,23 +77,6 @@ const CredentialExpiry = ({
             {message}
         </Banner>
     );
-};
+}
 
-CredentialExpiry.propTypes = {
-    component: PropTypes.string.isRequired,
-    expiryFetchFunc: PropTypes.func.isRequired,
-    userRolePermissions: PropTypes.shape({
-        resourceToAccess: PropTypes.shape({}),
-    }),
-    downloadYAMLFunc: PropTypes.func.isRequired,
-};
-
-CredentialExpiry.defaultProps = {
-    userRolePermissions: null,
-};
-
-const mapStateToProps = createStructuredSelector({
-    userRolePermissions: selectors.getUserRolePermissions,
-});
-
-export default connect(mapStateToProps, null)(CredentialExpiry);
+export default CredentialExpiryBanner;
