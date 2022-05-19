@@ -18,18 +18,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ApitokensStoreSuite struct {
+type TokenMetadataStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestApitokensStore(t *testing.T) {
-	suite.Run(t, new(ApitokensStoreSuite))
+func TestTokenMetadataStore(t *testing.T) {
+	suite.Run(t, new(TokenMetadataStoreSuite))
 }
 
-func (s *ApitokensStoreSuite) SetupTest() {
+func (s *TokenMetadataStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -52,14 +52,14 @@ func (s *ApitokensStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *ApitokensStoreSuite) TearDownTest() {
+func (s *TokenMetadataStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *ApitokensStoreSuite) TestStore() {
+func (s *TokenMetadataStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store

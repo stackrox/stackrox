@@ -23,14 +23,14 @@ import (
 )
 
 const (
-	baseTable = "apitokens"
+	baseTable = "token_metadata"
 
-	getStmt     = "SELECT serialized FROM apitokens WHERE Id = $1"
-	deleteStmt  = "DELETE FROM apitokens WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM apitokens"
-	getManyStmt = "SELECT serialized FROM apitokens WHERE Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM token_metadata WHERE Id = $1"
+	deleteStmt  = "DELETE FROM token_metadata WHERE Id = $1"
+	walkStmt    = "SELECT serialized FROM token_metadata"
+	getManyStmt = "SELECT serialized FROM token_metadata WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM apitokens WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM token_metadata WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -42,7 +42,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ApitokensSchema
+	schema         = pkgSchema.TokenMetadataSchema
 	targetResource = resources.Integration
 )
 
@@ -69,14 +69,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableApitokensStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTokenMetadataStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoApitokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetadata) error {
+func insertIntoTokenMetadata(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -89,7 +89,7 @@ func insertIntoApitokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetad
 		serialized,
 	}
 
-	finalStr := "INSERT INTO apitokens (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO token_metadata (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func insertIntoApitokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetad
 	return nil
 }
 
-func (s *storeImpl) copyFromApitokens(ctx context.Context, tx pgx.Tx, objs ...*storage.TokenMetadata) error {
+func (s *storeImpl) copyFromTokenMetadata(ctx context.Context, tx pgx.Tx, objs ...*storage.TokenMetadata) error {
 
 	inputRows := [][]interface{}{}
 
@@ -146,7 +146,7 @@ func (s *storeImpl) copyFromApitokens(ctx context.Context, tx pgx.Tx, objs ...*s
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"apitokens"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"token_metadata"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -172,7 +172,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TokenMetadata
 		return err
 	}
 
-	if err := s.copyFromApitokens(ctx, tx, objs...); err != nil {
+	if err := s.copyFromTokenMetadata(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -197,7 +197,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TokenMetadata) 
 			return err
 		}
 
-		if err := insertIntoApitokens(ctx, tx, obj); err != nil {
+		if err := insertIntoTokenMetadata(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -463,13 +463,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TokenMetadata
 
 //// Used for testing
 
-func dropTableApitokens(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS apitokens CASCADE")
+func dropTableTokenMetadata(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS token_metadata CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableApitokens(ctx, db)
+	dropTableTokenMetadata(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces
