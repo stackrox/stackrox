@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-table-bindings-wrapper --type=storage.TestGrandparent --table=testgrandparent --search-category 61
+//go:generate pg-table-bindings-wrapper --type=storage.TestGrandparent --table=test_grandparents --search-category 61

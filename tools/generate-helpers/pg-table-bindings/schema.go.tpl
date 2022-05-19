@@ -92,7 +92,7 @@ var (
         {{$field.ColumnName|upperCamelCase}} {{$field.ModelType}} `gorm:"column:{{$field.ColumnName|lowerCase}};type:{{$field.SQLType}}{{if $field.Options.Unique}};unique{{end}}{{if $field.Options.PrimaryKey}};primaryKey{{end}}{{if $field.Options.Index}};index:{{$schema.Table|lowerCamelCase|lowerCase}}_{{$field.ColumnName|lowerCase}},type:{{$field.Options.Index}}{{end}}"`
     {{- end}}
     {{- range $idx, $rel := $schema.RelationshipsToDefineAsForeignKeys }}
-        {{$rel.OtherSchema.Table|upperCamelCase}}Ref {{$rel.OtherSchema.Table|upperCamelCase}} `gorm:"foreignKey:{{ (concatWith $rel.ThisSchemaColumnNames ",") | lowerCase}};references:{{ (concatWith $rel.OtherSchemaColumnNames ",")|lowerCase}};constraint:OnDelete:CASCADE"`
+        {{$rel.OtherSchema.Table|upperCamelCase}}Ref {{$rel.OtherSchema.Table|upperCamelCase}} `gorm:"foreignKey:{{ (concatWith $rel.ThisSchemaColumnNames ",") | lowerCase}};references:{{ (concatWith $rel.OtherSchemaColumnNames ",")|lowerCase}};belongsTo;constraint:OnDelete:CASCADE"`
     {{- end}}
     }
     {{- range $idx, $child := $schema.Children }}
@@ -108,12 +108,6 @@ var (
 
 const (
     {{- template "createTableNames" .Schema }}
-    /*
-	{{.Schema.Table|upperCamelCase}}TableName = "{{.Schema.Table|lowerCase}}"
-	{{- range $idx, $child := .Schema.Children }}
-       {{$child.Table|upperCamelCase}}TableName = "{{$child.Table|lowerCase}}"
-    {{- end }}
-    */
 )
 
 {{- template "createGormModel" .Schema }}

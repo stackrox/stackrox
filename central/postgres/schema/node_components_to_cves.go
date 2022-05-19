@@ -56,9 +56,6 @@ var (
 
 const (
 	NodeComponentsToCvesTableName = "node_components_to_cves"
-	/*
-		NodeComponentsToCvesTableName = "node_components_to_cves"
-	*/
 )
 
 // NodeComponentCVEEdge holds the Gorm model for Postgres table `node_components_to_cves`.
@@ -69,5 +66,5 @@ type NodeComponentsToCves struct {
 	ComponentId       string         `gorm:"column:componentid;type:varchar;primaryKey"`
 	CveId             string         `gorm:"column:cveid;type:varchar;primaryKey"`
 	Serialized        []byte         `gorm:"column:serialized;type:bytea"`
-	NodeComponentsRef NodeComponents `gorm:"foreignKey:componentid;references:id;constraint:OnDelete:CASCADE"`
+	NodeComponentsRef NodeComponents `gorm:"foreignKey:componentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

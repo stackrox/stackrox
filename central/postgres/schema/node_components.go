@@ -47,9 +47,6 @@ var (
 
 const (
 	NodeComponentsTableName = "node_components"
-	/*
-		NodeComponentsTableName = "node_components"
-	*/
 )
 
 // ImageComponent holds the Gorm model for Postgres table `node_components`.

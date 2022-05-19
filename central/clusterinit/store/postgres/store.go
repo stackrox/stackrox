@@ -21,15 +21,15 @@ import (
 )
 
 const (
-	baseTable  = "clusterinitbundles"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM clusterinitbundles WHERE Id = $1)"
+	baseTable  = "cluster_init_bundles"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM cluster_init_bundles WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM clusterinitbundles WHERE Id = $1"
-	deleteStmt  = "DELETE FROM clusterinitbundles WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM clusterinitbundles"
-	getManyStmt = "SELECT serialized FROM clusterinitbundles WHERE Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM cluster_init_bundles WHERE Id = $1"
+	deleteStmt  = "DELETE FROM cluster_init_bundles WHERE Id = $1"
+	walkStmt    = "SELECT serialized FROM cluster_init_bundles"
+	getManyStmt = "SELECT serialized FROM cluster_init_bundles WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM clusterinitbundles WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM cluster_init_bundles WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -41,7 +41,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.ClusterinitbundlesSchema
+	schema = pkgSchema.ClusterInitBundlesSchema
 )
 
 type Store interface {
@@ -67,14 +67,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableClusterinitbundlesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableClusterInitBundlesStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, obj *storage.InitBundleMeta) error {
+func insertIntoClusterInitBundles(ctx context.Context, tx pgx.Tx, obj *storage.InitBundleMeta) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -87,7 +87,7 @@ func insertIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, obj *storage.I
 		serialized,
 	}
 
-	finalStr := "INSERT INTO clusterinitbundles (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO cluster_init_bundles (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func insertIntoClusterinitbundles(ctx context.Context, tx pgx.Tx, obj *storage.I
 	return nil
 }
 
-func (s *storeImpl) copyFromClusterinitbundles(ctx context.Context, tx pgx.Tx, objs ...*storage.InitBundleMeta) error {
+func (s *storeImpl) copyFromClusterInitBundles(ctx context.Context, tx pgx.Tx, objs ...*storage.InitBundleMeta) error {
 
 	inputRows := [][]interface{}{}
 
@@ -144,7 +144,7 @@ func (s *storeImpl) copyFromClusterinitbundles(ctx context.Context, tx pgx.Tx, o
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"clusterinitbundles"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"cluster_init_bundles"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -170,7 +170,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.InitBundleMet
 		return err
 	}
 
-	if err := s.copyFromClusterinitbundles(ctx, tx, objs...); err != nil {
+	if err := s.copyFromClusterInitBundles(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -195,7 +195,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.InitBundleMeta)
 			return err
 		}
 
-		if err := insertIntoClusterinitbundles(ctx, tx, obj); err != nil {
+		if err := insertIntoClusterInitBundles(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -443,13 +443,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.InitBundleMet
 
 //// Used for testing
 
-func dropTableClusterinitbundles(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS clusterinitbundles CASCADE")
+func dropTableClusterInitBundles(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS cluster_init_bundles CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableClusterinitbundles(ctx, db)
+	dropTableClusterInitBundles(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

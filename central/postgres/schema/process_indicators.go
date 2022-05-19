@@ -56,9 +56,6 @@ var (
 
 const (
 	ProcessIndicatorsTableName = "process_indicators"
-	/*
-		ProcessIndicatorsTableName = "process_indicators"
-	*/
 )
 
 // ProcessIndicator holds the Gorm model for Postgres table `process_indicators`.

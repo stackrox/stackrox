@@ -32,7 +32,7 @@ var (
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
-               create table if not exists pods_LiveInstances (
+               create table if not exists pods_live_instances (
                    pods_Id varchar,
                    idx integer,
                    ImageDigest varchar,
@@ -41,7 +41,7 @@ var (
                )
                `,
 				Indexes: []string{
-					"create index if not exists podsLiveInstances_idx on pods_LiveInstances using btree(idx)",
+					"create index if not exists podsLiveInstances_idx on pods_live_instances using btree(idx)",
 				},
 				Children: []*postgres.CreateStmts{},
 			},
@@ -70,11 +70,7 @@ var (
 
 const (
 	PodsTableName              = "pods"
-	PodsLiveInstancesTableName = "pods_liveinstances"
-	/*
-			PodsTableName = "pods"
-		       PodsLiveInstancesTableName = "pods_liveinstances"
-	*/
+	PodsLiveInstancesTableName = "pods_live_instances"
 )
 
 // Pod holds the Gorm model for Postgres table `pods`.
@@ -87,10 +83,10 @@ type Pods struct {
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }
 
-// ContainerInstance holds the Gorm model for Postgres table `pods_LiveInstances`.
+// ContainerInstance holds the Gorm model for Postgres table `pods_live_instances`.
 type PodsLiveInstances struct {
 	PodsId      string `gorm:"column:pods_id;type:varchar;primaryKey"`
 	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:podsliveinstances_idx,type:btree"`
 	ImageDigest string `gorm:"column:imagedigest;type:varchar"`
-	PodsRef     Pods   `gorm:"foreignKey:pods_id;references:id;constraint:OnDelete:CASCADE"`
+	PodsRef     Pods   `gorm:"foreignKey:pods_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

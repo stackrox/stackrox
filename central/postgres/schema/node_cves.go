@@ -51,9 +51,6 @@ var (
 
 const (
 	NodeCvesTableName = "node_cves"
-	/*
-		NodeCvesTableName = "node_cves"
-	*/
 )
 
 // CVE holds the Gorm model for Postgres table `node_cves`.

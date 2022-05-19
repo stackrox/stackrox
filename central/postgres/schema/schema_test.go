@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 var (
@@ -95,6 +96,8 @@ type Product struct {
 }
 
 func (s *SchemaTestSuite) TestSQL() {
+	ns := schema.NamingStrategy{}
+	fmt.Println(ns.TableName("TestGGrandChild1"))
 	s.Require().NoError(s.gorm.AutoMigrate(&Product{}))
 	s.Require().NoError(s.gorm.Table(DeploymentsTableName).AutoMigrate(&Deployments{}))
 	s.Require().NoError(s.gorm.AutoMigrate(&DeploymentsContainers{}))
@@ -119,21 +122,21 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 		},
 		{
 			file:        "apitokens.go",
-			createStmts: CreateTableApitokensStmt,
+			createStmts: CreateTableApiTokensStmt,
 			gormTables: []gormTable{
 				{
-					name:     ApitokensTableName,
-					instance: Apitokens{},
+					name:     ApiTokensTableName,
+					instance: ApiTokens{},
 				},
 			},
 		},
 		{
 			file:        "authproviders.go",
-			createStmts: CreateTableAuthprovidersStmt,
+			createStmts: CreateTableAuthProvidersStmt,
 			gormTables: []gormTable{
 				{
-					name:     AuthprovidersTableName,
-					instance: Authproviders{},
+					name:     AuthProvidersTableName,
+					instance: AuthProviders{},
 				},
 			},
 		},
@@ -158,12 +161,12 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 			},
 		},
 		{
-			file:        "clusterinitbundles.go",
-			createStmts: CreateTableClusterinitbundlesStmt,
+			file:        "cluster_init_bundles.go",
+			createStmts: CreateTableClusterInitBundlesStmt,
 			gormTables: []gormTable{
 				{
-					name:     ClusterinitbundlesTableName,
-					instance: Clusterinitbundles{},
+					name:     ClusterInitBundlesTableName,
+					instance: ClusterInitBundles{},
 				},
 			},
 		},
@@ -190,25 +193,25 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 					instance: DeploymentsContainers{},
 				},
 				{
-					name:     DeploymentsContainersEnvTableName,
-					instance: DeploymentsContainersEnv{},
-				}, /*
-					{
-						name:     DeploymentsContainersVolumesTableName,
-						instance: DeploymentsContainersVolumes{},
-					},
-					{
-						name:     DeploymentsContainersSecretsTableName,
-						instance: DeploymentsContainersSecrets{},
-					},
-					{
-						name:     DeploymentsPortsTableName,
-						instance: DeploymentsPorts{},
-					},
-					{
-						name:     DeploymentsPortsExposureInfosTableName,
-						instance: DeploymentsPortsExposureInfos{},
-					},*/
+					name:     DeploymentsContainersEnvsTableName,
+					instance: DeploymentsContainersEnvs{},
+				},
+				{
+					name:     DeploymentsContainersVolumesTableName,
+					instance: DeploymentsContainersVolumes{},
+				},
+				{
+					name:     DeploymentsContainersSecretsTableName,
+					instance: DeploymentsContainersSecrets{},
+				},
+				{
+					name:     DeploymentsPortsTableName,
+					instance: DeploymentsPorts{},
+				},
+				{
+					name:     DeploymentsPortsExposureInfosTableName,
+					instance: DeploymentsPortsExposureInfos{},
+				},
 			},
 		},
 		{
@@ -224,105 +227,502 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 					instance: ImagesLayers{},
 				},
 			},
-		}, /*
-			{
-				file:        "image_component_cve_relations.go",
-				createStmts: CreateTableImageComponentCveRelationsStmt,
-				gormTables: []gormTable{
-					{
-						name:     ImageComponentRelationsTableName,
-						instance: ImageComponentRelations{},
-					},
+		},
+		{
+			file:        "image_components.go",
+			createStmts: CreateTableImageComponentsStmt,
+			gormTables: []gormTable{
+				{
+					name:     ImageComponentsTableName,
+					instance: ImageComponents{},
 				},
 			},
+		},
+		{
+			file:        "image_component_cve_relations.go",
+			createStmts: CreateTableImageComponentCveRelationsStmt,
+			gormTables: []gormTable{
 				{
-					file: "",
-					{"image_component_relations.go"},
-					createStmts: CreateTable,
-					gormTables: []gormTable{
-						{
-							name:     TableName,
-							instance: {},
-						},
-					},
+					name:     ImageComponentCveRelationsTableName,
+					instance: ImageComponentCveRelations{},
+				},
+			},
+		},
+		{
+			file:        "image_component_relations.go",
+			createStmts: CreateTableImageComponentRelationsStmt,
+			gormTables: []gormTable{
+				{
+					name:     ImageComponentRelationsTableName,
+					instance: &ImageComponentRelations{},
+				},
+			},
+		},
+		{
+			file:        "image_cve_relations.go",
+			createStmts: CreateTableImageCveRelationsStmt,
+			gormTables: []gormTable{
+				{
+					name:     ImageCveRelationsTableName,
+					instance: &ImageCveRelations{},
+				},
+			},
+		},
+		{
+			file:        "image_cves.go",
+			createStmts: CreateTableImageCvesStmt,
+			gormTables: []gormTable{
+				{
+					name:     ImageCvesTableName,
+					instance: ImageCves{},
+				},
+			},
+		},
+		{
+			file:        "integration_health.go",
+			createStmts: CreateTableIntegrationHealthsStmt,
+			gormTables: []gormTable{
+				{
+					name:     IntegrationHealthsTableName,
+					instance: &IntegrationHealths{},
+				},
+			},
+		},
+		{
+			file:        "k8s_roles.go",
+			createStmts: CreateTableK8sRolesStmt,
+			gormTables: []gormTable{
+				{
+					name:     K8sRolesTableName,
+					instance: K8sRoles{},
+				},
+			},
+		},
+		{
+			file:        "multi_keys.go",
+			createStmts: CreateTableTestMultiKeyStructsStmt,
+			gormTables: []gormTable{
+				{
+					name:     TestMultiKeyStructsTableName,
+					instance: TestMultiKeyStructs{},
 				},
 				{
-					file: {"image_components.go"},
-					"",
-					createStmts: CreateTable,
-					gormTables: []gormTable{
-						{
-							name:     TableName,
-							instance: {},
-						},
-					},
+					name:     TestMultiKeyStructsNestedsTableName,
+					instance: TestMultiKeyStructsNesteds{},
+				},
+			},
+		},
+		{
+			file:        "namespaces.go",
+			createStmts: CreateTableNamespacesStmt,
+			gormTables: []gormTable{
+				{
+					name:     NamespacesTableName,
+					instance: Namespaces{},
+				},
+			},
+		},
+		{
+			file:        "network_baselines.go",
+			createStmts: CreateTableNetworkBaselinesStmt,
+			gormTables: []gormTable{
+				{
+					name:     NetworkBaselinesTableName,
+					instance: NetworkBaselines{},
+				},
+			},
+		},
+		{
+			file:        "network_entities.go",
+			createStmts: CreateTableNetworkEntitiesStmt,
+			gormTables: []gormTable{
+				{
+					name:     NetworkEntitiesTableName,
+					instance: NetworkEntities{},
+				},
+			},
+		},
+		{
+			file:        "node_components.go",
+			createStmts: CreateTableNodeComponentsStmt,
+			gormTables: []gormTable{
+				{
+					name:     NodeComponentsTableName,
+					instance: NodeComponents{},
+				},
+			},
+		},
+		{
+			file:        "node_components_to_cves.go",
+			createStmts: CreateTableNodeComponentsToCvesStmt,
+			gormTables: []gormTable{
+				{
+					name:     NodeComponentsToCvesTableName,
+					instance: NodeComponentsToCves{},
+				},
+			},
+		},
+		{
+			file:        "node_cves.go",
+			createStmts: CreateTableNodeCvesStmt,
+			gormTables: []gormTable{
+				{
+					name:     NodeCvesTableName,
+					instance: NodeCves{},
+				},
+			},
+		},
+		{
+			file:        "nodes.go",
+			createStmts: CreateTableNodesStmt,
+			gormTables: []gormTable{
+				{
+					name:     NodesTableName,
+					instance: Nodes{},
 				},
 				{
-					file: "",
-					{"image_cve_relations.go"},
-					createStmts: CreateTable,
-					gormTables: []gormTable{
-						{
-							name:     TableName,
-							instance: {},
-						},
-					},
+					name:     NodesTaintsTableName,
+					instance: NodesTaints{},
 				},
 				{
-					file:        "",
-					createStmts: CreateTable,
-					gormTables: []gormTable{
-						{
-							name:     TableName,
-							instance: {},
-						},
-					},
+					name:     NodesComponentsTableName,
+					instance: NodesComponents{},
 				},
-		*/
+				{
+					name:     NodesComponentsVulnsTableName,
+					instance: NodesComponentsVulns{},
+				},
+			},
+		},
+		{
+			file:        "nodes_to_components.go",
+			createStmts: CreateTableNodesToComponentsStmt,
+			gormTables: []gormTable{
+				{
+					name:     NodesToComponentsTableName,
+					instance: NodesToComponents{},
+				},
+			},
+		},
+		{
+			file:        "notifiers.go",
+			createStmts: CreateTableNotifiersStmt,
+			gormTables: []gormTable{
+				{
+					name:     NotifiersTableName,
+					instance: Notifiers{},
+				},
+			},
+		},
+		{
+			file:        "permission_sets.go",
+			createStmts: CreateTablePermissionSetsStmt,
+			gormTables: []gormTable{
+				{
+					name:     PermissionSetsTableName,
+					instance: PermissionSets{},
+				},
+			},
+		},
+		{
+			file:        "pods.go",
+			createStmts: CreateTablePodsStmt,
+			gormTables: []gormTable{
+				{
+					name:     PodsTableName,
+					instance: Pods{},
+				},
+				{
+					name:     PodsLiveInstancesTableName,
+					instance: PodsLiveInstances{},
+				},
+			},
+		},
+		{
+			file:        "policies.go",
+			createStmts: CreateTablePoliciesStmt,
+			gormTables: []gormTable{
+				{
+					name:     PoliciesTableName,
+					instance: Policies{},
+				},
+			},
+		},
+		{
+			file:        "process_indicators.go",
+			createStmts: CreateTableProcessIndicatorsStmt,
+			gormTables: []gormTable{
+				{
+					name:     ProcessIndicatorsTableName,
+					instance: ProcessIndicators{},
+				},
+			},
+		},
+		{
+			file:        "process_baselines.go",
+			createStmts: CreateTableProcessBaselinesStmt,
+			gormTables: []gormTable{
+				{
+					name:     ProcessBaselinesTableName,
+					instance: ProcessBaselines{},
+				},
+			},
+		},
+		{
+			file:        "process_whitelist_results.go",
+			createStmts: CreateTableProcessWhitelistResultsStmt,
+			gormTables: []gormTable{
+				{
+					name:     ProcessWhitelistResultsTableName,
+					instance: ProcessWhitelistResults{},
+				},
+			},
+		},
+		{
+			file:        "report_configs.go",
+			createStmts: CreateTableReportConfigsStmt,
+			gormTables: []gormTable{
+				{
+					name:     ReportConfigsTableName,
+					instance: ReportConfigs{},
+				},
+			},
+		},
+		{
+			file:        "risks.go",
+			createStmts: CreateTableRisksStmt,
+			gormTables: []gormTable{
+				{
+					name:     RisksTableName,
+					instance: Risks{},
+				},
+			},
+		},
+		{
+			file:        "k8s_role_bindings.go",
+			createStmts: CreateTableK8sRoleBindingsStmt,
+			gormTables: []gormTable{
+				{
+					name:     K8sRoleBindingsTableName,
+					instance: K8sRoleBindings{},
+				},
+				{
+					name:     K8sRoleBindingsSubjectsTableName,
+					instance: K8sRoleBindingsSubjects{},
+				},
+			},
+		},
+		{
+			file:        "roles.go",
+			createStmts: CreateTableRolesStmt,
+			gormTables: []gormTable{
+				{
+					name:     RolesTableName,
+					instance: Roles{},
+				},
+			},
+		},
+		{
+			file:        "secrets.go",
+			createStmts: CreateTableSecretsStmt,
+			gormTables: []gormTable{
+				{
+					name:     SecretsTableName,
+					instance: Secrets{},
+				},
+				{
+					name:     SecretsFilesTableName,
+					instance: SecretsFiles{},
+				},
+				{
+					name:     SecretsFilesRegistriesTableName,
+					instance: SecretsFilesRegistries{},
+				},
+			},
+		},
+		{
+			file:        "service_accounts.go",
+			createStmts: CreateTableServiceAccountsStmt,
+			gormTables: []gormTable{
+				{
+					name:     ServiceAccountsTableName,
+					instance: ServiceAccounts{},
+				},
+			},
+		},
+		{
+			file:        "signature_integrations.go",
+			createStmts: CreateTableSignatureIntegrationsStmt,
+			gormTables: []gormTable{
+				{
+					name:     SignatureIntegrationsTableName,
+					instance: SignatureIntegrations{},
+				},
+			},
+		},
+		{
+			file:        "simple_access_scopes.go",
+			createStmts: CreateTableSimpleAccessScopesStmt,
+			gormTables: []gormTable{
+				{
+					name:     SimpleAccessScopesTableName,
+					instance: SimpleAccessScopes{},
+				},
+			},
+		},
+		{
+			file:        "vulnerability_requests.go",
+			createStmts: CreateTableVulnerabilityRequestsStmt,
+			gormTables: []gormTable{
+				{
+					name:     VulnerabilityRequestsTableName,
+					instance: VulnerabilityRequests{},
+				},
+				{
+					name:     VulnerabilityRequestsApproversTableName,
+					instance: VulnerabilityRequestsApprovers{},
+				},
+				{
+					name:     VulnerabilityRequestsCommentsTableName,
+					instance: VulnerabilityRequestsComments{},
+				},
+			},
+		},
+		{
+			file:        "watched_images.go",
+			createStmts: CreateTableWatchedImagesStmt,
+			gormTables: []gormTable{
+				{
+					name:     WatchedImagesTableName,
+					instance: WatchedImages{},
+				},
+			},
+		},
+		{
+			file:        "test_single_key_structs.go",
+			createStmts: CreateTableTestSingleKeyStructsStmt,
+			gormTables: []gormTable{
+				{
+					name:     TestSingleKeyStructsTableName,
+					instance: TestSingleKeyStructs{},
+				},
+			},
+		},
+
+		{
+			file:        "test_child1.go",
+			createStmts: CreateTableTestChild1Stmt,
+			gormTables: []gormTable{
+				{
+					name:     TestChild1TableName,
+					instance: TestChild1{},
+				},
+			},
+		},
+		{
+			file:        "test_grandparents.go",
+			createStmts: CreateTableTestGrandparentsStmt,
+			gormTables: []gormTable{
+				{
+					name:     TestGrandparentsTableName,
+					instance: TestGrandparents{},
+				},
+				{
+					name:     TestGrandparentsEmbeddedsTableName,
+					instance: TestGrandparentsEmbeddeds{},
+				},
+				{
+					name:     TestGrandparentsEmbeddedsEmbedded2TableName,
+					instance: TestGrandparentsEmbeddedsEmbedded2{},
+				},
+			},
+		},
+		{
+			file:        "test_parent1.go",
+			createStmts: CreateTableTestParent1Stmt,
+			gormTables: []gormTable{
+				{
+					name:     TestParent1TableName,
+					instance: TestParent1{},
+				},
+				{
+					name:     TestParent1ChildrensTableName,
+					instance: TestParent1Childrens{},
+				},
+			},
+		},
+
+		{
+			file:        "test_parent3.go",
+			createStmts: CreateTableTestParent3Stmt,
+			gormTables: []gormTable{
+				{
+					name:     TestParent3TableName,
+					instance: TestParent3{},
+				},
+			},
+		},
+		{
+			file:        "test_parent2.go",
+			createStmts: CreateTableTestParent2Stmt,
+			gormTables: []gormTable{
+				{
+					name:     TestParent2TableName,
+					instance: TestParent2{},
+				},
+			},
+		},
+		{
+			file:        "test_grand_child1.go",
+			createStmts: CreateTableTestGrandChild1Stmt,
+			gormTables: []gormTable{
+				{
+					name:     TestGrandChild1TableName,
+					instance: TestGrandChild1{},
+				},
+			},
+		},
+		{
+			file:        "test_g2_grand_child1.go",
+			createStmts: CreateTableTestG2GrandChild1Stmt,
+			gormTables: []gormTable{
+				{
+					name:     TestG2GrandChild1TableName,
+					instance: TestG2GrandChild1{},
+				},
+			},
+		},
+		{
+			file:        "test_g3_grand_child1.go",
+			createStmts: CreateTableTestG3GrandChild1Stmt,
+			gormTables: []gormTable{
+				{
+					name:     TestG3GrandChild1TableName,
+					instance: TestG3GrandChild1{},
+				},
+			},
+		},
+		{
+			file:        "test_g_grand_child1.go",
+			createStmts: CreateTableTestGGrandChild1Stmt,
+			gormTables: []gormTable{
+				{
+					name:     TestGGrandChild1TableName,
+					instance: TestGGrandChild1{},
+				},
+			},
+		},
+		{
+			file:        "test_child2.go",
+			createStmts: CreateTableTestChild2Stmt,
+			gormTables: []gormTable{
+				{
+					name:     TestChild2TableName,
+					instance: TestChild2{},
+				},
+			},
+		},
 	}
-	/*
-		{"image_cves.go"},
-		{"integrationhealth.go"},
-		{"k8sroles.go"},
-		{"multikey.go"},
-		{"namespaces.go"},
-		{"networkbaseline.go"},
-		{"networkentity.go"},
-		{"node_components.go"},
-		{"node_components_to_cves.go"},
-		{"node_cves.go"},
-		{"nodes.go"},
-		{"nodes_to_components.go"},
-		{"notifiers.go"},
-		{"permissionsets.go"},
-		{"pods.go"},
-		{"policy.go"},
-		{"process_indicators.go"},
-		{"processbaselines.go"},
-		{"processwhitelistresults.go"},
-		{"reportconfigs.go"},
-		{"risk.go"},
-		{"rolebindings.go"},
-		{"roles.go"},
-		{"schema_test.go"},
-		{"secrets.go"},
-		{"serviceaccounts.go"},
-		{"signatureintegrations.go"},
-		{"simpleaccessscopes.go"},
-		{"singlekey.go"},
-		{"testchild1.go"},
-		{"testchild2.go"},
-		{"testg2grandchild1.go"},
-		{"testg3grandchild1.go"},
-		{"testggrandchild1.go"},
-		{"testgrandchild1.go"},
-		{"testgrandparent.go"},
-		{"testparent1.go"},
-		{"testparent2.go"},
-		{"testparent3.go"},
-		{"vulnreq.go"},
-		{"watchedimages.go"},
-	} */
 	for _, testCase := range testCases {
 		s.T().Run(testCase.file, func(t *testing.T) {
 			gormSchemas := s.getGormTableSchemas(testCase.gormTables)

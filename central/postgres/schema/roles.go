@@ -39,9 +39,6 @@ var (
 
 const (
 	RolesTableName = "roles"
-	/*
-		RolesTableName = "roles"
-	*/
 )
 
 // Role holds the Gorm model for Postgres table `roles`.

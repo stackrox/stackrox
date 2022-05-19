@@ -47,7 +47,7 @@ var (
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
-               create table if not exists deployments_Containers (
+               create table if not exists deployments_containers (
                    deployments_Id varchar,
                    idx integer,
                    Image_Id varchar,
@@ -68,61 +68,61 @@ var (
                )
                `,
 				Indexes: []string{
-					"create index if not exists deploymentsContainers_idx on deployments_Containers using btree(idx)",
+					"create index if not exists deploymentsContainers_idx on deployments_containers using btree(idx)",
 				},
 				Children: []*postgres.CreateStmts{
 					&postgres.CreateStmts{
 						Table: `
-               create table if not exists deployments_Containers_Envs (
+               create table if not exists deployments_containers_envs (
                    deployments_Id varchar,
-                   deployments_Containers_idx integer,
+                   deployments_containers_idx integer,
                    idx integer,
                    Key varchar,
                    Value varchar,
                    EnvVarSource integer,
-                   PRIMARY KEY(deployments_Id, deployments_Containers_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_Containers_idx) REFERENCES deployments_Containers(deployments_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(deployments_Id, deployments_containers_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
-							"create index if not exists deploymentsContainersEnv_idx on deployments_Containers_Envs using btree(idx)",
+							"create index if not exists deploymentsContainersEnvs_idx on deployments_containers_envs using btree(idx)",
 						},
 						Children: []*postgres.CreateStmts{},
 					},
 					&postgres.CreateStmts{
 						Table: `
-               create table if not exists deployments_Containers_Volumes (
+               create table if not exists deployments_containers_volumes (
                    deployments_Id varchar,
-                   deployments_Containers_idx integer,
+                   deployments_containers_idx integer,
                    idx integer,
                    Name varchar,
                    Source varchar,
                    Destination varchar,
                    ReadOnly bool,
                    Type varchar,
-                   PRIMARY KEY(deployments_Id, deployments_Containers_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_Containers_idx) REFERENCES deployments_Containers(deployments_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(deployments_Id, deployments_containers_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
-							"create index if not exists deploymentsContainersVolumes_idx on deployments_Containers_Volumes using btree(idx)",
+							"create index if not exists deploymentsContainersVolumes_idx on deployments_containers_volumes using btree(idx)",
 						},
 						Children: []*postgres.CreateStmts{},
 					},
 					&postgres.CreateStmts{
 						Table: `
-               create table if not exists deployments_Containers_Secrets (
+               create table if not exists deployments_containers_secrets (
                    deployments_Id varchar,
-                   deployments_Containers_idx integer,
+                   deployments_containers_idx integer,
                    idx integer,
                    Name varchar,
                    Path varchar,
-                   PRIMARY KEY(deployments_Id, deployments_Containers_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_Containers_idx) REFERENCES deployments_Containers(deployments_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(deployments_Id, deployments_containers_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
-							"create index if not exists deploymentsContainersSecrets_idx on deployments_Containers_Secrets using btree(idx)",
+							"create index if not exists deploymentsContainersSecrets_idx on deployments_containers_secrets using btree(idx)",
 						},
 						Children: []*postgres.CreateStmts{},
 					},
@@ -130,7 +130,7 @@ var (
 			},
 			&postgres.CreateStmts{
 				Table: `
-               create table if not exists deployments_Ports (
+               create table if not exists deployments_ports (
                    deployments_Id varchar,
                    idx integer,
                    ContainerPort integer,
@@ -141,14 +141,14 @@ var (
                )
                `,
 				Indexes: []string{
-					"create index if not exists deploymentsPorts_idx on deployments_Ports using btree(idx)",
+					"create index if not exists deploymentsPorts_idx on deployments_ports using btree(idx)",
 				},
 				Children: []*postgres.CreateStmts{
 					&postgres.CreateStmts{
 						Table: `
-               create table if not exists deployments_Ports_ExposureInfos (
+               create table if not exists deployments_ports_exposure_infos (
                    deployments_Id varchar,
-                   deployments_Ports_idx integer,
+                   deployments_ports_idx integer,
                    idx integer,
                    Level integer,
                    ServiceName varchar,
@@ -156,12 +156,12 @@ var (
                    NodePort integer,
                    ExternalIps text[],
                    ExternalHostnames text[],
-                   PRIMARY KEY(deployments_Id, deployments_Ports_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_Ports_idx) REFERENCES deployments_Ports(deployments_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(deployments_Id, deployments_ports_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_ports_idx) REFERENCES deployments_ports(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
-							"create index if not exists deploymentsPortsExposureInfos_idx on deployments_Ports_ExposureInfos using btree(idx)",
+							"create index if not exists deploymentsPortsExposureInfos_idx on deployments_ports_exposure_infos using btree(idx)",
 						},
 						Children: []*postgres.CreateStmts{},
 					},
@@ -194,16 +194,11 @@ var (
 const (
 	DeploymentsTableName                   = "deployments"
 	DeploymentsContainersTableName         = "deployments_containers"
-	DeploymentsContainersEnvTableName      = "deployments_containers_envs"
+	DeploymentsContainersEnvsTableName     = "deployments_containers_envs"
 	DeploymentsContainersVolumesTableName  = "deployments_containers_volumes"
 	DeploymentsContainersSecretsTableName  = "deployments_containers_secrets"
 	DeploymentsPortsTableName              = "deployments_ports"
-	DeploymentsPortsExposureInfosTableName = "deployments_ports_exposureinfos"
-	/*
-			DeploymentsTableName = "deployments"
-		       DeploymentsContainersTableName = "deployments_containers"
-		       DeploymentsPortsTableName = "deployments_ports"
-	*/
+	DeploymentsPortsExposureInfosTableName = "deployments_ports_exposure_infos"
 )
 
 // Deployment holds the Gorm model for Postgres table `deployments`.
@@ -229,7 +224,7 @@ type Deployments struct {
 	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
 }
 
-// Container holds the Gorm model for Postgres table `deployments_Containers`.
+// Container holds the Gorm model for Postgres table `deployments_containers`.
 type DeploymentsContainers struct {
 	DeploymentsId                         string          `gorm:"column:deployments_id;type:varchar;primaryKey"`
 	Idx                                   int             `gorm:"column:idx;type:integer;primaryKey;index:deploymentscontainers_idx,type:btree"`
@@ -246,21 +241,21 @@ type DeploymentsContainers struct {
 	ResourcesCpuCoresLimit                float32         `gorm:"column:resources_cpucoreslimit;type:numeric"`
 	ResourcesMemoryMbRequest              float32         `gorm:"column:resources_memorymbrequest;type:numeric"`
 	ResourcesMemoryMbLimit                float32         `gorm:"column:resources_memorymblimit;type:numeric"`
-	DeploymentsRef                        Deployments     `gorm:"foreignKey:deployments_id;references:id;constraint:OnDelete:CASCADE"`
+	DeploymentsRef                        Deployments     `gorm:"foreignKey:deployments_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
-// ContainerConfig_EnvironmentConfig holds the Gorm model for Postgres table `deployments_Containers_Envs`.
-type DeploymentsContainersEnv struct {
+// ContainerConfig_EnvironmentConfig holds the Gorm model for Postgres table `deployments_containers_envs`.
+type DeploymentsContainersEnvs struct {
 	DeploymentsId            string                                                 `gorm:"column:deployments_id;type:varchar;primaryKey"`
 	DeploymentsContainersIdx int                                                    `gorm:"column:deployments_containers_idx;type:integer;primaryKey"`
-	Idx                      int                                                    `gorm:"column:idx;type:integer;primaryKey;index:deploymentscontainersenv_idx,type:btree"`
+	Idx                      int                                                    `gorm:"column:idx;type:integer;primaryKey;index:deploymentscontainersenvs_idx,type:btree"`
 	Key                      string                                                 `gorm:"column:key;type:varchar"`
 	Value                    string                                                 `gorm:"column:value;type:varchar"`
 	EnvVarSource             storage.ContainerConfig_EnvironmentConfig_EnvVarSource `gorm:"column:envvarsource;type:integer"`
-	DeploymentsContainersRef DeploymentsContainers                                  `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;constraint:OnDelete:CASCADE"`
+	DeploymentsContainersRef DeploymentsContainers                                  `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
-// Volume holds the Gorm model for Postgres table `deployments_Containers_Volumes`.
+// Volume holds the Gorm model for Postgres table `deployments_containers_volumes`.
 type DeploymentsContainersVolumes struct {
 	DeploymentsId            string                `gorm:"column:deployments_id;type:varchar;primaryKey"`
 	DeploymentsContainersIdx int                   `gorm:"column:deployments_containers_idx;type:integer;primaryKey"`
@@ -270,30 +265,30 @@ type DeploymentsContainersVolumes struct {
 	Destination              string                `gorm:"column:destination;type:varchar"`
 	ReadOnly                 bool                  `gorm:"column:readonly;type:bool"`
 	Type                     string                `gorm:"column:type;type:varchar"`
-	DeploymentsContainersRef DeploymentsContainers `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;constraint:OnDelete:CASCADE"`
+	DeploymentsContainersRef DeploymentsContainers `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
-// EmbeddedSecret holds the Gorm model for Postgres table `deployments_Containers_Secrets`.
+// EmbeddedSecret holds the Gorm model for Postgres table `deployments_containers_secrets`.
 type DeploymentsContainersSecrets struct {
 	DeploymentsId            string                `gorm:"column:deployments_id;type:varchar;primaryKey"`
 	DeploymentsContainersIdx int                   `gorm:"column:deployments_containers_idx;type:integer;primaryKey"`
 	Idx                      int                   `gorm:"column:idx;type:integer;primaryKey;index:deploymentscontainerssecrets_idx,type:btree"`
 	Name                     string                `gorm:"column:name;type:varchar"`
 	Path                     string                `gorm:"column:path;type:varchar"`
-	DeploymentsContainersRef DeploymentsContainers `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;constraint:OnDelete:CASCADE"`
+	DeploymentsContainersRef DeploymentsContainers `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
-// PortConfig holds the Gorm model for Postgres table `deployments_Ports`.
+// PortConfig holds the Gorm model for Postgres table `deployments_ports`.
 type DeploymentsPorts struct {
 	DeploymentsId  string                           `gorm:"column:deployments_id;type:varchar;primaryKey"`
 	Idx            int                              `gorm:"column:idx;type:integer;primaryKey;index:deploymentsports_idx,type:btree"`
 	ContainerPort  int32                            `gorm:"column:containerport;type:integer"`
 	Protocol       string                           `gorm:"column:protocol;type:varchar"`
 	Exposure       storage.PortConfig_ExposureLevel `gorm:"column:exposure;type:integer"`
-	DeploymentsRef Deployments                      `gorm:"foreignKey:deployments_id;references:id;constraint:OnDelete:CASCADE"`
+	DeploymentsRef Deployments                      `gorm:"foreignKey:deployments_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
-// PortConfig_ExposureInfo holds the Gorm model for Postgres table `deployments_Ports_ExposureInfos`.
+// PortConfig_ExposureInfo holds the Gorm model for Postgres table `deployments_ports_exposure_infos`.
 type DeploymentsPortsExposureInfos struct {
 	DeploymentsId       string                           `gorm:"column:deployments_id;type:varchar;primaryKey"`
 	DeploymentsPortsIdx int                              `gorm:"column:deployments_ports_idx;type:integer;primaryKey"`
@@ -304,5 +299,5 @@ type DeploymentsPortsExposureInfos struct {
 	NodePort            int32                            `gorm:"column:nodeport;type:integer"`
 	ExternalIps         *pq.StringArray                  `gorm:"column:externalips;type:text[]"`
 	ExternalHostnames   *pq.StringArray                  `gorm:"column:externalhostnames;type:text[]"`
-	DeploymentsPortsRef DeploymentsPorts                 `gorm:"foreignKey:deployments_id,deployments_ports_idx;references:deployments_id,idx;constraint:OnDelete:CASCADE"`
+	DeploymentsPortsRef DeploymentsPorts                 `gorm:"foreignKey:deployments_id,deployments_ports_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }

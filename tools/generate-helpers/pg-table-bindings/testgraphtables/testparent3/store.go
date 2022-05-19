@@ -20,15 +20,15 @@ import (
 )
 
 const (
-	baseTable  = "testparent3"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM testparent3 WHERE Id = $1)"
+	baseTable  = "test_parent3"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM test_parent3 WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM testparent3 WHERE Id = $1"
-	deleteStmt  = "DELETE FROM testparent3 WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM testparent3"
-	getManyStmt = "SELECT serialized FROM testparent3 WHERE Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM test_parent3 WHERE Id = $1"
+	deleteStmt  = "DELETE FROM test_parent3 WHERE Id = $1"
+	walkStmt    = "SELECT serialized FROM test_parent3"
+	getManyStmt = "SELECT serialized FROM test_parent3 WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM testparent3 WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM test_parent3 WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -40,7 +40,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.Testparent3Schema
+	schema = pkgSchema.TestParent3Schema
 )
 
 type Store interface {
@@ -66,15 +66,15 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestgrandparentStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestparent3Stmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestGrandparentsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestParent3Stmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoTestparent3(ctx context.Context, tx pgx.Tx, obj *storage.TestParent3) error {
+func insertIntoTestParent3(ctx context.Context, tx pgx.Tx, obj *storage.TestParent3) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -89,7 +89,7 @@ func insertIntoTestparent3(ctx context.Context, tx pgx.Tx, obj *storage.TestPare
 		serialized,
 	}
 
-	finalStr := "INSERT INTO testparent3 (Id, ParentId, Val, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_parent3 (Id, ParentId, Val, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func insertIntoTestparent3(ctx context.Context, tx pgx.Tx, obj *storage.TestPare
 	return nil
 }
 
-func (s *storeImpl) copyFromTestparent3(ctx context.Context, tx pgx.Tx, objs ...*storage.TestParent3) error {
+func (s *storeImpl) copyFromTestParent3(ctx context.Context, tx pgx.Tx, objs ...*storage.TestParent3) error {
 
 	inputRows := [][]interface{}{}
 
@@ -154,7 +154,7 @@ func (s *storeImpl) copyFromTestparent3(ctx context.Context, tx pgx.Tx, objs ...
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"testparent3"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_parent3"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -180,7 +180,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestParent3) 
 		return err
 	}
 
-	if err := s.copyFromTestparent3(ctx, tx, objs...); err != nil {
+	if err := s.copyFromTestParent3(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -205,7 +205,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestParent3) er
 			return err
 		}
 
-		if err := insertIntoTestparent3(ctx, tx, obj); err != nil {
+		if err := insertIntoTestParent3(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -409,13 +409,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestParent3) 
 
 //// Used for testing
 
-func dropTableTestparent3(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS testparent3 CASCADE")
+func dropTableTestParent3(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_parent3 CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableTestparent3(ctx, db)
+	dropTableTestParent3(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

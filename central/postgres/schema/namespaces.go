@@ -55,9 +55,6 @@ var (
 
 const (
 	NamespacesTableName = "namespaces"
-	/*
-		NamespacesTableName = "namespaces"
-	*/
 )
 
 // NamespaceMetadata holds the Gorm model for Postgres table `namespaces`.

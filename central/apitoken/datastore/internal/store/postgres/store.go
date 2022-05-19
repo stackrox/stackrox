@@ -22,15 +22,15 @@ import (
 )
 
 const (
-	baseTable  = "apitokens"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM apitokens WHERE Id = $1)"
+	baseTable  = "api_tokens"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM api_tokens WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM apitokens WHERE Id = $1"
-	deleteStmt  = "DELETE FROM apitokens WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM apitokens"
-	getManyStmt = "SELECT serialized FROM apitokens WHERE Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM api_tokens WHERE Id = $1"
+	deleteStmt  = "DELETE FROM api_tokens WHERE Id = $1"
+	walkStmt    = "SELECT serialized FROM api_tokens"
+	getManyStmt = "SELECT serialized FROM api_tokens WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM apitokens WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM api_tokens WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -42,7 +42,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ApitokensSchema
+	schema         = pkgSchema.ApiTokensSchema
 	targetResource = resources.Integration
 )
 
@@ -69,14 +69,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableApitokensStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableApiTokensStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoApitokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetadata) error {
+func insertIntoApiTokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -89,7 +89,7 @@ func insertIntoApitokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetad
 		serialized,
 	}
 
-	finalStr := "INSERT INTO apitokens (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO api_tokens (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func insertIntoApitokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetad
 	return nil
 }
 
-func (s *storeImpl) copyFromApitokens(ctx context.Context, tx pgx.Tx, objs ...*storage.TokenMetadata) error {
+func (s *storeImpl) copyFromApiTokens(ctx context.Context, tx pgx.Tx, objs ...*storage.TokenMetadata) error {
 
 	inputRows := [][]interface{}{}
 
@@ -146,7 +146,7 @@ func (s *storeImpl) copyFromApitokens(ctx context.Context, tx pgx.Tx, objs ...*s
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"apitokens"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"api_tokens"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -172,7 +172,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TokenMetadata
 		return err
 	}
 
-	if err := s.copyFromApitokens(ctx, tx, objs...); err != nil {
+	if err := s.copyFromApiTokens(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -197,7 +197,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TokenMetadata) 
 			return err
 		}
 
-		if err := insertIntoApitokens(ctx, tx, obj); err != nil {
+		if err := insertIntoApiTokens(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -461,13 +461,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TokenMetadata
 
 //// Used for testing
 
-func dropTableApitokens(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS apitokens CASCADE")
+func dropTableApiTokens(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS api_tokens CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableApitokens(ctx, db)
+	dropTableApiTokens(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

@@ -83,9 +83,6 @@ var (
 
 const (
 	AlertsTableName = "alerts"
-	/*
-		AlertsTableName = "alerts"
-	*/
 )
 
 // Alert holds the Gorm model for Postgres table `alerts`.

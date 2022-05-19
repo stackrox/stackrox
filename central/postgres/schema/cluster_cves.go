@@ -51,9 +51,6 @@ var (
 
 const (
 	ClusterCvesTableName = "cluster_cves"
-	/*
-		ClusterCvesTableName = "cluster_cves"
-	*/
 )
 
 // CVE holds the Gorm model for Postgres table `cluster_cves`.

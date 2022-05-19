@@ -48,7 +48,7 @@ var (
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
-               create table if not exists images_Layers (
+               create table if not exists images_layers (
                    images_Id varchar,
                    idx integer,
                    Instruction varchar,
@@ -58,7 +58,7 @@ var (
                )
                `,
 				Indexes: []string{
-					"create index if not exists imagesLayers_idx on images_Layers using btree(idx)",
+					"create index if not exists imagesLayers_idx on images_layers using btree(idx)",
 				},
 				Children: []*postgres.CreateStmts{},
 			},
@@ -81,10 +81,6 @@ var (
 const (
 	ImagesTableName       = "images"
 	ImagesLayersTableName = "images_layers"
-	/*
-			ImagesTableName = "images"
-		       ImagesLayersTableName = "images_layers"
-	*/
 )
 
 // Image holds the Gorm model for Postgres table `images`.
@@ -112,11 +108,11 @@ type Images struct {
 	Serialized           []byte            `gorm:"column:serialized;type:bytea"`
 }
 
-// ImageLayer holds the Gorm model for Postgres table `images_Layers`.
+// ImageLayer holds the Gorm model for Postgres table `images_layers`.
 type ImagesLayers struct {
 	ImagesId    string `gorm:"column:images_id;type:varchar;primaryKey"`
 	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:imageslayers_idx,type:btree"`
 	Instruction string `gorm:"column:instruction;type:varchar"`
 	Value       string `gorm:"column:value;type:varchar"`
-	ImagesRef   Images `gorm:"foreignKey:images_id;references:id;constraint:OnDelete:CASCADE"`
+	ImagesRef   Images `gorm:"foreignKey:images_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

@@ -49,9 +49,6 @@ var (
 
 const (
 	ClustersTableName = "clusters"
-	/*
-		ClustersTableName = "clusters"
-	*/
 )
 
 // Cluster holds the Gorm model for Postgres table `clusters`.

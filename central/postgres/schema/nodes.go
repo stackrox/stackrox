@@ -44,7 +44,7 @@ var (
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
-               create table if not exists nodes_Taints (
+               create table if not exists nodes_taints (
                    nodes_Id varchar,
                    idx integer,
                    Key varchar,
@@ -55,13 +55,13 @@ var (
                )
                `,
 				Indexes: []string{
-					"create index if not exists nodesTaints_idx on nodes_Taints using btree(idx)",
+					"create index if not exists nodesTaints_idx on nodes_taints using btree(idx)",
 				},
 				Children: []*postgres.CreateStmts{},
 			},
 			&postgres.CreateStmts{
 				Table: `
-               create table if not exists nodes_Components (
+               create table if not exists nodes_components (
                    nodes_Id varchar,
                    idx integer,
                    Name varchar,
@@ -71,14 +71,14 @@ var (
                )
                `,
 				Indexes: []string{
-					"create index if not exists nodesComponents_idx on nodes_Components using btree(idx)",
+					"create index if not exists nodesComponents_idx on nodes_components using btree(idx)",
 				},
 				Children: []*postgres.CreateStmts{
 					&postgres.CreateStmts{
 						Table: `
-               create table if not exists nodes_Components_Vulns (
+               create table if not exists nodes_components_vulns (
                    nodes_Id varchar,
-                   nodes_Components_idx integer,
+                   nodes_components_idx integer,
                    idx integer,
                    Cve varchar,
                    Cvss numeric,
@@ -86,12 +86,12 @@ var (
                    PublishedOn timestamp,
                    Suppressed bool,
                    State integer,
-                   PRIMARY KEY(nodes_Id, nodes_Components_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (nodes_Id, nodes_Components_idx) REFERENCES nodes_Components(nodes_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(nodes_Id, nodes_components_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (nodes_Id, nodes_components_idx) REFERENCES nodes_components(nodes_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
-							"create index if not exists nodesComponentsVulns_idx on nodes_Components_Vulns using btree(idx)",
+							"create index if not exists nodesComponentsVulns_idx on nodes_components_vulns using btree(idx)",
 						},
 						Children: []*postgres.CreateStmts{},
 					},
@@ -125,11 +125,6 @@ const (
 	NodesTaintsTableName          = "nodes_taints"
 	NodesComponentsTableName      = "nodes_components"
 	NodesComponentsVulnsTableName = "nodes_components_vulns"
-	/*
-			NodesTableName = "nodes"
-		       NodesTaintsTableName = "nodes_taints"
-		       NodesComponentsTableName = "nodes_components"
-	*/
 )
 
 // Node holds the Gorm model for Postgres table `nodes`.
@@ -153,26 +148,26 @@ type Nodes struct {
 	Serialized              []byte            `gorm:"column:serialized;type:bytea"`
 }
 
-// Taint holds the Gorm model for Postgres table `nodes_Taints`.
+// Taint holds the Gorm model for Postgres table `nodes_taints`.
 type NodesTaints struct {
 	NodesId     string              `gorm:"column:nodes_id;type:varchar;primaryKey"`
 	Idx         int                 `gorm:"column:idx;type:integer;primaryKey;index:nodestaints_idx,type:btree"`
 	Key         string              `gorm:"column:key;type:varchar"`
 	Value       string              `gorm:"column:value;type:varchar"`
 	TaintEffect storage.TaintEffect `gorm:"column:tainteffect;type:integer"`
-	NodesRef    Nodes               `gorm:"foreignKey:nodes_id;references:id;constraint:OnDelete:CASCADE"`
+	NodesRef    Nodes               `gorm:"foreignKey:nodes_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
-// EmbeddedNodeScanComponent holds the Gorm model for Postgres table `nodes_Components`.
+// EmbeddedNodeScanComponent holds the Gorm model for Postgres table `nodes_components`.
 type NodesComponents struct {
 	NodesId  string `gorm:"column:nodes_id;type:varchar;primaryKey"`
 	Idx      int    `gorm:"column:idx;type:integer;primaryKey;index:nodescomponents_idx,type:btree"`
 	Name     string `gorm:"column:name;type:varchar"`
 	Version  string `gorm:"column:version;type:varchar"`
-	NodesRef Nodes  `gorm:"foreignKey:nodes_id;references:id;constraint:OnDelete:CASCADE"`
+	NodesRef Nodes  `gorm:"foreignKey:nodes_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
-// EmbeddedVulnerability holds the Gorm model for Postgres table `nodes_Components_Vulns`.
+// EmbeddedVulnerability holds the Gorm model for Postgres table `nodes_components_vulns`.
 type NodesComponentsVulns struct {
 	NodesId            string                     `gorm:"column:nodes_id;type:varchar;primaryKey"`
 	NodesComponentsIdx int                        `gorm:"column:nodes_components_idx;type:integer;primaryKey"`
@@ -183,5 +178,5 @@ type NodesComponentsVulns struct {
 	PublishedOn        *time.Time                 `gorm:"column:publishedon;type:timestamp"`
 	Suppressed         bool                       `gorm:"column:suppressed;type:bool"`
 	State              storage.VulnerabilityState `gorm:"column:state;type:integer"`
-	NodesComponentsRef NodesComponents            `gorm:"foreignKey:nodes_id,nodes_components_idx;references:nodes_id,idx;constraint:OnDelete:CASCADE"`
+	NodesComponentsRef NodesComponents            `gorm:"foreignKey:nodes_id,nodes_components_idx;references:nodes_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }

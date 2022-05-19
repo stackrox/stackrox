@@ -20,15 +20,15 @@ import (
 )
 
 const (
-	baseTable  = "testg2grandchild1"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM testg2grandchild1 WHERE Id = $1)"
+	baseTable  = "test_g2_grand_child1"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM test_g2_grand_child1 WHERE Id = $1)"
 
-	getStmt     = "SELECT serialized FROM testg2grandchild1 WHERE Id = $1"
-	deleteStmt  = "DELETE FROM testg2grandchild1 WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM testg2grandchild1"
-	getManyStmt = "SELECT serialized FROM testg2grandchild1 WHERE Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM test_g2_grand_child1 WHERE Id = $1"
+	deleteStmt  = "DELETE FROM test_g2_grand_child1 WHERE Id = $1"
+	walkStmt    = "SELECT serialized FROM test_g2_grand_child1"
+	getManyStmt = "SELECT serialized FROM test_g2_grand_child1 WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM testg2grandchild1 WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM test_g2_grand_child1 WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -40,7 +40,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.Testg2grandchild1Schema
+	schema = pkgSchema.TestG2GrandChild1Schema
 )
 
 type Store interface {
@@ -66,16 +66,16 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestggrandchild1Stmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestg3grandchild1Stmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestg2grandchild1Stmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestGGrandChild1Stmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestG3GrandChild1Stmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestG2GrandChild1Stmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoTestg2grandchild1(ctx context.Context, tx pgx.Tx, obj *storage.TestG2GrandChild1) error {
+func insertIntoTestG2GrandChild1(ctx context.Context, tx pgx.Tx, obj *storage.TestG2GrandChild1) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -91,7 +91,7 @@ func insertIntoTestg2grandchild1(ctx context.Context, tx pgx.Tx, obj *storage.Te
 		serialized,
 	}
 
-	finalStr := "INSERT INTO testg2grandchild1 (Id, ParentId, ChildId, Val, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, ChildId = EXCLUDED.ChildId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_g2_grand_child1 (Id, ParentId, ChildId, Val, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, ChildId = EXCLUDED.ChildId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func insertIntoTestg2grandchild1(ctx context.Context, tx pgx.Tx, obj *storage.Te
 	return nil
 }
 
-func (s *storeImpl) copyFromTestg2grandchild1(ctx context.Context, tx pgx.Tx, objs ...*storage.TestG2GrandChild1) error {
+func (s *storeImpl) copyFromTestG2GrandChild1(ctx context.Context, tx pgx.Tx, objs ...*storage.TestG2GrandChild1) error {
 
 	inputRows := [][]interface{}{}
 
@@ -160,7 +160,7 @@ func (s *storeImpl) copyFromTestg2grandchild1(ctx context.Context, tx pgx.Tx, ob
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"testg2grandchild1"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_g2_grand_child1"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -186,7 +186,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestG2GrandCh
 		return err
 	}
 
-	if err := s.copyFromTestg2grandchild1(ctx, tx, objs...); err != nil {
+	if err := s.copyFromTestG2GrandChild1(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -211,7 +211,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestG2GrandChil
 			return err
 		}
 
-		if err := insertIntoTestg2grandchild1(ctx, tx, obj); err != nil {
+		if err := insertIntoTestG2GrandChild1(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -415,13 +415,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestG2GrandCh
 
 //// Used for testing
 
-func dropTableTestg2grandchild1(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS testg2grandchild1 CASCADE")
+func dropTableTestG2GrandChild1(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_g2_grand_child1 CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableTestg2grandchild1(ctx, db)
+	dropTableTestG2GrandChild1(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

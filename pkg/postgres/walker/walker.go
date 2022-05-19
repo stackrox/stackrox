@@ -6,13 +6,14 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/jinzhu/inflection"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"gorm.io/gorm/schema"
 )
 
 var (
 	timestampType = reflect.TypeOf((*types.Timestamp)(nil))
+	ns            = schema.NamingStrategy{}
 )
 
 type context struct {
@@ -242,7 +243,7 @@ var simpleFieldsMap = map[reflect.Kind]DataType{
 }
 
 func tableName(parent, child string) string {
-	return fmt.Sprintf("%s_%s", parent, inflection.Plural(child))
+	return fmt.Sprintf("%s_%s", parent, ns.TableName(child))
 }
 
 func typeIsEnum(typ reflect.Type) bool {

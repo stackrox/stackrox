@@ -124,7 +124,7 @@ func insertIntoDeployments(ctx context.Context, tx pgx.Tx, obj *storage.Deployme
 		}
 	}
 
-	query = "delete from deployments_Containers where deployments_Id = $1 AND idx >= $2"
+	query = "delete from deployments_containers where deployments_Id = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetContainers()))
 	if err != nil {
 		return err
@@ -135,7 +135,7 @@ func insertIntoDeployments(ctx context.Context, tx pgx.Tx, obj *storage.Deployme
 		}
 	}
 
-	query = "delete from deployments_Ports where deployments_Id = $1 AND idx >= $2"
+	query = "delete from deployments_ports where deployments_Id = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetPorts()))
 	if err != nil {
 		return err
@@ -164,7 +164,7 @@ func insertIntoDeploymentsContainers(ctx context.Context, tx pgx.Tx, obj *storag
 		obj.GetResources().GetMemoryMbLimit(),
 	}
 
-	finalStr := "INSERT INTO deployments_Containers (deployments_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(deployments_Id, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit"
+	finalStr := "INSERT INTO deployments_containers (deployments_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(deployments_Id, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -173,12 +173,12 @@ func insertIntoDeploymentsContainers(ctx context.Context, tx pgx.Tx, obj *storag
 	var query string
 
 	for childIdx, child := range obj.GetConfig().GetEnv() {
-		if err := insertIntoDeploymentsContainersEnv(ctx, tx, child, deployments_Id, idx, childIdx); err != nil {
+		if err := insertIntoDeploymentsContainersEnvs(ctx, tx, child, deployments_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from deployments_Containers_Env where deployments_Id = $1 AND deployments_Containers_idx = $2 AND idx >= $3"
+	query = "delete from deployments_containers_envs where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
 	_, err = tx.Exec(ctx, query, deployments_Id, idx, len(obj.GetConfig().GetEnv()))
 	if err != nil {
 		return err
@@ -189,7 +189,7 @@ func insertIntoDeploymentsContainers(ctx context.Context, tx pgx.Tx, obj *storag
 		}
 	}
 
-	query = "delete from deployments_Containers_Volumes where deployments_Id = $1 AND deployments_Containers_idx = $2 AND idx >= $3"
+	query = "delete from deployments_containers_volumes where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
 	_, err = tx.Exec(ctx, query, deployments_Id, idx, len(obj.GetVolumes()))
 	if err != nil {
 		return err
@@ -200,7 +200,7 @@ func insertIntoDeploymentsContainers(ctx context.Context, tx pgx.Tx, obj *storag
 		}
 	}
 
-	query = "delete from deployments_Containers_Secrets where deployments_Id = $1 AND deployments_Containers_idx = $2 AND idx >= $3"
+	query = "delete from deployments_containers_secrets where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
 	_, err = tx.Exec(ctx, query, deployments_Id, idx, len(obj.GetSecrets()))
 	if err != nil {
 		return err
@@ -208,19 +208,19 @@ func insertIntoDeploymentsContainers(ctx context.Context, tx pgx.Tx, obj *storag
 	return nil
 }
 
-func insertIntoDeploymentsContainersEnv(ctx context.Context, tx pgx.Tx, obj *storage.ContainerConfig_EnvironmentConfig, deployments_Id string, deployments_Containers_idx int, idx int) error {
+func insertIntoDeploymentsContainersEnvs(ctx context.Context, tx pgx.Tx, obj *storage.ContainerConfig_EnvironmentConfig, deployments_Id string, deployments_containers_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
 		deployments_Id,
-		deployments_Containers_idx,
+		deployments_containers_idx,
 		idx,
 		obj.GetKey(),
 		obj.GetValue(),
 		obj.GetEnvVarSource(),
 	}
 
-	finalStr := "INSERT INTO deployments_Containers_Env (deployments_Id, deployments_Containers_idx, idx, Key, Value, EnvVarSource) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(deployments_Id, deployments_Containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_Containers_idx = EXCLUDED.deployments_Containers_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value, EnvVarSource = EXCLUDED.EnvVarSource"
+	finalStr := "INSERT INTO deployments_containers_envs (deployments_Id, deployments_containers_idx, idx, Key, Value, EnvVarSource) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(deployments_Id, deployments_containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_containers_idx = EXCLUDED.deployments_containers_idx, idx = EXCLUDED.idx, Key = EXCLUDED.Key, Value = EXCLUDED.Value, EnvVarSource = EXCLUDED.EnvVarSource"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -229,12 +229,12 @@ func insertIntoDeploymentsContainersEnv(ctx context.Context, tx pgx.Tx, obj *sto
 	return nil
 }
 
-func insertIntoDeploymentsContainersVolumes(ctx context.Context, tx pgx.Tx, obj *storage.Volume, deployments_Id string, deployments_Containers_idx int, idx int) error {
+func insertIntoDeploymentsContainersVolumes(ctx context.Context, tx pgx.Tx, obj *storage.Volume, deployments_Id string, deployments_containers_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
 		deployments_Id,
-		deployments_Containers_idx,
+		deployments_containers_idx,
 		idx,
 		obj.GetName(),
 		obj.GetSource(),
@@ -243,7 +243,7 @@ func insertIntoDeploymentsContainersVolumes(ctx context.Context, tx pgx.Tx, obj 
 		obj.GetType(),
 	}
 
-	finalStr := "INSERT INTO deployments_Containers_Volumes (deployments_Id, deployments_Containers_idx, idx, Name, Source, Destination, ReadOnly, Type) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(deployments_Id, deployments_Containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_Containers_idx = EXCLUDED.deployments_Containers_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Source = EXCLUDED.Source, Destination = EXCLUDED.Destination, ReadOnly = EXCLUDED.ReadOnly, Type = EXCLUDED.Type"
+	finalStr := "INSERT INTO deployments_containers_volumes (deployments_Id, deployments_containers_idx, idx, Name, Source, Destination, ReadOnly, Type) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(deployments_Id, deployments_containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_containers_idx = EXCLUDED.deployments_containers_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Source = EXCLUDED.Source, Destination = EXCLUDED.Destination, ReadOnly = EXCLUDED.ReadOnly, Type = EXCLUDED.Type"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -252,18 +252,18 @@ func insertIntoDeploymentsContainersVolumes(ctx context.Context, tx pgx.Tx, obj 
 	return nil
 }
 
-func insertIntoDeploymentsContainersSecrets(ctx context.Context, tx pgx.Tx, obj *storage.EmbeddedSecret, deployments_Id string, deployments_Containers_idx int, idx int) error {
+func insertIntoDeploymentsContainersSecrets(ctx context.Context, tx pgx.Tx, obj *storage.EmbeddedSecret, deployments_Id string, deployments_containers_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
 		deployments_Id,
-		deployments_Containers_idx,
+		deployments_containers_idx,
 		idx,
 		obj.GetName(),
 		obj.GetPath(),
 	}
 
-	finalStr := "INSERT INTO deployments_Containers_Secrets (deployments_Id, deployments_Containers_idx, idx, Name, Path) VALUES($1, $2, $3, $4, $5) ON CONFLICT(deployments_Id, deployments_Containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_Containers_idx = EXCLUDED.deployments_Containers_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Path = EXCLUDED.Path"
+	finalStr := "INSERT INTO deployments_containers_secrets (deployments_Id, deployments_containers_idx, idx, Name, Path) VALUES($1, $2, $3, $4, $5) ON CONFLICT(deployments_Id, deployments_containers_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_containers_idx = EXCLUDED.deployments_containers_idx, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Path = EXCLUDED.Path"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -283,7 +283,7 @@ func insertIntoDeploymentsPorts(ctx context.Context, tx pgx.Tx, obj *storage.Por
 		obj.GetExposure(),
 	}
 
-	finalStr := "INSERT INTO deployments_Ports (deployments_Id, idx, ContainerPort, Protocol, Exposure) VALUES($1, $2, $3, $4, $5) ON CONFLICT(deployments_Id, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, idx = EXCLUDED.idx, ContainerPort = EXCLUDED.ContainerPort, Protocol = EXCLUDED.Protocol, Exposure = EXCLUDED.Exposure"
+	finalStr := "INSERT INTO deployments_ports (deployments_Id, idx, ContainerPort, Protocol, Exposure) VALUES($1, $2, $3, $4, $5) ON CONFLICT(deployments_Id, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, idx = EXCLUDED.idx, ContainerPort = EXCLUDED.ContainerPort, Protocol = EXCLUDED.Protocol, Exposure = EXCLUDED.Exposure"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -297,7 +297,7 @@ func insertIntoDeploymentsPorts(ctx context.Context, tx pgx.Tx, obj *storage.Por
 		}
 	}
 
-	query = "delete from deployments_Ports_ExposureInfos where deployments_Id = $1 AND deployments_Ports_idx = $2 AND idx >= $3"
+	query = "delete from deployments_ports_exposure_infos where deployments_Id = $1 AND deployments_ports_idx = $2 AND idx >= $3"
 	_, err = tx.Exec(ctx, query, deployments_Id, idx, len(obj.GetExposureInfos()))
 	if err != nil {
 		return err
@@ -305,12 +305,12 @@ func insertIntoDeploymentsPorts(ctx context.Context, tx pgx.Tx, obj *storage.Por
 	return nil
 }
 
-func insertIntoDeploymentsPortsExposureInfos(ctx context.Context, tx pgx.Tx, obj *storage.PortConfig_ExposureInfo, deployments_Id string, deployments_Ports_idx int, idx int) error {
+func insertIntoDeploymentsPortsExposureInfos(ctx context.Context, tx pgx.Tx, obj *storage.PortConfig_ExposureInfo, deployments_Id string, deployments_ports_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
 		deployments_Id,
-		deployments_Ports_idx,
+		deployments_ports_idx,
 		idx,
 		obj.GetLevel(),
 		obj.GetServiceName(),
@@ -320,7 +320,7 @@ func insertIntoDeploymentsPortsExposureInfos(ctx context.Context, tx pgx.Tx, obj
 		obj.GetExternalHostnames(),
 	}
 
-	finalStr := "INSERT INTO deployments_Ports_ExposureInfos (deployments_Id, deployments_Ports_idx, idx, Level, ServiceName, ServicePort, NodePort, ExternalIps, ExternalHostnames) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(deployments_Id, deployments_Ports_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_Ports_idx = EXCLUDED.deployments_Ports_idx, idx = EXCLUDED.idx, Level = EXCLUDED.Level, ServiceName = EXCLUDED.ServiceName, ServicePort = EXCLUDED.ServicePort, NodePort = EXCLUDED.NodePort, ExternalIps = EXCLUDED.ExternalIps, ExternalHostnames = EXCLUDED.ExternalHostnames"
+	finalStr := "INSERT INTO deployments_ports_exposure_infos (deployments_Id, deployments_ports_idx, idx, Level, ServiceName, ServicePort, NodePort, ExternalIps, ExternalHostnames) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(deployments_Id, deployments_ports_idx, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, deployments_ports_idx = EXCLUDED.deployments_ports_idx, idx = EXCLUDED.idx, Level = EXCLUDED.Level, ServiceName = EXCLUDED.ServiceName, ServicePort = EXCLUDED.ServicePort, NodePort = EXCLUDED.NodePort, ExternalIps = EXCLUDED.ExternalIps, ExternalHostnames = EXCLUDED.ExternalHostnames"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -565,7 +565,7 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx pgx.Tx
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromDeploymentsContainersEnv(ctx, tx, deployments_Id, idx, obj.GetConfig().GetEnv()...); err != nil {
+		if err = s.copyFromDeploymentsContainersEnvs(ctx, tx, deployments_Id, idx, obj.GetConfig().GetEnv()...); err != nil {
 			return err
 		}
 		if err = s.copyFromDeploymentsContainersVolumes(ctx, tx, deployments_Id, idx, obj.GetVolumes()...); err != nil {
@@ -579,7 +579,7 @@ func (s *storeImpl) copyFromDeploymentsContainers(ctx context.Context, tx pgx.Tx
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsContainersEnv(ctx context.Context, tx pgx.Tx, deployments_Id string, deployments_Containers_idx int, objs ...*storage.ContainerConfig_EnvironmentConfig) error {
+func (s *storeImpl) copyFromDeploymentsContainersEnvs(ctx context.Context, tx pgx.Tx, deployments_Id string, deployments_containers_idx int, objs ...*storage.ContainerConfig_EnvironmentConfig) error {
 
 	inputRows := [][]interface{}{}
 
@@ -608,7 +608,7 @@ func (s *storeImpl) copyFromDeploymentsContainersEnv(ctx context.Context, tx pgx
 
 			deployments_Id,
 
-			deployments_Containers_idx,
+			deployments_containers_idx,
 
 			idx,
 
@@ -624,7 +624,7 @@ func (s *storeImpl) copyFromDeploymentsContainersEnv(ctx context.Context, tx pgx
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_env"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"deployments_containers_envs"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -638,7 +638,7 @@ func (s *storeImpl) copyFromDeploymentsContainersEnv(ctx context.Context, tx pgx
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx pgx.Tx, deployments_Id string, deployments_Containers_idx int, objs ...*storage.Volume) error {
+func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx pgx.Tx, deployments_Id string, deployments_containers_idx int, objs ...*storage.Volume) error {
 
 	inputRows := [][]interface{}{}
 
@@ -671,7 +671,7 @@ func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx
 
 			deployments_Id,
 
-			deployments_Containers_idx,
+			deployments_containers_idx,
 
 			idx,
 
@@ -705,7 +705,7 @@ func (s *storeImpl) copyFromDeploymentsContainersVolumes(ctx context.Context, tx
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx pgx.Tx, deployments_Id string, deployments_Containers_idx int, objs ...*storage.EmbeddedSecret) error {
+func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx pgx.Tx, deployments_Id string, deployments_containers_idx int, objs ...*storage.EmbeddedSecret) error {
 
 	inputRows := [][]interface{}{}
 
@@ -732,7 +732,7 @@ func (s *storeImpl) copyFromDeploymentsContainersSecrets(ctx context.Context, tx
 
 			deployments_Id,
 
-			deployments_Containers_idx,
+			deployments_containers_idx,
 
 			idx,
 
@@ -823,7 +823,7 @@ func (s *storeImpl) copyFromDeploymentsPorts(ctx context.Context, tx pgx.Tx, dep
 	return err
 }
 
-func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, tx pgx.Tx, deployments_Id string, deployments_Ports_idx int, objs ...*storage.PortConfig_ExposureInfo) error {
+func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, tx pgx.Tx, deployments_Id string, deployments_ports_idx int, objs ...*storage.PortConfig_ExposureInfo) error {
 
 	inputRows := [][]interface{}{}
 
@@ -858,7 +858,7 @@ func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, t
 
 			deployments_Id,
 
-			deployments_Ports_idx,
+			deployments_ports_idx,
 
 			idx,
 
@@ -880,7 +880,7 @@ func (s *storeImpl) copyFromDeploymentsPortsExposureInfos(ctx context.Context, t
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"deployments_ports_exposureinfos"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"deployments_ports_exposure_infos"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1195,36 +1195,36 @@ func dropTableDeployments(ctx context.Context, db *pgxpool.Pool) {
 }
 
 func dropTableDeploymentsContainers(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_Containers CASCADE")
-	dropTableDeploymentsContainersEnv(ctx, db)
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers CASCADE")
+	dropTableDeploymentsContainersEnvs(ctx, db)
 	dropTableDeploymentsContainersVolumes(ctx, db)
 	dropTableDeploymentsContainersSecrets(ctx, db)
 
 }
 
-func dropTableDeploymentsContainersEnv(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_Containers_Env CASCADE")
+func dropTableDeploymentsContainersEnvs(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers_envs CASCADE")
 
 }
 
 func dropTableDeploymentsContainersVolumes(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_Containers_Volumes CASCADE")
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers_volumes CASCADE")
 
 }
 
 func dropTableDeploymentsContainersSecrets(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_Containers_Secrets CASCADE")
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_containers_secrets CASCADE")
 
 }
 
 func dropTableDeploymentsPorts(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_Ports CASCADE")
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_ports CASCADE")
 	dropTableDeploymentsPortsExposureInfos(ctx, db)
 
 }
 
 func dropTableDeploymentsPortsExposureInfos(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_Ports_ExposureInfos CASCADE")
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS deployments_ports_exposure_infos CASCADE")
 
 }
 

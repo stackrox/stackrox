@@ -40,9 +40,6 @@ var (
 
 const (
 	NotifiersTableName = "notifiers"
-	/*
-		NotifiersTableName = "notifiers"
-	*/
 )
 
 // Notifier holds the Gorm model for Postgres table `notifiers`.

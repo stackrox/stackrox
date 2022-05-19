@@ -18,18 +18,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type SignatureintegrationsStoreSuite struct {
+type SignatureIntegrationsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestSignatureintegrationsStore(t *testing.T) {
-	suite.Run(t, new(SignatureintegrationsStoreSuite))
+func TestSignatureIntegrationsStore(t *testing.T) {
+	suite.Run(t, new(SignatureIntegrationsStoreSuite))
 }
 
-func (s *SignatureintegrationsStoreSuite) SetupTest() {
+func (s *SignatureIntegrationsStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -52,14 +52,14 @@ func (s *SignatureintegrationsStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *SignatureintegrationsStoreSuite) TearDownTest() {
+func (s *SignatureIntegrationsStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *SignatureintegrationsStoreSuite) TestStore() {
+func (s *SignatureIntegrationsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
