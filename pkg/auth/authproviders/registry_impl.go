@@ -263,6 +263,17 @@ func (r *registryImpl) GetExternalUserClaim(ctx context.Context, externalToken, 
 	if err != nil {
 		return nil, clientState, err
 	}
+
+	if authResp == nil || authResp.Claims == nil {
+		return nil, clientState, errox.NoCredentials.CausedBy("authentication response is empty")
+	}
+
+	if provider.AttributeVerifier() != nil {
+		if err := provider.AttributeVerifier().Verify(authResp.Claims.Attributes); err != nil {
+			return nil, clientState, errox.NoCredentials.CausedBy(err)
+		}
+	}
+
 	return authResp, clientState, nil
 }
 

@@ -14,7 +14,6 @@ import (
 )
 
 // CreateRoleBasedIdentity builds v1.AuthStatus containing identity and its role information from auth response.
-// In addition, the AuthResponse will be verified for conformity.
 func CreateRoleBasedIdentity(ctx context.Context, provider Provider, authResp *AuthResponse) (*v1.AuthStatus, error) {
 	if authResp == nil || authResp.Claims == nil {
 		return nil, errors.New("authentication response is empty")

@@ -41,7 +41,7 @@ type Provider interface {
 
 	// AttributeVerifier is optional. If it is set, external user attributes MUST be verified
 	// with the set user.AttributeVerifier. Otherwise, it would lead to authenticating principals that should be denied
-	// authenticated.
+	// authentication.
 	AttributeVerifier() user.AttributeVerifier
 
 	ApplyOptions(options ...ProviderOption) error

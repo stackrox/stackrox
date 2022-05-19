@@ -273,7 +273,6 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 		return response, nil
 	}
 
-	// We need all access for retrieving roles.
 	token, refreshCookie, err := s.registry.IssueToken(ctx, provider, authResponse)
 	if err != nil {
 		return nil, err
