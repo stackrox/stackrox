@@ -546,13 +546,13 @@ docker-build-data-image: docs-image
 
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:
-	cp -f bin/linux/roxctl image/bin/roxctl-linux
+	cp -f bin/linux/roxctl image/roxctl/roxctl-linux
 	docker build \
 		-t stackrox/roxctl:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
-		-f image/roxctl.Dockerfile \
+		-f image/roxctl/Dockerfile \
 		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
-		image/
+		image/roxctl
 
 .PHONY: copy-go-binaries-to-image-dir
 copy-go-binaries-to-image-dir:
