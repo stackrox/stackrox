@@ -7,3 +7,5 @@
 	url = https://github.com/stackrox/docs-tools.git
 	branch = main
 	shallow = true
+[submodules "docs/content"]
+	branch = rhacs-docs 3.69.2
