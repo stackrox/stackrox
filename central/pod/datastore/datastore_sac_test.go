@@ -103,7 +103,7 @@ func (s *podDatastoreSACSuite) TearDownSuite() {
 func (s *podDatastoreSACSuite) SetupTest() {
 	s.testPodIDs = make([]string, 0)
 
-	pods := fixtures.GetSACTestStoragePodSet(s.T(), fixtures.GetScopedPod)
+	pods := fixtures.GetSACTestStoragePodSet(fixtures.GetScopedPod)
 	for i := range pods {
 		s.Require().NoError(s.datastore.UpsertPod(s.testContexts[testutils.UnrestrictedReadWriteCtx], pods[i]))
 	}
@@ -171,7 +171,7 @@ func (s *podDatastoreSACSuite) TestUpsertPod() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			pod := fixtures.GetScopedPod(s.T(), uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
+			pod := fixtures.GetScopedPod(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 			s.testPodIDs = append(s.testPodIDs, pod.GetId())
 			ctx := s.testContexts[c.scopeKey]
 			err := s.datastore.UpsertPod(ctx, pod)
@@ -187,7 +187,7 @@ func (s *podDatastoreSACSuite) TestUpsertPod() {
 }
 
 func (s *podDatastoreSACSuite) TestGetPod() {
-	pod := fixtures.GetScopedPod(s.T(), uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
+	pod := fixtures.GetScopedPod(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	err := s.datastore.UpsertPod(s.testContexts[testutils.UnrestrictedReadWriteCtx], pod)
 	s.Require().NoError(err)
 	s.testPodIDs = append(s.testPodIDs, pod.GetId())
@@ -300,7 +300,7 @@ func (s *podDatastoreSACSuite) TestRemovePod() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			pod := fixtures.GetScopedPod(s.T(), uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
+			pod := fixtures.GetScopedPod(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 			s.testPodIDs = append(s.testPodIDs, pod.GetId())
 
 			ctx := s.testContexts[c.scopeKey]

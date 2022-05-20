@@ -6,8 +6,6 @@
 package fixtures
 
 import (
-	"testing"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -21,7 +19,7 @@ import (
 // 9 *storage.Pod scoped to Cluster1, 3 to each Namespace A / B / C.
 // 9 *storage.Pod scoped to Cluster2, 3 to each Namespace A / B / C.
 // 9 *storage.Pod scoped to Cluster3, 3 to each Namespace A / B / C.
-func GetSACTestStoragePodSet(t *testing.T, scopedStoragePodCreator func(t *testing.T, id string, clusterID string, namespace string) *storage.Pod) []*storage.Pod {
+func GetSACTestStoragePodSet(scopedStoragePodCreator func(id string, clusterID string, namespace string) *storage.Pod) []*storage.Pod {
 	clusters := []string{testconsts.Cluster1, testconsts.Cluster2, testconsts.Cluster3}
 	namespaces := []string{testconsts.NamespaceA, testconsts.NamespaceB, testconsts.NamespaceC}
 	const numberOfAccounts = 3
@@ -29,7 +27,7 @@ func GetSACTestStoragePodSet(t *testing.T, scopedStoragePodCreator func(t *testi
 	for _, cluster := range clusters {
 		for _, namespace := range namespaces {
 			for i := 0; i < numberOfAccounts; i++ {
-				storagePods = append(storagePods, scopedStoragePodCreator(t, uuid.NewV4().String(), cluster, namespace))
+				storagePods = append(storagePods, scopedStoragePodCreator(uuid.NewV4().String(), cluster, namespace))
 			}
 		}
 	}

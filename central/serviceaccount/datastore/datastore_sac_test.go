@@ -96,7 +96,7 @@ func (s *serviceAccountSACSuite) TearDownSuite() {
 func (s *serviceAccountSACSuite) SetupTest() {
 	s.testServiceAccountIDs = make([]string, 0)
 
-	serviceAccounts := fixtures.GetSACTestStorageServiceAccountSet(s.T(), fixtures.GetScopedServiceAccount)
+	serviceAccounts := fixtures.GetSACTestStorageServiceAccountSet(fixtures.GetScopedServiceAccount)
 
 	for i := range serviceAccounts {
 		err := s.datastore.UpsertServiceAccount(s.testContexts[testutils.UnrestrictedReadWriteCtx], serviceAccounts[i])
@@ -161,7 +161,7 @@ func (s *serviceAccountSACSuite) TestUpsertServiceAccount() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			account := fixtures.GetScopedServiceAccount(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
+			account := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
 			s.testServiceAccountIDs = append(s.testServiceAccountIDs, account.GetId())
 			ctx := s.testContexts[c.scopeKey]
@@ -178,7 +178,7 @@ func (s *serviceAccountSACSuite) TestUpsertServiceAccount() {
 }
 
 func (s *serviceAccountSACSuite) TestGetServiceAccount() {
-	account := fixtures.GetScopedServiceAccount(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
+	account := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
 		testconsts.NamespaceB)
 	err := s.datastore.UpsertServiceAccount(s.testContexts[testutils.UnrestrictedReadWriteCtx], account)
 	s.Require().NoError(err)
@@ -292,7 +292,7 @@ func (s *serviceAccountSACSuite) TestRemoveServiceAccount() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			account := fixtures.GetScopedServiceAccount(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
+			account := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
 			s.testServiceAccountIDs = append(s.testServiceAccountIDs, account.GetId())
 

@@ -6,8 +6,6 @@
 package fixtures
 
 import (
-	"testing"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -21,7 +19,7 @@ import (
 // 9 *storage.ProcessIndicator scoped to Cluster1, 3 to each Namespace A / B / C.
 // 9 *storage.ProcessIndicator scoped to Cluster2, 3 to each Namespace A / B / C.
 // 9 *storage.ProcessIndicator scoped to Cluster3, 3 to each Namespace A / B / C.
-func GetSACTestStorageProcessIndicatorSet(t *testing.T, scopedStorageProcessIndicatorCreator func(t *testing.T, id string, clusterID string, namespace string) *storage.ProcessIndicator) []*storage.ProcessIndicator {
+func GetSACTestStorageProcessIndicatorSet(scopedStorageProcessIndicatorCreator func(id string, clusterID string, namespace string) *storage.ProcessIndicator) []*storage.ProcessIndicator {
 	clusters := []string{testconsts.Cluster1, testconsts.Cluster2, testconsts.Cluster3}
 	namespaces := []string{testconsts.NamespaceA, testconsts.NamespaceB, testconsts.NamespaceC}
 	const numberOfAccounts = 3
@@ -29,7 +27,7 @@ func GetSACTestStorageProcessIndicatorSet(t *testing.T, scopedStorageProcessIndi
 	for _, cluster := range clusters {
 		for _, namespace := range namespaces {
 			for i := 0; i < numberOfAccounts; i++ {
-				storageProcessIndicators = append(storageProcessIndicators, scopedStorageProcessIndicatorCreator(t, uuid.NewV4().String(), cluster, namespace))
+				storageProcessIndicators = append(storageProcessIndicators, scopedStorageProcessIndicatorCreator(uuid.NewV4().String(), cluster, namespace))
 			}
 		}
 	}

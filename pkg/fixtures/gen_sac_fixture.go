@@ -1,8 +1,6 @@
 package fixtures
 
 import (
-	"testing"
-
 	"github.com/mauricelam/genny/generic"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -22,7 +20,7 @@ type Resource generic.Type
 // 9 Resource scoped to Cluster1, 3 to each Namespace A / B / C.
 // 9 Resource scoped to Cluster2, 3 to each Namespace A / B / C.
 // 9 Resource scoped to Cluster3, 3 to each Namespace A / B / C.
-func GetSACTestResourceSet(t *testing.T, scopedResourceCreator func(t *testing.T, id string, clusterID string, namespace string) Resource) []Resource {
+func GetSACTestResourceSet(scopedResourceCreator func(id string, clusterID string, namespace string) Resource) []Resource {
 	clusters := []string{testconsts.Cluster1, testconsts.Cluster2, testconsts.Cluster3}
 	namespaces := []string{testconsts.NamespaceA, testconsts.NamespaceB, testconsts.NamespaceC}
 	const numberOfAccounts = 3
@@ -30,7 +28,7 @@ func GetSACTestResourceSet(t *testing.T, scopedResourceCreator func(t *testing.T
 	for _, cluster := range clusters {
 		for _, namespace := range namespaces {
 			for i := 0; i < numberOfAccounts; i++ {
-				resources = append(resources, scopedResourceCreator(t, uuid.NewV4().String(), cluster, namespace))
+				resources = append(resources, scopedResourceCreator(uuid.NewV4().String(), cluster, namespace))
 			}
 		}
 	}

@@ -100,7 +100,7 @@ func (s *processIndicatorDatastoreSACSuite) TearDownSuite() {
 func (s *processIndicatorDatastoreSACSuite) SetupTest() {
 	s.testProcessIndicatorIDs = make([]string, 0)
 
-	processIndicators := fixtures.GetSACTestStorageProcessIndicatorSet(s.T(), fixtures.GetScopedProcessIndicator)
+	processIndicators := fixtures.GetSACTestStorageProcessIndicatorSet(fixtures.GetScopedProcessIndicator)
 	err := s.datastore.AddProcessIndicators(s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx], processIndicators...)
 	s.Require().NoError(err)
 
@@ -168,7 +168,7 @@ func (s *processIndicatorDatastoreSACSuite) TestAddProcessIndicators() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			processIndicator := fixtures.GetScopedProcessIndicator(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
+			processIndicator := fixtures.GetScopedProcessIndicator(uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
 			s.testProcessIndicatorIDs = append(s.testProcessIndicatorIDs, processIndicator.GetId())
 			ctx := s.testContexts[c.scopeKey]
@@ -186,7 +186,7 @@ func (s *processIndicatorDatastoreSACSuite) TestAddProcessIndicators() {
 }
 
 func (s *processIndicatorDatastoreSACSuite) TestGetProcessIndicator() {
-	processIndicator := fixtures.GetScopedProcessIndicator(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
+	processIndicator := fixtures.GetScopedProcessIndicator(uuid.NewV4().String(), testconsts.Cluster2,
 		testconsts.NamespaceB)
 	err := s.datastore.AddProcessIndicators(s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx], processIndicator)
 	s.Require().NoError(err)
@@ -300,7 +300,7 @@ func (s *processIndicatorDatastoreSACSuite) TestRemoveProcessIndicators() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			processIndicator := fixtures.GetScopedProcessIndicator(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
+			processIndicator := fixtures.GetScopedProcessIndicator(uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
 			s.testProcessIndicatorIDs = append(s.testProcessIndicatorIDs, processIndicator.GetId())
 

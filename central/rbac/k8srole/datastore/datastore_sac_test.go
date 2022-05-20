@@ -95,7 +95,7 @@ func (s *k8sRoleSACSuite) TearDownSuite() {
 func (s *k8sRoleSACSuite) SetupTest() {
 	s.testK8sRoleIDs = make([]string, 0)
 
-	k8sRoles := fixtures.GetSACTestStorageK8SRoleSet(s.T(), fixtures.GetScopedK8SRole)
+	k8sRoles := fixtures.GetSACTestStorageK8SRoleSet(fixtures.GetScopedK8SRole)
 
 	for i := range k8sRoles {
 		err := s.datastore.UpsertRole(s.testContexts[testutils.UnrestrictedReadWriteCtx], k8sRoles[i])
@@ -170,7 +170,7 @@ func (s *k8sRoleSACSuite) TestUpsertRole() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			role := fixtures.GetScopedK8SRole(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
+			role := fixtures.GetScopedK8SRole(uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
 			s.testK8sRoleIDs = append(s.testK8sRoleIDs, role.GetId())
 			ctx := s.testContexts[c.scopeKey]
@@ -187,7 +187,7 @@ func (s *k8sRoleSACSuite) TestUpsertRole() {
 }
 
 func (s *k8sRoleSACSuite) TestGetRole() {
-	role := fixtures.GetScopedK8SRole(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
+	role := fixtures.GetScopedK8SRole(uuid.NewV4().String(), testconsts.Cluster2,
 		testconsts.NamespaceB)
 	err := s.datastore.UpsertRole(s.testContexts[testutils.UnrestrictedReadWriteCtx], role)
 	s.Require().NoError(err)
@@ -301,7 +301,7 @@ func (s *k8sRoleSACSuite) TestRemoveRole() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			role := fixtures.GetScopedK8SRole(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
+			role := fixtures.GetScopedK8SRole(uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
 			s.testK8sRoleIDs = append(s.testK8sRoleIDs, role.GetId())
 
