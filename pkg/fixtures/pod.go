@@ -1,22 +1,21 @@
 package fixtures
 
 import (
+	"testing"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/require"
 )
 
 // GetPod returns a mock Pod
 func GetPod() *storage.Pod {
-	return GetScopedPod("nginx-7db9fccd9b-92hfs", "prod cluster", "stackrox")
-}
-
-// GetScopedPod returns a mock Pod belonging to the input scope.
-func GetScopedPod(ID string, clusterID string, namespace string) *storage.Pod {
 	return &storage.Pod{
-		Id:           ID,
+		Id:           "nginx-7db9fccd9b-92hfs",
 		DeploymentId: GetDeployment().GetId(),
-		ClusterId:    clusterID,
-		Namespace:    namespace,
+		ClusterId:    "prod cluster",
+		Namespace:    "stackrox",
 		Started: &types.Timestamp{
 			Seconds: 0,
 		},
@@ -115,4 +114,15 @@ func GetScopedPod(ID string, clusterID string, namespace string) *storage.Pod {
 			},
 		},
 	}
+}
+
+// GetScopedPod returns a mock Pod belonging to the input scope.
+func GetScopedPod(t *testing.T, ID string, clusterID string, namespace string) *storage.Pod {
+	pod := &storage.Pod{}
+	require.NoError(t, testutils.FullInit(pod, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	pod.Id = ID
+	pod.ClusterId = clusterID
+	pod.Namespace = namespace
+
+	return pod
 }

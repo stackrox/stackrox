@@ -6,6 +6,8 @@
 package fixtures
 
 import (
+	"testing"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -19,7 +21,7 @@ import (
 // 9 *storage.K8SRoleBinding scoped to Cluster1, 3 to each Namespace A / B / C.
 // 9 *storage.K8SRoleBinding scoped to Cluster2, 3 to each Namespace A / B / C.
 // 9 *storage.K8SRoleBinding scoped to Cluster3, 3 to each Namespace A / B / C.
-func GetSACTestStorageK8SRoleBindingSet(scopedStorageK8SRoleBindingCreator func(id string, clusterID string, namespace string) *storage.K8SRoleBinding) []*storage.K8SRoleBinding {
+func GetSACTestStorageK8SRoleBindingSet(t *testing.T, scopedStorageK8SRoleBindingCreator func(t *testing.T, id string, clusterID string, namespace string) *storage.K8SRoleBinding) []*storage.K8SRoleBinding {
 	clusters := []string{testconsts.Cluster1, testconsts.Cluster2, testconsts.Cluster3}
 	namespaces := []string{testconsts.NamespaceA, testconsts.NamespaceB, testconsts.NamespaceC}
 	const numberOfAccounts = 3
@@ -27,7 +29,7 @@ func GetSACTestStorageK8SRoleBindingSet(scopedStorageK8SRoleBindingCreator func(
 	for _, cluster := range clusters {
 		for _, namespace := range namespaces {
 			for i := 0; i < numberOfAccounts; i++ {
-				storageK8SRoleBindings = append(storageK8SRoleBindings, scopedStorageK8SRoleBindingCreator(uuid.NewV4().String(), cluster, namespace))
+				storageK8SRoleBindings = append(storageK8SRoleBindings, scopedStorageK8SRoleBindingCreator(t, uuid.NewV4().String(), cluster, namespace))
 			}
 		}
 	}
