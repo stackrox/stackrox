@@ -291,17 +291,15 @@ db_backup_and_restore_test() {
         die "missing args. usage: db_backup_and_restore_test <output dir>"
     fi
 
-    local output_dir="$1/central-backup"
-    info "Backing up to $1/central-backup"
+    local output_dir="$1"
+    info "Backing up to $1"
     mkdir -p "$output_dir"
     roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "$output_dir" || touch DB_TEST_FAIL
 
     if [[ ! -e DB_TEST_FAIL ]]; then
-        info "Restoring from $1/central-backup"
+        info "Restoring from $1"
         roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_* || touch DB_TEST_FAIL
     fi
-
-    ./scripts/ci/collect-service-logs.sh stackrox "$1/service-logs"
 
     [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
 }
