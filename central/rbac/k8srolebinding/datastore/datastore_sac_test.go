@@ -97,7 +97,7 @@ func (s *k8sRoleBindingSACSuite) TearDownSuite() {
 func (s *k8sRoleBindingSACSuite) SetupTest() {
 	s.testK8sRoleBindingIDs = make([]string, 0)
 
-	k8sRoleBindings := fixtures.GetSACTestStorageK8SRoleBindingSet(fixtures.GetScopedK8SRoleBinding)
+	k8sRoleBindings := fixtures.GetSACTestStorageK8SRoleBindingSet(s.T(), fixtures.GetScopedK8SRoleBinding)
 
 	for i := range k8sRoleBindings {
 		err := s.datastore.UpsertRoleBinding(s.testContexts[testutils.UnrestrictedReadWriteCtx], k8sRoleBindings[i])
@@ -172,7 +172,7 @@ func (s *k8sRoleBindingSACSuite) TestUpsertRoleBinding() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			roleBinding := fixtures.GetScopedK8SRoleBinding(uuid.NewV4().String(), testconsts.Cluster2,
+			roleBinding := fixtures.GetScopedK8SRoleBinding(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
 			s.testK8sRoleBindingIDs = append(s.testK8sRoleBindingIDs, roleBinding.GetId())
 			ctx := s.testContexts[c.scopeKey]
@@ -189,7 +189,7 @@ func (s *k8sRoleBindingSACSuite) TestUpsertRoleBinding() {
 }
 
 func (s *k8sRoleBindingSACSuite) TestGetRoleBinding() {
-	roleBinding := fixtures.GetScopedK8SRoleBinding(uuid.NewV4().String(), testconsts.Cluster2,
+	roleBinding := fixtures.GetScopedK8SRoleBinding(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
 		testconsts.NamespaceB)
 	err := s.datastore.UpsertRoleBinding(s.testContexts[testutils.UnrestrictedReadWriteCtx], roleBinding)
 	s.Require().NoError(err)
@@ -303,7 +303,7 @@ func (s *k8sRoleBindingSACSuite) TestRemoveRoleBinding() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			roleBinding := fixtures.GetScopedK8SRoleBinding(uuid.NewV4().String(), testconsts.Cluster2,
+			roleBinding := fixtures.GetScopedK8SRoleBinding(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
 			s.testK8sRoleBindingIDs = append(s.testK8sRoleBindingIDs, roleBinding.GetId())
 
