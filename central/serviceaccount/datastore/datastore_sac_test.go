@@ -96,7 +96,7 @@ func (s *serviceAccountSACSuite) TearDownSuite() {
 func (s *serviceAccountSACSuite) SetupTest() {
 	s.testServiceAccountIDs = make([]string, 0)
 
-	serviceAccounts := fixtures.GetSACTestStorageServiceAccountSet(fixtures.GetScopedServiceAccount)
+	serviceAccounts := fixtures.GetSACTestStorageServiceAccountSet(s.T(), fixtures.GetScopedServiceAccount)
 
 	for i := range serviceAccounts {
 		err := s.datastore.UpsertServiceAccount(s.testContexts[testutils.UnrestrictedReadWriteCtx], serviceAccounts[i])
@@ -152,18 +152,8 @@ func (s *serviceAccountSACSuite) TestUpsertServiceAccount() {
 			expectFail:  true,
 			expectedErr: sac.ErrResourceAccessDenied,
 		},
-		"read-write on matching cluster and matching namespace should be able to add": {
-			scopeKey:    testutils.Cluster2NamespaceBReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
 		"read-write on matching cluster and no namespace should not be able to add": {
 			scopeKey:    testutils.Cluster2ReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster and at least one matching namespace should be able to add": {
-			scopeKey:    testutils.Cluster2NamespacesABReadWriteCtx,
 			expectFail:  true,
 			expectedErr: sac.ErrResourceAccessDenied,
 		},
@@ -171,12 +161,12 @@ func (s *serviceAccountSACSuite) TestUpsertServiceAccount() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			role := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
+			account := fixtures.GetScopedServiceAccount(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
-			s.testServiceAccountIDs = append(s.testServiceAccountIDs, role.GetId())
+			s.testServiceAccountIDs = append(s.testServiceAccountIDs, account.GetId())
 			ctx := s.testContexts[c.scopeKey]
-			err := s.datastore.UpsertServiceAccount(ctx, role)
-			defer s.deleteServiceAccount(role.GetId())
+			err := s.datastore.UpsertServiceAccount(ctx, account)
+			defer s.deleteServiceAccount(account.GetId())
 			if c.expectFail {
 				s.Require().Error(err)
 				s.ErrorIs(err, c.expectedErr)
@@ -188,11 +178,11 @@ func (s *serviceAccountSACSuite) TestUpsertServiceAccount() {
 }
 
 func (s *serviceAccountSACSuite) TestGetServiceAccount() {
-	role := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
+	account := fixtures.GetScopedServiceAccount(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
 		testconsts.NamespaceB)
-	err := s.datastore.UpsertServiceAccount(s.testContexts[testutils.UnrestrictedReadWriteCtx], role)
+	err := s.datastore.UpsertServiceAccount(s.testContexts[testutils.UnrestrictedReadWriteCtx], account)
 	s.Require().NoError(err)
-	s.testServiceAccountIDs = append(s.testServiceAccountIDs, role.GetId())
+	s.testServiceAccountIDs = append(s.testServiceAccountIDs, account.GetId())
 
 	cases := map[string]struct {
 		scopeKey string
@@ -235,11 +225,11 @@ func (s *serviceAccountSACSuite) TestGetServiceAccount() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := s.testContexts[c.scopeKey]
-			res, found, err := s.datastore.GetServiceAccount(ctx, role.GetId())
+			res, found, err := s.datastore.GetServiceAccount(ctx, account.GetId())
 			s.Require().NoError(err)
 			if c.found {
 				s.True(found)
-				s.Equal(*role, *res)
+				s.Equal(*account, *res)
 			} else {
 				s.False(found)
 				s.Nil(res)
@@ -302,16 +292,16 @@ func (s *serviceAccountSACSuite) TestRemoveServiceAccount() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			role := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
+			account := fixtures.GetScopedServiceAccount(s.T(), uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
-			s.testServiceAccountIDs = append(s.testServiceAccountIDs, role.GetId())
+			s.testServiceAccountIDs = append(s.testServiceAccountIDs, account.GetId())
 
 			ctx := s.testContexts[c.scopeKey]
-			err := s.datastore.UpsertServiceAccount(s.testContexts[testutils.UnrestrictedReadWriteCtx], role)
+			err := s.datastore.UpsertServiceAccount(s.testContexts[testutils.UnrestrictedReadWriteCtx], account)
 			s.Require().NoError(err)
-			defer s.deleteServiceAccount(role.GetId())
+			defer s.deleteServiceAccount(account.GetId())
 
-			err = s.datastore.RemoveServiceAccount(ctx, role.GetId())
+			err = s.datastore.RemoveServiceAccount(ctx, account.GetId())
 			if c.expectFail {
 				s.Require().Error(err)
 				s.ErrorIs(err, c.expectedErr)
@@ -320,6 +310,37 @@ func (s *serviceAccountSACSuite) TestRemoveServiceAccount() {
 			}
 		})
 	}
+}
+
+func (s *serviceAccountSACSuite) TestCountServiceAccount() {
+	ctx := s.testContexts[testutils.UnrestrictedReadCtx]
+	result, err := s.datastore.Count(ctx, nil)
+	s.Require().NoError(err)
+	s.Equal(27, result)
+}
+
+func (s *serviceAccountSACSuite) TestSearchServiceAccount() {
+	// Run both scoped and unrestricted search test cases.
+	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runSearchServiceAccountTest(c)
+		})
+	}
+
+	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runSearchServiceAccountTest(c)
+		})
+	}
+}
+
+func (s *serviceAccountSACSuite) runSearchServiceAccountTest(c testutils.SACSearchTestCase) {
+	ctx := s.testContexts[c.ScopeKey]
+	results, err := s.datastore.SearchServiceAccounts(ctx, nil)
+	s.Require().NoError(err)
+	resultCounts := testutils.CountSearchResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
+	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
+
 }
 
 func (s *serviceAccountSACSuite) runSearchRawTest(c testutils.SACSearchTestCase) {
