@@ -1,17 +1,18 @@
-import withAuth from '../../helpers/basicAuth';
 import { url, selectors } from '../../constants/VulnManagementPage';
+import withAuth from '../../helpers/basicAuth';
 import {
     hasExpectedHeaderColumns,
     allChecksForEntities,
     allCVECheck,
     // uncomment after the issue fix  - allFixableCheck
 } from '../../helpers/vmWorkflowUtils';
+import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
 
 describe('Deployments list Page and its entity detail page , (related entities) sub list  validations ', () => {
     withAuth();
 
     it('should display all the columns and links expected in deployments list page', () => {
-        cy.visit(url.list.deployments);
+        visitVulnerabilityManagementEntities('deployments');
         hasExpectedHeaderColumns([
             'Cluster',
             'CVEs',

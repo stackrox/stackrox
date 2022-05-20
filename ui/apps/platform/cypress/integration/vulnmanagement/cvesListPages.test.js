@@ -1,13 +1,13 @@
-import withAuth from '../../helpers/basicAuth';
 import { url, selectors } from '../../constants/VulnManagementPage';
+import withAuth from '../../helpers/basicAuth';
 import { hasExpectedHeaderColumns, allChecksForEntities } from '../../helpers/vmWorkflowUtils';
-import * as api from '../../constants/apiEndpoints';
+import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
 
 describe('CVEs list Page and its entity detail page, sub list validations ', () => {
     withAuth();
 
     it('should display all the columns and links expected in cves list page', () => {
-        cy.visit(url.list.cves);
+        visitVulnerabilityManagementEntities('cves');
         hasExpectedHeaderColumns([
             'CVE',
             'Type',
@@ -42,14 +42,14 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
     });
 
     it('should display Discovered in Image time column when appropriate', () => {
-        cy.visit(url.list.cves);
+        visitVulnerabilityManagementEntities('cves');
         cy.get(`${selectors.tableColumn}`)
             .invoke('text')
             .then((text) => {
                 expect(text).not.to.include('Discovered in Image');
             });
 
-        cy.visit(url.list.images);
+        visitVulnerabilityManagementEntities('images');
         cy.get(`${selectors.allCVEColumnLink}:eq(0)`).click({ force: true });
         cy.get(`[data-testid="side-panel"] ${selectors.tableColumn}`)
             .invoke('text')
@@ -57,7 +57,7 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
                 expect(text).to.include('Discovered in Image');
             });
 
-        cy.visit(url.list.components);
+        visitVulnerabilityManagementEntities('components');
         cy.get(`${selectors.allCVEColumnLink}:eq(0)`).click({ force: true });
         cy.get(`[data-testid="side-panel"] ${selectors.tableColumn}`)
             .invoke('text')
@@ -67,7 +67,7 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
     });
 
     it('should display correct CVE type', () => {
-        cy.visit(url.list.cves);
+        visitVulnerabilityManagementEntities('cves');
 
         cy.get(`${selectors.cveTypes}:first`)
             .invoke('text')
@@ -85,7 +85,7 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
     });
 
     it('should suppress CVE', () => {
-        cy.visit(url.list.cves);
+        visitVulnerabilityManagementEntities('cves');
         cy.get(selectors.cveSuppressPanelButton).should('be.disabled');
 
         // Obtain the CVE to verify in suppressed view
@@ -114,7 +114,7 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
     });
 
     it.skip('should unsuppress suppressed CVE', () => {
-        cy.visit(`${url.list.cves}?s[CVE%20Snoozed]=true`);
+        visitVulnerabilityManagementEntities('cves', '?s[CVE%20Snoozed]=true');
         cy.get(selectors.cveUnsuppressPanelButton).should('be.disabled');
 
         // Obtain the CVE to verify in unsuppressed view
@@ -139,13 +139,8 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
     });
 
     describe('adding selected CVEs to policy', () => {
-        beforeEach(() => {
-            cy.intercept('POST', api.graphql(api.vulnMgmt.graphqlOps.getCves)).as('getCves');
-        });
-
         it('should add CVEs to new policies', () => {
-            cy.visit(url.list.cves);
-            cy.wait('@getCves');
+            visitVulnerabilityManagementEntities('cves');
 
             cy.get(selectors.cveAddToPolicyButton).should('be.disabled');
 
@@ -160,8 +155,7 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
         });
 
         it('should add CVEs to existing policies', () => {
-            cy.visit(url.list.cves);
-            cy.wait('@getCves');
+            visitVulnerabilityManagementEntities('cves');
 
             cy.get(selectors.cveAddToPolicyButton).should('be.disabled');
 
@@ -177,8 +171,7 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
         });
 
         it('should add CVEs to existing policies with CVEs', () => {
-            cy.visit(url.list.cves);
-            cy.wait('@getCves');
+            visitVulnerabilityManagementEntities('cves');
 
             cy.get(selectors.cveAddToPolicyButton).should('be.disabled');
 

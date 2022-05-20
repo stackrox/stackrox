@@ -6,12 +6,13 @@ import {
     allCVECheck,
     allFixableCheck,
 } from '../../helpers/vmWorkflowUtils';
+import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
 
 describe('Namespaces list Page and its entity detail page , (related entities) sub list  validations ', () => {
     withAuth();
 
     it('should display all the columns and links expected in namespaces list page', () => {
-        cy.visit(url.list.namespaces);
+        visitVulnerabilityManagementEntities('namespaces');
         hasExpectedHeaderColumns([
             'Cluster',
             'CVEs',

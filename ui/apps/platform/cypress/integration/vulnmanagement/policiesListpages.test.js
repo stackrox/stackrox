@@ -1,13 +1,14 @@
-import withAuth from '../../helpers/basicAuth';
 import { url, selectors } from '../../constants/VulnManagementPage';
 import { selectors as policySelectors } from '../../constants/PoliciesPagePatternFly';
+import withAuth from '../../helpers/basicAuth';
 import { hasExpectedHeaderColumns, allChecksForEntities } from '../../helpers/vmWorkflowUtils';
+import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
 
 describe('Policies list Page and its entity detail page , related entities sub list  validations ', () => {
     withAuth();
 
     it('should display all the columns and links expected in clusters list page', () => {
-        cy.visit(url.list.policies);
+        visitVulnerabilityManagementEntities('policies');
         hasExpectedHeaderColumns([
             'Policy',
             'Description',
@@ -33,7 +34,7 @@ describe('Policies list Page and its entity detail page , related entities sub l
     describe('post-Boolean Policy Logic tests', () => {
         // regression test for ROX-4752
         it('should show Privileged criterion when present in the policy', () => {
-            cy.visit(url.list.policies);
+            visitVulnerabilityManagementEntities('policies');
 
             cy.get(`${selectors.tableRows}:contains('Privileged')`).click();
 
