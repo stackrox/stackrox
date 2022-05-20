@@ -18,18 +18,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type SimpleaccessscopesStoreSuite struct {
+type SimpleAccessScopesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestSimpleaccessscopesStore(t *testing.T) {
-	suite.Run(t, new(SimpleaccessscopesStoreSuite))
+func TestSimpleAccessScopesStore(t *testing.T) {
+	suite.Run(t, new(SimpleAccessScopesStoreSuite))
 }
 
-func (s *SimpleaccessscopesStoreSuite) SetupTest() {
+func (s *SimpleAccessScopesStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -52,14 +52,14 @@ func (s *SimpleaccessscopesStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *SimpleaccessscopesStoreSuite) TearDownTest() {
+func (s *SimpleAccessScopesStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *SimpleaccessscopesStoreSuite) TestStore() {
+func (s *SimpleAccessScopesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store

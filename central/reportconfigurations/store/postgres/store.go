@@ -23,14 +23,14 @@ import (
 )
 
 const (
-	baseTable = "reportconfigs"
+	baseTable = "report_configurations"
 
-	getStmt     = "SELECT serialized FROM reportconfigs WHERE Id = $1"
-	deleteStmt  = "DELETE FROM reportconfigs WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM reportconfigs"
-	getManyStmt = "SELECT serialized FROM reportconfigs WHERE Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM report_configurations WHERE Id = $1"
+	deleteStmt  = "DELETE FROM report_configurations WHERE Id = $1"
+	walkStmt    = "SELECT serialized FROM report_configurations"
+	getManyStmt = "SELECT serialized FROM report_configurations WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM reportconfigs WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM report_configurations WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -42,7 +42,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ReportconfigsSchema
+	schema         = pkgSchema.ReportConfigurationsSchema
 	targetResource = resources.VulnerabilityReports
 )
 
@@ -69,14 +69,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableReportconfigsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableReportConfigurationsStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoReportconfigs(ctx context.Context, tx pgx.Tx, obj *storage.ReportConfiguration) error {
+func insertIntoReportConfigurations(ctx context.Context, tx pgx.Tx, obj *storage.ReportConfiguration) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -91,7 +91,7 @@ func insertIntoReportconfigs(ctx context.Context, tx pgx.Tx, obj *storage.Report
 		serialized,
 	}
 
-	finalStr := "INSERT INTO reportconfigs (Id, Name, Type, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO report_configurations (Id, Name, Type, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func insertIntoReportconfigs(ctx context.Context, tx pgx.Tx, obj *storage.Report
 	return nil
 }
 
-func (s *storeImpl) copyFromReportconfigs(ctx context.Context, tx pgx.Tx, objs ...*storage.ReportConfiguration) error {
+func (s *storeImpl) copyFromReportConfigurations(ctx context.Context, tx pgx.Tx, objs ...*storage.ReportConfiguration) error {
 
 	inputRows := [][]interface{}{}
 
@@ -156,7 +156,7 @@ func (s *storeImpl) copyFromReportconfigs(ctx context.Context, tx pgx.Tx, objs .
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"reportconfigs"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"report_configurations"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -182,7 +182,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ReportConfigu
 		return err
 	}
 
-	if err := s.copyFromReportconfigs(ctx, tx, objs...); err != nil {
+	if err := s.copyFromReportConfigurations(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -207,7 +207,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ReportConfigura
 			return err
 		}
 
-		if err := insertIntoReportconfigs(ctx, tx, obj); err != nil {
+		if err := insertIntoReportConfigurations(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -473,13 +473,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ReportConfigu
 
 //// Used for testing
 
-func dropTableReportconfigs(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS reportconfigs CASCADE")
+func dropTableReportConfigurations(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS report_configurations CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableReportconfigs(ctx, db)
+	dropTableReportConfigurations(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

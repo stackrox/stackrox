@@ -20,16 +20,16 @@ import (
 )
 
 const (
-	baseTable = "node_components_to_cves"
+	baseTable = "node_component_cve_edges"
 
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_components_to_cves WHERE Id = $1 AND ComponentId = $2 AND CveId = $3)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_component_cve_edges WHERE Id = $1 AND ComponentId = $2 AND CveId = $3)"
 
-	getStmt     = "SELECT serialized FROM node_components_to_cves WHERE Id = $1 AND ComponentId = $2 AND CveId = $3"
-	deleteStmt  = "DELETE FROM node_components_to_cves WHERE Id = $1 AND ComponentId = $2 AND CveId = $3"
-	walkStmt    = "SELECT serialized FROM node_components_to_cves"
-	getManyStmt = "SELECT serialized FROM node_components_to_cves WHERE Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM node_component_cve_edges WHERE Id = $1 AND ComponentId = $2 AND CveId = $3"
+	deleteStmt  = "DELETE FROM node_component_cve_edges WHERE Id = $1 AND ComponentId = $2 AND CveId = $3"
+	walkStmt    = "SELECT serialized FROM node_component_cve_edges"
+	getManyStmt = "SELECT serialized FROM node_component_cve_edges WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM node_components_to_cves WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM node_component_cve_edges WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -41,7 +41,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.NodeComponentsToCvesSchema
+	schema = pkgSchema.NodeComponentCveEdgesSchema
 )
 
 type Store interface {
@@ -63,9 +63,9 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNodeComponentsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentsStmt)
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNodeCvesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNodeComponentsToCvesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNodeComponentCveEdgesStmt)
 
 	return &storeImpl{
 		db: db,
@@ -216,13 +216,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NodeComponent
 
 //// Used for testing
 
-func dropTableNodeComponentsToCves(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS node_components_to_cves CASCADE")
+func dropTableNodeComponentCveEdges(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS node_component_cve_edges CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableNodeComponentsToCves(ctx, db)
+	dropTableNodeComponentCveEdges(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

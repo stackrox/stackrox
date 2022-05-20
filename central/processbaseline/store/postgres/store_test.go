@@ -20,18 +20,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ProcessbaselinesStoreSuite struct {
+type ProcessBaselinesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestProcessbaselinesStore(t *testing.T) {
-	suite.Run(t, new(ProcessbaselinesStoreSuite))
+func TestProcessBaselinesStore(t *testing.T) {
+	suite.Run(t, new(ProcessBaselinesStoreSuite))
 }
 
-func (s *ProcessbaselinesStoreSuite) SetupTest() {
+func (s *ProcessBaselinesStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,14 +54,14 @@ func (s *ProcessbaselinesStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *ProcessbaselinesStoreSuite) TearDownTest() {
+func (s *ProcessBaselinesStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *ProcessbaselinesStoreSuite) TestStore() {
+func (s *ProcessBaselinesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
@@ -117,7 +117,7 @@ func (s *ProcessbaselinesStoreSuite) TestStore() {
 	s.Equal(200, processBaselineCount)
 }
 
-func (s *ProcessbaselinesStoreSuite) TestSACUpsert() {
+func (s *ProcessBaselinesStoreSuite) TestSACUpsert() {
 	obj := &storage.ProcessBaseline{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -136,7 +136,7 @@ func (s *ProcessbaselinesStoreSuite) TestSACUpsert() {
 	}
 }
 
-func (s *ProcessbaselinesStoreSuite) TestSACUpsertMany() {
+func (s *ProcessBaselinesStoreSuite) TestSACUpsertMany() {
 	obj := &storage.ProcessBaseline{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -155,7 +155,7 @@ func (s *ProcessbaselinesStoreSuite) TestSACUpsertMany() {
 	}
 }
 
-func (s *ProcessbaselinesStoreSuite) TestSACCount() {
+func (s *ProcessBaselinesStoreSuite) TestSACCount() {
 	objA := &storage.ProcessBaseline{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -183,7 +183,7 @@ func (s *ProcessbaselinesStoreSuite) TestSACCount() {
 	}
 }
 
-func (s *ProcessbaselinesStoreSuite) TestSACGetIDs() {
+func (s *ProcessBaselinesStoreSuite) TestSACGetIDs() {
 	objA := &storage.ProcessBaseline{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -211,7 +211,7 @@ func (s *ProcessbaselinesStoreSuite) TestSACGetIDs() {
 	}
 }
 
-func (s *ProcessbaselinesStoreSuite) TestSACExists() {
+func (s *ProcessBaselinesStoreSuite) TestSACExists() {
 	objA := &storage.ProcessBaseline{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 

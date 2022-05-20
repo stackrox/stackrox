@@ -32,7 +32,7 @@ var (
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
-               create table if not exists pods_LiveInstances (
+               create table if not exists pods_live_instances (
                    pods_Id varchar,
                    idx integer,
                    ImageDigest varchar,
@@ -41,7 +41,7 @@ var (
                )
                `,
 				Indexes: []string{
-					"create index if not exists podsLiveInstances_idx on pods_LiveInstances using btree(idx)",
+					"create index if not exists podsLiveInstances_idx on pods_live_instances using btree(idx)",
 				},
 				Children: []*postgres.CreateStmts{},
 			},

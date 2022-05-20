@@ -21,14 +21,14 @@ import (
 )
 
 const (
-	baseTable = "networkbaseline"
+	baseTable = "network_baselines"
 
-	getStmt     = "SELECT serialized FROM networkbaseline WHERE DeploymentId = $1"
-	deleteStmt  = "DELETE FROM networkbaseline WHERE DeploymentId = $1"
-	walkStmt    = "SELECT serialized FROM networkbaseline"
-	getManyStmt = "SELECT serialized FROM networkbaseline WHERE DeploymentId = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM network_baselines WHERE DeploymentId = $1"
+	deleteStmt  = "DELETE FROM network_baselines WHERE DeploymentId = $1"
+	walkStmt    = "SELECT serialized FROM network_baselines"
+	getManyStmt = "SELECT serialized FROM network_baselines WHERE DeploymentId = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM networkbaseline WHERE DeploymentId = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM network_baselines WHERE DeploymentId = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -40,7 +40,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.NetworkbaselineSchema
+	schema = pkgSchema.NetworkBaselinesSchema
 )
 
 type Store interface {
@@ -66,14 +66,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNetworkbaselineStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNetworkBaselinesStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, obj *storage.NetworkBaseline) error {
+func insertIntoNetworkBaselines(ctx context.Context, tx pgx.Tx, obj *storage.NetworkBaseline) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -86,7 +86,7 @@ func insertIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, obj *storage.Netw
 		serialized,
 	}
 
-	finalStr := "INSERT INTO networkbaseline (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO network_baselines (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ func insertIntoNetworkbaseline(ctx context.Context, tx pgx.Tx, obj *storage.Netw
 	return nil
 }
 
-func (s *storeImpl) copyFromNetworkbaseline(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkBaseline) error {
+func (s *storeImpl) copyFromNetworkBaselines(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkBaseline) error {
 
 	inputRows := [][]interface{}{}
 
@@ -143,7 +143,7 @@ func (s *storeImpl) copyFromNetworkbaseline(ctx context.Context, tx pgx.Tx, objs
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkbaseline"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"network_baselines"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -169,7 +169,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkBaseli
 		return err
 	}
 
-	if err := s.copyFromNetworkbaseline(ctx, tx, objs...); err != nil {
+	if err := s.copyFromNetworkBaselines(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -194,7 +194,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkBaseline
 			return err
 		}
 
-		if err := insertIntoNetworkbaseline(ctx, tx, obj); err != nil {
+		if err := insertIntoNetworkBaselines(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -401,13 +401,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkBaseli
 
 //// Used for testing
 
-func dropTableNetworkbaseline(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkbaseline CASCADE")
+func dropTableNetworkBaselines(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_baselines CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableNetworkbaseline(ctx, db)
+	dropTableNetworkBaselines(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

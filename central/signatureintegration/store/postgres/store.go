@@ -23,14 +23,14 @@ import (
 )
 
 const (
-	baseTable = "signatureintegrations"
+	baseTable = "signature_integrations"
 
-	getStmt     = "SELECT serialized FROM signatureintegrations WHERE Id = $1"
-	deleteStmt  = "DELETE FROM signatureintegrations WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM signatureintegrations"
-	getManyStmt = "SELECT serialized FROM signatureintegrations WHERE Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM signature_integrations WHERE Id = $1"
+	deleteStmt  = "DELETE FROM signature_integrations WHERE Id = $1"
+	walkStmt    = "SELECT serialized FROM signature_integrations"
+	getManyStmt = "SELECT serialized FROM signature_integrations WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM signatureintegrations WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM signature_integrations WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -42,7 +42,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.SignatureintegrationsSchema
+	schema         = pkgSchema.SignatureIntegrationsSchema
 	targetResource = resources.SignatureIntegration
 )
 
@@ -69,14 +69,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableSignatureintegrationsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableSignatureIntegrationsStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoSignatureintegrations(ctx context.Context, tx pgx.Tx, obj *storage.SignatureIntegration) error {
+func insertIntoSignatureIntegrations(ctx context.Context, tx pgx.Tx, obj *storage.SignatureIntegration) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -90,7 +90,7 @@ func insertIntoSignatureintegrations(ctx context.Context, tx pgx.Tx, obj *storag
 		serialized,
 	}
 
-	finalStr := "INSERT INTO signatureintegrations (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO signature_integrations (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -99,7 +99,7 @@ func insertIntoSignatureintegrations(ctx context.Context, tx pgx.Tx, obj *storag
 	return nil
 }
 
-func (s *storeImpl) copyFromSignatureintegrations(ctx context.Context, tx pgx.Tx, objs ...*storage.SignatureIntegration) error {
+func (s *storeImpl) copyFromSignatureIntegrations(ctx context.Context, tx pgx.Tx, objs ...*storage.SignatureIntegration) error {
 
 	inputRows := [][]interface{}{}
 
@@ -151,7 +151,7 @@ func (s *storeImpl) copyFromSignatureintegrations(ctx context.Context, tx pgx.Tx
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"signatureintegrations"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"signature_integrations"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -177,7 +177,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.SignatureInte
 		return err
 	}
 
-	if err := s.copyFromSignatureintegrations(ctx, tx, objs...); err != nil {
+	if err := s.copyFromSignatureIntegrations(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -202,7 +202,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.SignatureIntegr
 			return err
 		}
 
-		if err := insertIntoSignatureintegrations(ctx, tx, obj); err != nil {
+		if err := insertIntoSignatureIntegrations(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -468,13 +468,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.SignatureInte
 
 //// Used for testing
 
-func dropTableSignatureintegrations(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS signatureintegrations CASCADE")
+func dropTableSignatureIntegrations(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS signature_integrations CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableSignatureintegrations(ctx, db)
+	dropTableSignatureIntegrations(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

@@ -55,9 +55,9 @@ func New(ctx context.Context, db *pgxpool.Pool, noUpdateTimestamps bool) store.S
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImagesStmt)
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentsStmt)
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCvesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentRelationsStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentCveRelationsStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCveRelationsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentEdgesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableComponentCveEdgesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCveEdgesStmt)
 
 	return &storeImpl{
 		db:                 db,

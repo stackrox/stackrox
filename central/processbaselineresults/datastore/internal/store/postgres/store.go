@@ -21,14 +21,14 @@ import (
 )
 
 const (
-	baseTable = "processwhitelistresults"
+	baseTable = "process_baseline_results"
 
-	getStmt     = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = $1"
-	deleteStmt  = "DELETE FROM processwhitelistresults WHERE DeploymentId = $1"
-	walkStmt    = "SELECT serialized FROM processwhitelistresults"
-	getManyStmt = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM process_baseline_results WHERE DeploymentId = $1"
+	deleteStmt  = "DELETE FROM process_baseline_results WHERE DeploymentId = $1"
+	walkStmt    = "SELECT serialized FROM process_baseline_results"
+	getManyStmt = "SELECT serialized FROM process_baseline_results WHERE DeploymentId = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM process_baseline_results WHERE DeploymentId = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -40,7 +40,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.ProcesswhitelistresultsSchema
+	schema = pkgSchema.ProcessBaselineResultsSchema
 )
 
 type Store interface {
@@ -66,14 +66,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableProcesswhitelistresultsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableProcessBaselineResultsStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoProcesswhitelistresults(ctx context.Context, tx pgx.Tx, obj *storage.ProcessBaselineResults) error {
+func insertIntoProcessBaselineResults(ctx context.Context, tx pgx.Tx, obj *storage.ProcessBaselineResults) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -86,7 +86,7 @@ func insertIntoProcesswhitelistresults(ctx context.Context, tx pgx.Tx, obj *stor
 		serialized,
 	}
 
-	finalStr := "INSERT INTO processwhitelistresults (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO process_baseline_results (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ func insertIntoProcesswhitelistresults(ctx context.Context, tx pgx.Tx, obj *stor
 	return nil
 }
 
-func (s *storeImpl) copyFromProcesswhitelistresults(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessBaselineResults) error {
+func (s *storeImpl) copyFromProcessBaselineResults(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessBaselineResults) error {
 
 	inputRows := [][]interface{}{}
 
@@ -143,7 +143,7 @@ func (s *storeImpl) copyFromProcesswhitelistresults(ctx context.Context, tx pgx.
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processwhitelistresults"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_baseline_results"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -169,7 +169,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaseli
 		return err
 	}
 
-	if err := s.copyFromProcesswhitelistresults(ctx, tx, objs...); err != nil {
+	if err := s.copyFromProcessBaselineResults(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -194,7 +194,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessBaseline
 			return err
 		}
 
-		if err := insertIntoProcesswhitelistresults(ctx, tx, obj); err != nil {
+		if err := insertIntoProcessBaselineResults(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -401,13 +401,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessBaseli
 
 //// Used for testing
 
-func dropTableProcesswhitelistresults(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS processwhitelistresults CASCADE")
+func dropTableProcessBaselineResults(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS process_baseline_results CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableProcesswhitelistresults(ctx, db)
+	dropTableProcessBaselineResults(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

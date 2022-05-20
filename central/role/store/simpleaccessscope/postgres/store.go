@@ -23,14 +23,14 @@ import (
 )
 
 const (
-	baseTable = "simpleaccessscopes"
+	baseTable = "simple_access_scopes"
 
-	getStmt     = "SELECT serialized FROM simpleaccessscopes WHERE Id = $1"
-	deleteStmt  = "DELETE FROM simpleaccessscopes WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM simpleaccessscopes"
-	getManyStmt = "SELECT serialized FROM simpleaccessscopes WHERE Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM simple_access_scopes WHERE Id = $1"
+	deleteStmt  = "DELETE FROM simple_access_scopes WHERE Id = $1"
+	walkStmt    = "SELECT serialized FROM simple_access_scopes"
+	getManyStmt = "SELECT serialized FROM simple_access_scopes WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM simpleaccessscopes WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM simple_access_scopes WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -42,7 +42,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.SimpleaccessscopesSchema
+	schema         = pkgSchema.SimpleAccessScopesSchema
 	targetResource = resources.Role
 )
 
@@ -69,14 +69,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableSimpleaccessscopesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableSimpleAccessScopesStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, obj *storage.SimpleAccessScope) error {
+func insertIntoSimpleAccessScopes(ctx context.Context, tx pgx.Tx, obj *storage.SimpleAccessScope) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -90,7 +90,7 @@ func insertIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, obj *storage.S
 		serialized,
 	}
 
-	finalStr := "INSERT INTO simpleaccessscopes (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO simple_access_scopes (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -99,7 +99,7 @@ func insertIntoSimpleaccessscopes(ctx context.Context, tx pgx.Tx, obj *storage.S
 	return nil
 }
 
-func (s *storeImpl) copyFromSimpleaccessscopes(ctx context.Context, tx pgx.Tx, objs ...*storage.SimpleAccessScope) error {
+func (s *storeImpl) copyFromSimpleAccessScopes(ctx context.Context, tx pgx.Tx, objs ...*storage.SimpleAccessScope) error {
 
 	inputRows := [][]interface{}{}
 
@@ -151,7 +151,7 @@ func (s *storeImpl) copyFromSimpleaccessscopes(ctx context.Context, tx pgx.Tx, o
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"simpleaccessscopes"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"simple_access_scopes"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -177,7 +177,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.SimpleAccessS
 		return err
 	}
 
-	if err := s.copyFromSimpleaccessscopes(ctx, tx, objs...); err != nil {
+	if err := s.copyFromSimpleAccessScopes(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -202,7 +202,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.SimpleAccessSco
 			return err
 		}
 
-		if err := insertIntoSimpleaccessscopes(ctx, tx, obj); err != nil {
+		if err := insertIntoSimpleAccessScopes(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -468,13 +468,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.SimpleAccessS
 
 //// Used for testing
 
-func dropTableSimpleaccessscopes(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS simpleaccessscopes CASCADE")
+func dropTableSimpleAccessScopes(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS simple_access_scopes CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableSimpleaccessscopes(ctx, db)
+	dropTableSimpleAccessScopes(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

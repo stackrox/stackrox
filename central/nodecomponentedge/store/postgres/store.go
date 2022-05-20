@@ -20,16 +20,16 @@ import (
 )
 
 const (
-	baseTable = "nodes_to_components"
+	baseTable = "node_component_edges"
 
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM nodes_to_components WHERE Id = $1 AND NodeId = $2 AND NodeComponentId = $3)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_component_edges WHERE Id = $1 AND NodeId = $2 AND NodeComponentId = $3)"
 
-	getStmt     = "SELECT serialized FROM nodes_to_components WHERE Id = $1 AND NodeId = $2 AND NodeComponentId = $3"
-	deleteStmt  = "DELETE FROM nodes_to_components WHERE Id = $1 AND NodeId = $2 AND NodeComponentId = $3"
-	walkStmt    = "SELECT serialized FROM nodes_to_components"
-	getManyStmt = "SELECT serialized FROM nodes_to_components WHERE Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM node_component_edges WHERE Id = $1 AND NodeId = $2 AND NodeComponentId = $3"
+	deleteStmt  = "DELETE FROM node_component_edges WHERE Id = $1 AND NodeId = $2 AND NodeComponentId = $3"
+	walkStmt    = "SELECT serialized FROM node_component_edges"
+	getManyStmt = "SELECT serialized FROM node_component_edges WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM nodes_to_components WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM node_component_edges WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -41,7 +41,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.NodesToComponentsSchema
+	schema = pkgSchema.NodeComponentEdgesSchema
 )
 
 type Store interface {
@@ -65,7 +65,7 @@ type storeImpl struct {
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNodesStmt)
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNodeComponentsStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNodesToComponentsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNodeComponentEdgesStmt)
 
 	return &storeImpl{
 		db: db,
@@ -216,13 +216,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NodeComponent
 
 //// Used for testing
 
-func dropTableNodesToComponents(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes_to_components CASCADE")
+func dropTableNodeComponentEdges(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS node_component_edges CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableNodesToComponents(ctx, db)
+	dropTableNodeComponentEdges(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

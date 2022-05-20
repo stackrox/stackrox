@@ -23,14 +23,14 @@ import (
 )
 
 const (
-	baseTable = "policy"
+	baseTable = "policies"
 
-	getStmt     = "SELECT serialized FROM policy WHERE Id = $1"
-	deleteStmt  = "DELETE FROM policy WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM policy"
-	getManyStmt = "SELECT serialized FROM policy WHERE Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM policies WHERE Id = $1"
+	deleteStmt  = "DELETE FROM policies WHERE Id = $1"
+	walkStmt    = "SELECT serialized FROM policies"
+	getManyStmt = "SELECT serialized FROM policies WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM policy WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM policies WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -42,7 +42,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.PolicySchema
+	schema         = pkgSchema.PoliciesSchema
 	targetResource = resources.Policy
 )
 
@@ -69,14 +69,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTablePolicyStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTablePoliciesStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error {
+func insertIntoPolicies(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -100,7 +100,7 @@ func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error
 		serialized,
 	}
 
-	finalStr := "INSERT INTO policy (Id, Name, Description, Disabled, Categories, LifecycleStages, Severity, EnforcementActions, LastUpdated, SORTName, SORTLifecycleStage, SORTEnforcement, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Disabled = EXCLUDED.Disabled, Categories = EXCLUDED.Categories, LifecycleStages = EXCLUDED.LifecycleStages, Severity = EXCLUDED.Severity, EnforcementActions = EXCLUDED.EnforcementActions, LastUpdated = EXCLUDED.LastUpdated, SORTName = EXCLUDED.SORTName, SORTLifecycleStage = EXCLUDED.SORTLifecycleStage, SORTEnforcement = EXCLUDED.SORTEnforcement, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO policies (Id, Name, Description, Disabled, Categories, LifecycleStages, Severity, EnforcementActions, LastUpdated, SORTName, SORTLifecycleStage, SORTEnforcement, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Description = EXCLUDED.Description, Disabled = EXCLUDED.Disabled, Categories = EXCLUDED.Categories, LifecycleStages = EXCLUDED.LifecycleStages, Severity = EXCLUDED.Severity, EnforcementActions = EXCLUDED.EnforcementActions, LastUpdated = EXCLUDED.LastUpdated, SORTName = EXCLUDED.SORTName, SORTLifecycleStage = EXCLUDED.SORTLifecycleStage, SORTEnforcement = EXCLUDED.SORTEnforcement, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func insertIntoPolicy(ctx context.Context, tx pgx.Tx, obj *storage.Policy) error
 	return nil
 }
 
-func (s *storeImpl) copyFromPolicy(ctx context.Context, tx pgx.Tx, objs ...*storage.Policy) error {
+func (s *storeImpl) copyFromPolicies(ctx context.Context, tx pgx.Tx, objs ...*storage.Policy) error {
 
 	inputRows := [][]interface{}{}
 
@@ -201,7 +201,7 @@ func (s *storeImpl) copyFromPolicy(ctx context.Context, tx pgx.Tx, objs ...*stor
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"policy"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"policies"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -227,7 +227,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Policy) error
 		return err
 	}
 
-	if err := s.copyFromPolicy(ctx, tx, objs...); err != nil {
+	if err := s.copyFromPolicies(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -252,7 +252,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Policy) error {
 			return err
 		}
 
-		if err := insertIntoPolicy(ctx, tx, obj); err != nil {
+		if err := insertIntoPolicies(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -518,13 +518,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Policy) error
 
 //// Used for testing
 
-func dropTablePolicy(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS policy CASCADE")
+func dropTablePolicies(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS policies CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTablePolicy(ctx, db)
+	dropTablePolicies(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

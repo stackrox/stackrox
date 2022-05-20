@@ -21,14 +21,14 @@ import (
 )
 
 const (
-	baseTable = "networkentity"
+	baseTable = "network_entities"
 
-	getStmt     = "SELECT serialized FROM networkentity WHERE Info_Id = $1"
-	deleteStmt  = "DELETE FROM networkentity WHERE Info_Id = $1"
-	walkStmt    = "SELECT serialized FROM networkentity"
-	getManyStmt = "SELECT serialized FROM networkentity WHERE Info_Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM network_entities WHERE Info_Id = $1"
+	deleteStmt  = "DELETE FROM network_entities WHERE Info_Id = $1"
+	walkStmt    = "SELECT serialized FROM network_entities"
+	getManyStmt = "SELECT serialized FROM network_entities WHERE Info_Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM networkentity WHERE Info_Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM network_entities WHERE Info_Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -40,7 +40,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.NetworkentitySchema
+	schema = pkgSchema.NetworkEntitiesSchema
 )
 
 type Store interface {
@@ -66,14 +66,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNetworkentityStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNetworkEntitiesStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoNetworkentity(ctx context.Context, tx pgx.Tx, obj *storage.NetworkEntity) error {
+func insertIntoNetworkEntities(ctx context.Context, tx pgx.Tx, obj *storage.NetworkEntity) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -87,7 +87,7 @@ func insertIntoNetworkentity(ctx context.Context, tx pgx.Tx, obj *storage.Networ
 		serialized,
 	}
 
-	finalStr := "INSERT INTO networkentity (Info_Id, Info_ExternalSource_Default, serialized) VALUES($1, $2, $3) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO network_entities (Info_Id, Info_ExternalSource_Default, serialized) VALUES($1, $2, $3) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func insertIntoNetworkentity(ctx context.Context, tx pgx.Tx, obj *storage.Networ
 	return nil
 }
 
-func (s *storeImpl) copyFromNetworkentity(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkEntity) error {
+func (s *storeImpl) copyFromNetworkEntities(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkEntity) error {
 
 	inputRows := [][]interface{}{}
 
@@ -148,7 +148,7 @@ func (s *storeImpl) copyFromNetworkentity(ctx context.Context, tx pgx.Tx, objs .
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkentity"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"network_entities"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -174,7 +174,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkEntity
 		return err
 	}
 
-	if err := s.copyFromNetworkentity(ctx, tx, objs...); err != nil {
+	if err := s.copyFromNetworkEntities(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -199,7 +199,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkEntity) 
 			return err
 		}
 
-		if err := insertIntoNetworkentity(ctx, tx, obj); err != nil {
+		if err := insertIntoNetworkEntities(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -406,13 +406,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkEntity
 
 //// Used for testing
 
-func dropTableNetworkentity(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkentity CASCADE")
+func dropTableNetworkEntities(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_entities CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableNetworkentity(ctx, db)
+	dropTableNetworkEntities(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

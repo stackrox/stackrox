@@ -64,7 +64,7 @@ func (s *k8sRoleBindingSACSuite) SetupSuite() {
 		pgStore.Destroy(ctx, s.pool)
 		s.storage = pgStore.New(ctx, s.pool)
 		s.indexer = pgStore.NewIndexer(s.pool)
-		s.optionsMap = schema.RolebindingsSchema.OptionsMap
+		s.optionsMap = schema.RoleBindingsSchema.OptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp("k8sRoleBindingSACTest")
 		s.Require().NoError(err)
