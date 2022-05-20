@@ -320,7 +320,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to all resources (read-only) for unrestricted scope gives deny-all scope tree for any resource write (case write cluster)",
+			name:      "Access to all resources (read-write) for unrestricted scope gives deny-all scope tree for any resource write (case write cluster)",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, rolePkg.AccessScopeIncludeAll)},
 			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Cluster),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
@@ -332,13 +332,13 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to all resources (read-only) for unrestricted scope gives deny-all scope tree for any resource write (case write namespace)",
+			name:      "Access to all resources (read-write) for unrestricted scope gives deny-all scope tree for any resource write (case write namespace)",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, rolePkg.AccessScopeIncludeAll)},
 			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Namespace),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to all resources (read-write) for deny-all scope gives deny-all scope tree for any resource and access (case read cluster)",
+			name:      "Access to all resources (read-only) for deny-all scope gives deny-all scope tree for any resource and access (case read cluster)",
 			roles:     []permissions.ResolvedRole{role(allResourcesEdit, rolePkg.AccessScopeExcludeAll)},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Cluster),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
@@ -350,7 +350,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to all resources (read-write) for deny-all scope gives deny-all scope tree for any resource and access (case read namespace)",
+			name:      "Access to all resources (read-only) for deny-all scope gives deny-all scope tree for any resource and access (case read namespace)",
 			roles:     []permissions.ResolvedRole{role(allResourcesEdit, rolePkg.AccessScopeExcludeAll)},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Namespace),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
@@ -362,7 +362,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to all resources (read-write) for nil scope gives deny-all scope tree for any resource and access (case read cluster)",
+			name:      "Access to all resources (read-only) for nil scope gives deny-all scope tree for any resource and access (case read cluster)",
 			roles:     []permissions.ResolvedRole{role(allResourcesEdit, nil)},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Cluster),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
@@ -374,7 +374,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to all resources (read-write) for nil scope gives deny-all scope tree for any resource and access (case read namespace)",
+			name:      "Access to all resources (read-only) for nil scope gives deny-all scope tree for any resource and access (case read namespace)",
 			roles:     []permissions.ResolvedRole{role(allResourcesEdit, nil)},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Namespace),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
@@ -386,7 +386,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to all resources (read-write) for empty scope gives deny-all scope tree for any resource and access (case read cluster)",
+			name:      "Access to all resources (read-only) for empty scope gives deny-all scope tree for any resource and access (case read cluster)",
 			roles:     []permissions.ResolvedRole{role(allResourcesEdit, &storage.SimpleAccessScope{Id: "empty"})},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Cluster),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
@@ -398,7 +398,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to all resources (read-write) for empty scope gives deny-all scope tree for any resource and access (case read namespace)",
+			name:      "Access to all resources (read-only) for empty scope gives deny-all scope tree for any resource and access (case read namespace)",
 			roles:     []permissions.ResolvedRole{role(allResourcesEdit, &storage.SimpleAccessScope{Id: "empty"})},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Namespace),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
@@ -410,7 +410,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to one resource (read-write) for unrestricted scope gives unrestricted scope tree for the resource and any access (case read cluster)",
+			name:      "Access to one resource (read-only) for unrestricted scope gives unrestricted scope tree for the resource and any access (case read cluster)",
 			roles:     []permissions.ResolvedRole{role(clusterEdit, rolePkg.AccessScopeIncludeAll)},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Cluster),
 			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
@@ -422,7 +422,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to one resource (read-write) for unrestricted scope gives deny-all scope tree for any other resource and any access (case read namespace)",
+			name:      "Access to one resource (read-only) for unrestricted scope gives deny-all scope tree for any other resource and any access (case read namespace)",
 			roles:     []permissions.ResolvedRole{role(clusterEdit, rolePkg.AccessScopeIncludeAll)},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Namespace),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
@@ -434,7 +434,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to replaced resource (read-write) for unrestricted scope gives unrestricted scope tree for the resource and any access (case read cluster)",
+			name:      "Access to replaced resource (read-only) for unrestricted scope gives unrestricted scope tree for the resource and any access (case read cluster)",
 			roles:     []permissions.ResolvedRole{role(complianceEdit, rolePkg.AccessScopeIncludeAll)},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.ComplianceRuns),
 			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
@@ -446,7 +446,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.UnrestrictedEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to replaced resource (read-write) for unrestricted scope gives deny-all scope tree for any other resource and any access (case read namespace)",
+			name:      "Access to replaced resource (read-only) for unrestricted scope gives deny-all scope tree for any other resource and any access (case read namespace)",
 			roles:     []permissions.ResolvedRole{role(complianceEdit, rolePkg.AccessScopeIncludeAll)},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Cluster),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
@@ -458,7 +458,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to any resource (read-write) for cluster scope gives cluster scope tree for any resource and access (case read cluster)",
+			name:      "Access to any resource (read-only) for cluster scope gives cluster scope tree for any resource and access (case read cluster)",
 			roles:     []permissions.ResolvedRole{role(allResourcesEdit, withAccessTo1Cluster())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Cluster),
 			resultEAS: oneClusterEffectiveScope,
@@ -470,7 +470,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: oneClusterEffectiveScope,
 		},
 		{
-			name:      "Access to any resource (read-write) for cluster scope gives cluster scope tree for any resource and access (case read namespace)",
+			name:      "Access to any resource (read-only) for cluster scope gives cluster scope tree for any resource and access (case read namespace)",
 			roles:     []permissions.ResolvedRole{role(allResourcesEdit, withAccessTo1Cluster())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Namespace),
 			resultEAS: oneClusterEffectiveScope,
@@ -482,7 +482,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: oneClusterEffectiveScope,
 		},
 		{
-			name:      "Access to any resource (read-write) for namespace scope gives namespace scope tree for any resource and access (case read cluster)",
+			name:      "Access to any resource (read-only) for namespace scope gives namespace scope tree for any resource and access (case read cluster)",
 			roles:     []permissions.ResolvedRole{role(allResourcesEdit, withAccessTo1Namespace())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Cluster),
 			resultEAS: oneNamespaceEffectiveScope,
@@ -494,7 +494,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: oneNamespaceEffectiveScope,
 		},
 		{
-			name:      "Access to any resource (read-write) for namespace scope gives namespace scope tree for any resource and access (case read namespace)",
+			name:      "Access to any resource (read-only) for namespace scope gives namespace scope tree for any resource and access (case read namespace)",
 			roles:     []permissions.ResolvedRole{role(allResourcesEdit, withAccessTo1Namespace())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Namespace),
 			resultEAS: oneNamespaceEffectiveScope,
@@ -512,7 +512,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: oneNamespaceEffectiveScope,
 		},
 		{
-			name:      "Access to any resource (read-only) for namespace scope gives deny-all scope tree for any resource and write access (case write cluster)",
+			name:      "Access to any resource (read-write) for namespace scope gives deny-all scope tree for any resource and write access (case write cluster)",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Namespace())},
 			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Cluster),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
@@ -524,13 +524,13 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: oneNamespaceEffectiveScope,
 		},
 		{
-			name:      "Access to any resource (read-only) for namespace scope gives deny-all scope tree for any resource and write access (case write namespace)",
+			name:      "Access to any resource (read-write) for namespace scope gives deny-all scope tree for any resource and write access (case write namespace)",
 			roles:     []permissions.ResolvedRole{role(allResourcesView, withAccessTo1Namespace())},
 			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Namespace),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to specific resource (read-write) for namespace scope gives namespace scope tree for the resource and any access (case read cluster)",
+			name:      "Access to specific resource (read-only) for namespace scope gives namespace scope tree for the resource and any access (case read cluster)",
 			roles:     []permissions.ResolvedRole{role(clusterEdit, withAccessTo1Namespace())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Cluster),
 			resultEAS: oneNamespaceEffectiveScope,
@@ -542,7 +542,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: oneNamespaceEffectiveScope,
 		},
 		{
-			name:      "Access to specific resource (read-write) for namespace scope gives deny-all scope tree for any other resource and access (case read namespace)",
+			name:      "Access to specific resource (read-only) for namespace scope gives deny-all scope tree for any other resource and access (case read namespace)",
 			roles:     []permissions.ResolvedRole{role(clusterEdit, withAccessTo1Namespace())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Namespace),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
@@ -554,7 +554,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name: "Access to specific resource (read-write) for mixed scope gives union scope tree for the resource and any access (case read cluster)",
+			name: "Access to specific resource (read-only) for mixed scope gives union scope tree for the resource and any access (case read cluster)",
 			roles: []permissions.ResolvedRole{
 				role(clusterEdit, withAccessTo1Namespace()), role(clusterEdit, withAccessTo2Cluster())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Cluster),
@@ -568,14 +568,14 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: mixedEffectiveScope,
 		},
 		{
-			name: "Access to specific resource (read-write) for mixed scope gives deny-all scope tree for any other resource and access (case read namespace)",
+			name: "Access to specific resource (read-only) for mixed scope gives deny-all scope tree for any other resource and access (case read namespace)",
 			roles: []permissions.ResolvedRole{
 				role(clusterEdit, withAccessTo1Namespace()), role(clusterEdit, withAccessTo2Cluster())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Namespace),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name:      "Access to specific replaced resource (read-write) for namespace scope gives namespace scope tree for the resource and any access (case read cluster)",
+			name:      "Access to specific replaced resource (read-only) for namespace scope gives namespace scope tree for the resource and any access (case read cluster)",
 			roles:     []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Namespace())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.ComplianceRuns),
 			resultEAS: oneNamespaceEffectiveScope,
@@ -587,7 +587,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: oneNamespaceEffectiveScope,
 		},
 		{
-			name:      "Access to specific replaced resource (read-write) for namespace scope gives deny-all scope tree for any other resource and access (case read namespace)",
+			name:      "Access to specific replaced resource (read-only) for namespace scope gives deny-all scope tree for any other resource and access (case read namespace)",
 			roles:     []permissions.ResolvedRole{role(complianceEdit, withAccessTo1Namespace())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Cluster),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
@@ -599,7 +599,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
-			name: "Access to specific replaced resource (read-write) for mixed scope gives union scope tree for the resource and any access (case read cluster)",
+			name: "Access to specific replaced resource (read-only) for mixed scope gives union scope tree for the resource and any access (case read cluster)",
 			roles: []permissions.ResolvedRole{
 				role(complianceEdit, withAccessTo1Namespace()), role(complianceEdit, withAccessTo2Cluster())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.ComplianceRuns),
@@ -613,7 +613,7 @@ func TestEffectiveAccessScope(t *testing.T) {
 			resultEAS: mixedEffectiveScope,
 		},
 		{
-			name: "Access to specific replaced resource (read-write) for mixed scope gives deny-all scope tree for any other resource and access (case read namespace)",
+			name: "Access to specific replaced resource (read-only) for mixed scope gives deny-all scope tree for any other resource and access (case read namespace)",
 			roles: []permissions.ResolvedRole{
 				role(complianceEdit, withAccessTo1Namespace()), role(complianceEdit, withAccessTo2Cluster())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Cluster),

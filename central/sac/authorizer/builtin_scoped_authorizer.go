@@ -194,7 +194,7 @@ func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(resource permission
 	}
 	// Ensure replaced resources are also taken into account.
 	if a.resource != resource.Resource && (a.resource.ReplacingResource == nil ||
-		a.resource.ReplacingResource != nil && *a.resource.ReplacingResource != resource.Resource) {
+		(a.resource.ReplacingResource != nil && *a.resource.ReplacingResource != resource.Resource)) {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
 
