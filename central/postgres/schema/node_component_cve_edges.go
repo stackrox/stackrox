@@ -26,7 +26,7 @@ var (
                    CveId varchar,
                    serialized bytea,
                    PRIMARY KEY(Id, ComponentId, CveId),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ComponentId) REFERENCES image_components(Id) ON DELETE CASCADE
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ComponentId) REFERENCES node_components(Id) ON DELETE CASCADE
                )
                `,
 		Indexes:  []string{},
@@ -41,7 +41,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NodeComponentCVEEdge)(nil)), "node_component_cve_edges")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.ImageComponent": ImageComponentsSchema,
+			"storage.ImageComponent": NodeComponentsSchema,
 			"storage.CVE":            NodeCvesSchema,
 		}
 

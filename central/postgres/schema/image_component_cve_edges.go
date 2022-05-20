@@ -15,10 +15,10 @@ import (
 )
 
 var (
-	// CreateTableComponentCveEdgesStmt holds the create statement for table `component_cve_edges`.
-	CreateTableComponentCveEdgesStmt = &postgres.CreateStmts{
+	// CreateTableImageComponentCveEdgesStmt holds the create statement for table `image_component_cve_edges`.
+	CreateTableImageComponentCveEdgesStmt = &postgres.CreateStmts{
 		Table: `
-               create table if not exists component_cve_edges (
+               create table if not exists image_component_cve_edges (
                    Id varchar,
                    IsFixable bool,
                    FixedBy varchar,
@@ -33,13 +33,13 @@ var (
 		Children: []*postgres.CreateStmts{},
 	}
 
-	// ComponentCveEdgesSchema is the go schema for table `component_cve_edges`.
-	ComponentCveEdgesSchema = func() *walker.Schema {
-		schema := globaldb.GetSchemaForTable("component_cve_edges")
+	// ImageComponentCveEdgesSchema is the go schema for table `image_component_cve_edges`.
+	ImageComponentCveEdgesSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("image_component_cve_edges")
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComponentCVEEdge)(nil)), "component_cve_edges")
+		schema = walker.Walk(reflect.TypeOf((*storage.ComponentCVEEdge)(nil)), "image_component_cve_edges")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ImageComponent": ImageComponentsSchema,
 			"storage.CVE":            ImageCvesSchema,

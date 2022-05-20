@@ -20,16 +20,16 @@ import (
 )
 
 const (
-	baseTable = "component_cve_edges"
+	baseTable = "image_component_cve_edges"
 
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM component_cve_edges WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3)"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_cve_edges WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3)"
 
-	getStmt     = "SELECT serialized FROM component_cve_edges WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3"
-	deleteStmt  = "DELETE FROM component_cve_edges WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3"
-	walkStmt    = "SELECT serialized FROM component_cve_edges"
-	getManyStmt = "SELECT serialized FROM component_cve_edges WHERE Id = ANY($1::text[])"
+	getStmt     = "SELECT serialized FROM image_component_cve_edges WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3"
+	deleteStmt  = "DELETE FROM image_component_cve_edges WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3"
+	walkStmt    = "SELECT serialized FROM image_component_cve_edges"
+	getManyStmt = "SELECT serialized FROM image_component_cve_edges WHERE Id = ANY($1::text[])"
 
-	deleteManyStmt = "DELETE FROM component_cve_edges WHERE Id = ANY($1::text[])"
+	deleteManyStmt = "DELETE FROM image_component_cve_edges WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -41,7 +41,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.ComponentCveEdgesSchema
+	schema = pkgSchema.ImageComponentCveEdgesSchema
 )
 
 type Store interface {
@@ -65,7 +65,7 @@ type storeImpl struct {
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentsStmt)
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCvesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableComponentCveEdgesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentCveEdgesStmt)
 
 	return &storeImpl{
 		db: db,
@@ -216,13 +216,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ComponentCVEE
 
 //// Used for testing
 
-func dropTableComponentCveEdges(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS component_cve_edges CASCADE")
+func dropTableImageComponentCveEdges(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_cve_edges CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableComponentCveEdges(ctx, db)
+	dropTableImageComponentCveEdges(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

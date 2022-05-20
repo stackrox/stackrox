@@ -25,11 +25,11 @@ import (
 const (
 	baseTable = "images"
 	// For now hard-code the table names. This is a workaround until schemas can become truly sharable.
-	imageComponentRelationTable = "image_component_relations"
+	imageComponentRelationTable = "image_component_edges"
 	imageComponentTable         = "image_components"
-	componentCVERelationTable   = "image_component_cve_relations"
+	componentCVERelationTable   = "image_component_cve_edges"
 	imageCVETable               = "image_cves"
-	imageCVERelationsTable      = "image_cve_relations"
+	imageCVERelationsTable      = "image_cve_edges"
 
 	countStmt  = "SELECT COUNT(*) FROM images"
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM images WHERE Id = $1)"
@@ -56,7 +56,7 @@ func New(ctx context.Context, db *pgxpool.Pool, noUpdateTimestamps bool) store.S
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentsStmt)
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCvesStmt)
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentEdgesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableComponentCveEdgesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentCveEdgesStmt)
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCveEdgesStmt)
 
 	return &storeImpl{
@@ -515,7 +515,7 @@ func copyFromImageCVERelations(ctx context.Context, tx pgx.Tx, iTime *protoTypes
 }
 
 func removeOrphanedImageCVEEdges(ctx context.Context, tx pgx.Tx, imageID string, ids []string) error {
-	_, err := tx.Exec(ctx, "DELETE FROM "+imageCVERelationsTable+" WHERE id in (select id from image_cve_relations where imageid = $1 and id != ANY($2::text[]))", imageID, ids)
+	_, err := tx.Exec(ctx, "DELETE FROM "+imageCVERelationsTable+" WHERE id in (select id from image_cve_edges where imageid = $1 and id != ANY($2::text[]))", imageID, ids)
 	if err != nil {
 		return err
 	}
@@ -731,7 +731,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func getImageComponentEdges(ctx context.Context, tx pgx.Tx, imageID string) (map[string]*storage.ImageComponentEdge, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageComponentRelations")
 
-	rows, err := tx.Query(ctx, "SELECT serialized FROM image_component_relations WHERE imageid = $1", imageID)
+	rows, err := tx.Query(ctx, "SELECT serialized FROM image_component_edges WHERE imageid = $1", imageID)
 	if err != nil {
 		return nil, err
 	}
@@ -754,7 +754,7 @@ func getImageComponentEdges(ctx context.Context, tx pgx.Tx, imageID string) (map
 func getImageCVEEdgeIDs(ctx context.Context, tx pgx.Tx, imageID string) (set.StringSet, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageCVERelations")
 
-	rows, err := tx.Query(ctx, "SELECT id FROM image_cve_relations WHERE imageid = $1", imageID)
+	rows, err := tx.Query(ctx, "SELECT id FROM image_cve_edges WHERE imageid = $1", imageID)
 	if err != nil {
 		return nil, err
 	}
@@ -773,7 +773,7 @@ func getImageCVEEdgeIDs(ctx context.Context, tx pgx.Tx, imageID string) (set.Str
 func getImageCVEEdges(ctx context.Context, tx pgx.Tx, imageID string) (map[string]*storage.ImageCVEEdge, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageCVERelations")
 
-	rows, err := tx.Query(ctx, "SELECT serialized FROM image_cve_relations WHERE imageid = $1", imageID)
+	rows, err := tx.Query(ctx, "SELECT serialized FROM image_cve_edges WHERE imageid = $1", imageID)
 	if err != nil {
 		return nil, err
 	}
@@ -819,7 +819,7 @@ func getImageComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (
 func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string][]*storage.ComponentCVEEdge, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageComponentCVERelations")
 
-	rows, err := tx.Query(ctx, "SELECT serialized FROM image_component_cve_relations WHERE imagecomponentid = ANY($1::text[])", componentIDs)
+	rows, err := tx.Query(ctx, "SELECT serialized FROM image_component_cve_edges WHERE imagecomponentid = ANY($1::text[])", componentIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -881,17 +881,17 @@ func (s *storeImpl) deleteImageTree(ctx context.Context, conn *pgxpool.Conn, ima
 		return err
 	}
 	// TODO: Remove once schema has settled. This removal is already taken care of by fk constraint.
-	// Delete image-component relations.
-	if _, err := conn.Exec(ctx, "delete from image_component_relations where imageid = ANY($1::text[])", imageIDs); err != nil {
+	// Delete image-component edges.
+	if _, err := conn.Exec(ctx, "delete from image_component_edges where imageid = ANY($1::text[])", imageIDs); err != nil {
 		return err
 	}
 	// TODO: Remove once schema has settled. This removal is already taken care of by fk constraint.
-	// Delete image-cve relations.
-	if _, err := conn.Exec(ctx, "delete from image_cve_relations where imageid = ANY($1::text[])", imageIDs); err != nil {
+	// Delete image-cve edges.
+	if _, err := conn.Exec(ctx, "delete from image_cve_edges where imageid = ANY($1::text[])", imageIDs); err != nil {
 		return err
 	}
 	// Get orphaned image components.
-	rows, err := s.db.Query(ctx, "select id from image_components where not exists (select image_components.id FROM image_components, image_component_relations WHERE image_components.id = image_component_relations.imagecomponentid)")
+	rows, err := s.db.Query(ctx, "select id from image_components where not exists (select image_components.id FROM image_components, image_component_edges WHERE image_components.id = image_component_edges.imagecomponentid)")
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
@@ -910,12 +910,12 @@ func (s *storeImpl) deleteImageTree(ctx context.Context, conn *pgxpool.Conn, ima
 		return err
 	}
 	// TODO: Remove once schema has settled. This removal is already taken care of by fk constraint.
-	// Delete orphaned component-cve relations.
-	if _, err := conn.Exec(ctx, "delete from image_component_cve_relations where imagecomponentid = ANY($1::text[])", componentIDs); err != nil {
+	// Delete orphaned component-cve edges.
+	if _, err := conn.Exec(ctx, "delete from image_component_cve_edges where imagecomponentid = ANY($1::text[])", componentIDs); err != nil {
 		return err
 	}
 	// Delete orphaned cves.
-	if _, err := conn.Exec(ctx, "delete from image_cves where not exists (select image_cves.id FROM image_cves, image_component_cve_relations WHERE image_cves.id = image_component_cve_relations.imagecveid)"); err != nil {
+	if _, err := conn.Exec(ctx, "delete from image_cves where not exists (select image_cves.id FROM image_cves, image_component_cve_edges WHERE image_cves.id = image_component_cve_edges.imagecveid)"); err != nil {
 		return err
 	}
 	return nil

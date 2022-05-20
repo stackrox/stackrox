@@ -18,18 +18,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ComponentCveEdgesStoreSuite struct {
+type ImageComponentCveEdgesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestComponentCveEdgesStore(t *testing.T) {
-	suite.Run(t, new(ComponentCveEdgesStoreSuite))
+func TestImageComponentCveEdgesStore(t *testing.T) {
+	suite.Run(t, new(ImageComponentCveEdgesStoreSuite))
 }
 
-func (s *ComponentCveEdgesStoreSuite) SetupTest() {
+func (s *ImageComponentCveEdgesStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -52,14 +52,14 @@ func (s *ComponentCveEdgesStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *ComponentCveEdgesStoreSuite) TearDownTest() {
+func (s *ImageComponentCveEdgesStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *ComponentCveEdgesStoreSuite) TestStore() {
+func (s *ImageComponentCveEdgesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
