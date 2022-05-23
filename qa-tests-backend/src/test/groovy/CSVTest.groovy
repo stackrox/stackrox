@@ -132,14 +132,14 @@ class CSVTest extends BaseSpecification {
             reader = new CSVReader(new InputStreamReader(response.body().asInputStream()))
             lines = reader.readAll()
         } catch (Exception e) {
-            e.printStackTrace()
+            log.error("Could not read response body", e)
         } finally {
             try {
                 if (reader != null) {
                     reader.close()
                 }
             } catch (IOException e) {
-                e.printStackTrace()
+                log.error("Could not close reader", e)
             }
         }
 

@@ -41,7 +41,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.K8SRole)(nil)), "k8s_roles")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ROLES, "k8s_roles", (*storage.K8SRole)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ROLES, "k8srole", (*storage.K8SRole)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

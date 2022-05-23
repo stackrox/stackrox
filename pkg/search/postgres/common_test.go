@@ -45,8 +45,8 @@ func TestMultiTableQueries(t *testing.T) {
 				Select: selectQuery{
 					Query: "select deployments.Id",
 				},
-				From:  "deployments, deployments_Containers",
-				Where: "(deployments_Containers.Image_Name_FullName = $$ and deployments.Id = deployments_Containers.deployments_Id)",
+				From:  "deployments, deployments_containers",
+				Where: "(deployments_containers.Image_Name_FullName = $$ and deployments.Id = deployments_containers.deployments_Id)",
 				Data:  []interface{}{"stackrox"},
 			},
 		},
@@ -59,8 +59,8 @@ func TestMultiTableQueries(t *testing.T) {
 				Select: selectQuery{
 					Query: "select deployments.Id",
 				},
-				From:  "deployments, deployments_Containers",
-				Where: "((deployments.Name = $$) and (deployments_Containers.Image_Name_FullName = $$ and deployments.Id = deployments_Containers.deployments_Id))",
+				From:  "deployments, deployments_containers",
+				Where: "((deployments.Name = $$) and (deployments_containers.Image_Name_FullName = $$ and deployments.Id = deployments_containers.deployments_Id))",
 				Data:  []interface{}{"central", "stackrox"},
 			},
 		},
@@ -74,8 +74,8 @@ func TestMultiTableQueries(t *testing.T) {
 				Select: selectQuery{
 					Query: "select deployments.Id",
 				},
-				From:  "deployments, deployments_Containers",
-				Where: "((deployments_Containers.Image_Name_FullName = $$ and deployments.Id = deployments_Containers.deployments_Id) or (deployments.Name = $$))",
+				From:  "deployments, deployments_containers",
+				Where: "((deployments_containers.Image_Name_FullName = $$ and deployments.Id = deployments_containers.deployments_Id) or (deployments.Name = $$))",
 				Data:  []interface{}{"central", "stackrox"},
 			},
 		},
@@ -89,8 +89,8 @@ func TestMultiTableQueries(t *testing.T) {
 				Select: selectQuery{
 					Query: "select deployments.Id",
 				},
-				From:  "deployments, deployments_Containers, deployments_Ports",
-				Where: "((deployments_Containers.Image_Name_FullName = $$ and deployments.Id = deployments_Containers.deployments_Id) and (deployments_Ports.Protocol = $$ and deployments.Id = deployments_Ports.deployments_Id))",
+				From:  "deployments, deployments_containers, deployments_ports",
+				Where: "((deployments_containers.Image_Name_FullName = $$ and deployments.Id = deployments_containers.deployments_Id) and (deployments_ports.Protocol = $$ and deployments.Id = deployments_ports.deployments_Id))",
 				Data:  []interface{}{"tcp", "stackrox"},
 			},
 		},
@@ -104,8 +104,8 @@ func TestMultiTableQueries(t *testing.T) {
 				Select: selectQuery{
 					Query: "select deployments.Id",
 				},
-				From:  "deployments, deployments_Containers, deployments_Ports",
-				Where: "((deployments_Containers.Image_Name_FullName = $$ and deployments.Id = deployments_Containers.deployments_Id) or (deployments_Ports.Protocol = $$ and deployments.Id = deployments_Ports.deployments_Id))",
+				From:  "deployments, deployments_containers, deployments_ports",
+				Where: "((deployments_containers.Image_Name_FullName = $$ and deployments.Id = deployments_containers.deployments_Id) or (deployments_ports.Protocol = $$ and deployments.Id = deployments_ports.deployments_Id))",
 				Data:  []interface{}{"tcp", "stackrox"},
 			},
 		},
@@ -119,8 +119,8 @@ func TestMultiTableQueries(t *testing.T) {
 				Select: selectQuery{
 					Query: "select deployments.Id",
 				},
-				From:  "deployments, deployments_Containers",
-				Where: "((deployments_Containers.SecurityContext_Privileged = $$ and deployments.Id = deployments_Containers.deployments_Id) or (deployments.Name = $$))",
+				From:  "deployments, deployments_containers",
+				Where: "((deployments_containers.SecurityContext_Privileged = $$ and deployments.Id = deployments_containers.deployments_Id) or (deployments.Name = $$))",
 				Data:  []interface{}{"central", "true"},
 			},
 		},
@@ -131,8 +131,8 @@ func TestMultiTableQueries(t *testing.T) {
 				Select: selectQuery{
 					Query: "select deployments.Id",
 				},
-				From:  "deployments, deployments_Containers",
-				Where: "(NOT (deployments_Containers.Image_Name_FullName ilike $$) and deployments.Id = deployments_Containers.deployments_Id)",
+				From:  "deployments, deployments_containers",
+				Where: "(NOT (deployments_containers.Image_Name_FullName ilike $$) and deployments.Id = deployments_containers.deployments_Id)",
 				Data:  []interface{}{"central%"},
 			},
 		},
@@ -165,7 +165,7 @@ func TestMultiTableQueries(t *testing.T) {
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
-			actual, err := standardizeQueryAndPopulatePath(c.q, deploymentBaseSchema, GET)
+			actual, err := standardizeQueryAndPopulatePath(c.q, deploymentBaseSchema, SEARCH)
 			assert.NoError(t, err)
 			assert.Equal(t, c.expected.Select, actual.Select)
 			assert.ElementsMatch(t, strings.Split(c.expected.From, ", "), strings.Split(actual.From, ", "))

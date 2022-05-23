@@ -10,10 +10,22 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
+	"gorm.io/gorm/schema"
 )
 
 var (
 	log = logging.LoggerForModule()
+
+	// NamingStrategy explicitly defines the naming strategy for Postgres
+	// Do not change this strategy after PostgresDB released. It has global impact on the
+	// names of PostgresDB tables, columns etc.
+	// If you have to, consider making a data migration plan.
+	NamingStrategy = schema.NamingStrategy{
+		TablePrefix:   "",
+		SingularTable: false,
+		NameReplacer:  nil,
+		NoLowerCase:   false,
+	}
 )
 
 // ErrNilIfNoRows returns nil if the error is pgx.ErrNoRows

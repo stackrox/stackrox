@@ -35,7 +35,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NetworkEntity)(nil)), "network_entities")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NETWORK_ENTITY, "network_entities", (*storage.NetworkEntity)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NETWORK_ENTITY, "networkentity", (*storage.NetworkEntity)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

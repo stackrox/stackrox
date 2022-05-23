@@ -7,6 +7,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	mappings "github.com/stackrox/rox/pkg/search/options/processindicators"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -43,6 +45,8 @@ type processIndicatorDatastoreSACSuite struct {
 
 	datastore DataStore
 
+	optionsMap searchPkg.OptionsMap
+
 	testContexts            map[string]context.Context
 	testProcessIndicatorIDs []string
 }
@@ -61,6 +65,7 @@ func (s *processIndicatorDatastoreSACSuite) SetupSuite() {
 		pgStore.Destroy(ctx, s.pool)
 		s.storage = pgStore.New(ctx, s.pool)
 		s.indexer = pgStore.NewIndexer(s.pool)
+		s.optionsMap = schema.ProcessIndicatorsSchema.OptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp(processIndicatorObj)
 		s.Require().NoError(err)
@@ -70,6 +75,7 @@ func (s *processIndicatorDatastoreSACSuite) SetupSuite() {
 
 		s.storage = rdbStore.New(s.engine)
 		s.indexer = index.New(s.index)
+		s.optionsMap = mappings.OptionsMap
 	}
 
 	s.search = search.New(s.storage, s.indexer)
@@ -86,15 +92,15 @@ func (s *processIndicatorDatastoreSACSuite) TearDownSuite() {
 	} else {
 		err := rocksdb.CloseAndRemove(s.engine)
 		s.Require().NoError(err)
+		s.Require().NoError(s.index.Close())
 	}
 
-	s.Require().NoError(s.index.Close())
 }
 
 func (s *processIndicatorDatastoreSACSuite) SetupTest() {
 	s.testProcessIndicatorIDs = make([]string, 0)
 
-	processIndicators := fixtures.GetSACTestProcessIndicatorSet()
+	processIndicators := fixtures.GetSACTestStorageProcessIndicatorSet(fixtures.GetScopedProcessIndicator)
 	err := s.datastore.AddProcessIndicators(s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx], processIndicators...)
 	s.Require().NoError(err)
 
@@ -362,6 +368,6 @@ func (s *processIndicatorDatastoreSACSuite) runSearchTest(c sacTestUtils.SACSear
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := sacTestUtils.CountResultsPerClusterAndNamespace(s.T(), results, mappings.OptionsMap)
+	resultCounts := sacTestUtils.CountResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
 	sacTestUtils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }

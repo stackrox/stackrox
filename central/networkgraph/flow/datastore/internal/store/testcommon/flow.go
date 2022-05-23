@@ -172,6 +172,11 @@ func (suite *FlowStoreTestSuite) TestStore() {
 func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 	t1 := time.Now().Add(-5 * time.Minute)
 	t2 := time.Now()
+	if features.PostgresDatastore.Enabled() {
+		// Round the timestamps to the microsecond
+		t1 = t1.Truncate(1000)
+		t2 = t2.Truncate(1000)
+	}
 	flows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{

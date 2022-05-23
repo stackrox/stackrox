@@ -18,18 +18,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ProcessWhitelistResultsStoreSuite struct {
+type ProcessBaselineResultsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestProcessWhitelistResultsStore(t *testing.T) {
-	suite.Run(t, new(ProcessWhitelistResultsStoreSuite))
+func TestProcessBaselineResultsStore(t *testing.T) {
+	suite.Run(t, new(ProcessBaselineResultsStoreSuite))
 }
 
-func (s *ProcessWhitelistResultsStoreSuite) SetupTest() {
+func (s *ProcessBaselineResultsStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -52,14 +52,14 @@ func (s *ProcessWhitelistResultsStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *ProcessWhitelistResultsStoreSuite) TearDownTest() {
+func (s *ProcessBaselineResultsStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *ProcessWhitelistResultsStoreSuite) TestStore() {
+func (s *ProcessBaselineResultsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store

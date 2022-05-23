@@ -2,6 +2,10 @@
 all: style test
 
 GRADLE := ./gradlew
+GRADLE_TEST_ARGS =
+ifdef FAIL_FAST
+GRADLE_TEST_ARGS = --fail-fast
+endif
 
 ###########
 ## Style ##
@@ -46,55 +50,55 @@ clean-generated-srcs:
 .PHONY: test
 test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=-Upgrade,-SensorBounce,-SensorBounceNext
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=-Upgrade,-SensorBounce,-SensorBounceNext
 
 .PHONY: bat-test
 bat-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=BAT
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=BAT
 
 .PHONY: smoke-test
 smoke-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=SMOKE
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=SMOKE
 
 .PHONY: runtime-test
 runtime-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=RUNTIME
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=RUNTIME
 
 .PHONY: enforcement-test
 enforcement-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=PolicyEnforcement
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=PolicyEnforcement
 
 .PHONY: integration-test
 integration-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=Integration
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=Integration
 
 .PHONY: networkpolicy-simulator-test
 networkpolicy-simulator-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=NetworkPolicySimulation
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=NetworkPolicySimulation
 
 .PHONY: non-bat-test
 non-bat-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=-BAT,-Upgrade,-SensorBounce,-SensorBounceNext
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=-BAT,-Upgrade,-SensorBounce,-SensorBounceNext
 
 .PHONY: upgrade-test
 upgrade-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=Upgrade
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=Upgrade
 
 .PHONY: graphql-test
 graphql-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=GraphQL
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=GraphQL
 
 .PHONY: sensor-bounce-test
 sensor-bounce-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=SensorBounce
-	$(GRADLE) test -Dgroups=SensorBounceNext
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=SensorBounce
+	$(GRADLE) test $(GRADLE_TEST_ARGS) -Dgroups=SensorBounceNext

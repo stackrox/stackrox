@@ -18,12 +18,18 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
+	configDS "github.com/stackrox/rox/central/config/datastore"
+	groupDS "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/logimbue/store"
 	"github.com/stackrox/rox/central/logimbue/writer"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	roleDS "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/errox"
@@ -36,7 +42,9 @@ import (
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/prometheusutil"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
+	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
@@ -89,22 +97,34 @@ type Service interface {
 
 // New returns a Service that implements v1.DebugServiceServer
 func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemetryGatherer *gatherers.RoxGatherer,
-	store store.Store, authzTraceSink observe.AuthzTraceSink) Service {
+	store store.Store, authzTraceSink observe.AuthzTraceSink, authProviderRegistry authproviders.Registry,
+	groupDataStore groupDS.DataStore, roleDataStore roleDS.DataStore, configDataStore configDS.DataStore,
+	notifierDataStore notifierDS.DataStore) Service {
 	return &serviceImpl{
-		clusters:          clusters,
-		sensorConnMgr:     sensorConnMgr,
-		telemetryGatherer: telemetryGatherer,
-		store:             store,
-		authzTraceSink:    authzTraceSink,
+		clusters:             clusters,
+		sensorConnMgr:        sensorConnMgr,
+		telemetryGatherer:    telemetryGatherer,
+		store:                store,
+		authzTraceSink:       authzTraceSink,
+		authProviderRegistry: authProviderRegistry,
+		groupDataStore:       groupDataStore,
+		roleDataStore:        roleDataStore,
+		configDataStore:      configDataStore,
+		notifierDataStore:    notifierDataStore,
 	}
 }
 
 type serviceImpl struct {
-	sensorConnMgr     connection.Manager
-	clusters          datastore.DataStore
-	telemetryGatherer *gatherers.RoxGatherer
-	store             store.Store
-	authzTraceSink    observe.AuthzTraceSink
+	sensorConnMgr        connection.Manager
+	clusters             datastore.DataStore
+	telemetryGatherer    *gatherers.RoxGatherer
+	store                store.Store
+	authzTraceSink       observe.AuthzTraceSink
+	authProviderRegistry authproviders.Registry
+	groupDataStore       groupDS.DataStore
+	roleDataStore        roleDS.DataStore
+	configDataStore      configDS.DataStore
+	notifierDataStore    notifierDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -214,6 +234,31 @@ func (s *serviceImpl) StreamAuthzTraces(_ *v1.Empty, stream v1.DebugService_Stre
 	}
 }
 
+func fetchAndAddJSONToZip(ctx context.Context, zipWriter *zip.Writer, fileName string, fetchData func(ctx context.Context) (interface{}, error)) {
+	jsonObj, errFetchData := fetchData(ctx)
+	if errFetchData != nil {
+		log.Error(errFetchData)
+
+		return
+	}
+
+	if errAddToZip := addJSONToZip(zipWriter, fileName, jsonObj); errAddToZip != nil {
+		log.Error(errAddToZip)
+	}
+}
+
+func addJSONToZip(zipWriter *zip.Writer, fileName string, jsonObj interface{}) error {
+	w, err := zipWriter.Create(fileName)
+	if err != nil {
+		return errors.Wrapf(err, "unable to create zip file %q", fileName)
+	}
+
+	jsonEnc := json.NewEncoder(w)
+	jsonEnc.SetIndent("", "  ")
+
+	return jsonEnc.Encode(jsonObj)
+}
+
 func zipPrometheusMetrics(zipWriter *zip.Writer, name string) error {
 	metricsWriter, err := zipWriter.Create(name)
 	if err != nil {
@@ -299,21 +344,12 @@ func getLogFile(zipWriter *zip.Writer, targetPath string, sourcePath string) err
 }
 
 func getVersion(zipWriter *zip.Writer) error {
-	w, err := zipWriter.Create("versions.json")
-	if err != nil {
-		return err
-	}
 	versions := version.GetAllVersionsDevelopment()
 	if buildinfo.ReleaseBuild {
 		versions = version.GetAllVersionsUnified()
 	}
-	data, err := json.Marshal(versions)
-	if err != nil {
-		return err
-	}
 
-	_, err = w.Write(data)
-	return err
+	return addJSONToZip(zipWriter, "versions.json", versions)
 }
 
 func writeTelemetryData(zipWriter *zip.Writer, telemetryInfo *data.TelemetryData) error {
@@ -321,13 +357,7 @@ func writeTelemetryData(zipWriter *zip.Writer, telemetryInfo *data.TelemetryData
 		return errors.New("no telemetry data provided")
 	}
 
-	w, err := zipWriter.Create("telemetry-data.json")
-	if err != nil {
-		return err
-	}
-	jsonEnc := json.NewEncoder(w)
-	jsonEnc.SetIndent("", "  ")
-	return jsonEnc.Encode(telemetryInfo)
+	return addJSONToZip(zipWriter, "telemetry-data.json", telemetryInfo)
 }
 
 func (s *serviceImpl) getLogImbue(zipWriter *zip.Writer) error {
@@ -341,6 +371,90 @@ func (s *serviceImpl) getLogImbue(zipWriter *zip.Writer) error {
 	}
 	err = writer.WriteLogs(w, logs)
 	return err
+}
+
+func (s *serviceImpl) getAuthProviders(_ context.Context) (interface{}, error) {
+	authProviders := s.authProviderRegistry.GetProviders(nil, nil)
+
+	var storageAuthProviders []*storage.AuthProvider
+	for _, authProvider := range authProviders {
+		storageAuthProviders = append(storageAuthProviders, authProvider.StorageView())
+	}
+
+	return storageAuthProviders, nil
+}
+
+func (s *serviceImpl) getGroups(_ context.Context) (interface{}, error) {
+	accessGroupsCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Group)))
+
+	return s.groupDataStore.GetAll(accessGroupsCtx)
+}
+
+type diagResolvedRole struct {
+	Role          *storage.Role              `json:"role,omitempty"`
+	PermissionSet map[string]string          `json:"permission_set,omitempty"`
+	AccessScope   *storage.SimpleAccessScope `json:"access_scope,omitempty"`
+}
+
+func (s *serviceImpl) getRoles(_ context.Context) (interface{}, error) {
+	accessRolesCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Role)))
+
+	roles, errGetRoles := s.roleDataStore.GetAllRoles(accessRolesCtx)
+	if errGetRoles != nil {
+		return nil, errGetRoles
+	}
+
+	var resolvedRoles []*diagResolvedRole
+	for _, role := range roles {
+		diagRole := diagResolvedRole{
+			Role: role,
+		}
+
+		if resolvedRole, err := s.roleDataStore.GetAndResolveRole(accessRolesCtx, role.Name); err == nil {
+			// Get better formatting of permission sets.
+			diagRole.PermissionSet = map[string]string{}
+			for permName, accessRight := range resolvedRole.GetPermissions() {
+				diagRole.PermissionSet[permName] = accessRight.String()
+			}
+			diagRole.AccessScope = resolvedRole.GetAccessScope()
+		}
+
+		resolvedRoles = append(resolvedRoles, &diagRole)
+	}
+
+	return resolvedRoles, nil
+}
+
+func (s *serviceImpl) getNotifiers(_ context.Context) (interface{}, error) {
+	accessNotifierCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Notifier)))
+
+	notifiers, err := s.notifierDataStore.GetNotifiers(accessNotifierCtx)
+	if err != nil {
+		return nil, err
+	}
+	for _, n := range notifiers {
+		secrets.ScrubSecretsFromStructWithReplacement(n, secrets.ScrubReplacementStr)
+	}
+
+	return notifiers, nil
+}
+
+func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
+	accessConfigCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Config)))
+
+	return s.configDataStore.GetConfig(accessConfigCtx)
 }
 
 // DebugHandler is an HTTP handler that outputs debugging information
@@ -369,13 +483,16 @@ func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 type debugDumpOptions struct {
 	logs logsMode
 	// telemetryMode specifies how to use sensor/central telemetry to gather diagnostics.
-	// 0 - don't collect any telemetry data, 1 - collect telemetry data for central only,
-	// 2 - collect telemetry data from sensors and central.
-	telemetryMode  int
-	withCPUProfile bool
-	withLogImbue   bool
-	clusters       []string
-	since          time.Time
+	// 0 - don't collect any telemetry data
+	// 1 - collect telemetry data for central only
+	// 2 - collect telemetry data from sensors and central
+	telemetryMode     int
+	withCPUProfile    bool
+	withLogImbue      bool
+	withAccessControl bool
+	withNotifiers     bool
+	clusters          []string
+	since             time.Time
 }
 
 func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseWriter, filename string, opts debugDumpOptions) {
@@ -428,20 +545,35 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 			log.Error(err)
 		}
 	}
+
+	if s.telemetryGatherer != nil && opts.telemetryMode > 0 {
+		telemetryData := s.telemetryGatherer.Gather(ctx, opts.telemetryMode >= 2)
+		if err := writeTelemetryData(zipWriter, telemetryData); err != nil {
+			log.Error(err)
+		}
+	}
+
+	if opts.withAccessControl {
+		fetchAndAddJSONToZip(ctx, zipWriter, "auth-providers.json", s.getAuthProviders)
+		fetchAndAddJSONToZip(ctx, zipWriter, "auth-provider-groups.json", s.getGroups)
+		fetchAndAddJSONToZip(ctx, zipWriter, "access-control-roles.json", s.getRoles)
+	}
+
+	if opts.withNotifiers {
+		fetchAndAddJSONToZip(ctx, zipWriter, "notifiers.json", s.getNotifiers)
+	}
+
+	fetchAndAddJSONToZip(ctx, zipWriter, "system-configuration.json", s.getConfig)
+
+	// Get logs last to also catch logs made during creation of diag bundle.
 	if opts.logs == localLogs {
 		if err := getLogs(zipWriter); err != nil {
 			log.Error(err)
 		}
 	}
+
 	if opts.withLogImbue {
 		if err := s.getLogImbue(zipWriter); err != nil {
-			log.Error(err)
-		}
-	}
-
-	if s.telemetryGatherer != nil && opts.telemetryMode > 0 {
-		telemetryData := s.telemetryGatherer.Gather(ctx, opts.telemetryMode >= 2)
-		if err := writeTelemetryData(zipWriter, telemetryData); err != nil {
 			log.Error(err)
 		}
 	}
@@ -474,10 +606,12 @@ func (s *serviceImpl) getVersionsJSON(w http.ResponseWriter, r *http.Request) {
 
 func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 	opts := debugDumpOptions{
-		logs:           localLogs,
-		withCPUProfile: true,
-		withLogImbue:   true,
-		telemetryMode:  0,
+		logs:              localLogs,
+		withCPUProfile:    true,
+		withLogImbue:      true,
+		withAccessControl: true,
+		withNotifiers:     true,
+		telemetryMode:     0,
 	}
 
 	query := r.URL.Query()
@@ -514,10 +648,12 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 	filename := time.Now().Format("stackrox_diagnostic_2006_01_02_15_04_05.zip")
 
 	opts := debugDumpOptions{
-		logs:           fullK8sIntrospectionData,
-		telemetryMode:  2,
-		withCPUProfile: false,
-		withLogImbue:   true,
+		logs:              fullK8sIntrospectionData,
+		telemetryMode:     2,
+		withCPUProfile:    false,
+		withLogImbue:      true,
+		withAccessControl: true,
+		withNotifiers:     true,
 	}
 
 	err := getOptionalQueryParams(&opts, r.URL)

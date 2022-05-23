@@ -20,18 +20,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type NamespacesStoreSuite struct {
+type NamespaceMetadataStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestNamespacesStore(t *testing.T) {
-	suite.Run(t, new(NamespacesStoreSuite))
+func TestNamespaceMetadataStore(t *testing.T) {
+	suite.Run(t, new(NamespaceMetadataStoreSuite))
 }
 
-func (s *NamespacesStoreSuite) SetupTest() {
+func (s *NamespaceMetadataStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,14 +54,14 @@ func (s *NamespacesStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *NamespacesStoreSuite) TearDownTest() {
+func (s *NamespaceMetadataStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *NamespacesStoreSuite) TestStore() {
+func (s *NamespaceMetadataStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
@@ -117,7 +117,7 @@ func (s *NamespacesStoreSuite) TestStore() {
 	s.Equal(200, namespaceMetadataCount)
 }
 
-func (s *NamespacesStoreSuite) TestSACUpsert() {
+func (s *NamespaceMetadataStoreSuite) TestSACUpsert() {
 	obj := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -136,7 +136,7 @@ func (s *NamespacesStoreSuite) TestSACUpsert() {
 	}
 }
 
-func (s *NamespacesStoreSuite) TestSACUpsertMany() {
+func (s *NamespaceMetadataStoreSuite) TestSACUpsertMany() {
 	obj := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -155,7 +155,7 @@ func (s *NamespacesStoreSuite) TestSACUpsertMany() {
 	}
 }
 
-func (s *NamespacesStoreSuite) TestSACCount() {
+func (s *NamespaceMetadataStoreSuite) TestSACCount() {
 	objA := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -183,7 +183,7 @@ func (s *NamespacesStoreSuite) TestSACCount() {
 	}
 }
 
-func (s *NamespacesStoreSuite) TestSACGetIDs() {
+func (s *NamespaceMetadataStoreSuite) TestSACGetIDs() {
 	objA := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -207,6 +207,127 @@ func (s *NamespacesStoreSuite) TestSACGetIDs() {
 			ids, err := s.store.GetIDs(ctxs[name])
 			assert.NoError(t, err)
 			assert.EqualValues(t, expectedIds, ids)
+		})
+	}
+}
+
+func (s *NamespaceMetadataStoreSuite) TestSACExists() {
+	objA := &storage.NamespaceMetadata{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	s.store.Upsert(withAllAccessCtx, objA)
+
+	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
+	for name, expected := range map[string]bool{
+		withAllAccess:           true,
+		withNoAccess:            false,
+		withNoAccessToCluster:   false,
+		withAccessToDifferentNs: false,
+		withAccess:              true,
+		withAccessToCluster:     true,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			exists, err := s.store.Exists(ctxs[name], objA.GetId())
+			assert.NoError(t, err)
+			assert.Equal(t, expected, exists)
+		})
+	}
+}
+
+func (s *NamespaceMetadataStoreSuite) TestSACGet() {
+	objA := &storage.NamespaceMetadata{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	s.store.Upsert(withAllAccessCtx, objA)
+
+	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
+	for name, expected := range map[string]bool{
+		withAllAccess:           true,
+		withNoAccess:            false,
+		withNoAccessToCluster:   false,
+		withAccessToDifferentNs: false,
+		withAccess:              true,
+		withAccessToCluster:     true,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			actual, exists, err := s.store.Get(ctxs[name], objA.GetId())
+			assert.NoError(t, err)
+			assert.Equal(t, expected, exists)
+			if expected == true {
+				assert.Equal(t, objA, actual)
+			} else {
+				assert.Nil(t, actual)
+			}
+		})
+	}
+}
+
+func (s *NamespaceMetadataStoreSuite) TestSACDelete() {
+	objA := &storage.NamespaceMetadata{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.NamespaceMetadata{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+
+	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
+	for name, expectedCount := range map[string]int{
+		withAllAccess:           0,
+		withNoAccess:            2,
+		withNoAccessToCluster:   2,
+		withAccessToDifferentNs: 2,
+		withAccess:              1,
+		withAccessToCluster:     1,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			s.SetupTest()
+
+			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
+			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
+
+			assert.NoError(t, s.store.Delete(ctxs[name], objA.GetId()))
+			assert.NoError(t, s.store.Delete(ctxs[name], objB.GetId()))
+
+			count, err := s.store.Count(withAllAccessCtx)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
+		})
+	}
+}
+
+func (s *NamespaceMetadataStoreSuite) TestSACDeleteMany() {
+	objA := &storage.NamespaceMetadata{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.NamespaceMetadata{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+
+	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
+	for name, expectedCount := range map[string]int{
+		withAllAccess:           0,
+		withNoAccess:            2,
+		withNoAccessToCluster:   2,
+		withAccessToDifferentNs: 2,
+		withAccess:              1,
+		withAccessToCluster:     1,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			s.SetupTest()
+
+			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
+			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
+
+			assert.NoError(t, s.store.DeleteMany(ctxs[name], []string{
+				objA.GetId(),
+				objB.GetId(),
+			}))
+
+			count, err := s.store.Count(withAllAccessCtx)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
 		})
 	}
 }

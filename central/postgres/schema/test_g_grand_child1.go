@@ -35,7 +35,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestGGrandChild1)(nil)), "test_g_grand_child1")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(65), "test_g_grand_child1", (*storage.TestGGrandChild1)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory(65), "testggrandchild1", (*storage.TestGGrandChild1)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

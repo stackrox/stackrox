@@ -67,6 +67,7 @@ func (r *registryImpl) Init() error {
 		// Construct the options for the provider, using the stored definition, and the defaults for previously stored objects.
 		options := []ProviderOption{
 			WithStorageView(storedValue),
+			WithAttributeVerifier(storedValue),
 		}
 		options = append(options, DefaultOptionsForStoredProvider(r.backendFactories, r.issuerFactory, r.roleMapperFactory, r.loginURL)...)
 
@@ -163,6 +164,7 @@ func (r *registryImpl) ValidateProvider(ctx context.Context, options ...Provider
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -261,6 +263,17 @@ func (r *registryImpl) GetExternalUserClaim(ctx context.Context, externalToken, 
 	if err != nil {
 		return nil, clientState, err
 	}
+
+	if authResp == nil || authResp.Claims == nil {
+		return nil, clientState, errox.NoCredentials.CausedBy("authentication response is empty")
+	}
+
+	if provider.AttributeVerifier() != nil {
+		if err := provider.AttributeVerifier().Verify(authResp.Claims.Attributes); err != nil {
+			return nil, clientState, errox.NoCredentials.CausedBy(err)
+		}
+	}
+
 	return authResp, clientState, nil
 }
 

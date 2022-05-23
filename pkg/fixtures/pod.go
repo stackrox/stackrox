@@ -3,23 +3,15 @@ package fixtures
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac/testconsts"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // GetPod returns a mock Pod
 func GetPod() *storage.Pod {
-	return GetScopedPod("nginx-7db9fccd9b-92hfs", GetDeployment().GetId(),
-		"prod cluster", "stackrox")
-}
-
-// GetScopedPod returns a mock Pod belonging to the input scope.
-func GetScopedPod(ID string, deploymentID string, clusterID string, namespace string) *storage.Pod {
 	return &storage.Pod{
-		Id:           ID,
-		DeploymentId: deploymentID,
-		ClusterId:    clusterID,
-		Namespace:    namespace,
+		Id:           "nginx-7db9fccd9b-92hfs",
+		DeploymentId: GetDeployment().GetId(),
+		ClusterId:    "prod cluster",
+		Namespace:    "stackrox",
 		Started: &types.Timestamp{
 			Seconds: 0,
 		},
@@ -120,44 +112,11 @@ func GetScopedPod(ID string, deploymentID string, clusterID string, namespace st
 	}
 }
 
-// GetSACTestPodSet returns a set of mock Pods that can be used
-// for scoped access control sets.
-// It will include:
-// 9 Process indicators scoped to Cluster1, 3 to each Namespace A / B / C.
-// 9 Process indicators scoped to Cluster2, 3 to each Namespace A / B / C.
-// 9 Process indicators scoped to Cluster3, 3 to each Namespace A / B / C.
-func GetSACTestPodSet() []*storage.Pod {
-	return []*storage.Pod{
-		scopedPod(testconsts.Cluster1, testconsts.NamespaceA),
-		scopedPod(testconsts.Cluster1, testconsts.NamespaceA),
-		scopedPod(testconsts.Cluster1, testconsts.NamespaceA),
-		scopedPod(testconsts.Cluster1, testconsts.NamespaceB),
-		scopedPod(testconsts.Cluster1, testconsts.NamespaceB),
-		scopedPod(testconsts.Cluster1, testconsts.NamespaceB),
-		scopedPod(testconsts.Cluster1, testconsts.NamespaceC),
-		scopedPod(testconsts.Cluster1, testconsts.NamespaceC),
-		scopedPod(testconsts.Cluster1, testconsts.NamespaceC),
-		scopedPod(testconsts.Cluster2, testconsts.NamespaceA),
-		scopedPod(testconsts.Cluster2, testconsts.NamespaceA),
-		scopedPod(testconsts.Cluster2, testconsts.NamespaceA),
-		scopedPod(testconsts.Cluster2, testconsts.NamespaceB),
-		scopedPod(testconsts.Cluster2, testconsts.NamespaceB),
-		scopedPod(testconsts.Cluster2, testconsts.NamespaceB),
-		scopedPod(testconsts.Cluster2, testconsts.NamespaceC),
-		scopedPod(testconsts.Cluster2, testconsts.NamespaceC),
-		scopedPod(testconsts.Cluster2, testconsts.NamespaceC),
-		scopedPod(testconsts.Cluster3, testconsts.NamespaceA),
-		scopedPod(testconsts.Cluster3, testconsts.NamespaceA),
-		scopedPod(testconsts.Cluster3, testconsts.NamespaceA),
-		scopedPod(testconsts.Cluster3, testconsts.NamespaceB),
-		scopedPod(testconsts.Cluster3, testconsts.NamespaceB),
-		scopedPod(testconsts.Cluster3, testconsts.NamespaceB),
-		scopedPod(testconsts.Cluster3, testconsts.NamespaceC),
-		scopedPod(testconsts.Cluster3, testconsts.NamespaceC),
-		scopedPod(testconsts.Cluster3, testconsts.NamespaceC),
+// GetScopedPod returns a mock Pod belonging to the input scope.
+func GetScopedPod(ID string, clusterID string, namespace string) *storage.Pod {
+	return &storage.Pod{
+		Id:        ID,
+		ClusterId: clusterID,
+		Namespace: namespace,
 	}
-}
-
-func scopedPod(clusterID, namespace string) *storage.Pod {
-	return GetScopedPod(uuid.NewV4().String(), uuid.NewV4().String(), clusterID, namespace)
 }

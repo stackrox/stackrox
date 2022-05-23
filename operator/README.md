@@ -117,7 +117,7 @@ The recommended approach is the following.
    ```
 3. Install CRDs and deploy operator resources
    ```bash
-   $ make install deploy
+   $ make deploy
    ```
 4. Validate that the operator's pod has started successfully
    ```bash

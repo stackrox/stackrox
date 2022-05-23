@@ -11,9 +11,9 @@ const selectors = {
         logout: '.pf-c-page__header-tools-item button:contains("Log out")',
     },
     pageHeader: {
-        editButton: '[data-testid="edit-btn"]',
-        cancelButton: '[data-testid="cancel-btn"]',
-        saveButton: '[data-testid="save-btn"]',
+        editButton: 'button:contains("Edit")',
+        cancelButton: 'button:contains("Cancel")',
+        saveButton: 'button:contains("Save")',
     },
     header: {
         widget: '[data-testid="header-config"]',

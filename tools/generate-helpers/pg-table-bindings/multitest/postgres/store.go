@@ -16,19 +16,19 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
-	baseTable  = "test_multi_key_structs"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM test_multi_key_structs WHERE Key1 = $1 AND Key2 = $2)"
+	baseTable = "test_multi_key_structs"
 
-	getStmt     = "SELECT serialized FROM test_multi_key_structs WHERE Key1 = $1 AND Key2 = $2"
-	deleteStmt  = "DELETE FROM test_multi_key_structs WHERE Key1 = $1 AND Key2 = $2"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM test_multi_key_structs WHERE Key1 = $1 AND Key2 = $2)"
+	getStmt    = "SELECT serialized FROM test_multi_key_structs WHERE Key1 = $1 AND Key2 = $2"
+	deleteStmt = "DELETE FROM test_multi_key_structs WHERE Key1 = $1 AND Key2 = $2"
+
 	walkStmt    = "SELECT serialized FROM test_multi_key_structs"
 	getManyStmt = "SELECT serialized FROM test_multi_key_structs WHERE Key1 = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM test_multi_key_structs WHERE Key1 = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -226,7 +226,7 @@ func (s *storeImpl) copyFromTestMultiKeyStructs(ctx context.Context, tx pgx.Tx, 
 			serialized,
 		})
 
-		if _, err := tx.Exec(ctx, deleteStmt, obj.GetKey1(), obj.GetKey2()); err != nil {
+		if err := s.Delete(ctx, obj.GetKey1(), obj.GetKey2()); err != nil {
 			return err
 		}
 
@@ -533,15 +533,14 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestM
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "TestMultiKeyStruct")
 
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "TestMultiKeyStruct")
-	if err != nil {
-		return err
-	}
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
-		return err
-	}
-	return nil
+	var sacQueryFilter *v1.Query
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure

@@ -32,10 +32,12 @@ import (
 	complianceManager "github.com/stackrox/rox/central/compliance/manager"
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
+	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
 	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
+	imageCVEService "github.com/stackrox/rox/central/cve/image/service"
 	cveService "github.com/stackrox/rox/central/cve/service"
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
@@ -79,6 +81,7 @@ import (
 	networkFlowService "github.com/stackrox/rox/central/networkgraph/service"
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
 	nodeService "github.com/stackrox/rox/central/node/service"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
@@ -303,6 +306,11 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 			gatherers.Singleton(),
 			logimbueStore.Singleton(),
 			authzTraceSink,
+			registry,
+			groupDataStore.Singleton(),
+			roleDataStore.Singleton(),
+			configDS.Singleton(),
+			notifierDS.Singleton(),
 		),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
@@ -343,6 +351,9 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		vulnRequestService.Singleton(),
+	}
+	if features.PostgresDatastore.Enabled() {
+		servicesToRegister = append(servicesToRegister, imageCVEService.Singleton())
 	}
 
 	if features.ImageSignatureVerification.Enabled() {

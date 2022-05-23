@@ -21,19 +21,15 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
-	baseTable  = "k8s_role_bindings"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM k8s_role_bindings WHERE Id = $1)"
+	baseTable = "role_bindings"
 
-	getStmt     = "SELECT serialized FROM k8s_role_bindings WHERE Id = $1"
-	deleteStmt  = "DELETE FROM k8s_role_bindings WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM k8s_role_bindings"
-	getManyStmt = "SELECT serialized FROM k8s_role_bindings WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM k8s_role_bindings WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM role_bindings"
+	getManyStmt = "SELECT serialized FROM role_bindings WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -45,7 +41,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.K8sRoleBindingsSchema
+	schema         = pkgSchema.RoleBindingsSchema
 	targetResource = resources.K8sRoleBinding
 )
 
@@ -72,14 +68,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableK8sRoleBindingsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableRoleBindingsStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoK8sRoleBindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SRoleBinding) error {
+func insertIntoRoleBindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SRoleBinding) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -100,7 +96,7 @@ func insertIntoK8sRoleBindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SR
 		serialized,
 	}
 
-	finalStr := "INSERT INTO k8s_role_bindings (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, RoleId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, RoleId = EXCLUDED.RoleId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO role_bindings (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, RoleId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, RoleId = EXCLUDED.RoleId, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -109,12 +105,12 @@ func insertIntoK8sRoleBindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SR
 	var query string
 
 	for childIdx, child := range obj.GetSubjects() {
-		if err := insertIntoK8sRoleBindingsSubjects(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoRoleBindingsSubjects(ctx, tx, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from k8s_role_bindings_subjects where k8s_role_bindings_Id = $1 AND idx >= $2"
+	query = "delete from role_bindings_subjects where role_bindings_Id = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetSubjects()))
 	if err != nil {
 		return err
@@ -122,17 +118,17 @@ func insertIntoK8sRoleBindings(ctx context.Context, tx pgx.Tx, obj *storage.K8SR
 	return nil
 }
 
-func insertIntoK8sRoleBindingsSubjects(ctx context.Context, tx pgx.Tx, obj *storage.Subject, k8s_role_bindings_Id string, idx int) error {
+func insertIntoRoleBindingsSubjects(ctx context.Context, tx pgx.Tx, obj *storage.Subject, role_bindings_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		k8s_role_bindings_Id,
+		role_bindings_Id,
 		idx,
 		obj.GetKind(),
 		obj.GetName(),
 	}
 
-	finalStr := "INSERT INTO k8s_role_bindings_subjects (k8s_role_bindings_Id, idx, Kind, Name) VALUES($1, $2, $3, $4) ON CONFLICT(k8s_role_bindings_Id, idx) DO UPDATE SET k8s_role_bindings_Id = EXCLUDED.k8s_role_bindings_Id, idx = EXCLUDED.idx, Kind = EXCLUDED.Kind, Name = EXCLUDED.Name"
+	finalStr := "INSERT INTO role_bindings_subjects (role_bindings_Id, idx, Kind, Name) VALUES($1, $2, $3, $4) ON CONFLICT(role_bindings_Id, idx) DO UPDATE SET role_bindings_Id = EXCLUDED.role_bindings_Id, idx = EXCLUDED.idx, Kind = EXCLUDED.Kind, Name = EXCLUDED.Name"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -141,7 +137,7 @@ func insertIntoK8sRoleBindingsSubjects(ctx context.Context, tx pgx.Tx, obj *stor
 	return nil
 }
 
-func (s *storeImpl) copyFromK8sRoleBindings(ctx context.Context, tx pgx.Tx, objs ...*storage.K8SRoleBinding) error {
+func (s *storeImpl) copyFromRoleBindings(ctx context.Context, tx pgx.Tx, objs ...*storage.K8SRoleBinding) error {
 
 	inputRows := [][]interface{}{}
 
@@ -214,14 +210,13 @@ func (s *storeImpl) copyFromK8sRoleBindings(ctx context.Context, tx pgx.Tx, objs
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"k8s_role_bindings"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"role_bindings"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -235,7 +230,7 @@ func (s *storeImpl) copyFromK8sRoleBindings(ctx context.Context, tx pgx.Tx, objs
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromK8sRoleBindingsSubjects(ctx, tx, obj.GetId(), obj.GetSubjects()...); err != nil {
+		if err = s.copyFromRoleBindingsSubjects(ctx, tx, obj.GetId(), obj.GetSubjects()...); err != nil {
 			return err
 		}
 	}
@@ -243,7 +238,7 @@ func (s *storeImpl) copyFromK8sRoleBindings(ctx context.Context, tx pgx.Tx, objs
 	return err
 }
 
-func (s *storeImpl) copyFromK8sRoleBindingsSubjects(ctx context.Context, tx pgx.Tx, k8s_role_bindings_Id string, objs ...*storage.Subject) error {
+func (s *storeImpl) copyFromRoleBindingsSubjects(ctx context.Context, tx pgx.Tx, role_bindings_Id string, objs ...*storage.Subject) error {
 
 	inputRows := [][]interface{}{}
 
@@ -251,7 +246,7 @@ func (s *storeImpl) copyFromK8sRoleBindingsSubjects(ctx context.Context, tx pgx.
 
 	copyCols := []string{
 
-		"k8s_role_bindings_id",
+		"role_bindings_id",
 
 		"idx",
 
@@ -266,7 +261,7 @@ func (s *storeImpl) copyFromK8sRoleBindingsSubjects(ctx context.Context, tx pgx.
 
 		inputRows = append(inputRows, []interface{}{
 
-			k8s_role_bindings_Id,
+			role_bindings_Id,
 
 			idx,
 
@@ -280,7 +275,7 @@ func (s *storeImpl) copyFromK8sRoleBindingsSubjects(ctx context.Context, tx pgx.
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"k8s_role_bindings_subjects"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"role_bindings_subjects"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -306,7 +301,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.K8SRoleBindin
 		return err
 	}
 
-	if err := s.copyFromK8sRoleBindings(ctx, tx, objs...); err != nil {
+	if err := s.copyFromRoleBindings(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -331,7 +326,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.K8SRoleBinding)
 			return err
 		}
 
-		if err := insertIntoK8sRoleBindings(ctx, tx, obj); err != nil {
+		if err := insertIntoRoleBindings(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -392,11 +387,8 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return 0, err
 	}
@@ -413,27 +405,49 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "K8SRoleBinding")
 
-	row := s.db.QueryRow(ctx, existsStmt, id)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
+	if err != nil {
+		return false, err
 	}
-	return exists, nil
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return false, err
+	}
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	return count == 1, err
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "K8SRoleBinding")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "K8SRoleBinding")
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return nil, false, err
 	}
-	defer release()
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, false, err
+	}
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -457,16 +471,23 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "K8SRoleBinding")
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "K8SRoleBinding")
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
 	if err != nil {
 		return err
 	}
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
 		return err
 	}
-	return nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -474,11 +495,8 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.K8SRoleBindingIDs")
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
-	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
-		Resource: targetResource,
-		Access:   storage.Access_READ_ACCESS,
-	})
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return nil, err
 	}
@@ -551,15 +569,24 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.K8SRo
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "K8SRoleBinding")
 
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "K8SRoleBinding")
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
 	if err != nil {
 		return err
 	}
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
 		return err
 	}
-	return nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
@@ -587,19 +614,19 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.K8SRoleBindin
 
 //// Used for testing
 
-func dropTableK8sRoleBindings(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS k8s_role_bindings CASCADE")
-	dropTableK8sRoleBindingsSubjects(ctx, db)
+func dropTableRoleBindings(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS role_bindings CASCADE")
+	dropTableRoleBindingsSubjects(ctx, db)
 
 }
 
-func dropTableK8sRoleBindingsSubjects(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS k8s_role_bindings_subjects CASCADE")
+func dropTableRoleBindingsSubjects(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS role_bindings_subjects CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableK8sRoleBindings(ctx, db)
+	dropTableRoleBindings(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

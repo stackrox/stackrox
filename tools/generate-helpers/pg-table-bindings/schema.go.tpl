@@ -77,7 +77,7 @@ var (
             {{- if eq $ty "*storage.Alert"}}
                 {{- $ty = "*storage.ListAlert"}}
             {{- end}}
-            schema.SetOptionsMap(search.Walk(v1.{{.SearchCategory}}, "{{.Schema.Table}}", ({{$ty}})(nil)))
+            schema.SetOptionsMap(search.Walk(v1.{{.SearchCategory}}, "{{.Schema.TypeName|lower}}", ({{$ty}})(nil)))
         {{- end }}
         globaldb.RegisterTable(schema)
         return schema

@@ -6,9 +6,13 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+- ROX-9358: The diagnostic bundle includes notifiers, auth providers and auth provider groups, access control roles with attached permission set and access scope, and system configuration. Users with `DebugLogs` permission will be able to read listed entities from a generated diagnostic bundle regardless of their respective permissions.
 - ROX-10819: The documentation for API v1/notifiers ("GetNotifiers") previously stated that the request could be filtered by name or type. This is incorrect as this API never allowed filtering. The documentation has been fixed to reflect that.
 - ROX-9614: Add `file` query parameter to Central's `/api/extensions/scannerdefinitions`, allowing retrieval of individual files (not directories) from Scanner's Definition bundle using their full path within the archive. Add `sensorEndpoint` to Scanner's configmap, so Scanner in slim mode knows how to reach Sensor from its cluster.
 - ROX-9928: Policy "OpenShift: Advanced Cluster Security Central Admin Secret Accessed" renamed to "OpenShift: Central Admin Secret Accessed"
+- ROX-8277: changed UserAgent Header for all requests from stackrox operator to kubernetes API server to show appropriate version of the operator, for example: `rhacs-operator/v3.70.0 opensource (linux/amd64)`
+- `ids` field in `/v1/cves/suppress` and `/v1/cves/unsuppress` API payload will be renamed to `cves` in 72.0 release.
+- `cves.ids` field of `storage.VulnerabilityRequest` object, which is in the response of `VulnerabilityRequestService` endpoints, will be renamed to `cves.cves` in 72.0 release.
 
 ## [70.0]
 
@@ -46,6 +50,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Violation tags and process tags are deprecated, and will be removed in version 3.72.0.
 - Users who do not want to include the RBAC factor in risk calculation can set
   the "ROX_INCLUDE_RBAC_IN_RISK" environment variable to "false" in the Central deployment spec.
+- Kubernetes' PodSecurityPolicy API is deprecated which is why installation of PodSecurityPolicies will be disabled with version 3.71.0.
 
 ## [69.1]
 

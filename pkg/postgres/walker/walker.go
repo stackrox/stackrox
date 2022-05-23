@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"gorm.io/gorm/schema"
@@ -243,7 +244,7 @@ var simpleFieldsMap = map[reflect.Kind]DataType{
 }
 
 func tableName(parent, child string) string {
-	return fmt.Sprintf("%s_%s", parent, ns.TableName(child))
+	return fmt.Sprintf("%s_%s", parent, pgutils.NamingStrategy.TableName(child))
 }
 
 func typeIsEnum(typ reflect.Type) bool {

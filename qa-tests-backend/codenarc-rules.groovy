@@ -300,11 +300,11 @@ ruleset {
     // LoggerForDifferentClass
     // LoggerWithWrongModifiers
     LoggingSwallowsStacktrace 
-    MultipleLoggers 
-    // PrintStackTrace
+    // MultipleLoggers
+    PrintStackTrace
     // Println
-    // SystemErrPrint
-    // SystemOutPrint
+    SystemErrPrint
+    SystemOutPrint
     
     // rulesets/naming.xml
     AbstractClassName 

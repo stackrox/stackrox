@@ -16,19 +16,15 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
-	baseTable  = "process_whitelist_results"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM process_whitelist_results WHERE DeploymentId = $1)"
+	baseTable = "process_baseline_results"
 
-	getStmt     = "SELECT serialized FROM process_whitelist_results WHERE DeploymentId = $1"
-	deleteStmt  = "DELETE FROM process_whitelist_results WHERE DeploymentId = $1"
-	walkStmt    = "SELECT serialized FROM process_whitelist_results"
-	getManyStmt = "SELECT serialized FROM process_whitelist_results WHERE DeploymentId = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM process_whitelist_results WHERE DeploymentId = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM process_baseline_results"
+	getManyStmt = "SELECT serialized FROM process_baseline_results WHERE DeploymentId = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -40,7 +36,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.ProcessWhitelistResultsSchema
+	schema = pkgSchema.ProcessBaselineResultsSchema
 )
 
 type Store interface {
@@ -66,14 +62,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableProcessWhitelistResultsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableProcessBaselineResultsStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoProcessWhitelistResults(ctx context.Context, tx pgx.Tx, obj *storage.ProcessBaselineResults) error {
+func insertIntoProcessBaselineResults(ctx context.Context, tx pgx.Tx, obj *storage.ProcessBaselineResults) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -86,7 +82,7 @@ func insertIntoProcessWhitelistResults(ctx context.Context, tx pgx.Tx, obj *stor
 		serialized,
 	}
 
-	finalStr := "INSERT INTO process_whitelist_results (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO process_baseline_results (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -95,7 +91,7 @@ func insertIntoProcessWhitelistResults(ctx context.Context, tx pgx.Tx, obj *stor
 	return nil
 }
 
-func (s *storeImpl) copyFromProcessWhitelistResults(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessBaselineResults) error {
+func (s *storeImpl) copyFromProcessBaselineResults(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessBaselineResults) error {
 
 	inputRows := [][]interface{}{}
 
@@ -136,14 +132,13 @@ func (s *storeImpl) copyFromProcessWhitelistResults(ctx context.Context, tx pgx.
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_whitelist_results"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_baseline_results"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -169,7 +164,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaseli
 		return err
 	}
 
-	if err := s.copyFromProcessWhitelistResults(ctx, tx, objs...); err != nil {
+	if err := s.copyFromProcessBaselineResults(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -194,7 +189,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessBaseline
 			return err
 		}
 
-		if err := insertIntoProcessWhitelistResults(ctx, tx, obj); err != nil {
+		if err := insertIntoProcessBaselineResults(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -236,27 +231,30 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, deploymentId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ProcessBaselineResults")
 
-	row := s.db.QueryRow(ctx, existsStmt, deploymentId)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
-	}
-	return exists, nil
+	var sacQueryFilter *v1.Query
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	return count == 1, err
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, deploymentId string) (*storage.ProcessBaselineResults, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ProcessBaselineResults")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ProcessBaselineResults")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	row := conn.QueryRow(ctx, getStmt, deploymentId)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -280,16 +278,14 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, deploymentId string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ProcessBaselineResults")
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "ProcessBaselineResults")
-	if err != nil {
-		return err
-	}
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	if _, err := conn.Exec(ctx, deleteStmt, deploymentId); err != nil {
-		return err
-	}
-	return nil
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -362,15 +358,14 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Proce
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ProcessBaselineResults")
 
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "ProcessBaselineResults")
-	if err != nil {
-		return err
-	}
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
-		return err
-	}
-	return nil
+	var sacQueryFilter *v1.Query
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
@@ -398,13 +393,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessBaseli
 
 //// Used for testing
 
-func dropTableProcessWhitelistResults(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS process_whitelist_results CASCADE")
+func dropTableProcessBaselineResults(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS process_baseline_results CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableProcessWhitelistResults(ctx, db)
+	dropTableProcessBaselineResults(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

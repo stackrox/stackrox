@@ -21,11 +21,6 @@ var (
                    Id varchar,
                    Name varchar UNIQUE,
                    Labels jsonb,
-                   HealthStatus_SensorHealthStatus integer,
-                   HealthStatus_CollectorHealthStatus integer,
-                   HealthStatus_OverallHealthStatus integer,
-                   HealthStatus_AdmissionControlHealthStatus integer,
-                   HealthStatus_ScannerHealthStatus integer,
                    serialized bytea,
                    PRIMARY KEY(Id)
                )
@@ -41,7 +36,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Cluster)(nil)), "clusters")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTERS, "clusters", (*storage.Cluster)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTERS, "cluster", (*storage.Cluster)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()
@@ -53,13 +48,8 @@ const (
 
 // Cluster holds the Gorm model for Postgres table `clusters`.
 type Clusters struct {
-	Id                                       string                                        `gorm:"column:id;type:varchar;primaryKey"`
-	Name                                     string                                        `gorm:"column:name;type:varchar;unique"`
-	Labels                                   map[string]string                             `gorm:"column:labels;type:jsonb"`
-	HealthStatusSensorHealthStatus           storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_sensorhealthstatus;type:integer"`
-	HealthStatusCollectorHealthStatus        storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_collectorhealthstatus;type:integer"`
-	HealthStatusOverallHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_overallhealthstatus;type:integer"`
-	HealthStatusAdmissionControlHealthStatus storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_admissioncontrolhealthstatus;type:integer"`
-	HealthStatusScannerHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:healthstatus_scannerhealthstatus;type:integer"`
-	Serialized                               []byte                                        `gorm:"column:serialized;type:bytea"`
+	Id         string            `gorm:"column:id;type:varchar;primaryKey"`
+	Name       string            `gorm:"column:name;type:varchar;unique"`
+	Labels     map[string]string `gorm:"column:labels;type:jsonb"`
+	Serialized []byte            `gorm:"column:serialized;type:bytea"`
 }

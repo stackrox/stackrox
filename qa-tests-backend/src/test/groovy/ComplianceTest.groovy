@@ -491,7 +491,7 @@ class ComplianceTest extends BaseSpecification {
             }
             println "Verified ${verifiedRows} out of ${rowNumber} total rows"
         } catch (Exception e) {
-            println e.printStackTrace()
+            log.error("Exception", e)
         }
     }
 
@@ -1369,6 +1369,7 @@ class ComplianceTest extends BaseSpecification {
     }
 
     @Category([BAT])
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify ComplianceRuns with SAC on clusters with wildcard"() {
         def otherClusterName = "disallowedCluster"
 

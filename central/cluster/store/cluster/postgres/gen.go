@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-table-bindings-wrapper --type=storage.Cluster --table=clusters --search-category CLUSTERS
+//go:generate pg-table-bindings-wrapper --type=storage.Cluster --search-category CLUSTERS

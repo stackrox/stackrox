@@ -20,15 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "image_component_relations"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_relations WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3)"
+	baseTable = "image_component_edges"
 
-	getStmt     = "SELECT serialized FROM image_component_relations WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3"
-	deleteStmt  = "DELETE FROM image_component_relations WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3"
-	walkStmt    = "SELECT serialized FROM image_component_relations"
-	getManyStmt = "SELECT serialized FROM image_component_relations WHERE Id = ANY($1::text[])"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_edges WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3)"
+	getStmt    = "SELECT serialized FROM image_component_edges WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3"
+	deleteStmt = "DELETE FROM image_component_edges WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3"
 
-	deleteManyStmt = "DELETE FROM image_component_relations WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM image_component_edges"
+	getManyStmt = "SELECT serialized FROM image_component_edges WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -40,7 +39,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.ImageComponentRelationsSchema
+	schema = pkgSchema.ImageComponentEdgesSchema
 )
 
 type Store interface {
@@ -64,7 +63,7 @@ type storeImpl struct {
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImagesStmt)
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentsStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentRelationsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentEdgesStmt)
 
 	return &storeImpl{
 		db: db,
@@ -215,13 +214,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ImageComponen
 
 //// Used for testing
 
-func dropTableImageComponentRelations(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_relations CASCADE")
+func dropTableImageComponentEdges(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_component_edges CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableImageComponentRelations(ctx, db)
+	dropTableImageComponentEdges(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

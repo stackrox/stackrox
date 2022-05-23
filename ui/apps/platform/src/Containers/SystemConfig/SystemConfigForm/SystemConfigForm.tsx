@@ -1,5 +1,7 @@
 import React, { ReactElement } from 'react';
 import {
+    ActionGroup,
+    Button,
     TextArea,
     Form,
     FormSection,
@@ -17,30 +19,75 @@ import {
     CardActions,
     Switch,
 } from '@patternfly/react-core';
+import { useFormik } from 'formik';
 
 import ColorPicker from 'Components/ColorPicker';
 import { getProductBranding } from 'constants/productBranding';
+import { PrivateConfig, PublicConfig, SystemConfig } from 'types/config.proto';
+import { TelemetryConfig } from 'types/telemetry.proto';
 import { ConfigTelemetryDetailContent } from '../ConfigTelemetryDetailWidget';
-import { PrivateConfig, PublicConfig, TelemetryConfig } from '../SystemConfigTypes';
 import FormSelect from './FormSelect';
 
-export type SystemConfigFormProps = {
-    values: {
-        privateConfig: PrivateConfig;
-        publicConfig: PublicConfig;
-        telemetryConfig: TelemetryConfig;
+function getCompletePublicConfig(systemConfig: SystemConfig): PublicConfig {
+    return {
+        header: {
+            color: systemConfig?.publicConfig?.header?.color || '#000000',
+            backgroundColor: systemConfig?.publicConfig?.header?.backgroundColor || '#FFFFFF',
+            text: systemConfig?.publicConfig?.header?.text || '',
+            enabled: systemConfig?.publicConfig?.header?.enabled || false,
+            size: systemConfig?.publicConfig?.header?.size || 'UNSET',
+        },
+        footer: {
+            color: systemConfig?.publicConfig?.footer?.color || '#000000',
+            backgroundColor: systemConfig?.publicConfig?.footer?.backgroundColor || '#FFFFFF',
+            text: systemConfig?.publicConfig?.footer?.text || '',
+            enabled: systemConfig?.publicConfig?.footer?.enabled || false,
+            size: systemConfig?.publicConfig?.footer?.size || 'UNSET',
+        },
+        loginNotice: {
+            text: systemConfig?.publicConfig?.loginNotice?.text || '',
+            enabled: systemConfig?.publicConfig?.loginNotice?.enabled || false,
+        },
     };
-    onSubmitForm: (event) => void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setFieldValue: (field: string, value: any, shouldValidate?: boolean) => void;
+}
+
+type Values = {
+    privateConfig: PrivateConfig;
+    publicConfig: PublicConfig;
+    telemetryConfig: TelemetryConfig;
+};
+
+export type SystemConfigFormProps = {
+    systemConfig: SystemConfig;
+    telemetryConfig: TelemetryConfig;
+    onCancel: () => void;
+    onSubmit: (
+        systemConfigSubmitted: SystemConfig,
+        telemetryConfigSubmitted: TelemetryConfig
+    ) => void;
 };
 
 const SystemConfigForm = ({
-    onSubmitForm,
-    values,
-    setFieldValue,
+    systemConfig,
+    telemetryConfig,
+    onCancel,
+    onSubmit,
 }: SystemConfigFormProps): ReactElement => {
     const { type } = getProductBranding();
+    const { privateConfig } = systemConfig;
+    const publicConfig = getCompletePublicConfig(systemConfig);
+    const { submitForm, setFieldValue, values, dirty, isValid, isSubmitting, setSubmitting } =
+        useFormik<Values>({
+            initialValues: { privateConfig, publicConfig, telemetryConfig },
+            onSubmit: () => {
+                // TODO next step will call save functions directly from services instead of indirectly via sagas.
+                onSubmit(
+                    { privateConfig: values.privateConfig, publicConfig: values.publicConfig },
+                    values.telemetryConfig
+                );
+                setSubmitting(false);
+            },
+        });
 
     function onChange(value, event) {
         return setFieldValue(event.target.id, value, false);
@@ -50,8 +97,13 @@ const SystemConfigForm = ({
         return setFieldValue(id, value, false);
     }
 
+    function onSubmitForm(event) {
+        event.preventDefault();
+        return submitForm();
+    }
+
     return (
-        <Form id="system-config-edit-form" onSubmit={onSubmitForm}>
+        <Form onSubmit={onSubmitForm}>
             <Grid hasGutter md={12}>
                 <GridItem md={12}>
                     <Card>
@@ -258,7 +310,9 @@ const SystemConfigForm = ({
                                         >
                                             <FormSelect
                                                 id="publicConfig.header.size"
-                                                value={values?.publicConfig?.header.size}
+                                                value={
+                                                    values?.publicConfig?.header?.size ?? 'UNSET'
+                                                }
                                                 onChange={onCustomChange}
                                             >
                                                 <SelectOption key={0} value="SMALL" />
@@ -343,7 +397,9 @@ const SystemConfigForm = ({
                                         >
                                             <FormSelect
                                                 id="publicConfig.footer.size"
-                                                value={values?.publicConfig?.footer.size}
+                                                value={
+                                                    values?.publicConfig?.footer?.size ?? 'UNSET'
+                                                }
                                                 onChange={onCustomChange}
                                             >
                                                 <SelectOption key={0} value="SMALL" />
@@ -433,6 +489,19 @@ const SystemConfigForm = ({
                     </GridItem>
                 )}
             </Grid>
+            <ActionGroup>
+                <Button
+                    variant="primary"
+                    type="submit"
+                    isDisabled={!dirty || !isValid || isSubmitting}
+                    isLoading={isSubmitting}
+                >
+                    Save
+                </Button>
+                <Button variant="secondary" onClick={onCancel}>
+                    Cancel
+                </Button>
+            </ActionGroup>
         </Form>
     );
 };

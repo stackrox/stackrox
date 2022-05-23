@@ -1,60 +1,23 @@
 import React, { ReactElement, useState } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { ActionGroup, Button, PageSection, Title, Flex, FlexItem } from '@patternfly/react-core';
-import { useFormik } from 'formik';
+import { Button, PageSection, Title, Flex, FlexItem } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import { actions } from 'reducers/systemConfig';
 import { actions as telemetryActions } from 'reducers/telemetryConfig';
+import { SystemConfig } from 'types/config.proto';
+import { TelemetryConfig } from 'types/telemetry.proto';
 
 import SystemConfigForm from './SystemConfigForm';
 import Details from './Details';
-import { PublicConfig, PrivateConfig, SystemConfig, TelemetryConfig } from './SystemConfigTypes';
 
 export type PageProps = {
     systemConfig: SystemConfig;
-    saveSystemConfig: (config) => void;
+    saveSystemConfig: (systemConfig: SystemConfig) => void;
     telemetryConfig: TelemetryConfig;
-    saveTelemetryConfig: (config) => void;
+    saveTelemetryConfig: (telemetryConfig: TelemetryConfig) => void;
 };
-
-type InitialValues = {
-    privateConfig: PrivateConfig;
-    publicConfig: PublicConfig;
-    telemetryConfig: TelemetryConfig;
-};
-
-function getInitialValues(
-    systemConfig: SystemConfig,
-    telemetryConfig: TelemetryConfig
-): InitialValues {
-    const modifiedSystemConfig = { ...systemConfig };
-    modifiedSystemConfig.publicConfig = {
-        header: {
-            color: systemConfig?.publicConfig?.header?.color || '#000000',
-            backgroundColor: systemConfig?.publicConfig?.header?.backgroundColor || '#FFFFFF',
-            text: systemConfig?.publicConfig?.header?.text || '',
-            enabled: systemConfig?.publicConfig?.header?.enabled || false,
-            size: systemConfig?.publicConfig?.header?.size || 'UNSET',
-        },
-        footer: {
-            color: systemConfig?.publicConfig?.footer?.color || '#000000',
-            backgroundColor: systemConfig?.publicConfig?.footer?.backgroundColor || '#FFFFFF',
-            text: systemConfig?.publicConfig?.footer?.text || '',
-            enabled: systemConfig?.publicConfig?.footer?.enabled || false,
-            size: systemConfig?.publicConfig?.footer?.size || 'UNSET',
-        },
-        loginNotice: {
-            text: systemConfig?.publicConfig?.loginNotice?.text || '',
-            enabled: systemConfig?.publicConfig?.loginNotice?.enabled || false,
-        },
-    };
-    return {
-        ...modifiedSystemConfig,
-        telemetryConfig,
-    };
-}
 
 const Page = ({
     systemConfig,
@@ -62,13 +25,11 @@ const Page = ({
     telemetryConfig,
     saveTelemetryConfig,
 }: PageProps): ReactElement => {
-    const initialValues = getInitialValues(systemConfig, telemetryConfig);
     const [isEditing, setIsEditing] = useState(false);
-    const { submitForm, setFieldValue, values, dirty, isValid, isSubmitting, setSubmitting } =
-        useFormik({
-            initialValues,
-            onSubmit,
-        });
+    // TODO next step will call fetch functions directly from services instead of indirectly via sagas
+    // Wait while either object is empty, which is initial state of the reducers.
+    const isLoading =
+        Object.keys(systemConfig).length === 0 || Object.keys(telemetryConfig).length === 0;
 
     function editSystemConfig() {
         setIsEditing(true);
@@ -78,16 +39,11 @@ const Page = ({
         setIsEditing(false);
     }
 
-    function onSubmit(config) {
-        saveSystemConfig(config);
-        saveTelemetryConfig(config.telemetryConfig);
+    function onSubmit(systemConfigSubmitted, telemetryConfigSubmitted) {
+        // TODO next step will receive the responses from requests in the form (so it can render error and loading).
+        saveSystemConfig(systemConfigSubmitted);
+        saveTelemetryConfig(telemetryConfigSubmitted);
         setIsEditing(false);
-        setSubmitting(false);
-    }
-
-    function onSubmitForm(event) {
-        event.preventDefault();
-        return submitForm();
     }
 
     return (
@@ -99,36 +55,13 @@ const Page = ({
                     </FlexItem>
                     <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
                         <FlexItem>
-                            {isEditing ? (
-                                <ActionGroup className="pf-u-display-flex pf-u-justify-content-flex-end">
-                                    <Button
-                                        variant="secondary"
-                                        className="pf-u-mr-sm"
-                                        onClick={cancelEdit}
-                                        data-testid="cancel-btn"
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        variant="primary"
-                                        data-testid="save-btn"
-                                        form="system-config-edit-form"
-                                        type="submit"
-                                        isDisabled={!dirty || !isValid || isSubmitting}
-                                        isLoading={isSubmitting}
-                                    >
-                                        Save
-                                    </Button>
-                                </ActionGroup>
-                            ) : (
-                                <Button
-                                    variant="primary"
-                                    data-testid="edit-btn"
-                                    onClick={editSystemConfig}
-                                >
-                                    Edit
-                                </Button>
-                            )}
+                            <Button
+                                variant="primary"
+                                isDisabled={isEditing || isLoading}
+                                onClick={editSystemConfig}
+                            >
+                                Edit
+                            </Button>
                         </FlexItem>
                     </Flex>
                 </Flex>
@@ -136,9 +69,10 @@ const Page = ({
             <PageSection>
                 {isEditing ? (
                     <SystemConfigForm
-                        values={values}
-                        onSubmitForm={onSubmitForm}
-                        setFieldValue={setFieldValue}
+                        systemConfig={systemConfig}
+                        telemetryConfig={telemetryConfig}
+                        onCancel={cancelEdit}
+                        onSubmit={onSubmit}
                     />
                 ) : (
                     <Details systemConfig={systemConfig} telemetryConfig={telemetryConfig} />

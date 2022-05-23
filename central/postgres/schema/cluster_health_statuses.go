@@ -3,6 +3,7 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/stackrox/rox/central/globaldb"
@@ -23,7 +24,8 @@ var (
                    AdmissionControlHealthStatus integer,
                    ScannerHealthStatus integer,
                    serialized bytea,
-                   PRIMARY KEY(Id)
+                   PRIMARY KEY(Id),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (Id) REFERENCES clusters(Id) ON DELETE CASCADE
                )
                `,
 		Indexes:  []string{},
@@ -37,6 +39,13 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ClusterHealthStatus)(nil)), "cluster_health_statuses")
+		referencedSchemas := map[string]*walker.Schema{
+			"storage.Cluster": ClustersSchema,
+		}
+
+		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
+			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
+		})
 		globaldb.RegisterTable(schema)
 		return schema
 	}()
@@ -55,4 +64,5 @@ type ClusterHealthStatuses struct {
 	AdmissionControlHealthStatus storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:admissioncontrolhealthstatus;type:integer"`
 	ScannerHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:scannerhealthstatus;type:integer"`
 	Serialized                   []byte                                        `gorm:"column:serialized;type:bytea"`
+	ClustersRef                  Clusters                                      `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

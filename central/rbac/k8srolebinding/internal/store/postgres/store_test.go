@@ -20,18 +20,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type K8sRoleBindingsStoreSuite struct {
+type RoleBindingsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestK8sRoleBindingsStore(t *testing.T) {
-	suite.Run(t, new(K8sRoleBindingsStoreSuite))
+func TestRoleBindingsStore(t *testing.T) {
+	suite.Run(t, new(RoleBindingsStoreSuite))
 }
 
-func (s *K8sRoleBindingsStoreSuite) SetupTest() {
+func (s *RoleBindingsStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,14 +54,14 @@ func (s *K8sRoleBindingsStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *K8sRoleBindingsStoreSuite) TearDownTest() {
+func (s *RoleBindingsStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *K8sRoleBindingsStoreSuite) TestStore() {
+func (s *RoleBindingsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
@@ -117,7 +117,7 @@ func (s *K8sRoleBindingsStoreSuite) TestStore() {
 	s.Equal(200, k8SRoleBindingCount)
 }
 
-func (s *K8sRoleBindingsStoreSuite) TestSACUpsert() {
+func (s *RoleBindingsStoreSuite) TestSACUpsert() {
 	obj := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -136,7 +136,7 @@ func (s *K8sRoleBindingsStoreSuite) TestSACUpsert() {
 	}
 }
 
-func (s *K8sRoleBindingsStoreSuite) TestSACUpsertMany() {
+func (s *RoleBindingsStoreSuite) TestSACUpsertMany() {
 	obj := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -155,7 +155,7 @@ func (s *K8sRoleBindingsStoreSuite) TestSACUpsertMany() {
 	}
 }
 
-func (s *K8sRoleBindingsStoreSuite) TestSACCount() {
+func (s *RoleBindingsStoreSuite) TestSACCount() {
 	objA := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -183,7 +183,7 @@ func (s *K8sRoleBindingsStoreSuite) TestSACCount() {
 	}
 }
 
-func (s *K8sRoleBindingsStoreSuite) TestSACGetIDs() {
+func (s *RoleBindingsStoreSuite) TestSACGetIDs() {
 	objA := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -207,6 +207,127 @@ func (s *K8sRoleBindingsStoreSuite) TestSACGetIDs() {
 			ids, err := s.store.GetIDs(ctxs[name])
 			assert.NoError(t, err)
 			assert.EqualValues(t, expectedIds, ids)
+		})
+	}
+}
+
+func (s *RoleBindingsStoreSuite) TestSACExists() {
+	objA := &storage.K8SRoleBinding{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	s.store.Upsert(withAllAccessCtx, objA)
+
+	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
+	for name, expected := range map[string]bool{
+		withAllAccess:           true,
+		withNoAccess:            false,
+		withNoAccessToCluster:   false,
+		withAccessToDifferentNs: false,
+		withAccess:              true,
+		withAccessToCluster:     true,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			exists, err := s.store.Exists(ctxs[name], objA.GetId())
+			assert.NoError(t, err)
+			assert.Equal(t, expected, exists)
+		})
+	}
+}
+
+func (s *RoleBindingsStoreSuite) TestSACGet() {
+	objA := &storage.K8SRoleBinding{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	s.store.Upsert(withAllAccessCtx, objA)
+
+	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
+	for name, expected := range map[string]bool{
+		withAllAccess:           true,
+		withNoAccess:            false,
+		withNoAccessToCluster:   false,
+		withAccessToDifferentNs: false,
+		withAccess:              true,
+		withAccessToCluster:     true,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			actual, exists, err := s.store.Get(ctxs[name], objA.GetId())
+			assert.NoError(t, err)
+			assert.Equal(t, expected, exists)
+			if expected == true {
+				assert.Equal(t, objA, actual)
+			} else {
+				assert.Nil(t, actual)
+			}
+		})
+	}
+}
+
+func (s *RoleBindingsStoreSuite) TestSACDelete() {
+	objA := &storage.K8SRoleBinding{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.K8SRoleBinding{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+
+	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
+	for name, expectedCount := range map[string]int{
+		withAllAccess:           0,
+		withNoAccess:            2,
+		withNoAccessToCluster:   2,
+		withAccessToDifferentNs: 2,
+		withAccess:              1,
+		withAccessToCluster:     1,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			s.SetupTest()
+
+			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
+			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
+
+			assert.NoError(t, s.store.Delete(ctxs[name], objA.GetId()))
+			assert.NoError(t, s.store.Delete(ctxs[name], objB.GetId()))
+
+			count, err := s.store.Count(withAllAccessCtx)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
+		})
+	}
+}
+
+func (s *RoleBindingsStoreSuite) TestSACDeleteMany() {
+	objA := &storage.K8SRoleBinding{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.K8SRoleBinding{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+
+	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
+	for name, expectedCount := range map[string]int{
+		withAllAccess:           0,
+		withNoAccess:            2,
+		withNoAccessToCluster:   2,
+		withAccessToDifferentNs: 2,
+		withAccess:              1,
+		withAccessToCluster:     1,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			s.SetupTest()
+
+			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
+			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
+
+			assert.NoError(t, s.store.DeleteMany(ctxs[name], []string{
+				objA.GetId(),
+				objB.GetId(),
+			}))
+
+			count, err := s.store.Count(withAllAccessCtx)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
 		})
 	}
 }

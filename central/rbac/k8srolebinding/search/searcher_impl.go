@@ -17,7 +17,7 @@ import (
 var (
 	k8sRoleBindingsSACSearchHelper = sac.ForResource(resources.K8sRoleBinding).
 					MustCreateSearchHelper(mappings.OptionsMap)
-	k8sRoleBindingsSACPgSearchHelper = sac.ForResource(resources.K8sRoleBinding).
+	k8sRoleBindingsSACPostgresSearchHelper = sac.ForResource(resources.K8sRoleBinding).
 						MustCreatePgSearchHelper(mappings.OptionsMap)
 )
 
@@ -39,7 +39,7 @@ func (ds *searcherImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]
 // Search returns the raw search results from the query.
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	if features.PostgresDatastore.Enabled() {
-		return k8sRoleBindingsSACPgSearchHelper.Apply(ds.index.Search)(ctx, q)
+		return k8sRoleBindingsSACPostgresSearchHelper.Apply(ds.index.Search)(ctx, q)
 	}
 	return k8sRoleBindingsSACSearchHelper.Apply(ds.index.Search)(ctx, q)
 }
@@ -47,7 +47,7 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 // Count returns the number of search results from the query.
 func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if features.PostgresDatastore.Enabled() {
-		return k8sRoleBindingsSACPgSearchHelper.ApplyCount(ds.index.Count)(ctx, q)
+		return k8sRoleBindingsSACPostgresSearchHelper.ApplyCount(ds.index.Count)(ctx, q)
 	}
 	return k8sRoleBindingsSACSearchHelper.ApplyCount(ds.index.Count)(ctx, q)
 }

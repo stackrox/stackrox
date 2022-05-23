@@ -241,6 +241,16 @@ func (resolver *Resolver) nodeVulnerabilitiesV2(ctx context.Context, args Pagina
 	return ret, err
 }
 
+func (resolver *Resolver) clusterVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
+	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
+	ret := make([]ClusterVulnerabilityResolver, 0, len(vulnResolvers))
+	for _, resolver := range vulnResolvers {
+		resolver.ctx = ctx
+		ret = append(ret, resolver)
+	}
+	return ret, err
+}
+
 func (resolver *Resolver) unwrappedVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]*cVEResolver, error) {
 	if err := readCVEs(ctx); err != nil {
 		return nil, err

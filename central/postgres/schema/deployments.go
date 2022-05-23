@@ -179,13 +179,13 @@ var (
 		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":             ImagesSchema,
-			"storage.NamespaceMetadata": NamespacesSchema,
+			"storage.NamespaceMetadata": NamespaceMetadataSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployments", (*storage.Deployment)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployment", (*storage.Deployment)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

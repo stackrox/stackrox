@@ -38,7 +38,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Risk)(nil)), "risks")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_RISKS, "risks", (*storage.Risk)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_RISKS, "risk", (*storage.Risk)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

@@ -18,19 +18,15 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 )
 
 const (
-	baseTable  = "api_tokens"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM api_tokens WHERE Id = $1)"
+	baseTable = "token_metadata"
 
-	getStmt     = "SELECT serialized FROM api_tokens WHERE Id = $1"
-	deleteStmt  = "DELETE FROM api_tokens WHERE Id = $1"
-	walkStmt    = "SELECT serialized FROM api_tokens"
-	getManyStmt = "SELECT serialized FROM api_tokens WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM api_tokens WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM token_metadata"
+	getManyStmt = "SELECT serialized FROM token_metadata WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -42,7 +38,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ApiTokensSchema
+	schema         = pkgSchema.TokenMetadataSchema
 	targetResource = resources.Integration
 )
 
@@ -69,14 +65,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableApiTokensStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTokenMetadataStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoApiTokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetadata) error {
+func insertIntoTokenMetadata(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -89,7 +85,7 @@ func insertIntoApiTokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetad
 		serialized,
 	}
 
-	finalStr := "INSERT INTO api_tokens (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO token_metadata (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -98,7 +94,7 @@ func insertIntoApiTokens(ctx context.Context, tx pgx.Tx, obj *storage.TokenMetad
 	return nil
 }
 
-func (s *storeImpl) copyFromApiTokens(ctx context.Context, tx pgx.Tx, objs ...*storage.TokenMetadata) error {
+func (s *storeImpl) copyFromTokenMetadata(ctx context.Context, tx pgx.Tx, objs ...*storage.TokenMetadata) error {
 
 	inputRows := [][]interface{}{}
 
@@ -139,14 +135,13 @@ func (s *storeImpl) copyFromApiTokens(ctx context.Context, tx pgx.Tx, objs ...*s
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"api_tokens"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"token_metadata"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -172,7 +167,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TokenMetadata
 		return err
 	}
 
-	if err := s.copyFromApiTokens(ctx, tx, objs...); err != nil {
+	if err := s.copyFromTokenMetadata(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -197,7 +192,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TokenMetadata) 
 			return err
 		}
 
-		if err := insertIntoApiTokens(ctx, tx, obj); err != nil {
+		if err := insertIntoTokenMetadata(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -258,6 +253,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "TokenMetadata")
 
+	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return false, err
@@ -265,17 +261,20 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, nil
 	}
 
-	row := s.db.QueryRow(ctx, existsStmt, id)
-	var exists bool
-	if err := row.Scan(&exists); err != nil {
-		return false, pgutils.ErrNilIfNoRows(err)
-	}
-	return exists, nil
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
+	return count == 1, err
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.TokenMetadata, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "TokenMetadata")
+
+	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
@@ -284,15 +283,13 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.TokenMetadata,
 		return nil, false, nil
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "TokenMetadata")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -316,6 +313,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "TokenMetadata")
 
+	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
@@ -323,16 +321,12 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "TokenMetadata")
-	if err != nil {
-		return err
-	}
-	defer release()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
 
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
-		return err
-	}
-	return nil
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -418,6 +412,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Token
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "TokenMetadata")
 
+	var sacQueryFilter *v1.Query
+
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
@@ -425,15 +421,12 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "TokenMetadata")
-	if err != nil {
-		return err
-	}
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
-		return err
-	}
-	return nil
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
@@ -461,13 +454,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TokenMetadata
 
 //// Used for testing
 
-func dropTableApiTokens(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS api_tokens CASCADE")
+func dropTableTokenMetadata(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS token_metadata CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableApiTokens(ctx, db)
+	dropTableTokenMetadata(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

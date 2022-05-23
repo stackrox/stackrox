@@ -48,7 +48,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestSingleKeyStruct)(nil)), "test_single_key_structs")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "test_single_key_structs", (*storage.TestSingleKeyStruct)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "testsinglekeystruct", (*storage.TestSingleKeyStruct)(nil)))
 		globaldb.RegisterTable(schema)
 		return schema
 	}()

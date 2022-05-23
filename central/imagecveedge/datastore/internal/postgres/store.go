@@ -20,15 +20,14 @@ import (
 )
 
 const (
-	baseTable  = "image_cve_relations"
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3)"
+	baseTable = "image_cve_edges"
 
-	getStmt     = "SELECT serialized FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3"
-	deleteStmt  = "DELETE FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3"
-	walkStmt    = "SELECT serialized FROM image_cve_relations"
-	getManyStmt = "SELECT serialized FROM image_cve_relations WHERE Id = ANY($1::text[])"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_cve_edges WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3)"
+	getStmt    = "SELECT serialized FROM image_cve_edges WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3"
+	deleteStmt = "DELETE FROM image_cve_edges WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3"
 
-	deleteManyStmt = "DELETE FROM image_cve_relations WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM image_cve_edges"
+	getManyStmt = "SELECT serialized FROM image_cve_edges WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -40,7 +39,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.ImageCveRelationsSchema
+	schema = pkgSchema.ImageCveEdgesSchema
 )
 
 type Store interface {
@@ -64,7 +63,7 @@ type storeImpl struct {
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImagesStmt)
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCvesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCveRelationsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCveEdgesStmt)
 
 	return &storeImpl{
 		db: db,
@@ -215,13 +214,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ImageCVEEdge)
 
 //// Used for testing
 
-func dropTableImageCveRelations(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_cve_relations CASCADE")
+func dropTableImageCveEdges(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_cve_edges CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableImageCveRelations(ctx, db)
+	dropTableImageCveEdges(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

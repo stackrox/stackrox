@@ -122,8 +122,19 @@ class ProcessBaselinesTest extends BaseSpecification {
                     (baseline.key.containerName.equalsIgnoreCase(containerName)))
         assert baseline.elementsList.find { it.element.processName == processName } != null
 
-        // Need to sleep so the baseline has time to lock
-        sleep 70000
+        // wait for baseline to come out of observation
+        baseline = evaluateWithRetry(30, 3) {
+            def tmpBaseline = ProcessBaselineService.getProcessBaseline(clusterId, deployment, containerName)
+            def now = System.currentTimeSeconds()
+            if (tmpBaseline.getStackRoxLockedTimestamp().getSeconds() > now) {
+                throw new RuntimeException(
+                    "Baseline ${deployment} is still in observation. Baseline is ${tmpBaseline}."
+                )
+            }
+            return tmpBaseline
+        }
+        assert baseline
+
         orchestrator.execInContainer(deployment, "pwd")
 
         then:
@@ -222,7 +233,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         orchestrator.execInContainer(deployment, "pwd")
 
         // check for process baseline violation
-        assert waitForViolation(containerName, "Unauthorized Process Execution", 15)
+        assert waitForViolation(containerName, "Unauthorized Process Execution", 90)
         List<AlertOuterClass.ListAlert> alertList = AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest
                  .newBuilder().build())
         String alertId
@@ -257,7 +268,6 @@ class ProcessBaselinesTest extends BaseSpecification {
                 break
              }
          }
-        System.out.println("numAlertsAfterResolve .. " + numAlertsAfterResolve)
         assert (numAlertsAfterResolve  == expectedViolationsCount)
 
         cleanup:

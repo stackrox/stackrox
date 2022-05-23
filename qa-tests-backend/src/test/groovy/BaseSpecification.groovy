@@ -22,6 +22,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import services.BaseService
 import services.ClusterService
+import services.FeatureFlagService
 import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
@@ -36,6 +37,8 @@ import util.OnFailure
 @Retry(condition = { Helpers.determineRetry(failure) })
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
+
+    static final Logger LOG = LoggerFactory.getLogger("test." + BaseSpecification.getSimpleName())
 
     static final String TEST_IMAGE = "quay.io/rhacs-eng/qa:nginx-1-7-9"
 
@@ -197,18 +200,21 @@ class BaseSpecification extends Specification {
         try {
             orchestrator.setup()
         } catch (Exception e) {
-            e.printStackTrace()
-            println "Error setting up orchestrator: ${e.message}"
+            log.error("Error setting up orchestrator", e)
             throw e
         }
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-        try {
-            def response = SACService.addAuthPlugin()
-            pluginConfigID = response.getId()
-            println response.toString()
-        } catch (StatusRuntimeException e) {
-            println("Unable to enable the authz plugin, defaulting to basic auth: ${e.message}")
+        if (FeatureFlagService.isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE')) {
+            log.info("Postgres datastore enabled. Do not enable authz plugin. Use built in plugin instead.")
+        } else {
+            try {
+                def response = SACService.addAuthPlugin()
+                pluginConfigID = response.getId()
+                println response.toString()
+            } catch (StatusRuntimeException e) {
+                log.error("Unable to enable the authz plugin, defaulting to basic auth", e)
+            }
         }
 
         coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
@@ -230,8 +236,8 @@ class BaseSpecification extends Specification {
             )
         }
         if (!coreImageIntegrationId) {
-            println "WARNING: Could not create the core image integration."
-            println "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
+            log.warn "Could not create the core image integration."
+            log.warn "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
         }
 
         recordResourcesAtSpecStart()
@@ -282,7 +288,7 @@ class BaseSpecification extends Specification {
         try {
             orchestrator.cleanup()
         } catch (Exception e) {
-            println "Error to clean up orchestrator: ${e.message}"
+            log.error("Failed to clean up orchestrator", e)
             throw e
         }
         disableAuthzPlugin()
@@ -332,7 +338,7 @@ class BaseSpecification extends Specification {
                            Env.get("REGISTRY_PASSWORD", null) == null)) {
             // Arguably this should be fatal but for tests that don't pull from docker.io/stackrox it is not strictly
             // necessary.
-            println "WARNING: The REGISTRY_USERNAME and/or REGISTRY_PASSWORD env var is missing. " +
+            LOG.warn "The REGISTRY_USERNAME and/or REGISTRY_PASSWORD env var is missing. " +
                     "(this is ok if your test does not use images from docker.io/stackrox)"
             return
         }
@@ -366,7 +372,7 @@ class BaseSpecification extends Specification {
     static addGCRImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
         if (!Env.IN_CI && Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER", null) == null) {
             // Arguably this should be fatal but for tests that don't pull from us.gcr.io it is not strictly necessary
-            println "WARNING: The GOOGLE_CREDENTIALS_GCR_SCANNER env var is missing. "+
+            LOG.warn "The GOOGLE_CREDENTIALS_GCR_SCANNER env var is missing. "+
                     "(this is ok if your test does not use images on us.gcr.io)"
             return
         }

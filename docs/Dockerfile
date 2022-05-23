@@ -7,7 +7,7 @@ COPY content content
 COPY tools tools
 COPY Makefile ./
 
-RUN npm install -g npm@8.9.0 && npm install -g yarn@1.22.18
+RUN npm install -g npm@8.10.0 && npm install -g yarn@1.22.18
 RUN make
 
 FROM registry.access.redhat.com/ubi8/nginx-120:latest

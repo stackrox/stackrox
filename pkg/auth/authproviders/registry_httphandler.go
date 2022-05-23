@@ -261,6 +261,19 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}
+
+	if authResp == nil || authResp.Claims == nil {
+		r.error(w, errox.NoCredentials.CausedBy("authentication response is empty"), typ, clientState, testMode)
+		return
+	}
+
+	if provider.AttributeVerifier() != nil {
+		if err := provider.AttributeVerifier().Verify(authResp.Claims.Attributes); err != nil {
+			r.error(w, errox.NoCredentials.CausedBy(err), typ, clientState, testMode)
+			return
+		}
+	}
+
 	// We need all access for retrieving roles.
 	user, err := CreateRoleBasedIdentity(sac.WithAllAccess(req.Context()), provider, authResp)
 	if err != nil {
@@ -289,12 +302,10 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 
 	var tokenInfo *tokens.TokenInfo
 	var refreshCookie *http.Cookie
-	if authResp != nil {
-		tokenInfo, refreshCookie, err = r.issueTokenForResponse(req.Context(), provider, authResp)
-		if err != nil {
-			r.error(w, err, typ, clientState, testMode)
-			return
-		}
+	tokenInfo, refreshCookie, err = r.issueTokenForResponse(req.Context(), provider, authResp)
+	if err != nil {
+		r.error(w, err, typ, clientState, testMode)
+		return
 	}
 
 	if tokenInfo == nil {
