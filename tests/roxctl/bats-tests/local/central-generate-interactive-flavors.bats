@@ -53,9 +53,9 @@ assert_prompts_development() {
   # partial line matching allows to avoid problems with leading an trailing whitespaces
   # Enter - comes form interactive mode
   # main/scanner/scanner-db are contants from code
-  assert_line --regexp 'Enter main .* "quay.io/main:'
-  assert_line --regexp 'Enter scanner-db .* "quay.io/scanner-db:'
-  assert_line --regexp 'Enter scanner .* "quay.io/scanner:'
+  assert_line --regexp 'Enter main .* "quay.io/rhacs-eng/main:'
+  assert_line --regexp 'Enter scanner-db .* "quay.io/rhacs-eng/scanner-db:'
+  assert_line --regexp 'Enter scanner .* "quay.io/rhacs-eng/scanner:'
 }
 
 assert_prompts_stackrox() {
