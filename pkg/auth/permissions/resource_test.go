@@ -9,7 +9,7 @@ import (
 
 func TestCheckResourceForAccess(t *testing.T) {
 	testResource := Resource("Test")
-	replacingResource := Resource("Test")
+	replacingResource := Resource("TestReplace")
 
 	testResourceMetadata := ResourceMetadata{
 		Resource: testResource,
