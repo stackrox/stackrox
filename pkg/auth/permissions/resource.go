@@ -43,6 +43,17 @@ func (m ResourceMetadata) GetResource() Resource {
 	return m.Resource
 }
 
+// GetReplacingResource returns the resource replacing the existing resource for this metadata object.
+// This is done in case of deprecation of the resource. In case no replacing resource is specified, nil will
+// be returned which must be handled by the caller.
+func (m ResourceMetadata) GetReplacingResource() *Resource {
+	if m.ReplacingResource != nil {
+		r := m.ReplacingResource.GetResource()
+		return &r
+	}
+	return nil
+}
+
 // GetScope returns the resource scope for this metadata object.
 func (m ResourceMetadata) GetScope() ResourceScope {
 	// Replacing resources _may_ have a different ResourceScope than the initial resource.
@@ -70,6 +81,7 @@ func (m ResourceMetadata) PerformLegacyAuthForSAC() bool {
 // or a ResourceMetadata object.
 type ResourceHandle interface {
 	GetResource() Resource
+	GetReplacingResource() *Resource
 }
 
 // WithLegacyAuthForSAC returns a resource metadata that instructs the legacy auth handler to either force or force
