@@ -99,7 +99,22 @@ check_stackrox_logs() {
     local dir="$1"
 
     if [[ ! -d "$dir/stackrox/pods" ]]; then
-        die "StackRox logs were not collected. (See ./scripts/ci/collect-service-logs.sh stackrox)"
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
+    fi
+
+    check_for_stackrox_restarts "$dir"
+    check_for_errors_in_stackrox_logs "$dir"
+}
+
+check_for_stackrox_restarts() {
+        if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: check_for_stackrox_restarts <dir>"
+    fi
+
+    local dir="$1"
+
+    if [[ ! -d "$dir/stackrox/pods" ]]; then
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
     fi
 
     local previous_logs
@@ -107,9 +122,21 @@ check_stackrox_logs() {
     if [[ -n "$previous_logs" ]]; then
         echo >&2 "Previous logs found"
         # shellcheck disable=SC2086
-        if ! scripts/ci/logcheck/check-restart-logs.sh upgrade-tests $previous_logs; then
+        if ! scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME:-${CIRCLE_JOB}}" $previous_logs; then
             exit 1
         fi
+    fi
+}
+
+check_for_errors_in_stackrox_logs() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: check_for_errors_in_stackrox_logs <dir>"
+    fi
+
+    local dir="$1"
+
+    if [[ ! -d "$dir/stackrox/pods" ]]; then
+        die "StackRox logs were not collected. (Use ./scripts/ci/collect-service-logs.sh stackrox)"
     fi
 
     local logs
@@ -255,6 +282,26 @@ restore_56_1_backup() {
     gsutil cp gs://stackrox-ci-upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
     roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
         central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
+}
+
+db_backup_and_restore_test() {
+    info "Running a central database backup and restore test"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing args. usage: db_backup_and_restore_test <output dir>"
+    fi
+
+    local output_dir="$1"
+    info "Backing up to $1"
+    mkdir -p "$output_dir"
+    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "$output_dir" || touch DB_TEST_FAIL
+
+    if [[ ! -e DB_TEST_FAIL ]]; then
+        info "Restoring from $1"
+        roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/stackrox_db_* || touch DB_TEST_FAIL
+    fi
+
+    [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
