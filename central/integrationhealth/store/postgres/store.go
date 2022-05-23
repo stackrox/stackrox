@@ -24,12 +24,8 @@ import (
 const (
 	baseTable = "integration_healths"
 
-	getStmt     = "SELECT serialized FROM integration_healths WHERE Id = $1"
-	deleteStmt  = "DELETE FROM integration_healths WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM integration_healths"
 	getManyStmt = "SELECT serialized FROM integration_healths WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM integration_healths WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -137,8 +133,7 @@ func (s *storeImpl) copyFromIntegrationHealths(ctx context.Context, tx pgx.Tx, o
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
@@ -271,19 +266,18 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.IntegrationHealth, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "IntegrationHealth")
 
+	var sacQueryFilter *v1.Query
 	if ok, err := permissionCheckerSingleton().GetAllowed(ctx); err != nil || !ok {
 		return nil, false, err
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "IntegrationHealth")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -307,22 +301,19 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "IntegrationHealth")
 
+	var sacQueryFilter *v1.Query
 	if ok, err := permissionCheckerSingleton().DeleteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "IntegrationHealth")
-	if err != nil {
-		return err
-	}
-	defer release()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
 
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
-		return err
-	}
-	return nil
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -403,21 +394,19 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Integ
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "IntegrationHealth")
 
+	var sacQueryFilter *v1.Query
 	if ok, err := permissionCheckerSingleton().DeleteManyAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "IntegrationHealth")
-	if err != nil {
-		return err
-	}
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
-		return err
-	}
-	return nil
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure

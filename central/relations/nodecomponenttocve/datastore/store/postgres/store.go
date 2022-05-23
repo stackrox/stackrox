@@ -23,13 +23,11 @@ const (
 	baseTable = "node_component_cve_edges"
 
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_component_cve_edges WHERE Id = $1 AND ComponentId = $2 AND CveId = $3)"
+	getStmt    = "SELECT serialized FROM node_component_cve_edges WHERE Id = $1 AND ComponentId = $2 AND CveId = $3"
+	deleteStmt = "DELETE FROM node_component_cve_edges WHERE Id = $1 AND ComponentId = $2 AND CveId = $3"
 
-	getStmt     = "SELECT serialized FROM node_component_cve_edges WHERE Id = $1 AND ComponentId = $2 AND CveId = $3"
-	deleteStmt  = "DELETE FROM node_component_cve_edges WHERE Id = $1 AND ComponentId = $2 AND CveId = $3"
 	walkStmt    = "SELECT serialized FROM node_component_cve_edges"
 	getManyStmt = "SELECT serialized FROM node_component_cve_edges WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM node_component_cve_edges WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 

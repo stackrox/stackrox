@@ -59,79 +59,54 @@ var (
 	VulnerabilityReports = newResourceMetadata("VulnerabilityReports", permissions.GlobalScope)
 	WatchedImage         = newResourceMetadata("WatchedImage", permissions.GlobalScope)
 
-	// Deprecated resources.
+	// To-be-deprecated resources. For now, the resources should still be used in favor of the newly
+	// introduced ones.
 
-	// Deprecated: AllComments is deprecated, use Administration.
 	AllComments = newDeprecatedResourceMetadata("AllComments", permissions.GlobalScope,
 		Administration)
-	// Deprecated: APIToken is deprecated, use Integration.
-	APIToken = newDeprecatedResourceMetadata("APIToken", permissions.GlobalScope, Integration)
-	// Deprecated: AuthPlugin is deprecated, use Access.
-	AuthPlugin = newDeprecatedResourceMetadata("AuthPlugin", permissions.GlobalScope, Access)
-	// Deprecated: AuthProvider is deprecated, use Access.
+	APIToken     = newDeprecatedResourceMetadata("APIToken", permissions.GlobalScope, Integration)
+	AuthPlugin   = newDeprecatedResourceMetadata("AuthPlugin", permissions.GlobalScope, Access)
 	AuthProvider = newDeprecatedResourceMetadata("AuthProvider", permissions.GlobalScope,
 		Access)
-	// Deprecated: BackupPlugins is deprecated, use Integration.
 	BackupPlugins = newDeprecatedResourceMetadata("BackupPlugins", permissions.GlobalScope,
 		Integration)
-	// Deprecated: ComplianceRuns is deprecated, use Compliance.
 	ComplianceRuns = newDeprecatedResourceMetadata("ComplianceRuns", permissions.ClusterScope,
 		Compliance)
-	// Deprecated: ComplianceRunSchedule is deprecated, use Administration.
 	ComplianceRunSchedule = newDeprecatedResourceMetadata("ComplianceRunSchedule",
 		permissions.GlobalScope, Administration)
-	// Deprecated: Config is deprecated, use Administration.
 	Config = newDeprecatedResourceMetadata("Config", permissions.GlobalScope,
 		Administration)
-	// Deprecated: DebugLogs is deprecated, use Administration.
 	DebugLogs = newDeprecatedResourceMetadata("DebugLogs", permissions.GlobalScope,
 		Administration)
-	// Deprecated: Group is deprecated, use Access.
-	Group = newDeprecatedResourceMetadata("Group", permissions.GlobalScope, Access)
-	// Deprecated: ImageIntegration is deprecated, use Integration.
+	Group            = newDeprecatedResourceMetadata("Group", permissions.GlobalScope, Access)
 	ImageIntegration = newDeprecatedResourceMetadata("ImageIntegration",
 		permissions.GlobalScope, Integration)
-	// Deprecated: Indicator is deprecated, use DeploymentExtension.
 	Indicator = newDeprecatedResourceMetadata("Indicator", permissions.NamespaceScope,
 		DeploymentExtension)
-	// Deprecated: Licenses is deprecated, use Access.
-	Licenses = newDeprecatedResourceMetadata("Licenses", permissions.GlobalScope, Access)
-	// Deprecated: NetworkBaseline is deprecated, use DeploymentExtension.
+	Licenses        = newDeprecatedResourceMetadata("Licenses", permissions.GlobalScope, Access)
 	NetworkBaseline = newDeprecatedResourceMetadata("NetworkBaseline",
 		permissions.NamespaceScope, DeploymentExtension)
-	// Deprecated: NetworkGraphConfig is deprecated, use Administration.
 	NetworkGraphConfig = newDeprecatedResourceMetadata("NetworkGraphConfig",
 		permissions.GlobalScope, Administration)
-	// Deprecated: Notifier is deprecated, use Integration.
 	Notifier = newDeprecatedResourceMetadata("Notifier", permissions.GlobalScope,
 		Integration)
-	// Deprecated: ProbeUpload is deprecated, use Administration.
 	ProbeUpload = newDeprecatedResourceMetadata("ProbeUpload", permissions.GlobalScope,
 		Administration)
-	// Deprecated: ProcessWhitelist is deprecated, use DeploymentExtension.
 	ProcessWhitelist = newDeprecatedResourceMetadata("ProcessWhitelist",
 		permissions.NamespaceScope, DeploymentExtension)
-	// Deprecated: Risk is deprecated, use DeploymentExtension.
 	Risk = newDeprecatedResourceMetadata("Risk", permissions.NamespaceScope,
 		DeploymentExtension)
-	// Deprecated: Role is deprecated, use Access.
-	Role = newDeprecatedResourceMetadata("Role", permissions.GlobalScope, Access)
-	// Deprecated: ScannerBundle is deprecated, use Administration.
+	Role          = newDeprecatedResourceMetadata("Role", permissions.GlobalScope, Access)
 	ScannerBundle = newDeprecatedResourceMetadata("ScannerBundle",
 		permissions.GlobalScope, Administration)
-	// Deprecated: ScannerDefinitions is deprecated, use Administration.
 	ScannerDefinitions = newDeprecatedResourceMetadata("ScannerDefinitions",
 		permissions.GlobalScope, Administration)
-	// Deprecated: SensorUpgradeConfig is deprecated, use Administration.
 	SensorUpgradeConfig = newDeprecatedResourceMetadata("SensorUpgradeConfig",
 		permissions.GlobalScope, Administration)
-	// Deprecated: ServiceIdentity is deprecated, use Administration.
 	ServiceIdentity = newDeprecatedResourceMetadata("ServiceIdentity",
 		permissions.GlobalScope, Administration)
-	// Deprecated: SignatureIntegration is deprecated, use Integration.
 	SignatureIntegration = newDeprecatedResourceMetadataWithFeatureFlag("SignatureIntegration",
 		permissions.GlobalScope, Integration, features.ImageSignatureVerification)
-	// Deprecated: User is deprecated, use Access.
 	User = newDeprecatedResourceMetadata("User", permissions.GlobalScope, Access)
 
 	// Internal Resources.

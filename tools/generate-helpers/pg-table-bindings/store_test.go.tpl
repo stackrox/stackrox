@@ -269,6 +269,103 @@ func (s *{{$namePrefix}}StoreSuite) TestSACExists() {
 		})
 	}
 }
+
+func (s *{{$namePrefix}}StoreSuite) TestSACGet() {
+	objA := &{{.Type}}{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	s.store.Upsert(withAllAccessCtx, objA)
+
+	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
+	for name, expected := range map[string]bool{
+		withAllAccess:           true,
+		withNoAccess:            false,
+		withNoAccessToCluster:   false,
+		withAccessToDifferentNs: false,
+		withAccess:              true,
+		withAccessToCluster:     true,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			actual, exists, err := s.store.Get(ctxs[name], objA.GetId())
+			assert.NoError(t, err)
+			assert.Equal(t, expected, exists)
+			if expected == true {
+				assert.Equal(t, objA, actual)
+			} else {
+				assert.Nil(t, actual)
+			}
+		})
+	}
+}
+
+func (s *{{$namePrefix}}StoreSuite) TestSACDelete() {
+	objA := &{{.Type}}{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &{{.Type}}{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+
+	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
+	for name, expectedCount := range map[string]int{
+		withAllAccess:           0,
+		withNoAccess:            2,
+		withNoAccessToCluster:   2,
+		withAccessToDifferentNs: 2,
+		withAccess:              1,
+		withAccessToCluster:     1,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			s.SetupTest()
+
+			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
+			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
+
+			assert.NoError(t, s.store.Delete(ctxs[name], {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "objA"}}, {{end}}))
+			assert.NoError(t, s.store.Delete(ctxs[name], {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "objB"}}, {{end}}))
+
+			count, err := s.store.Count(withAllAccessCtx)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
+		})
+	}
+}
+
+func (s *{{$namePrefix}}StoreSuite) TestSACDeleteMany() {
+	objA := &{{.Type}}{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &{{.Type}}{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+
+	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
+	for name, expectedCount := range map[string]int{
+		withAllAccess:           0,
+		withNoAccess:            2,
+		withNoAccessToCluster:   2,
+		withAccessToDifferentNs: 2,
+		withAccess:              1,
+		withAccessToCluster:     1,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			s.SetupTest()
+
+			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
+			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
+
+			assert.NoError(t, s.store.DeleteMany(ctxs[name], []string{
+				{{ (index .Schema.PrimaryKeys 0).Getter "objA"}},
+				{{ (index .Schema.PrimaryKeys 0).Getter "objB"}},
+			}))
+
+			count, err := s.store.Count(withAllAccessCtx)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
+		})
+	}
+}
 {{- end }}
 
 const (

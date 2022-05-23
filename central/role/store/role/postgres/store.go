@@ -25,12 +25,8 @@ import (
 const (
 	baseTable = "roles"
 
-	getStmt     = "SELECT serialized FROM roles WHERE Name = $1"
-	deleteStmt  = "DELETE FROM roles WHERE Name = $1"
 	walkStmt    = "SELECT serialized FROM roles"
 	getManyStmt = "SELECT serialized FROM roles WHERE Name = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM roles WHERE Name = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -139,8 +135,7 @@ func (s *storeImpl) copyFromRoles(ctx context.Context, tx pgx.Tx, objs ...*stora
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
@@ -279,6 +274,8 @@ func (s *storeImpl) Exists(ctx context.Context, name string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, name string) (*storage.Role, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Role")
 
+	var sacQueryFilter *v1.Query
+
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, false, err
@@ -286,15 +283,13 @@ func (s *storeImpl) Get(ctx context.Context, name string) (*storage.Role, bool, 
 		return nil, false, nil
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Role")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(name).ProtoQuery(),
+	)
 
-	row := conn.QueryRow(ctx, getStmt, name)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -318,6 +313,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, name string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Role")
 
+	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
@@ -325,16 +321,12 @@ func (s *storeImpl) Delete(ctx context.Context, name string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "Role")
-	if err != nil {
-		return err
-	}
-	defer release()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(name).ProtoQuery(),
+	)
 
-	if _, err := conn.Exec(ctx, deleteStmt, name); err != nil {
-		return err
-	}
-	return nil
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -420,6 +412,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Role,
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Role")
 
+	var sacQueryFilter *v1.Query
+
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
@@ -427,15 +421,12 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "Role")
-	if err != nil {
-		return err
-	}
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
-		return err
-	}
-	return nil
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure

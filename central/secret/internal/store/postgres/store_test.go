@@ -235,6 +235,103 @@ func (s *SecretsStoreSuite) TestSACExists() {
 	}
 }
 
+func (s *SecretsStoreSuite) TestSACGet() {
+	objA := &storage.Secret{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	s.store.Upsert(withAllAccessCtx, objA)
+
+	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
+	for name, expected := range map[string]bool{
+		withAllAccess:           true,
+		withNoAccess:            false,
+		withNoAccessToCluster:   false,
+		withAccessToDifferentNs: false,
+		withAccess:              true,
+		withAccessToCluster:     true,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			actual, exists, err := s.store.Get(ctxs[name], objA.GetId())
+			assert.NoError(t, err)
+			assert.Equal(t, expected, exists)
+			if expected == true {
+				assert.Equal(t, objA, actual)
+			} else {
+				assert.Nil(t, actual)
+			}
+		})
+	}
+}
+
+func (s *SecretsStoreSuite) TestSACDelete() {
+	objA := &storage.Secret{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.Secret{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+
+	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
+	for name, expectedCount := range map[string]int{
+		withAllAccess:           0,
+		withNoAccess:            2,
+		withNoAccessToCluster:   2,
+		withAccessToDifferentNs: 2,
+		withAccess:              1,
+		withAccessToCluster:     1,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			s.SetupTest()
+
+			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
+			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
+
+			assert.NoError(t, s.store.Delete(ctxs[name], objA.GetId()))
+			assert.NoError(t, s.store.Delete(ctxs[name], objB.GetId()))
+
+			count, err := s.store.Count(withAllAccessCtx)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
+		})
+	}
+}
+
+func (s *SecretsStoreSuite) TestSACDeleteMany() {
+	objA := &storage.Secret{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.Secret{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+
+	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
+	for name, expectedCount := range map[string]int{
+		withAllAccess:           0,
+		withNoAccess:            2,
+		withNoAccessToCluster:   2,
+		withAccessToDifferentNs: 2,
+		withAccess:              1,
+		withAccessToCluster:     1,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			s.SetupTest()
+
+			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
+			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
+
+			assert.NoError(t, s.store.DeleteMany(ctxs[name], []string{
+				objA.GetId(),
+				objB.GetId(),
+			}))
+
+			count, err := s.store.Count(withAllAccessCtx)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
+		})
+	}
+}
+
 const (
 	withAllAccess           = "AllAccess"
 	withNoAccess            = "NoAccess"

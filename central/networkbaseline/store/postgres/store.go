@@ -23,12 +23,8 @@ import (
 const (
 	baseTable = "network_baselines"
 
-	getStmt     = "SELECT serialized FROM network_baselines WHERE DeploymentId = $1"
-	deleteStmt  = "DELETE FROM network_baselines WHERE DeploymentId = $1"
 	walkStmt    = "SELECT serialized FROM network_baselines"
 	getManyStmt = "SELECT serialized FROM network_baselines WHERE DeploymentId = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM network_baselines WHERE DeploymentId = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -136,8 +132,7 @@ func (s *storeImpl) copyFromNetworkBaselines(ctx context.Context, tx pgx.Tx, obj
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
@@ -251,15 +246,15 @@ func (s *storeImpl) Exists(ctx context.Context, deploymentId string) (bool, erro
 func (s *storeImpl) Get(ctx context.Context, deploymentId string) (*storage.NetworkBaseline, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkBaseline")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkBaseline")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	row := conn.QueryRow(ctx, getStmt, deploymentId)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -283,16 +278,14 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, deploymentId string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkBaseline")
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkBaseline")
-	if err != nil {
-		return err
-	}
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	if _, err := conn.Exec(ctx, deleteStmt, deploymentId); err != nil {
-		return err
-	}
-	return nil
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -365,15 +358,14 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Netwo
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkBaseline")
 
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "NetworkBaseline")
-	if err != nil {
-		return err
-	}
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
-		return err
-	}
-	return nil
+	var sacQueryFilter *v1.Query
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure

@@ -112,7 +112,7 @@ function RoleForm({
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">
-                            {action === 'create' ? 'Add role' : role.name}
+                            {action === 'create' ? 'Create role' : role.name}
                         </Title>
                     </ToolbarItem>
                     {action !== 'create' && (

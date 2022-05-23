@@ -301,10 +301,10 @@ ruleset {
     // LoggerWithWrongModifiers
     LoggingSwallowsStacktrace 
     // MultipleLoggers
-    // PrintStackTrace
+    PrintStackTrace
     // Println
-    // SystemErrPrint
-    // SystemOutPrint
+    SystemErrPrint
+    SystemOutPrint
     
     // rulesets/naming.xml
     AbstractClassName 

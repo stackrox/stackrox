@@ -23,13 +23,11 @@ const (
 	baseTable = "image_component_edges"
 
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_component_edges WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3)"
+	getStmt    = "SELECT serialized FROM image_component_edges WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3"
+	deleteStmt = "DELETE FROM image_component_edges WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3"
 
-	getStmt     = "SELECT serialized FROM image_component_edges WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3"
-	deleteStmt  = "DELETE FROM image_component_edges WHERE Id = $1 AND ImageId = $2 AND ImageComponentId = $3"
 	walkStmt    = "SELECT serialized FROM image_component_edges"
 	getManyStmt = "SELECT serialized FROM image_component_edges WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM image_component_edges WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 

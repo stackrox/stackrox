@@ -58,7 +58,7 @@ var (
 )
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
-func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager, centralConnFactory centralclient.CentralConnectionFactory) (*sensor.Sensor, error) {
+func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager, centralConnFactory centralclient.CentralConnectionFactory, localSensor bool) (*sensor.Sensor, error) {
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
 
 	var helmManagedConfig *central.HelmManagedConfigInit
@@ -107,11 +107,6 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager, resources.NetworkPolicySingleton())
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener.New(client, configHandler, policyDetector, k8sNodeName.Setting()))
 
-	upgradeCmdHandler, err := upgrade.NewCommandHandler(configHandler)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating upgrade command handler")
-	}
-
 	imageService := image.NewService(imageCache)
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
@@ -132,11 +127,18 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		complianceCommandHandler,
 		processSignals,
 		telemetry.NewCommandHandler(client.Kubernetes()),
-		upgradeCmdHandler,
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
 		reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache),
+	}
+
+	if !localSensor {
+		upgradeCmdHandler, err := upgrade.NewCommandHandler(configHandler)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating upgrade command handler")
+		}
+		components = append(components, upgradeCmdHandler)
 	}
 
 	sensorNamespace, err := satoken.LoadNamespaceFromFile()

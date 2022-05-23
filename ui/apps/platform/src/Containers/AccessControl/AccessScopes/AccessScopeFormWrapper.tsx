@@ -117,7 +117,7 @@ function AccessScopeFormWrapper({
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">
-                            {action === 'create' ? 'Add access scope' : accessScope.name}
+                            {action === 'create' ? 'Create access scope' : accessScope.name}
                         </Title>
                     </ToolbarItem>
                     {action !== 'create' && (

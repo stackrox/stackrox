@@ -141,7 +141,7 @@ tasks.withType(Test) {
 }
 
 test {
-    timeout = Duration.ofHours(2)
+    timeout = Duration.ofHours(3)
     testLogging.showStandardStreams = true
 
     // This ensures that repeated invocations of tests actually run the tests.

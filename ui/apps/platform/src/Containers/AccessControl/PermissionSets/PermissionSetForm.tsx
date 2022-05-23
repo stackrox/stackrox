@@ -118,7 +118,7 @@ function PermissionSetForm({
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">
-                            {action === 'create' ? 'Add permission set' : permissionSet.name}
+                            {action === 'create' ? 'Create permission set' : permissionSet.name}
                         </Title>
                     </ToolbarItem>
                     {action !== 'create' && (

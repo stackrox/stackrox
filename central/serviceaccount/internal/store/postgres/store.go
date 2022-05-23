@@ -28,12 +28,8 @@ import (
 const (
 	baseTable = "service_accounts"
 
-	getStmt     = "SELECT serialized FROM service_accounts WHERE Id = $1"
-	deleteStmt  = "DELETE FROM service_accounts WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM service_accounts"
 	getManyStmt = "SELECT serialized FROM service_accounts WHERE Id = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM service_accounts WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -172,8 +168,7 @@ func (s *storeImpl) copyFromServiceAccounts(ctx context.Context, tx pgx.Tx, objs
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
@@ -291,7 +286,7 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return 0, err
@@ -310,7 +305,7 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ServiceAccount")
 
 	var sacQueryFilter *v1.Query
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return false, err
@@ -333,15 +328,25 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ServiceAccount, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ServiceAccount")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ServiceAccount")
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return nil, false, err
 	}
-	defer release()
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
+		return nil, false, err
+	}
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -365,16 +370,23 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "ServiceAccount")
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "ServiceAccount")
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
 	if err != nil {
 		return err
 	}
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, id); err != nil {
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
 		return err
 	}
-	return nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -382,7 +394,7 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ServiceAccountIDs")
 	var sacQueryFilter *v1.Query
 
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx)
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.View(targetResource))
 	if err != nil {
 		return nil, err
@@ -456,15 +468,24 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Servi
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "ServiceAccount")
 
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "ServiceAccount")
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
 	if err != nil {
 		return err
 	}
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+	if err != nil {
 		return err
 	}
-	return nil
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
