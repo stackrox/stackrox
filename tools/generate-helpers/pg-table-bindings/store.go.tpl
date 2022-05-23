@@ -707,6 +707,11 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error) {
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{{.Type}}, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "{{.TrimmedType}}")
+
+    if len(ids) == 0 {
+        return nil, nil, nil
+    }
+
     var sacQueryFilter *v1.Query
     {{ if .Obj.HasPermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.GetManyAllowed(ctx); err != nil {
@@ -746,7 +751,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
 
 	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -755,13 +760,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
 		}
 		return nil, nil, err
 	}
-	defer rows.Close()
 	resultsByID := make(map[{{$singlePK.Type}}]*{{.Type}})
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
+    for _, data := range rows {
 		msg := &{{.Type}}{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 		    return nil, nil, err

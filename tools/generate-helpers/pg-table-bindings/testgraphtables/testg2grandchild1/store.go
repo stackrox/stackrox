@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -325,6 +326,11 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestG2GrandChild1, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "TestG2GrandChild1")
+
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+
 	var sacQueryFilter *v1.Query
 
 	q := search.ConjunctionQuery(
@@ -334,7 +340,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestG
 
 	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -343,13 +349,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestG
 		}
 		return nil, nil, err
 	}
-	defer rows.Close()
 	resultsByID := make(map[string]*storage.TestG2GrandChild1)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
+	for _, data := range rows {
 		msg := &storage.TestG2GrandChild1{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
