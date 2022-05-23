@@ -1,14 +1,11 @@
 import static org.junit.Assume.assumeFalse
-
-import io.stackrox.proto.storage.RoleOuterClass
-import services.GraphQLService
-
 import groups.BAT
-import org.junit.experimental.categories.Category
-
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
+import io.stackrox.proto.storage.RoleOuterClass
+import org.junit.experimental.categories.Category
 import services.ApiTokenService
 import services.BaseService
+import services.GraphQLService
 import services.ImageIntegrationService
 import services.ImageService
 import services.RoleService
@@ -67,7 +64,7 @@ class VulnMgmtSACTest extends BaseSpecification {
         def testRole = RoleService.createRoleWithScopeAndPermissionSet(name,
             UNRESTRICTED_SCOPE_ID, resourceToAccess)
         assert RoleService.getRole(testRole.name)
-        println "Created Role:\n${testRole}"
+        log.info "Created Role:\n${testRole}"
     }
 
     def setupSpec() {

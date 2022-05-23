@@ -1,6 +1,8 @@
 import common.Constants
 import groups.BAT
 import groups.NetworkPolicySimulation
+import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
+import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyReference
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
@@ -10,8 +12,6 @@ import services.NetworkGraphService
 import services.NetworkPolicyService
 import spock.lang.Unroll
 import util.NetworkGraphUtil
-import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
-import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyReference
 
 class NetworkSimulator extends BaseSpecification {
 

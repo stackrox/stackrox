@@ -1,14 +1,14 @@
 import static Services.waitForViolation
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
-
+import groups.BAT
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
 import io.stackrox.proto.storage.DeploymentOuterClass
-
-import groups.BAT
 import objects.Deployment
 import orchestratormanager.OrchestratorTypes
+import org.junit.AssumptionViolatedException
+import org.junit.experimental.categories.Category
 import services.AlertService
 import services.ApiTokenService
 import services.BaseService
@@ -19,13 +19,10 @@ import services.NetworkGraphService
 import services.SearchService
 import services.SecretService
 import services.SummaryService
-import util.NetworkGraphUtil
-
-import util.Env
 import spock.lang.IgnoreIf
-import org.junit.AssumptionViolatedException
-import org.junit.experimental.categories.Category
 import spock.lang.Unroll
+import util.Env
+import util.NetworkGraphUtil
 
 @Category(BAT)
 @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
@@ -159,7 +156,7 @@ class SACTest extends BaseSpecification {
         then:
         "Call API and verify data returned is within scoped access"
         def result = DeploymentService.listDeployments()
-        println result.toString()
+        log.info result.toString()
         assert result.size() == 1
         assert DeploymentService.getDeploymentWithRisk(result.first().id).hasRisk()
         def resourceNotAllowed = result.find { it.namespace != sacResource }
@@ -531,9 +528,9 @@ class SACTest extends BaseSpecification {
         then:
         "The number of results should be the same for everything"
 
-        println "With basic auth + restricted query: ${restrictedWithBasicAuthCount}"
-        println "With all access token + restricted query: ${restrictedWithAllAccessCount}"
-        println "With SAC restricted token + unrestricted query: ${unrestrictedWithSACCount}"
+        log.info "With basic auth + restricted query: ${restrictedWithBasicAuthCount}"
+        log.info "With all access token + restricted query: ${restrictedWithAllAccessCount}"
+        log.info "With SAC restricted token + unrestricted query: ${unrestrictedWithSACCount}"
 
         assert restrictedWithBasicAuthCount == restrictedWithAllAccessCount
         assert restrictedWithAllAccessCount == unrestrictedWithSACCount
@@ -562,12 +559,12 @@ class SACTest extends BaseSpecification {
         def networkGraphWithAllAccess = NetworkGraphService.getNetworkGraph(null, "Namespace:stackrox")
         def allAccessFlows = NetworkGraphUtil.flowStrings(networkGraphWithAllAccess)
         allAccessFlows.removeAll(UNSTABLE_FLOWS)
-        println allAccessFlows
+        log.info "${allAccessFlows}"
 
         def allAccessFlowsWithoutNeighbors = allAccessFlows.findAll {
             it.matches("(stackrox/.*|INTERNET) -> (stackrox/.*|INTERNET)")
         }
-        println allAccessFlowsWithoutNeighbors
+        log.info "${allAccessFlowsWithoutNeighbors}"
 
         and:
         "Obtaining the network graph for the StackRox namespace with a SAC restricted token"
@@ -575,14 +572,14 @@ class SACTest extends BaseSpecification {
         def networkGraphWithSAC = NetworkGraphService.getNetworkGraph(null, "Namespace:stackrox")
         def sacFlows = NetworkGraphUtil.flowStrings(networkGraphWithSAC)
         sacFlows.removeAll(UNSTABLE_FLOWS)
-        println sacFlows
+        log.info "${sacFlows}"
 
         and:
         "Obtaining the network graph for the StackRox namespace with a SAC restricted token and no query"
         def networkGraphWithSACNoQuery = NetworkGraphService.getNetworkGraph()
         def sacFlowsNoQuery = NetworkGraphUtil.flowStrings(networkGraphWithSACNoQuery)
         sacFlowsNoQuery.removeAll(UNSTABLE_FLOWS)
-        println sacFlowsNoQuery
+        log.info "${sacFlowsNoQuery}"
 
         then:
         "Query-restricted and non-restricted flows should be equal under SAC"

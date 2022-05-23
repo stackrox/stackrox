@@ -52,7 +52,7 @@ class GroupsTest extends BaseSpecification {
             try {
                 GroupService.deleteGroup(group.props)
             } catch (Exception ex) {
-                print "Failed to delete group: ${ex.message}"
+                log.warn("Failed to delete group", ex)
             }
         }
     }

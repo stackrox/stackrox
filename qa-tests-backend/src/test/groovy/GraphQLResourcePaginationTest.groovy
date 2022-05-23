@@ -30,7 +30,7 @@ class GraphQLResourcePaginationTest extends BaseSpecification {
         def objs = resultRet.getValue()["${topResource}s"]
         assert objs.size() != 0
 
-        println "Got top level objects: ${objs}"
+        log.info "Got top level objects: ${objs}"
 
         def sublistGraphQLQuery = "query get${topResource}_${subResource}(" +
                 "\$id: ID!, \$query: String, \$pagination: Pagination) {" +

@@ -3,16 +3,15 @@ import static Services.getViolationsByDeploymentID
 import static Services.roxDetectedDeployment
 import static Services.updatePolicy
 import static Services.updatePolicyToExclusionDeployment
-
-import util.Timer
-import services.AlertService
 import groups.BAT
-import java.util.stream.Collectors
-import objects.Deployment
-import org.junit.experimental.categories.Category
 import io.stackrox.proto.storage.AlertOuterClass.ViolationState
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ProcessIndicatorOuterClass.ProcessIndicator
+import java.util.stream.Collectors
+import objects.Deployment
+import org.junit.experimental.categories.Category
+import services.AlertService
+import util.Timer
 
 class RuntimeViolationLifecycleTest extends BaseSpecification  {
     static final private String APTGETPOLICY = "Ubuntu Package Manager Execution"

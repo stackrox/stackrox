@@ -299,10 +299,10 @@ ruleset {
     // rulesets/logging.xml
     // LoggerForDifferentClass
     // LoggerWithWrongModifiers
-    LoggingSwallowsStacktrace 
+    LoggingSwallowsStacktrace
     // MultipleLoggers
     PrintStackTrace
-    // Println
+    Println
     SystemErrPrint
     SystemOutPrint
     

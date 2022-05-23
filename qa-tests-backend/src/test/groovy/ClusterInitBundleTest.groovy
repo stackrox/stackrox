@@ -1,14 +1,11 @@
 import static java.util.UUID.randomUUID
-
-import io.stackrox.proto.api.v1.ApiTokenService
-
 import groups.BAT
+import io.stackrox.proto.api.v1.ApiTokenService
+import org.junit.Assume
+import org.junit.experimental.categories.Category
 import services.BaseService
 import services.ClusterInitBundleService
 import services.ClusterService
-
-import org.junit.Assume
-import org.junit.experimental.categories.Category
 import spock.lang.Shared
 
 @Category(BAT)

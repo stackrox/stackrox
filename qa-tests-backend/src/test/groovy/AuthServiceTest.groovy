@@ -1,7 +1,6 @@
 import groups.BAT
 import io.stackrox.proto.api.v1.AuthServiceOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
-
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.AuthService
