@@ -52,7 +52,7 @@ class ReconciliationTest extends BaseSpecification {
         "*central.SensorEvent_Secret": 5,
     ]
 
-    private static void verifyReconciliationStats(boolean verifyMin) {
+    private void verifyReconciliationStats(boolean verifyMin) {
         // Cannot verify this on a release build, since the API is not exposed.
         if (MetadataService.isReleaseBuild()) {
             return
@@ -65,7 +65,7 @@ class ReconciliationTest extends BaseSpecification {
             assert reconciliationStatsForCluster
             assert reconciliationStatsForCluster.getReconciliationDone()
         }
-        println "Reconciliation stats: ${reconciliationStatsForCluster.deletedObjectsByTypeMap}"
+        log.info "Reconciliation stats: ${reconciliationStatsForCluster.deletedObjectsByTypeMap}"
         for (def entry: reconciliationStatsForCluster.getDeletedObjectsByTypeMap().entrySet()) {
             def expectedMinDeletions = EXPECTED_MIN_DELETIONS_BY_KEY.get(entry.getKey())
             assert expectedMinDeletions != null : "Please add object type " +
@@ -187,7 +187,7 @@ class ReconciliationTest extends BaseSpecification {
             if (numDeployments + numPods + numNamespaces + numNetworkPolicies + numSecrets == 0) {
                 break
             }
-            println "Waiting for all resources to be reconciled"
+            log.info "Waiting for all resources to be reconciled"
         }
         assert numDeployments == 0
         assert numPods == 0

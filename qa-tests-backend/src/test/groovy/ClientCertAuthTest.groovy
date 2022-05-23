@@ -1,7 +1,8 @@
 import groups.BAT
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.GroupServiceOuterClass
-
+import java.nio.file.Files
+import java.nio.file.Paths
 import org.junit.experimental.categories.Category
 import services.AuthProviderService
 import services.AuthService
@@ -11,9 +12,6 @@ import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Unroll
 import util.Env
-
-import java.nio.file.Files
-import java.nio.file.Paths
 
 @Category(BAT)
 @Stepwise
@@ -37,10 +35,10 @@ class ClientCertAuthTest extends BaseSpecification {
         for (int i = 0; i < 2; i++) {
             providerIDs[i] = AuthProviderService.createAuthProvider(
                     "Test Client CA Auth ${i}", "userpki", ["keys": cert])
-            println "Client cert auth provider ID is ${providerIDs[i]}"
+            log.info "Client cert auth provider ID is ${providerIDs[i]}"
             GroupService.addDefaultMapping(providerIDs[i], "Continuous Integration")
             certTokens[i] = AuthProviderService.getAuthProviderLoginToken(providerIDs[i])
-            println "Certificate token is ${certTokens[i]}"
+            log.info "Certificate token is ${certTokens[i]}"
         }
     }
 

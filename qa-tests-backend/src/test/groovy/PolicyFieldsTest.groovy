@@ -1,15 +1,6 @@
-
 import static Services.waitForViolation
-
 import common.Constants
 import groups.BAT
-import objects.ConfigMapKeyRef
-import objects.Deployment
-import objects.SecretKeyRef
-import objects.Volume
-import orchestratormanager.OrchestratorTypes
-import org.junit.Assume
-import org.junit.experimental.categories.Category
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
@@ -18,6 +9,13 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
+import objects.ConfigMapKeyRef
+import objects.Deployment
+import objects.SecretKeyRef
+import objects.Volume
+import orchestratormanager.OrchestratorTypes
+import org.junit.Assume
+import org.junit.experimental.categories.Category
 import services.AlertService
 import services.PolicyService
 import spock.lang.Shared
@@ -842,7 +840,7 @@ class PolicyFieldsTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS) {
             if (deployment.namespace != Constants.ORCHESTRATOR_NAMESPACE &&
                     !newNamespaces.contains(deployment.namespace)) {
-                println "Creating the test namespace ${deployment.namespace} with pull rights before deployment"
+                log.info "Creating the test namespace ${deployment.namespace} with pull rights before deployment"
                 orchestrator.ensureNamespaceExists(deployment.namespace)
                 addStackroxImagePullSecret(deployment.namespace)
                 addGCRImagePullSecret(deployment.namespace)

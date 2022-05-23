@@ -175,7 +175,7 @@ class PolicyConfigurationTest extends BaseSpecification {
         "Ensure that the latest tag violation shows up"
         def hasViolation =
                 waitForViolation(NGINX_LATEST_NAME, "Latest Tag", WAIT_FOR_VIOLATION_TIMEOUT)
-        println "Has violation ${hasViolation}"
+        log.info "Has violation ${hasViolation}"
         assert hasViolation
 
         cleanup:

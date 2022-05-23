@@ -1,13 +1,12 @@
 import static org.junit.Assume.assumeTrue
-
 import groups.BAT
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
+import objects.Deployment
 import objects.Job
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.DeploymentService
 import services.ImageService
-import objects.Deployment
 import spock.lang.Unroll
 import util.Timer
 
