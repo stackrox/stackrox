@@ -55,6 +55,14 @@ const ClusterSelect = ({
         selectClusterId(cluster || '');
     }, [cluster, selectClusterId]);
 
+    // Set the clusterId in the URL to the default selected cluster, if it doesn't
+    // yet exist in the URL
+    useEffect(() => {
+        if (!cluster) {
+            setCluster(selectedClusterId);
+        }
+    }, [cluster, setCluster, selectedClusterId]);
+
     function changeCluster(_e, clusterId) {
         selectClusterId(clusterId);
         closeSelect();
