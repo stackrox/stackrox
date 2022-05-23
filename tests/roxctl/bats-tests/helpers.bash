@@ -227,7 +227,7 @@ image_reference_regex() {
   local version="${3:-$any_version}"
 
   case $registry_slug in
-    docker.io)
+    quay.io)
       echo "quay\.io/rhacs-eng/$component:$version"
       ;;
     stackrox.io)
