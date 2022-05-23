@@ -312,13 +312,6 @@ func (s *serviceAccountSACSuite) TestRemoveServiceAccount() {
 	}
 }
 
-func (s *serviceAccountSACSuite) TestCountServiceAccount() {
-	ctx := s.testContexts[testutils.UnrestrictedReadCtx]
-	result, err := s.datastore.Count(ctx, nil)
-	s.Require().NoError(err)
-	s.Equal(27, result)
-}
-
 func (s *serviceAccountSACSuite) TestSearchServiceAccount() {
 	// Run both scoped and unrestricted search test cases.
 	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
