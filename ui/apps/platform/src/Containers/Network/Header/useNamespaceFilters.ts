@@ -4,6 +4,7 @@ import { createStructuredSelector } from 'reselect';
 import { gql, useQuery } from '@apollo/client';
 
 import { selectors } from 'reducers';
+import { NamespaceMetadata } from 'types/namespaceMetadata.proto';
 
 type SelectorState = { selectedClusterId: string | null; selectedNamespaceFilters: string[] };
 type SelectorResult = SelectorState;
@@ -13,23 +14,19 @@ const selector = createStructuredSelector<SelectorState, SelectorResult>({
     selectedNamespaceFilters: selectors.getSelectedNamespaceFilters,
 });
 
-// TODO Better reuse of this type elsewhere?
-export type Namespace = {
-    id: string;
-    name: string;
-};
+type NamespaceMetadataSlim = Pick<NamespaceMetadata, 'id' | 'name'>;
 
 type NamespaceMetadataResp = {
     id: string;
     results: {
         namespaces: {
-            metadata: Namespace;
+            metadata: NamespaceMetadataSlim;
         }[];
     };
 };
 
 export const NAMESPACES_FOR_CLUSTER_QUERY = gql`
-    query getClusterNamespaceNames($id: ID!) {
+    query getClusterNamespaces($id: ID!) {
         results: cluster(id: $id) {
             id
             namespaces {
@@ -43,7 +40,9 @@ export const NAMESPACES_FOR_CLUSTER_QUERY = gql`
 `;
 
 function useNamespaceFilters() {
-    const [availableNamespaceFilters, setAvailableNamespaceFilters] = useState<Namespace[]>([]);
+    const [availableNamespaceFilters, setAvailableNamespaceFilters] = useState<
+        NamespaceMetadataSlim[]
+    >([]);
     const { selectedClusterId, selectedNamespaceFilters } = useSelector<
         SelectorState,
         SelectorResult
