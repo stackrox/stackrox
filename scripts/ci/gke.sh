@@ -109,9 +109,6 @@ create_cluster() {
     GKE_RELEASE_CHANNEL="${GKE_RELEASE_CHANNEL:-stable}"
     MACHINE_TYPE="${MACHINE_TYPE:-e2-standard-4}"
 
-    # # this function does not work in strict -e mode
-    # set +euo pipefail
-
     echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\""
 
     VERSION_ARGS=(--release-channel "${GKE_RELEASE_CHANNEL}")
@@ -134,6 +131,7 @@ create_cluster() {
         echo "Trying zone $zone"
         ci_export ZONE "$zone"
         gcloud config set compute/zone "${zone}"
+        status=0
         # shellcheck disable=SC2153
         timeout 420 gcloud beta container clusters create \
             --machine-type "${MACHINE_TYPE}" \
@@ -151,8 +149,7 @@ create_cluster() {
             --tags="${tags}" \
             --labels="${labels}" \
             ${PSP_ARG} \
-            "${CLUSTER_NAME}"
-        status="$?"
+            "${CLUSTER_NAME}" || status="$?"
         if [[ "${status}" == 0 ]]; then
             success=1
             break
