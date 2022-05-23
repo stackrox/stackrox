@@ -22,5 +22,41 @@
         "image": "^docs.*",
         "tag": ".*",
         "reason": "The docs image is not deployed in production"
+    },
+    {
+        "vuln": "pyup.io-38765 (CVE-2019-20916)",
+        "image": ".*",
+        "tag": ".*",
+        "reason": "This is a Quay false fixable"
+    },
+    {
+         "vuln": "pyup.io-40291 (CVE-2021-28363)",
+         "image": ".*",
+         "tag": ".*",
+         "reason": "This is a Quay false fixable"
+    },
+    {
+         "vuln": "pyup.io-42218 (PVE-2021-42218)",
+         "image": ".*",
+         "tag": ".*",
+         "reason": "This is a Quay false fixable"
+    },
+    {
+         "vuln": "pyup.io-42559 (CVE-2021-3572)",
+         "image": ".*",
+         "tag": ".*",
+         "reason": "This is a Quay false fixable"
+    },
+    {
+         "vuln": "pyup.io-38834 (CVE-2020-26137)",
+         "image": ".*",
+         "tag": ".*",
+         "reason": "This is a Quay false fixable"
+    },
+    {
+         "vuln": "pyup.io-43975 (CVE-2021-33503)",
+         "image": ".*",
+         "tag": ".*",
+         "reason": "This is a Quay false fixable"
     }
 ]
