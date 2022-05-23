@@ -77,16 +77,14 @@ func (resolver *Resolver) NodeComponent(ctx context.Context, args IDQuery) (Node
 
 func (resolver *Resolver) NodeComponents(ctx context.Context, q PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeComponents")
-	query := search.AddRawQueriesAsConjunction(q.String(),
-		search.NewQueryBuilder().AddRegexes(search.NodeID, ".+", ".*").Query())
+	query := queryWithNodeIDRegexFilter(q.String())
 
 	return resolver.nodeComponentsV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
 }
 
 func (resolver *Resolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeComponentCount")
-	query := search.AddRawQueriesAsConjunction(args.String(),
-		search.NewQueryBuilder().AddRegexes(search.NodeID, ".+", ".*").Query())
+	query := queryWithNodeIDRegexFilter(args.String())
 
 	return resolver.componentCountV2(ctx, RawQuery{Query: &query})
 }
@@ -177,4 +175,9 @@ func (ncr *nodeComponentResolverImpl) VulnerabilityCount(ctx context.Context, ar
 func (ncr *nodeComponentResolverImpl) VulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	// TODO : implement this method
 	return nil, errors.New("Resolver not implemented")
+}
+
+func queryWithNodeIDRegexFilter(q string) string {
+	return search.AddRawQueriesAsConjunction(q,
+		search.NewQueryBuilder().AddRegexes(search.NodeID, ".+", ".*").Query())
 }
