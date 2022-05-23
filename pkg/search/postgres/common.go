@@ -152,7 +152,6 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, selectT
 		tables = append(tables, f.Schema)
 	}
 	froms, _ := getJoins(schema, tables...)
-	joinOnConditionsByTable := map[string]string{}
 
 	queryEntry, err := compileQueryToPostgres(schema, q, dbFields)
 	if err != nil {
