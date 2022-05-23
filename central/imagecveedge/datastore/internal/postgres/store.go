@@ -23,8 +23,8 @@ const (
 	baseTable = "image_cve_relations"
 
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3)"
+	getStmt    = "SELECT serialized FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3"
 
-	getStmt     = "SELECT serialized FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3"
 	deleteStmt  = "DELETE FROM image_cve_relations WHERE Id = $1 AND ImageId = $2 AND ImageCveId = $3"
 	walkStmt    = "SELECT serialized FROM image_cve_relations"
 	getManyStmt = "SELECT serialized FROM image_cve_relations WHERE Id = ANY($1::text[])"

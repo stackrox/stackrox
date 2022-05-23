@@ -25,7 +25,6 @@ import (
 const (
 	baseTable = "permissionsets"
 
-	getStmt     = "SELECT serialized FROM permissionsets WHERE Id = $1"
 	deleteStmt  = "DELETE FROM permissionsets WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM permissionsets"
 	getManyStmt = "SELECT serialized FROM permissionsets WHERE Id = ANY($1::text[])"
@@ -284,6 +283,8 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.PermissionSet, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "PermissionSet")
 
+	var sacQueryFilter *v1.Query
+
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, false, err
@@ -291,15 +292,13 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.PermissionSet,
 		return nil, false, nil
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "PermissionSet")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 

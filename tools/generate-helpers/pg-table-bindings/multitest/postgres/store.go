@@ -23,8 +23,8 @@ const (
 	baseTable = "multikey"
 
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM multikey WHERE Key1 = $1 AND Key2 = $2)"
+	getStmt    = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
 
-	getStmt     = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
 	deleteStmt  = "DELETE FROM multikey WHERE Key1 = $1 AND Key2 = $2"
 	walkStmt    = "SELECT serialized FROM multikey"
 	getManyStmt = "SELECT serialized FROM multikey WHERE Key1 = ANY($1::text[])"

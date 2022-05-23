@@ -23,7 +23,6 @@ import (
 const (
 	baseTable = "networkentity"
 
-	getStmt     = "SELECT serialized FROM networkentity WHERE Info_Id = $1"
 	deleteStmt  = "DELETE FROM networkentity WHERE Info_Id = $1"
 	walkStmt    = "SELECT serialized FROM networkentity"
 	getManyStmt = "SELECT serialized FROM networkentity WHERE Info_Id = ANY($1::text[])"
@@ -256,15 +255,15 @@ func (s *storeImpl) Exists(ctx context.Context, infoId string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, infoId string) (*storage.NetworkEntity, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkEntity")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkEntity")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	row := conn.QueryRow(ctx, getStmt, infoId)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(infoId).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
