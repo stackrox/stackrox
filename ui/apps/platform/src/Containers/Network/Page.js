@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { connect, useDispatch, useSelector } from 'react-redux';
-import { useRouteMatch } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { connect, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
 import useLocalStorage from 'hooks/useLocalStorage';
 import { actions as dialogueActions } from 'reducers/network/dialogue';
-import { actions as graphActions } from 'reducers/network/graph';
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 import { actions as pageActions } from 'reducers/network/page';
 import dialogueStages from 'Containers/Network/Dialogue/dialogueStages';
@@ -17,7 +15,6 @@ import Dialogue from 'Containers/Network/Dialogue';
 import Graph from 'Containers/Network/Graph/Graph';
 import SidePanel from 'Containers/Network/SidePanel/SidePanel';
 import SimulationFrame from 'Components/SimulationFrame';
-import { fetchDeployment } from 'services/DeploymentsService';
 import { getErrorMessageFromServerResponse } from 'utils/networkGraphUtils';
 import Header from './Header/Header';
 import NoSelectedNamespace from './NoSelectedNamespace';
@@ -86,36 +83,10 @@ function NetworkPage({
     const { isNetworkSimulationOn } = useNetworkPolicySimulation();
     const { isBaselineSimulationOn } = useNetworkBaselineSimulation();
     const isSimulationOn = isNetworkSimulationOn || isBaselineSimulationOn;
-    const [isInitialRender, setIsInitialRender] = useState(true);
 
-    const {
-        params: { deploymentId },
-    } = useRouteMatch();
     const { clusters, selectedClusterId, selectedNamespaceFilters } = useSelector(
         networkPageContentSelector
     );
-    const dispatch = useDispatch();
-
-    useEffect(() => {
-        if (!isInitialRender) {
-            return;
-        }
-        setIsInitialRender(false);
-        if (!deploymentId) {
-            return;
-        }
-        // If the page is visited with a deployment id, we need to enable that deployment's
-        // namespace filter and switch to the correct cluster
-        fetchDeployment(deploymentId).then(({ clusterId, namespaceId }) => {
-            if (clusterId !== selectedClusterId) {
-                dispatch(graphActions.selectNetworkClusterId(clusterId));
-                dispatch(graphActions.setSelectedNamespaceFilters([namespaceId]));
-            } else if (!selectedNamespaceFilters.includes(namespaceId)) {
-                const newFilters = [...selectedNamespaceFilters, namespaceId];
-                dispatch(graphActions.setSelectedNamespaceFilters(newFilters));
-            }
-        });
-    }, [dispatch, deploymentId, selectedClusterId, selectedNamespaceFilters, isInitialRender]);
 
     const clusterName = clusters.find((c) => c.id === selectedClusterId)?.name;
 

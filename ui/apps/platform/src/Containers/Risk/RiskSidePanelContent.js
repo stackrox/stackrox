@@ -39,13 +39,16 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
         { text: 'Deployment Details' },
         { text: 'Process Discovery' },
     ];
+
+    const { id, clusterId, namespaceId } = selectedDeployment;
+    const networkGraphLink = `/main/network/${id}?cluster=${clusterId}&ns=${namespaceId}`;
     return (
         <Tabs headers={riskPanelTabs}>
             <Tab>
                 <div className="flex flex-col pb-5">
                     <Link
                         className="btn btn-base h-10 no-underline mt-4 ml-3 mr-3"
-                        to={`/main/network/${selectedDeployment.id}`}
+                        to={networkGraphLink}
                         data-testid="view-deployments-in-network-graph-button"
                     >
                         View Deployment in Network Graph
@@ -88,6 +91,8 @@ RiskSidePanelContent.propTypes = {
     isFetching: PropTypes.bool.isRequired,
     selectedDeployment: PropTypes.shape({
         id: PropTypes.string.isRequired,
+        clusterId: PropTypes.string.isRequired,
+        namespaceId: PropTypes.string.isRequired,
     }),
     deploymentRisk: PropTypes.shape({}),
     processGroup: PropTypes.shape({
