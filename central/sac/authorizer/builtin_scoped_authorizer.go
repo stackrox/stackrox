@@ -92,7 +92,10 @@ func (a *globalScopeChecker) PerformChecks(_ context.Context) error {
 }
 
 func (a *globalScopeChecker) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
-	return nil, errNoGlobalEffectiveAccessScope
+	return a.
+		SubScopeChecker(sac.AccessModeScopeKey(resource.Access)).
+		SubScopeChecker(sac.ResourceScopeKey(resource.Resource.GetResource())).
+		EffectiveAccessScope(resource)
 }
 
 func (a *globalScopeChecker) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {
