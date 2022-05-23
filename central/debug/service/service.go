@@ -436,12 +436,7 @@ func (s *serviceImpl) getNotifiers(_ context.Context) (interface{}, error) {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Notifier)))
 
-	notifiers, err := s.notifierDataStore.GetScrubbedNotifiers(accessNotifierCtx)
-	if err != nil {
-		return nil, err
-	}
-
-	return notifiers, nil
+	return s.notifierDataStore.GetScrubbedNotifiers(accessNotifierCtx)
 }
 
 func (s *serviceImpl) getConfig(_ context.Context) (interface{}, error) {
