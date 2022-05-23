@@ -237,6 +237,73 @@ func (s *riskDatastoreSACSuite) TestGetRisk() {
 	}
 }
 
+func (s *riskDatastoreSACSuite) TestGetRiskForDeployment() {
+	risk := fixtures.GetScopedRisk(uuid.NewV4().String(), testconsts.Cluster2,
+		testconsts.NamespaceB)
+	err := s.datastore.UpsertRisk(s.testContexts[testutils.UnrestrictedReadWriteCtx], risk)
+	s.Require().NoError(err)
+	s.testRiskIDs = append(s.testRiskIDs, risk.GetSubject().GetId())
+
+	d := &storage.Deployment{
+		Id:        risk.GetSubject().GetId(),
+		ClusterId: testconsts.Cluster2,
+		Namespace: testconsts.NamespaceB,
+	}
+
+	cases := map[string]struct {
+		scopeKey string
+		found    bool
+	}{
+		"global read-only can get": {
+			scopeKey: testutils.UnrestrictedReadCtx,
+			found:    true,
+		},
+		"global read-write can get": {
+			scopeKey: testutils.UnrestrictedReadWriteCtx,
+			found:    true,
+		},
+		"read-write on wrong cluster cannot get": {
+			scopeKey: testutils.Cluster1ReadWriteCtx,
+		},
+		"read-write on wrong cluster and wrong namespace cannot get": {
+			scopeKey: testutils.Cluster1NamespaceAReadWriteCtx,
+		},
+		"read-write on wrong cluster and matching namespace cannot get": {
+			scopeKey: testutils.Cluster1NamespaceBReadWriteCtx,
+		},
+		"read-write on matching cluster but wrong namespaces cannot get": {
+			scopeKey: testutils.Cluster2NamespacesACReadWriteCtx,
+		},
+		"read-write on matching cluster can read": {
+			scopeKey: testutils.Cluster2ReadWriteCtx,
+			found:    true,
+		},
+		"read-write on the matching cluster and namespace can get": {
+			scopeKey: testutils.Cluster2NamespaceBReadWriteCtx,
+			found:    true,
+		},
+		"read-write on the matching cluster and at least one matching namespace can get": {
+			scopeKey: testutils.Cluster2NamespacesABReadWriteCtx,
+			found:    true,
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.scopeKey]
+			res, found, err := s.datastore.GetRiskForDeployment(ctx, d)
+			s.Require().NoError(err)
+			if c.found {
+				s.Require().True(found)
+				s.Equal(*risk, *res)
+			} else {
+				s.False(found)
+				s.Nil(res)
+			}
+		})
+	}
+}
+
 func (s *riskDatastoreSACSuite) TestRemoveRisk() {
 	cases := map[string]struct {
 		scopeKey    string
