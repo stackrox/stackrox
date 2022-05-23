@@ -3635,7 +3635,7 @@ jobs:
             - check-to-run:
                 label: ci-postgres-tests
                 run-on-master: true
-                run-on-tags: true
+                run-on-tags: false
           use-websocket: true
 
   gke-kernel-api-e2e-tests:
