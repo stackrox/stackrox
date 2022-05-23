@@ -240,31 +240,31 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 		},
 		{
 			file:        "image_component_cve_relations.go",
-			createStmts: CreateTableImageComponentCveRelationsStmt,
+			createStmts: CreateTableImageComponentCveEdgesStmt,
 			gormTables: []gormTable{
 				{
-					name:     ImageComponentCveRelationsTableName,
-					instance: ImageComponentCveRelations{},
+					name:     ImageComponentCveEdgesTableName,
+					instance: ImageComponentCveEdges{},
 				},
 			},
 		},
 		{
 			file:        "image_component_relations.go",
-			createStmts: CreateTableImageComponentRelationsStmt,
+			createStmts: CreateTableImageComponentEdgesStmt,
 			gormTables: []gormTable{
 				{
-					name:     ImageComponentRelationsTableName,
-					instance: &ImageComponentRelations{},
+					name:     ImageComponentEdgesTableName,
+					instance: &ImageComponentEdges{},
 				},
 			},
 		},
 		{
 			file:        "image_cve_relations.go",
-			createStmts: CreateTableImageCveRelationsStmt,
+			createStmts: CreateTableImageCveEdgesStmt,
 			gormTables: []gormTable{
 				{
-					name:     ImageCveRelationsTableName,
-					instance: &ImageCveRelations{},
+					name:     ImageCveEdgesTableName,
+					instance: &ImageCveEdges{},
 				},
 			},
 		},
@@ -314,11 +314,11 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 		},
 		{
 			file:        "namespaces.go",
-			createStmts: CreateTableNamespacesStmt,
+			createStmts: CreateTableNamespaceMetadataStmt,
 			gormTables: []gormTable{
 				{
-					name:     NamespacesTableName,
-					instance: Namespaces{},
+					name:     NamespaceMetadataTableName,
+					instance: NamespaceMetadata{},
 				},
 			},
 		},
@@ -354,11 +354,11 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 		},
 		{
 			file:        "node_components_to_cves.go",
-			createStmts: CreateTableNodeComponentsToCvesStmt,
+			createStmts: CreateTableNodeComponentCveEdgesStmt,
 			gormTables: []gormTable{
 				{
-					name:     NodeComponentsToCvesTableName,
-					instance: NodeComponentsToCves{},
+					name:     NodeComponentCveEdgesTableName,
+					instance: NodeComponentCveEdges{},
 				},
 			},
 		},
@@ -396,11 +396,11 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 		},
 		{
 			file:        "nodes_to_components.go",
-			createStmts: CreateTableNodesToComponentsStmt,
+			createStmts: CreateTableNodeComponentEdgesStmt,
 			gormTables: []gormTable{
 				{
-					name:     NodesToComponentsTableName,
-					instance: NodesToComponents{},
+					name:     NodeComponentEdgesTableName,
+					instance: NodeComponentEdges{},
 				},
 			},
 		},
