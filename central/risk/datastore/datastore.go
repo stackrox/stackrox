@@ -47,7 +47,7 @@ func New(riskStore store.Store, indexer index.Indexer, searcher search.Searcher)
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.DeploymentExtension)))
+			sac.ResourceScopeKeys(resources.Risk)))
 	if err := d.buildIndex(ctx); err != nil {
 		return nil, errors.Wrap(err, "failed to build index from existing store")
 	}

@@ -43,7 +43,7 @@ func New(k8sRoleStore store.Store, indexer index.Indexer, searcher search.Search
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration)))
+			sac.ResourceScopeKeys(resources.K8sRole)))
 	if err := d.buildIndex(ctx); err != nil {
 		return nil, errors.Wrap(err, "failed to build index from existing store")
 	}
