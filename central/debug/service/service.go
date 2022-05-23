@@ -44,7 +44,6 @@ import (
 	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
-	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
@@ -437,12 +436,9 @@ func (s *serviceImpl) getNotifiers(_ context.Context) (interface{}, error) {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Notifier)))
 
-	notifiers, err := s.notifierDataStore.GetNotifiers(accessNotifierCtx)
+	notifiers, err := s.notifierDataStore.GetScrubbedNotifiers(accessNotifierCtx)
 	if err != nil {
 		return nil, err
-	}
-	for _, n := range notifiers {
-		secrets.ScrubSecretsFromStructWithReplacement(n, secrets.ScrubReplacementStr)
 	}
 
 	return notifiers, nil

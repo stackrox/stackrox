@@ -11,7 +11,9 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error)
+	GetScrubbedNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error)
 	GetNotifiers(ctx context.Context) ([]*storage.Notifier, error)
+	GetScrubbedNotifiers(ctx context.Context) ([]*storage.Notifier, error)
 	AddNotifier(ctx context.Context, notifier *storage.Notifier) (string, error)
 	UpdateNotifier(ctx context.Context, notifier *storage.Notifier) error
 	RemoveNotifier(ctx context.Context, id string) error
