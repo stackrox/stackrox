@@ -47,7 +47,7 @@ describe('Access Control Access scopes', () => {
         cy.get(selectors.navLinkCurrent).should('have.text', h2);
 
         cy.contains(selectors.h2, /^\d+ results? found$/).should('exist');
-        cy.get(selectors.list.addButton).should('have.text', 'Add access scope');
+        cy.get(selectors.list.createButton).should('have.text', 'Create access scope');
 
         cy.get(`${selectors.list.th}:contains("Name")`);
         cy.get(`${selectors.list.th}:contains("Description")`);
