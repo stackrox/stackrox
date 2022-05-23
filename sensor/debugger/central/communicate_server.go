@@ -62,13 +62,15 @@ func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor)
 }
 
 // BlockReceive will read from the connection stream if the connection was already established.
+// Messages read here were sent from Sensor.
 // The caller might get blocked because it waits until connection is available.
 func (s *FakeService) BlockReceive() (*central.MsgFromSensor, error) {
 	s.ConnectionStarted.Wait()
 	return s.stream.Recv()
 }
 
-// BlockSend will send from the connection stream if the connection was already established.
+// BlockSend will send to the connection stream if the connection was already established.
+// This message will be received by Sensor.
 // The caller might get blocked because it waits until connection is available.
 func (s *FakeService) BlockSend(msg *central.MsgToSensor) error {
 	s.ConnectionStarted.Wait()
