@@ -248,8 +248,6 @@ function Roles(): ReactElement {
                 <AccessControlBreadcrumbs
                     entityType={entityType}
                     entityName={action === 'create' ? 'Create role' : role?.name}
-                    isDisabled={hasAction}
-                    isList={isList}
                 />
             )}
             <PageSection variant={isList ? PageSectionVariants.default : PageSectionVariants.light}>

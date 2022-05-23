@@ -181,8 +181,6 @@ function AuthProviders(): ReactElement {
                             ? `Create ${getProviderLabel()} provider`
                             : selectedAuthProvider?.name
                     }
-                    isDisabled={hasAction}
-                    isList={isList}
                 />
             )}
             <PageSection variant={isList ? 'default' : 'light'}>
