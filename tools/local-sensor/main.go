@@ -3,13 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"flag"
 	"log"
 	"net"
 	"os"
 	"os/signal"
-	"path"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -58,21 +56,6 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 	return conn, fakeCentral, closeF
 }
 
-func mustGetCommandLineArgs() (time.Duration, string) {
-	if len(os.Args) != 3 {
-		fmt.Println("USAGE:")
-		fmt.Println("  local-sensor <minutes> <output file path>")
-		log.Fatalf("Incorrect number of arguments, expected 2 but found: %d", len(os.Args)-1)
-	}
-
-	i, err := strconv.Atoi(os.Args[1])
-	if err != nil {
-		log.Fatalf("First parameter must be a valid integer")
-	}
-
-	return time.Duration(i) * time.Minute, path.Clean(os.Args[2])
-}
-
 func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, outfile string) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -85,15 +68,27 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 	}()
 }
 
-// Args:
-//   local-sensor <minutes> <output file path>
+// local-sensor adds three new flags to sensor:
+// -duration: specifies how long should the scenario run for (e.g. 10m)
+// -output: once the scenario finishes (or gets killed) all messages sent to the fake central will be stored in this file.
+// -verbose: other than storing messages to files, local-sensor will also send them to stdout
 //
-// local-sensor will run for <minutes> receiving events from a k8s cluster based on local environment.
 // If a KUBECONFIG file is provided, then local-sensor will use that file to connect to a remote cluster.
-// <output file path> specifies where should local-sensor store all the serialized messages sent to central.
-// Outgoing messages will also show up in stdout
 func main() {
-	scenarioDuration, outfile := mustGetCommandLineArgs()
+	durationFlag := flag.String("duration", "", "duration that the scenario should run (leave it empty to run it without timeout)")
+	outputFileFlag := flag.String("output", "results.json", "output all messages received to file")
+	verboseFlag := flag.Bool("verbose", false, "prints all messages to stdout as well as to the output file")
+
+	flag.Parse()
+
+	var scenarioDuration time.Duration
+	if *durationFlag != "" {
+		var err error
+		scenarioDuration, err = time.ParseDuration(*durationFlag)
+		if err != nil {
+			log.Fatalf("cannot parse duration value %s: %s", *durationFlag, err)
+		}
+	}
 
 	fakeClient, err := k8s.MakeOutOfClusterClient()
 	utils.CrashOnError(err)
@@ -110,11 +105,13 @@ func main() {
 		message.PolicySync([]*storage.Policy{}),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
 
-	fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
-		log.Printf("MESSAGE RECEIVED: %s\n", msg.String())
-	})
+	if *verboseFlag {
+		fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
+			log.Printf("MESSAGE RECEIVED: %s\n", msg.String())
+		})
+	}
 
-	registerHostKillSignals(startTime, fakeCentral, outfile)
+	registerHostKillSignals(startTime, fakeCentral, *outputFileFlag)
 
 	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
 	defer shutdownFakeServer()
@@ -131,10 +128,10 @@ func main() {
 	spyCentral.ConnectionStarted.Wait()
 
 	log.Printf("Running scenario for %f minutes\n", scenarioDuration.Minutes())
-	time.Sleep(scenarioDuration)
+	<-time.Tick(scenarioDuration)
 	endTime := time.Now()
 	allMessages := fakeCentral.GetAllMessages()
-	dumpMessages(allMessages, startTime, endTime, outfile)
+	dumpMessages(allMessages, startTime, endTime, *outputFileFlag)
 
 	spyCentral.KillSwitch.Signal()
 }
