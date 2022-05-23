@@ -53,9 +53,9 @@ assert_prompts_development() {
   # partial line matching allows to avoid problems with leading an trailing whitespaces
   # Enter - comes form interactive mode
   # main/scanner/scanner-db are contants from code
-  assert_line --regexp 'Enter main .* "docker.io/stackrox/main:'
-  assert_line --regexp 'Enter scanner-db .* "docker.io/stackrox/scanner-db:'
-  assert_line --regexp 'Enter scanner .* "docker.io/stackrox/scanner:'
+  assert_line --regexp 'Enter main .* "quay.io/rhacs-eng/main:'
+  assert_line --regexp 'Enter scanner-db .* "quay.io/rhacs-eng/scanner-db:'
+  assert_line --regexp 'Enter scanner .* "quay.io/rhacs-eng/scanner:'
 }
 
 assert_prompts_stackrox() {
@@ -84,8 +84,8 @@ assert_prompts_rhacs() {
   assert_prompts_development
   assert_flavor_prompt_development
   sleep 2 # due to frequent flakes of missing yaml files
-  assert_components_registry "$out_dir/central" "docker.io" "$any_version" 'main'
-  assert_components_registry "$out_dir/scanner" "docker.io" "$any_version" 'scanner' 'scanner-db'
+  assert_components_registry "$out_dir/central" "quay.io/rhacs-eng" "$any_version" 'main'
+  assert_components_registry "$out_dir/scanner" "quay.io/rhacs-eng" "$any_version" 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development central generate interactive flavor=stackrox.io" {
