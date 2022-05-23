@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	// CreateTableTokenMetadataStmt holds the create statement for table `token_metadata`.
-	CreateTableTokenMetadataStmt = &postgres.CreateStmts{
+	// CreateTableApiTokensStmt holds the create statement for table `api_tokens`.
+	CreateTableApiTokensStmt = &postgres.CreateStmts{
 		Table: `
-               create table if not exists token_metadata (
+               create table if not exists api_tokens (
                    Id varchar,
                    serialized bytea,
                    PRIMARY KEY(Id)
@@ -25,13 +25,13 @@ var (
 		Children: []*postgres.CreateStmts{},
 	}
 
-	// TokenMetadataSchema is the go schema for table `token_metadata`.
-	TokenMetadataSchema = func() *walker.Schema {
-		schema := globaldb.GetSchemaForTable("token_metadata")
+	// ApiTokensSchema is the go schema for table `api_tokens`.
+	ApiTokensSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("api_tokens")
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.TokenMetadata)(nil)), "token_metadata")
+		schema = walker.Walk(reflect.TypeOf((*storage.TokenMetadata)(nil)), "api_tokens")
 		globaldb.RegisterTable(schema)
 		return schema
 	}()
