@@ -27,13 +27,19 @@ func (c *checkRequiredAttributesImpl) Verify(attributes map[string][]string) err
 		return fmt.Errorf("none of the required attributes [%s] are set", attributeKeysAsString(c.required))
 	}
 
+	var missingAttributes []string
 	for _, required := range c.required {
 		if observedValue, ok := attributes[required.GetAttributeKey()]; !ok || observedValue == nil {
-			return fmt.Errorf("missing required attribute %q", required.GetAttributeKey())
+			missingAttributes = append(missingAttributes, required.GetAttributeKey())
 		} else if ok && sliceutils.StringFind(observedValue, required.GetAttributeValue()) == -1 {
 			return fmt.Errorf("required attribute %q did not have the required value", required.GetAttributeKey())
 		}
 	}
+
+	if len(missingAttributes) > 0 {
+		return fmt.Errorf("missing required attributes [%s]", strings.Join(missingAttributes, ","))
+	}
+
 	return nil
 }
 
