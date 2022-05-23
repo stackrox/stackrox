@@ -3,14 +3,14 @@ tests:
   set:
     collector.slimMode: false
   expect: |
-    assertMainIs("quay.io/stackrox-io/main:3.0.99.0")
-    assertCollectorIs("quay.io/stackrox-io/collector:99.9.9-latest")
+    assertMainIs("quay.io/rhacs-eng/main:3.0.99.0")
+    assertCollectorIs("quay.io/rhacs-eng/collector:99.9.9-latest")
 - name: slim mode
   set:
     collector.slimMode: true
   expect: |
-    assertMainIs("quay.io/stackrox-io/main:3.0.99.0")
-    assertCollectorIs("quay.io/stackrox-io/collector:99.9.9-slim")
+    assertMainIs("quay.io/rhacs-eng/main:3.0.99.0")
+    assertCollectorIs("quay.io/rhacs-eng/collector:99.9.9-slim")
 
 - name: scanner image
   server:
@@ -21,5 +21,5 @@ tests:
   set:
     scanner.disable: false
   expect: |
-    assertScannerIs("quay.io/stackrox-io/scanner-slim:99.9.9")
-    assertScannerDBIs("quay.io/stackrox-io/scanner-db-slim:99.9.9")
+    assertScannerIs("quay.io/rhacs-eng/scanner-slim:99.9.9")
+    assertScannerDBIs("quay.io/rhacs-eng/scanner-db-slim:99.9.9")

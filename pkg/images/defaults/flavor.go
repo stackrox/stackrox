@@ -102,13 +102,13 @@ type ImageFlavor struct {
 func DevelopmentBuildImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
 	return ImageFlavor{
-		MainRegistry:       "quay.io/stackrox-io",
+		MainRegistry:       "quay.io/rhacs-eng",
 		MainImageName:      "main",
 		MainImageTag:       v.MainVersion,
 		CentralDBImageTag:  v.MainVersion,
 		CentralDBImageName: "central-db",
 
-		CollectorRegistry:      "quay.io/stackrox-io",
+		CollectorRegistry:      "quay.io/rhacs-eng",
 		CollectorImageName:     "collector",
 		CollectorImageTag:      v.CollectorVersion + "-latest",
 		CollectorSlimImageName: "collector",
