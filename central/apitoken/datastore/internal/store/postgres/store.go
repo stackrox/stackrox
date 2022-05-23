@@ -25,7 +25,6 @@ import (
 const (
 	baseTable = "apitokens"
 
-	getStmt     = "SELECT serialized FROM apitokens WHERE Id = $1"
 	deleteStmt  = "DELETE FROM apitokens WHERE Id = $1"
 	walkStmt    = "SELECT serialized FROM apitokens"
 	getManyStmt = "SELECT serialized FROM apitokens WHERE Id = ANY($1::text[])"
@@ -279,6 +278,8 @@ func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.TokenMetadata, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "TokenMetadata")
 
+	var sacQueryFilter *v1.Query
+
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, false, err
@@ -286,15 +287,13 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.TokenMetadata,
 		return nil, false, nil
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "TokenMetadata")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
+	)
 
-	row := conn.QueryRow(ctx, getStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 

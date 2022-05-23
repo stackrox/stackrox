@@ -25,7 +25,6 @@ import (
 const (
 	baseTable = "watchedimages"
 
-	getStmt     = "SELECT serialized FROM watchedimages WHERE Name = $1"
 	deleteStmt  = "DELETE FROM watchedimages WHERE Name = $1"
 	walkStmt    = "SELECT serialized FROM watchedimages"
 	getManyStmt = "SELECT serialized FROM watchedimages WHERE Name = ANY($1::text[])"
@@ -279,6 +278,8 @@ func (s *storeImpl) Exists(ctx context.Context, name string) (bool, error) {
 func (s *storeImpl) Get(ctx context.Context, name string) (*storage.WatchedImage, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "WatchedImage")
 
+	var sacQueryFilter *v1.Query
+
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, false, err
@@ -286,15 +287,13 @@ func (s *storeImpl) Get(ctx context.Context, name string) (*storage.WatchedImage
 		return nil, false, nil
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "WatchedImage")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(name).ProtoQuery(),
+	)
 
-	row := conn.QueryRow(ctx, getStmt, name)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 

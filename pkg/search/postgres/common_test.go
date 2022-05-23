@@ -165,7 +165,7 @@ func TestMultiTableQueries(t *testing.T) {
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
-			actual, err := standardizeQueryAndPopulatePath(c.q, deploymentBaseSchema, GET)
+			actual, err := standardizeQueryAndPopulatePath(c.q, deploymentBaseSchema, SEARCH)
 			assert.NoError(t, err)
 			assert.Equal(t, c.expected.Select, actual.Select)
 			assert.ElementsMatch(t, strings.Split(c.expected.From, ", "), strings.Split(actual.From, ", "))

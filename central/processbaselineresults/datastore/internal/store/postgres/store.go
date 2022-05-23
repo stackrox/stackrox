@@ -23,7 +23,6 @@ import (
 const (
 	baseTable = "processwhitelistresults"
 
-	getStmt     = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = $1"
 	deleteStmt  = "DELETE FROM processwhitelistresults WHERE DeploymentId = $1"
 	walkStmt    = "SELECT serialized FROM processwhitelistresults"
 	getManyStmt = "SELECT serialized FROM processwhitelistresults WHERE DeploymentId = ANY($1::text[])"
@@ -251,15 +250,15 @@ func (s *storeImpl) Exists(ctx context.Context, deploymentId string) (bool, erro
 func (s *storeImpl) Get(ctx context.Context, deploymentId string) (*storage.ProcessBaselineResults, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ProcessBaselineResults")
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ProcessBaselineResults")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
+	var sacQueryFilter *v1.Query
 
-	row := conn.QueryRow(ctx, getStmt, deploymentId)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
+	)
+
+	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
