@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -155,5 +154,5 @@ func dumpMessages(messages []*central.MsgFromSensor, start, end time.Time, outfi
 		MessagesFromSensor: messages,
 	})
 	utils.CrashOnError(err)
-	utils.CrashOnError(ioutil.WriteFile(outfile, data, 0644))
+	utils.CrashOnError(os.WriteFile(outfile, data, 0644))
 }
