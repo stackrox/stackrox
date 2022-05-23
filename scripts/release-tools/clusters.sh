@@ -17,6 +17,7 @@ main() {
     "Generate Slack message for qa GKE cluster"
     "Create new RC OpenShift cluster"
     "Create new qa GKE cluster"
+    "Create new long-running cluster"
     "Quit"
   )
   if [[ -n "$action" ]]; then
@@ -66,6 +67,10 @@ exec_option() {
         ;;
     "${MENU_OPTIONS[6]}"|7)
         create_qa_gke_cluster
+        exit 0
+        ;;
+    "${MENU_OPTIONS[7]}"|8)
+        create_long_running_cluster
         exit 0
         ;;
     *) echo "invalid option: '$1'";;
@@ -125,7 +130,7 @@ fetch_artifacts() {
 }
 
 get_cluster_postfix() {
-  echo "${RELEASE//./-}-rc${RC_NUMBER}-test"
+  echo "${RELEASE//./-}-rc${RC_NUMBER}-test" # Change before merging
 }
 
 get_cluster_prefix() {
@@ -135,6 +140,8 @@ get_cluster_prefix() {
     echo "os4-9-demo"
   elif [[ "$cluster_type" == "gke" ]]; then
     echo "qa-demo"
+  elif [[ "$cluster_type" == "long-running" ]]; then
+    echo "$cluster_type"
   else
     die "Unknown cluster type: $cluster_type"
   fi
@@ -191,7 +198,6 @@ create_rc_openshift_cluster() {
 create_qa_gke_cluster() {
   require_binary infractl
 
-  cluster_postfix="$(get_cluster_postfix)"
   [[ -n "${INFRA_TOKEN}" ]] || die "INFRA_TOKEN is not set"
 
   CLUSTER_NAME="$(get_cluster_name gke)"
@@ -210,6 +216,56 @@ create_qa_gke_cluster() {
   export KUBECONFIG="${ARTIFACTS_DIR}/${CLUSTER_NAME}/kubeconfig"
 
   kubectl -n stackrox get pods
+}
+
+create_long_running_cluster() {
+
+  CLUSTER_NAME="$(get_cluster_name long-running)"
+  export CLUSTER_NAME
+
+  echo "cluster_name= $CLUSTER_NAME"
+  
+  status="$(check_cluster_status "$CLUSTER_NAME")"
+  
+  if does_cluster_exist "$CLUSTER_NAME"; then
+      echo "Unable to create cluster"
+  else
+      infractl create gke-default $CLUSTER_NAME --lifespan 168h --arg nodes=5 --wait --slack-me
+  fi
+  
+  # Set your local kubectl context to the remote cluster once the above completes successfully.
+  infractl get $CLUSTER_NAME --json | jq '.Connect' -r | bash
+  
+  
+  export MAIN_IMAGE_TAG=$(git describe --tags --abbrev=0) # Release version, e.g. 3.63.0-rc.2.
+  export API_ENDPOINT="localhost:8000"
+  
+  export STORAGE=pvc # Backing storage
+  export STORAGE_CLASS=faster # Runs on an SSD type
+  export STORAGE_SIZE=100 # 100G
+  export MONITORING_SUPPORT=true # Runs monitoring
+  export LOAD_BALANCER=lb
+  
+  toplevel_dir="$(git rev-parse --show-toplevel)"
+  "$toplevel_dir/deploy/k8s/central.sh" # Launches central
+  
+  # Open port-forward to central, e.g. with
+  kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
+  sleep 60
+  
+  export ROX_ADMIN_USERNAME=admin
+  
+  export ROX_ADMIN_PASSWORD="$(cat deploy/k8s/central-deploy/password)"
+
+  "$toplevel_dir/deploy/k8s/sensor.sh"
+
+  kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
+  kubectl -n stackrox set env deploy/sensor ROX_FAKE_KUBERNETES_WORKLOAD=long-running
+  kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"3Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
+  
+  kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0
+
+  "$toplevel_dir/scale/launch_workload.sh np-load"
 }
 
 cleanup_artifacts() {
