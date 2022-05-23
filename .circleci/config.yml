@@ -2982,7 +2982,7 @@ jobs:
 
       - check-to-run:
           label: ci-kernel-module-tests
-          run-on-master: true
+          run-on-master: false
           run-on-tags: true
 
       - provision-gke-cluster:
@@ -3659,7 +3659,7 @@ jobs:
           determine-whether-to-run:
             - check-to-run:
                 label: ci-kernel-module-tests
-                run-on-master: true
+                run-on-master: false
                 run-on-tags: true
 
   gke-api-scale-tests:
