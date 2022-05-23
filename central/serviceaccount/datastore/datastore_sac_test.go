@@ -8,13 +8,13 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/postgres/schema"
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
-	pgStore "github.com/stackrox/rox/central/rbac/k8srole/internal/store/postgres"
-	rdbStore "github.com/stackrox/rox/central/rbac/k8srole/internal/store/rocksdb"
-	k8sRoleMappings "github.com/stackrox/rox/central/rbac/k8srole/mappings"
-	k8sRoleSearch "github.com/stackrox/rox/central/rbac/k8srole/search"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/serviceaccount/internal/index"
+	"github.com/stackrox/rox/central/serviceaccount/internal/store"
+	pgStore "github.com/stackrox/rox/central/serviceaccount/internal/store/postgres"
+	rdbStore "github.com/stackrox/rox/central/serviceaccount/internal/store/rocksdb"
+	"github.com/stackrox/rox/central/serviceaccount/mappings"
+	"github.com/stackrox/rox/central/serviceaccount/search"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -22,35 +22,35 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
-	"github.com/stackrox/rox/pkg/search"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
-func TestK8sRoleSAC(t *testing.T) {
-	suite.Run(t, new(k8sRoleSACSuite))
+func TestServiceAccountSAC(t *testing.T) {
+	suite.Run(t, new(serviceAccountSACSuite))
 }
 
-type k8sRoleSACSuite struct {
+type serviceAccountSACSuite struct {
 	suite.Suite
 
 	datastore DataStore
 
 	pool *pgxpool.Pool
 
-	engine     *rocksdb.RocksDB
-	index      bleve.Index
-	optionsMap search.OptionsMap
+	engine *rocksdb.RocksDB
+	index  bleve.Index
 
-	storage store.Store
-	indexer index.Indexer
-	search  k8sRoleSearch.Searcher
+	storage    store.Store
+	indexer    index.Indexer
+	search     search.Searcher
+	optionsMap searchPkg.OptionsMap
 
-	testContexts   map[string]context.Context
-	testK8sRoleIDs []string
+	testContexts          map[string]context.Context
+	testServiceAccountIDs []string
 }
 
-func (s *k8sRoleSACSuite) SetupSuite() {
+func (s *serviceAccountSACSuite) SetupSuite() {
 	var err error
 
 	if features.PostgresDatastore.Enabled() {
@@ -63,27 +63,28 @@ func (s *k8sRoleSACSuite) SetupSuite() {
 		pgStore.Destroy(ctx, s.pool)
 		s.storage = pgStore.New(ctx, s.pool)
 		s.indexer = pgStore.NewIndexer(s.pool)
-		s.optionsMap = schema.K8srolesSchema.OptionsMap
+		s.optionsMap = schema.ServiceaccountsSchema.OptionsMap
 	} else {
-		s.engine, err = rocksdb.NewTemp("k8sRoleSACTest")
+		s.engine, err = rocksdb.NewTemp("serviceAccountSACTest")
 		s.Require().NoError(err)
 		bleveIndex, err := globalindex.MemOnlyIndex()
 		s.Require().NoError(err)
 		s.index = bleveIndex
-		s.optionsMap = k8sRoleMappings.OptionsMap
+
 		s.storage = rdbStore.New(s.engine)
 		s.indexer = index.New(s.index)
+		s.optionsMap = mappings.OptionsMap
 	}
 
-	s.search = k8sRoleSearch.New(s.storage, s.indexer)
+	s.search = search.New(s.storage, s.indexer)
 	s.datastore, err = New(s.storage, s.indexer, s.search)
 	s.Require().NoError(err)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
-		resources.K8sRole.GetResource())
+		resources.ServiceAccount.GetResource())
 }
 
-func (s *k8sRoleSACSuite) TearDownSuite() {
+func (s *serviceAccountSACSuite) TearDownSuite() {
 	if features.PostgresDatastore.Enabled() {
 		s.pool.Close()
 	} else {
@@ -92,32 +93,32 @@ func (s *k8sRoleSACSuite) TearDownSuite() {
 	}
 }
 
-func (s *k8sRoleSACSuite) SetupTest() {
-	s.testK8sRoleIDs = make([]string, 0)
+func (s *serviceAccountSACSuite) SetupTest() {
+	s.testServiceAccountIDs = make([]string, 0)
 
-	k8sRoles := fixtures.GetSACTestStorageK8SRoleSet(fixtures.GetScopedK8SRole)
+	serviceAccounts := fixtures.GetSACTestStorageServiceAccountSet(fixtures.GetScopedServiceAccount)
 
-	for i := range k8sRoles {
-		err := s.datastore.UpsertRole(s.testContexts[testutils.UnrestrictedReadWriteCtx], k8sRoles[i])
+	for i := range serviceAccounts {
+		err := s.datastore.UpsertServiceAccount(s.testContexts[testutils.UnrestrictedReadWriteCtx], serviceAccounts[i])
 		s.Require().NoError(err)
 	}
 
-	for _, rb := range k8sRoles {
-		s.testK8sRoleIDs = append(s.testK8sRoleIDs, rb.GetId())
+	for _, rb := range serviceAccounts {
+		s.testServiceAccountIDs = append(s.testServiceAccountIDs, rb.GetId())
 	}
 }
 
-func (s *k8sRoleSACSuite) TearDownTest() {
-	for _, id := range s.testK8sRoleIDs {
-		s.deleteK8sRole(id)
+func (s *serviceAccountSACSuite) TearDownTest() {
+	for _, id := range s.testServiceAccountIDs {
+		s.deleteServiceAccount(id)
 	}
 }
 
-func (s *k8sRoleSACSuite) deleteK8sRole(id string) {
-	s.Require().NoError(s.datastore.RemoveRole(s.testContexts[testutils.UnrestrictedReadWriteCtx], id))
+func (s *serviceAccountSACSuite) deleteServiceAccount(id string) {
+	s.Require().NoError(s.datastore.RemoveServiceAccount(s.testContexts[testutils.UnrestrictedReadWriteCtx], id))
 }
 
-func (s *k8sRoleSACSuite) TestUpsertRole() {
+func (s *serviceAccountSACSuite) TestUpsertServiceAccount() {
 	cases := map[string]struct {
 		scopeKey    string
 		expectFail  bool
@@ -151,18 +152,8 @@ func (s *k8sRoleSACSuite) TestUpsertRole() {
 			expectFail:  true,
 			expectedErr: sac.ErrResourceAccessDenied,
 		},
-		"read-write on matching cluster and matching namespace should be able to add": {
-			scopeKey:    testutils.Cluster2NamespaceBReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
 		"read-write on matching cluster and no namespace should not be able to add": {
 			scopeKey:    testutils.Cluster2ReadWriteCtx,
-			expectFail:  true,
-			expectedErr: sac.ErrResourceAccessDenied,
-		},
-		"read-write on matching cluster and at least one matching namespace should be able to add": {
-			scopeKey:    testutils.Cluster2NamespacesABReadWriteCtx,
 			expectFail:  true,
 			expectedErr: sac.ErrResourceAccessDenied,
 		},
@@ -170,12 +161,12 @@ func (s *k8sRoleSACSuite) TestUpsertRole() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			role := fixtures.GetScopedK8SRole(uuid.NewV4().String(), testconsts.Cluster2,
+			account := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
-			s.testK8sRoleIDs = append(s.testK8sRoleIDs, role.GetId())
+			s.testServiceAccountIDs = append(s.testServiceAccountIDs, account.GetId())
 			ctx := s.testContexts[c.scopeKey]
-			err := s.datastore.UpsertRole(ctx, role)
-			defer s.deleteK8sRole(role.GetId())
+			err := s.datastore.UpsertServiceAccount(ctx, account)
+			defer s.deleteServiceAccount(account.GetId())
 			if c.expectFail {
 				s.Require().Error(err)
 				s.ErrorIs(err, c.expectedErr)
@@ -186,12 +177,12 @@ func (s *k8sRoleSACSuite) TestUpsertRole() {
 	}
 }
 
-func (s *k8sRoleSACSuite) TestGetRole() {
-	role := fixtures.GetScopedK8SRole(uuid.NewV4().String(), testconsts.Cluster2,
+func (s *serviceAccountSACSuite) TestGetServiceAccount() {
+	account := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
 		testconsts.NamespaceB)
-	err := s.datastore.UpsertRole(s.testContexts[testutils.UnrestrictedReadWriteCtx], role)
+	err := s.datastore.UpsertServiceAccount(s.testContexts[testutils.UnrestrictedReadWriteCtx], account)
 	s.Require().NoError(err)
-	s.testK8sRoleIDs = append(s.testK8sRoleIDs, role.GetId())
+	s.testServiceAccountIDs = append(s.testServiceAccountIDs, account.GetId())
 
 	cases := map[string]struct {
 		scopeKey string
@@ -234,11 +225,11 @@ func (s *k8sRoleSACSuite) TestGetRole() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			ctx := s.testContexts[c.scopeKey]
-			res, found, err := s.datastore.GetRole(ctx, role.GetId())
+			res, found, err := s.datastore.GetServiceAccount(ctx, account.GetId())
 			s.Require().NoError(err)
 			if c.found {
 				s.True(found)
-				s.Equal(*role, *res)
+				s.Equal(*account, *res)
 			} else {
 				s.False(found)
 				s.Nil(res)
@@ -247,7 +238,7 @@ func (s *k8sRoleSACSuite) TestGetRole() {
 	}
 }
 
-func (s *k8sRoleSACSuite) TestRemoveRole() {
+func (s *serviceAccountSACSuite) TestRemoveServiceAccount() {
 	cases := map[string]struct {
 		scopeKey    string
 		expectFail  bool
@@ -301,16 +292,16 @@ func (s *k8sRoleSACSuite) TestRemoveRole() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			role := fixtures.GetScopedK8SRole(uuid.NewV4().String(), testconsts.Cluster2,
+			account := fixtures.GetScopedServiceAccount(uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
-			s.testK8sRoleIDs = append(s.testK8sRoleIDs, role.GetId())
+			s.testServiceAccountIDs = append(s.testServiceAccountIDs, account.GetId())
 
 			ctx := s.testContexts[c.scopeKey]
-			err := s.datastore.UpsertRole(s.testContexts[testutils.UnrestrictedReadWriteCtx], role)
+			err := s.datastore.UpsertServiceAccount(s.testContexts[testutils.UnrestrictedReadWriteCtx], account)
 			s.Require().NoError(err)
-			defer s.deleteK8sRole(role.GetId())
+			defer s.deleteServiceAccount(account.GetId())
 
-			err = s.datastore.RemoveRole(ctx, role.GetId())
+			err = s.datastore.RemoveServiceAccount(ctx, account.GetId())
 			if c.expectFail {
 				s.Require().Error(err)
 				s.ErrorIs(err, c.expectedErr)
@@ -321,9 +312,33 @@ func (s *k8sRoleSACSuite) TestRemoveRole() {
 	}
 }
 
-func (s *k8sRoleSACSuite) runSearchRawTest(c testutils.SACSearchTestCase) {
+func (s *serviceAccountSACSuite) TestSearchServiceAccount() {
+	// Run both scoped and unrestricted search test cases.
+	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runSearchServiceAccountTest(c)
+		})
+	}
+
+	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runSearchServiceAccountTest(c)
+		})
+	}
+}
+
+func (s *serviceAccountSACSuite) runSearchServiceAccountTest(c testutils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
-	results, err := s.datastore.SearchRawRoles(ctx, nil)
+	results, err := s.datastore.SearchServiceAccounts(ctx, nil)
+	s.Require().NoError(err)
+	resultCounts := testutils.CountSearchResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
+	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
+
+}
+
+func (s *serviceAccountSACSuite) runSearchRawTest(c testutils.SACSearchTestCase) {
+	ctx := s.testContexts[c.ScopeKey]
+	results, err := s.datastore.SearchRawServiceAccounts(ctx, nil)
 	s.Require().NoError(err)
 	resultObjs := make([]sac.NamespaceScopedObject, 0, len(results))
 	for i := range results {
@@ -333,7 +348,7 @@ func (s *k8sRoleSACSuite) runSearchRawTest(c testutils.SACSearchTestCase) {
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
-func (s *k8sRoleSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
+func (s *serviceAccountSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
@@ -341,7 +356,7 @@ func (s *k8sRoleSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
-func (s *k8sRoleSACSuite) TestScopedSearch() {
+func (s *serviceAccountSACSuite) TestScopedSearch() {
 	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
@@ -349,7 +364,7 @@ func (s *k8sRoleSACSuite) TestScopedSearch() {
 	}
 }
 
-func (s *k8sRoleSACSuite) TestUnrestrictedSearch() {
+func (s *serviceAccountSACSuite) TestUnrestrictedSearch() {
 	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
@@ -357,7 +372,7 @@ func (s *k8sRoleSACSuite) TestUnrestrictedSearch() {
 	}
 }
 
-func (s *k8sRoleSACSuite) TestScopeSearchRaw() {
+func (s *serviceAccountSACSuite) TestScopeSearchRaw() {
 	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchRawTest(c)
@@ -365,7 +380,7 @@ func (s *k8sRoleSACSuite) TestScopeSearchRaw() {
 	}
 }
 
-func (s *k8sRoleSACSuite) TestUnrestrictedSearchRaw() {
+func (s *serviceAccountSACSuite) TestUnrestrictedSearchRaw() {
 	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchRawTest(c)

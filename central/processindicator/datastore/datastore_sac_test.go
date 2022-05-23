@@ -100,7 +100,7 @@ func (s *processIndicatorDatastoreSACSuite) TearDownSuite() {
 func (s *processIndicatorDatastoreSACSuite) SetupTest() {
 	s.testProcessIndicatorIDs = make([]string, 0)
 
-	processIndicators := fixtures.GetSACTestProcessIndicatorSet()
+	processIndicators := fixtures.GetSACTestStorageProcessIndicatorSet(fixtures.GetScopedProcessIndicator)
 	err := s.datastore.AddProcessIndicators(s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx], processIndicators...)
 	s.Require().NoError(err)
 
