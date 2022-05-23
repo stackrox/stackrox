@@ -295,6 +295,7 @@ export const riskAcceptance = {
 
 export const system = {
     config: '/v1/config',
+    configPublic: '/v1/config/public',
 };
 
 export const extensions = {
