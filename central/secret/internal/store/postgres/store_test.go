@@ -264,6 +264,74 @@ func (s *SecretsStoreSuite) TestSACGet() {
 	}
 }
 
+func (s *SecretsStoreSuite) TestSACDelete() {
+	objA := &storage.Secret{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.Secret{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+
+	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
+	for name, expectedCount := range map[string]int{
+		withAllAccess:           0,
+		withNoAccess:            2,
+		withNoAccessToCluster:   2,
+		withAccessToDifferentNs: 2,
+		withAccess:              1,
+		withAccessToCluster:     1,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			s.SetupTest()
+
+			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
+			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
+
+			assert.NoError(t, s.store.Delete(ctxs[name], objA.GetId()))
+			assert.NoError(t, s.store.Delete(ctxs[name], objB.GetId()))
+
+			count, err := s.store.Count(withAllAccessCtx)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
+		})
+	}
+}
+
+func (s *SecretsStoreSuite) TestSACDeleteMany() {
+	objA := &storage.Secret{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.Secret{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+
+	ctxs := getSACContexts(objA, storage.Access_READ_WRITE_ACCESS)
+	for name, expectedCount := range map[string]int{
+		withAllAccess:           0,
+		withNoAccess:            2,
+		withNoAccessToCluster:   2,
+		withAccessToDifferentNs: 2,
+		withAccess:              1,
+		withAccessToCluster:     1,
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			s.SetupTest()
+
+			s.NoError(s.store.Upsert(withAllAccessCtx, objA))
+			s.NoError(s.store.Upsert(withAllAccessCtx, objB))
+
+			assert.NoError(t, s.store.DeleteMany(ctxs[name], []string{
+				objA.GetId(),
+				objB.GetId(),
+			}))
+
+			count, err := s.store.Count(withAllAccessCtx)
+			assert.NoError(t, err)
+			assert.Equal(t, expectedCount, count)
+		})
+	}
+}
+
 const (
 	withAllAccess           = "AllAccess"
 	withNoAccess            = "NoAccess"
