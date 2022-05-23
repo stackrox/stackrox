@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect } from 'react';
+import React, { ReactElement, useEffect } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { Select, SelectOption } from '@patternfly/react-core';
@@ -8,8 +8,8 @@ import { actions as graphActions, networkGraphClusters } from 'reducers/network/
 import { actions as pageActions } from 'reducers/network/page';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import useURLCluster from 'hooks/useURLCluster';
 import { Cluster } from 'types/cluster.proto';
-import useURLParameter from 'hooks/useURLParameter';
 
 type ClusterSelectProps = {
     id?: string;
@@ -19,26 +19,6 @@ type ClusterSelectProps = {
     selectedClusterId?: string;
     isDisabled?: boolean;
 };
-
-// TODO We should probably always keep the cluster in the URL for clarity
-//
-// TODO Are there use cases where we want the possibility of multiple selected clusters,
-// and should that be rolled into this hook?
-// TODO extract
-function useURLCluster(defaultClusterId: string) {
-    const [cluster, setClusterInternal] = useURLParameter('cluster', defaultClusterId || undefined);
-    const setCluster = useCallback(
-        (clusterId?: string) => {
-            setClusterInternal(clusterId);
-        },
-        [setClusterInternal]
-    );
-
-    return {
-        cluster: typeof cluster === 'string' ? cluster : undefined,
-        setCluster,
-    };
-}
 
 const ClusterSelect = ({
     id,

@@ -1,11 +1,10 @@
-import React, { useCallback, useRef, ChangeEvent, useEffect } from 'react';
+import React, { useCallback, ChangeEvent, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import isEqual from 'lodash/isEqual';
 import { Select, SelectOption, SelectOptionObject, SelectVariant } from '@patternfly/react-core';
 
 import { actions as graphActions } from 'reducers/network/graph';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import useURLParameter from 'hooks/useURLParameter';
+import useURLNamespaceIds from 'hooks/useURLNamespaceIds';
 import useNamespaceFilters from './useNamespaceFilters';
 
 function filterElementsWithValueProp(
@@ -26,60 +25,19 @@ interface NamespaceSelectProps {
     className?: string;
 }
 
-// TODO extract
-// TODO Should we tie cluster in here as well? e.g. Multiple selected Clusters?
-function useURLNamespaces(defaultNamespaces: string[], allowedNamespaces: string[]) {
-    const [namespacesInternal, setNamespacesInternal] = useURLParameter(
-        'ns',
-        defaultNamespaces.filter((ns) => allowedNamespaces.includes(ns)) || []
-    );
-    const namespaceRef = useRef<string[]>([]);
-    const setNamespaces = useCallback(
-        (newNamespaces: string[]) => {
-            setNamespacesInternal(newNamespaces.filter((ns) => allowedNamespaces.includes(ns)));
-        },
-        [setNamespacesInternal, allowedNamespaces]
-    );
-
-    const filteredNamespaces: string[] = [];
-    if (!namespacesInternal) {
-        // Do nothing
-    } else if (
-        typeof namespacesInternal === 'string' &&
-        allowedNamespaces.includes(namespacesInternal)
-    ) {
-        filteredNamespaces.push(namespacesInternal);
-    } else if (namespacesInternal && Array.isArray(namespacesInternal)) {
-        namespacesInternal.forEach((ns) => {
-            if (typeof ns === 'string' && allowedNamespaces.includes(ns)) {
-                filteredNamespaces.push(ns);
-            }
-        });
-    }
-
-    if (!isEqual(namespaceRef.current, filteredNamespaces)) {
-        namespaceRef.current = filteredNamespaces;
-    }
-
-    return {
-        namespaces: namespaceRef.current,
-        setNamespaces,
-    };
-}
-
 function NamespaceSelect({ id, className = '', isDisabled = false }: NamespaceSelectProps) {
     const { isOpen, onToggle } = useSelectToggle();
     const { loading, error, availableNamespaceFilters, selectedNamespaceFilters } =
         useNamespaceFilters();
-    const { namespaces, setNamespaces } = useURLNamespaces(
+    const { namespaceIds, setNamespaceIds } = useURLNamespaceIds(
         selectedNamespaceFilters,
         availableNamespaceFilters.map((ns) => ns.id)
     );
     const dispatch = useDispatch();
 
     useEffect(() => {
-        dispatch(graphActions.setSelectedNamespaceFilters(namespaces));
-    }, [dispatch, namespaces]);
+        dispatch(graphActions.setSelectedNamespaceFilters(namespaceIds));
+    }, [dispatch, namespaceIds]);
 
     function onSelect(e, selected: string | SelectOptionObject) {
         const selectedString = typeof selected === 'string' ? selected : selected.toString();
@@ -93,7 +51,7 @@ function NamespaceSelect({ id, className = '', isDisabled = false }: NamespaceSe
             .filter((ns) => availableNamespaceFilters.find((nsFilter) => nsFilter.id === ns))
             .map((ns) => ns);
 
-        setNamespaces(cleanedSelection);
+        setNamespaceIds(cleanedSelection);
         dispatch(graphActions.setSelectedNamespaceFilters(cleanedSelection));
     }
 
@@ -121,7 +79,7 @@ function NamespaceSelect({ id, className = '', isDisabled = false }: NamespaceSe
             className={`namespace-select ${className}`}
             placeholderText="Namespaces"
             isDisabled={isDisabled || loading || Boolean(error)}
-            selections={namespaces}
+            selections={namespaceIds}
             variant={SelectVariant.checkbox}
             maxHeight="275px"
             hasInlineFilter
