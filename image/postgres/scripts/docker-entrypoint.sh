@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-# This file is from https://github.com/docker-library/postgres/tree/master/14/bullseye
+
+### STACKROX MODIFIED - This file was copied from [the PostgreSQL Docker
+### Community][1].  Any stackrox modification or comments are tagged with this
+### comment.
+###
+### [1]: https://github.com/docker-library/postgres/blob/master/14/bullseye/docker-entrypoint.sh
+
 set -Eeo pipefail
 # TODO swap to -Eeuo pipefail above (after handling all potentially-unset variables)
 
@@ -173,10 +179,11 @@ docker_process_init_files() {
 					. "$f"
 				fi
 				;;
-			*.sql)    echo "$0: running $f"; docker_process_sql -f "$f"; echo ;;
-			*.sql.gz) echo "$0: running $f"; gunzip -c "$f" | docker_process_sql; echo ;;
-			*.sql.xz) echo "$0: running $f"; xzcat "$f" | docker_process_sql; echo ;;
-			*)        echo "$0: ignoring $f" ;;
+			*.sql)     echo "$0: running $f"; docker_process_sql -f "$f"; echo ;;
+			*.sql.gz)  echo "$0: running $f"; gunzip -c "$f" | docker_process_sql; echo ;;
+			*.sql.xz)  echo "$0: running $f"; xzcat "$f" | docker_process_sql; echo ;;
+			*.sql.zst) echo "$0: running $f"; zstd -dc "$f" | docker_process_sql; echo ;;
+			*)         echo "$0: ignoring $f" ;;
 		esac
 		echo
 	done
@@ -303,6 +310,9 @@ _main() {
 		# setup data directories and permissions (when run as root)
 		docker_create_db_directories
 		if [ "$(id -u)" = '0' ]; then
+			### STACKROX MODIFIED - gosu is not installed in our
+			### image, but we use the postgres user, so this line
+			### will not be reached.
 			# then restart script as postgres user
 			exec gosu postgres "$BASH_SOURCE" "$@"
 		fi
