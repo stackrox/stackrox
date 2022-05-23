@@ -41,8 +41,8 @@ export function visitVulnerabilityManagementDashboard() {
 }
 
 /*
- * For example, visitEntities('cves')
- * For example, visitEntities('policies', '?s[Policy]=Fixable Severity at least Important')
+ * For example, visitVulnerabilityManagementEntities('cves')
+ * For example, visitVulnerabilityManagementEntities('policies', '?s[Policy]=Fixable Severity at least Important')
  */
 export function visitVulnerabilityManagementEntities(entitiesKey, search = '') {
     cy.intercept('POST', api.graphql('searchOptions')).as('searchOptions');
