@@ -1,5 +1,7 @@
 package permissions
 
+import "github.com/stackrox/rox/generated/storage"
+
 // Resource is a string representation of an exposed set of API endpoints (services).
 type Resource string
 
@@ -43,6 +45,11 @@ func (m ResourceMetadata) GetResource() Resource {
 
 // GetScope returns the resource scope for this metadata object.
 func (m ResourceMetadata) GetScope() ResourceScope {
+	// Replacing resources _may_ have a different ResourceScope than the initial resource.
+	// This way, clients don't have to deal with replacing resources when checking for scope.
+	if m.ReplacingResource != nil && m.ReplacingResource.GetScope() < m.Scope {
+		return m.ReplacingResource.GetScope()
+	}
 	return m.Scope
 }
 
@@ -70,4 +77,20 @@ type ResourceHandle interface {
 func WithLegacyAuthForSAC(md ResourceMetadata, use bool) ResourceMetadata {
 	md.legacyAuthForSAC = &use
 	return md
+}
+
+// CheckResourceForAccess will verify whether the given ResourceMetadata is contained within the map
+// with at least the specified storage.Access.
+// Note: This will take replacing resources into account.
+func CheckResourceForAccess(resource ResourceMetadata, resourceAccessMap map[string]storage.Access,
+	access storage.Access) bool {
+	if resourceAccessMap[string(resource.GetResource())] >= access {
+		return true
+	} else if resource.ReplacingResource != nil &&
+		// Right now, we are not taking multiple replacing resources into account, i.e. Resource A has replacing
+		// resource "Resource B", which also has a replacing resource "Resource C".
+		resourceAccessMap[string(resource.ReplacingResource.GetResource())] >= access {
+		return true
+	}
+	return false
 }
