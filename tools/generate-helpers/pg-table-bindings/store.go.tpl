@@ -49,15 +49,13 @@ const (
 {{- if gt (len $pks) 1 }}
         existsStmt = "SELECT EXISTS(SELECT 1 FROM {{.Table}} WHERE {{template "whereMatch" $pks}})"
         getStmt = "SELECT serialized FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
+        deleteStmt = "DELETE FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
 {{- end }}
 
-        deleteStmt = "DELETE FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
         walkStmt = "SELECT serialized FROM {{.Table}}"
 
 {{- if $singlePK }}
         getManyStmt = "SELECT serialized FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
-
-        deleteManyStmt = "DELETE FROM {{.Table}} WHERE {{$singlePK.ColumnName}} = ANY($1::text[])"
 {{- end }}
 
         batchAfter = 100
@@ -233,7 +231,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
         // Add the id to be deleted.
         deletes = append(deletes, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
         {{else}}
-        if _, err := tx.Exec(ctx, deleteStmt, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}}); err != nil {
+        if err := s.Delete(ctx, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}}); err != nil {
             return err
         }
 
@@ -245,8 +243,7 @@ func (s *storeImpl) {{ template "copyFunctionName" $schema }}(ctx context.Contex
             // copy does not upsert so have to delete first.  parent deletion cascades so only need to
             // delete for the top level parent
             {{if and ((eq (len $schema.PrimaryKeys) 1)) (not $schema.Parent) }}
-            _, err = tx.Exec(ctx, deleteManyStmt, deletes);
-            if err != nil {
+            if err := s.DeleteMany(ctx, deletes); err != nil {
                 return err
             }
             // clear the inserts and vals for the next batch
@@ -604,8 +601,11 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
-
-	{{ if .PermissionChecker -}}
+{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
+{{- if eq (len $pks) 1 }}
+    var sacQueryFilter *v1.Query
+{{- end }}
+    {{- if .PermissionChecker }}
     if ok, err := {{ .PermissionChecker }}.DeleteAllowed(ctx); err != nil {
         return err
     } else if !ok {
@@ -618,8 +618,37 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- end}}
+    {{- else if .Obj.IsDirectlyScoped }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+	if err != nil {
+		return err
+	}
+    {{- if .Obj.IsClusterScope }}
+    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    {{- else}}
+    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    {{- end }}
+	if err != nil {
+		return err
+	}
+    {{- end }}
 
+{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
+{{- if eq (len $pks) 1 }}
+    q := search.ConjunctionQuery(
+        sacQueryFilter,
+    {{- range $idx, $pk := $pks}}
+        {{- if eq $pk.Name $singlePK.Name }}
+        search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        {{- else }}
+        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ $pk.Search.FieldName }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        {{- end}}
+    {{- end}}
+    )
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+{{- else }}
     conn, release, err := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
 	if err != nil {
 	    return err
@@ -630,6 +659,7 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
 		return err
 	}
 	return nil
+{{- end }}
 }
 {{- end}}
 
@@ -746,6 +776,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []{{$singlePK.Type}}) ([]*{
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "{{.TrimmedType}}")
 
+    var sacQueryFilter *v1.Query
     {{ if .PermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.DeleteManyAllowed(ctx); err != nil {
         return err
@@ -759,17 +790,28 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
     } else if !ok {
         return sac.ErrResourceAccessDenied
     }
-    {{- end}}
+    {{- else if .Obj.IsDirectlyScoped }}
+    {{ template "defineScopeChecker" "READ_WRITE" }}
+    scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.Modify(targetResource))
+    if err != nil {
+        return err
+    }
+    {{- if .Obj.IsClusterScope }}
+    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    {{- else}}
+    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    {{- end }}
+    if err != nil {
+        return err
+    }
+    {{- end }}
 
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "{{.TrimmedType}}")
-	if err != nil {
-	    return err
-	}
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
-		return err
-	}
-	return nil
+    q := search.ConjunctionQuery(
+    sacQueryFilter,
+        search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+    )
+
+    return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 {{- end }}
 {{- end }}

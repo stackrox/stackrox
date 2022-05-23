@@ -25,11 +25,8 @@ import (
 const (
 	baseTable = "watchedimages"
 
-	deleteStmt  = "DELETE FROM watchedimages WHERE Name = $1"
 	walkStmt    = "SELECT serialized FROM watchedimages"
 	getManyStmt = "SELECT serialized FROM watchedimages WHERE Name = ANY($1::text[])"
-
-	deleteManyStmt = "DELETE FROM watchedimages WHERE Name = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -138,8 +135,7 @@ func (s *storeImpl) copyFromWatchedimages(ctx context.Context, tx pgx.Tx, objs .
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.Exec(ctx, deleteManyStmt, deletes)
-			if err != nil {
+			if err := s.DeleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
@@ -317,6 +313,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 func (s *storeImpl) Delete(ctx context.Context, name string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "WatchedImage")
 
+	var sacQueryFilter *v1.Query
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
@@ -324,16 +321,12 @@ func (s *storeImpl) Delete(ctx context.Context, name string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "WatchedImage")
-	if err != nil {
-		return err
-	}
-	defer release()
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(name).ProtoQuery(),
+	)
 
-	if _, err := conn.Exec(ctx, deleteStmt, name); err != nil {
-		return err
-	}
-	return nil
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // GetIDs returns all the IDs for the store
@@ -419,6 +412,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Watch
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "WatchedImage")
 
+	var sacQueryFilter *v1.Query
+
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return err
@@ -426,15 +421,12 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "WatchedImage")
-	if err != nil {
-		return err
-	}
-	defer release()
-	if _, err := conn.Exec(ctx, deleteManyStmt, ids); err != nil {
-		return err
-	}
-	return nil
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
