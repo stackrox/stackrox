@@ -74,7 +74,7 @@ assert_prompts_rhacs() {
 
 @test "roxctl-development central generate interactive flavor=development_build" {
   roxctl_bin="$(roxctl-development-cmd)"
-  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- "$roxctl_bin" development_build "$out_dir" "docker.io/stackrox"
+  run expect -f "tests/roxctl/bats-tests/local/expect/flavor-interactive.expect.tcl" -- "$roxctl_bin" development_build "$out_dir" "quay.io/rhacs-eng"
   bitfield_to_failure "$status"
   assert_success
   assert_prompts_development
