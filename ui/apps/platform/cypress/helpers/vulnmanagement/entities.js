@@ -15,6 +15,7 @@ const opnamesForDashboard = [
     'recentlyDetectedVulnerabilities',
     'mostCommonVulnerabilities',
     'deploymentsWithMostSeverePolicyViolations',
+    'clustersWithMostOrchestratorIstioVulnerabilities',
 ];
 
 export function visitVulnerabilityManagementDashboardFromLeftNav() {
