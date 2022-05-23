@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/clusterinit/backend/access"
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate/mocks"
 	"github.com/stackrox/rox/central/clusterinit/store"
 	rocksdbStore "github.com/stackrox/rox/central/clusterinit/store/rocksdb"
@@ -467,7 +468,7 @@ func (s *clusterInitBackendTestSuite) TestCheckAccess() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			err := CheckAccess(c.ctx, c.access)
+			err := access.CheckAccess(c.ctx, c.access)
 			if c.shouldFail {
 				s.Require().Error(err)
 				s.ErrorIs(err, c.expectedErr)
