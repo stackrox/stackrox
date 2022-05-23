@@ -20,18 +20,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type NamespaceMetadataStoreSuite struct {
+type NamespacesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestNamespaceMetadataStore(t *testing.T) {
-	suite.Run(t, new(NamespaceMetadataStoreSuite))
+func TestNamespacesStore(t *testing.T) {
+	suite.Run(t, new(NamespacesStoreSuite))
 }
 
-func (s *NamespaceMetadataStoreSuite) SetupTest() {
+func (s *NamespacesStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,14 +54,14 @@ func (s *NamespaceMetadataStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *NamespaceMetadataStoreSuite) TearDownTest() {
+func (s *NamespacesStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *NamespaceMetadataStoreSuite) TestStore() {
+func (s *NamespacesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
@@ -117,7 +117,7 @@ func (s *NamespaceMetadataStoreSuite) TestStore() {
 	s.Equal(200, namespaceMetadataCount)
 }
 
-func (s *NamespaceMetadataStoreSuite) TestSACUpsert() {
+func (s *NamespacesStoreSuite) TestSACUpsert() {
 	obj := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -136,7 +136,7 @@ func (s *NamespaceMetadataStoreSuite) TestSACUpsert() {
 	}
 }
 
-func (s *NamespaceMetadataStoreSuite) TestSACUpsertMany() {
+func (s *NamespacesStoreSuite) TestSACUpsertMany() {
 	obj := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -155,7 +155,7 @@ func (s *NamespaceMetadataStoreSuite) TestSACUpsertMany() {
 	}
 }
 
-func (s *NamespaceMetadataStoreSuite) TestSACCount() {
+func (s *NamespacesStoreSuite) TestSACCount() {
 	objA := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -183,7 +183,7 @@ func (s *NamespaceMetadataStoreSuite) TestSACCount() {
 	}
 }
 
-func (s *NamespaceMetadataStoreSuite) TestSACGetIDs() {
+func (s *NamespacesStoreSuite) TestSACGetIDs() {
 	objA := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -211,7 +211,7 @@ func (s *NamespaceMetadataStoreSuite) TestSACGetIDs() {
 	}
 }
 
-func (s *NamespaceMetadataStoreSuite) TestSACExists() {
+func (s *NamespacesStoreSuite) TestSACExists() {
 	objA := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -235,7 +235,7 @@ func (s *NamespaceMetadataStoreSuite) TestSACExists() {
 	}
 }
 
-func (s *NamespaceMetadataStoreSuite) TestSACGet() {
+func (s *NamespacesStoreSuite) TestSACGet() {
 	objA := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -264,7 +264,7 @@ func (s *NamespaceMetadataStoreSuite) TestSACGet() {
 	}
 }
 
-func (s *NamespaceMetadataStoreSuite) TestSACDelete() {
+func (s *NamespacesStoreSuite) TestSACDelete() {
 	objA := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -297,7 +297,7 @@ func (s *NamespaceMetadataStoreSuite) TestSACDelete() {
 	}
 }
 
-func (s *NamespaceMetadataStoreSuite) TestSACDeleteMany() {
+func (s *NamespacesStoreSuite) TestSACDeleteMany() {
 	objA := &storage.NamespaceMetadata{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
