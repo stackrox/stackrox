@@ -32,6 +32,7 @@ import (
                {{- end}}
                )
                `,
+    GormModel: (*{{$schema.Table|upperCamelCase}})(nil),
     Indexes: []string {
                    {{- range $idx, $field := $schema.Fields}}
                        {{- if $field.Options.Index}}
