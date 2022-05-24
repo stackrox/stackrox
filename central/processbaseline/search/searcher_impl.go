@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/index/mappings"
 	"github.com/stackrox/rox/central/processbaseline/store"
@@ -10,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -21,7 +23,9 @@ const (
 )
 
 var (
-	processBaselineSACSearchHelper = sac.ForResource(resources.ProcessWhitelist).MustCreateSearchHelper(mappings.OptionsMap)
+	processBaselineSACSearchHelper         = sac.ForResource(resources.ProcessWhitelist).MustCreateSearchHelper(mappings.OptionsMap)
+	processBaselinePostgresSACSearchHelper = sac.ForResource(resources.ProcessWhitelist).
+						MustCreatePgSearchHelper(schema.ProcessbaselinesSchema.OptionsMap)
 )
 
 type searcherImpl struct {
@@ -82,7 +86,14 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 ///////////////////////////////////////////////
 
 func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	filteredSearcher := processBaselineSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+	var filteredSearcher search.Searcher
+	if features.PostgresDatastore.Enabled() {
+		filteredSearcher = processBaselinePostgresSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the
+		// UnsafeSearcher safe.
+	} else {
+		filteredSearcher = processBaselineSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher
+		// safe.
+	}
 	paginatedSearcher := paginated.Paginated(filteredSearcher)
 	return paginatedSearcher
 }
