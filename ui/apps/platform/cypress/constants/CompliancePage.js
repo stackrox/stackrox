@@ -15,7 +15,7 @@ export const url = {
 
 /*
  * Headings on entities pages.
- * The keys correspond to url list object above.
+ * The keys correspond to url entities object above.
  */
 export const headingPlural = {
     clusters: 'Clusters',
