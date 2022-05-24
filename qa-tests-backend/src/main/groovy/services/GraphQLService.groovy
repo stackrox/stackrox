@@ -41,7 +41,7 @@ class GraphQLService {
             return response
         }
 
-        log.warn("There were errors in the graph QL response: %s", response.toString())
+        log.warnf("There were errors in the graph QL response: %s", response.toString())
 
         return response
     }

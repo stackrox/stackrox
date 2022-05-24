@@ -1,13 +1,17 @@
 import static org.junit.Assume.assumeFalse
+
+import org.apache.commons.lang3.StringUtils
+
 import groups.GraphQL
 import objects.Deployment
-import org.apache.commons.lang3.StringUtils
-import org.junit.experimental.categories.Category
 import services.GraphQLService
-import spock.lang.Shared
-import spock.lang.Unroll
 import util.Env
 import util.Timer
+
+import org.junit.experimental.categories.Category
+import spock.lang.IgnoreIf
+import spock.lang.Shared
+import spock.lang.Unroll
 
 class VulnScanWithGraphQLTest extends BaseSpecification {
     static final private String STRUTSDEPLOYMENT_VULN_SCAN = "qastruts"
@@ -148,6 +152,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
 
     @Unroll
     @Category(GraphQL)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify image info from #CVEID in GraphQL"() {
         when:
         "Fetch the results of the CVE,image from GraphQL "
@@ -169,7 +174,6 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         while (t.IsValid()) {
             def result2Ret = gqlService.Call(GET_IMAGE_INFO_FROM_VULN_QUERY, [id: cveId])
             assert result2Ret.getCode() == 200
-            log.info "return code " + result2Ret.getCode()
             if (result2Ret.getValue().result != null) {
                 log.info "images fetched from cve"
                 return result2Ret
