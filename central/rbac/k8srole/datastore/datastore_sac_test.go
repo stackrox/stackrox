@@ -63,7 +63,7 @@ func (s *k8sRoleSACSuite) SetupSuite() {
 		pgStore.Destroy(ctx, s.pool)
 		s.storage = pgStore.New(ctx, s.pool)
 		s.indexer = pgStore.NewIndexer(s.pool)
-		s.optionsMap = schema.K8srolesSchema.OptionsMap
+		s.optionsMap = schema.K8sRolesSchema.OptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp("k8sRoleSACTest")
 		s.Require().NoError(err)

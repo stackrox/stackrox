@@ -22,10 +22,10 @@ import (
 )
 
 const (
-	baseTable = "integrationhealth"
+	baseTable = "integration_healths"
 
-	walkStmt    = "SELECT serialized FROM integrationhealth"
-	getManyStmt = "SELECT serialized FROM integrationhealth WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM integration_healths"
+	getManyStmt = "SELECT serialized FROM integration_healths WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -37,7 +37,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.IntegrationhealthSchema
+	schema = pkgSchema.IntegrationHealthsSchema
 )
 
 type Store interface {
@@ -63,14 +63,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableIntegrationhealthStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableIntegrationHealthsStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoIntegrationhealth(ctx context.Context, tx pgx.Tx, obj *storage.IntegrationHealth) error {
+func insertIntoIntegrationHealths(ctx context.Context, tx pgx.Tx, obj *storage.IntegrationHealth) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -83,7 +83,7 @@ func insertIntoIntegrationhealth(ctx context.Context, tx pgx.Tx, obj *storage.In
 		serialized,
 	}
 
-	finalStr := "INSERT INTO integrationhealth (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO integration_healths (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func insertIntoIntegrationhealth(ctx context.Context, tx pgx.Tx, obj *storage.In
 	return nil
 }
 
-func (s *storeImpl) copyFromIntegrationhealth(ctx context.Context, tx pgx.Tx, objs ...*storage.IntegrationHealth) error {
+func (s *storeImpl) copyFromIntegrationHealths(ctx context.Context, tx pgx.Tx, objs ...*storage.IntegrationHealth) error {
 
 	inputRows := [][]interface{}{}
 
@@ -139,7 +139,7 @@ func (s *storeImpl) copyFromIntegrationhealth(ctx context.Context, tx pgx.Tx, ob
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"integrationhealth"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"integration_healths"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -165,7 +165,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.IntegrationHe
 		return err
 	}
 
-	if err := s.copyFromIntegrationhealth(ctx, tx, objs...); err != nil {
+	if err := s.copyFromIntegrationHealths(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -190,7 +190,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.IntegrationHeal
 			return err
 		}
 
-		if err := insertIntoIntegrationhealth(ctx, tx, obj); err != nil {
+		if err := insertIntoIntegrationHealths(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -434,13 +434,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.IntegrationHe
 
 //// Used for testing
 
-func dropTableIntegrationhealth(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS integrationhealth CASCADE")
+func dropTableIntegrationHealths(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS integration_healths CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableIntegrationhealth(ctx, db)
+	dropTableIntegrationHealths(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

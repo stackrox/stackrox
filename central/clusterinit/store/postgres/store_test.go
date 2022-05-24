@@ -18,18 +18,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ClusterinitbundlesStoreSuite struct {
+type ClusterInitBundlesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestClusterinitbundlesStore(t *testing.T) {
-	suite.Run(t, new(ClusterinitbundlesStoreSuite))
+func TestClusterInitBundlesStore(t *testing.T) {
+	suite.Run(t, new(ClusterInitBundlesStoreSuite))
 }
 
-func (s *ClusterinitbundlesStoreSuite) SetupTest() {
+func (s *ClusterInitBundlesStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -52,14 +52,14 @@ func (s *ClusterinitbundlesStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *ClusterinitbundlesStoreSuite) TearDownTest() {
+func (s *ClusterInitBundlesStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *ClusterinitbundlesStoreSuite) TestStore() {
+func (s *ClusterInitBundlesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store

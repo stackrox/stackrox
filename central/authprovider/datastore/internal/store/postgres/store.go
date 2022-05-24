@@ -23,10 +23,10 @@ import (
 )
 
 const (
-	baseTable = "authproviders"
+	baseTable = "auth_providers"
 
-	walkStmt    = "SELECT serialized FROM authproviders"
-	getManyStmt = "SELECT serialized FROM authproviders WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM auth_providers"
+	getManyStmt = "SELECT serialized FROM auth_providers WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -38,7 +38,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.AuthprovidersSchema
+	schema         = pkgSchema.AuthProvidersSchema
 	targetResource = resources.AuthProvider
 )
 
@@ -66,14 +66,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableAuthprovidersStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableAuthProvidersStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoAuthproviders(ctx context.Context, tx pgx.Tx, obj *storage.AuthProvider) error {
+func insertIntoAuthProviders(ctx context.Context, tx pgx.Tx, obj *storage.AuthProvider) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -87,7 +87,7 @@ func insertIntoAuthproviders(ctx context.Context, tx pgx.Tx, obj *storage.AuthPr
 		serialized,
 	}
 
-	finalStr := "INSERT INTO authproviders (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO auth_providers (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func insertIntoAuthproviders(ctx context.Context, tx pgx.Tx, obj *storage.AuthPr
 	return nil
 }
 
-func (s *storeImpl) copyFromAuthproviders(ctx context.Context, tx pgx.Tx, objs ...*storage.AuthProvider) error {
+func (s *storeImpl) copyFromAuthProviders(ctx context.Context, tx pgx.Tx, objs ...*storage.AuthProvider) error {
 
 	inputRows := [][]interface{}{}
 
@@ -147,7 +147,7 @@ func (s *storeImpl) copyFromAuthproviders(ctx context.Context, tx pgx.Tx, objs .
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"authproviders"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"auth_providers"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -173,7 +173,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.AuthProvider)
 		return err
 	}
 
-	if err := s.copyFromAuthproviders(ctx, tx, objs...); err != nil {
+	if err := s.copyFromAuthProviders(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -198,7 +198,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.AuthProvider) e
 			return err
 		}
 
-		if err := insertIntoAuthproviders(ctx, tx, obj); err != nil {
+		if err := insertIntoAuthProviders(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -470,13 +470,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.AuthProvider)
 
 //// Used for testing
 
-func dropTableAuthproviders(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS authproviders CASCADE")
+func dropTableAuthProviders(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS auth_providers CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableAuthproviders(ctx, db)
+	dropTableAuthProviders(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

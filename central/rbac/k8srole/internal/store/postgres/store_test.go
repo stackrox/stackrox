@@ -20,18 +20,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type K8srolesStoreSuite struct {
+type K8sRolesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestK8srolesStore(t *testing.T) {
-	suite.Run(t, new(K8srolesStoreSuite))
+func TestK8sRolesStore(t *testing.T) {
+	suite.Run(t, new(K8sRolesStoreSuite))
 }
 
-func (s *K8srolesStoreSuite) SetupTest() {
+func (s *K8sRolesStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,14 +54,14 @@ func (s *K8srolesStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *K8srolesStoreSuite) TearDownTest() {
+func (s *K8sRolesStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *K8srolesStoreSuite) TestStore() {
+func (s *K8sRolesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
@@ -117,7 +117,7 @@ func (s *K8srolesStoreSuite) TestStore() {
 	s.Equal(200, k8SRoleCount)
 }
 
-func (s *K8srolesStoreSuite) TestSACUpsert() {
+func (s *K8sRolesStoreSuite) TestSACUpsert() {
 	obj := &storage.K8SRole{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -136,7 +136,7 @@ func (s *K8srolesStoreSuite) TestSACUpsert() {
 	}
 }
 
-func (s *K8srolesStoreSuite) TestSACUpsertMany() {
+func (s *K8sRolesStoreSuite) TestSACUpsertMany() {
 	obj := &storage.K8SRole{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -155,7 +155,7 @@ func (s *K8srolesStoreSuite) TestSACUpsertMany() {
 	}
 }
 
-func (s *K8srolesStoreSuite) TestSACCount() {
+func (s *K8sRolesStoreSuite) TestSACCount() {
 	objA := &storage.K8SRole{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -183,7 +183,7 @@ func (s *K8srolesStoreSuite) TestSACCount() {
 	}
 }
 
-func (s *K8srolesStoreSuite) TestSACGetIDs() {
+func (s *K8sRolesStoreSuite) TestSACGetIDs() {
 	objA := &storage.K8SRole{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -211,7 +211,7 @@ func (s *K8srolesStoreSuite) TestSACGetIDs() {
 	}
 }
 
-func (s *K8srolesStoreSuite) TestSACExists() {
+func (s *K8sRolesStoreSuite) TestSACExists() {
 	objA := &storage.K8SRole{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -235,7 +235,7 @@ func (s *K8srolesStoreSuite) TestSACExists() {
 	}
 }
 
-func (s *K8srolesStoreSuite) TestSACGet() {
+func (s *K8sRolesStoreSuite) TestSACGet() {
 	objA := &storage.K8SRole{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -264,7 +264,7 @@ func (s *K8srolesStoreSuite) TestSACGet() {
 	}
 }
 
-func (s *K8srolesStoreSuite) TestSACDelete() {
+func (s *K8sRolesStoreSuite) TestSACDelete() {
 	objA := &storage.K8SRole{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -297,7 +297,7 @@ func (s *K8srolesStoreSuite) TestSACDelete() {
 	}
 }
 
-func (s *K8srolesStoreSuite) TestSACDeleteMany() {
+func (s *K8sRolesStoreSuite) TestSACDeleteMany() {
 	objA := &storage.K8SRole{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 

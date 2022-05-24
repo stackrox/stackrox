@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	baseTable = "testgrandparent"
+	baseTable = "test_grandparents"
 
-	walkStmt    = "SELECT serialized FROM testgrandparent"
-	getManyStmt = "SELECT serialized FROM testgrandparent WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM test_grandparents"
+	getManyStmt = "SELECT serialized FROM test_grandparents WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -36,7 +36,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.TestgrandparentSchema
+	schema = pkgSchema.TestGrandparentsSchema
 )
 
 type Store interface {
@@ -62,14 +62,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestgrandparentStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestGrandparentsStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoTestgrandparent(ctx context.Context, tx pgx.Tx, obj *storage.TestGrandparent) error {
+func insertIntoTestGrandparents(ctx context.Context, tx pgx.Tx, obj *storage.TestGrandparent) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -83,7 +83,7 @@ func insertIntoTestgrandparent(ctx context.Context, tx pgx.Tx, obj *storage.Test
 		serialized,
 	}
 
-	finalStr := "INSERT INTO testgrandparent (Id, Val, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_grandparents (Id, Val, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -92,12 +92,12 @@ func insertIntoTestgrandparent(ctx context.Context, tx pgx.Tx, obj *storage.Test
 	var query string
 
 	for childIdx, child := range obj.GetEmbedded() {
-		if err := insertIntoTestgrandparentEmbedded(ctx, tx, child, obj.GetId(), childIdx); err != nil {
+		if err := insertIntoTestGrandparentsEmbeddeds(ctx, tx, child, obj.GetId(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from testgrandparent_Embedded where testgrandparent_Id = $1 AND idx >= $2"
+	query = "delete from test_grandparents_embeddeds where test_grandparents_Id = $1 AND idx >= $2"
 	_, err = tx.Exec(ctx, query, obj.GetId(), len(obj.GetEmbedded()))
 	if err != nil {
 		return err
@@ -105,16 +105,16 @@ func insertIntoTestgrandparent(ctx context.Context, tx pgx.Tx, obj *storage.Test
 	return nil
 }
 
-func insertIntoTestgrandparentEmbedded(ctx context.Context, tx pgx.Tx, obj *storage.TestGrandparent_Embedded, testgrandparent_Id string, idx int) error {
+func insertIntoTestGrandparentsEmbeddeds(ctx context.Context, tx pgx.Tx, obj *storage.TestGrandparent_Embedded, test_grandparents_Id string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		testgrandparent_Id,
+		test_grandparents_Id,
 		idx,
 		obj.GetVal(),
 	}
 
-	finalStr := "INSERT INTO testgrandparent_Embedded (testgrandparent_Id, idx, Val) VALUES($1, $2, $3) ON CONFLICT(testgrandparent_Id, idx) DO UPDATE SET testgrandparent_Id = EXCLUDED.testgrandparent_Id, idx = EXCLUDED.idx, Val = EXCLUDED.Val"
+	finalStr := "INSERT INTO test_grandparents_embeddeds (test_grandparents_Id, idx, Val) VALUES($1, $2, $3) ON CONFLICT(test_grandparents_Id, idx) DO UPDATE SET test_grandparents_Id = EXCLUDED.test_grandparents_Id, idx = EXCLUDED.idx, Val = EXCLUDED.Val"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -123,30 +123,30 @@ func insertIntoTestgrandparentEmbedded(ctx context.Context, tx pgx.Tx, obj *stor
 	var query string
 
 	for childIdx, child := range obj.GetEmbedded2() {
-		if err := insertIntoTestgrandparentEmbeddedEmbedded2(ctx, tx, child, testgrandparent_Id, idx, childIdx); err != nil {
+		if err := insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx, tx, child, test_grandparents_Id, idx, childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from testgrandparent_Embedded_Embedded2 where testgrandparent_Id = $1 AND testgrandparent_Embedded_idx = $2 AND idx >= $3"
-	_, err = tx.Exec(ctx, query, testgrandparent_Id, idx, len(obj.GetEmbedded2()))
+	query = "delete from test_grandparents_embeddeds_embedded2 where test_grandparents_Id = $1 AND test_grandparents_embeddeds_idx = $2 AND idx >= $3"
+	_, err = tx.Exec(ctx, query, test_grandparents_Id, idx, len(obj.GetEmbedded2()))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertIntoTestgrandparentEmbeddedEmbedded2(ctx context.Context, tx pgx.Tx, obj *storage.TestGrandparent_Embedded_Embedded2, testgrandparent_Id string, testgrandparent_Embedded_idx int, idx int) error {
+func insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, tx pgx.Tx, obj *storage.TestGrandparent_Embedded_Embedded2, test_grandparents_Id string, test_grandparents_embeddeds_idx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		testgrandparent_Id,
-		testgrandparent_Embedded_idx,
+		test_grandparents_Id,
+		test_grandparents_embeddeds_idx,
 		idx,
 		obj.GetVal(),
 	}
 
-	finalStr := "INSERT INTO testgrandparent_Embedded_Embedded2 (testgrandparent_Id, testgrandparent_Embedded_idx, idx, Val) VALUES($1, $2, $3, $4) ON CONFLICT(testgrandparent_Id, testgrandparent_Embedded_idx, idx) DO UPDATE SET testgrandparent_Id = EXCLUDED.testgrandparent_Id, testgrandparent_Embedded_idx = EXCLUDED.testgrandparent_Embedded_idx, idx = EXCLUDED.idx, Val = EXCLUDED.Val"
+	finalStr := "INSERT INTO test_grandparents_embeddeds_embedded2 (test_grandparents_Id, test_grandparents_embeddeds_idx, idx, Val) VALUES($1, $2, $3, $4) ON CONFLICT(test_grandparents_Id, test_grandparents_embeddeds_idx, idx) DO UPDATE SET test_grandparents_Id = EXCLUDED.test_grandparents_Id, test_grandparents_embeddeds_idx = EXCLUDED.test_grandparents_embeddeds_idx, idx = EXCLUDED.idx, Val = EXCLUDED.Val"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -155,7 +155,7 @@ func insertIntoTestgrandparentEmbeddedEmbedded2(ctx context.Context, tx pgx.Tx, 
 	return nil
 }
 
-func (s *storeImpl) copyFromTestgrandparent(ctx context.Context, tx pgx.Tx, objs ...*storage.TestGrandparent) error {
+func (s *storeImpl) copyFromTestGrandparents(ctx context.Context, tx pgx.Tx, objs ...*storage.TestGrandparent) error {
 
 	inputRows := [][]interface{}{}
 
@@ -206,7 +206,7 @@ func (s *storeImpl) copyFromTestgrandparent(ctx context.Context, tx pgx.Tx, objs
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"testgrandparent"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -220,7 +220,7 @@ func (s *storeImpl) copyFromTestgrandparent(ctx context.Context, tx pgx.Tx, objs
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromTestgrandparentEmbedded(ctx, tx, obj.GetId(), obj.GetEmbedded()...); err != nil {
+		if err = s.copyFromTestGrandparentsEmbeddeds(ctx, tx, obj.GetId(), obj.GetEmbedded()...); err != nil {
 			return err
 		}
 	}
@@ -228,7 +228,7 @@ func (s *storeImpl) copyFromTestgrandparent(ctx context.Context, tx pgx.Tx, objs
 	return err
 }
 
-func (s *storeImpl) copyFromTestgrandparentEmbedded(ctx context.Context, tx pgx.Tx, testgrandparent_Id string, objs ...*storage.TestGrandparent_Embedded) error {
+func (s *storeImpl) copyFromTestGrandparentsEmbeddeds(ctx context.Context, tx pgx.Tx, test_grandparents_Id string, objs ...*storage.TestGrandparent_Embedded) error {
 
 	inputRows := [][]interface{}{}
 
@@ -236,7 +236,7 @@ func (s *storeImpl) copyFromTestgrandparentEmbedded(ctx context.Context, tx pgx.
 
 	copyCols := []string{
 
-		"testgrandparent_id",
+		"test_grandparents_id",
 
 		"idx",
 
@@ -249,7 +249,7 @@ func (s *storeImpl) copyFromTestgrandparentEmbedded(ctx context.Context, tx pgx.
 
 		inputRows = append(inputRows, []interface{}{
 
-			testgrandparent_Id,
+			test_grandparents_Id,
 
 			idx,
 
@@ -261,7 +261,7 @@ func (s *storeImpl) copyFromTestgrandparentEmbedded(ctx context.Context, tx pgx.
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"testgrandparent_embedded"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents_embeddeds"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -275,7 +275,7 @@ func (s *storeImpl) copyFromTestgrandparentEmbedded(ctx context.Context, tx pgx.
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromTestgrandparentEmbeddedEmbedded2(ctx, tx, testgrandparent_Id, idx, obj.GetEmbedded2()...); err != nil {
+		if err = s.copyFromTestGrandparentsEmbeddedsEmbedded2(ctx, tx, test_grandparents_Id, idx, obj.GetEmbedded2()...); err != nil {
 			return err
 		}
 	}
@@ -283,7 +283,7 @@ func (s *storeImpl) copyFromTestgrandparentEmbedded(ctx context.Context, tx pgx.
 	return err
 }
 
-func (s *storeImpl) copyFromTestgrandparentEmbeddedEmbedded2(ctx context.Context, tx pgx.Tx, testgrandparent_Id string, testgrandparent_Embedded_idx int, objs ...*storage.TestGrandparent_Embedded_Embedded2) error {
+func (s *storeImpl) copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, tx pgx.Tx, test_grandparents_Id string, test_grandparents_embeddeds_idx int, objs ...*storage.TestGrandparent_Embedded_Embedded2) error {
 
 	inputRows := [][]interface{}{}
 
@@ -291,9 +291,9 @@ func (s *storeImpl) copyFromTestgrandparentEmbeddedEmbedded2(ctx context.Context
 
 	copyCols := []string{
 
-		"testgrandparent_id",
+		"test_grandparents_id",
 
-		"testgrandparent_embedded_idx",
+		"test_grandparents_embeddeds_idx",
 
 		"idx",
 
@@ -306,9 +306,9 @@ func (s *storeImpl) copyFromTestgrandparentEmbeddedEmbedded2(ctx context.Context
 
 		inputRows = append(inputRows, []interface{}{
 
-			testgrandparent_Id,
+			test_grandparents_Id,
 
-			testgrandparent_Embedded_idx,
+			test_grandparents_embeddeds_idx,
 
 			idx,
 
@@ -320,7 +320,7 @@ func (s *storeImpl) copyFromTestgrandparentEmbeddedEmbedded2(ctx context.Context
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"testgrandparent_embedded_embedded2"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_grandparents_embeddeds_embedded2"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -346,7 +346,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestGrandpare
 		return err
 	}
 
-	if err := s.copyFromTestgrandparent(ctx, tx, objs...); err != nil {
+	if err := s.copyFromTestGrandparents(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -371,7 +371,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestGrandparent
 			return err
 		}
 
-		if err := insertIntoTestgrandparent(ctx, tx, obj); err != nil {
+		if err := insertIntoTestGrandparents(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -575,25 +575,25 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestGrandpare
 
 //// Used for testing
 
-func dropTableTestgrandparent(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS testgrandparent CASCADE")
-	dropTableTestgrandparentEmbedded(ctx, db)
+func dropTableTestGrandparents(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_grandparents CASCADE")
+	dropTableTestGrandparentsEmbeddeds(ctx, db)
 
 }
 
-func dropTableTestgrandparentEmbedded(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS testgrandparent_Embedded CASCADE")
-	dropTableTestgrandparentEmbeddedEmbedded2(ctx, db)
+func dropTableTestGrandparentsEmbeddeds(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_grandparents_embeddeds CASCADE")
+	dropTableTestGrandparentsEmbeddedsEmbedded2(ctx, db)
 
 }
 
-func dropTableTestgrandparentEmbeddedEmbedded2(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS testgrandparent_Embedded_Embedded2 CASCADE")
+func dropTableTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_grandparents_embeddeds_embedded2 CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableTestgrandparent(ctx, db)
+	dropTableTestGrandparents(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

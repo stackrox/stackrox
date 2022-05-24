@@ -26,10 +26,10 @@ import (
 )
 
 const (
-	baseTable = "serviceaccounts"
+	baseTable = "service_accounts"
 
-	walkStmt    = "SELECT serialized FROM serviceaccounts"
-	getManyStmt = "SELECT serialized FROM serviceaccounts WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM service_accounts"
+	getManyStmt = "SELECT serialized FROM service_accounts WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -41,7 +41,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ServiceaccountsSchema
+	schema         = pkgSchema.ServiceAccountsSchema
 	targetResource = resources.ServiceAccount
 )
 
@@ -68,14 +68,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableServiceaccountsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableServiceAccountsStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoServiceaccounts(ctx context.Context, tx pgx.Tx, obj *storage.ServiceAccount) error {
+func insertIntoServiceAccounts(ctx context.Context, tx pgx.Tx, obj *storage.ServiceAccount) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -94,7 +94,7 @@ func insertIntoServiceaccounts(ctx context.Context, tx pgx.Tx, obj *storage.Serv
 		serialized,
 	}
 
-	finalStr := "INSERT INTO serviceaccounts (Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO service_accounts (Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func insertIntoServiceaccounts(ctx context.Context, tx pgx.Tx, obj *storage.Serv
 	return nil
 }
 
-func (s *storeImpl) copyFromServiceaccounts(ctx context.Context, tx pgx.Tx, objs ...*storage.ServiceAccount) error {
+func (s *storeImpl) copyFromServiceAccounts(ctx context.Context, tx pgx.Tx, objs ...*storage.ServiceAccount) error {
 
 	inputRows := [][]interface{}{}
 
@@ -174,7 +174,7 @@ func (s *storeImpl) copyFromServiceaccounts(ctx context.Context, tx pgx.Tx, objs
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"serviceaccounts"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"service_accounts"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -200,7 +200,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ServiceAccoun
 		return err
 	}
 
-	if err := s.copyFromServiceaccounts(ctx, tx, objs...); err != nil {
+	if err := s.copyFromServiceAccounts(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -225,7 +225,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ServiceAccount)
 			return err
 		}
 
-		if err := insertIntoServiceaccounts(ctx, tx, obj); err != nil {
+		if err := insertIntoServiceAccounts(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -513,13 +513,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ServiceAccoun
 
 //// Used for testing
 
-func dropTableServiceaccounts(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS serviceaccounts CASCADE")
+func dropTableServiceAccounts(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS service_accounts CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableServiceaccounts(ctx, db)
+	dropTableServiceAccounts(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

@@ -26,10 +26,10 @@ import (
 )
 
 const (
-	baseTable = "k8sroles"
+	baseTable = "k8s_roles"
 
-	walkStmt    = "SELECT serialized FROM k8sroles"
-	getManyStmt = "SELECT serialized FROM k8sroles WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM k8s_roles"
+	getManyStmt = "SELECT serialized FROM k8s_roles WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -41,7 +41,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.K8srolesSchema
+	schema         = pkgSchema.K8sRolesSchema
 	targetResource = resources.K8sRole
 )
 
@@ -68,14 +68,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableK8srolesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableK8sRolesStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoK8sroles(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole) error {
+func insertIntoK8sRoles(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -95,7 +95,7 @@ func insertIntoK8sroles(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole) er
 		serialized,
 	}
 
-	finalStr := "INSERT INTO k8sroles (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO k8s_roles (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func insertIntoK8sroles(ctx context.Context, tx pgx.Tx, obj *storage.K8SRole) er
 	return nil
 }
 
-func (s *storeImpl) copyFromK8sroles(ctx context.Context, tx pgx.Tx, objs ...*storage.K8SRole) error {
+func (s *storeImpl) copyFromK8sRoles(ctx context.Context, tx pgx.Tx, objs ...*storage.K8SRole) error {
 
 	inputRows := [][]interface{}{}
 
@@ -179,7 +179,7 @@ func (s *storeImpl) copyFromK8sroles(ctx context.Context, tx pgx.Tx, objs ...*st
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"k8sroles"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"k8s_roles"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -205,7 +205,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.K8SRole) erro
 		return err
 	}
 
-	if err := s.copyFromK8sroles(ctx, tx, objs...); err != nil {
+	if err := s.copyFromK8sRoles(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -230,7 +230,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.K8SRole) error 
 			return err
 		}
 
-		if err := insertIntoK8sroles(ctx, tx, obj); err != nil {
+		if err := insertIntoK8sRoles(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -518,13 +518,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.K8SRole) erro
 
 //// Used for testing
 
-func dropTableK8sroles(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS k8sroles CASCADE")
+func dropTableK8sRoles(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS k8s_roles CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableK8sroles(ctx, db)
+	dropTableK8sRoles(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

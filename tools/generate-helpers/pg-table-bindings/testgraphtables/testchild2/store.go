@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	baseTable = "testchild2"
+	baseTable = "test_child2"
 
-	walkStmt    = "SELECT serialized FROM testchild2"
-	getManyStmt = "SELECT serialized FROM testchild2 WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM test_child2"
+	getManyStmt = "SELECT serialized FROM test_child2 WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -36,7 +36,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.Testchild2Schema
+	schema = pkgSchema.TestChild2Schema
 )
 
 type Store interface {
@@ -62,16 +62,16 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestparent2Stmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestgrandparentStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestchild2Stmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestParent2Stmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestGrandparentsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestChild2Stmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoTestchild2(ctx context.Context, tx pgx.Tx, obj *storage.TestChild2) error {
+func insertIntoTestChild2(ctx context.Context, tx pgx.Tx, obj *storage.TestChild2) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -87,7 +87,7 @@ func insertIntoTestchild2(ctx context.Context, tx pgx.Tx, obj *storage.TestChild
 		serialized,
 	}
 
-	finalStr := "INSERT INTO testchild2 (Id, ParentId, GrandparentId, Val, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, GrandparentId = EXCLUDED.GrandparentId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_child2 (Id, ParentId, GrandparentId, Val, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, GrandparentId = EXCLUDED.GrandparentId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func insertIntoTestchild2(ctx context.Context, tx pgx.Tx, obj *storage.TestChild
 	return nil
 }
 
-func (s *storeImpl) copyFromTestchild2(ctx context.Context, tx pgx.Tx, objs ...*storage.TestChild2) error {
+func (s *storeImpl) copyFromTestChild2(ctx context.Context, tx pgx.Tx, objs ...*storage.TestChild2) error {
 
 	inputRows := [][]interface{}{}
 
@@ -155,7 +155,7 @@ func (s *storeImpl) copyFromTestchild2(ctx context.Context, tx pgx.Tx, objs ...*
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"testchild2"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_child2"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -181,7 +181,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestChild2) e
 		return err
 	}
 
-	if err := s.copyFromTestchild2(ctx, tx, objs...); err != nil {
+	if err := s.copyFromTestChild2(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -206,7 +206,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestChild2) err
 			return err
 		}
 
-		if err := insertIntoTestchild2(ctx, tx, obj); err != nil {
+		if err := insertIntoTestChild2(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -410,13 +410,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestChild2) e
 
 //// Used for testing
 
-func dropTableTestchild2(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS testchild2 CASCADE")
+func dropTableTestChild2(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_child2 CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableTestchild2(ctx, db)
+	dropTableTestChild2(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

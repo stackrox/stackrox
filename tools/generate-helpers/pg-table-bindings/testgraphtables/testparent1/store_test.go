@@ -18,18 +18,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type Testparent1StoreSuite struct {
+type TestParent1StoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestTestparent1Store(t *testing.T) {
-	suite.Run(t, new(Testparent1StoreSuite))
+func TestTestParent1Store(t *testing.T) {
+	suite.Run(t, new(TestParent1StoreSuite))
 }
 
-func (s *Testparent1StoreSuite) SetupTest() {
+func (s *TestParent1StoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -52,14 +52,14 @@ func (s *Testparent1StoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *Testparent1StoreSuite) TearDownTest() {
+func (s *TestParent1StoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *Testparent1StoreSuite) TestStore() {
+func (s *TestParent1StoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store

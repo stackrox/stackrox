@@ -45,7 +45,7 @@ var (
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
-               create table if not exists deployments_Containers (
+               create table if not exists deployments_containers (
                    deployments_Id varchar,
                    idx integer,
                    Image_Id varchar,
@@ -66,61 +66,61 @@ var (
                )
                `,
 				Indexes: []string{
-					"create index if not exists deploymentsContainers_idx on deployments_Containers using btree(idx)",
+					"create index if not exists deploymentsContainers_idx on deployments_containers using btree(idx)",
 				},
 				Children: []*postgres.CreateStmts{
 					&postgres.CreateStmts{
 						Table: `
-               create table if not exists deployments_Containers_Env (
+               create table if not exists deployments_containers_envs (
                    deployments_Id varchar,
-                   deployments_Containers_idx integer,
+                   deployments_containers_idx integer,
                    idx integer,
                    Key varchar,
                    Value varchar,
                    EnvVarSource integer,
-                   PRIMARY KEY(deployments_Id, deployments_Containers_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_Containers_idx) REFERENCES deployments_Containers(deployments_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(deployments_Id, deployments_containers_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
-							"create index if not exists deploymentsContainersEnv_idx on deployments_Containers_Env using btree(idx)",
+							"create index if not exists deploymentsContainersEnvs_idx on deployments_containers_envs using btree(idx)",
 						},
 						Children: []*postgres.CreateStmts{},
 					},
 					&postgres.CreateStmts{
 						Table: `
-               create table if not exists deployments_Containers_Volumes (
+               create table if not exists deployments_containers_volumes (
                    deployments_Id varchar,
-                   deployments_Containers_idx integer,
+                   deployments_containers_idx integer,
                    idx integer,
                    Name varchar,
                    Source varchar,
                    Destination varchar,
                    ReadOnly bool,
                    Type varchar,
-                   PRIMARY KEY(deployments_Id, deployments_Containers_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_Containers_idx) REFERENCES deployments_Containers(deployments_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(deployments_Id, deployments_containers_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
-							"create index if not exists deploymentsContainersVolumes_idx on deployments_Containers_Volumes using btree(idx)",
+							"create index if not exists deploymentsContainersVolumes_idx on deployments_containers_volumes using btree(idx)",
 						},
 						Children: []*postgres.CreateStmts{},
 					},
 					&postgres.CreateStmts{
 						Table: `
-               create table if not exists deployments_Containers_Secrets (
+               create table if not exists deployments_containers_secrets (
                    deployments_Id varchar,
-                   deployments_Containers_idx integer,
+                   deployments_containers_idx integer,
                    idx integer,
                    Name varchar,
                    Path varchar,
-                   PRIMARY KEY(deployments_Id, deployments_Containers_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_Containers_idx) REFERENCES deployments_Containers(deployments_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(deployments_Id, deployments_containers_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
-							"create index if not exists deploymentsContainersSecrets_idx on deployments_Containers_Secrets using btree(idx)",
+							"create index if not exists deploymentsContainersSecrets_idx on deployments_containers_secrets using btree(idx)",
 						},
 						Children: []*postgres.CreateStmts{},
 					},
@@ -128,7 +128,7 @@ var (
 			},
 			&postgres.CreateStmts{
 				Table: `
-               create table if not exists deployments_Ports (
+               create table if not exists deployments_ports (
                    deployments_Id varchar,
                    idx integer,
                    ContainerPort integer,
@@ -139,14 +139,14 @@ var (
                )
                `,
 				Indexes: []string{
-					"create index if not exists deploymentsPorts_idx on deployments_Ports using btree(idx)",
+					"create index if not exists deploymentsPorts_idx on deployments_ports using btree(idx)",
 				},
 				Children: []*postgres.CreateStmts{
 					&postgres.CreateStmts{
 						Table: `
-               create table if not exists deployments_Ports_ExposureInfos (
+               create table if not exists deployments_ports_exposure_infos (
                    deployments_Id varchar,
-                   deployments_Ports_idx integer,
+                   deployments_ports_idx integer,
                    idx integer,
                    Level integer,
                    ServiceName varchar,
@@ -154,12 +154,12 @@ var (
                    NodePort integer,
                    ExternalIps text[],
                    ExternalHostnames text[],
-                   PRIMARY KEY(deployments_Id, deployments_Ports_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_Ports_idx) REFERENCES deployments_Ports(deployments_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(deployments_Id, deployments_ports_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_ports_idx) REFERENCES deployments_ports(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
-							"create index if not exists deploymentsPortsExposureInfos_idx on deployments_Ports_ExposureInfos using btree(idx)",
+							"create index if not exists deploymentsPortsExposureInfos_idx on deployments_ports_exposure_infos using btree(idx)",
 						},
 						Children: []*postgres.CreateStmts{},
 					},

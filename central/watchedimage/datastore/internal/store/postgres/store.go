@@ -23,10 +23,10 @@ import (
 )
 
 const (
-	baseTable = "watchedimages"
+	baseTable = "watched_images"
 
-	walkStmt    = "SELECT serialized FROM watchedimages"
-	getManyStmt = "SELECT serialized FROM watchedimages WHERE Name = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM watched_images"
+	getManyStmt = "SELECT serialized FROM watched_images WHERE Name = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -38,7 +38,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.WatchedimagesSchema
+	schema         = pkgSchema.WatchedImagesSchema
 	targetResource = resources.WatchedImage
 )
 
@@ -65,14 +65,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableWatchedimagesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableWatchedImagesStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoWatchedimages(ctx context.Context, tx pgx.Tx, obj *storage.WatchedImage) error {
+func insertIntoWatchedImages(ctx context.Context, tx pgx.Tx, obj *storage.WatchedImage) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -85,7 +85,7 @@ func insertIntoWatchedimages(ctx context.Context, tx pgx.Tx, obj *storage.Watche
 		serialized,
 	}
 
-	finalStr := "INSERT INTO watchedimages (Name, serialized) VALUES($1, $2) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO watched_images (Name, serialized) VALUES($1, $2) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -94,7 +94,7 @@ func insertIntoWatchedimages(ctx context.Context, tx pgx.Tx, obj *storage.Watche
 	return nil
 }
 
-func (s *storeImpl) copyFromWatchedimages(ctx context.Context, tx pgx.Tx, objs ...*storage.WatchedImage) error {
+func (s *storeImpl) copyFromWatchedImages(ctx context.Context, tx pgx.Tx, objs ...*storage.WatchedImage) error {
 
 	inputRows := [][]interface{}{}
 
@@ -141,7 +141,7 @@ func (s *storeImpl) copyFromWatchedimages(ctx context.Context, tx pgx.Tx, objs .
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"watchedimages"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"watched_images"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -167,7 +167,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.WatchedImage)
 		return err
 	}
 
-	if err := s.copyFromWatchedimages(ctx, tx, objs...); err != nil {
+	if err := s.copyFromWatchedImages(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -192,7 +192,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.WatchedImage) e
 			return err
 		}
 
-		if err := insertIntoWatchedimages(ctx, tx, obj); err != nil {
+		if err := insertIntoWatchedImages(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -454,13 +454,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.WatchedImage)
 
 //// Used for testing
 
-func dropTableWatchedimages(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS watchedimages CASCADE")
+func dropTableWatchedImages(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS watched_images CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableWatchedimages(ctx, db)
+	dropTableWatchedImages(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

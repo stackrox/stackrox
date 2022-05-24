@@ -26,10 +26,10 @@ import (
 )
 
 const (
-	baseTable = "processbaselines"
+	baseTable = "process_baselines"
 
-	walkStmt    = "SELECT serialized FROM processbaselines"
-	getManyStmt = "SELECT serialized FROM processbaselines WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM process_baselines"
+	getManyStmt = "SELECT serialized FROM process_baselines WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -41,7 +41,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ProcessbaselinesSchema
+	schema         = pkgSchema.ProcessBaselinesSchema
 	targetResource = resources.ProcessWhitelist
 )
 
@@ -68,14 +68,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableProcessbaselinesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableProcessBaselinesStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoProcessbaselines(ctx context.Context, tx pgx.Tx, obj *storage.ProcessBaseline) error {
+func insertIntoProcessBaselines(ctx context.Context, tx pgx.Tx, obj *storage.ProcessBaseline) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -91,7 +91,7 @@ func insertIntoProcessbaselines(ctx context.Context, tx pgx.Tx, obj *storage.Pro
 		serialized,
 	}
 
-	finalStr := "INSERT INTO processbaselines (Id, Key_DeploymentId, Key_ClusterId, Key_Namespace, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO process_baselines (Id, Key_DeploymentId, Key_ClusterId, Key_Namespace, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func insertIntoProcessbaselines(ctx context.Context, tx pgx.Tx, obj *storage.Pro
 	return nil
 }
 
-func (s *storeImpl) copyFromProcessbaselines(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessBaseline) error {
+func (s *storeImpl) copyFromProcessBaselines(ctx context.Context, tx pgx.Tx, objs ...*storage.ProcessBaseline) error {
 
 	inputRows := [][]interface{}{}
 
@@ -159,7 +159,7 @@ func (s *storeImpl) copyFromProcessbaselines(ctx context.Context, tx pgx.Tx, obj
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"processbaselines"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"process_baselines"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -185,7 +185,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ProcessBaseli
 		return err
 	}
 
-	if err := s.copyFromProcessbaselines(ctx, tx, objs...); err != nil {
+	if err := s.copyFromProcessBaselines(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -210,7 +210,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ProcessBaseline
 			return err
 		}
 
-		if err := insertIntoProcessbaselines(ctx, tx, obj); err != nil {
+		if err := insertIntoProcessBaselines(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -498,13 +498,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ProcessBaseli
 
 //// Used for testing
 
-func dropTableProcessbaselines(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS processbaselines CASCADE")
+func dropTableProcessBaselines(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS process_baselines CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableProcessbaselines(ctx, db)
+	dropTableProcessBaselines(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

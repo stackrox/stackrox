@@ -18,18 +18,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type PolicyStoreSuite struct {
+type PoliciesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestPolicyStore(t *testing.T) {
-	suite.Run(t, new(PolicyStoreSuite))
+func TestPoliciesStore(t *testing.T) {
+	suite.Run(t, new(PoliciesStoreSuite))
 }
 
-func (s *PolicyStoreSuite) SetupTest() {
+func (s *PoliciesStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -52,14 +52,14 @@ func (s *PolicyStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *PolicyStoreSuite) TearDownTest() {
+func (s *PoliciesStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *PolicyStoreSuite) TestStore() {
+func (s *PoliciesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store

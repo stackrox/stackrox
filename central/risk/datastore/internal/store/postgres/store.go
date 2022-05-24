@@ -26,10 +26,10 @@ import (
 )
 
 const (
-	baseTable = "risk"
+	baseTable = "risks"
 
-	walkStmt    = "SELECT serialized FROM risk"
-	getManyStmt = "SELECT serialized FROM risk WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM risks"
+	getManyStmt = "SELECT serialized FROM risks WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -41,7 +41,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.RiskSchema
+	schema         = pkgSchema.RisksSchema
 	targetResource = resources.Risk
 )
 
@@ -68,14 +68,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableRiskStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableRisksStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
+func insertIntoRisks(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -92,7 +92,7 @@ func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO risk (Id, Subject_Namespace, Subject_ClusterId, Subject_Type, Score, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type, Score = EXCLUDED.Score, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO risks (Id, Subject_Namespace, Subject_ClusterId, Subject_Type, Score, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type, Score = EXCLUDED.Score, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func insertIntoRisk(ctx context.Context, tx pgx.Tx, obj *storage.Risk) error {
 	return nil
 }
 
-func (s *storeImpl) copyFromRisk(ctx context.Context, tx pgx.Tx, objs ...*storage.Risk) error {
+func (s *storeImpl) copyFromRisks(ctx context.Context, tx pgx.Tx, objs ...*storage.Risk) error {
 
 	inputRows := [][]interface{}{}
 
@@ -164,7 +164,7 @@ func (s *storeImpl) copyFromRisk(ctx context.Context, tx pgx.Tx, objs ...*storag
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"risk"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"risks"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -190,7 +190,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Risk) error {
 		return err
 	}
 
-	if err := s.copyFromRisk(ctx, tx, objs...); err != nil {
+	if err := s.copyFromRisks(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -215,7 +215,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.Risk) error {
 			return err
 		}
 
-		if err := insertIntoRisk(ctx, tx, obj); err != nil {
+		if err := insertIntoRisks(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -503,13 +503,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.Risk) error) 
 
 //// Used for testing
 
-func dropTableRisk(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS risk CASCADE")
+func dropTableRisks(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS risks CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableRisk(ctx, db)
+	dropTableRisks(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

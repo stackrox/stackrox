@@ -43,7 +43,7 @@ var (
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
-               create table if not exists nodes_Taints (
+               create table if not exists nodes_taints (
                    nodes_Id varchar,
                    idx integer,
                    Key varchar,
@@ -54,13 +54,13 @@ var (
                )
                `,
 				Indexes: []string{
-					"create index if not exists nodesTaints_idx on nodes_Taints using btree(idx)",
+					"create index if not exists nodesTaints_idx on nodes_taints using btree(idx)",
 				},
 				Children: []*postgres.CreateStmts{},
 			},
 			&postgres.CreateStmts{
 				Table: `
-               create table if not exists nodes_Components (
+               create table if not exists nodes_components (
                    nodes_Id varchar,
                    idx integer,
                    Name varchar,
@@ -70,14 +70,14 @@ var (
                )
                `,
 				Indexes: []string{
-					"create index if not exists nodesComponents_idx on nodes_Components using btree(idx)",
+					"create index if not exists nodesComponents_idx on nodes_components using btree(idx)",
 				},
 				Children: []*postgres.CreateStmts{
 					&postgres.CreateStmts{
 						Table: `
-               create table if not exists nodes_Components_Vulns (
+               create table if not exists nodes_components_vulns (
                    nodes_Id varchar,
-                   nodes_Components_idx integer,
+                   nodes_components_idx integer,
                    idx integer,
                    Cve varchar,
                    Cvss numeric,
@@ -85,12 +85,12 @@ var (
                    PublishedOn timestamp,
                    Suppressed bool,
                    State integer,
-                   PRIMARY KEY(nodes_Id, nodes_Components_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (nodes_Id, nodes_Components_idx) REFERENCES nodes_Components(nodes_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(nodes_Id, nodes_components_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (nodes_Id, nodes_components_idx) REFERENCES nodes_components(nodes_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
-							"create index if not exists nodesComponentsVulns_idx on nodes_Components_Vulns using btree(idx)",
+							"create index if not exists nodesComponentsVulns_idx on nodes_components_vulns using btree(idx)",
 						},
 						Children: []*postgres.CreateStmts{},
 					},

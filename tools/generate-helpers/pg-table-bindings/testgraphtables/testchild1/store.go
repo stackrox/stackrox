@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	baseTable = "testchild1"
+	baseTable = "test_child1"
 
-	walkStmt    = "SELECT serialized FROM testchild1"
-	getManyStmt = "SELECT serialized FROM testchild1 WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM test_child1"
+	getManyStmt = "SELECT serialized FROM test_child1 WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -36,7 +36,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.Testchild1Schema
+	schema = pkgSchema.TestChild1Schema
 )
 
 type Store interface {
@@ -62,14 +62,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestchild1Stmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestChild1Stmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoTestchild1(ctx context.Context, tx pgx.Tx, obj *storage.TestChild1) error {
+func insertIntoTestChild1(ctx context.Context, tx pgx.Tx, obj *storage.TestChild1) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -83,7 +83,7 @@ func insertIntoTestchild1(ctx context.Context, tx pgx.Tx, obj *storage.TestChild
 		serialized,
 	}
 
-	finalStr := "INSERT INTO testchild1 (Id, Val, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_child1 (Id, Val, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func insertIntoTestchild1(ctx context.Context, tx pgx.Tx, obj *storage.TestChild
 	return nil
 }
 
-func (s *storeImpl) copyFromTestchild1(ctx context.Context, tx pgx.Tx, objs ...*storage.TestChild1) error {
+func (s *storeImpl) copyFromTestChild1(ctx context.Context, tx pgx.Tx, objs ...*storage.TestChild1) error {
 
 	inputRows := [][]interface{}{}
 
@@ -143,7 +143,7 @@ func (s *storeImpl) copyFromTestchild1(ctx context.Context, tx pgx.Tx, objs ...*
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"testchild1"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_child1"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -169,7 +169,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestChild1) e
 		return err
 	}
 
-	if err := s.copyFromTestchild1(ctx, tx, objs...); err != nil {
+	if err := s.copyFromTestChild1(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -194,7 +194,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestChild1) err
 			return err
 		}
 
-		if err := insertIntoTestchild1(ctx, tx, obj); err != nil {
+		if err := insertIntoTestChild1(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -398,13 +398,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestChild1) e
 
 //// Used for testing
 
-func dropTableTestchild1(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS testchild1 CASCADE")
+func dropTableTestChild1(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_child1 CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableTestchild1(ctx, db)
+	dropTableTestChild1(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces
