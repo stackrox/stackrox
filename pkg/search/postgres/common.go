@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var (
@@ -51,23 +50,46 @@ type selectQuery struct {
 	Fields []pgsearch.SelectQueryField
 }
 
+type innerJoin struct {
+	leftTable       string
+	rightTable      string
+	columnNamePairs []walker.ColumnNamePair
+}
+
 type query struct {
 	Select     selectQuery
 	From       string
 	Where      string
 	Pagination string
+	InnerJoins []innerJoin
 	Data       []interface{}
 }
 
 func (q *query) String() string {
-	query := q.Select.Query + " from " + q.From
+	var querySB strings.Builder
+	querySB.WriteString(q.Select.Query)
+	querySB.WriteString(" from ")
+	querySB.WriteString(q.From)
+	for _, innerJoin := range q.InnerJoins {
+		querySB.WriteString(" inner join ")
+		querySB.WriteString(innerJoin.rightTable)
+		querySB.WriteString(" on")
+		for i, columnNamePair := range innerJoin.columnNamePairs {
+			if i > 0 {
+				querySB.WriteString(" and")
+			}
+			querySB.WriteString(fmt.Sprintf(" %s.%s = %s.%s", innerJoin.leftTable, columnNamePair.ColumnNameInThisSchema, innerJoin.rightTable, columnNamePair.ColumnNameInOtherSchema))
+		}
+	}
 	if q.Where != "" {
-		query += " where " + q.Where
+		querySB.WriteString(" where ")
+		querySB.WriteString(q.Where)
 	}
 	if q.Pagination != "" {
-		query += " " + q.Pagination
+		querySB.WriteString(" ")
+		querySB.WriteString(q.Pagination)
 	}
-	return query
+	return querySB.String()
 }
 
 func qualifyColumn(table, column string) string {
@@ -123,35 +145,32 @@ func generateSelectFields(entry *pgsearch.QueryEntry, primaryKeys []walker.Field
 		sel.Query = "select serialized"
 		return sel
 	}
-	var pathsInSelectClause []string
+	var primaryKeyPaths []string
 	// Always select the primary keys first.
 	for _, pk := range primaryKeys {
-		pathsInSelectClause = append(pathsInSelectClause, qualifyColumn(pk.Schema.Table, pk.ColumnName))
+		primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName))
 	}
 
+	var remainingPaths []string
 	if entry != nil {
 		for _, selectedField := range entry.SelectedFields {
-			pathsInSelectClause = append(pathsInSelectClause, selectedField.SelectPath)
+			remainingPaths = append(remainingPaths, selectedField.SelectPath)
 		}
 		sel.Fields = entry.SelectedFields
 	}
 
-	sel.Query = fmt.Sprintf("select %s", strings.Join(pathsInSelectClause, ","))
+	var querySB strings.Builder
+	querySB.WriteString(fmt.Sprintf("select distinct(%s)", strings.Join(primaryKeyPaths, ",")))
+	for _, path := range remainingPaths {
+		querySB.WriteString(fmt.Sprintf(", %s", path))
+	}
+	sel.Query = querySB.String()
 	return sel
 }
 
 func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, selectType QueryType) (*query, error) {
 	standardizeFieldNamesInQuery(q)
-	// Field can belong to multiple tables. Therefore, find all the tables reachable from starting table, that contain
-	// query fields.
-	// TODO(viswa): both getTableFieldsForQuery and getJoins do the same BFS, see if there's a way to simplify and do
-	// it in one go.
-	dbFields := getTableFieldsForQuery(schema, q)
-	tables := make([]*walker.Schema, 0, len(dbFields))
-	for _, f := range dbFields {
-		tables = append(tables, f.Schema)
-	}
-	froms, _ := getJoins(schema, tables...)
+	innerJoins, dbFields := getJoinsAndFields(schema, q)
 
 	queryEntry, err := compileQueryToPostgres(schema, q, dbFields)
 	if err != nil {
@@ -165,7 +184,6 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, selectT
 		return nil, nil
 	}
 
-	fromClause := stringutils.JoinNonEmpty(", ", froms...)
 	selQuery := generateSelectFields(queryEntry, schema.PrimaryKeys(), selectType)
 	pagination, err := getPaginationQuery(q.GetPagination(), schema, dbFields)
 	if err != nil {
@@ -174,7 +192,8 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, selectT
 
 	query := &query{
 		Select:     selQuery,
-		From:       fromClause,
+		InnerJoins: innerJoins,
+		From:       schema.Table,
 		Pagination: pagination,
 	}
 	if queryEntry != nil {
@@ -224,45 +243,6 @@ func entriesFromQueries(
 		entries = append(entries, entry)
 	}
 	return entries, nil
-}
-
-func collectFields(q *v1.Query) set.StringSet {
-	var queries []*v1.Query
-	collectedFields := set.NewStringSet()
-	switch sub := q.GetQuery().(type) {
-	case *v1.Query_BaseQuery:
-		switch subBQ := q.GetBaseQuery().Query.(type) {
-		case *v1.BaseQuery_DocIdQuery, *v1.BaseQuery_MatchNoneQuery:
-			// nothing to do
-		case *v1.BaseQuery_MatchFieldQuery:
-			collectedFields.Add(subBQ.MatchFieldQuery.GetField())
-		case *v1.BaseQuery_MatchLinkedFieldsQuery:
-			for _, q := range subBQ.MatchLinkedFieldsQuery.Query {
-				collectedFields.Add(q.GetField())
-			}
-		default:
-			panic("unsupported")
-		}
-	case *v1.Query_Conjunction:
-		queries = append(queries, sub.Conjunction.Queries...)
-	case *v1.Query_Disjunction:
-		queries = append(queries, sub.Disjunction.Queries...)
-	case *v1.Query_BooleanQuery:
-		queries = append(queries, sub.BooleanQuery.Must.Queries...)
-		queries = append(queries, sub.BooleanQuery.MustNot.Queries...)
-	}
-
-	for _, query := range queries {
-		collectedFields.AddAll(collectFields(query).AsSlice()...)
-	}
-	for _, sortOption := range q.GetPagination().GetSortOptions() {
-		collectedFields.Add(sortOption.GetField())
-	}
-	return collectedFields
-}
-
-func getTableFieldsForQuery(schema *walker.Schema, q *v1.Query) map[string]*walker.Field {
-	return getDBFieldsForSearchFields(schema, collectFields(q))
 }
 
 func getDBFieldsForSearchFields(schema *walker.Schema, searchFields set.StringSet) map[string]*walker.Field {
@@ -454,31 +434,38 @@ func RunSearchRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.P
 	defer rows.Close()
 	log.Debugf("SEARCH: ran query %s; data %+v", queryStr, query.Data)
 
-	numPrimaryKeys := len(schema.PrimaryKeys())
-	highlightedResults := make([]interface{}, len(query.Select.Fields)+numPrimaryKeys)
+	highlightedResults := make([]interface{}, len(query.Select.Fields)+1)
 
 	// Assumes that ids are strings.
-	for i := 0; i < numPrimaryKeys; i++ {
-		highlightedResults[i] = pointers.String("")
+	numPrimaryKeys := len(schema.PrimaryKeys())
+	if numPrimaryKeys > 1 {
+		pkResults := make([]interface{}, numPrimaryKeys)
+		highlightedResults[0] = &pkResults
+	} else {
+		highlightedResults[0] = pointers.String("")
 	}
 	for i, field := range query.Select.Fields {
-		highlightedResults[i+numPrimaryKeys] = mustAllocForDataType(field.FieldType)
+		highlightedResults[i+1] = mustAllocForDataType(field.FieldType)
 	}
 	for rows.Next() {
 		if err := rows.Scan(highlightedResults...); err != nil {
 			return nil, err
 		}
-		idParts := make([]string, 0, numPrimaryKeys)
-		for i := 0; i < numPrimaryKeys; i++ {
-			idParts = append(idParts, valueFromStringPtrInterface(highlightedResults[i]))
+		var id string
+		if numPrimaryKeys > 1 {
+			idParts := make([]string, 0, numPrimaryKeys)
+			for _, res := range *highlightedResults[0].(*[]interface{}) {
+				idParts = append(idParts, res.(string))
+			}
+			id = strings.Join(idParts, IDSeparator) // TODO: figure out what separator to use
+		} else {
+			id = valueFromStringPtrInterface(highlightedResults[0])
 		}
-		result := searchPkg.Result{
-			ID: strings.Join(idParts, IDSeparator), // TODO: figure out what separator to use
-		}
+		result := searchPkg.Result{ID: id}
 		if len(query.Select.Fields) > 0 {
 			result.Matches = make(map[string][]string)
 			for i, field := range query.Select.Fields {
-				returnedValue := highlightedResults[i+numPrimaryKeys]
+				returnedValue := highlightedResults[i+1]
 				if field.PostTransform != nil {
 					returnedValue = field.PostTransform(returnedValue)
 				}
