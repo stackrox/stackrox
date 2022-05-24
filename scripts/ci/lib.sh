@@ -604,11 +604,15 @@ gate_pr_job() {
     local job_config="$1"
     local pr_details="$2"
 
-    local run_with_labels
+    local run_with_labels=()
     local skip_with_label
     local run_with_changed_path
     local changed_path_to_ignore
-    mapfile -t run_with_labels < <(get_var_from_job_config run_with_labels "$job_config")
+    local run_with_labels_from_json
+    run_with_labels_from_json="$(get_var_from_job_config run_with_labels "$job_config")"
+    if [[ -n "${run_with_labels_from_json}" ]]; then
+        mapfile -t run_with_labels <<<"${run_with_labels_from_json}"
+    fi
     skip_with_label="$(get_var_from_job_config skip_with_label "$job_config")"
     run_with_changed_path="$(get_var_from_job_config run_with_changed_path "$job_config")"
     changed_path_to_ignore="$(get_var_from_job_config changed_path_to_ignore "$job_config")"
