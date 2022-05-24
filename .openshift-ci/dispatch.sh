@@ -34,6 +34,21 @@ case "$ci_job" in
     style-checks)
         make style
         ;;
+    go-unit-tests-release)
+        GOTAGS=release "$ROOT/scripts/ci/jobs/go-unit-tests.sh"
+        ;;
+    go-unit-tests)
+        GOTAGS='' "$ROOT/scripts/ci/jobs/go-unit-tests.sh"
+        ;;
+    integration-unit-tests)
+        "$ROOT/scripts/ci/jobs/integration-unit-tests.sh"
+        ;;
+    shell-unit-tests)
+        "$ROOT/scripts/ci/jobs/shell-unit-tests.sh"
+        ;;
+    ui-unit-tests)
+        "$ROOT/scripts/ci/jobs/ui-unit-tests.sh"
+        ;;
     push-images)
         "$ROOT/scripts/ci/jobs/push-images.sh"
         ;;
