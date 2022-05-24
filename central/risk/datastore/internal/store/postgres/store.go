@@ -28,8 +28,7 @@ import (
 const (
 	baseTable = "risks"
 
-	walkStmt    = "SELECT serialized FROM risks"
-	getManyStmt = "SELECT serialized FROM risks WHERE Id = ANY($1::text[])"
+	walkStmt = "SELECT serialized FROM risks"
 
 	batchAfter = 100
 
@@ -410,15 +409,32 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Risk, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Risk")
 
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "Risk")
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+
+	var sacQueryFilter *v1.Query
+
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+		Resource: targetResource,
+		Access:   storage.Access_READ_ACCESS,
+	})
 	if err != nil {
 		return nil, nil, err
 	}
-	defer release()
-
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		return nil, nil, err
+	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -427,13 +443,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Risk,
 		}
 		return nil, nil, err
 	}
-	defer rows.Close()
 	resultsByID := make(map[string]*storage.Risk)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
+	for _, data := range rows {
 		msg := &storage.Risk{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err

@@ -545,6 +545,34 @@ func RunGetQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Quer
 	return data, err
 }
 
+// RunGetManyQueryForSchema executes a request for just the search against the database
+func RunGetManyQueryForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) ([][]byte, error) {
+	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
+	if err != nil {
+		return nil, err
+	}
+	if query == nil {
+		return nil, errox.InvalidArgs.New("empty query")
+	}
+
+	queryStr := query.String()
+	rows, err := db.Query(ctx, replaceVars(queryStr), query.Data...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results [][]byte
+	for rows.Next() {
+		var data []byte
+		if err := rows.Scan(&data); err != nil {
+			return nil, err
+		}
+		results = append(results, data)
+	}
+	return results, nil
+}
+
 // RunDeleteRequestForSchema executes a request for just the delete against the database
 func RunDeleteRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.Pool) error {
 	query, err := standardizeQueryAndPopulatePath(q, schema, DELETE)

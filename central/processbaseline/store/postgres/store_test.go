@@ -332,6 +332,45 @@ func (s *ProcessBaselinesStoreSuite) TestSACDeleteMany() {
 	}
 }
 
+func (s *ProcessBaselinesStoreSuite) TestSACGetMany() {
+	objA := &storage.ProcessBaseline{}
+	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	objB := &storage.ProcessBaseline{}
+	s.NoError(testutils.FullInit(objB, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+
+	withAllAccessCtx := sac.WithAllAccess(context.Background())
+	s.store.Upsert(withAllAccessCtx, objA)
+	s.store.Upsert(withAllAccessCtx, objB)
+
+	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
+	for name, expected := range map[string]struct {
+		elems          []*storage.ProcessBaseline
+		missingIndices []int
+	}{
+		withAllAccess:           {elems: []*storage.ProcessBaseline{objA, objB}, missingIndices: []int{}},
+		withNoAccess:            {elems: []*storage.ProcessBaseline{}, missingIndices: []int{0, 1}},
+		withNoAccessToCluster:   {elems: []*storage.ProcessBaseline{}, missingIndices: []int{0, 1}},
+		withAccessToDifferentNs: {elems: []*storage.ProcessBaseline{}, missingIndices: []int{0, 1}},
+		withAccess:              {elems: []*storage.ProcessBaseline{objA}, missingIndices: []int{1}},
+		withAccessToCluster:     {elems: []*storage.ProcessBaseline{objA}, missingIndices: []int{1}},
+	} {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			actual, missingIndices, err := s.store.GetMany(ctxs[name], []string{objA.GetId(), objB.GetId()})
+			assert.NoError(t, err)
+			assert.Equal(t, expected.elems, actual)
+			assert.Equal(t, expected.missingIndices, missingIndices)
+		})
+	}
+
+	s.T().Run("with no ids", func(t *testing.T) {
+		actual, missingIndices, err := s.store.GetMany(withAllAccessCtx, []string{})
+		assert.Nil(t, err)
+		assert.Nil(t, actual)
+		assert.Nil(t, missingIndices)
+	})
+}
+
 const (
 	withAllAccess           = "AllAccess"
 	withNoAccess            = "NoAccess"
