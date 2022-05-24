@@ -32,7 +32,7 @@ function SimulatorButton({
 
     function toggleSimulation() {
         // @TODO: This isn't very nice. We'll have  to revisit this in the future. But adding this fix to address a customer issue (https://stack-rox.atlassian.net/browse/ROX-3118)
-        history.push('/main/network');
+        history.push(`/main/network${history.location.search as string}`);
         if (creatingOrSimulating) {
             closeSidePanel();
         } else {
