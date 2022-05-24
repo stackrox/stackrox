@@ -44,7 +44,7 @@ teardown() {
   assert_success
   has_default_flavor_warning
   assert_output --partial "Written Helm chart central-services to directory"
-  assert_helm_template_central_registry "$out_dir" 'docker.io' "$any_version" 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'quay.io' "$any_version" 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development helm output central-services --rhacs should use redhat.io registry and display deprecation warning" {
@@ -79,7 +79,7 @@ teardown() {
   run roxctl-development helm output central-services --image-defaults=development_build --output-dir "$out_dir"
   assert_success
   assert_output --partial "Written Helm chart central-services to directory"
-  assert_helm_template_central_registry "$out_dir" 'docker.io' "$any_version" 'main' 'scanner' 'scanner-db'
+  assert_helm_template_central_registry "$out_dir" 'quay.io' "$any_version" 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-development helm output central-services --rhacs --image-defaults=development_build should return error about --rhacs colliding with --image-defaults" {

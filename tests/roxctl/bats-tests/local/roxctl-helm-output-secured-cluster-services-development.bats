@@ -27,7 +27,7 @@ teardown() {
   assert_output --partial "Written Helm chart secured-cluster-services to directory"
 
   helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
-  assert_components_registry "$out_dir/rendered" "docker.io" "$any_version" 'collector' 'admission-controller' 'sensor'
+  assert_components_registry "$out_dir/rendered" "quay.io" "$any_version" 'collector' 'admission-controller' 'sensor'
 }
 
 @test "roxctl-development helm output secured-cluster-services --image-defaults=development_build should use docker.io registry" {
@@ -36,7 +36,7 @@ teardown() {
   assert_output --partial "Written Helm chart secured-cluster-services to directory"
 
   helm_template_secured_cluster "$out_dir" "$out_dir/rendered" "$CLUSTER_NAME"
-  assert_components_registry "$out_dir/rendered" "docker.io" "$any_version" 'collector' 'admission-controller' 'sensor'
+  assert_components_registry "$out_dir/rendered" "quay.io" "$any_version" 'collector' 'admission-controller' 'sensor'
 }
 
 @test "roxctl-development helm output secured-cluster-services --image-defaults=stackrox.io should use stackrox.io registry (default collector)" {
