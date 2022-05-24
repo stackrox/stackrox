@@ -33,8 +33,10 @@ func (d *datastoreImpl) GetBaselineResults(ctx context.Context, deploymentID str
 		return nil, err
 	}
 
-	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(pWResults).Allowed(ctx); err != nil || !ok {
+	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(pWResults).Allowed(ctx); err != nil {
 		return nil, err
+	} else if !ok {
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	return pWResults, nil
@@ -46,8 +48,10 @@ func (d *datastoreImpl) DeleteBaselineResults(ctx context.Context, deploymentID 
 		return err
 	}
 
-	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(pWResults).Allowed(ctx); err != nil || !ok {
+	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(pWResults).Allowed(ctx); err != nil {
 		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
 
 	return d.storage.Delete(ctx, deploymentID)
