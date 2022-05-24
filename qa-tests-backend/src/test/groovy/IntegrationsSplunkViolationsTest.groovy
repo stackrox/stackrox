@@ -1,21 +1,27 @@
 import static util.SplunkUtil.SPLUNK_ADMIN_PASSWORD
 import static util.SplunkUtil.postToSplunk
 import static util.SplunkUtil.tearDownSplunk
-import com.jayway.restassured.path.json.JsonPath
-import com.jayway.restassured.response.Response
-import groups.Integration
-import io.stackrox.proto.api.v1.AlertServiceOuterClass
+
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
-import org.junit.Rule
-import org.junit.experimental.categories.Category
-import org.junit.rules.Timeout
+
+import com.jayway.restassured.path.json.JsonPath
+import com.jayway.restassured.response.Response
+
+import io.stackrox.proto.api.v1.AlertServiceOuterClass
+
+import groups.Integration
 import services.AlertService
 import services.ApiTokenService
 import services.NetworkBaselineService
-import spock.lang.Unroll
+import util.Env
 import util.SplunkUtil
 import util.Timer
+
+import org.junit.Rule
+import org.junit.experimental.categories.Category
+import org.junit.rules.Timeout
+import spock.lang.IgnoreIf
 
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Rule
@@ -77,8 +83,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                 ["name": SPLUNK_INPUT_NAME, "interval": "1", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
     }
 
-    @Unroll
     @Category(Integration)
+    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
