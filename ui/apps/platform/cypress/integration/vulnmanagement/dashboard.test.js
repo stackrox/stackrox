@@ -107,8 +107,6 @@ describe('Vuln Management Dashboard Page', () => {
         cy.location('pathname').should('eq', url.list.deployments);
     });
 
-    // @TODO: add check that changing entity type re-displays the loader
-    //   not reliable to test without a good way to mock GraphQL responses
     it('"Top Riskiest <entities>" widget should start with a loading indicator', () => {
         cy.visit(url.dashboard); // do not call visit helper because it waits on the requests
         cy.get(selectors.getWidget('Top risky deployments by CVE count & CVSS score'))
