@@ -42,7 +42,7 @@ const (
 	NetworkBaselinesTableName = "network_baselines"
 )
 
-// NetworkBaseline holds the Gorm model for Postgres table `network_baselines`.
+// NetworkBaselines holds the Gorm model for Postgres table `network_baselines`.
 type NetworkBaselines struct {
 	DeploymentId string `gorm:"column:deploymentid;type:varchar;primaryKey"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`

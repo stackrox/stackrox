@@ -42,7 +42,7 @@ const (
 	ApiTokensTableName = "api_tokens"
 )
 
-// TokenMetadata holds the Gorm model for Postgres table `api_tokens`.
+// ApiTokens holds the Gorm model for Postgres table `api_tokens`.
 type ApiTokens struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`

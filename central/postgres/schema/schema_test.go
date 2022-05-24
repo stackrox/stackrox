@@ -315,7 +315,8 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 			}
 			// Check if the table name is reversible.
 			// Gorm may have wrong behavior if the table name is not reversible.
-			s.Require().Equal(testCase.name, pgutils.NamingStrategy.TableName(pgutils.NamingStrategy.SchemaName(testCase.name)))
+			schemaName := pgutils.NamingStrategy.SchemaName(testCase.name)
+			s.Require().Equal(testCase.name, pgutils.NamingStrategy.TableName(schemaName))
 		})
 	}
 	s.Require().Len(allTestCases, 0)
@@ -349,7 +350,7 @@ func (s *SchemaTestSuite) getGormTableSchemas(schema *walker.Schema, createStmt 
 }
 
 func (s *SchemaTestSuite) dumpSchema(table string) string {
-	// Could use pg_commands but this will exist only for a while
+	// Dump Postgres schema
 	cmd := exec.Command(`pg_dump`, `--schema-only`, `--db`, `postgres`, `-t`, table)
 	out, err := cmd.Output()
 	s.Require().NoError(err)

@@ -49,7 +49,7 @@ const (
 	RisksTableName = "risks"
 )
 
-// Risk holds the Gorm model for Postgres table `risks`.
+// Risks holds the Gorm model for Postgres table `risks`.
 type Risks struct {
 	Id               string                  `gorm:"column:id;type:varchar;primaryKey"`
 	SubjectNamespace string                  `gorm:"column:subject_namespace;type:varchar"`

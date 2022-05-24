@@ -84,7 +84,7 @@ const (
 	TestMultiKeyStructsNestedsTableName = "test_multi_key_structs_nesteds"
 )
 
-// TestMultiKeyStruct holds the Gorm model for Postgres table `test_multi_key_structs`.
+// TestMultiKeyStructs holds the Gorm model for Postgres table `test_multi_key_structs`.
 type TestMultiKeyStructs struct {
 	Key1              string                          `gorm:"column:key1;type:varchar;primaryKey"`
 	Key2              string                          `gorm:"column:key2;type:varchar;primaryKey"`
@@ -103,11 +103,11 @@ type TestMultiKeyStructs struct {
 	Serialized        []byte                          `gorm:"column:serialized;type:bytea"`
 }
 
-// TestMultiKeyStruct_Nested holds the Gorm model for Postgres table `test_multi_key_structs_nesteds`.
+// TestMultiKeyStructsNesteds holds the Gorm model for Postgres table `test_multi_key_structs_nesteds`.
 type TestMultiKeyStructsNesteds struct {
 	TestMultiKeyStructsKey1 string              `gorm:"column:test_multi_key_structs_key1;type:varchar;primaryKey"`
 	TestMultiKeyStructsKey2 string              `gorm:"column:test_multi_key_structs_key2;type:varchar;primaryKey"`
-	Idx                     int                 `gorm:"column:idx;type:integer;primaryKey;index:testmultikeystructsnesteds_idx,type:btree"`
+	Idx                     int                 `gorm:"column:idx;type:integer;primaryKey;index:test_multi_key_structs_nesteds_idx,type:btree"`
 	Nested                  string              `gorm:"column:nested;type:varchar"`
 	IsNested                bool                `gorm:"column:isnested;type:bool"`
 	Int64                   int64               `gorm:"column:int64;type:integer"`

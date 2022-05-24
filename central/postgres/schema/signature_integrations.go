@@ -43,7 +43,7 @@ const (
 	SignatureIntegrationsTableName = "signature_integrations"
 )
 
-// SignatureIntegration holds the Gorm model for Postgres table `signature_integrations`.
+// SignatureIntegrations holds the Gorm model for Postgres table `signature_integrations`.
 type SignatureIntegrations struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`

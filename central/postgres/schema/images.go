@@ -85,7 +85,7 @@ const (
 	ImagesLayersTableName = "images_layers"
 )
 
-// Image holds the Gorm model for Postgres table `images`.
+// Images holds the Gorm model for Postgres table `images`.
 type Images struct {
 	Id                   string            `gorm:"column:id;type:varchar;primaryKey"`
 	NameRegistry         string            `gorm:"column:name_registry;type:varchar"`
@@ -110,10 +110,10 @@ type Images struct {
 	Serialized           []byte            `gorm:"column:serialized;type:bytea"`
 }
 
-// ImageLayer holds the Gorm model for Postgres table `images_layers`.
+// ImagesLayers holds the Gorm model for Postgres table `images_layers`.
 type ImagesLayers struct {
 	ImagesId    string `gorm:"column:images_id;type:varchar;primaryKey"`
-	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:imageslayers_idx,type:btree"`
+	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:images_layers_idx,type:btree"`
 	Instruction string `gorm:"column:instruction;type:varchar"`
 	Value       string `gorm:"column:value;type:varchar"`
 	ImagesRef   Images `gorm:"foreignKey:images_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`

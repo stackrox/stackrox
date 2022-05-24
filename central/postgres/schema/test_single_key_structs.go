@@ -59,9 +59,9 @@ const (
 	TestSingleKeyStructsTableName = "test_single_key_structs"
 )
 
-// TestSingleKeyStruct holds the Gorm model for Postgres table `test_single_key_structs`.
+// TestSingleKeyStructs holds the Gorm model for Postgres table `test_single_key_structs`.
 type TestSingleKeyStructs struct {
-	Key         string                           `gorm:"column:key;type:varchar;primaryKey;index:testsinglekeystructs_key,type:hash"`
+	Key         string                           `gorm:"column:key;type:varchar;primaryKey;index:test_single_key_structs_key,type:hash"`
 	Name        string                           `gorm:"column:name;type:varchar;unique"`
 	StringSlice *pq.StringArray                  `gorm:"column:stringslice;type:text[]"`
 	Bool        bool                             `gorm:"column:bool;type:bool"`

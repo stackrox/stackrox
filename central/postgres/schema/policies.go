@@ -58,7 +58,7 @@ const (
 	PoliciesTableName = "policies"
 )
 
-// Policy holds the Gorm model for Postgres table `policies`.
+// Policies holds the Gorm model for Postgres table `policies`.
 type Policies struct {
 	Id                 string           `gorm:"column:id;type:varchar;primaryKey"`
 	Name               string           `gorm:"column:name;type:varchar;unique"`

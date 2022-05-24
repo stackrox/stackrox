@@ -42,7 +42,7 @@ const (
 	WatchedImagesTableName = "watched_images"
 )
 
-// WatchedImage holds the Gorm model for Postgres table `watched_images`.
+// WatchedImages holds the Gorm model for Postgres table `watched_images`.
 type WatchedImages struct {
 	Name       string `gorm:"column:name;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`

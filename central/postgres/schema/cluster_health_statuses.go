@@ -56,7 +56,7 @@ const (
 	ClusterHealthStatusesTableName = "cluster_health_statuses"
 )
 
-// ClusterHealthStatus holds the Gorm model for Postgres table `cluster_health_statuses`.
+// ClusterHealthStatuses holds the Gorm model for Postgres table `cluster_health_statuses`.
 type ClusterHealthStatuses struct {
 	Id                           string                                        `gorm:"column:id;type:varchar;primaryKey"`
 	SensorHealthStatus           storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:sensorhealthstatus;type:integer"`

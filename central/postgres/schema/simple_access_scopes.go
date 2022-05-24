@@ -43,7 +43,7 @@ const (
 	SimpleAccessScopesTableName = "simple_access_scopes"
 )
 
-// SimpleAccessScope holds the Gorm model for Postgres table `simple_access_scopes`.
+// SimpleAccessScopes holds the Gorm model for Postgres table `simple_access_scopes`.
 type SimpleAccessScopes struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`

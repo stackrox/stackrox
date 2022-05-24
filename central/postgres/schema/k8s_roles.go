@@ -52,7 +52,7 @@ const (
 	K8sRolesTableName = "k8s_roles"
 )
 
-// K8SRole holds the Gorm model for Postgres table `k8s_roles`.
+// K8sRoles holds the Gorm model for Postgres table `k8s_roles`.
 type K8sRoles struct {
 	Id          string            `gorm:"column:id;type:varchar;primaryKey"`
 	Name        string            `gorm:"column:name;type:varchar"`

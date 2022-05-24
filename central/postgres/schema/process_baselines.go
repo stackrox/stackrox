@@ -48,7 +48,7 @@ const (
 	ProcessBaselinesTableName = "process_baselines"
 )
 
-// ProcessBaseline holds the Gorm model for Postgres table `process_baselines`.
+// ProcessBaselines holds the Gorm model for Postgres table `process_baselines`.
 type ProcessBaselines struct {
 	Id              string `gorm:"column:id;type:varchar;primaryKey"`
 	KeyDeploymentId string `gorm:"column:key_deploymentid;type:varchar"`

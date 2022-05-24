@@ -43,7 +43,7 @@ const (
 	PermissionSetsTableName = "permission_sets"
 )
 
-// PermissionSet holds the Gorm model for Postgres table `permission_sets`.
+// PermissionSets holds the Gorm model for Postgres table `permission_sets`.
 type PermissionSets struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`

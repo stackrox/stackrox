@@ -43,7 +43,7 @@ const (
 	NotifiersTableName = "notifiers"
 )
 
-// Notifier holds the Gorm model for Postgres table `notifiers`.
+// Notifiers holds the Gorm model for Postgres table `notifiers`.
 type Notifiers struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`

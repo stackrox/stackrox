@@ -54,7 +54,7 @@ const (
 	NodeCvesTableName = "node_cves"
 )
 
-// CVE holds the Gorm model for Postgres table `node_cves`.
+// NodeCves holds the Gorm model for Postgres table `node_cves`.
 type NodeCves struct {
 	Id             string                        `gorm:"column:id;type:varchar;primaryKey"`
 	Cve            string                        `gorm:"column:cve;type:varchar"`

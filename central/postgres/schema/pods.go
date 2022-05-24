@@ -75,7 +75,7 @@ const (
 	PodsLiveInstancesTableName = "pods_live_instances"
 )
 
-// Pod holds the Gorm model for Postgres table `pods`.
+// Pods holds the Gorm model for Postgres table `pods`.
 type Pods struct {
 	Id           string `gorm:"column:id;type:varchar;primaryKey"`
 	Name         string `gorm:"column:name;type:varchar"`
@@ -85,10 +85,10 @@ type Pods struct {
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }
 
-// ContainerInstance holds the Gorm model for Postgres table `pods_live_instances`.
+// PodsLiveInstances holds the Gorm model for Postgres table `pods_live_instances`.
 type PodsLiveInstances struct {
 	PodsId      string `gorm:"column:pods_id;type:varchar;primaryKey"`
-	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:podsliveinstances_idx,type:btree"`
+	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:pods_live_instances_idx,type:btree"`
 	ImageDigest string `gorm:"column:imagedigest;type:varchar"`
 	PodsRef     Pods   `gorm:"foreignKey:pods_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

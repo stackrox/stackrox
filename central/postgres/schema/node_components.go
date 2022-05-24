@@ -50,7 +50,7 @@ const (
 	NodeComponentsTableName = "node_components"
 )
 
-// ImageComponent holds the Gorm model for Postgres table `node_components`.
+// NodeComponents holds the Gorm model for Postgres table `node_components`.
 type NodeComponents struct {
 	Id         string             `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string             `gorm:"column:name;type:varchar"`

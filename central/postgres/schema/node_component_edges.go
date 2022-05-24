@@ -57,7 +57,7 @@ const (
 	NodeComponentEdgesTableName = "node_component_edges"
 )
 
-// NodeComponentEdge holds the Gorm model for Postgres table `node_component_edges`.
+// NodeComponentEdges holds the Gorm model for Postgres table `node_component_edges`.
 type NodeComponentEdges struct {
 	Id              string `gorm:"column:id;type:varchar;primaryKey"`
 	NodeId          string `gorm:"column:nodeid;type:varchar;primaryKey"`

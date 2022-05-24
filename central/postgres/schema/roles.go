@@ -42,7 +42,7 @@ const (
 	RolesTableName = "roles"
 )
 
-// Role holds the Gorm model for Postgres table `roles`.
+// Roles holds the Gorm model for Postgres table `roles`.
 type Roles struct {
 	Name       string `gorm:"column:name;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`

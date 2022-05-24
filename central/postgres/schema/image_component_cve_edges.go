@@ -59,7 +59,7 @@ const (
 	ImageComponentCveEdgesTableName = "image_component_cve_edges"
 )
 
-// ComponentCVEEdge holds the Gorm model for Postgres table `image_component_cve_edges`.
+// ImageComponentCveEdges holds the Gorm model for Postgres table `image_component_cve_edges`.
 type ImageComponentCveEdges struct {
 	Id                 string          `gorm:"column:id;type:varchar;primaryKey"`
 	IsFixable          bool            `gorm:"column:isfixable;type:bool"`

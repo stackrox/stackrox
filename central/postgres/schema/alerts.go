@@ -86,7 +86,7 @@ const (
 	AlertsTableName = "alerts"
 )
 
-// Alert holds the Gorm model for Postgres table `alerts`.
+// Alerts holds the Gorm model for Postgres table `alerts`.
 type Alerts struct {
 	Id                       string                              `gorm:"column:id;type:varchar;primaryKey"`
 	PolicyId                 string                              `gorm:"column:policy_id;type:varchar"`

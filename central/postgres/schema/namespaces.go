@@ -58,7 +58,7 @@ const (
 	NamespacesTableName = "namespaces"
 )
 
-// NamespaceMetadata holds the Gorm model for Postgres table `namespaces`.
+// Namespaces holds the Gorm model for Postgres table `namespaces`.
 type Namespaces struct {
 	Id          string            `gorm:"column:id;type:varchar;primaryKey"`
 	Name        string            `gorm:"column:name;type:varchar"`

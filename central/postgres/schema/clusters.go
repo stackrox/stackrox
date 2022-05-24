@@ -47,7 +47,7 @@ const (
 	ClustersTableName = "clusters"
 )
 
-// Cluster holds the Gorm model for Postgres table `clusters`.
+// Clusters holds the Gorm model for Postgres table `clusters`.
 type Clusters struct {
 	Id         string            `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string            `gorm:"column:name;type:varchar;unique"`

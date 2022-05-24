@@ -51,7 +51,7 @@ const (
 	ServiceAccountsTableName = "service_accounts"
 )
 
-// ServiceAccount holds the Gorm model for Postgres table `service_accounts`.
+// ServiceAccounts holds the Gorm model for Postgres table `service_accounts`.
 type ServiceAccounts struct {
 	Id          string            `gorm:"column:id;type:varchar;primaryKey"`
 	Name        string            `gorm:"column:name;type:varchar"`

@@ -54,7 +54,7 @@ const (
 	ImageCvesTableName = "image_cves"
 )
 
-// CVE holds the Gorm model for Postgres table `image_cves`.
+// ImageCves holds the Gorm model for Postgres table `image_cves`.
 type ImageCves struct {
 	Id             string                        `gorm:"column:id;type:varchar;primaryKey"`
 	Cve            string                        `gorm:"column:cve;type:varchar"`

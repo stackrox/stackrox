@@ -43,7 +43,7 @@ const (
 	AuthProvidersTableName = "auth_providers"
 )
 
-// AuthProvider holds the Gorm model for Postgres table `auth_providers`.
+// AuthProviders holds the Gorm model for Postgres table `auth_providers`.
 type AuthProviders struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`

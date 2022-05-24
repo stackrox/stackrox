@@ -131,7 +131,7 @@ const (
 	NodesComponentsVulnsTableName = "nodes_components_vulns"
 )
 
-// Node holds the Gorm model for Postgres table `nodes`.
+// Nodes holds the Gorm model for Postgres table `nodes`.
 type Nodes struct {
 	Id                      string            `gorm:"column:id;type:varchar;primaryKey"`
 	Name                    string            `gorm:"column:name;type:varchar"`
@@ -152,30 +152,30 @@ type Nodes struct {
 	Serialized              []byte            `gorm:"column:serialized;type:bytea"`
 }
 
-// Taint holds the Gorm model for Postgres table `nodes_taints`.
+// NodesTaints holds the Gorm model for Postgres table `nodes_taints`.
 type NodesTaints struct {
 	NodesId     string              `gorm:"column:nodes_id;type:varchar;primaryKey"`
-	Idx         int                 `gorm:"column:idx;type:integer;primaryKey;index:nodestaints_idx,type:btree"`
+	Idx         int                 `gorm:"column:idx;type:integer;primaryKey;index:nodes_taints_idx,type:btree"`
 	Key         string              `gorm:"column:key;type:varchar"`
 	Value       string              `gorm:"column:value;type:varchar"`
 	TaintEffect storage.TaintEffect `gorm:"column:tainteffect;type:integer"`
 	NodesRef    Nodes               `gorm:"foreignKey:nodes_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
-// EmbeddedNodeScanComponent holds the Gorm model for Postgres table `nodes_components`.
+// NodesComponents holds the Gorm model for Postgres table `nodes_components`.
 type NodesComponents struct {
 	NodesId  string `gorm:"column:nodes_id;type:varchar;primaryKey"`
-	Idx      int    `gorm:"column:idx;type:integer;primaryKey;index:nodescomponents_idx,type:btree"`
+	Idx      int    `gorm:"column:idx;type:integer;primaryKey;index:nodes_components_idx,type:btree"`
 	Name     string `gorm:"column:name;type:varchar"`
 	Version  string `gorm:"column:version;type:varchar"`
 	NodesRef Nodes  `gorm:"foreignKey:nodes_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
-// EmbeddedVulnerability holds the Gorm model for Postgres table `nodes_components_vulns`.
+// NodesComponentsVulns holds the Gorm model for Postgres table `nodes_components_vulns`.
 type NodesComponentsVulns struct {
 	NodesId            string                     `gorm:"column:nodes_id;type:varchar;primaryKey"`
 	NodesComponentsIdx int                        `gorm:"column:nodes_components_idx;type:integer;primaryKey"`
-	Idx                int                        `gorm:"column:idx;type:integer;primaryKey;index:nodescomponentsvulns_idx,type:btree"`
+	Idx                int                        `gorm:"column:idx;type:integer;primaryKey;index:nodes_components_vulns_idx,type:btree"`
 	Cve                string                     `gorm:"column:cve;type:varchar"`
 	Cvss               float32                    `gorm:"column:cvss;type:numeric"`
 	FixedBy            string                     `gorm:"column:fixedby;type:varchar"`

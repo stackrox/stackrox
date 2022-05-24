@@ -58,7 +58,7 @@ const (
 	ImageComponentEdgesTableName = "image_component_edges"
 )
 
-// ImageComponentEdge holds the Gorm model for Postgres table `image_component_edges`.
+// ImageComponentEdges holds the Gorm model for Postgres table `image_component_edges`.
 type ImageComponentEdges struct {
 	Id               string `gorm:"column:id;type:varchar;primaryKey"`
 	Location         string `gorm:"column:location;type:varchar"`

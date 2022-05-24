@@ -42,7 +42,7 @@ const (
 	IntegrationHealthsTableName = "integration_healths"
 )
 
-// IntegrationHealth holds the Gorm model for Postgres table `integration_healths`.
+// IntegrationHealths holds the Gorm model for Postgres table `integration_healths`.
 type IntegrationHealths struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`

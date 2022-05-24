@@ -60,7 +60,7 @@ const (
 	ImageCveEdgesTableName = "image_cve_edges"
 )
 
-// ImageCVEEdge holds the Gorm model for Postgres table `image_cve_edges`.
+// ImageCveEdges holds the Gorm model for Postgres table `image_cve_edges`.
 type ImageCveEdges struct {
 	Id                   string                     `gorm:"column:id;type:varchar;primaryKey"`
 	FirstImageOccurrence *time.Time                 `gorm:"column:firstimageoccurrence;type:timestamp"`

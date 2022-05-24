@@ -54,7 +54,7 @@ const (
 	ClusterCvesTableName = "cluster_cves"
 )
 
-// CVE holds the Gorm model for Postgres table `cluster_cves`.
+// ClusterCves holds the Gorm model for Postgres table `cluster_cves`.
 type ClusterCves struct {
 	Id             string                        `gorm:"column:id;type:varchar;primaryKey"`
 	Cve            string                        `gorm:"column:cve;type:varchar"`

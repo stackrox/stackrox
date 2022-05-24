@@ -47,7 +47,7 @@ const (
 	ReportConfigurationsTableName = "report_configurations"
 )
 
-// ReportConfiguration holds the Gorm model for Postgres table `report_configurations`.
+// ReportConfigurations holds the Gorm model for Postgres table `report_configurations`.
 type ReportConfigurations struct {
 	Id         string                                 `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string                                 `gorm:"column:name;type:varchar"`
