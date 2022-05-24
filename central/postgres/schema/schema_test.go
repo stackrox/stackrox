@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/features"
@@ -36,6 +37,7 @@ var (
 type SchemaTestSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
+	connConfig  *pgx.ConnConfig
 	pool        *pgxpool.Pool
 	gorm        *gorm.DB
 	ctx         context.Context
@@ -59,6 +61,7 @@ func (s *SchemaTestSuite) SetupTest() {
 
 	source := pgtest.GetConnectionString(s.T())
 	config, err := pgxpool.ParseConfig(source)
+	s.connConfig = config.ConnConfig
 
 	s.Require().NoError(err)
 	pool, err := pgxpool.ConnectConfig(ctx, config)
@@ -69,6 +72,7 @@ func (s *SchemaTestSuite) SetupTest() {
 	s.tmpDir, err = os.MkdirTemp("", "schema_test")
 	s.Require().NoError(err)
 	source = pgtest.GetGormConnectionString(s.T())
+	fmt.Println("source:", source)
 	s.gorm, err = gorm.Open(postgres.Open(source), &gorm.Config{})
 	s.Require().NoError(err)
 }
@@ -354,9 +358,15 @@ func (s *SchemaTestSuite) getGormTableSchemas(schema *walker.Schema, createStmt 
 
 func (s *SchemaTestSuite) dumpSchema(table string) string {
 	// Dump Postgres schema
-	cmd := exec.Command(`pg_dump`, `--schema-only`, `--db`, `postgres`, `-t`, table)
+	cmd := exec.Command(`pg_dump`, `--schema-only`,
+		"-d", s.connConfig.Database,
+		"-h", s.connConfig.Host,
+		"-U", s.connConfig.User,
+		"-p", fmt.Sprintf("%d", s.connConfig.Port),
+		"-t", table,
+	)
 	out, err := cmd.Output()
-	s.Require().NoError(err)
+	s.Require().NoError(err, fmt.Sprintf("Failed to get schema dump\n output: %s\n err: %v\n", out, err))
 	return fKConstraintRegex.ReplaceAllString(addConstraintRegex.ReplaceAllString(string(out), ""), "")
 }
 

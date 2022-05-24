@@ -26,8 +26,7 @@ func GetGormConnectionString(_ *testing.T) string {
 	if _, ok := os.LookupEnv("CI"); ok {
 		user = "postgres"
 	}
-	pass := env.GetString("POSTGRES_PASSWORD", "")
 	database := env.GetString("POSTGRES_DB", "postgres")
 	host := env.GetString("POSTGRES_HOST", "localhost")
-	return fmt.Sprintf("host=%s port=5432 database=%s user=%s password=%s sslmode=disable statement_timeout=600000", host, database, user, pass)
+	return fmt.Sprintf("host=%s port=5432 database=%s user=%s sslmode=disable statement_timeout=600000", host, database, user)
 }
