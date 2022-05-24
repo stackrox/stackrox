@@ -18,18 +18,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type SinglekeyStoreSuite struct {
+type TestSingleKeyStructsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestSinglekeyStore(t *testing.T) {
-	suite.Run(t, new(SinglekeyStoreSuite))
+func TestTestSingleKeyStructsStore(t *testing.T) {
+	suite.Run(t, new(TestSingleKeyStructsStoreSuite))
 }
 
-func (s *SinglekeyStoreSuite) SetupTest() {
+func (s *TestSingleKeyStructsStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -52,14 +52,14 @@ func (s *SinglekeyStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *SinglekeyStoreSuite) TearDownTest() {
+func (s *TestSingleKeyStructsStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *SinglekeyStoreSuite) TestStore() {
+func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store

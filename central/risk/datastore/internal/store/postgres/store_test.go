@@ -20,18 +20,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type RiskStoreSuite struct {
+type RisksStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestRiskStore(t *testing.T) {
-	suite.Run(t, new(RiskStoreSuite))
+func TestRisksStore(t *testing.T) {
+	suite.Run(t, new(RisksStoreSuite))
 }
 
-func (s *RiskStoreSuite) SetupTest() {
+func (s *RisksStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,14 +54,14 @@ func (s *RiskStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *RiskStoreSuite) TearDownTest() {
+func (s *RisksStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *RiskStoreSuite) TestStore() {
+func (s *RisksStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
@@ -117,7 +117,7 @@ func (s *RiskStoreSuite) TestStore() {
 	s.Equal(200, riskCount)
 }
 
-func (s *RiskStoreSuite) TestSACUpsert() {
+func (s *RisksStoreSuite) TestSACUpsert() {
 	obj := &storage.Risk{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -136,7 +136,7 @@ func (s *RiskStoreSuite) TestSACUpsert() {
 	}
 }
 
-func (s *RiskStoreSuite) TestSACUpsertMany() {
+func (s *RisksStoreSuite) TestSACUpsertMany() {
 	obj := &storage.Risk{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -155,7 +155,7 @@ func (s *RiskStoreSuite) TestSACUpsertMany() {
 	}
 }
 
-func (s *RiskStoreSuite) TestSACCount() {
+func (s *RisksStoreSuite) TestSACCount() {
 	objA := &storage.Risk{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -183,7 +183,7 @@ func (s *RiskStoreSuite) TestSACCount() {
 	}
 }
 
-func (s *RiskStoreSuite) TestSACGetIDs() {
+func (s *RisksStoreSuite) TestSACGetIDs() {
 	objA := &storage.Risk{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -211,7 +211,7 @@ func (s *RiskStoreSuite) TestSACGetIDs() {
 	}
 }
 
-func (s *RiskStoreSuite) TestSACExists() {
+func (s *RisksStoreSuite) TestSACExists() {
 	objA := &storage.Risk{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -235,7 +235,7 @@ func (s *RiskStoreSuite) TestSACExists() {
 	}
 }
 
-func (s *RiskStoreSuite) TestSACGet() {
+func (s *RisksStoreSuite) TestSACGet() {
 	objA := &storage.Risk{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -264,7 +264,7 @@ func (s *RiskStoreSuite) TestSACGet() {
 	}
 }
 
-func (s *RiskStoreSuite) TestSACDelete() {
+func (s *RisksStoreSuite) TestSACDelete() {
 	objA := &storage.Risk{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -297,7 +297,7 @@ func (s *RiskStoreSuite) TestSACDelete() {
 	}
 }
 
-func (s *RiskStoreSuite) TestSACDeleteMany() {
+func (s *RisksStoreSuite) TestSACDeleteMany() {
 	objA := &storage.Risk{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 

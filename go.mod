@@ -117,6 +117,7 @@ require (
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gorm.io/gorm v1.23.5
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.2
 	k8s.io/api v0.23.1

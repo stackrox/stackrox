@@ -32,7 +32,7 @@ var (
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
-               create table if not exists secrets_Files (
+               create table if not exists secrets_files (
                    secrets_Id varchar,
                    idx integer,
                    Type integer,
@@ -42,22 +42,22 @@ var (
                )
                `,
 				Indexes: []string{
-					"create index if not exists secretsFiles_idx on secrets_Files using btree(idx)",
+					"create index if not exists secretsFiles_idx on secrets_files using btree(idx)",
 				},
 				Children: []*postgres.CreateStmts{
 					&postgres.CreateStmts{
 						Table: `
-               create table if not exists secrets_Files_Registries (
+               create table if not exists secrets_files_registries (
                    secrets_Id varchar,
-                   secrets_Files_idx integer,
+                   secrets_files_idx integer,
                    idx integer,
                    Name varchar,
-                   PRIMARY KEY(secrets_Id, secrets_Files_idx, idx),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (secrets_Id, secrets_Files_idx) REFERENCES secrets_Files(secrets_Id, idx) ON DELETE CASCADE
+                   PRIMARY KEY(secrets_Id, secrets_files_idx, idx),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (secrets_Id, secrets_files_idx) REFERENCES secrets_files(secrets_Id, idx) ON DELETE CASCADE
                )
                `,
 						Indexes: []string{
-							"create index if not exists secretsFilesRegistries_idx on secrets_Files_Registries using btree(idx)",
+							"create index if not exists secretsFilesRegistries_idx on secrets_files_registries using btree(idx)",
 						},
 						Children: []*postgres.CreateStmts{},
 					},

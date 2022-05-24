@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	baseTable = "testgrandchild1"
+	baseTable = "test_grand_child1"
 
-	walkStmt    = "SELECT serialized FROM testgrandchild1"
-	getManyStmt = "SELECT serialized FROM testgrandchild1 WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM test_grand_child1"
+	getManyStmt = "SELECT serialized FROM test_grand_child1 WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -36,7 +36,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.Testgrandchild1Schema
+	schema = pkgSchema.TestGrandChild1Schema
 )
 
 type Store interface {
@@ -62,16 +62,16 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestchild1Stmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestggrandchild1Stmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestgrandchild1Stmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestChild1Stmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestGGrandChild1Stmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestGrandChild1Stmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoTestgrandchild1(ctx context.Context, tx pgx.Tx, obj *storage.TestGrandChild1) error {
+func insertIntoTestGrandChild1(ctx context.Context, tx pgx.Tx, obj *storage.TestGrandChild1) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -87,7 +87,7 @@ func insertIntoTestgrandchild1(ctx context.Context, tx pgx.Tx, obj *storage.Test
 		serialized,
 	}
 
-	finalStr := "INSERT INTO testgrandchild1 (Id, ParentId, ChildId, Val, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, ChildId = EXCLUDED.ChildId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_grand_child1 (Id, ParentId, ChildId, Val, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, ChildId = EXCLUDED.ChildId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func insertIntoTestgrandchild1(ctx context.Context, tx pgx.Tx, obj *storage.Test
 	return nil
 }
 
-func (s *storeImpl) copyFromTestgrandchild1(ctx context.Context, tx pgx.Tx, objs ...*storage.TestGrandChild1) error {
+func (s *storeImpl) copyFromTestGrandChild1(ctx context.Context, tx pgx.Tx, objs ...*storage.TestGrandChild1) error {
 
 	inputRows := [][]interface{}{}
 
@@ -155,7 +155,7 @@ func (s *storeImpl) copyFromTestgrandchild1(ctx context.Context, tx pgx.Tx, objs
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"testgrandchild1"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_grand_child1"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -181,7 +181,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestGrandChil
 		return err
 	}
 
-	if err := s.copyFromTestgrandchild1(ctx, tx, objs...); err != nil {
+	if err := s.copyFromTestGrandChild1(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -206,7 +206,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestGrandChild1
 			return err
 		}
 
-		if err := insertIntoTestgrandchild1(ctx, tx, obj); err != nil {
+		if err := insertIntoTestGrandChild1(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -410,13 +410,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestGrandChil
 
 //// Used for testing
 
-func dropTableTestgrandchild1(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS testgrandchild1 CASCADE")
+func dropTableTestGrandChild1(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_grand_child1 CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableTestgrandchild1(ctx, db)
+	dropTableTestGrandChild1(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

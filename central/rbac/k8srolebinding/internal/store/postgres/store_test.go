@@ -20,18 +20,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type RolebindingsStoreSuite struct {
+type RoleBindingsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestRolebindingsStore(t *testing.T) {
-	suite.Run(t, new(RolebindingsStoreSuite))
+func TestRoleBindingsStore(t *testing.T) {
+	suite.Run(t, new(RoleBindingsStoreSuite))
 }
 
-func (s *RolebindingsStoreSuite) SetupTest() {
+func (s *RoleBindingsStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,14 +54,14 @@ func (s *RolebindingsStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *RolebindingsStoreSuite) TearDownTest() {
+func (s *RoleBindingsStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *RolebindingsStoreSuite) TestStore() {
+func (s *RoleBindingsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
@@ -117,7 +117,7 @@ func (s *RolebindingsStoreSuite) TestStore() {
 	s.Equal(200, k8SRoleBindingCount)
 }
 
-func (s *RolebindingsStoreSuite) TestSACUpsert() {
+func (s *RoleBindingsStoreSuite) TestSACUpsert() {
 	obj := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -136,7 +136,7 @@ func (s *RolebindingsStoreSuite) TestSACUpsert() {
 	}
 }
 
-func (s *RolebindingsStoreSuite) TestSACUpsertMany() {
+func (s *RoleBindingsStoreSuite) TestSACUpsertMany() {
 	obj := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -155,7 +155,7 @@ func (s *RolebindingsStoreSuite) TestSACUpsertMany() {
 	}
 }
 
-func (s *RolebindingsStoreSuite) TestSACCount() {
+func (s *RoleBindingsStoreSuite) TestSACCount() {
 	objA := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -183,7 +183,7 @@ func (s *RolebindingsStoreSuite) TestSACCount() {
 	}
 }
 
-func (s *RolebindingsStoreSuite) TestSACGetIDs() {
+func (s *RoleBindingsStoreSuite) TestSACGetIDs() {
 	objA := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -211,7 +211,7 @@ func (s *RolebindingsStoreSuite) TestSACGetIDs() {
 	}
 }
 
-func (s *RolebindingsStoreSuite) TestSACExists() {
+func (s *RoleBindingsStoreSuite) TestSACExists() {
 	objA := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -235,7 +235,7 @@ func (s *RolebindingsStoreSuite) TestSACExists() {
 	}
 }
 
-func (s *RolebindingsStoreSuite) TestSACGet() {
+func (s *RoleBindingsStoreSuite) TestSACGet() {
 	objA := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -264,7 +264,7 @@ func (s *RolebindingsStoreSuite) TestSACGet() {
 	}
 }
 
-func (s *RolebindingsStoreSuite) TestSACDelete() {
+func (s *RoleBindingsStoreSuite) TestSACDelete() {
 	objA := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -297,7 +297,7 @@ func (s *RolebindingsStoreSuite) TestSACDelete() {
 	}
 }
 
-func (s *RolebindingsStoreSuite) TestSACDeleteMany() {
+func (s *RoleBindingsStoreSuite) TestSACDeleteMany() {
 	objA := &storage.K8SRoleBinding{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 

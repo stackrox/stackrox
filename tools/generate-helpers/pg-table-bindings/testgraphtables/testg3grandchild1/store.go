@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	baseTable = "testg3grandchild1"
+	baseTable = "test_g3_grand_child1"
 
-	walkStmt    = "SELECT serialized FROM testg3grandchild1"
-	getManyStmt = "SELECT serialized FROM testg3grandchild1 WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM test_g3_grand_child1"
+	getManyStmt = "SELECT serialized FROM test_g3_grand_child1 WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -36,7 +36,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.Testg3grandchild1Schema
+	schema = pkgSchema.TestG3GrandChild1Schema
 )
 
 type Store interface {
@@ -62,14 +62,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestg3grandchild1Stmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestG3GrandChild1Stmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoTestg3grandchild1(ctx context.Context, tx pgx.Tx, obj *storage.TestG3GrandChild1) error {
+func insertIntoTestG3GrandChild1(ctx context.Context, tx pgx.Tx, obj *storage.TestG3GrandChild1) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -83,7 +83,7 @@ func insertIntoTestg3grandchild1(ctx context.Context, tx pgx.Tx, obj *storage.Te
 		serialized,
 	}
 
-	finalStr := "INSERT INTO testg3grandchild1 (Id, Val, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_g3_grand_child1 (Id, Val, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func insertIntoTestg3grandchild1(ctx context.Context, tx pgx.Tx, obj *storage.Te
 	return nil
 }
 
-func (s *storeImpl) copyFromTestg3grandchild1(ctx context.Context, tx pgx.Tx, objs ...*storage.TestG3GrandChild1) error {
+func (s *storeImpl) copyFromTestG3GrandChild1(ctx context.Context, tx pgx.Tx, objs ...*storage.TestG3GrandChild1) error {
 
 	inputRows := [][]interface{}{}
 
@@ -143,7 +143,7 @@ func (s *storeImpl) copyFromTestg3grandchild1(ctx context.Context, tx pgx.Tx, ob
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"testg3grandchild1"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_g3_grand_child1"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -169,7 +169,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestG3GrandCh
 		return err
 	}
 
-	if err := s.copyFromTestg3grandchild1(ctx, tx, objs...); err != nil {
+	if err := s.copyFromTestG3GrandChild1(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -194,7 +194,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestG3GrandChil
 			return err
 		}
 
-		if err := insertIntoTestg3grandchild1(ctx, tx, obj); err != nil {
+		if err := insertIntoTestG3GrandChild1(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -398,13 +398,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestG3GrandCh
 
 //// Used for testing
 
-func dropTableTestg3grandchild1(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS testg3grandchild1 CASCADE")
+func dropTableTestG3GrandChild1(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_g3_grand_child1 CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableTestg3grandchild1(ctx, db)
+	dropTableTestG3GrandChild1(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

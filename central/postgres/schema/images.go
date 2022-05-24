@@ -46,7 +46,7 @@ var (
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
-               create table if not exists images_Layers (
+               create table if not exists images_layers (
                    images_Id varchar,
                    idx integer,
                    Instruction varchar,
@@ -56,7 +56,7 @@ var (
                )
                `,
 				Indexes: []string{
-					"create index if not exists imagesLayers_idx on images_Layers using btree(idx)",
+					"create index if not exists imagesLayers_idx on images_layers using btree(idx)",
 				},
 				Children: []*postgres.CreateStmts{},
 			},

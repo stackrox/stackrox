@@ -21,6 +21,7 @@ import (
 	"github.com/spf13/cobra"
 	_ "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mathutil"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -64,7 +65,7 @@ type properties struct {
 
 	PermissionChecker string
 
-	// Refs indicate the additional referentiol relationships. Each string is <table_name>:<proto_type>.
+	// Refs indicate the additional referentiol relationships. Each string is [<table_name>:]<proto_type>.
 	// These are non-embedding relations, that is, this table is not embedded into referenced table to
 	// construct the proto message.
 	Refs []string
@@ -138,13 +139,12 @@ func main() {
 
 	c.Flags().StringVar(&props.RegisteredType, "registered-type", "", "the type this is registered in proto as storage.X")
 
-	c.Flags().StringVar(&props.Table, "table", "", "the logical table of the objects")
-	utils.Must(c.MarkFlagRequired("table"))
+	c.Flags().StringVar(&props.Table, "table", "", "the logical table of the objects, default to lower snake_case of type")
 
 	c.Flags().StringVar(&props.Singular, "singular", "", "the singular name of the object")
 	c.Flags().StringVar(&props.SearchCategory, "search-category", "", "the search category to index under")
 	c.Flags().StringVar(&props.PermissionChecker, "permission-checker", "", "the permission checker that should be used")
-	c.Flags().StringSliceVar(&props.Refs, "references", []string{}, "additional foreign key references as <table_name:type>")
+	c.Flags().StringSliceVar(&props.Refs, "references", []string{}, "additional foreign key references, comma seperated of <[table_name:]type>")
 	c.Flags().BoolVar(&props.JoinTable, "join-table", false, "indicates the schema represents a join table. The generation of mutating functions is skipped")
 	c.Flags().BoolVar(&props.SchemaOnly, "schema-only", false, "if true, generates only the schema and not store and index")
 	c.Flags().BoolVar(&props.GetAll, "get-all-func", false, "if true, generates a GetAll function")
@@ -158,7 +158,10 @@ func main() {
 		if mt == nil {
 			log.Fatalf("could not find message for type: %s", typ)
 		}
-
+		trimmedType := stringutils.GetAfter(props.Type, ".")
+		if props.Table == "" {
+			props.Table = pgutils.NamingStrategy.TableName(trimmedType)
+		}
 		schema := walker.Walk(mt, props.Table)
 		if schema.NoPrimaryKey() {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
@@ -182,9 +185,10 @@ func main() {
 				searchCategory = fmt.Sprintf("SearchCategory_%s", props.SearchCategory)
 			}
 		}
+
 		templateMap := map[string]interface{}{
 			"Type":              props.Type,
-			"TrimmedType":       stringutils.GetAfter(props.Type, "."),
+			"TrimmedType":       trimmedType,
 			"Table":             props.Table,
 			"Schema":            schema,
 			"SearchCategory":    searchCategory,

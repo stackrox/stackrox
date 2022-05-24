@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	baseTable = "singlekey"
+	baseTable = "test_single_key_structs"
 
-	walkStmt    = "SELECT serialized FROM singlekey"
-	getManyStmt = "SELECT serialized FROM singlekey WHERE Key = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM test_single_key_structs"
+	getManyStmt = "SELECT serialized FROM test_single_key_structs WHERE Key = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -36,7 +36,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.SinglekeySchema
+	schema = pkgSchema.TestSingleKeyStructsSchema
 )
 
 type Store interface {
@@ -63,14 +63,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableSinglekeyStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestSingleKeyStructsStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoSinglekey(ctx context.Context, tx pgx.Tx, obj *storage.TestSingleKeyStruct) error {
+func insertIntoTestSingleKeyStructs(ctx context.Context, tx pgx.Tx, obj *storage.TestSingleKeyStruct) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -93,7 +93,7 @@ func insertIntoSinglekey(ctx context.Context, tx pgx.Tx, obj *storage.TestSingle
 		serialized,
 	}
 
-	finalStr := "INSERT INTO singlekey (Key, Name, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(Key) DO UPDATE SET Key = EXCLUDED.Key, Name = EXCLUDED.Name, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_single_key_structs (Key, Name, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(Key) DO UPDATE SET Key = EXCLUDED.Key, Name = EXCLUDED.Name, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -102,7 +102,7 @@ func insertIntoSinglekey(ctx context.Context, tx pgx.Tx, obj *storage.TestSingle
 	return nil
 }
 
-func (s *storeImpl) copyFromSinglekey(ctx context.Context, tx pgx.Tx, objs ...*storage.TestSingleKeyStruct) error {
+func (s *storeImpl) copyFromTestSingleKeyStructs(ctx context.Context, tx pgx.Tx, objs ...*storage.TestSingleKeyStruct) error {
 
 	inputRows := [][]interface{}{}
 
@@ -189,7 +189,7 @@ func (s *storeImpl) copyFromSinglekey(ctx context.Context, tx pgx.Tx, objs ...*s
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"singlekey"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_single_key_structs"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -215,7 +215,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestSingleKey
 		return err
 	}
 
-	if err := s.copyFromSinglekey(ctx, tx, objs...); err != nil {
+	if err := s.copyFromTestSingleKeyStructs(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -240,7 +240,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestSingleKeySt
 			return err
 		}
 
-		if err := insertIntoSinglekey(ctx, tx, obj); err != nil {
+		if err := insertIntoTestSingleKeyStructs(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -454,13 +454,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestSingleKey
 
 //// Used for testing
 
-func dropTableSinglekey(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS singlekey CASCADE")
+func dropTableTestSingleKeyStructs(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_single_key_structs CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableSinglekey(ctx, db)
+	dropTableTestSingleKeyStructs(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

@@ -23,10 +23,10 @@ import (
 )
 
 const (
-	baseTable = "permissionsets"
+	baseTable = "permission_sets"
 
-	walkStmt    = "SELECT serialized FROM permissionsets"
-	getManyStmt = "SELECT serialized FROM permissionsets WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM permission_sets"
+	getManyStmt = "SELECT serialized FROM permission_sets WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -38,7 +38,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.PermissionsetsSchema
+	schema         = pkgSchema.PermissionSetsSchema
 	targetResource = resources.Role
 )
 
@@ -65,14 +65,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTablePermissionsetsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTablePermissionSetsStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoPermissionsets(ctx context.Context, tx pgx.Tx, obj *storage.PermissionSet) error {
+func insertIntoPermissionSets(ctx context.Context, tx pgx.Tx, obj *storage.PermissionSet) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -86,7 +86,7 @@ func insertIntoPermissionsets(ctx context.Context, tx pgx.Tx, obj *storage.Permi
 		serialized,
 	}
 
-	finalStr := "INSERT INTO permissionsets (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO permission_sets (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ func insertIntoPermissionsets(ctx context.Context, tx pgx.Tx, obj *storage.Permi
 	return nil
 }
 
-func (s *storeImpl) copyFromPermissionsets(ctx context.Context, tx pgx.Tx, objs ...*storage.PermissionSet) error {
+func (s *storeImpl) copyFromPermissionSets(ctx context.Context, tx pgx.Tx, objs ...*storage.PermissionSet) error {
 
 	inputRows := [][]interface{}{}
 
@@ -146,7 +146,7 @@ func (s *storeImpl) copyFromPermissionsets(ctx context.Context, tx pgx.Tx, objs 
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"permissionsets"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"permission_sets"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -172,7 +172,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.PermissionSet
 		return err
 	}
 
-	if err := s.copyFromPermissionsets(ctx, tx, objs...); err != nil {
+	if err := s.copyFromPermissionSets(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -197,7 +197,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PermissionSet) 
 			return err
 		}
 
-		if err := insertIntoPermissionsets(ctx, tx, obj); err != nil {
+		if err := insertIntoPermissionSets(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -459,13 +459,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.PermissionSet
 
 //// Used for testing
 
-func dropTablePermissionsets(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS permissionsets CASCADE")
+func dropTablePermissionSets(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS permission_sets CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTablePermissionsets(ctx, db)
+	dropTablePermissionSets(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

@@ -24,7 +24,7 @@ var (
 	}
 
 	riskSACSearchHelper         = sac.ForResource(resources.Risk).MustCreateSearchHelper(mappings.OptionsMap)
-	riskSACPostgresSearchHelper = sac.ForResource(resources.Risk).MustCreatePgSearchHelper(schema.RiskSchema.OptionsMap)
+	riskSACPostgresSearchHelper = sac.ForResource(resources.Risk).MustCreatePgSearchHelper(schema.RisksSchema.OptionsMap)
 )
 
 // searcherImpl provides an intermediary implementation layer for RiskStorage.

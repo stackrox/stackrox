@@ -21,14 +21,14 @@ import (
 )
 
 const (
-	baseTable = "multikey"
+	baseTable = "test_multi_key_structs"
 
-	existsStmt = "SELECT EXISTS(SELECT 1 FROM multikey WHERE Key1 = $1 AND Key2 = $2)"
-	getStmt    = "SELECT serialized FROM multikey WHERE Key1 = $1 AND Key2 = $2"
-	deleteStmt = "DELETE FROM multikey WHERE Key1 = $1 AND Key2 = $2"
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM test_multi_key_structs WHERE Key1 = $1 AND Key2 = $2)"
+	getStmt    = "SELECT serialized FROM test_multi_key_structs WHERE Key1 = $1 AND Key2 = $2"
+	deleteStmt = "DELETE FROM test_multi_key_structs WHERE Key1 = $1 AND Key2 = $2"
 
-	walkStmt    = "SELECT serialized FROM multikey"
-	getManyStmt = "SELECT serialized FROM multikey WHERE Key1 = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM test_multi_key_structs"
+	getManyStmt = "SELECT serialized FROM test_multi_key_structs WHERE Key1 = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -40,7 +40,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.MultikeySchema
+	schema = pkgSchema.TestMultiKeyStructsSchema
 )
 
 type Store interface {
@@ -66,14 +66,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableMultikeyStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestMultiKeyStructsStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoMultikey(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKeyStruct) error {
+func insertIntoTestMultiKeyStructs(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKeyStruct) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -99,7 +99,7 @@ func insertIntoMultikey(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKe
 		serialized,
 	}
 
-	finalStr := "INSERT INTO multikey (Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, String_, IntSlice, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(Key1, Key2) DO UPDATE SET Key1 = EXCLUDED.Key1, Key2 = EXCLUDED.Key2, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, String_ = EXCLUDED.String_, IntSlice = EXCLUDED.IntSlice, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_multi_key_structs (Key1, Key2, StringSlice, Bool, Uint64, Int64, Float, Labels, Timestamp, Enum, Enums, String_, IntSlice, Oneofnested_Nested, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(Key1, Key2) DO UPDATE SET Key1 = EXCLUDED.Key1, Key2 = EXCLUDED.Key2, StringSlice = EXCLUDED.StringSlice, Bool = EXCLUDED.Bool, Uint64 = EXCLUDED.Uint64, Int64 = EXCLUDED.Int64, Float = EXCLUDED.Float, Labels = EXCLUDED.Labels, Timestamp = EXCLUDED.Timestamp, Enum = EXCLUDED.Enum, Enums = EXCLUDED.Enums, String_ = EXCLUDED.String_, IntSlice = EXCLUDED.IntSlice, Oneofnested_Nested = EXCLUDED.Oneofnested_Nested, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -108,12 +108,12 @@ func insertIntoMultikey(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKe
 	var query string
 
 	for childIdx, child := range obj.GetNested() {
-		if err := insertIntoMultikeyNested(ctx, tx, child, obj.GetKey1(), obj.GetKey2(), childIdx); err != nil {
+		if err := insertIntoTestMultiKeyStructsNesteds(ctx, tx, child, obj.GetKey1(), obj.GetKey2(), childIdx); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from multikey_Nested where multikey_Key1 = $1 AND multikey_Key2 = $2 AND idx >= $3"
+	query = "delete from test_multi_key_structs_nesteds where test_multi_key_structs_Key1 = $1 AND test_multi_key_structs_Key2 = $2 AND idx >= $3"
 	_, err = tx.Exec(ctx, query, obj.GetKey1(), obj.GetKey2(), len(obj.GetNested()))
 	if err != nil {
 		return err
@@ -121,12 +121,12 @@ func insertIntoMultikey(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKe
 	return nil
 }
 
-func insertIntoMultikeyNested(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKeyStruct_Nested, multikey_Key1 string, multikey_Key2 string, idx int) error {
+func insertIntoTestMultiKeyStructsNesteds(ctx context.Context, tx pgx.Tx, obj *storage.TestMultiKeyStruct_Nested, test_multi_key_structs_Key1 string, test_multi_key_structs_Key2 string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		multikey_Key1,
-		multikey_Key2,
+		test_multi_key_structs_Key1,
+		test_multi_key_structs_Key2,
 		idx,
 		obj.GetNested(),
 		obj.GetIsNested(),
@@ -136,7 +136,7 @@ func insertIntoMultikeyNested(ctx context.Context, tx pgx.Tx, obj *storage.TestM
 		obj.GetNested2().GetInt64(),
 	}
 
-	finalStr := "INSERT INTO multikey_Nested (multikey_Key1, multikey_Key2, idx, Nested, IsNested, Int64, Nested2_Nested2, Nested2_IsNested, Nested2_Int64) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(multikey_Key1, multikey_Key2, idx) DO UPDATE SET multikey_Key1 = EXCLUDED.multikey_Key1, multikey_Key2 = EXCLUDED.multikey_Key2, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested, IsNested = EXCLUDED.IsNested, Int64 = EXCLUDED.Int64, Nested2_Nested2 = EXCLUDED.Nested2_Nested2, Nested2_IsNested = EXCLUDED.Nested2_IsNested, Nested2_Int64 = EXCLUDED.Nested2_Int64"
+	finalStr := "INSERT INTO test_multi_key_structs_nesteds (test_multi_key_structs_Key1, test_multi_key_structs_Key2, idx, Nested, IsNested, Int64, Nested2_Nested2, Nested2_IsNested, Nested2_Int64) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(test_multi_key_structs_Key1, test_multi_key_structs_Key2, idx) DO UPDATE SET test_multi_key_structs_Key1 = EXCLUDED.test_multi_key_structs_Key1, test_multi_key_structs_Key2 = EXCLUDED.test_multi_key_structs_Key2, idx = EXCLUDED.idx, Nested = EXCLUDED.Nested, IsNested = EXCLUDED.IsNested, Int64 = EXCLUDED.Int64, Nested2_Nested2 = EXCLUDED.Nested2_Nested2, Nested2_IsNested = EXCLUDED.Nested2_IsNested, Nested2_Int64 = EXCLUDED.Nested2_Int64"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -145,7 +145,7 @@ func insertIntoMultikeyNested(ctx context.Context, tx pgx.Tx, obj *storage.TestM
 	return nil
 }
 
-func (s *storeImpl) copyFromMultikey(ctx context.Context, tx pgx.Tx, objs ...*storage.TestMultiKeyStruct) error {
+func (s *storeImpl) copyFromTestMultiKeyStructs(ctx context.Context, tx pgx.Tx, objs ...*storage.TestMultiKeyStruct) error {
 
 	inputRows := [][]interface{}{}
 
@@ -235,7 +235,7 @@ func (s *storeImpl) copyFromMultikey(ctx context.Context, tx pgx.Tx, objs ...*st
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"multikey"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_multi_key_structs"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -249,7 +249,7 @@ func (s *storeImpl) copyFromMultikey(ctx context.Context, tx pgx.Tx, objs ...*st
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err = s.copyFromMultikeyNested(ctx, tx, obj.GetKey1(), obj.GetKey2(), obj.GetNested()...); err != nil {
+		if err = s.copyFromTestMultiKeyStructsNesteds(ctx, tx, obj.GetKey1(), obj.GetKey2(), obj.GetNested()...); err != nil {
 			return err
 		}
 	}
@@ -257,7 +257,7 @@ func (s *storeImpl) copyFromMultikey(ctx context.Context, tx pgx.Tx, objs ...*st
 	return err
 }
 
-func (s *storeImpl) copyFromMultikeyNested(ctx context.Context, tx pgx.Tx, multikey_Key1 string, multikey_Key2 string, objs ...*storage.TestMultiKeyStruct_Nested) error {
+func (s *storeImpl) copyFromTestMultiKeyStructsNesteds(ctx context.Context, tx pgx.Tx, test_multi_key_structs_Key1 string, test_multi_key_structs_Key2 string, objs ...*storage.TestMultiKeyStruct_Nested) error {
 
 	inputRows := [][]interface{}{}
 
@@ -265,9 +265,9 @@ func (s *storeImpl) copyFromMultikeyNested(ctx context.Context, tx pgx.Tx, multi
 
 	copyCols := []string{
 
-		"multikey_key1",
+		"test_multi_key_structs_key1",
 
-		"multikey_key2",
+		"test_multi_key_structs_key2",
 
 		"idx",
 
@@ -290,9 +290,9 @@ func (s *storeImpl) copyFromMultikeyNested(ctx context.Context, tx pgx.Tx, multi
 
 		inputRows = append(inputRows, []interface{}{
 
-			multikey_Key1,
+			test_multi_key_structs_Key1,
 
-			multikey_Key2,
+			test_multi_key_structs_Key2,
 
 			idx,
 
@@ -314,7 +314,7 @@ func (s *storeImpl) copyFromMultikeyNested(ctx context.Context, tx pgx.Tx, multi
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"multikey_nested"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"test_multi_key_structs_nesteds"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -340,7 +340,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.TestMultiKeyS
 		return err
 	}
 
-	if err := s.copyFromMultikey(ctx, tx, objs...); err != nil {
+	if err := s.copyFromTestMultiKeyStructs(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -365,7 +365,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TestMultiKeyStr
 			return err
 		}
 
-		if err := insertIntoMultikey(ctx, tx, obj); err != nil {
+		if err := insertIntoTestMultiKeyStructs(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -568,19 +568,19 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TestMultiKeyS
 
 //// Used for testing
 
-func dropTableMultikey(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS multikey CASCADE")
-	dropTableMultikeyNested(ctx, db)
+func dropTableTestMultiKeyStructs(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_multi_key_structs CASCADE")
+	dropTableTestMultiKeyStructsNesteds(ctx, db)
 
 }
 
-func dropTableMultikeyNested(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS multikey_Nested CASCADE")
+func dropTableTestMultiKeyStructsNesteds(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS test_multi_key_structs_nesteds CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableMultikey(ctx, db)
+	dropTableTestMultiKeyStructs(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

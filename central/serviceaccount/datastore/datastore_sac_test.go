@@ -63,7 +63,7 @@ func (s *serviceAccountSACSuite) SetupSuite() {
 		pgStore.Destroy(ctx, s.pool)
 		s.storage = pgStore.New(ctx, s.pool)
 		s.indexer = pgStore.NewIndexer(s.pool)
-		s.optionsMap = schema.ServiceaccountsSchema.OptionsMap
+		s.optionsMap = schema.ServiceAccountsSchema.OptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp("serviceAccountSACTest")
 		s.Require().NoError(err)

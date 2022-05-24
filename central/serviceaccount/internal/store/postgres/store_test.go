@@ -20,18 +20,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ServiceaccountsStoreSuite struct {
+type ServiceAccountsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestServiceaccountsStore(t *testing.T) {
-	suite.Run(t, new(ServiceaccountsStoreSuite))
+func TestServiceAccountsStore(t *testing.T) {
+	suite.Run(t, new(ServiceAccountsStoreSuite))
 }
 
-func (s *ServiceaccountsStoreSuite) SetupTest() {
+func (s *ServiceAccountsStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,14 +54,14 @@ func (s *ServiceaccountsStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *ServiceaccountsStoreSuite) TearDownTest() {
+func (s *ServiceAccountsStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *ServiceaccountsStoreSuite) TestStore() {
+func (s *ServiceAccountsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
@@ -117,7 +117,7 @@ func (s *ServiceaccountsStoreSuite) TestStore() {
 	s.Equal(200, serviceAccountCount)
 }
 
-func (s *ServiceaccountsStoreSuite) TestSACUpsert() {
+func (s *ServiceAccountsStoreSuite) TestSACUpsert() {
 	obj := &storage.ServiceAccount{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -136,7 +136,7 @@ func (s *ServiceaccountsStoreSuite) TestSACUpsert() {
 	}
 }
 
-func (s *ServiceaccountsStoreSuite) TestSACUpsertMany() {
+func (s *ServiceAccountsStoreSuite) TestSACUpsertMany() {
 	obj := &storage.ServiceAccount{}
 	s.NoError(testutils.FullInit(obj, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
@@ -155,7 +155,7 @@ func (s *ServiceaccountsStoreSuite) TestSACUpsertMany() {
 	}
 }
 
-func (s *ServiceaccountsStoreSuite) TestSACCount() {
+func (s *ServiceAccountsStoreSuite) TestSACCount() {
 	objA := &storage.ServiceAccount{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -183,7 +183,7 @@ func (s *ServiceaccountsStoreSuite) TestSACCount() {
 	}
 }
 
-func (s *ServiceaccountsStoreSuite) TestSACGetIDs() {
+func (s *ServiceAccountsStoreSuite) TestSACGetIDs() {
 	objA := &storage.ServiceAccount{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -211,7 +211,7 @@ func (s *ServiceaccountsStoreSuite) TestSACGetIDs() {
 	}
 }
 
-func (s *ServiceaccountsStoreSuite) TestSACExists() {
+func (s *ServiceAccountsStoreSuite) TestSACExists() {
 	objA := &storage.ServiceAccount{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -235,7 +235,7 @@ func (s *ServiceaccountsStoreSuite) TestSACExists() {
 	}
 }
 
-func (s *ServiceaccountsStoreSuite) TestSACGet() {
+func (s *ServiceAccountsStoreSuite) TestSACGet() {
 	objA := &storage.ServiceAccount{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -264,7 +264,7 @@ func (s *ServiceaccountsStoreSuite) TestSACGet() {
 	}
 }
 
-func (s *ServiceaccountsStoreSuite) TestSACDelete() {
+func (s *ServiceAccountsStoreSuite) TestSACDelete() {
 	objA := &storage.ServiceAccount{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
@@ -297,7 +297,7 @@ func (s *ServiceaccountsStoreSuite) TestSACDelete() {
 	}
 }
 
-func (s *ServiceaccountsStoreSuite) TestSACDeleteMany() {
+func (s *ServiceAccountsStoreSuite) TestSACDeleteMany() {
 	objA := &storage.ServiceAccount{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
