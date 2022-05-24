@@ -200,8 +200,6 @@ function PermissionSets(): ReactElement {
                 <AccessControlBreadcrumbs
                     entityType={entityType}
                     entityName={action === 'create' ? 'Create permission set' : permissionSet?.name}
-                    isDisabled={hasAction}
-                    isList={isList}
                 />
             )}
             {alertPermissionSets}
