@@ -154,7 +154,7 @@ export function getUndoModificationForDeployment(deploymentId) {
  */
 export function fetchNetworkPolicyGraph(clusterId, namespaces, query, modification, includePorts) {
     const urlParams = query ? { query } : {};
-    const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
+    const namespaceQuery = namespaces.length > 0 ? `Namespace ID:${namespaces.join(',')}` : '';
     urlParams.query = query ? `${query}+${namespaceQuery}` : namespaceQuery;
 
     if (includePorts) {
@@ -201,7 +201,7 @@ export function fetchNetworkPolicyGraph(clusterId, namespaces, query, modificati
  */
 export function fetchNetworkFlowGraph(clusterId, namespaces, query, date, includePorts) {
     const urlParams = query ? { query } : {};
-    const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
+    const namespaceQuery = namespaces.length > 0 ? `Namespace ID:${namespaces.join(',')}` : '';
     urlParams.query = query ? `${query}+${namespaceQuery}` : namespaceQuery;
     if (date) {
         urlParams.since = date.toISOString();
