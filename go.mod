@@ -103,15 +103,15 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.20.0
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
-	golang.org/x/net v0.0.0-20220412020605-290c469a71a5
+	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad
+	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6
 	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11
 	golang.org/x/tools v0.1.8
 	golang.stackrox.io/grpc-http1 v0.2.4
-	google.golang.org/api v0.75.0
-	google.golang.org/genproto v0.0.0-20220421151946-72621c1f0bd3
+	google.golang.org/api v0.80.0
+	google.golang.org/genproto v0.0.0-20220505152158-f39f71e6c8f3
 	google.golang.org/grpc v1.46.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
