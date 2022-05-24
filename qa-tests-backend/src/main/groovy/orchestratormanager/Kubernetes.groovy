@@ -157,7 +157,7 @@ class Kubernetes implements OrchestratorMain {
             if (kce.code != 409) {
                 throw kce
             }
-            log.debug("Namespace ${ns} already exists")
+            println "Namespace ${ns} already exists"
         }
     }
 
