@@ -68,7 +68,6 @@ func (s *SchemaTestSuite) SetupTest() {
 	s.pool = pool
 	s.tmpDir, err = os.MkdirTemp("", "schema_test")
 	s.Require().NoError(err)
-	source = "host=localhost port=5432 database=postgres user=cong password= sslmode=disable statement_timeout=600000"
 	s.gorm, err = gorm.Open(postgres.Open(source), &gorm.Config{})
 	s.Require().NoError(err)
 }
