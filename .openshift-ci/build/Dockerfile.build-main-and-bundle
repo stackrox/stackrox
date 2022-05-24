@@ -6,4 +6,4 @@ ENV ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
 COPY . /go/src/github.com/stackrox/stackrox
 WORKDIR /go/src/github.com/stackrox/stackrox
 
-RUN ./.openshift-ci/build/build-main-and-bundles.sh
+RUN ./.openshift-ci/build/build-main-and-bundle.sh

@@ -118,10 +118,6 @@ build_main_and_bundles() {
     git restore .
     git status
 
-    # TODO(RS-509) Submodules are not initialized in migration but they should
-    # be in the 'src' delivered by OSCI in the final env so this can then be removed.
-    git submodule update --init
-
     info "Current Status:"
     "$ROOT/status.sh" || true
 
