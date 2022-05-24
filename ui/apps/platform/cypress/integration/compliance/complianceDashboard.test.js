@@ -11,7 +11,7 @@ describe('Compliance dashboard page', () => {
 
     it('should scan for compliance data from the Dashboard page', () => {
         visitComplianceDashboard();
-        scanCompliance();
+        scanCompliance(); // prerequisite for the following tests
     });
 
     it('should show the same amount of clusters between the Dashboard and List Page', () => {
@@ -81,6 +81,6 @@ describe('Compliance dashboard page', () => {
         visitComplianceDashboard();
 
         cy.get(selectors.widget.PCICompliance.controls).first().click();
-        cy.location('search').should('eq', '?s[standard]=PCI DSS 3.2.1');
+        cy.location('search').should('eq', '?s[standard]=PCI DSS 3.2.1'.replace(/ /g, '%20'));
     });
 });
