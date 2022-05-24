@@ -47,9 +47,9 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance using the provided store and indexer
-func New(store store.Store, graphProvider graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker, idMapStorage idmap.Storage) (DataStore, error) {
+func New(nsStore store.Store, graphProvider graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker, idMapStorage idmap.Storage) (DataStore, error) {
 	ds := &datastoreImpl{
-		store:           store,
+		store:           nsStore,
 		indexer:         indexer,
 		deployments:     deploymentDataStore,
 		namespaceRanker: namespaceRanker,
@@ -60,7 +60,11 @@ func New(store store.Store, graphProvider graph.Provider, indexer index.Indexer,
 	} else {
 		ds.formattedSearcher = formatSearcher(indexer, graphProvider, namespaceRanker)
 	}
-	if err := ds.buildIndex(context.TODO()); err != nil {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Namespace)))
+	if err := ds.buildIndex(ctx); err != nil {
 		return nil, err
 	}
 	return ds, nil

@@ -126,7 +126,11 @@ func New(
 	} else {
 		ds.searcher = search.New(clusterStorage, indexer, graphProvider, clusterRanker)
 	}
-	if err := ds.buildIndex(context.TODO()); err != nil {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Cluster)))
+	if err := ds.buildIndex(ctx); err != nil {
 		return ds, err
 	}
 

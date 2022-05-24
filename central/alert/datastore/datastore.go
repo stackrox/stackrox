@@ -9,10 +9,12 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -40,14 +42,18 @@ type DataStore interface {
 }
 
 // New returns a new soleInstance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+func New(alertStore store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
 	ds := &datastoreImpl{
-		storage:    storage,
+		storage:    alertStore,
 		indexer:    indexer,
 		searcher:   searcher,
 		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
-	if err := ds.buildIndex(context.TODO()); err != nil {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Alert)))
+	if err := ds.buildIndex(ctx); err != nil {
 		return nil, err
 	}
 	return ds, nil
@@ -55,12 +61,12 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 
 // NewWithDb returns a new soleInstance of DataStore using the input indexer, and searcher.
 func NewWithDb(db *rocksdbBase.RocksDB, bIndex bleve.Index) DataStore {
-	store := store.NewFullStore(rocksdb.New(db))
+	alertStore := store.NewFullStore(rocksdb.New(db))
 	indexer := index.New(bIndex)
-	searcher := search.New(store, indexer)
+	searcher := search.New(alertStore, indexer)
 
 	return &datastoreImpl{
-		storage:    store,
+		storage:    alertStore,
 		indexer:    indexer,
 		searcher:   searcher,
 		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
