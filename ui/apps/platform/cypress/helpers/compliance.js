@@ -12,14 +12,32 @@ const opnamesForDashboard = [
     'getComplianceStandards',
 ];
 
+const standardNames = [
+    'CIS Docker v1.2.0',
+    'CIS Kubernetes v1.5',
+    'HIPAA 164',
+    'NIST SP 800-190',
+    'NIST SP 800-53',
+    'PCI DSS 3.2.1',
+];
+
 export function visitComplianceDashboard() {
     opnamesForDashboard.forEach((opname) => {
         cy.intercept('POST', api.graphql(opname)).as(opname);
+    });
+    // Intercept requests for compliance standards, which have same opname but different value in payload.
+    cy.intercept('POST', api.graphql('complianceStandards'), (req) => {
+        const { where } = req.body.variables;
+        const alias = standardNames.find((standardName) => where === `Standard:${standardName}`);
+        if (typeof alias === 'string') {
+            req.alias = alias;
+        }
     });
 
     visit(url.dashboard);
 
     cy.wait(opnamesForDashboard.map((opname) => `@${opname}`));
+    cy.wait(standardNames.map((standardName) => `@${standardName}`));
     cy.get('h1:contains("Compliance")');
 }
 
