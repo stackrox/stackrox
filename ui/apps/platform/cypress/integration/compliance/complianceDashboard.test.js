@@ -20,7 +20,7 @@ describe('Compliance dashboard page', () => {
         cy.get(selectors.dashboard.tileLinks.cluster.value)
             .invoke('text')
             .then((text) => {
-                const numClusters = parseInt(text, 10); // for example, 1 CLUSTER
+                const numClusters = parseInt(text, 10); // for example, 1 cluster
                 visitComplianceEntities('clusters');
                 cy.get(selectors.list.table.rows).its('length').should('eq', numClusters);
             });
@@ -44,7 +44,7 @@ describe('Compliance dashboard page', () => {
         cy.get(selectors.dashboard.tileLinks.node.value)
             .invoke('text')
             .then((text) => {
-                const numNodes = parseInt(text, 10); // for example, 1 NODE
+                const numNodes = parseInt(text, 10); // for example, 2 nodes
                 visitComplianceEntities('nodes');
                 cy.get(selectors.list.table.rows).its('length').should('eq', numNodes);
             });
