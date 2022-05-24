@@ -82,9 +82,8 @@ describe('Access Control Auth providers', () => {
         cy.get(selectors.list.createButton).click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Create ${type} provider")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
@@ -115,9 +114,8 @@ describe('Access Control Auth providers', () => {
         cy.get(selectors.list.createButton).click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Create ${type} provider")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
@@ -212,9 +210,8 @@ describe('Access Control Auth providers', () => {
         cy.get(selectors.list.createButton).click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Create ${type} provider")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
@@ -265,9 +262,8 @@ describe('Access Control Auth providers', () => {
         cy.get(selectors.list.createButton).click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Create ${type} provider")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
@@ -309,9 +305,8 @@ describe('Access Control Auth providers', () => {
         cy.get(selectors.list.createButton).click();
         cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("Create ${type} provider")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("Create ${type} provider")`);
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
@@ -384,9 +379,8 @@ describe('Access Control Auth providers', () => {
         cy.visit(`${authProvidersUrl}/bogus`);
         cy.wait('@GetAuthProviders');
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3)`).should('not.exist');
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2)`).should('not.exist');
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');

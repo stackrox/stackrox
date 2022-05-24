@@ -173,8 +173,6 @@ function AccessScopes(): ReactElement {
                 <AccessControlBreadcrumbs
                     entityType={entityType}
                     entityName={action === 'create' ? 'Create access scope' : accessScope?.name}
-                    isDisabled={hasAction}
-                    isList={isList}
                 />
             )}
             {alertAccessScopes}

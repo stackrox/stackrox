@@ -180,9 +180,8 @@ describe('Access Control Roles', () => {
         cy.visit(`${rolesUrl}/bogus`);
         cy.wait('@GetAuthProviders');
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3)`).should('not.exist');
+        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h2}")`);
+        cy.get(`${selectors.breadcrumbItem}:nth-child(2)`).should('not.exist');
 
         cy.get(selectors.h1).should('not.exist');
         cy.get(selectors.navLinkCurrent).should('not.exist');
