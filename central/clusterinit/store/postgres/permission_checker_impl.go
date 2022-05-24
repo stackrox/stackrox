@@ -68,3 +68,7 @@ func (permissionChecker) GetManyAllowed(ctx context.Context) (bool, error) {
 func (permissionChecker) DeleteManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
 	return checkAccess(ctx, storage.Access_READ_WRITE_ACCESS)
 }
+
+func (permissionChecker) WalkAllowed(ctx context.Context) (bool, error) {
+	return checkAccess(ctx, storage.Access_READ_ACCESS)
+}

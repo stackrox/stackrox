@@ -28,8 +28,6 @@ const (
 	getStmt    = "SELECT serialized FROM node_component_edges WHERE Id = $1 AND NodeId = $2 AND NodeComponentId = $3"
 	deleteStmt = "DELETE FROM node_component_edges WHERE Id = $1 AND NodeId = $2 AND NodeComponentId = $3"
 
-	walkStmt = "SELECT serialized FROM node_component_edges"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
@@ -192,16 +190,12 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.NodeC
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NodeComponentEdge) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
+	var sacQueryFilter *v1.Query
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
-		}
+	for _, data := range rows {
 		var msg storage.NodeComponentEdge
 		if err := proto.Unmarshal(data, &msg); err != nil {
 			return err

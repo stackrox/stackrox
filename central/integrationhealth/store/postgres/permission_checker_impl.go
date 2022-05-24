@@ -64,3 +64,7 @@ func (permissionChecker) GetManyAllowed(ctx context.Context) (bool, error) {
 func (permissionChecker) DeleteManyAllowed(ctx context.Context, keys ...sac.ScopeKey) (bool, error) {
 	return multiResourceSAC.WriteAllowedToAny(ctx)
 }
+
+func (permissionChecker) WalkAllowed(ctx context.Context) (bool, error) {
+	return multiResourceSAC.ReadAllowedToAny(ctx)
+}

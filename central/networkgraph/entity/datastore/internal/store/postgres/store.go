@@ -24,8 +24,6 @@ import (
 const (
 	baseTable = "network_entities"
 
-	walkStmt = "SELECT serialized FROM network_entities"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
@@ -375,16 +373,12 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
+	var sacQueryFilter *v1.Query
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
-		}
+	for _, data := range rows {
 		var msg storage.NetworkEntity
 		if err := proto.Unmarshal(data, &msg); err != nil {
 			return err
