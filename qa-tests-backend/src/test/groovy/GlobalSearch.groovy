@@ -1,12 +1,11 @@
 import static Services.getSearchResponse
 import static Services.waitForViolation
-
-import objects.Deployment
-import util.Env
-import spock.lang.Unroll
-import io.stackrox.proto.api.v1.SearchServiceOuterClass
-import org.junit.experimental.categories.Category
 import groups.BAT
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
+import objects.Deployment
+import org.junit.experimental.categories.Category
+import spock.lang.Unroll
+import util.Env
 
 class GlobalSearch extends BaseSpecification {
     static final private List<SearchServiceOuterClass.SearchCategory> EXPECTED_DEPLOYMENT_CATEGORIES = []
@@ -45,8 +44,8 @@ class GlobalSearch extends BaseSpecification {
         def foundViolation = waitForViolation(DEPLOYMENT.getName(), "Latest tag", WAIT_FOR_VIOLATION_TIMEOUT)
         if (!foundViolation) {
             def policy = Services.getPolicyByName("Latest tag")
-            println "'Latest tag' policy:"
-            println policy
+            log.info "'Latest tag' policy:"
+            log.info policy
         }
         assert foundViolation
     }
@@ -79,7 +78,7 @@ class GlobalSearch extends BaseSpecification {
         withRetry(30, 1) {
             searchResponse = getSearchResponse(query, searchCategories)
             searchResponse.countsList.forEach {
-                count -> println "Category: ${count.category}: ${count.count}"
+                count -> log.info "Category: ${count.category}: ${count.count}"
             }
             presentCategories = searchResponse.countsList.collectMany {
                 count -> count.count > 0 ? [count.category] : [] } .toSet()

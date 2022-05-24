@@ -1,10 +1,9 @@
-import services.ProcessService
-
 import groups.BAT
 import groups.RUNTIME
-import spock.lang.Unroll
 import objects.Deployment
 import org.junit.experimental.categories.Category
+import services.ProcessService
+import spock.lang.Unroll
 import util.Timer
 
 class ProcessVisualizationReplicaTest extends BaseSpecification {
@@ -80,13 +79,13 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
             if (receivedProcessPaths.containsAll(expectedFilePaths) && observedPathOnEachContainer) {
                 break
             }
-            println "Didn't find all the expected processes, retrying..."
+            log.info "Didn't find all the expected processes, retrying..."
         }
-        println "ProcessVisualizationTest: Dep: " + depName + " Processes: " + receivedProcessPaths
+        log.info "ProcessVisualizationTest: Dep: " + depName + " Processes: " + receivedProcessPaths
 
         processContainerMap = ProcessService.getProcessContainerMap(uid, expectedFilePaths)
 
-        println processContainerMap
+        log.info processContainerMap.toString()
 
         processContainerMap.each { k, v ->
             // check that every path has k*REPLICACOUNT containerId's

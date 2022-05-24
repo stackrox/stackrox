@@ -31,7 +31,8 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes: []string{},
+		GormModel: (*RoleBindings)(nil),
+		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -44,6 +45,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (role_bindings_Id) REFERENCES role_bindings(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*RoleBindingsSubjects)(nil),
 				Indexes: []string{
 					"create index if not exists roleBindingsSubjects_idx on role_bindings_subjects using btree(idx)",
 				},

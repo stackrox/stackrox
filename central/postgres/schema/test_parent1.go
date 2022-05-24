@@ -27,7 +27,8 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ParentId) REFERENCES test_grandparents(Id) ON DELETE CASCADE
                )
                `,
-		Indexes: []string{},
+		GormModel: (*TestParent1)(nil),
+		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -39,6 +40,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (test_parent1_Id) REFERENCES test_parent1(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*TestParent1Childrens)(nil),
 				Indexes: []string{
 					"create index if not exists testParent1Childrens_idx on test_parent1_childrens using btree(idx)",
 				},

@@ -1,11 +1,9 @@
 import com.google.protobuf.util.Timestamps
-
 import groups.BAT
 import objects.Deployment
+import org.junit.experimental.categories.Category
 import services.GraphQLService
 import services.ImageService
-
-import org.junit.experimental.categories.Category
 import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Unroll
@@ -210,7 +208,7 @@ class CVETest extends BaseSpecification {
         def resultRet = gqlService.Call(GET_CVES_QUERY,
                 [query: "Image:${image}+CVE:${cve}", scopeQuery: ""])
         assert resultRet.getCode() == 200
-        println "return code " + resultRet.getCode()
+        log.info "return code " + resultRet.getCode()
 
         then:
         "Verify specific CVE data"
@@ -256,7 +254,7 @@ class CVETest extends BaseSpecification {
 
         def resultRet = gqlService.Call(GET_CVES_QUERY, [query: "${query}", scopeQuery: ""])
         assert resultRet.getCode() == 200
-        println "return code " + resultRet.getCode()
+        log.info "return code " + resultRet.getCode()
 
         then:
         "Verify specific CVE data"

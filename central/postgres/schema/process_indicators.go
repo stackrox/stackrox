@@ -34,6 +34,7 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
+		GormModel: (*ProcessIndicators)(nil),
 		Indexes: []string{
 			"create index if not exists processIndicators_DeploymentId on process_indicators using hash(DeploymentId)",
 			"create index if not exists processIndicators_PodUid on process_indicators using hash(PodUid)",

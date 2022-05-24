@@ -21,8 +21,9 @@ var (
                    PRIMARY KEY(Name)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*WatchedImages)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// WatchedImagesSchema is the go schema for table `watched_images`.

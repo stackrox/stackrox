@@ -1,7 +1,6 @@
 import static Services.waitForViolation
-
-import groups.Integration
 import groups.BAT
+import groups.Integration
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.ScopeOuterClass

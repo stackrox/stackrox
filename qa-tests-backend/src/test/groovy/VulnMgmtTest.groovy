@@ -1,7 +1,7 @@
-import io.stackrox.proto.storage.Cve.VulnerabilitySeverity
-import services.GraphQLService
 import groups.BAT
+import io.stackrox.proto.storage.Cve.VulnerabilitySeverity
 import org.junit.experimental.categories.Category
+import services.GraphQLService
 import services.ImageIntegrationService
 import services.ImageService
 import spock.lang.IgnoreIf

@@ -26,10 +26,10 @@ import (
 )
 
 const (
-	baseTable = "namespace_metadata"
+	baseTable = "namespaces"
 
-	walkStmt    = "SELECT serialized FROM namespace_metadata"
-	getManyStmt = "SELECT serialized FROM namespace_metadata WHERE Id = ANY($1::text[])"
+	walkStmt    = "SELECT serialized FROM namespaces"
+	getManyStmt = "SELECT serialized FROM namespaces WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -41,7 +41,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NamespaceMetadataSchema
+	schema         = pkgSchema.NamespacesSchema
 	targetResource = resources.Namespace
 )
 
@@ -69,14 +69,14 @@ type storeImpl struct {
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
 	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableClustersStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNamespaceMetadataStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNamespacesStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoNamespaceMetadata(ctx context.Context, tx pgx.Tx, obj *storage.NamespaceMetadata) error {
+func insertIntoNamespaces(ctx context.Context, tx pgx.Tx, obj *storage.NamespaceMetadata) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -94,7 +94,7 @@ func insertIntoNamespaceMetadata(ctx context.Context, tx pgx.Tx, obj *storage.Na
 		serialized,
 	}
 
-	finalStr := "INSERT INTO namespace_metadata (Id, Name, ClusterId, ClusterName, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO namespaces (Id, Name, ClusterId, ClusterName, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func insertIntoNamespaceMetadata(ctx context.Context, tx pgx.Tx, obj *storage.Na
 	return nil
 }
 
-func (s *storeImpl) copyFromNamespaceMetadata(ctx context.Context, tx pgx.Tx, objs ...*storage.NamespaceMetadata) error {
+func (s *storeImpl) copyFromNamespaces(ctx context.Context, tx pgx.Tx, objs ...*storage.NamespaceMetadata) error {
 
 	inputRows := [][]interface{}{}
 
@@ -170,7 +170,7 @@ func (s *storeImpl) copyFromNamespaceMetadata(ctx context.Context, tx pgx.Tx, ob
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"namespace_metadata"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"namespaces"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -196,7 +196,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NamespaceMeta
 		return err
 	}
 
-	if err := s.copyFromNamespaceMetadata(ctx, tx, objs...); err != nil {
+	if err := s.copyFromNamespaces(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -221,7 +221,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NamespaceMetada
 			return err
 		}
 
-		if err := insertIntoNamespaceMetadata(ctx, tx, obj); err != nil {
+		if err := insertIntoNamespaces(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -509,13 +509,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NamespaceMeta
 
 //// Used for testing
 
-func dropTableNamespaceMetadata(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS namespace_metadata CASCADE")
+func dropTableNamespaces(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS namespaces CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableNamespaceMetadata(ctx, db)
+	dropTableNamespaces(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

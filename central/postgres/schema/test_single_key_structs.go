@@ -35,6 +35,7 @@ var (
                    PRIMARY KEY(Key)
                )
                `,
+		GormModel: (*TestSingleKeyStructs)(nil),
 		Indexes: []string{
 			"create index if not exists testSingleKeyStructs_Key on test_single_key_structs using hash(Key)",
 		},

@@ -1858,7 +1858,7 @@ commands:
             if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
               echo "On nightly tag, running all QA tests but failing fast..."
               make -C qa-tests-backend test FAIL_FAST=true || touch FAIL
-            elif [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; the
+            elif [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
               echo "On master, running all QA tests..."
               make -C qa-tests-backend test || touch FAIL
             elif .circleci/pr_has_label.sh ci-all-qa-tests; then
@@ -2969,7 +2969,7 @@ jobs:
       - check-to-run:
           label: ci-postgres-tests
           run-on-master: true
-          run-on-tags: true
+          run-on-tags: false
       - provision-gke-cluster:
           cluster-id: postgres-api-e2e-tests
 
@@ -2982,7 +2982,7 @@ jobs:
 
       - check-to-run:
           label: ci-kernel-module-tests
-          run-on-master: true
+          run-on-master: false
           run-on-tags: true
 
       - provision-gke-cluster:
@@ -3659,7 +3659,7 @@ jobs:
           determine-whether-to-run:
             - check-to-run:
                 label: ci-kernel-module-tests
-                run-on-master: true
+                run-on-master: false
                 run-on-tags: true
 
   gke-api-scale-tests:

@@ -43,7 +43,8 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes: []string{},
+		GormModel: (*Deployments)(nil),
+		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -67,6 +68,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id) REFERENCES deployments(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*DeploymentsContainers)(nil),
 				Indexes: []string{
 					"create index if not exists deploymentsContainers_idx on deployments_containers using btree(idx)",
 				},
@@ -84,6 +86,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
+						GormModel: (*DeploymentsContainersEnvs)(nil),
 						Indexes: []string{
 							"create index if not exists deploymentsContainersEnvs_idx on deployments_containers_envs using btree(idx)",
 						},
@@ -104,6 +107,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
+						GormModel: (*DeploymentsContainersVolumes)(nil),
 						Indexes: []string{
 							"create index if not exists deploymentsContainersVolumes_idx on deployments_containers_volumes using btree(idx)",
 						},
@@ -121,6 +125,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
+						GormModel: (*DeploymentsContainersSecrets)(nil),
 						Indexes: []string{
 							"create index if not exists deploymentsContainersSecrets_idx on deployments_containers_secrets using btree(idx)",
 						},
@@ -140,6 +145,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id) REFERENCES deployments(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*DeploymentsPorts)(nil),
 				Indexes: []string{
 					"create index if not exists deploymentsPorts_idx on deployments_ports using btree(idx)",
 				},
@@ -160,6 +166,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_ports_idx) REFERENCES deployments_ports(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
+						GormModel: (*DeploymentsPortsExposureInfos)(nil),
 						Indexes: []string{
 							"create index if not exists deploymentsPortsExposureInfos_idx on deployments_ports_exposure_infos using btree(idx)",
 						},
@@ -179,7 +186,7 @@ var (
 		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":             ImagesSchema,
-			"storage.NamespaceMetadata": NamespaceMetadataSchema,
+			"storage.NamespaceMetadata": NamespacesSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {

@@ -15,10 +15,10 @@ import (
 )
 
 var (
-	// CreateTableNamespaceMetadataStmt holds the create statement for table `namespace_metadata`.
-	CreateTableNamespaceMetadataStmt = &postgres.CreateStmts{
+	// CreateTableNamespacesStmt holds the create statement for table `namespaces`.
+	CreateTableNamespacesStmt = &postgres.CreateStmts{
 		Table: `
-               create table if not exists namespace_metadata (
+               create table if not exists namespaces (
                    Id varchar,
                    Name varchar,
                    ClusterId varchar,
@@ -29,17 +29,18 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*Namespaces)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
-	// NamespaceMetadataSchema is the go schema for table `namespace_metadata`.
-	NamespaceMetadataSchema = func() *walker.Schema {
-		schema := globaldb.GetSchemaForTable("namespace_metadata")
+	// NamespacesSchema is the go schema for table `namespaces`.
+	NamespacesSchema = func() *walker.Schema {
+		schema := globaldb.GetSchemaForTable("namespaces")
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.NamespaceMetadata)(nil)), "namespace_metadata")
+		schema = walker.Walk(reflect.TypeOf((*storage.NamespaceMetadata)(nil)), "namespaces")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 		}
@@ -54,11 +55,11 @@ var (
 )
 
 const (
-	NamespaceMetadataTableName = "namespace_metadata"
+	NamespacesTableName = "namespaces"
 )
 
-// NamespaceMetadata holds the Gorm model for Postgres table `namespace_metadata`.
-type NamespaceMetadata struct {
+// NamespaceMetadata holds the Gorm model for Postgres table `namespaces`.
+type Namespaces struct {
 	Id          string            `gorm:"column:id;type:varchar;primaryKey"`
 	Name        string            `gorm:"column:name;type:varchar"`
 	ClusterId   string            `gorm:"column:clusterid;type:varchar"`

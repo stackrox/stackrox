@@ -143,7 +143,7 @@ class CSVTest extends BaseSpecification {
             }
         }
 
-        println "Number of CVEs received from CSV endpoint: " + lines.size()
+        log.info "Number of CVEs received from CSV endpoint: " + lines.size()
 
         def csvCVEs = new ArrayList<CVE>()
         for (int i = 1; i < lines.size(); i++) {

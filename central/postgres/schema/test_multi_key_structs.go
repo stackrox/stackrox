@@ -38,7 +38,8 @@ var (
                    PRIMARY KEY(Key1, Key2)
                )
                `,
-		Indexes: []string{},
+		GormModel: (*TestMultiKeyStructs)(nil),
+		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -56,6 +57,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (test_multi_key_structs_Key1, test_multi_key_structs_Key2) REFERENCES test_multi_key_structs(Key1, Key2) ON DELETE CASCADE
                )
                `,
+				GormModel: (*TestMultiKeyStructsNesteds)(nil),
 				Indexes: []string{
 					"create index if not exists testMultiKeyStructsNesteds_idx on test_multi_key_structs_nesteds using btree(idx)",
 				},

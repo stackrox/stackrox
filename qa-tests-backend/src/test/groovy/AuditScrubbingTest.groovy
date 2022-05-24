@@ -28,7 +28,7 @@ class AuditScrubbingTest extends BaseSpecification {
         sleep 3000
     }
 
-    private static getAuditEntry(String attemptId) {
+    private getAuditEntry(String attemptId) {
         def timer = new Timer(30, 1)
         while (timer.IsValid()) {
             def get = new URL("http://localhost:8080").openConnection()
@@ -39,7 +39,8 @@ class AuditScrubbingTest extends BaseSpecification {
                     def data = it["data"]["audit"]
                     return data["request"]["endpoint"] == ENDPOINT &&
                             (data["request"]["payload"]["state"] as String).endsWith(attemptId)
-                } catch (Exception _) {
+                } catch (Exception e) {
+                    log.warn("exception", e)
                     return false
                 }
             }

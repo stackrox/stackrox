@@ -44,7 +44,8 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes: []string{},
+		GormModel: (*Images)(nil),
+		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -57,6 +58,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (images_Id) REFERENCES images(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*ImagesLayers)(nil),
 				Indexes: []string{
 					"create index if not exists imagesLayers_idx on images_layers using btree(idx)",
 				},

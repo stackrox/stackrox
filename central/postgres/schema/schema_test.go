@@ -30,11 +30,6 @@ var (
 	excludeFiles       = set.NewStringSet("schema_test.go")
 )
 
-type gormTable struct {
-	name     string
-	instance interface{}
-}
-
 type SchemaTestSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
@@ -97,8 +92,8 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 			createStmts: CreateTableAlertsStmt,
 		},
 		{
-			name:        TokenMetadataTableName,
-			createStmts: CreateTableTokenMetadataStmt,
+			name:        ApiTokensTableName,
+			createStmts: CreateTableApiTokensStmt,
 		},
 		{
 			name:        AuthProvidersTableName,
@@ -161,8 +156,8 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 			createStmts: CreateTableTestMultiKeyStructsStmt,
 		},
 		{
-			name:        NamespaceMetadataTableName,
-			createStmts: CreateTableNamespaceMetadataStmt,
+			name:        NamespacesTableName,
+			createStmts: CreateTableNamespacesStmt,
 		},
 		{
 			name:        NetworkBaselinesTableName,
@@ -209,22 +204,21 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 			createStmts: CreateTablePoliciesStmt,
 		},
 		{
-			name:        ProcessIndicatorsTableName,
-			createStmts: CreateTableProcessIndicatorsStmt,
+			name:        ProcessBaselineResultsTableName,
+			createStmts: CreateTableProcessBaselineResultsStmt,
 		},
 		{
 			name:        ProcessBaselinesTableName,
 			createStmts: CreateTableProcessBaselinesStmt,
 		},
-		/*
-			{
-				name:        ProcessWhitelistResultsTableName,
-				createStmts: CreateTableProcessWhitelistResultsStmt,
-			},
-			{
-				name:        ReportConfigsTableName,
-				createStmts: CreateTableReportConfigsStmt,
-			},*/
+		{
+			name:        ProcessIndicatorsTableName,
+			createStmts: CreateTableProcessIndicatorsStmt,
+		},
+		{
+			name:        ReportConfigurationsTableName,
+			createStmts: CreateTableReportConfigurationsStmt,
+		},
 		{
 			name:        RisksTableName,
 			createStmts: CreateTableRisksStmt,
@@ -311,6 +305,7 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 	for _, testCase := range testCases {
 		s.T().Run(testCase.name, func(t *testing.T) {
 			s.Require().Contains(allTestCases, testCase.name)
+			allTestCases.Remove(testCase.name)
 			schema := globaldb.GetSchemaForTable(testCase.name)
 			gormSchemas := s.getGormTableSchemas(schema, testCase.createStmts)
 			pgutils.CreateTable(s.ctx, s.pool, testCase.createStmts)
@@ -320,7 +315,7 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 			}
 		})
 	}
-	s.Require().Len(testCases, len(allTestCases))
+	s.Require().Len(allTestCases, 0)
 }
 
 func (s *SchemaTestSuite) getAllTestCases() []string {

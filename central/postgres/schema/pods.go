@@ -28,7 +28,8 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes: []string{},
+		GormModel: (*Pods)(nil),
+		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -40,6 +41,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (pods_Id) REFERENCES pods(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*PodsLiveInstances)(nil),
 				Indexes: []string{
 					"create index if not exists podsLiveInstances_idx on pods_live_instances using btree(idx)",
 				},

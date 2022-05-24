@@ -5,19 +5,16 @@ import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.Rules
 import static io.stackrox.proto.storage.RoleOuterClass.SimpleAccessScope.newBuilder
 import static services.ApiTokenService.generateToken
 import static services.ClusterService.DEFAULT_CLUSTER_NAME
-
+import groups.BAT
 import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.storage.RoleOuterClass
-
-import groups.BAT
+import org.junit.experimental.categories.Category
 import services.BaseService
 import services.DeploymentService
 import services.RoleService
-import util.Env
-
-import org.junit.experimental.categories.Category
 import spock.lang.IgnoreIf
 import spock.lang.Shared
+import util.Env
 
 @Category(BAT)
 @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })

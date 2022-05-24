@@ -1,7 +1,7 @@
 import groups.BAT
+import io.stackrox.proto.storage.ClusterOuterClass
 import org.junit.experimental.categories.Category
 import services.ClusterService
-import io.stackrox.proto.storage.ClusterOuterClass
 import spock.lang.Stepwise
 import util.Cert
 

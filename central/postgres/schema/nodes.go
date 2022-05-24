@@ -40,7 +40,8 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes: []string{},
+		GormModel: (*Nodes)(nil),
+		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -54,6 +55,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (nodes_Id) REFERENCES nodes(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*NodesTaints)(nil),
 				Indexes: []string{
 					"create index if not exists nodesTaints_idx on nodes_taints using btree(idx)",
 				},
@@ -70,6 +72,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (nodes_Id) REFERENCES nodes(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*NodesComponents)(nil),
 				Indexes: []string{
 					"create index if not exists nodesComponents_idx on nodes_components using btree(idx)",
 				},
@@ -90,6 +93,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (nodes_Id, nodes_components_idx) REFERENCES nodes_components(nodes_Id, idx) ON DELETE CASCADE
                )
                `,
+						GormModel: (*NodesComponentsVulns)(nil),
 						Indexes: []string{
 							"create index if not exists nodesComponentsVulns_idx on nodes_components_vulns using btree(idx)",
 						},

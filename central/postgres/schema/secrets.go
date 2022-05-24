@@ -29,7 +29,8 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes: []string{},
+		GormModel: (*Secrets)(nil),
+		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -42,6 +43,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*SecretsFiles)(nil),
 				Indexes: []string{
 					"create index if not exists secretsFiles_idx on secrets_files using btree(idx)",
 				},
@@ -57,6 +59,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (secrets_Id, secrets_files_idx) REFERENCES secrets_files(secrets_Id, idx) ON DELETE CASCADE
                )
                `,
+						GormModel: (*SecretsFilesRegistries)(nil),
 						Indexes: []string{
 							"create index if not exists secretsFilesRegistries_idx on secrets_files_registries using btree(idx)",
 						},

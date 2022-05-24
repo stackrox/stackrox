@@ -21,8 +21,9 @@ var (
                    PRIMARY KEY(Name)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*Roles)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// RolesSchema is the go schema for table `roles`.

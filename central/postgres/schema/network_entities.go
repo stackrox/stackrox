@@ -24,8 +24,9 @@ var (
                    PRIMARY KEY(Info_Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*NetworkEntities)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// NetworkEntitiesSchema is the go schema for table `network_entities`.
