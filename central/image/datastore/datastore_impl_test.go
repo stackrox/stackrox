@@ -2,9 +2,9 @@ package datastore
 
 import (
 	"context"
-	"path/filepath"
 	"testing"
 
+	"github.com/blevesearch/bleve"
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	componentCVEEdgeDackBox "github.com/stackrox/rox/central/componentcveedge/dackbox"
@@ -44,7 +44,7 @@ type ImageDataStoreTestSuite struct {
 	suite.Suite
 
 	db        *rocksdb.RocksDB
-	blevePath string
+	index     bleve.Index
 	indexQ    queue.WaitableQueue
 	datastore DataStore
 
@@ -62,19 +62,13 @@ func (suite *ImageDataStoreTestSuite) SetupSuite() {
 	suite.indexQ = queue.NewWaitableQueue()
 
 	dacky, err := dackbox.NewRocksDBDackBox(suite.db, suite.indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
-	if err != nil {
-		suite.FailNow("failed to create dackbox", err.Error())
-	}
+	suite.Require().NoError(err, "failed to create dackbox")
 
-	suite.blevePath = suite.T().TempDir()
-	blevePath := filepath.Join(suite.blevePath, "scorch.bleve")
-	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")
-	if err != nil {
-		suite.FailNow("failed to create bleve index", err.Error())
-	}
+	suite.index, err = globalindex.MemOnlyIndex()
+	suite.Require().NoError(err, "failed to create bleve index")
 
 	reg := indexer.NewWrapperRegistry()
-	indexer.NewLazy(suite.indexQ, reg, bleveIndex, dacky.AckIndexed).Start()
+	indexer.NewLazy(suite.indexQ, reg, suite.index, dacky.AckIndexed).Start()
 	reg.RegisterWrapper(cveDackbox.Bucket, cveIndex.Wrapper{})
 	reg.RegisterWrapper(componentDackBox.Bucket, componentIndex.Wrapper{})
 	reg.RegisterWrapper(componentCVEEdgeDackBox.Bucket, componentCVEEdgeIndex.Wrapper{})
@@ -83,11 +77,12 @@ func (suite *ImageDataStoreTestSuite) SetupSuite() {
 
 	suite.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(suite.T()))
 
-	suite.datastore = New(dacky, concurrency.NewKeyFence(), bleveIndex, bleveIndex, false, suite.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
+	suite.datastore = New(dacky, concurrency.NewKeyFence(), suite.index, suite.index, false, suite.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
 }
 
 func (suite *ImageDataStoreTestSuite) TearDownSuite() {
 	rocksdbtest.TearDownRocksDB(suite.db)
+	suite.Require().NoError(suite.index.Close())
 }
 
 func (suite *ImageDataStoreTestSuite) TestSearch() {
@@ -99,7 +94,7 @@ func (suite *ImageDataStoreTestSuite) TestSearch() {
 	))
 
 	// Upsert image.
-	suite.NoError(suite.datastore.UpsertImage(ctx, image))
+	suite.Require().NoError(suite.datastore.UpsertImage(ctx, image))
 
 	// Ensure the CVEs are indexed.
 	indexingDone := concurrency.NewSignal()
@@ -118,12 +113,12 @@ func (suite *ImageDataStoreTestSuite) TestSearch() {
 
 	// Basic scoped search.
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Len(results, 1)
 
 	// Search Images.
 	images, err := suite.datastore.SearchRawImages(scopedCtx, pkgSearch.EmptyQuery())
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.NotNil(images)
 	suite.Len(images, 1)
 	for _, component := range image.GetScan().GetComponents() {
@@ -148,7 +143,7 @@ func (suite *ImageDataStoreTestSuite) TestSearch() {
 			},
 		},
 	})
-	suite.NoError(suite.datastore.UpsertImage(ctx, newImage))
+	suite.Require().NoError(suite.datastore.UpsertImage(ctx, newImage))
 
 	// Ensure the CVEs are indexed.
 	indexingDone = concurrency.NewSignal()
@@ -157,12 +152,12 @@ func (suite *ImageDataStoreTestSuite) TestSearch() {
 
 	// Search multiple images.
 	images, err = suite.datastore.SearchRawImages(ctx, pkgSearch.EmptyQuery())
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Len(images, 2)
 
 	// Search for just one image.
 	images, err = suite.datastore.SearchRawImages(scopedCtx, pkgSearch.EmptyQuery())
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Len(images, 1)
 
 	// Search by CVE.
@@ -171,14 +166,14 @@ func (suite *ImageDataStoreTestSuite) TestSearch() {
 		Level: v1.SearchCategory_VULNERABILITIES,
 	})
 	images, err = suite.datastore.SearchRawImages(scopedCtx, pkgSearch.EmptyQuery())
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Len(images, 2)
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		ID:    "cve3",
 		Level: v1.SearchCategory_VULNERABILITIES,
 	})
 	results, err = suite.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
-	suite.NoError(err)
+	suite.Require().NoError(err)
 	suite.Len(results, 1)
 	suite.Equal("id2", results[0].ID)
 }
