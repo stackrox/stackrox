@@ -59,14 +59,13 @@ export function visitComplianceEntities(entitiesKey) {
 
 /*
  * For example, visitComplianceStandard('CIS Docker v1.2.0')
- * For example, visitComplianceStandard('CIS Docker v1.2.0', 'TODO')
  */
-export function visitComplianceStandard(standardName, searchSuffix = '') {
+export function visitComplianceStandard(standardName) {
     cy.intercept('POST', api.graphql('searchOptions')).as('searchOptions');
     cy.intercept('POST', api.graphql('getComplianceStandards')).as('getComplianceStandards');
     cy.intercept('POST', api.graphql('controls')).as('controls');
 
-    visit(`${url.controls}?s[standard]=${standardName}${searchSuffix}`);
+    visit(`${url.controls}?s[standard]=${standardName}`);
 
     cy.wait(['@searchOptions', '@getComplianceStandards', '@controls']);
     cy.get(`h1:contains("${standardName}")`);
