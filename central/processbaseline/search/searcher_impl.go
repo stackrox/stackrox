@@ -61,7 +61,15 @@ func (s *searcherImpl) buildIndex(ctx context.Context) error {
 }
 
 func (s *searcherImpl) SearchRawProcessBaselines(ctx context.Context, q *v1.Query) ([]*storage.ProcessBaseline, error) {
-	results, err := processBaselineSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
+	var (
+		results []search.Result
+		err     error
+	)
+	if features.PostgresDatastore.Enabled() {
+		results, err = processBaselinePostgresSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
+	} else {
+		results, err = processBaselineSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
+	}
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
