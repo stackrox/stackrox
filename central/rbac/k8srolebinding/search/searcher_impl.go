@@ -18,7 +18,7 @@ var (
 	k8sRoleBindingsSACSearchHelper = sac.ForResource(resources.K8sRoleBinding).
 					MustCreateSearchHelper(mappings.OptionsMap)
 	k8sRoleBindingsSACPostgresSearchHelper = sac.ForResource(resources.K8sRoleBinding).
-						MustCreatePgSearchHelper(mappings.OptionsMap)
+						MustCreatePgSearchHelper()
 )
 
 // searcherImpl provides a search implementation for k8s role bindings.

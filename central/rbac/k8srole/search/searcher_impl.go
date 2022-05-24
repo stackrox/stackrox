@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
 	"github.com/stackrox/rox/central/rbac/k8srole/mappings"
@@ -17,7 +16,7 @@ import (
 
 var (
 	k8sRolesSACSearchHelper   = sac.ForResource(resources.K8sRole).MustCreateSearchHelper(mappings.OptionsMap)
-	k8sRolesSACPgSearchHelper = sac.ForResource(resources.K8sRole).MustCreatePgSearchHelper(schema.K8sRolesSchema.OptionsMap)
+	k8sRolesSACPgSearchHelper = sac.ForResource(resources.K8sRole).MustCreatePgSearchHelper()
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.

@@ -16,7 +16,7 @@ import (
 
 var (
 	serviceAccountsSACSearchHelper         = sac.ForResource(resources.ServiceAccount).MustCreateSearchHelper(mappings.OptionsMap)
-	serviceAccountsSACPostgresSearchHelper = sac.ForResource(resources.ServiceAccount).MustCreatePgSearchHelper(mappings.OptionsMap)
+	serviceAccountsSACPostgresSearchHelper = sac.ForResource(resources.ServiceAccount).MustCreatePgSearchHelper()
 )
 
 type searcherImpl struct {

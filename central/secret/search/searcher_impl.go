@@ -23,7 +23,7 @@ var (
 	}
 
 	secretSACSearchHelper         = sac.ForResource(resources.Secret).MustCreateSearchHelper(mappings.OptionsMap)
-	secretSACPostgresSearchHelper = sac.ForResource(resources.Secret).MustCreatePgSearchHelper(mappings.OptionsMap)
+	secretSACPostgresSearchHelper = sac.ForResource(resources.Secret).MustCreatePgSearchHelper()
 )
 
 // searcherImpl provides an intermediary implementation layer for secrets

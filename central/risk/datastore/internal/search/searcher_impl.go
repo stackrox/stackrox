@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
 	"github.com/stackrox/rox/central/risk/mappings"
@@ -24,7 +23,7 @@ var (
 	}
 
 	riskSACSearchHelper         = sac.ForResource(resources.Risk).MustCreateSearchHelper(mappings.OptionsMap)
-	riskSACPostgresSearchHelper = sac.ForResource(resources.Risk).MustCreatePgSearchHelper(schema.RisksSchema.OptionsMap)
+	riskSACPostgresSearchHelper = sac.ForResource(resources.Risk).MustCreatePgSearchHelper()
 )
 
 // searcherImpl provides an intermediary implementation layer for RiskStorage.
