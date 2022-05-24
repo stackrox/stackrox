@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/index/mappings"
 	"github.com/stackrox/rox/central/processbaseline/store"
@@ -24,8 +23,7 @@ const (
 
 var (
 	processBaselineSACSearchHelper         = sac.ForResource(resources.ProcessWhitelist).MustCreateSearchHelper(mappings.OptionsMap)
-	processBaselinePostgresSACSearchHelper = sac.ForResource(resources.ProcessWhitelist).
-						MustCreatePgSearchHelper(schema.ProcessbaselinesSchema.OptionsMap)
+	processBaselinePostgresSACSearchHelper = sac.ForResource(resources.ProcessWhitelist).MustCreatePgSearchHelper()
 )
 
 type searcherImpl struct {
