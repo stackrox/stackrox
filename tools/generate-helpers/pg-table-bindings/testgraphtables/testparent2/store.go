@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,8 +24,7 @@ import (
 const (
 	baseTable = "test_parent2"
 
-	walkStmt    = "SELECT serialized FROM test_parent2"
-	getManyStmt = "SELECT serialized FROM test_parent2 WHERE Id = ANY($1::text[])"
+	walkStmt = "SELECT serialized FROM test_parent2"
 
 	batchAfter = 100
 
@@ -321,15 +321,20 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestParent2, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "TestParent2")
 
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "TestParent2")
-	if err != nil {
-		return nil, nil, err
+	if len(ids) == 0 {
+		return nil, nil, nil
 	}
-	defer release()
 
-	rows, err := conn.Query(ctx, getManyStmt, ids)
+	var sacQueryFilter *v1.Query
+
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
+
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -338,13 +343,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.TestP
 		}
 		return nil, nil, err
 	}
-	defer rows.Close()
 	resultsByID := make(map[string]*storage.TestParent2)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
+	for _, data := range rows {
 		msg := &storage.TestParent2{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
