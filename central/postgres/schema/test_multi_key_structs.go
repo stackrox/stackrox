@@ -107,7 +107,7 @@ type TestMultiKeyStructs struct {
 type TestMultiKeyStructsNesteds struct {
 	TestMultiKeyStructsKey1 string              `gorm:"column:test_multi_key_structs_key1;type:varchar;primaryKey"`
 	TestMultiKeyStructsKey2 string              `gorm:"column:test_multi_key_structs_key2;type:varchar;primaryKey"`
-	Idx                     int                 `gorm:"column:idx;type:integer;primaryKey;index:test_multi_key_structs_nesteds_idx,type:btree"`
+	Idx                     int                 `gorm:"column:idx;type:integer;primaryKey;index:testmultikeystructsnesteds_idx,type:btree"`
 	Nested                  string              `gorm:"column:nested;type:varchar"`
 	IsNested                bool                `gorm:"column:isnested;type:bool"`
 	Int64                   int64               `gorm:"column:int64;type:integer"`

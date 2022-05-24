@@ -88,7 +88,7 @@ type Pods struct {
 // PodsLiveInstances holds the Gorm model for Postgres table `pods_live_instances`.
 type PodsLiveInstances struct {
 	PodsId      string `gorm:"column:pods_id;type:varchar;primaryKey"`
-	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:pods_live_instances_idx,type:btree"`
+	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:podsliveinstances_idx,type:btree"`
 	ImageDigest string `gorm:"column:imagedigest;type:varchar"`
 	PodsRef     Pods   `gorm:"foreignKey:pods_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

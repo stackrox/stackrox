@@ -62,10 +62,10 @@ const (
 // ProcessIndicators holds the Gorm model for Postgres table `process_indicators`.
 type ProcessIndicators struct {
 	Id                 string `gorm:"column:id;type:varchar;primaryKey"`
-	DeploymentId       string `gorm:"column:deploymentid;type:varchar;index:process_indicators_deploymentid,type:hash"`
+	DeploymentId       string `gorm:"column:deploymentid;type:varchar;index:processindicators_deploymentid,type:hash"`
 	ContainerName      string `gorm:"column:containername;type:varchar"`
 	PodId              string `gorm:"column:podid;type:varchar"`
-	PodUid             string `gorm:"column:poduid;type:varchar;index:process_indicators_poduid,type:hash"`
+	PodUid             string `gorm:"column:poduid;type:varchar;index:processindicators_poduid,type:hash"`
 	SignalContainerId  string `gorm:"column:signal_containerid;type:varchar"`
 	SignalName         string `gorm:"column:signal_name;type:varchar"`
 	SignalArgs         string `gorm:"column:signal_args;type:varchar"`

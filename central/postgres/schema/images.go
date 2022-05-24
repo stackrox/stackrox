@@ -113,7 +113,7 @@ type Images struct {
 // ImagesLayers holds the Gorm model for Postgres table `images_layers`.
 type ImagesLayers struct {
 	ImagesId    string `gorm:"column:images_id;type:varchar;primaryKey"`
-	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:images_layers_idx,type:btree"`
+	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:imageslayers_idx,type:btree"`
 	Instruction string `gorm:"column:instruction;type:varchar"`
 	Value       string `gorm:"column:value;type:varchar"`
 	ImagesRef   Images `gorm:"foreignKey:images_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`

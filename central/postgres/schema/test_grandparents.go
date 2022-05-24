@@ -93,7 +93,7 @@ type TestGrandparents struct {
 // TestGrandparentsEmbeddeds holds the Gorm model for Postgres table `test_grandparents_embeddeds`.
 type TestGrandparentsEmbeddeds struct {
 	TestGrandparentsId  string           `gorm:"column:test_grandparents_id;type:varchar;primaryKey"`
-	Idx                 int              `gorm:"column:idx;type:integer;primaryKey;index:test_grandparents_embeddeds_idx,type:btree"`
+	Idx                 int              `gorm:"column:idx;type:integer;primaryKey;index:testgrandparentsembeddeds_idx,type:btree"`
 	Val                 string           `gorm:"column:val;type:varchar"`
 	TestGrandparentsRef TestGrandparents `gorm:"foreignKey:test_grandparents_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
@@ -102,7 +102,7 @@ type TestGrandparentsEmbeddeds struct {
 type TestGrandparentsEmbeddedsEmbedded2 struct {
 	TestGrandparentsId           string                    `gorm:"column:test_grandparents_id;type:varchar;primaryKey"`
 	TestGrandparentsEmbeddedsIdx int                       `gorm:"column:test_grandparents_embeddeds_idx;type:integer;primaryKey"`
-	Idx                          int                       `gorm:"column:idx;type:integer;primaryKey;index:test_grandparents_embeddeds_embedded2_idx,type:btree"`
+	Idx                          int                       `gorm:"column:idx;type:integer;primaryKey;index:testgrandparentsembeddedsembedded2_idx,type:btree"`
 	Val                          string                    `gorm:"column:val;type:varchar"`
 	TestGrandparentsEmbeddedsRef TestGrandparentsEmbeddeds `gorm:"foreignKey:test_grandparents_id,test_grandparents_embeddeds_idx;references:test_grandparents_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }
