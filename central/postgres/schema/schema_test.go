@@ -313,6 +313,9 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 				sqlSchema := s.dumpSchema(table)
 				s.Require().Equal(sqlSchema, gormSchema)
 			}
+			// Check if the table name is reversible.
+			// Gorm may have wrong behavior if the table name is not reversible.
+			s.Require().Equal(testCase.name, pgutils.NamingStrategy.TableName(pgutils.NamingStrategy.SchemaName(testCase.name)))
 		})
 	}
 	s.Require().Len(allTestCases, 0)

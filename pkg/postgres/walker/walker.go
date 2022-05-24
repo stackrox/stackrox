@@ -9,12 +9,10 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"gorm.io/gorm/schema"
 )
 
 var (
 	timestampType = reflect.TypeOf((*types.Timestamp)(nil))
-	ns            = schema.NamingStrategy{}
 )
 
 type context struct {

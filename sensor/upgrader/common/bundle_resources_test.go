@@ -28,6 +28,6 @@ func TestEnsureBundleResourcesTypesAreCorrect(t *testing.T) {
 		{Group: "security.openshift.io", Version: "v1", Kind: "SecurityContextConstraints"},
 		{Group: "policy", Version: "v1beta1", Kind: "PodSecurityPolicy"},
 		{Group: "apps", Version: "v1", Kind: "DaemonSet"},
-		{Group: "apps", Version: "v1", Kind: "DeploymentType"},
+		{Group: "apps", Version: "v1", Kind: "Deployment"},
 	})
 }

@@ -11,7 +11,7 @@ func DefaultConfig() Config {
 		Namespaces: []string{env.Namespace.Setting()},
 		Objects: []ObjectConfig{
 			{
-				GVK: schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "DeploymentType"},
+				GVK: schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"},
 			},
 			{
 				GVK: schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "DaemonSet"},

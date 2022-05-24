@@ -17,7 +17,7 @@ RUN echo "$(id -u):$(id -g)" > /tmp/container-uid
 # Update RPMs to hopefully aid with vulns that aren't yet patched in the base image. Also remove package management
 # utils because our own policies don't recommend having them in the image. For that we need to be root.
 USER 0:0
-RUN dnf upgrade -y --nobest && \
+RUN dnf upgrade -y && \
     dnf clean all && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum

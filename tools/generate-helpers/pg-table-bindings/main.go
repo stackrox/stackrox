@@ -206,7 +206,6 @@ func main() {
 		if err := generateSchema(schema, searchCategory, parsedReferences, props.SchemaDirectory); err != nil {
 			return err
 		}
-
 		if props.SchemaOnly {
 			return nil
 		}
