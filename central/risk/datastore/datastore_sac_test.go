@@ -64,7 +64,7 @@ func (s *riskDatastoreSACSuite) SetupSuite() {
 		pgStore.Destroy(ctx, s.pool)
 		s.storage = pgStore.New(ctx, s.pool)
 		s.indexer = pgStore.NewIndexer(s.pool)
-		s.optionsMap = schema.RiskSchema.OptionsMap
+		s.optionsMap = schema.RisksSchema.OptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp("riskSACTest")
 		s.Require().NoError(err)
