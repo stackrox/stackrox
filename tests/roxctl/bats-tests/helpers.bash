@@ -227,8 +227,8 @@ image_reference_regex() {
   local version="${3:-$any_version}"
 
   case $registry_slug in
-    docker.io)
-      echo "docker\.io/stackrox/$component:$version"
+    quay.io)
+      echo "quay\.io/rhacs-eng/$component:$version"
       ;;
     stackrox.io)
       if [[ "$component" == "collector" ]]; then
