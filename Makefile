@@ -79,7 +79,7 @@ GOPATH_VOLUME_SRC := $(GOPATH_VOLUME_NAME)
 endif
 
 LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated
-GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go
+GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go -e GOCACHE=/linux-gocache
 
 null :=
 space := $(null) $(null)
