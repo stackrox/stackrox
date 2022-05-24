@@ -86,12 +86,6 @@ create_main_bundle_and_scripts() {
        "$ROOT/image/rhel/create-bundle.sh" image "local" "local" image/rhel
 }
 
-create_central_db_bundle() {
-    info "Creating central-db bundle.tar.gz"
-
-    "$ROOT/image/postgres/create-bundle.sh" image/postgres image/postgres "true"
-}
-
 cleanup_image() {
     if [[ -z "${OPENSHIFT_BUILD_NAME:-}" ]]; then
         info "This is not an OpenShift build, will not reduce the image"
@@ -126,9 +120,6 @@ build_main_and_bundles() {
     info "Make the main image Dockerfile"
     make "$ROOT/image/rhel/Dockerfile.gen"
 
-    info "Make the central-db image Dockerfile"
-    make "$ROOT/image/postgres/Dockerfile.gen"
-
     background_build_ui
     build_cli
     build_go_binaries
@@ -148,7 +139,6 @@ build_main_and_bundles() {
     make_stackrox_data
 
     create_main_bundle_and_scripts
-    create_central_db_bundle
 
     cleanup_image
 }
