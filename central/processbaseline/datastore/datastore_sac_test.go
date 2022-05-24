@@ -70,7 +70,7 @@ func (s *processBaselineSACTestSuite) SetupSuite() {
 		pgStore.Destroy(ctx, s.pool)
 		s.storage = pgStore.New(ctx, s.pool)
 		s.indexer = pgStore.NewIndexer(s.pool)
-		s.optionsMap = schema.ProcessbaselinesSchema.OptionsMap
+		s.optionsMap = schema.ProcessBaselinesSchema.OptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp("processBaselineSACTest")
 		s.Require().NoError(err)
