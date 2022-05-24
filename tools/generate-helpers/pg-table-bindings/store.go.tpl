@@ -52,8 +52,6 @@ const (
         deleteStmt = "DELETE FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
 {{- end }}
 
-        walkStmt = "SELECT serialized FROM {{.Table}}"
-
         batchAfter = 100
 
         // using copyFrom, we may not even want to batch.  It would probably be simpler
@@ -829,16 +827,41 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []{{$singlePK.Type}}) er
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *{{.Type}}) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
+    var sacQueryFilter *v1.Query
+{{- if .PermissionChecker }}
+    if ok, err := {{ .PermissionChecker }}.WalkAllowed(ctx); err != nil || !ok {
+        return err
+    }
+{{- else if .Obj.IsGloballyScoped }}
+    {{ template "defineScopeChecker" "READ" }}
+    if ok, err := scopeChecker.Allowed(ctx); err != nil {
+        return err
+    } else if !ok {
+        return nil
+    }
+{{- else if .Obj.IsDirectlyScoped }}
+    {{ template "defineScopeChecker" "READ" }}
+    scopeTree, err := scopeChecker.EffectiveAccessScope(permissions.ResourceWithAccess{
+        Resource: targetResource,
+        Access:   storage.Access_READ_ACCESS,
+    })
+    if err != nil {
+        return err
+    }
+    {{- if .Obj.IsClusterScope }}
+    sacQueryFilter, err = sac.BuildClusterLevelSACQueryFilter(scopeTree)
+    {{- else}}
+    sacQueryFilter, err = sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
+    {{- end }}
+    if err != nil {
+        return err
+    }
+{{- end }}
+    rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
-		}
+	for _, data := range rows {
 		var msg {{.Type}}
 		if err := proto.Unmarshal(data, &msg); err != nil {
 		    return err

@@ -26,8 +26,6 @@ import (
 const (
 	baseTable = "api_tokens"
 
-	walkStmt = "SELECT serialized FROM api_tokens"
-
 	batchAfter = 100
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
@@ -430,16 +428,18 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.TokenMetadata) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return nil
+	}
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
-		}
+	for _, data := range rows {
 		var msg storage.TokenMetadata
 		if err := proto.Unmarshal(data, &msg); err != nil {
 			return err
