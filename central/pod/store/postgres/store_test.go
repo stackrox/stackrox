@@ -211,7 +211,7 @@ func (s *PodsStoreSuite) TestSACWalk() {
 			}
 			err := s.store.Walk(ctxs[name], getIds)
 			assert.NoError(t, err)
-			assert.Equal(t, expectedIds, ids)
+			assert.ElementsMatch(t, expectedIds, ids)
 		})
 	}
 }
