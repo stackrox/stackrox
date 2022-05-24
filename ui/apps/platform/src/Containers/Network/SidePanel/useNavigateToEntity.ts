@@ -9,9 +9,9 @@ function useNavigateToEntity(): NavigateToEntityHook {
     const history = useHistory();
     return function onNavigateToEntityById(entityId: string, type: EntityType): void {
         if (type === nodeTypes.CIDR_BLOCK || type === nodeTypes.EXTERNAL_ENTITIES) {
-            history.push(`/main/network/${entityId}/${type}`);
+            history.push(`/main/network/${entityId}/${type}${history.location.search as string}`);
         } else {
-            history.push(`/main/network/${entityId}`);
+            history.push(`/main/network/${entityId}${history.location.search as string}`);
         }
     };
 }

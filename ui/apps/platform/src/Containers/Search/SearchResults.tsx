@@ -227,15 +227,7 @@ function SearchResults({
             const searchOptions = amendSearchOptions(searchCategory, name);
             passthroughGlobalSearchOptions(searchOptions, category);
             const searchFilter = searchOptionsToSearchFilter(searchOptions);
-            let queryString = '';
-            // TODO Once Violations, Risk, and Network Graph are all using URL Search Params this can be simplified
-            if (category === 'ALERTS' || category === 'DEPLOYMENTS') {
-                queryString = getUrlQueryStringForSearchFilter(searchFilter);
-            } else if (category === 'NETWORK') {
-                // Do nothing, until Network Graph moves from Redux to URL Params
-            } else {
-                // This should never happen, the only three "filter on" pages are the ones listed above
-            }
+            const queryString = getUrlQueryStringForSearchFilter(searchFilter);
             onClose(`${toURL}?${queryString}`);
         };
 
