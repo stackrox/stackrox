@@ -10,9 +10,11 @@ import (
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/rbac/k8srole/search"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgRocksDB "github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 )
@@ -31,13 +33,18 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+func New(k8sRoleStore store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
 	d := &datastoreImpl{
-		storage:  storage,
+		storage:  k8sRoleStore,
 		indexer:  indexer,
 		searcher: searcher,
 	}
-	if err := d.buildIndex(context.TODO()); err != nil {
+
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.K8sRole)))
+	if err := d.buildIndex(ctx); err != nil {
 		return nil, errors.Wrap(err, "failed to build index from existing store")
 	}
 	return d, nil
@@ -47,13 +54,13 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 // To make this more explicit, we require passing a testing.T to this version.
 func NewForTestOnly(t *testing.T, db *pkgRocksDB.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
 	testutils.MustBeInTest(t)
-	storage := rocksdb.New(db)
+	k8sRoleStore := rocksdb.New(db)
 	indexer := index.New(bleveIndex)
 
 	d := &datastoreImpl{
-		storage:  storage,
+		storage:  k8sRoleStore,
 		indexer:  indexer,
-		searcher: search.New(storage, indexer),
+		searcher: search.New(k8sRoleStore, indexer),
 	}
 
 	if err := d.buildIndex(context.TODO()); err != nil {
