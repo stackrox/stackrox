@@ -50,7 +50,9 @@ export function scanCompliance() {
         cy.intercept('POST', api.graphql(opname)).as(opname);
     });
 
-    cy.get(selectors.scanButton).click().should('have.attr', 'disabled');
+    cy.get(selectors.scanButton).should('not.have.attr', 'disabled');
+    cy.get(selectors.scanButton).click();
+    cy.get(selectors.scanButton).should('have.attr', 'disabled');
 
     cy.wait('@triggerScan'); // request occurs immediately
     cy.wait(
