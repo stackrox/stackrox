@@ -25,13 +25,6 @@ run all end-to-end tests in a headless mode use `yarn test-e2e-local`. To run
 one test suite specifically in headless mode, use
 `yarn cypress-spec <spec-file>`.
 
-#### End-to-end Tests for Demo Automation (Cypress)
-
-To bring up [Cypress](https://www.cypress.io/) UI use `yarn cypress-demo-open`.
-To run all end-to-end tests in a headless mode use `yarn test-e2e-demo-local`.
-Make sure that `CYPRESS_DEMO_PASSWORD` is set with the Central Password for the
-Demo Setup.
-
 ### Feature flags
 
 #### Add a feature flag to frontend code
