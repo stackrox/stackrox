@@ -85,6 +85,9 @@ func mustGetCommandLineArgs() localSensorConfig {
 	fsc.Duration = *durationFlag
 	fsc.CentralOutput = path.Clean(*centralOutputFile)
 
+	if *recordTrace && *replayTrace {
+		log.Fatalf("cannot record and replay a trace at the same time. Use either -record or -replay flag")
+	}
 	fsc.ShallRecordK8sInput = *recordTrace
 	if *recordTrace && *traceOutFile == "" {
 		log.Printf("trace destination empty. Using default 'k8s-trace.jsonl'\n")
@@ -94,6 +97,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	if *replayTrace && *traceInFile == "" {
 		log.Fatalf("trace source empty")
 	}
+
 	fsc.ShallReplayK8sTrace = *replayTrace
 	fsc.ReplayK8sTraceFile = path.Clean(*traceInFile)
 	fsc.Verbose = *verboseFlag
@@ -120,6 +124,10 @@ func main() {
 
 	fsc := mustGetCommandLineArgs()
 	fakeClient, err := k8s.MakeOutOfClusterClient()
+	// when replying a trace, there is no need to connect to K8s cluster
+	if fsc.ShallReplayK8sTrace {
+		fakeClient = k8s.MakeFakeClient()
+	}
 	utils.CrashOnError(err)
 
 	startTime := time.Now()
@@ -151,6 +159,7 @@ func main() {
 		enabled:     fsc.ShallRecordK8sInput,
 	}
 	_ = traceRec.Init()
+
 	trReader := &traceReader{
 		source:  path.Clean(fsc.ReplayK8sTraceFile),
 		enabled: fsc.ShallReplayK8sTrace,
