@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
@@ -93,8 +92,8 @@ func mustGetCommandLineArgs() localSensorConfig {
 	centralOutputFile := flag.String("central-out", "central-out.json", "file to store the events that would be sent to central")
 	recordTrace := flag.Bool("record", false, "whether to record a trace with k8s events")
 	traceOutFile := flag.String("record-out", "k8s-trace.jsonl", "a file where recorded trace would be stored")
-	replyTrace := flag.Bool("reply", false, "whether to reply recorded a trace with k8s events")
-	traceInFile := flag.String("reply-in", "k8s-trace.jsonl", "a file where recorded trace would be read from")
+	replayTrace := flag.Bool("replay", false, "whether to reply recorded a trace with k8s events")
+	traceInFile := flag.String("replay-in", "k8s-trace.jsonl", "a file where recorded trace would be read from")
 	flag.Parse()
 
 	dur, err := time.ParseDuration(*duration)
@@ -110,10 +109,10 @@ func mustGetCommandLineArgs() localSensorConfig {
 		*traceOutFile = "k8s-trace.jsonl"
 	}
 	fsc.RecordK8sFile = path.Clean(*traceOutFile)
-	if *replyTrace && *traceInFile == "" {
+	if *replayTrace && *traceInFile == "" {
 		log.Fatalf("trace source empty")
 	}
-	fsc.ShallReplayK8sTrace = *replyTrace
+	fsc.ShallReplayK8sTrace = *replayTrace
 	fsc.ReplayK8sTraceFile = path.Clean(*traceInFile)
 	fsc.Verbose = *verboseFlag
 	return fsc
@@ -127,32 +126,6 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 	allMessages := fakeCentral.GetAllMessages()
 	dumpMessages(allMessages, startTime, endTime, outfile)
 	os.Exit(0)
-}
-
-type traceWriter struct {
-	destination string
-	enabled     bool
-}
-
-func (tw *traceWriter) Init() error {
-	if !tw.enabled || path.Dir(tw.destination) == "" {
-		return nil
-	}
-	return os.MkdirAll(path.Dir(tw.destination), os.ModePerm)
-}
-
-func (tw *traceWriter) Write(b []byte) (int, error) {
-	if !tw.enabled {
-		return 0, nil
-	}
-	fObjs, err := os.OpenFile(tw.destination, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		return 0, errors.Wrapf(err, "Error opening file: %s\n", tw.destination)
-	}
-	defer func() {
-		_ = fObjs.Close()
-	}()
-	return fObjs.Write(append(b, []byte{10}...))
 }
 
 // local-sensor adds three new flags to sensor:
