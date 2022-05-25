@@ -94,7 +94,7 @@ func (w *storeImpl) checkDuplicateName(ctx context.Context, meta *storage.InitBu
 		return err
 	}
 	for _, m := range metas {
-		if m.Name == meta.Name && !m.IsRevoked {
+		if m.GetName() == meta.GetName() && !m.GetIsRevoked() {
 			return ErrInitBundleDuplicateName
 		}
 	}
