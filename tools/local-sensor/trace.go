@@ -41,11 +41,16 @@ func (tw *traceWriter) Write(b []byte) (int, error) {
 var _ io.Reader = (*traceReader)(nil)
 
 type traceReader struct {
-	source  string
-	mode    string
-	lineNo  int64
+	// source file from which the lines are read
+	source string
+	// mode defines whether to wait between replaying the consecutive k8s events
+	mode string
+	// lineNo is the pointer marking which line from the file has been read recently
+	lineNo int64
+	// enabled defines whether this reader should do anything at all (can be removed maybe)
 	enabled bool
-	mu      sync.Mutex
+	// mu is a mutex that might be useful if many goroutines would read from the same file
+	mu sync.Mutex
 }
 
 func (tw *traceReader) Init() error {
@@ -58,11 +63,11 @@ func (tw *traceReader) Init() error {
 	return os.MkdirAll(path.Dir(tw.source), os.ModePerm)
 }
 
+// Read reads one line from the trace file. This line corresponds to a single K8s event
 func (tw *traceReader) Read(p []byte) (n int, err error) {
 	if !tw.enabled {
 		return 0, nil
 	}
-
 	file, err := os.OpenFile(tw.source, os.O_RDONLY, 0644)
 	if err != nil {
 		return 0, errors.Wrapf(err, "Error opening file: %s\n", tw.source)
