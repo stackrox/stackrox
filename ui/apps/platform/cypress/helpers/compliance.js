@@ -49,6 +49,14 @@ export function scanCompliance() {
     opnamesForDashboard.forEach((opname) => {
         cy.intercept('POST', api.graphql(opname)).as(opname);
     });
+    // Intercept requests for compliance standards, which have same opname but different value in payload.
+    cy.intercept('POST', api.graphql('complianceStandards'), (req) => {
+        const { where } = req.body.variables;
+        const alias = standardNames.find((standardName) => where === `Standard:${standardName}`);
+        if (typeof alias === 'string') {
+            req.alias = alias;
+        }
+    });
 
     cy.get(selectors.scanButton).should('not.have.attr', 'disabled');
     cy.get(selectors.scanButton).click();
@@ -61,6 +69,7 @@ export function scanCompliance() {
             requestTimeout: 30000, // increase from default 5 seconds until requests occur
         }
     );
+    cy.wait(standardNames.map((standardName) => `@${standardName}`));
     cy.get(selectors.scanButton).click().should('not.have.attr', 'disabled');
 }
 
