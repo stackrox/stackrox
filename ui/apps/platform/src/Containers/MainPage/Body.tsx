@@ -13,6 +13,7 @@ import {
     clustersListPath,
     integrationsPath,
     policiesPath,
+    deprecatedPoliciesPath,
     riskPath,
     apidocsPath,
     accessControlPathV2,
@@ -58,11 +59,8 @@ const AsyncIntegrationsPage = asyncComponent(
 );
 const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/ViolationsPage'));
 
-// TODO: rename this to AsyncPoliciesPage after we remove the old deprecated policies code
-// Jira issue to track: https://issues.redhat.com/browse/ROX-9450
-const AsyncPoliciesPagePatternFly = asyncComponent(
-    () => import('Containers/Policies/PoliciesPage')
-);
+const AsyncPolicyManagementPage = asyncComponent(() => import('Containers/Policies/PoliciesPage'));
+
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
 const AsyncAccessControlPageV2 = asyncComponent(
@@ -114,7 +112,8 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={violationsPath} component={AsyncViolationsPage} />
                     <Route path={compliancePath} component={AsyncCompliancePage} />
                     <Route path={integrationsPath} component={AsyncIntegrationsPage} />
-                    <Route path={policiesPath} component={AsyncPoliciesPagePatternFly} />
+                    <Route path={policiesPath} component={AsyncPolicyManagementPage} />
+                    <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
                     <Route path={riskPath} component={AsyncRiskPage} />
                     <Route path={accessControlPathV2} component={AsyncAccessControlPageV2} />
                     <Route path={apidocsPath} component={AsyncApiDocsPage} />
