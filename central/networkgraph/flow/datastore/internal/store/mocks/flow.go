@@ -53,6 +53,21 @@ func (mr *MockFlowStoreMockRecorder) GetAllFlows(ctx, since interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllFlows", reflect.TypeOf((*MockFlowStore)(nil).GetAllFlows), ctx, since)
 }
 
+// GetFlowsForDeployment mocks base method.
+func (m *MockFlowStore) GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFlowsForDeployment", ctx, deploymentID)
+	ret0, _ := ret[0].([]*storage.NetworkFlow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFlowsForDeployment indicates an expected call of GetFlowsForDeployment.
+func (mr *MockFlowStoreMockRecorder) GetFlowsForDeployment(ctx, deploymentID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFlowsForDeployment", reflect.TypeOf((*MockFlowStore)(nil).GetFlowsForDeployment), ctx, deploymentID)
+}
+
 // GetMatchingFlows mocks base method.
 func (m *MockFlowStore) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
 	m.ctrl.T.Helper()

@@ -54,6 +54,21 @@ func (fds *flowDataStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*s
 	return flows, ts, nil
 }
 
+func (fds *flowDataStoreImpl) GetFlowsForDeployment(ctx context.Context, deploymentID string, adjustForGraph bool) ([]*storage.NetworkFlow, error) {
+	flows, err := fds.storage.GetFlowsForDeployment(ctx, deploymentID)
+	if err != nil {
+		return nil, err
+	}
+
+	if adjustForGraph {
+		flows, err = fds.adjustFlowsForGraphConfig(ctx, flows)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return flows, nil
+}
+
 func (fds *flowDataStoreImpl) adjustFlowsForGraphConfig(ctx context.Context, flows []*storage.NetworkFlow) ([]*storage.NetworkFlow, error) {
 	graphConfigReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
