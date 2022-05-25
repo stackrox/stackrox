@@ -3,7 +3,6 @@ import { useHistory } from 'react-router-dom';
 import {
     Button,
     ButtonVariant,
-    Divider,
     Dropdown,
     DropdownItem,
     DropdownSeparator,
@@ -229,7 +228,7 @@ function PoliciesTable({
     // dropdownItems={hasWriteAccessForPolicy ? [Enable, Disable, Export, Delete] : [Export]} see PolicyDetail.tsx
     return (
         <>
-            <PageSection isFilled hasOverflowScroll id="policies-table">
+            <PageSection isFilled id="policies-table">
                 <Toolbar>
                     <ToolbarContent>
                         <ToolbarItem
@@ -341,7 +340,11 @@ function PoliciesTable({
                         </ToolbarItem>
                     </ToolbarContent>
                 </Toolbar>
-                <TableComposable aria-label="Policies table" data-testid="policies-table">
+                <TableComposable
+                    isStickyHeader
+                    aria-label="Policies table"
+                    data-testid="policies-table"
+                >
                     <Thead>
                         <Tr>
                             <Th

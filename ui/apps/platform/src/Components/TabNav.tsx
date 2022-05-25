@@ -7,7 +7,7 @@ type TabNavProps = {
         title: string;
         link: string;
     }[];
-    currentTabTitle: string;
+    currentTabTitle?: string;
     isDisabled?: boolean;
 };
 
