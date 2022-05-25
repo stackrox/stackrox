@@ -5,10 +5,6 @@ import {
     url as violationsUrl,
     selectors as violationsSelectors,
 } from '../constants/ViolationsPage';
-import {
-    url as complianceUrl,
-    selectors as complianceSelectors,
-} from '../constants/CompliancePage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import { visitMainDashboard, visitMainDashboardViaRedirectFromUrl } from '../helpers/main';
@@ -119,16 +115,6 @@ describe('Dashboard page', () => {
             cy.location('search').should('eq', '?s[Severity]=LOW_SEVERITY');
             cy.get(violationsSelectors.resultsFoundHeader(lowSeverityCount));
         });
-    });
-
-    it.skip('should navigate to compliance standards page when clicking on standard', () => {
-        visitMainDashboard();
-        cy.get(selectors.sectionHeaders.compliance).should('exist');
-        cy.get(selectors.chart.legendLink).click();
-        cy.location().should((location) => {
-            expect(location.href).to.include(complianceUrl.list.standards.CIS_Docker_v1_2_0);
-        });
-        cy.get(complianceSelectors.list.table.header).should('exist');
     });
 
     it('should display violations by cluster chart for single cluster', () => {
