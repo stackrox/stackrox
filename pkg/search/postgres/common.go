@@ -145,26 +145,20 @@ func generateSelectFields(entry *pgsearch.QueryEntry, primaryKeys []walker.Field
 		sel.Query = "select serialized"
 		return sel
 	}
-	var primaryKeyPaths []string
+	var pathsInSelectClause []string
 	// Always select the primary keys first.
 	for _, pk := range primaryKeys {
-		primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName))
+		pathsInSelectClause = append(pathsInSelectClause, qualifyColumn(pk.Schema.Table, pk.ColumnName))
 	}
 
-	var remainingPaths []string
 	if entry != nil {
 		for _, selectedField := range entry.SelectedFields {
-			remainingPaths = append(remainingPaths, selectedField.SelectPath)
+			pathsInSelectClause = append(pathsInSelectClause, selectedField.SelectPath)
 		}
 		sel.Fields = entry.SelectedFields
 	}
 
-	var querySB strings.Builder
-	querySB.WriteString(fmt.Sprintf("select distinct(%s)", strings.Join(primaryKeyPaths, ",")))
-	for _, path := range remainingPaths {
-		querySB.WriteString(fmt.Sprintf(", %s", path))
-	}
-	sel.Query = querySB.String()
+	sel.Query = fmt.Sprintf("select %s", strings.Join(pathsInSelectClause, ","))
 	return sel
 }
 
@@ -434,34 +428,27 @@ func RunSearchRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.P
 	defer rows.Close()
 	log.Debugf("SEARCH: ran query %s; data %+v", queryStr, query.Data)
 
-	highlightedResults := make([]interface{}, len(query.Select.Fields)+1)
-
 	// Assumes that ids are strings.
 	numPrimaryKeys := len(schema.PrimaryKeys())
-	if numPrimaryKeys > 1 {
-		pkResults := make([]interface{}, numPrimaryKeys)
-		highlightedResults[0] = &pkResults
-	} else {
-		highlightedResults[0] = pointers.String("")
+	highlightedResults := make([]interface{}, len(query.Select.Fields)+numPrimaryKeys)
+
+	for i := 0; i < numPrimaryKeys; i++ {
+		highlightedResults[i] = pointers.String("")
 	}
 	for i, field := range query.Select.Fields {
-		highlightedResults[i+1] = mustAllocForDataType(field.FieldType)
+		highlightedResults[i+numPrimaryKeys] = mustAllocForDataType(field.FieldType)
 	}
 	for rows.Next() {
 		if err := rows.Scan(highlightedResults...); err != nil {
 			return nil, err
 		}
-		var id string
-		if numPrimaryKeys > 1 {
-			idParts := make([]string, 0, numPrimaryKeys)
-			for _, res := range *highlightedResults[0].(*[]interface{}) {
-				idParts = append(idParts, res.(string))
-			}
-			id = strings.Join(idParts, IDSeparator) // TODO: figure out what separator to use
-		} else {
-			id = valueFromStringPtrInterface(highlightedResults[0])
+		idParts := make([]string, 0, numPrimaryKeys)
+		for i := 0; i < numPrimaryKeys; i++ {
+			idParts = append(idParts, valueFromStringPtrInterface(highlightedResults[i]))
 		}
-		result := searchPkg.Result{ID: id}
+		result := searchPkg.Result{
+			ID: strings.Join(idParts, IDSeparator), // TODO: figure out what separator to use
+		}
 		if len(query.Select.Fields) > 0 {
 			result.Matches = make(map[string][]string)
 			for i, field := range query.Select.Fields {
