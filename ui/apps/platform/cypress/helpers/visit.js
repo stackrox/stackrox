@@ -7,6 +7,7 @@ import * as api from '../constants/apiEndpoints';
 export function visit(url) {
     cy.intercept('GET', api.featureFlags).as('getFeatureFlags');
     cy.intercept('GET', api.roles.mypermissions).as('getMyPermissions');
+    cy.intercept('GET', api.system.configPublic).as('getConfigPublic');
     cy.visit(url);
-    cy.wait(['@getFeatureFlags', '@getMyPermissions']);
+    cy.wait(['@getFeatureFlags', '@getMyPermissions', '@getConfigPublic']);
 }

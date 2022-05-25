@@ -32,6 +32,21 @@ export const url = {
     },
 };
 
+/*
+ * Headings on entities pages: uppercase style hides the inconsistencies.
+ * The keys correspond to url list object above.
+ */
+export const headingPlural = {
+    clusters: 'clusters',
+    components: 'components',
+    cves: 'CVES',
+    deployments: 'deployments',
+    images: 'images',
+    namespaces: 'namespaces',
+    nodes: 'nodes',
+    policies: 'policies',
+};
+
 export const vmHomePageSelectors = {
     // TODO: remove this selector, after at least one sub-menu is added to Vuln Mgmt menu
     vulnManagementNavLink: `${navigationSelectors.navLinks}:contains("Vulnerability Management")`,

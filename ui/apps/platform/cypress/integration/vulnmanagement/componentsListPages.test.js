@@ -1,17 +1,18 @@
-import withAuth from '../../helpers/basicAuth';
 import { url, selectors } from '../../constants/VulnManagementPage';
+import withAuth from '../../helpers/basicAuth';
 import {
     hasExpectedHeaderColumns,
     allChecksForEntities,
     allCVECheck,
     // TBD - will be uncommented after issue is fixed - allFixableCheck
 } from '../../helpers/vmWorkflowUtils';
+import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
 
 describe('Components list Page and its entity detail page, (related entities) sub list validations ', () => {
     withAuth();
 
     it('should display all the columns expected in components list page', () => {
-        cy.visit(url.list.components);
+        visitVulnerabilityManagementEntities('components');
         hasExpectedHeaderColumns([
             'Component',
             'CVEs',

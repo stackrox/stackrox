@@ -198,42 +198,49 @@ export const configMgmt = {
     // Use graphqlPluralEntity or graphqlSingularEntity.
 };
 
+/*
+ * The following keys correspond to url list object in VulnManagementPage.js file.
+ */
+
 const vulnMgmtEntityOp = {
-    CLUSTER: 'getCluster',
-    COMPONENT: 'getComponent',
-    CVE: 'getCve',
-    DEPLOYMENT: 'getDeployment',
-    IMAGE: 'getImage',
-    NAMESPACE: 'getNamespace',
-    NODE: 'getNode',
-    POLICY: 'getPolicy',
+    clusters: 'getCluster',
+    components: 'getComponent',
+    cves: 'getCve',
+    deployments: 'getDeployment',
+    images: 'getImage',
+    namespaces: 'getNamespace',
+    nodes: 'getNode',
+    policies: 'getPolicy',
 };
 
 const vulnMgmtEntitiesOp = {
-    CLUSTER: 'getClusters',
-    COMPONENT: 'getComponents',
-    CVE: 'getCves',
-    DEPLOYMENT: 'getDeployments',
-    IMAGE: 'getImages',
-    NAMESPACE: 'getNamespaces',
-    NODE: 'getNodes',
-    POLICY: 'getPolicies',
+    clusters: 'getClusters',
+    components: 'getComponents',
+    cves: 'getCves',
+    deployments: 'getDeployments',
+    images: 'getImages',
+    namespaces: 'getNamespaces',
+    nodes: 'getNodes',
+    policies: 'getPolicies',
 };
 
 const vulnMgmtEntitiesPrefix = {
-    CLUSTER: 'getCluster_',
-    COMPONENT: 'getComponentSubEntity',
-    CVE: 'getCve',
-    DEPLOYMENT: 'getDeployment',
-    IMAGE: 'getImage',
-    NAMESPACE: 'getNamespace',
-    NODE: 'getNode',
-    POLICY: 'getPolicy',
+    clusters: 'getCluster_',
+    components: 'getComponentSubEntity',
+    cves: 'getCve',
+    deployments: 'getDeployment',
+    images: 'getImage',
+    namespaces: 'getNamespace',
+    nodes: 'getNode',
+    policies: 'getPolicy',
 };
 
 export const vulnMgmt = {
+    // For example, graphqlEntity('clusters')
     graphqlEntity: (key) => graphql(vulnMgmtEntityOp[key]),
+    // For example, graphqlEntities('clusters')
     graphqlEntities: (key) => graphql(vulnMgmtEntitiesOp[key]),
+    // For example, graphqlEntities2('clusters', 'CVE')
     // prettier-ignore
     graphqlEntities2: (key1, key2) => graphql(`${vulnMgmtEntitiesPrefix[key1]}${key2}`),
     graphqlOps: {
@@ -288,6 +295,7 @@ export const riskAcceptance = {
 
 export const system = {
     config: '/v1/config',
+    configPublic: '/v1/config/public',
 };
 
 export const extensions = {

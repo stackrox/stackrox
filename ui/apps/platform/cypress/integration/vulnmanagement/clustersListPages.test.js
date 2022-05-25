@@ -1,17 +1,18 @@
-import withAuth from '../../helpers/basicAuth';
 import { url, selectors } from '../../constants/VulnManagementPage';
+import withAuth from '../../helpers/basicAuth';
 import {
     hasExpectedHeaderColumns,
     allChecksForEntities,
     allCVECheck,
     allFixableCheck,
 } from '../../helpers/vmWorkflowUtils';
+import { visitVulnerabilityManagementEntities } from '../../helpers/vulnmanagement/entities';
 
 describe('Clusters list Page and its single entity detail page, and sub list validations ', () => {
     withAuth();
 
     it('should display all the columns and links expected in clusters list page', () => {
-        cy.visit(url.list.clusters);
+        visitVulnerabilityManagementEntities('clusters');
         hasExpectedHeaderColumns([
             'Cluster',
             'CVEs',
