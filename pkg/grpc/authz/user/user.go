@@ -87,5 +87,5 @@ func (p *permissionChecker) checkPermissions(rolePerms map[string]storage.Access
 }
 
 func evaluateAgainstPermissions(perms map[string]storage.Access, perm permissions.ResourceWithAccess) bool {
-	return permissions.CheckResourceForAccess(perm.Resource, perms, perm.Access)
+	return perm.Resource.IsPermittedBy(perms, perm.Access)
 }
