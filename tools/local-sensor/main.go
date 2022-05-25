@@ -151,6 +151,12 @@ func main() {
 		enabled:     fsc.ShallRecordK8sInput,
 	}
 	_ = traceRec.Init()
+	trReader := &traceReader{
+		source:  path.Clean(fsc.ReplayK8sTraceFile),
+		enabled: fsc.ShallReplayK8sTrace,
+		mode:    "ignoreTimestamps",
+	}
+	_ = trReader.Init()
 
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(fakeClient).

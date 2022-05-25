@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 )
 
 const (
@@ -21,6 +22,10 @@ const (
 	clusterOperatorGroupVersion = "config.openshift.io/v1"
 )
 
+type traceReader interface {
+	ReadNextMsg() (resources.InformerK8sMsg, error)
+}
+
 type listenerImpl struct {
 	client             client.Interface
 	eventsC            chan *central.MsgFromSensor
@@ -30,7 +35,6 @@ type listenerImpl struct {
 	detector           detector.Detector
 	resyncPeriod       time.Duration
 	traceWriter        io.Writer
-	traceReader        io.Writer
 }
 
 func (k *listenerImpl) Start() error {
