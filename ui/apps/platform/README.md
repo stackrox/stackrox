@@ -33,7 +33,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 
 1. Add `'ROX_WHATEVER'` to string enumeration type `FeatureFlagEnvVar` in ui/apps/platform/src/types/featureFlag.ts
 
-2. To include frontend code when the flag is enabled, do any of the following:
+2. To include frontend code when the feature flag is enabled, do any of the following:
 
     * Add `featureFlagDependency: 'ROX_WHATEVER'` property in any of the following:
         * for **integration tile** in ui/apps/platform/src/Containers/Integrations/utils/integrationsList.ts
@@ -107,7 +107,16 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
             });
             ```
 
-4. To turn on a feature flag for **local deployment**, do either or both of the following:
+4. To turn on a feature flag for continuous integration in **branch** and **master** builds:
+
+    * Add `- ROX_WHATEVER: true` under `environment` for `gke-ui-e2e-tests` in .circleci/config.yml
+
+    Where else to turn on the feature flag for **backend** tests is outside the scope of this procedure
+
+    The value of feature flags for **demo** and **release** builds is in pkg/features/list.go 
+
+5. To turn on a feature flag for **local deployment**, do either or both of the following:
+
     * Before you enter `yarn deploy-local` command in **ui** directory, enter `export ROX_WHATEVER=true` command
     * Before you enter `yarn cypress-open` command in **ui/apps/platform** directory, enter `export CYPRESS_ROX_WHATEVER=true` command
 
@@ -117,7 +126,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 
 1. Delete `'ROX_WHATEVER'` from string enumeration type `FeatureFlagEnvVar` in ui/apps/platform/src/types/featureFlag.ts
 
-2. Do any of the following:
+2. In frontend code, do any of the following:
 
     * Delete `featureFlagDependency: 'ROX_WHATEVER'` property in any of the following:
         * for **integration tile** in ui/apps/platform/src/Containers/Integrations/utils/integrationsList.ts
@@ -158,7 +167,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 
                     Replace `{isWhateverEnabled ? (<Whatever />) : (<WhateverItHasBeen />)}` with `<Whatever />`
 
-3. For integration tests:
+3. In integration tests:
 
     * Delete `import { hasFeatureFlag } from '../…/helpers/features';` in cypress/integration/…/whatever.test.js
     * And then at the beginning of `describe` block do either or both of the following:
@@ -186,3 +195,42 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
                 }
             });
             ```
+
+4. For continuous integration:
+
+    * Delete `- ROX_WHATEVER: true` under `environment` for `gke-ui-e2e-tests` in .circleci/config.yml
+
+    Where else to delete the feature flag for **backend** tests is outside the scope of this procedure
+
+### API
+
+#### Frontend request and response types
+
+Given a change to a backend data structure:
+
+1. Create or edit a corresponding file with camel case name in the ui/apps/platform/src/types folder:
+
+    * whateverService.proto.ts for request or response in proto/api/v1/whatever_service.proto
+    * whatever.proto.ts for storage/whatever.proto
+    * whatEver.proto.ts for storage/what_ever.proto
+
+2. For type and property names:
+
+    * If a backend type is declared within the scope of a parent type or has a generic name, you might prefix the frontend type to prevent name collisions or increase specificity, for example: `ContainerSecurityContext` or `PolicySeverity`
+    * If a backend property has underscore case like `service_id` the frontend property has camelcase like `serviceId`
+
+3. For property types, follow existing examples of the correspondence between backend proto files and frontend TypeScript files
+
+#### Frontend REST services
+
+Given a change to a backend whatever_service.proto file in the proto/api/v1 folder:
+
+1. Create or edit a corresponding file in the ui/apps/platform/src/services folder:
+
+    * Classic naming convention is title case and plural: WhateversService.ts
+    * Consistent naming convention is camel case and singular: whateverService.ts
+
+2. For request and response types:
+
+    * Import from type files (described in the previous section)
+    * For function arguments and return types, follow existing examples of the correspondence between backend services and frontend functions
