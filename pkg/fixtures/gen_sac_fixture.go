@@ -13,6 +13,7 @@ import (
 //go:generate genny -in=$GOFILE -imp=github.com/stackrox/rox/generated/storage -out=role_$GOFILE gen "Resource=*storage.K8SRole"
 //go:generate genny -in=$GOFILE -imp=github.com/stackrox/rox/generated/storage -out=service_account_$GOFILE gen "Resource=*storage.ServiceAccount"
 //go:generate genny -in=$GOFILE -imp=github.com/stackrox/rox/generated/storage -out=risk_$GOFILE gen "Resource=*storage.Risk"
+//go:generate genny -in=$GOFILE -imp=github.com/stackrox/rox/generated/storage -out=process_baseline_result_$GOFILE gen "Resource=*storage.ProcessBaselineResults"
 type Resource generic.Type
 
 // GetSACTestResourceSet returns a set of mock Resource that can be used
