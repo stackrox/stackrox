@@ -58,6 +58,7 @@ func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor)
 		initialMessages:   initialMessages,
 		receivedMessages:  []*central.MsgFromSensor{},
 		receivedLock:      sync.RWMutex{},
+		messageCallback: func(_ *central.MsgFromSensor) { /* noop */ },
 	}
 }
 
