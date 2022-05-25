@@ -93,7 +93,7 @@ func (s *processBaselineSACTestSuite) SetupSuite() {
 	s.datastore = New(s.storage, s.indexer, s.search, s.processBaselineResultMock, s.processIndicatorMock)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
-		resources.ProcessWhitelist.GetResource())
+		resources.ProcessWhitelist)
 }
 
 func (s *processBaselineSACTestSuite) TearDownSuite() {
