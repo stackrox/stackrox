@@ -34,6 +34,20 @@ func (m *MockDeploymentObservationQueue) EXPECT() *MockDeploymentObservationQueu
 	return m.recorder
 }
 
+// GetObservationDetails mocks base method.
+func (m *MockDeploymentObservationQueue) GetObservationDetails(deploymentID string) *queue.DeploymentObservation {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetObservationDetails", deploymentID)
+	ret0, _ := ret[0].(*queue.DeploymentObservation)
+	return ret0
+}
+
+// GetObservationDetails indicates an expected call of GetObservationDetails.
+func (mr *MockDeploymentObservationQueueMockRecorder) GetObservationDetails(deploymentID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObservationDetails", reflect.TypeOf((*MockDeploymentObservationQueue)(nil).GetObservationDetails), deploymentID)
+}
+
 // InObservation mocks base method.
 func (m *MockDeploymentObservationQueue) InObservation(deploymentID string) bool {
 	m.ctrl.T.Helper()
@@ -86,6 +100,18 @@ func (m *MockDeploymentObservationQueue) Push(observation *queue.DeploymentObser
 func (mr *MockDeploymentObservationQueueMockRecorder) Push(observation interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Push", reflect.TypeOf((*MockDeploymentObservationQueue)(nil).Push), observation)
+}
+
+// PutBackInObservation mocks base method.
+func (m *MockDeploymentObservationQueue) PutBackInObservation(observation *queue.DeploymentObservation) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PutBackInObservation", observation)
+}
+
+// PutBackInObservation indicates an expected call of PutBackInObservation.
+func (mr *MockDeploymentObservationQueueMockRecorder) PutBackInObservation(observation interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutBackInObservation", reflect.TypeOf((*MockDeploymentObservationQueue)(nil).PutBackInObservation), observation)
 }
 
 // RemoveDeployment mocks base method.

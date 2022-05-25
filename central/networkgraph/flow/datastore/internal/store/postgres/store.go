@@ -47,6 +47,11 @@ const (
 	// These mimic how the RocksDB version of the flow store work
 	getSinceStmt         = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM networkflow nf " + joinStmt + " WHERE (nf.LastSeenTimestamp >= $1 OR nf.LastSeenTimestamp IS NULL) AND nf.ClusterId = $2"
 	deleteDeploymentStmt = "DELETE FROM networkflow WHERE ClusterId = $1 AND ((Props_SrcEntity_Type = 1 AND Props_SrcEntity_Id = $2) OR (Props_DstEntity_Type = 1 AND Props_DstEntity_Id = $2))"
+
+	// This seemed OK in scale and long running tests because it is not executed that frequently.  A metric
+	// for this was added so we can keep an eye on the time and adjust if necessary.
+	getByDeploymentStmt = "SELECT nf.Props_SrcEntity_Type, nf.Props_SrcEntity_Id, nf.Props_DstEntity_Type, nf.Props_DstEntity_Id, nf.Props_DstPort, nf.Props_L4Protocol, nf.LastSeenTimestamp, nf.ClusterId FROM networkflow nf " + joinStmt +
+		" WHERE ((nf.Props_SrcEntity_Type = 1 AND nf.Props_SrcEntity_Id = $1) OR (nf.Props_DstEntity_Type = 1 AND nf.Props_DstEntity_Id = $1)) AND nf.ClusterId = $2"
 )
 
 var (
@@ -84,6 +89,8 @@ type FlowStore interface {
 	// GetAllFlows The methods below are the ones that match the flow interface which is what we probably have to match.
 	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
 	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
+	// GetFlowsForDeployment returns all flows referencing a specific deployment id
+	GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error)
 
 	// UpsertFlows Same as other Upserts but it takes in a time
 	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
@@ -559,6 +566,24 @@ func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage
 	flows, err := s.readRows(rows, pred)
 
 	return flows, lastUpdateTS, err
+}
+
+// GetFlowsForDeployment returns the flows matching the deployment ID
+func (s *flowStoreImpl) GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetFlowsForDeployment, "NetworkFlow")
+	var rows pgx.Rows
+	var err error
+
+	rows, err = s.db.Query(ctx, getByDeploymentStmt, deploymentID, s.clusterID)
+
+	if err != nil {
+		return nil, pgutils.ErrNilIfNoRows(err)
+	}
+	defer rows.Close()
+
+	flows, err := s.readRows(rows, nil)
+
+	return flows, err
 }
 
 func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlowProperties) error {
