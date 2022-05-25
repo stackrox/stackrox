@@ -3537,6 +3537,7 @@ jobs:
       - ROX_POLICIES_PATTERNFLY: true
       - ROX_NEW_POLICY_CATEGORIES: true
       - ROX_SECURITY_METRICS_PHASE_ONE: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
 
     steps:
       - checkout
