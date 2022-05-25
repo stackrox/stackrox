@@ -148,6 +148,9 @@ func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 	now := time.Now().Unix()
 	dispType := strings.Trim(fmt.Sprintf("%T", obj), "*")
 	events := m.Dispatcher.ProcessEvent(obj, oldObj, action)
+	if m.writer == nil {
+		return events
+	}
 
 	jsonLine, err := json.Marshal(InformerK8sMsg{
 		ObjectType: dispType,
