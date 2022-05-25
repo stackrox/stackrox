@@ -57,10 +57,7 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *pgxpool.Pool
-
-	// Lock since copyFrom requires a delete first before being executed we can get in odd states if
-	// multiple processes are trying to work on the same subsets of rows.
+	db    *pgxpool.Pool
 	mutex sync.Mutex
 }
 
@@ -265,6 +262,9 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.TestSingleKeyStruct
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TestSingleKeyStruct) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.UpdateMany, "TestSingleKeyStruct")
 
+	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+	// violations
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 

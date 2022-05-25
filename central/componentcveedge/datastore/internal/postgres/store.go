@@ -56,10 +56,7 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *pgxpool.Pool
-
-	// Lock since copyFrom requires a delete first before being executed we can get in odd states if
-	// multiple processes are trying to work on the same subsets of rows.
+	db    *pgxpool.Pool
 	mutex sync.Mutex
 }
 
