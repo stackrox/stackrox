@@ -30,6 +30,7 @@ type listenerImpl struct {
 	detector           detector.Detector
 	resyncPeriod       time.Duration
 	traceWriter        io.Writer
+	traceReader        io.Writer
 }
 
 func (k *listenerImpl) Start() error {

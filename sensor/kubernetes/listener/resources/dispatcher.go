@@ -136,7 +136,8 @@ type dumpingDispatcher struct {
 	Dispatcher
 }
 
-type informerMsg struct {
+// InformerK8sMsg is a message being recorded/replayed when collecting the traces with K8s events
+type InformerK8sMsg struct {
 	ObjectType string
 	Action     string
 	Timestamp  int64
@@ -148,7 +149,7 @@ func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 	dispType := strings.Trim(fmt.Sprintf("%T", obj), "*")
 	events := m.Dispatcher.ProcessEvent(obj, oldObj, action)
 
-	jsonLine, err := json.Marshal(informerMsg{
+	jsonLine, err := json.Marshal(InformerK8sMsg{
 		ObjectType: dispType,
 		Timestamp:  now,
 		Action:     action.String(),
