@@ -85,10 +85,11 @@ func (k ResourceScopeKey) String() string {
 }
 
 // ResourceScopeKeys wraps the given resources in a scope key slice.
+// Note: The returned scope keys _may_ be greater than the given resources,
+// since replacing resources will be taken into account and conditionally added
+// to the returned scope keys.
 func ResourceScopeKeys(resources ...permissions.ResourceHandle) []ScopeKey {
-	// keys := make([]ScopeKey, len(resources))
-	// TODO(dhaus): Not sure this semantic change will bear issues.
-	var keys []ScopeKey
+	keys := make([]ScopeKey, len(resources))
 	for _, resource := range resources {
 		keys = append(keys, ResourceScopeKey(resource.GetResource()))
 		if resource.GetReplacingResource() != nil {

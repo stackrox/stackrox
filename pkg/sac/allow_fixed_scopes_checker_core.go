@@ -90,8 +90,8 @@ func (c allowFixedScopesCheckerCore) getResourceEffectiveAccessScope(resource pe
 		if resource.Resource.GetReplacingResource() == nil {
 			return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 		}
-		_, resourceAllowed = c.topLevelKeys()[ResourceScopeKey(*resource.Resource.GetReplacingResource())]
-		if !resourceAllowed {
+		_, replacingResourceAllowed := c.topLevelKeys()[ResourceScopeKey(*resource.Resource.GetReplacingResource())]
+		if !replacingResourceAllowed {
 			return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 		}
 	}
