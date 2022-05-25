@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 // local-sensor is an application that allows you to run sensor in your host machine, while mocking a
