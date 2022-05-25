@@ -162,7 +162,7 @@ func (c scopeChecker) AccessMode(am storage.Access) ScopeChecker {
 
 // Resource returns a scope checker for the subscope corresponding to the given resource.
 func (c scopeChecker) Resource(resource permissions.ResourceHandle) ScopeChecker {
-	return c.SubScopeChecker(ResourceScopeKey(resource.GetResource()))
+	return c.SubScopeChecker(ResourceScopeKeys(resource)...)
 }
 
 // ClusterID returns a scope checker for the subscope corresponding to the given cluster ID.
