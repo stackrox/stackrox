@@ -180,11 +180,16 @@ export const userAttributes = {
     list: '/v1/userattributes/*',
 };
 
+const complianceEntitiesOp = {
+    clusters: 'clustersList',
+    deployments: 'deploymentsList',
+    namespaces: 'namespaceList', // singular: too bad, so sad
+    nodes: 'nodesList',
+};
+
 export const compliance = {
-    graphqlOps: {
-        getAggregatedResults: 'getAggregatedResults',
-        namespaces: 'namespaceList',
-    },
+    // For example, graphqlEntities('clusters')
+    graphqlEntities: (key) => graphql(complianceEntitiesOp[key]),
     export: {
         csv: '/api/compliance/export/csv',
     },
