@@ -54,10 +54,6 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type traceReader interface {
-	ReadNextMsg() (resources.InformerK8sMsg, error)
-}
-
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())

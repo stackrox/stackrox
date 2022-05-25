@@ -2,15 +2,15 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
-	"fmt"
+	"io"
 	"os"
 	"path"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 )
+
+var _ io.Writer = (*traceWriter)(nil)
 
 type traceWriter struct {
 	destination string
@@ -38,6 +38,8 @@ func (tw *traceWriter) Write(b []byte) (int, error) {
 	return fObjs.Write(append(b, []byte{10}...))
 }
 
+var _ io.Reader = (*traceReader)(nil)
+
 type traceReader struct {
 	source  string
 	mode    string
@@ -56,14 +58,14 @@ func (tw *traceReader) Init() error {
 	return os.MkdirAll(path.Dir(tw.source), os.ModePerm)
 }
 
-func (tw *traceReader) ReadNextMsg() (resources.InformerK8sMsg, error) {
+func (tw *traceReader) Read(p []byte) (n int, err error) {
 	if !tw.enabled {
-		return resources.InformerK8sMsg{}, nil
+		return 0, nil
 	}
 
 	file, err := os.OpenFile(tw.source, os.O_RDONLY, 0644)
 	if err != nil {
-		return resources.InformerK8sMsg{}, errors.Wrapf(err, "Error opening file: %s\n", tw.source)
+		return 0, errors.Wrapf(err, "Error opening file: %s\n", tw.source)
 	}
 	defer func() {
 		_ = file.Close()
@@ -71,21 +73,15 @@ func (tw *traceReader) ReadNextMsg() (resources.InformerK8sMsg, error) {
 	tw.mu.Lock()
 	defer tw.mu.Unlock()
 	scanner := bufio.NewScanner(file)
-	obj := resources.InformerK8sMsg{}
 	var lno int64
 	for scanner.Scan() {
 		lno++
 		if lno < tw.lineNo {
 			continue
 		}
-		if err := json.Unmarshal(scanner.Bytes(), &obj); err != nil {
-			tw.lineNo = lno
-			return resources.InformerK8sMsg{}, errors.Wrap(err, "error when unmarshalling")
-		}
-		return obj, nil
+		b := scanner.Bytes()
+		n = copy(p, b)
+		return n, scanner.Err()
 	}
-	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "shouldn't see an error scanning a string")
-	}
-	return resources.InformerK8sMsg{}, nil
+	return 0, scanner.Err()
 }

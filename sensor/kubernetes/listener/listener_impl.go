@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 )
 
 const (
@@ -21,10 +20,6 @@ const (
 	clusterOperatorResourceName = "clusteroperators"
 	clusterOperatorGroupVersion = "config.openshift.io/v1"
 )
-
-type traceReader interface {
-	ReadNextMsg() (resources.InformerK8sMsg, error)
-}
 
 type listenerImpl struct {
 	client             client.Interface
