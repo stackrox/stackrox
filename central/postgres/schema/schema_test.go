@@ -107,6 +107,10 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 			createStmts: CreateTableAuthProvidersStmt,
 		},
 		{
+			name:        ClustersTableName,
+			createStmts: CreateTableClustersStmt,
+		},
+		{
 			name:        ClusterCvesTableName,
 			createStmts: CreateTableClusterCvesStmt,
 		},
@@ -117,10 +121,6 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 		{
 			name:        ClusterInitBundlesTableName,
 			createStmts: CreateTableClusterInitBundlesStmt,
-		},
-		{
-			name:        ClustersTableName,
-			createStmts: CreateTableClustersStmt,
 		},
 		{
 			name:        DeploymentsTableName,
