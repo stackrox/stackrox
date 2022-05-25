@@ -4,17 +4,15 @@ import axios from './instance';
 
 const baseUrl = '/v1/config';
 
-/**
- * Fetches system configurations.
+/*
+ * Fetch system configuration: private and public.
  */
-export function fetchSystemConfig(): Promise<{ response: SystemConfig }> {
-    return axios.get<SystemConfig>(baseUrl).then(({ data }) => ({
-        response: data,
-    }));
+export function fetchSystemConfig(): Promise<SystemConfig> {
+    return axios.get<SystemConfig>(baseUrl).then((response) => response.data);
 }
 
-/**
- * Fetches login notice and header/footer info.
+/*
+ * Fetch login notice and header/footer info.
  */
 export function fetchPublicConfig(): Promise<{ response: PublicConfig }> {
     return axios.get<PublicConfig>(`${baseUrl}/public`).then(({ data }) => ({
@@ -22,8 +20,8 @@ export function fetchPublicConfig(): Promise<{ response: PublicConfig }> {
     }));
 }
 
-/**
- * Saves modified system config.
+/*
+ * Save system configuration: private and public.
  */
 export function saveSystemConfig(config: SystemConfig): Promise<SystemConfig> {
     return axios.put<SystemConfig>(baseUrl, config).then((response) => response.data);

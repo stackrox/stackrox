@@ -1,35 +1,56 @@
-import React, { ReactElement, useState } from 'react';
-import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
+import React, { ReactElement, useEffect, useState } from 'react';
 import { Button, PageSection, Title, Flex, FlexItem } from '@patternfly/react-core';
 
-import { selectors } from 'reducers';
 import { actions } from 'reducers/systemConfig';
-import { actions as telemetryActions } from 'reducers/telemetryConfig';
+import { fetchSystemConfig, saveSystemConfig } from 'services/SystemConfigService';
+import { fetchTelemetryConfig, saveTelemetryConfig } from 'services/TelemetryService';
 import { SystemConfig } from 'types/config.proto';
 import { TelemetryConfig } from 'types/telemetry.proto';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import SystemConfigForm from './SystemConfigForm';
 import Details from './Details';
 
-export type PageProps = {
-    systemConfig: SystemConfig;
-    saveSystemConfig: (systemConfig: SystemConfig) => void;
-    telemetryConfig: TelemetryConfig;
-    saveTelemetryConfig: (telemetryConfig: TelemetryConfig) => void;
-};
-
-const Page = ({
-    systemConfig,
-    saveSystemConfig,
-    telemetryConfig,
-    saveTelemetryConfig,
-}: PageProps): ReactElement => {
+const SystemConfigPage = (): ReactElement => {
     const [isEditing, setIsEditing] = useState(false);
-    // TODO next step will call fetch functions directly from services instead of indirectly via sagas
-    // Wait while either object is empty, which is initial state of the reducers.
-    const isLoading =
-        Object.keys(systemConfig).length === 0 || Object.keys(telemetryConfig).length === 0;
+
+    const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
+    const [isLoadingSystemConfig, setIsLoadingSystemConfig] = useState(false);
+    const [systemConfigErrorMessage, setSystemConfigErrorMessage] = useState('');
+
+    const [telemetryConfig, setTelemetryConfig] = useState<TelemetryConfig | null>(null);
+    const [isLoadingTelemetryConfig, setIsLoadingTelemetryConfig] = useState(false);
+    const [telemetryConfigErrorMessage, setTelemetryConfigErrorMessage] = useState('');
+
+    useEffect(() => {
+        setIsLoadingSystemConfig(true);
+        fetchSystemConfig()
+            .then((data) => {
+                setSystemConfig(data);
+                setSystemConfigErrorMessage('');
+            })
+            .catch((error) => {
+                setSystemConfig(null);
+                setSystemConfigErrorMessage(getAxiosErrorMessage(error));
+            })
+            .finally(() => setIsLoadingSystemConfig(false));
+    }, []);
+
+    useEffect(() => {
+        setIsLoadingTelemetryConfig(true);
+        fetchTelemetryConfig()
+            .then((data) => {
+                setTelemetryConfig(data);
+                setTelemetryConfigErrorMessage('');
+            })
+            .catch((error) => {
+                setTelemetryConfig(null);
+                setTelemetryConfigErrorMessage(getAxiosErrorMessage(error));
+            })
+            .finally(() => setIsLoadingTelemetryConfig(false));
+    }, []);
+
+    const isLoading = isLoadingSystemConfig || isLoadingTelemetryConfig;
 
     function editSystemConfig() {
         setIsEditing(true);
@@ -82,14 +103,4 @@ const Page = ({
     );
 };
 
-const mapStateToProps = createStructuredSelector({
-    systemConfig: selectors.getSystemConfig,
-    telemetryConfig: selectors.getTelemetryConfig,
-});
-
-const mapDispatchToProps = {
-    saveSystemConfig: actions.saveSystemConfig,
-    saveTelemetryConfig: telemetryActions.saveTelemetryConfig,
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(Page);
+export default SystemConfigPage;

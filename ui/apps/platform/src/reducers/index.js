@@ -26,7 +26,6 @@ import groups, { selectors as groupsSelectors } from './groups';
 import attributes, { selectors as attributesSelectors } from './attributes';
 import pdfDownload, { selectors as pdfDownloadSelectors } from './pdfDownload';
 import systemConfig, { selectors as systemConfigSelectors } from './systemConfig';
-import telemetryConfig, { selectors as telemetryConfigSelectors } from './telemetryConfig';
 
 // Reducers
 
@@ -53,7 +52,6 @@ const appReducer = combineReducers({
     attributes,
     pdfDownload,
     systemConfig,
-    telemetryConfig,
 });
 
 const createRootReducer = (history) => {
@@ -92,7 +90,6 @@ const getRuleGroups = (state) => getApp(state).groups;
 const getAttributes = (state) => getApp(state).attributes;
 const getPdfDownload = (state) => getApp(state).pdfDownload;
 const getSystemConfig = (state) => getApp(state).systemConfig;
-const getTelemetryConfig = (state) => getApp(state).telemetryConfig;
 
 const boundSelectors = {
     ...bindSelectors(getAPITokens, apiTokenSelectors),
@@ -118,7 +115,6 @@ const boundSelectors = {
     ...bindSelectors(getAttributes, attributesSelectors),
     ...bindSelectors(getPdfDownload, pdfDownloadSelectors),
     ...bindSelectors(getSystemConfig, systemConfigSelectors),
-    ...bindSelectors(getTelemetryConfig, telemetryConfigSelectors),
 };
 
 export const selectors = {
