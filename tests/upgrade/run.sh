@@ -247,7 +247,7 @@ install_metrics_server_and_deactivate() {
     # shellcheck disable=SC2034
     for i in $(seq 1 10); do
         kubectl api-resources >stdout.out 2>stderr.out || true
-        if grep 'metrics.k8s.io.*the server is currently unable to handle the request' stderr.out; then
+        if grep -q 'metrics.k8s.io.*the server is currently unable to handle the request' stderr.out; then
             success=1
             break
         fi
