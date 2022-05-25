@@ -487,7 +487,8 @@ ui-test:
 test: go-unit-tests ui-test shell-unit-tests
 
 .PHONY: integration-unit-tests
-integration-unit-tests: build-prep
+integration-unit-tests: build-prep test-prep
+	set -o pipefail ; \
 	GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -count=1 -v \
 		$(shell go list ./... | grep  "registries\|scanners\|notifiers") \
 		| tee test-output/test.log
