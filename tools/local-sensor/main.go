@@ -8,9 +8,11 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
@@ -57,16 +59,81 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 	return conn, fakeCentral, closeF
 }
 
+type localSensorConfig struct {
+	Duration            time.Duration
+	CentralOutput       string
+	ShallRecordK8sInput bool
+	RecordK8sFile       string
+	ShallReplayK8sTrace bool
+	ReplayK8sTraceFile  string
+	Verbose             bool
+}
+
+func mustGetCommandLineArgs() localSensorConfig {
+	fsc := localSensorConfig{}
+	verboseFlag := flag.Bool("verbose", false, "prints all messages to stdout as well as to the output file")
+
+	durationFlag := flag.Duration("duration", 0, "duration that the scenario should run (leave it empty to run it without timeout)")
+	centralOutputFile := flag.String("central-out", "central-out.json", "file to store the events that would be sent to central")
+	recordTrace := flag.Bool("record", false, "whether to record a trace with k8s events")
+	traceOutFile := flag.String("record-out", "k8s-trace.jsonl", "a file where recorded trace would be stored")
+	replyTrace := flag.Bool("reply", false, "whether to reply recorded a trace with k8s events")
+	traceInFile := flag.String("reply-in", "k8s-trace.jsonl", "a file where recorded trace would be read from")
+	//resyncPeriod := flag.Duration("resync", 1*time.Minute, "resync period")
+	flag.Parse()
+
+	fsc.Duration = *durationFlag
+	fsc.CentralOutput = path.Clean(*centralOutputFile)
+
+	fsc.ShallRecordK8sInput = *recordTrace
+	if *recordTrace && *traceOutFile == "" {
+		log.Printf("trace destination empty. Using default 'k8s-trace.jsonl'\n")
+		*traceOutFile = "k8s-trace.jsonl"
+	}
+	fsc.RecordK8sFile = path.Clean(*traceOutFile)
+	if *replyTrace && *traceInFile == "" {
+		log.Fatalf("trace source empty")
+	}
+	fsc.ShallReplayK8sTrace = *replyTrace
+	fsc.ReplayK8sTraceFile = path.Clean(*traceInFile)
+	fsc.Verbose = *verboseFlag
+	return fsc
+}
+
 func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, outfile string) {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		endTime := time.Now()
-		allMessages := fakeCentral.GetAllMessages()
-		dumpMessages(allMessages, startTime, endTime, outfile)
-		os.Exit(0)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+	<-ctx.Done()
+	endTime := time.Now()
+	allMessages := fakeCentral.GetAllMessages()
+	dumpMessages(allMessages, startTime, endTime, outfile)
+	os.Exit(0)
+}
+
+type traceWriter struct {
+	destination string
+	enabled     bool
+}
+
+func (tw *traceWriter) Init() error {
+	if !tw.enabled || path.Dir(tw.destination) == "" {
+		return nil
+	}
+	return os.MkdirAll(path.Dir(tw.destination), os.ModePerm)
+}
+
+func (tw *traceWriter) Write(b []byte) (int, error) {
+	if !tw.enabled {
+		return 0, nil
+	}
+	fObjs, err := os.OpenFile(tw.destination, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return 0, errors.Wrapf(err, "Error opening file: %s\n", tw.destination)
+	}
+	defer func() {
+		_ = fObjs.Close()
 	}()
+	return fObjs.Write(append(b, []byte{10}...))
 }
 
 // local-sensor adds three new flags to sensor:
@@ -76,13 +143,8 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 //
 // If a KUBECONFIG file is provided, then local-sensor will use that file to connect to a remote cluster.
 func main() {
-	durationFlag := flag.Duration("duration", 0, "duration that the scenario should run (leave it empty to run it without timeout)")
-	outputFileFlag := flag.String("output", "results.json", "output all messages received to file")
-	verboseFlag := flag.Bool("verbose", false, "prints all messages to stdout as well as to the output file")
-	resyncPeriod := flag.Duration("resync", 1*time.Minute, "resync period")
 
-	flag.Parse()
-
+	fsc := mustGetCommandLineArgs()
 	fakeClient, err := k8s.MakeOutOfClusterClient()
 	utils.CrashOnError(err)
 
@@ -98,23 +160,29 @@ func main() {
 		message.PolicySync([]*storage.Policy{}),
 		message.BaselineSync([]*storage.ProcessBaseline{}))
 
-	if *verboseFlag {
+	if fsc.Verbose {
 		fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
 			log.Printf("MESSAGE RECEIVED: %s\n", msg.String())
 		})
 	}
 
-	registerHostKillSignals(startTime, fakeCentral, *outputFileFlag)
+	go registerHostKillSignals(startTime, fakeCentral, fsc.CentralOutput)
 
 	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
 	defer shutdownFakeServer()
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
+	traceRec := &traceWriter{
+		destination: path.Clean(fsc.RecordK8sFile),
+		enabled:     fsc.ShallRecordK8sInput,
+	}
+	_ = traceRec.Init()
+
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(fakeClient).
 		WithCentralConnectionFactory(fakeConnectionFactory).
 		WithLocalSensor(true).
-		WithResyncPeriod(*resyncPeriod))
+		WithResyncPeriod(*resyncPeriod).WithTraceWriter(traceRec))
 	if err != nil {
 		panic(err)
 	}
@@ -124,10 +192,11 @@ func main() {
 
 	spyCentral.ConnectionStarted.Wait()
 
-	<-time.Tick(*durationFlag)
+	log.Printf("Running scenario for %f minutes\n", fsc.Duration.Minutes())
+	<-time.Tick(fsc.Duration)
 	endTime := time.Now()
 	allMessages := fakeCentral.GetAllMessages()
-	dumpMessages(allMessages, startTime, endTime, *outputFileFlag)
+	dumpMessages(allMessages, startTime, endTime, fsc.CentralOutput)
 
 	spyCentral.KillSwitch.Signal()
 }
