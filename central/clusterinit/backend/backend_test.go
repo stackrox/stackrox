@@ -12,7 +12,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/clusterinit/backend/access"
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate/mocks"
+	"github.com/stackrox/rox/central/clusterinit/store"
 	rocksdbStore "github.com/stackrox/rox/central/clusterinit/store/rocksdb"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/central/role/resources"
@@ -120,9 +122,9 @@ func (s *clusterInitBackendTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	m := mocks.NewMockProvider(s.mockCtrl)
 	s.rocksDB = rocksdbtest.RocksDBForT(s.T())
-	store, err := rocksdbStore.NewStore(s.rocksDB)
+	rocksdbStore, err := rocksdbStore.New(s.rocksDB)
 	s.Require().NoError(err)
-	s.backend = newBackend(store, m)
+	s.backend = newBackend(store.NewStore(rocksdbStore), m)
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	s.certProvider = m
 
@@ -466,7 +468,7 @@ func (s *clusterInitBackendTestSuite) TestCheckAccess() {
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			err := CheckAccess(c.ctx, c.access)
+			err := access.CheckAccess(c.ctx, c.access)
 			if c.shouldFail {
 				s.Require().Error(err)
 				s.ErrorIs(err, c.expectedErr)
