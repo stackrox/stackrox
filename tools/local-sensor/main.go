@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -18,6 +19,7 @@ import (
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -75,6 +77,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 
 	durationFlag := flag.Duration("duration", 0, "duration that the scenario should run (leave it empty to run it without timeout)")
 	centralOutputFile := flag.String("central-out", "central-out.json", "file to store the events that would be sent to central")
+
 	recordTrace := flag.Bool("record", false, "whether to record a trace with k8s events")
 	traceOutFile := flag.String("record-out", "k8s-trace.jsonl", "a file where recorded trace would be stored")
 	replayTrace := flag.Bool("reply", false, "whether to reply recorded a trace with k8s events")
@@ -121,7 +124,7 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 //
 // If a KUBECONFIG file is provided, then local-sensor will use that file to connect to a remote cluster.
 func main() {
-
+	//TODO(do-not-merge): remove test.jsonl file from git
 	fsc := mustGetCommandLineArgs()
 	fakeClient, err := k8s.MakeOutOfClusterClient()
 	// when replying a trace, there is no need to connect to K8s cluster
@@ -167,6 +170,29 @@ func main() {
 	}
 	_ = trReader.Init()
 
+	// DIRTY-area
+	if trReader.enabled {
+		for i := 0; i < 5; i++ {
+			buf := make([]byte, 4096)
+			n, err := trReader.Read(buf)
+			if err != nil {
+				log.Fatalf("error reading using the trReader")
+			}
+			fmt.Printf("read %d bytes from the file\n", n)
+			obj := resources.InformerK8sMsg{}
+
+			if err := json.Unmarshal(buf[:n], &obj); err != nil {
+				log.Fatalf("cannot unmarshal: %s\n", err)
+			} else {
+				fmt.Printf("payload: %s\n", obj.Payload)
+			}
+			// depending on a mode - sleep or do sth else
+			// fakeClient.Dynamic().Resource(? inject here the 'obj' somehow ?)
+		}
+	}
+	// DIRTY-area-end
+
+	// TODO: remove the trReader dependency from CreateSensor
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(fakeClient).
 		WithCentralConnectionFactory(fakeConnectionFactory).
