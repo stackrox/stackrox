@@ -83,7 +83,7 @@ func TestCheckResourceForAccess(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, c.expectedRes, CheckResourceForAccess(c.resource, c.permissions, c.access))
+			assert.Equal(t, c.expectedRes, c.resource.IsPermittedBy(c.permissions, c.access))
 		})
 	}
 }

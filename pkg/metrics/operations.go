@@ -18,6 +18,7 @@ const (
 	Get
 	GetAll
 	GetMany
+	GetFlowsForDeployment
 
 	// Special operation currently used only for processes.
 	GetGrouped

@@ -133,7 +133,7 @@ func (a *accessModeLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey)
 	}
 	filteredRoles := make([]permissions.ResolvedRole, 0, len(a.roles))
 	for _, role := range a.roles {
-		if permissions.CheckResourceForAccess(resource, role.GetPermissions(), a.access) {
+		if resource.IsPermittedBy(role.GetPermissions(), a.access) {
 			filteredRoles = append(filteredRoles, role)
 		}
 	}

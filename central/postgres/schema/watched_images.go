@@ -21,8 +21,9 @@ var (
                    PRIMARY KEY(Name)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*WatchedImages)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// WatchedImagesSchema is the go schema for table `watched_images`.
@@ -36,3 +37,13 @@ var (
 		return schema
 	}()
 )
+
+const (
+	WatchedImagesTableName = "watched_images"
+)
+
+// WatchedImages holds the Gorm model for Postgres table `watched_images`.
+type WatchedImages struct {
+	Name       string `gorm:"column:name;type:varchar;primaryKey"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}

@@ -1,9 +1,9 @@
 import { url as apidocsUrl } from '../constants/ApiReferencePage';
-import { baseURL as complianceUrl } from '../constants/CompliancePage';
 import { url as userUrl } from '../constants/UserPage';
 import selectors from '../constants/GeneralPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
+import { visitComplianceDashboard, visitComplianceEntities } from '../helpers/compliance';
 import { visitMainDashboard, visitMainDashboardFromLeftNav } from '../helpers/main';
 import { visitNetworkGraph } from '../helpers/networkGraph';
 import { visitViolations, visitViolationsWithUncaughtException } from '../helpers/violations';
@@ -39,21 +39,13 @@ describe('General sanity checks', () => {
         });
 
         it('for Compliance Dashboard', () => {
-            const getAggregatedResults = api.graphql(
-                api.compliance.graphqlOps.getAggregatedResults
-            );
-            cy.intercept('POST', getAggregatedResults).as('getAggregatedResults');
-            cy.visit(complianceUrl);
-            cy.wait('@getAggregatedResults');
+            visitComplianceDashboard();
 
             cy.title().should('match', new RegExp(`Compliance | ${productNameRegExp}`));
         });
 
         it('for Compliance Namespaces', () => {
-            const namespaces = api.graphql(api.compliance.graphqlOps.namespaces);
-            cy.intercept('POST', namespaces).as('namespaces');
-            cy.visit(`${complianceUrl}/namespaces`);
-            cy.wait('@namespaces');
+            visitComplianceEntities('namespaces');
 
             cy.title().should('match', new RegExp(`Compliance - Namespace | ${productNameRegExp}`));
         });

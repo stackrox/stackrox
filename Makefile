@@ -79,7 +79,7 @@ GOPATH_VOLUME_SRC := $(GOPATH_VOLUME_NAME)
 endif
 
 LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated
-GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go
+GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go -e GOCACHE=/linux-gocache
 
 null :=
 space := $(null) $(null)
@@ -487,8 +487,11 @@ ui-test:
 test: go-unit-tests ui-test shell-unit-tests
 
 .PHONY: integration-unit-tests
-integration-unit-tests: build-prep
-	 GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -count=1 $(shell go list ./... | grep  "registries\|scanners\|notifiers")
+integration-unit-tests: build-prep test-prep
+	set -o pipefail ; \
+	GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -count=1 -v \
+		$(shell go list ./... | grep  "registries\|scanners\|notifiers") \
+		| tee test-output/test.log
 
 generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
 	$(BASE_DIR)/scripts/generate-junit-reports.sh
@@ -513,10 +516,11 @@ $(CURDIR)/image/rhel/bundle.tar.gz:
 
 .PHONY: $(CURDIR)/image/rhel/Dockerfile.gen
 $(CURDIR)/image/rhel/Dockerfile.gen:
+	ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 	LABEL_VERSION=$(TAG) \
 	LABEL_RELEASE=$(TAG) \
 	QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
-	envsubst '$${LABEL_VERSION} $${LABEL_RELEASE} $${QUAY_TAG_EXPIRATION}' \
+	envsubst '$${ROX_IMAGE_FLAVOR} $${LABEL_VERSION} $${LABEL_RELEASE} $${QUAY_TAG_EXPIRATION}' \
 	< $(CURDIR)/image/rhel/Dockerfile.envsubst > $(CURDIR)/image/rhel/Dockerfile.gen
 
 .PHONY: docker-build-main-image
@@ -525,7 +529,6 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image cent
 	docker build \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
-		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
 		--build-arg ROX_PRODUCT_BRANDING=$(ROX_PRODUCT_BRANDING) \
 		--file image/rhel/Dockerfile.gen \
 		image/rhel
@@ -546,13 +549,13 @@ docker-build-data-image: docs-image
 
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:
-	cp -f bin/linux/roxctl image/bin/roxctl-linux
+	cp -f bin/linux/roxctl image/roxctl/roxctl-linux
 	docker build \
 		-t stackrox/roxctl:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
-		-f image/roxctl.Dockerfile \
+		-f image/roxctl/Dockerfile \
 		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
-		image/
+		image/roxctl
 
 .PHONY: copy-go-binaries-to-image-dir
 copy-go-binaries-to-image-dir:
@@ -618,13 +621,19 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 $(CURDIR)/image/postgres/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
 
+.PHONY: $(CURDIR)/image/postgres/Dockerfile.gen
+$(CURDIR)/image/postgres/Dockerfile.gen:
+	ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
+	envsubst '$${ROX_IMAGE_FLAVOR}' \
+	< $(CURDIR)/image/postgres/Dockerfile.envsubst > $(CURDIR)/image/postgres/Dockerfile.gen
+
 .PHONY: central-db-image
-central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz
+central-db-image: $(CURDIR)/image/postgres/bundle.tar.gz $(CURDIR)/image/postgres/Dockerfile.gen
 	docker build \
 		-t stackrox/central-db:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG) \
 		--build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) \
-		--file image/postgres/Dockerfile \
+		--file image/postgres/Dockerfile.gen \
 		image/postgres
 	@echo "Built central-db image with tag $(TAG)"
 

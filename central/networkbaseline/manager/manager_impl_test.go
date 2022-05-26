@@ -8,8 +8,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	queueMocks "github.com/stackrox/rox/central/deployment/queue/mocks"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkEntityDSMock "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
+	networkFlowDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	networkPolicyMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
@@ -80,11 +82,14 @@ func TestManager(t *testing.T) {
 type ManagerTestSuite struct {
 	suite.Suite
 
-	ds                *fakeDS
-	networkEntities   *networkEntityDSMock.MockEntityDataStore
-	deploymentDS      *deploymentMocks.MockDataStore
-	networkPolicyDS   *networkPolicyMocks.MockDataStore
-	connectionManager *connectionMocks.MockManager
+	ds                         *fakeDS
+	networkEntities            *networkEntityDSMock.MockEntityDataStore
+	deploymentDS               *deploymentMocks.MockDataStore
+	networkPolicyDS            *networkPolicyMocks.MockDataStore
+	clusterFlows               *networkFlowDSMocks.MockClusterDataStore
+	flowStore                  *networkFlowDSMocks.MockFlowDataStore
+	connectionManager          *connectionMocks.MockManager
+	deploymentObservationQueue *queueMocks.MockDeploymentObservationQueue
 
 	m             Manager
 	currTestStart timestamp.MicroTS
@@ -95,10 +100,12 @@ func (suite *ManagerTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.networkEntities = networkEntityDSMock.NewMockEntityDataStore(suite.mockCtrl)
 	suite.currTestStart = timestamp.Now()
-	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.deploymentDS = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.networkPolicyDS = networkPolicyMocks.NewMockDataStore(suite.mockCtrl)
+	suite.clusterFlows = networkFlowDSMocks.NewMockClusterDataStore(suite.mockCtrl)
+	suite.flowStore = networkFlowDSMocks.NewMockFlowDataStore(suite.mockCtrl)
 	suite.connectionManager = connectionMocks.NewMockManager(suite.mockCtrl)
+	suite.deploymentObservationQueue = queueMocks.NewMockDeploymentObservationQueue(suite.mockCtrl)
 }
 
 func (suite *ManagerTestSuite) TearDownTest() {
@@ -112,7 +119,8 @@ func (suite *ManagerTestSuite) mustInitManager(initialBaselines ...*storage.Netw
 		suite.ds.baselines[baseline.GetDeploymentId()] = baseline
 	}
 	var err error
-	suite.m, err = New(suite.ds, suite.networkEntities, suite.deploymentDS, suite.networkPolicyDS, suite.connectionManager)
+	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	suite.m, err = New(suite.ds, suite.networkEntities, suite.deploymentDS, suite.networkPolicyDS, suite.clusterFlows, suite.connectionManager)
 	suite.Require().NoError(err)
 }
 
@@ -154,7 +162,19 @@ func (suite *ManagerTestSuite) mustGetObserationPeriod(baselineID int) timestamp
 
 func (suite *ManagerTestSuite) initBaselinesForDeployments(ids ...int) {
 	for _, id := range ids {
+		suite.deploymentDS.EXPECT().GetDeployment(gomock.Any(), depID(id)).Return(
+			&storage.Deployment{
+				Id:        depID(id),
+				Name:      depName(id),
+				ClusterId: clusterID(id),
+				Namespace: ns(id),
+			}, true, nil,
+		).AnyTimes()
+		suite.clusterFlows.EXPECT().GetFlowStore(gomock.Any(), clusterID(id)).Return(suite.flowStore, nil).AnyTimes()
+		suite.flowStore.EXPECT().GetFlowsForDeployment(gomock.Any(), depID(id), false).Return(nil, nil).AnyTimes()
 		suite.Require().NoError(suite.m.ProcessDeploymentCreate(depID(id), depName(id), clusterID(id), ns(id)))
+		suite.Require().NoError(suite.m.CreateNetworkBaseline(depID(id)))
+
 	}
 }
 
@@ -320,24 +340,20 @@ func (suite *ManagerTestSuite) TestRepeatedCreates() {
 
 	suite.initBaselinesForDeployments(1, 2, 3)
 	suite.assertBaselinesAre(emptyBaseline(1), emptyBaseline(2), emptyBaseline(3))
-
 	suite.initBaselinesForDeployments(1) // Should be a no-op
 	suite.assertBaselinesAre(emptyBaseline(1), emptyBaseline(2), emptyBaseline(3))
-
 	suite.processFlowUpdate(conns(depToDepConn(1, 2, 52)), conns(depToDepConn(2, 3, 51)))
 	suite.assertBaselinesAre(
 		baselineWithPeers(1, depPeer(2, properties(false, 52))),
 		baselineWithPeers(2, depPeer(1, properties(true, 52))),
 		emptyBaseline(3),
 	)
-
 	suite.initBaselinesForDeployments(1) // Should be a no-op
 	suite.assertBaselinesAre(
 		baselineWithPeers(1, depPeer(2, properties(false, 52))),
 		baselineWithPeers(2, depPeer(1, properties(true, 52))),
 		emptyBaseline(3),
 	)
-
 }
 
 func (suite *ManagerTestSuite) TestResilienceToRestarts() {
@@ -725,7 +741,8 @@ func (suite *ManagerTestSuite) TestProcessPostClusterDelete() {
 			depPeer(1, properties(true, 443)),
 		),
 	)
-	suite.Nil(suite.m.ProcessPostClusterDelete(clusterID(10)))
+	deletedIDs := []string{depID(1), depID(2)}
+	suite.Nil(suite.m.ProcessPostClusterDelete(deletedIDs))
 	suite.assertBaselinesAre(
 		baselineWithClusterAndPeers(3, 11),
 		baselineWithClusterAndPeers(4, 12),

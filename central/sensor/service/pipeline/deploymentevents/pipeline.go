@@ -206,7 +206,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 		return err
 	}
 
-	// Add network baseline for this deployment if it does not exist yet
+	// Inform network baseline manager that a new deployment has been created
 	if err := s.networkBaselines.ProcessDeploymentCreate(
 		deployment.GetId(),
 		deployment.GetName(),

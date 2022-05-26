@@ -25,8 +25,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*ReportConfigurations)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ReportConfigurationsSchema is the go schema for table `report_configurations`.
@@ -41,3 +42,15 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ReportConfigurationsTableName = "report_configurations"
+)
+
+// ReportConfigurations holds the Gorm model for Postgres table `report_configurations`.
+type ReportConfigurations struct {
+	Id         string                                 `gorm:"column:id;type:varchar;primaryKey"`
+	Name       string                                 `gorm:"column:name;type:varchar"`
+	Type       storage.ReportConfiguration_ReportType `gorm:"column:type;type:integer"`
+	Serialized []byte                                 `gorm:"column:serialized;type:bytea"`
+}

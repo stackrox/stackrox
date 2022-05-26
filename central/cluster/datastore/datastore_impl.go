@@ -522,7 +522,7 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	ds.removeClusterNamespaces(ctx, cluster)
 
 	// Tombstone each deployment and mark alerts stale.
-	ds.removeClusterDeployments(ctx, cluster)
+	removedDeployments := ds.removeClusterDeployments(ctx, cluster)
 
 	ds.removeClusterPods(ctx, cluster)
 
@@ -535,7 +535,7 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 		log.Errorf("failed to delete external network graph entities for removed cluster %s: %v", cluster.GetId(), err)
 	}
 
-	err := ds.networkBaselineMgr.ProcessPostClusterDelete(cluster.GetId())
+	err := ds.networkBaselineMgr.ProcessPostClusterDelete(removedDeployments)
 	if err != nil {
 		log.Errorf("failed to delete network baselines associated with this cluster %q: %v", cluster.GetId(), err)
 	}
@@ -580,12 +580,16 @@ func (ds *datastoreImpl) removeClusterPods(ctx context.Context, cluster *storage
 	}
 }
 
-func (ds *datastoreImpl) removeClusterDeployments(ctx context.Context, cluster *storage.Cluster) {
+func (ds *datastoreImpl) removeClusterDeployments(ctx context.Context, cluster *storage.Cluster) []string {
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
 	deployments, err := ds.deploymentDataStore.Search(ctx, q)
 	if err != nil {
 		log.Errorf("failed to get deployments for removed cluster %s: %v", cluster.GetId(), err)
 	}
+
+	// Deployment IDs being removed.
+	removedIDs := make([]string, 0, len(deployments))
+
 	// Tombstone each deployment and mark alerts stale.
 	for _, deployment := range deployments {
 		alerts, err := ds.getAlerts(ctx, deployment.ID)
@@ -598,12 +602,14 @@ func (ds *datastoreImpl) removeClusterDeployments(ctx context.Context, cluster *
 			}
 		}
 
+		removedIDs = append(removedIDs, deployment.ID)
 		err = ds.deploymentDataStore.RemoveDeployment(ctx, cluster.GetId(), deployment.ID)
 		if err != nil {
 			log.Errorf("failed to remove deployment %s in deleted cluster: %v", deployment.ID, err)
 		}
 	}
 
+	return removedIDs
 }
 
 func (ds *datastoreImpl) removeClusterSecrets(ctx context.Context, cluster *storage.Cluster) {

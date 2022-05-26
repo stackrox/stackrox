@@ -40,6 +40,7 @@ import (
     "github.com/stackrox/rox/pkg/sac"
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres"
+    "github.com/stackrox/rox/pkg/sync"
 )
 
 const (
@@ -97,6 +98,7 @@ type Store interface {
 
 type storeImpl struct {
     db *pgxpool.Pool
+    mutex sync.Mutex
 }
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
@@ -395,6 +397,12 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
         }
     }
     {{- end }}
+
+    // Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+    // same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+    // violations
+    s.mutex.Lock()
+    defer s.mutex.Unlock()
 
     if len(objs) < batchAfter {
         return s.upsert(ctx, objs...)

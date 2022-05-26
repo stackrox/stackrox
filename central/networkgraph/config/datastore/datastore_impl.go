@@ -26,12 +26,18 @@ type datastoreImpl struct {
 }
 
 // New return new instance of DataStore.
-func New(storage store.Store) DataStore {
+func New(s store.Store) DataStore {
 	ds := &datastoreImpl{
-		store: storage,
+		store: s,
 	}
 
-	if err := ds.initDefaultConfig(context.TODO()); err != nil {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraphConfig),
+		))
+
+	if err := ds.initDefaultConfig(ctx); err != nil {
 		utils.Should(errors.Wrap(err, "could not initialize default network graph configuration"))
 	}
 
@@ -46,9 +52,10 @@ func (d *datastoreImpl) initDefaultConfig(ctx context.Context) error {
 
 	if !found {
 		defaultConfig := &storage.NetworkGraphConfig{
+			Id:                      networkGraphConfigKey,
 			HideDefaultExternalSrcs: false,
 		}
-		if err := d.store.UpsertWithID(ctx, networkGraphConfigKey, defaultConfig); err != nil {
+		if err := d.store.Upsert(ctx, defaultConfig); err != nil {
 			return err
 		}
 	}
@@ -78,6 +85,6 @@ func (d *datastoreImpl) UpdateNetworkGraphConfig(ctx context.Context, config *st
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-
-	return d.store.UpsertWithID(ctx, networkGraphConfigKey, config)
+	config.Id = networkGraphConfigKey
+	return d.store.Upsert(ctx, config)
 }

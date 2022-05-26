@@ -46,7 +46,8 @@ func (m ResourceMetadata) GetResource() Resource {
 // GetScope returns the resource scope for this metadata object.
 func (m ResourceMetadata) GetScope() ResourceScope {
 	// Replacing resources _may_ have a different ResourceScope than the initial resource.
-	// This way, clients don't have to deal with replacing resources when checking for scope.
+	// This _may_ broaden the scope, i.e. when the current resource is namespace scoped and the replacing
+	// resource is cluster scoped.
 	if m.ReplacingResource != nil && m.ReplacingResource.GetScope() < m.Scope {
 		return m.ReplacingResource.GetScope()
 	}
@@ -79,17 +80,16 @@ func WithLegacyAuthForSAC(md ResourceMetadata, use bool) ResourceMetadata {
 	return md
 }
 
-// CheckResourceForAccess will verify whether the given ResourceMetadata is contained within the map
+// IsPermittedBy returns whether the ResourceMetadata is contained within the map
 // with at least the specified storage.Access.
 // Note: This will take replacing resources into account.
-func CheckResourceForAccess(resource ResourceMetadata, resourceAccessMap map[string]storage.Access,
-	access storage.Access) bool {
-	if resourceAccessMap[string(resource.GetResource())] >= access {
+func (m ResourceMetadata) IsPermittedBy(resourceAccessMap map[string]storage.Access, access storage.Access) bool {
+	if resourceAccessMap[string(m.GetResource())] >= access {
 		return true
-	} else if resource.ReplacingResource != nil &&
+	} else if m.ReplacingResource != nil &&
 		// Right now, we are not taking multiple replacing resources into account, i.e. Resource A has replacing
 		// resource "Resource B", which also has a replacing resource "Resource C".
-		resourceAccessMap[string(resource.ReplacingResource.GetResource())] >= access {
+		resourceAccessMap[string(m.ReplacingResource.GetResource())] >= access {
 		return true
 	}
 	return false

@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
+	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
 
@@ -74,5 +75,16 @@ func CreateTable(ctx context.Context, db *pgxpool.Pool, createStmt *postgres.Cre
 
 	for _, child := range createStmt.Children {
 		CreateTable(ctx, db, child)
+	}
+}
+
+// CreateTableFromModel executes input create statement using the input connection.
+func CreateTableFromModel(db *gorm.DB, createStmt *postgres.CreateStmts) {
+	err := db.AutoMigrate(createStmt.GormModel)
+	if err != nil {
+		log.Panicf("Error creating table %s: %v", createStmt.Table, err)
+	}
+	for _, child := range createStmt.Children {
+		CreateTableFromModel(db, child)
 	}
 }

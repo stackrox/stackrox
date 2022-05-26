@@ -24,7 +24,8 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes: []string{},
+		GormModel: (*TestGrandparents)(nil),
+		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -36,6 +37,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (test_grandparents_Id) REFERENCES test_grandparents(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*TestGrandparentsEmbeddeds)(nil),
 				Indexes: []string{
 					"create index if not exists testGrandparentsEmbeddeds_idx on test_grandparents_embeddeds using btree(idx)",
 				},
@@ -51,6 +53,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (test_grandparents_Id, test_grandparents_embeddeds_idx) REFERENCES test_grandparents_embeddeds(test_grandparents_Id, idx) ON DELETE CASCADE
                )
                `,
+						GormModel: (*TestGrandparentsEmbeddedsEmbedded2)(nil),
 						Indexes: []string{
 							"create index if not exists testGrandparentsEmbeddedsEmbedded2_idx on test_grandparents_embeddeds_embedded2 using btree(idx)",
 						},
@@ -73,3 +76,33 @@ var (
 		return schema
 	}()
 )
+
+const (
+	TestGrandparentsTableName                   = "test_grandparents"
+	TestGrandparentsEmbeddedsTableName          = "test_grandparents_embeddeds"
+	TestGrandparentsEmbeddedsEmbedded2TableName = "test_grandparents_embeddeds_embedded2"
+)
+
+// TestGrandparents holds the Gorm model for Postgres table `test_grandparents`.
+type TestGrandparents struct {
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Val        string `gorm:"column:val;type:varchar"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
+
+// TestGrandparentsEmbeddeds holds the Gorm model for Postgres table `test_grandparents_embeddeds`.
+type TestGrandparentsEmbeddeds struct {
+	TestGrandparentsId  string           `gorm:"column:test_grandparents_id;type:varchar;primaryKey"`
+	Idx                 int              `gorm:"column:idx;type:integer;primaryKey;index:testgrandparentsembeddeds_idx,type:btree"`
+	Val                 string           `gorm:"column:val;type:varchar"`
+	TestGrandparentsRef TestGrandparents `gorm:"foreignKey:test_grandparents_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+// TestGrandparentsEmbeddedsEmbedded2 holds the Gorm model for Postgres table `test_grandparents_embeddeds_embedded2`.
+type TestGrandparentsEmbeddedsEmbedded2 struct {
+	TestGrandparentsId           string                    `gorm:"column:test_grandparents_id;type:varchar;primaryKey"`
+	TestGrandparentsEmbeddedsIdx int                       `gorm:"column:test_grandparents_embeddeds_idx;type:integer;primaryKey"`
+	Idx                          int                       `gorm:"column:idx;type:integer;primaryKey;index:testgrandparentsembeddedsembedded2_idx,type:btree"`
+	Val                          string                    `gorm:"column:val;type:varchar"`
+	TestGrandparentsEmbeddedsRef TestGrandparentsEmbeddeds `gorm:"foreignKey:test_grandparents_id,test_grandparents_embeddeds_idx;references:test_grandparents_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
+}

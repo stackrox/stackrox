@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
+import { useHistory } from 'react-router-dom';
 import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
@@ -39,6 +40,7 @@ function NetworkSearch({
     closeSidePanel,
     isDisabled,
 }) {
+    const history = useHistory();
     const [searchOptions, setSearchOptions] = useState([]);
     const { searchFilter, setSearchFilter } = useURLSearch();
 
@@ -64,6 +66,7 @@ function NetworkSearch({
     function onSearch(options) {
         setSearchFilter(options);
         if (isCompleteSearchFilter(options)) {
+            history.push(`/main/network${history.location.search}`);
             closeSidePanel();
         }
     }

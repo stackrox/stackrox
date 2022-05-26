@@ -32,6 +32,7 @@ import (
                {{- end}}
                )
                `,
+    GormModel: (*{{$schema.Table|upperCamelCase}})(nil),
     Indexes: []string {
                    {{- range $idx, $field := $schema.Fields}}
                        {{- if $field.Options.Index}}
@@ -83,3 +84,31 @@ var (
         return schema
     }()
 )
+
+{{- define "createGormModel" }}
+{{- $schema := . }}
+    // {{$schema.Table|upperCamelCase}} holds the Gorm model for Postgres table `{{$schema.Table|lowerCase}}`.
+    type {{$schema.Table|upperCamelCase}} struct {
+    {{- range $idx, $field := $schema.DBColumnFields }}
+        {{$field.ColumnName|upperCamelCase}} {{$field.ModelType}} `gorm:"column:{{$field.ColumnName|lowerCase}};type:{{$field.SQLType}}{{if $field.Options.Unique}};unique{{end}}{{if $field.Options.PrimaryKey}};primaryKey{{end}}{{if $field.Options.Index}};index:{{$schema.Table|lowerCamelCase|lowerCase}}_{{$field.ColumnName|lowerCase}},type:{{$field.Options.Index}}{{end}}"`
+    {{- end}}
+    {{- range $idx, $rel := $schema.RelationshipsToDefineAsForeignKeys }}
+        {{$rel.OtherSchema.Table|upperCamelCase}}Ref {{$rel.OtherSchema.Table|upperCamelCase}} `gorm:"foreignKey:{{ (concatWith $rel.ThisSchemaColumnNames ",") | lowerCase}};references:{{ (concatWith $rel.OtherSchemaColumnNames ",")|lowerCase}};belongsTo;constraint:OnDelete:CASCADE"`
+    {{- end}}
+    }
+    {{- range $idx, $child := $schema.Children }}
+        {{- template "createGormModel" $child }}
+    {{- end }}
+{{- end}}
+{{- define "createTableNames" }}
+	{{.Table|upperCamelCase}}TableName = "{{.Table|lowerCase}}"
+	{{- range $idx, $child := .Children }}
+	   {{- template "createTableNames" $child }}
+    {{- end }}
+{{- end}}
+
+const (
+    {{- template "createTableNames" .Schema }}
+)
+
+{{- template "createGormModel" .Schema }}

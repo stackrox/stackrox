@@ -2285,7 +2285,7 @@ jobs:
           path: go-unit-release-junit-reports
   go-postgres-tests:
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:0.3.31
+      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.36-4-g645f6152d7
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -3537,6 +3537,7 @@ jobs:
       - ROX_POLICIES_PATTERNFLY: true
       - ROX_NEW_POLICY_CATEGORIES: true
       - ROX_SECURITY_METRICS_PHASE_ONE: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
 
     steps:
       - checkout
