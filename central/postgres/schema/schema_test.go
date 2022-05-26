@@ -1,6 +1,3 @@
-//go:build sql_integration
-// +build sql_integration
-
 package schema
 
 import (
@@ -173,6 +170,10 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 		{
 			name:        NetworkEntitiesTableName,
 			createStmts: CreateTableNetworkEntitiesStmt,
+		},
+		{
+			name:        NetworkGraphConfigsTableName,
+			createStmts: CreateTableNetworkGraphConfigsStmt,
 		},
 		{
 			name:        NodeComponentsTableName,

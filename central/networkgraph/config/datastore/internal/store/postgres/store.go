@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	baseTable = "networkgraphconfig"
+	baseTable = "network_graph_configs"
 
 	batchAfter = 100
 
@@ -36,7 +36,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NetworkgraphconfigSchema
+	schema         = pkgSchema.NetworkGraphConfigsSchema
 	targetResource = resources.NetworkGraphConfig
 )
 
@@ -63,14 +63,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNetworkgraphconfigStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNetworkGraphConfigsStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoNetworkgraphconfig(ctx context.Context, tx pgx.Tx, obj *storage.NetworkGraphConfig) error {
+func insertIntoNetworkGraphConfigs(ctx context.Context, tx pgx.Tx, obj *storage.NetworkGraphConfig) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -83,7 +83,7 @@ func insertIntoNetworkgraphconfig(ctx context.Context, tx pgx.Tx, obj *storage.N
 		serialized,
 	}
 
-	finalStr := "INSERT INTO networkgraphconfig (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO network_graph_configs (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func insertIntoNetworkgraphconfig(ctx context.Context, tx pgx.Tx, obj *storage.N
 	return nil
 }
 
-func (s *storeImpl) copyFromNetworkgraphconfig(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkGraphConfig) error {
+func (s *storeImpl) copyFromNetworkGraphConfigs(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkGraphConfig) error {
 
 	inputRows := [][]interface{}{}
 
@@ -139,7 +139,7 @@ func (s *storeImpl) copyFromNetworkgraphconfig(ctx context.Context, tx pgx.Tx, o
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkgraphconfig"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"network_graph_configs"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -165,7 +165,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkGraphC
 		return err
 	}
 
-	if err := s.copyFromNetworkgraphconfig(ctx, tx, objs...); err != nil {
+	if err := s.copyFromNetworkGraphConfigs(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -190,7 +190,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkGraphCon
 			return err
 		}
 
-		if err := insertIntoNetworkgraphconfig(ctx, tx, obj); err != nil {
+		if err := insertIntoNetworkGraphConfigs(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -453,13 +453,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkGraphC
 
 //// Used for testing
 
-func dropTableNetworkgraphconfig(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkgraphconfig CASCADE")
+func dropTableNetworkGraphConfigs(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_graph_configs CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableNetworkgraphconfig(ctx, db)
+	dropTableNetworkGraphConfigs(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

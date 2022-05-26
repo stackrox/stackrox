@@ -18,18 +18,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type NetworkgraphconfigStoreSuite struct {
+type NetworkGraphConfigsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestNetworkgraphconfigStore(t *testing.T) {
-	suite.Run(t, new(NetworkgraphconfigStoreSuite))
+func TestNetworkGraphConfigsStore(t *testing.T) {
+	suite.Run(t, new(NetworkGraphConfigsStoreSuite))
 }
 
-func (s *NetworkgraphconfigStoreSuite) SetupTest() {
+func (s *NetworkGraphConfigsStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -52,14 +52,14 @@ func (s *NetworkgraphconfigStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *NetworkgraphconfigStoreSuite) TearDownTest() {
+func (s *NetworkGraphConfigsStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *NetworkgraphconfigStoreSuite) TestStore() {
+func (s *NetworkGraphConfigsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
