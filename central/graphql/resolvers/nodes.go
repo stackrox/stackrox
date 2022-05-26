@@ -25,25 +25,42 @@ func init() {
 		schema.AddQuery("node(id:ID!): Node"),
 		schema.AddQuery("nodes(query: String, pagination: Pagination): [Node!]!"),
 		schema.AddQuery("nodeCount(query: String): Int!"),
-		schema.AddExtraResolver("Node", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddType("ComplianceControlCount", []string{"failingCount: Int!", "passingCount: Int!", "unknownCount: Int!"}),
-		schema.AddExtraResolver("Node", "nodeComplianceControlCount(query: String) : ComplianceControlCount!"),
-		schema.AddExtraResolver("Node", "controlStatus(query: String): String!"),
-		schema.AddExtraResolver("Node", "failingControls(query: String): [ComplianceControl!]!"),
-		schema.AddExtraResolver("Node", "passingControls(query: String): [ComplianceControl!]!"),
-		schema.AddExtraResolver("Node", "controls(query: String): [ComplianceControl!]!"),
-		schema.AddExtraResolver("Node", "cluster: Cluster!"),
-		schema.AddExtraResolver("Node", "vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]!"),
-		schema.AddExtraResolver("Node", "vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability]!"),
-		schema.AddExtraResolver("Node", `unusedVarSink(query: String): Int`),
-		schema.AddExtraResolver("Node", "nodeStatus(query: String): String!"),
-		schema.AddExtraResolver("Node", "topVuln(query: String): EmbeddedVulnerability"),
-		schema.AddExtraResolver("Node", "topVulnerability(query: String): NodeVulnerability"),
-		schema.AddExtraResolver("Node", "vulnCount(query: String): Int!"),
-		schema.AddExtraResolver("Node", "vulnCounter(query: String): VulnerabilityCounter!"),
-		schema.AddExtraResolver("Node", "plottedVulns(query: String): PlottedVulnerabilities!"),
-		schema.AddExtraResolver("Node", "components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!"),
-		schema.AddExtraResolver("Node", `componentCount(query: String): Int!`),
+
+		// NOTE: This list is and should remain alphabetically ordered
+		schema.AddExtraResolvers("Node", []string{
+			"cluster: Cluster!",
+			"complianceResults(query: String): [ControlResult!]!",
+			"controls(query: String): [ComplianceControl!]!",
+			"controlStatus(query: String): String!",
+			"failingControls(query: String): [ComplianceControl!]!",
+			"nodeComplianceControlCount(query: String) : ComplianceControlCount!",
+			"nodeComponents(query: String, pagination: Pagination): [NodeComponent!]!",
+			"nodeComponentCount(query: String): Int!",
+			"nodeStatus(query: String): String!",
+			"nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability]!",
+			"nodeVulnerabilityCount(query: String): Int!",
+			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
+			"passingControls(query: String): [ComplianceControl!]!",
+			"plottedVulns(query: String): PlottedVulnerabilities!",
+			"topNodeVulnerability(query: String): NodeVulnerability",
+			"unusedVarSink(query: String): Int",
+		}),
+		// deprecated fields
+		schema.AddExtraResolvers("Node", []string{
+			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!" +
+				"@deprecated(reason: \"use 'nodeComponents'\")",
+			"componentCount(query: String): Int!" +
+				"@deprecated(reason: \"use 'nodeComponentCount'\")",
+			"topVuln(query: String): EmbeddedVulnerability" +
+				"@deprecated(reason: \"use 'topNodeVulnerability'\")",
+			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]!" +
+				"@deprecated(reason: \"use 'nodeVulnerabilities'\")",
+			"vulnCount(query: String): Int!" +
+				"@deprecated(reason: \"use 'nodeVulnerabilityCount'\")",
+			"vulnCounter(query: String): VulnerabilityCounter!" +
+				"@deprecated(reason: \"use 'nodeVulnerabilityCounter'\")",
+		}),
 	)
 }
 
@@ -290,9 +307,9 @@ func (resolver *nodeResolver) NodeStatus(ctx context.Context, args RawQuery) (st
 	return "active", nil
 }
 
-// Compoonents returns all of the components in the node.
+// Components returns the components in the node.
 func (resolver *nodeResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeComponents")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Components")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
@@ -313,9 +330,37 @@ func (resolver *nodeResolver) ComponentCount(ctx context.Context, args RawQuery)
 	return resolver.root.componentCountV2(resolver.nodeScopeContext(ctx), RawQuery{Query: &query})
 }
 
+// NodeComponents returns the components in the node.
+func (resolver *nodeResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeComponents")
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+
+	if !features.PostgresDatastore.Enabled() {
+		return resolver.root.NodeComponents(resolver.nodeScopeContext(ctx), args)
+	}
+	// TODO : Add postgres support
+	return nil, errors.New("Sub-resolver NodeComponents in nodeResolver does not support postgres yet")
+}
+
+// NodeComponentCount returns the number of components in the node
+func (resolver *nodeResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeComponentCount")
+	if err := readNodes(ctx); err != nil {
+		return 0, err
+	}
+
+	if !features.PostgresDatastore.Enabled() {
+		return resolver.root.NodeComponentCount(resolver.nodeScopeContext(ctx), args)
+	}
+	// TODO : Add postgres support
+	return 0, errors.New("Sub-resolver NodeComponentCount in nodeResolver does not support postgres yet")
+}
+
 // TopVuln returns the first vulnerability with the top CVSS score.
 func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopVulnerability")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopVuln")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
@@ -323,8 +368,8 @@ func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (Vulne
 	return resolver.unwrappedTopVulnQuery(ctx, args)
 }
 
-// TopVulnerability returns the first node vulnerability with the top CVSS score.
-func (resolver *nodeResolver) TopVulnerability(ctx context.Context, args RawQuery) (NodeVulnerabilityResolver, error) {
+// TopNodeVulnerability returns the first node vulnerability with the top CVSS score.
+func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args RawQuery) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopVulnerability")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
@@ -334,7 +379,7 @@ func (resolver *nodeResolver) TopVulnerability(ctx context.Context, args RawQuer
 		return resolver.unwrappedTopVulnQuery(ctx, args)
 	}
 	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver TopVuln in nodeResolver does not support postgres yet")
+	return nil, errors.New("Sub-resolver TopVulnerability in nodeResolver does not support postgres yet")
 }
 
 func (resolver *nodeResolver) unwrappedTopVulnQuery(ctx context.Context, args RawQuery) (*cVEResolver, error) {
@@ -397,8 +442,30 @@ func (resolver *nodeResolver) Vulns(ctx context.Context, args PaginatedQuery) ([
 	return resolver.root.vulnerabilitiesV2(resolver.nodeScopeContext(ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
-// Vulnerabilities returns all of the vulnerabilities in the node.
-func (resolver *nodeResolver) Vulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+// VulnCount returns the number of vulnerabilities the node has.
+func (resolver *nodeResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "VulnCount")
+	if err := readNodes(ctx); err != nil {
+		return 0, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
+
+	return resolver.root.vulnerabilityCountV2(resolver.nodeScopeContext(ctx), RawQuery{Query: &query})
+}
+
+// VulnCounter resolves the number of different types of vulnerabilities contained in a node.
+func (resolver *nodeResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "VulnCounter")
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
+
+	return resolver.root.vulnCounterV2(resolver.nodeScopeContext(ctx), RawQuery{Query: &query})
+}
+
+// NodeVulnerabilities returns the vulnerabilities in the node.
+func (resolver *nodeResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Vulnerabilities")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
@@ -411,8 +478,8 @@ func (resolver *nodeResolver) Vulnerabilities(ctx context.Context, args Paginate
 	return nil, errors.New("Sub-resolver Vulns in nodeResolver does not support postgres yet")
 }
 
-// VulnCount returns the number of vulnerabilities the node has.
-func (resolver *nodeResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
+// NodeVulnerabilityCount returns the number of vulnerabilities the node has.
+func (resolver *nodeResolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "VulnerabilityCount")
 	if err := readNodes(ctx); err != nil {
 		return 0, err
@@ -425,8 +492,8 @@ func (resolver *nodeResolver) VulnCount(ctx context.Context, args RawQuery) (int
 	return 0, errors.New("Sub-resolver VulnCount in nodeResolver does not support postgres yet")
 }
 
-// VulnCounter resolves the number of different types of vulnerabilities contained in a node.
-func (resolver *nodeResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+// NodeVulnerabilityCounter resolves the number of different types of vulnerabilities contained in a node.
+func (resolver *nodeResolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "VulnCounter")
 	if err := readNodes(ctx); err != nil {
 		return nil, err

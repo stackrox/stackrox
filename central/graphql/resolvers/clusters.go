@@ -31,58 +31,63 @@ func init() {
 		schema.AddExtraResolvers("Cluster", []string{
 			"alerts(query: String, pagination: Pagination): [Alert!]!",
 			"alertCount(query: String): Int!",
-			"latestViolation(query: String): Time",
-			"failingPolicyCounter(query: String): PolicyCounter",
+			"clusterVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ClusterVulnerability!]!",
+			"clusterVulnerabilityCount(query: String): Int!",
+			"clusterVulnerabilityCounter(query: String): VulnerabilityCounter!",
+			"complianceResults(query: String): [ControlResult!]!",
+			"complianceControlCount(query: String): ComplianceControlCount!",
+			"controlStatus(query: String): String!",
+			"controls(query: String): [ComplianceControl!]!",
 			"deployments(query: String, pagination: Pagination): [Deployment!]!",
 			"deploymentCount(query: String): Int!",
-			"nodes(query: String, pagination: Pagination): [Node!]!",
-			"nodeCount(query: String): Int!",
-			"node(node: ID!): Node",
-			"namespaces(query: String, pagination: Pagination): [Namespace!]!",
-			"namespace(name: String!): Namespace",
-			"namespaceCount(query: String): Int!",
-			"complianceResults(query: String): [ControlResult!]!",
+			"failingControls(query: String): [ComplianceControl!]!",
+			"failingPolicyCounter(query: String): PolicyCounter",
+			"images(query: String, pagination: Pagination): [Image!]!",
+			"imageCount(query: String): Int!",
+			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!",
+			"imageVulnerabilityCount(query: String): Int!",
+			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
+			"isGKECluster: Boolean!",
+			"isOpenShiftCluster: Boolean!",
+			"istioEnabled: Boolean!",
 			"k8sRoles(query: String, pagination: Pagination): [K8SRole!]!",
 			"k8sRole(role: ID!): K8SRole",
 			"k8sRoleCount(query: String): Int!",
+			"latestViolation(query: String): Time",
+			"namespaces(query: String, pagination: Pagination): [Namespace!]!",
+			"namespace(name: String!): Namespace",
+			"namespaceCount(query: String): Int!",
+			"nodeComponents(query: String, pagination: Pagination): [NodeComponent!]!",
+			"nodeComponentCount(query: String): Int!",
+			"nodes(query: String, pagination: Pagination): [Node!]!",
+			"nodeCount(query: String): Int!",
+			"node(node: ID!): Node",
+			"nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!",
+			"nodeVulnerabilityCount(query: String): Int!",
+			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
+			"passingControls(query: String): [ComplianceControl!]!",
+			"plottedVulns(query: String): PlottedVulnerabilities!",
+			"policies(query: String, pagination: Pagination): [Policy!]!",
+			"policyCount(query: String): Int!",
+			"policyStatus(query: String): PolicyStatus!",
+			"risk: Risk",
+			"secrets(query: String, pagination: Pagination): [Secret!]!",
+			"secretCount(query: String): Int!",
 			"serviceAccounts(query: String, pagination: Pagination): [ServiceAccount!]!",
 			"serviceAccount(sa: ID!): ServiceAccount",
 			"serviceAccountCount(query: String): Int!",
 			"subjects(query: String, pagination: Pagination): [Subject!]!",
 			"subject(name: String!): Subject",
 			"subjectCount(query: String): Int!",
-			"images(query: String, pagination: Pagination): [Image!]!",
-			"imageCount(query: String): Int!",
-			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
-			"componentCount(query: String): Int!",
-			"nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!",
-			"nodeVulnerabilityCount(query: String): Int!",
-			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
-			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!",
-			"imageVulnerabilityCount(query: String): Int!",
-			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
-			"clusterVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ClusterVulnerability!]!",
-			"clusterVulnerabilityCount(query: String): Int!",
-			"clusterVulnerabilityCounter(query: String): VulnerabilityCounter!",
-			"policies(query: String, pagination: Pagination): [Policy!]!",
-			"policyCount(query: String): Int!",
-			"policyStatus(query: String): PolicyStatus!",
-			"secrets(query: String, pagination: Pagination): [Secret!]!",
-			"secretCount(query: String): Int!",
-			"controlStatus(query: String): String!",
-			"controls(query: String): [ComplianceControl!]!",
-			"failingControls(query: String): [ComplianceControl!]!",
-			"passingControls(query: String): [ComplianceControl!]!",
-			"complianceControlCount(query: String): ComplianceControlCount!",
-			"risk: Risk",
-			"isGKECluster: Boolean!",
-			"isOpenShiftCluster: Boolean!",
 			"unusedVarSink(query: String): Int",
-			"istioEnabled: Boolean!",
-			"plottedVulns(query: String): PlottedVulnerabilities!",
 		}),
+
 		// deprecated fields
 		schema.AddExtraResolvers("Cluster", []string{
+			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!" +
+				"@deprecated(reason: \"use 'imageComponents' or 'nodeComponents'\")",
+			"componentCount(query: String): Int!" +
+				"@deprecated(reason: \"use 'imageComponentCount' or 'nodeComponentCount'\")",
 			"vulnCount(query: String): Int! " +
 				"@deprecated(reason: \"use 'imageVulnerabilityCount' or 'nodeVulnerabilityCount'\")",
 			"vulnCounter(query: String): VulnerabilityCounter! " +
@@ -552,6 +557,30 @@ func (resolver *clusterResolver) ComponentCount(ctx context.Context, args RawQue
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
 
 	return resolver.root.ComponentCount(ctx, RawQuery{Query: &query})
+}
+
+// NodeComponents returns the node components in the cluster.
+func (resolver *clusterResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponents")
+
+	if !features.PostgresDatastore.Enabled() {
+		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+		return resolver.root.NodeComponents(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	}
+	// TODO : Add postgres support
+	return nil, errors.New("Sub-resolver NodeComponents in clusterResolver does not support postgres yet")
+}
+
+// NodeComponentCount returns the number of node components in the cluster
+func (resolver *clusterResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponents")
+
+	if !features.PostgresDatastore.Enabled() {
+		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+		return resolver.root.NodeComponentCount(ctx, RawQuery{Query: &query})
+	}
+	// TODO : Add postgres support
+	return 0, errors.New("Sub-resolver NodeComponentCount in clusterResolver does not support postgres yet")
 }
 
 func (resolver *clusterResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
