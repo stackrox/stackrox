@@ -2300,7 +2300,7 @@ jobs:
     - run:
         name: Run Go postgres unit tests
         command: |
-          cci-export PATH /usr/pgsql-14/bin:$PATH
+          export PATH /usr/pgsql-14/bin:$PATH
           make go-postgres-unit-tests
     - post-go-unit-tests:
         path: go-unit-release-junit-reports
