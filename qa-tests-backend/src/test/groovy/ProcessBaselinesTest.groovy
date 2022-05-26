@@ -234,7 +234,9 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         println "Locked Process Baseline: ${lockProcessBaselines}"
 
+        // Give the reprocessing some time.
         sleep 30000
+
         // check for process baseline violation
         assert waitForViolation(containerName, "Unauthorized Process Execution", 120)
         List<AlertOuterClass.ListAlert> alertList = AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest

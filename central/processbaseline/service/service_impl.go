@@ -156,7 +156,6 @@ func (s *serviceImpl) UpdateProcessBaselines(ctx context.Context, request *v1.Up
 }
 
 func (s *serviceImpl) LockProcessBaselines(ctx context.Context, request *v1.LockProcessBaselinesRequest) (*v1.UpdateProcessBaselinesResponse, error) {
-	log.Infof("SHREWS -- locking baseline -- %s", request)
 	var resp *v1.UpdateProcessBaselinesResponse
 	defer s.reprocessUpdatedBaselines(&resp)
 

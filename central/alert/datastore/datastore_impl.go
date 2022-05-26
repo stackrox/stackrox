@@ -334,7 +334,6 @@ func copyScopingInformationToObjectRoot(alert *storage.Alert) {
 }
 
 func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alert *storage.Alert) error {
-	log.Infof("SHREWS -- adding alert -- %s", alert)
 	// Checks pass then update.
 	copyScopingInformationToObjectRoot(alert)
 	if err := ds.storage.Upsert(ctx, alert); err != nil {
