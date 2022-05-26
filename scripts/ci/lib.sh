@@ -724,7 +724,7 @@ openshift_ci_mods() {
 
     # NAMESPACE is injected by OpenShift CI for the cluster running tests but
     # can have side effects for stackrox tests e.g. with helm.
-    if [[ -n "$NAMESPACE" ]]; then
+    if [[ -n "${NAMESPACE:-}" ]]; then
         export OPENSHIFT_CI_NAMESPACE="$NAMESPACE"
         unset NAMESPACE
     fi
