@@ -21,8 +21,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*ClusterInitBundles)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ClusterInitBundlesSchema is the go schema for table `cluster_init_bundles`.
@@ -36,3 +37,13 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ClusterInitBundlesTableName = "cluster_init_bundles"
+)
+
+// ClusterInitBundles holds the Gorm model for Postgres table `cluster_init_bundles`.
+type ClusterInitBundles struct {
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}

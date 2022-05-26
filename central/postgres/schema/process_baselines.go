@@ -26,8 +26,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*ProcessBaselines)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ProcessBaselinesSchema is the go schema for table `process_baselines`.
@@ -42,3 +43,16 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ProcessBaselinesTableName = "process_baselines"
+)
+
+// ProcessBaselines holds the Gorm model for Postgres table `process_baselines`.
+type ProcessBaselines struct {
+	Id              string `gorm:"column:id;type:varchar;primaryKey"`
+	KeyDeploymentId string `gorm:"column:key_deploymentid;type:varchar"`
+	KeyClusterId    string `gorm:"column:key_clusterid;type:varchar"`
+	KeyNamespace    string `gorm:"column:key_namespace;type:varchar"`
+	Serialized      []byte `gorm:"column:serialized;type:bytea"`
+}

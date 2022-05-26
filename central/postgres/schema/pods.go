@@ -28,7 +28,8 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes: []string{},
+		GormModel: (*Pods)(nil),
+		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -40,6 +41,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (pods_Id) REFERENCES pods(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*PodsLiveInstances)(nil),
 				Indexes: []string{
 					"create index if not exists podsLiveInstances_idx on pods_live_instances using btree(idx)",
 				},
@@ -67,3 +69,26 @@ var (
 		return schema
 	}()
 )
+
+const (
+	PodsTableName              = "pods"
+	PodsLiveInstancesTableName = "pods_live_instances"
+)
+
+// Pods holds the Gorm model for Postgres table `pods`.
+type Pods struct {
+	Id           string `gorm:"column:id;type:varchar;primaryKey"`
+	Name         string `gorm:"column:name;type:varchar"`
+	DeploymentId string `gorm:"column:deploymentid;type:varchar"`
+	Namespace    string `gorm:"column:namespace;type:varchar"`
+	ClusterId    string `gorm:"column:clusterid;type:varchar"`
+	Serialized   []byte `gorm:"column:serialized;type:bytea"`
+}
+
+// PodsLiveInstances holds the Gorm model for Postgres table `pods_live_instances`.
+type PodsLiveInstances struct {
+	PodsId      string `gorm:"column:pods_id;type:varchar;primaryKey"`
+	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:podsliveinstances_idx,type:btree"`
+	ImageDigest string `gorm:"column:imagedigest;type:varchar"`
+	PodsRef     Pods   `gorm:"foreignKey:pods_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}

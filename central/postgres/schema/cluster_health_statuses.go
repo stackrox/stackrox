@@ -28,8 +28,9 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (Id) REFERENCES clusters(Id) ON DELETE CASCADE
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*ClusterHealthStatuses)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ClusterHealthStatusesSchema is the go schema for table `cluster_health_statuses`.
@@ -50,3 +51,19 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ClusterHealthStatusesTableName = "cluster_health_statuses"
+)
+
+// ClusterHealthStatuses holds the Gorm model for Postgres table `cluster_health_statuses`.
+type ClusterHealthStatuses struct {
+	Id                           string                                        `gorm:"column:id;type:varchar;primaryKey"`
+	SensorHealthStatus           storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:sensorhealthstatus;type:integer"`
+	CollectorHealthStatus        storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:collectorhealthstatus;type:integer"`
+	OverallHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:overallhealthstatus;type:integer"`
+	AdmissionControlHealthStatus storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:admissioncontrolhealthstatus;type:integer"`
+	ScannerHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:scannerhealthstatus;type:integer"`
+	Serialized                   []byte                                        `gorm:"column:serialized;type:bytea"`
+	ClustersRef                  Clusters                                      `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}

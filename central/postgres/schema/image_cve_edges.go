@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -29,8 +30,9 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*ImageCveEdges)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ImageCveEdgesSchema is the go schema for table `image_cve_edges`.
@@ -53,3 +55,18 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ImageCveEdgesTableName = "image_cve_edges"
+)
+
+// ImageCveEdges holds the Gorm model for Postgres table `image_cve_edges`.
+type ImageCveEdges struct {
+	Id                   string                     `gorm:"column:id;type:varchar;primaryKey"`
+	FirstImageOccurrence *time.Time                 `gorm:"column:firstimageoccurrence;type:timestamp"`
+	State                storage.VulnerabilityState `gorm:"column:state;type:integer"`
+	ImageId              string                     `gorm:"column:imageid;type:varchar;primaryKey"`
+	ImageCveId           string                     `gorm:"column:imagecveid;type:varchar;primaryKey"`
+	Serialized           []byte                     `gorm:"column:serialized;type:bytea"`
+	ImagesRef            Images                     `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}

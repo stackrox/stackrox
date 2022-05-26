@@ -31,7 +31,8 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes: []string{},
+		GormModel: (*RoleBindings)(nil),
+		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -44,6 +45,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (role_bindings_Id) REFERENCES role_bindings(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*RoleBindingsSubjects)(nil),
 				Indexes: []string{
 					"create index if not exists roleBindingsSubjects_idx on role_bindings_subjects using btree(idx)",
 				},
@@ -64,3 +66,31 @@ var (
 		return schema
 	}()
 )
+
+const (
+	RoleBindingsTableName         = "role_bindings"
+	RoleBindingsSubjectsTableName = "role_bindings_subjects"
+)
+
+// RoleBindings holds the Gorm model for Postgres table `role_bindings`.
+type RoleBindings struct {
+	Id          string            `gorm:"column:id;type:varchar;primaryKey"`
+	Name        string            `gorm:"column:name;type:varchar"`
+	Namespace   string            `gorm:"column:namespace;type:varchar"`
+	ClusterId   string            `gorm:"column:clusterid;type:varchar"`
+	ClusterName string            `gorm:"column:clustername;type:varchar"`
+	ClusterRole bool              `gorm:"column:clusterrole;type:bool"`
+	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
+	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
+	RoleId      string            `gorm:"column:roleid;type:varchar"`
+	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
+}
+
+// RoleBindingsSubjects holds the Gorm model for Postgres table `role_bindings_subjects`.
+type RoleBindingsSubjects struct {
+	RoleBindingsId  string              `gorm:"column:role_bindings_id;type:varchar;primaryKey"`
+	Idx             int                 `gorm:"column:idx;type:integer;primaryKey;index:rolebindingssubjects_idx,type:btree"`
+	Kind            storage.SubjectKind `gorm:"column:kind;type:integer"`
+	Name            string              `gorm:"column:name;type:varchar"`
+	RoleBindingsRef RoleBindings        `gorm:"foreignKey:role_bindings_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}

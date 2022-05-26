@@ -24,8 +24,9 @@ var (
                    PRIMARY KEY(Info_Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*NetworkEntities)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// NetworkEntitiesSchema is the go schema for table `network_entities`.
@@ -40,3 +41,14 @@ var (
 		return schema
 	}()
 )
+
+const (
+	NetworkEntitiesTableName = "network_entities"
+)
+
+// NetworkEntities holds the Gorm model for Postgres table `network_entities`.
+type NetworkEntities struct {
+	InfoId                    string `gorm:"column:info_id;type:varchar;primaryKey"`
+	InfoExternalSourceDefault bool   `gorm:"column:info_externalsource_default;type:bool"`
+	Serialized                []byte `gorm:"column:serialized;type:bytea"`
+}

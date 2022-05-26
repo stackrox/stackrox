@@ -28,8 +28,9 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*ImageComponentEdges)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ImageComponentEdgesSchema is the go schema for table `image_component_edges`.
@@ -52,3 +53,17 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ImageComponentEdgesTableName = "image_component_edges"
+)
+
+// ImageComponentEdges holds the Gorm model for Postgres table `image_component_edges`.
+type ImageComponentEdges struct {
+	Id               string `gorm:"column:id;type:varchar;primaryKey"`
+	Location         string `gorm:"column:location;type:varchar"`
+	ImageId          string `gorm:"column:imageid;type:varchar;primaryKey"`
+	ImageComponentId string `gorm:"column:imagecomponentid;type:varchar;primaryKey"`
+	Serialized       []byte `gorm:"column:serialized;type:bytea"`
+	ImagesRef        Images `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}

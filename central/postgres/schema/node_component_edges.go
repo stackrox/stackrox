@@ -27,8 +27,9 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (NodeId) REFERENCES nodes(Id) ON DELETE CASCADE
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*NodeComponentEdges)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// NodeComponentEdgesSchema is the go schema for table `node_component_edges`.
@@ -51,3 +52,16 @@ var (
 		return schema
 	}()
 )
+
+const (
+	NodeComponentEdgesTableName = "node_component_edges"
+)
+
+// NodeComponentEdges holds the Gorm model for Postgres table `node_component_edges`.
+type NodeComponentEdges struct {
+	Id              string `gorm:"column:id;type:varchar;primaryKey"`
+	NodeId          string `gorm:"column:nodeid;type:varchar;primaryKey"`
+	NodeComponentId string `gorm:"column:nodecomponentid;type:varchar;primaryKey"`
+	Serialized      []byte `gorm:"column:serialized;type:bytea"`
+	NodesRef        Nodes  `gorm:"foreignKey:nodeid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}

@@ -24,8 +24,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*TestGGrandChild1)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// TestGGrandChild1Schema is the go schema for table `test_g_grand_child1`.
@@ -40,3 +41,14 @@ var (
 		return schema
 	}()
 )
+
+const (
+	TestGGrandChild1TableName = "test_g_grand_child1"
+)
+
+// TestGGrandChild1 holds the Gorm model for Postgres table `test_g_grand_child1`.
+type TestGGrandChild1 struct {
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Val        string `gorm:"column:val;type:varchar"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}

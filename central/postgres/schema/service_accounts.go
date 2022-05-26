@@ -29,8 +29,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*ServiceAccounts)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ServiceAccountsSchema is the go schema for table `service_accounts`.
@@ -45,3 +46,19 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ServiceAccountsTableName = "service_accounts"
+)
+
+// ServiceAccounts holds the Gorm model for Postgres table `service_accounts`.
+type ServiceAccounts struct {
+	Id          string            `gorm:"column:id;type:varchar;primaryKey"`
+	Name        string            `gorm:"column:name;type:varchar"`
+	Namespace   string            `gorm:"column:namespace;type:varchar"`
+	ClusterName string            `gorm:"column:clustername;type:varchar"`
+	ClusterId   string            `gorm:"column:clusterid;type:varchar"`
+	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
+	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
+	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
+}

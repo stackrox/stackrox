@@ -103,10 +103,15 @@ func valueExpansion(size int) string {
 	return strings.Join(all, ", ")
 }
 
+func concatWith(strs []string, sep string) string {
+	return strings.Join(strs, sep)
+}
+
 var funcMap = template.FuncMap{
 	"lowerCamelCase":    lowerCamelCase,
 	"upperCamelCase":    upperCamelCase,
 	"valueExpansion":    valueExpansion,
 	"lowerCase":         strings.ToLower,
 	"storageToResource": storageToResource,
+	"concatWith":        concatWith,
 }

@@ -28,8 +28,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*NodeComponents)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// NodeComponentsSchema is the go schema for table `node_components`.
@@ -44,3 +45,18 @@ var (
 		return schema
 	}()
 )
+
+const (
+	NodeComponentsTableName = "node_components"
+)
+
+// NodeComponents holds the Gorm model for Postgres table `node_components`.
+type NodeComponents struct {
+	Id         string             `gorm:"column:id;type:varchar;primaryKey"`
+	Name       string             `gorm:"column:name;type:varchar"`
+	Version    string             `gorm:"column:version;type:varchar"`
+	Source     storage.SourceType `gorm:"column:source;type:integer"`
+	RiskScore  float32            `gorm:"column:riskscore;type:numeric"`
+	TopCvss    float32            `gorm:"column:topcvss;type:numeric"`
+	Serialized []byte             `gorm:"column:serialized;type:bytea"`
+}

@@ -29,8 +29,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*Namespaces)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// NamespacesSchema is the go schema for table `namespaces`.
@@ -52,3 +53,18 @@ var (
 		return schema
 	}()
 )
+
+const (
+	NamespacesTableName = "namespaces"
+)
+
+// Namespaces holds the Gorm model for Postgres table `namespaces`.
+type Namespaces struct {
+	Id          string            `gorm:"column:id;type:varchar;primaryKey"`
+	Name        string            `gorm:"column:name;type:varchar"`
+	ClusterId   string            `gorm:"column:clusterid;type:varchar"`
+	ClusterName string            `gorm:"column:clustername;type:varchar"`
+	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
+	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
+	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
+}
