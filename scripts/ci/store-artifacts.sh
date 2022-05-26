@@ -134,7 +134,7 @@ make_artifacts_help() {
     local help_file
     if is_OPENSHIFT_CI; then
         require_environment "ARTIFACT_DIR"
-        help_file="$ARTIFACT_DIR/howto-locate-other-artifacts.html"
+        help_file="$ARTIFACT_DIR/custom-link-howto-locate-other-artifacts.html"
     elif is_CIRCLECI; then
         help_file="/tmp/howto-locate-artifacts.html"
     else
@@ -142,6 +142,11 @@ make_artifacts_help() {
     fi
 
     cat > "$help_file" <<- EOH
+<html>
+    <head>
+        <title>Stackrox Artifacts</title>
+    </head>
+    <body>
         Artifacts are stored in a GCS bucket ($GS_URL). There are at least two options for access:
 
         <h3>gsutil cp</h3>
@@ -159,6 +164,8 @@ make_artifacts_help() {
         <a href="$browser_job_url?authuser=0">authuser=0</a><br>
         <a href="$browser_job_url?authuser=1">authuser=1</a><br>
         <a href="$browser_job_url?authuser=2">authuser=2</a><br>
+    </body>
+</html>
 EOH
 
     info "Artifacts are stored in a GCS bucket ($GS_URL)"
