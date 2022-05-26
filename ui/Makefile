@@ -27,6 +27,7 @@ lint: deps $(SOURCES)
 build: deps $(SOURCES)
 	@echo "+ $@"
 	yarn build
+	@touch build
 
 .PHONY: start
 start: deps
