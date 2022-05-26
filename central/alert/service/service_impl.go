@@ -112,6 +112,7 @@ func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*
 
 // ListAlerts returns ListAlerts according to the request.
 func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) (*v1.ListAlertsResponse, error) {
+	log.Info("SHREWS -- calling ListAlerts")
 	if request.GetPagination() == nil {
 		request.Pagination = &v1.Pagination{
 			Limit: maxListAlertsReturned,
