@@ -106,7 +106,7 @@ func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 		keyEquivGoFunc = keyQuery.equivalentGoFunc
 		valueEquivGoFunc = valueQuery.equivalentGoFunc
 	}
-	combinedWhereClause.Query = fmt.Sprintf("exists (select * from jsonb_each_text(%s) elem where %s)", ctx.qualifiedColumnName, queryPortion)
+	combinedWhereClause.Query = fmt.Sprintf("(jsonb_typeof(%s) = 'object') and (exists (select * from jsonb_each_text(%s) elem where %s))", ctx.qualifiedColumnName, ctx.qualifiedColumnName, queryPortion)
 	return qeWithSelectFieldIfNeeded(ctx, combinedWhereClause, func(i interface{}) interface{} {
 		asMap := readMapValue(i)
 		var out []string
