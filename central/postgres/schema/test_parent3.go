@@ -27,8 +27,9 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ParentId) REFERENCES test_grandparents(Id) ON DELETE CASCADE
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*TestParent3)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// TestParent3Schema is the go schema for table `test_parent3`.
@@ -50,3 +51,16 @@ var (
 		return schema
 	}()
 )
+
+const (
+	TestParent3TableName = "test_parent3"
+)
+
+// TestParent3 holds the Gorm model for Postgres table `test_parent3`.
+type TestParent3 struct {
+	Id                  string           `gorm:"column:id;type:varchar;primaryKey"`
+	ParentId            string           `gorm:"column:parentid;type:varchar"`
+	Val                 string           `gorm:"column:val;type:varchar"`
+	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
+	TestGrandparentsRef TestGrandparents `gorm:"foreignKey:parentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}

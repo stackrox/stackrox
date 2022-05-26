@@ -39,9 +39,25 @@ func DataTypeToSQLType(dataType DataType) string {
 	case EnumArray, IntArray:
 		sqlType = "int[]"
 	case Bytes:
-		sqlType = "varchar"
+		sqlType = "bytea"
 	default:
 		panic(dataType)
 	}
 	return sqlType
+}
+
+// GetToGormModelType converts the internal representation to Gorm Model type
+func GetToGormModelType(typ string, dataType DataType) string {
+	var modelType string
+	switch dataType {
+	case DateTime:
+		modelType = "*time.Time"
+	case StringArray:
+		modelType = "*pq.StringArray"
+	case EnumArray, IntArray:
+		modelType = "*pq.Int32Array"
+	default:
+		modelType = typ
+	}
+	return modelType
 }

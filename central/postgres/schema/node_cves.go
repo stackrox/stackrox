@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -31,8 +32,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*NodeCves)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// NodeCvesSchema is the go schema for table `node_cves`.
@@ -47,3 +49,21 @@ var (
 		return schema
 	}()
 )
+
+const (
+	NodeCvesTableName = "node_cves"
+)
+
+// NodeCves holds the Gorm model for Postgres table `node_cves`.
+type NodeCves struct {
+	Id             string                        `gorm:"column:id;type:varchar;primaryKey"`
+	Cve            string                        `gorm:"column:cve;type:varchar"`
+	Cvss           float32                       `gorm:"column:cvss;type:numeric"`
+	ImpactScore    float32                       `gorm:"column:impactscore;type:numeric"`
+	PublishedOn    *time.Time                    `gorm:"column:publishedon;type:timestamp"`
+	CreatedAt      *time.Time                    `gorm:"column:createdat;type:timestamp"`
+	Suppressed     bool                          `gorm:"column:suppressed;type:bool"`
+	SuppressExpiry *time.Time                    `gorm:"column:suppressexpiry;type:timestamp"`
+	Severity       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
+	Serialized     []byte                        `gorm:"column:serialized;type:bytea"`
+}

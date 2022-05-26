@@ -22,8 +22,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*AuthProviders)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// AuthProvidersSchema is the go schema for table `auth_providers`.
@@ -37,3 +38,14 @@ var (
 		return schema
 	}()
 )
+
+const (
+	AuthProvidersTableName = "auth_providers"
+)
+
+// AuthProviders holds the Gorm model for Postgres table `auth_providers`.
+type AuthProviders struct {
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Name       string `gorm:"column:name;type:varchar;unique"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}

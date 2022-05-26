@@ -21,8 +21,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*ApiTokens)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ApiTokensSchema is the go schema for table `api_tokens`.
@@ -36,3 +37,13 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ApiTokensTableName = "api_tokens"
+)
+
+// ApiTokens holds the Gorm model for Postgres table `api_tokens`.
+type ApiTokens struct {
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}

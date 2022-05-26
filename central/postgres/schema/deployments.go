@@ -5,7 +5,9 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"time"
 
+	"github.com/lib/pq"
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -41,7 +43,8 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes: []string{},
+		GormModel: (*Deployments)(nil),
+		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -65,6 +68,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id) REFERENCES deployments(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*DeploymentsContainers)(nil),
 				Indexes: []string{
 					"create index if not exists deploymentsContainers_idx on deployments_containers using btree(idx)",
 				},
@@ -82,6 +86,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
+						GormModel: (*DeploymentsContainersEnvs)(nil),
 						Indexes: []string{
 							"create index if not exists deploymentsContainersEnvs_idx on deployments_containers_envs using btree(idx)",
 						},
@@ -102,6 +107,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
+						GormModel: (*DeploymentsContainersVolumes)(nil),
 						Indexes: []string{
 							"create index if not exists deploymentsContainersVolumes_idx on deployments_containers_volumes using btree(idx)",
 						},
@@ -119,6 +125,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_containers_idx) REFERENCES deployments_containers(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
+						GormModel: (*DeploymentsContainersSecrets)(nil),
 						Indexes: []string{
 							"create index if not exists deploymentsContainersSecrets_idx on deployments_containers_secrets using btree(idx)",
 						},
@@ -138,6 +145,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id) REFERENCES deployments(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*DeploymentsPorts)(nil),
 				Indexes: []string{
 					"create index if not exists deploymentsPorts_idx on deployments_ports using btree(idx)",
 				},
@@ -158,6 +166,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (deployments_Id, deployments_ports_idx) REFERENCES deployments_ports(deployments_Id, idx) ON DELETE CASCADE
                )
                `,
+						GormModel: (*DeploymentsPortsExposureInfos)(nil),
 						Indexes: []string{
 							"create index if not exists deploymentsPortsExposureInfos_idx on deployments_ports_exposure_infos using btree(idx)",
 						},
@@ -188,3 +197,114 @@ var (
 		return schema
 	}()
 )
+
+const (
+	DeploymentsTableName                   = "deployments"
+	DeploymentsContainersTableName         = "deployments_containers"
+	DeploymentsContainersEnvsTableName     = "deployments_containers_envs"
+	DeploymentsContainersVolumesTableName  = "deployments_containers_volumes"
+	DeploymentsContainersSecretsTableName  = "deployments_containers_secrets"
+	DeploymentsPortsTableName              = "deployments_ports"
+	DeploymentsPortsExposureInfosTableName = "deployments_ports_exposure_infos"
+)
+
+// Deployments holds the Gorm model for Postgres table `deployments`.
+type Deployments struct {
+	Id                            string                  `gorm:"column:id;type:varchar;primaryKey"`
+	Name                          string                  `gorm:"column:name;type:varchar"`
+	Type                          string                  `gorm:"column:type;type:varchar"`
+	Namespace                     string                  `gorm:"column:namespace;type:varchar"`
+	NamespaceId                   string                  `gorm:"column:namespaceid;type:varchar"`
+	OrchestratorComponent         bool                    `gorm:"column:orchestratorcomponent;type:bool"`
+	Labels                        map[string]string       `gorm:"column:labels;type:jsonb"`
+	PodLabels                     map[string]string       `gorm:"column:podlabels;type:jsonb"`
+	Created                       *time.Time              `gorm:"column:created;type:timestamp"`
+	ClusterId                     string                  `gorm:"column:clusterid;type:varchar"`
+	ClusterName                   string                  `gorm:"column:clustername;type:varchar"`
+	Annotations                   map[string]string       `gorm:"column:annotations;type:jsonb"`
+	Priority                      int64                   `gorm:"column:priority;type:integer"`
+	ImagePullSecrets              *pq.StringArray         `gorm:"column:imagepullsecrets;type:text[]"`
+	ServiceAccount                string                  `gorm:"column:serviceaccount;type:varchar"`
+	ServiceAccountPermissionLevel storage.PermissionLevel `gorm:"column:serviceaccountpermissionlevel;type:integer"`
+	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric"`
+	ProcessTags                   *pq.StringArray         `gorm:"column:processtags;type:text[]"`
+	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
+}
+
+// DeploymentsContainers holds the Gorm model for Postgres table `deployments_containers`.
+type DeploymentsContainers struct {
+	DeploymentsId                         string          `gorm:"column:deployments_id;type:varchar;primaryKey"`
+	Idx                                   int             `gorm:"column:idx;type:integer;primaryKey;index:deploymentscontainers_idx,type:btree"`
+	ImageId                               string          `gorm:"column:image_id;type:varchar"`
+	ImageNameRegistry                     string          `gorm:"column:image_name_registry;type:varchar"`
+	ImageNameRemote                       string          `gorm:"column:image_name_remote;type:varchar"`
+	ImageNameTag                          string          `gorm:"column:image_name_tag;type:varchar"`
+	ImageNameFullName                     string          `gorm:"column:image_name_fullname;type:varchar"`
+	SecurityContextPrivileged             bool            `gorm:"column:securitycontext_privileged;type:bool"`
+	SecurityContextDropCapabilities       *pq.StringArray `gorm:"column:securitycontext_dropcapabilities;type:text[]"`
+	SecurityContextAddCapabilities        *pq.StringArray `gorm:"column:securitycontext_addcapabilities;type:text[]"`
+	SecurityContextReadOnlyRootFilesystem bool            `gorm:"column:securitycontext_readonlyrootfilesystem;type:bool"`
+	ResourcesCpuCoresRequest              float32         `gorm:"column:resources_cpucoresrequest;type:numeric"`
+	ResourcesCpuCoresLimit                float32         `gorm:"column:resources_cpucoreslimit;type:numeric"`
+	ResourcesMemoryMbRequest              float32         `gorm:"column:resources_memorymbrequest;type:numeric"`
+	ResourcesMemoryMbLimit                float32         `gorm:"column:resources_memorymblimit;type:numeric"`
+	DeploymentsRef                        Deployments     `gorm:"foreignKey:deployments_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+// DeploymentsContainersEnvs holds the Gorm model for Postgres table `deployments_containers_envs`.
+type DeploymentsContainersEnvs struct {
+	DeploymentsId            string                                                 `gorm:"column:deployments_id;type:varchar;primaryKey"`
+	DeploymentsContainersIdx int                                                    `gorm:"column:deployments_containers_idx;type:integer;primaryKey"`
+	Idx                      int                                                    `gorm:"column:idx;type:integer;primaryKey;index:deploymentscontainersenvs_idx,type:btree"`
+	Key                      string                                                 `gorm:"column:key;type:varchar"`
+	Value                    string                                                 `gorm:"column:value;type:varchar"`
+	EnvVarSource             storage.ContainerConfig_EnvironmentConfig_EnvVarSource `gorm:"column:envvarsource;type:integer"`
+	DeploymentsContainersRef DeploymentsContainers                                  `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+// DeploymentsContainersVolumes holds the Gorm model for Postgres table `deployments_containers_volumes`.
+type DeploymentsContainersVolumes struct {
+	DeploymentsId            string                `gorm:"column:deployments_id;type:varchar;primaryKey"`
+	DeploymentsContainersIdx int                   `gorm:"column:deployments_containers_idx;type:integer;primaryKey"`
+	Idx                      int                   `gorm:"column:idx;type:integer;primaryKey;index:deploymentscontainersvolumes_idx,type:btree"`
+	Name                     string                `gorm:"column:name;type:varchar"`
+	Source                   string                `gorm:"column:source;type:varchar"`
+	Destination              string                `gorm:"column:destination;type:varchar"`
+	ReadOnly                 bool                  `gorm:"column:readonly;type:bool"`
+	Type                     string                `gorm:"column:type;type:varchar"`
+	DeploymentsContainersRef DeploymentsContainers `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+// DeploymentsContainersSecrets holds the Gorm model for Postgres table `deployments_containers_secrets`.
+type DeploymentsContainersSecrets struct {
+	DeploymentsId            string                `gorm:"column:deployments_id;type:varchar;primaryKey"`
+	DeploymentsContainersIdx int                   `gorm:"column:deployments_containers_idx;type:integer;primaryKey"`
+	Idx                      int                   `gorm:"column:idx;type:integer;primaryKey;index:deploymentscontainerssecrets_idx,type:btree"`
+	Name                     string                `gorm:"column:name;type:varchar"`
+	Path                     string                `gorm:"column:path;type:varchar"`
+	DeploymentsContainersRef DeploymentsContainers `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+// DeploymentsPorts holds the Gorm model for Postgres table `deployments_ports`.
+type DeploymentsPorts struct {
+	DeploymentsId  string                           `gorm:"column:deployments_id;type:varchar;primaryKey"`
+	Idx            int                              `gorm:"column:idx;type:integer;primaryKey;index:deploymentsports_idx,type:btree"`
+	ContainerPort  int32                            `gorm:"column:containerport;type:integer"`
+	Protocol       string                           `gorm:"column:protocol;type:varchar"`
+	Exposure       storage.PortConfig_ExposureLevel `gorm:"column:exposure;type:integer"`
+	DeploymentsRef Deployments                      `gorm:"foreignKey:deployments_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+// DeploymentsPortsExposureInfos holds the Gorm model for Postgres table `deployments_ports_exposure_infos`.
+type DeploymentsPortsExposureInfos struct {
+	DeploymentsId       string                           `gorm:"column:deployments_id;type:varchar;primaryKey"`
+	DeploymentsPortsIdx int                              `gorm:"column:deployments_ports_idx;type:integer;primaryKey"`
+	Idx                 int                              `gorm:"column:idx;type:integer;primaryKey;index:deploymentsportsexposureinfos_idx,type:btree"`
+	Level               storage.PortConfig_ExposureLevel `gorm:"column:level;type:integer"`
+	ServiceName         string                           `gorm:"column:servicename;type:varchar"`
+	ServicePort         int32                            `gorm:"column:serviceport;type:integer"`
+	NodePort            int32                            `gorm:"column:nodeport;type:integer"`
+	ExternalIps         *pq.StringArray                  `gorm:"column:externalips;type:text[]"`
+	ExternalHostnames   *pq.StringArray                  `gorm:"column:externalhostnames;type:text[]"`
+	DeploymentsPortsRef DeploymentsPorts                 `gorm:"foreignKey:deployments_id,deployments_ports_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
+}

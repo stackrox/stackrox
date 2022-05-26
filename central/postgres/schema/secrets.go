@@ -4,6 +4,7 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -28,7 +29,8 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes: []string{},
+		GormModel: (*Secrets)(nil),
+		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -41,6 +43,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (secrets_Id) REFERENCES secrets(Id) ON DELETE CASCADE
                )
                `,
+				GormModel: (*SecretsFiles)(nil),
 				Indexes: []string{
 					"create index if not exists secretsFiles_idx on secrets_files using btree(idx)",
 				},
@@ -56,6 +59,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (secrets_Id, secrets_files_idx) REFERENCES secrets_files(secrets_Id, idx) ON DELETE CASCADE
                )
                `,
+						GormModel: (*SecretsFilesRegistries)(nil),
 						Indexes: []string{
 							"create index if not exists secretsFilesRegistries_idx on secrets_files_registries using btree(idx)",
 						},
@@ -78,3 +82,38 @@ var (
 		return schema
 	}()
 )
+
+const (
+	SecretsTableName                = "secrets"
+	SecretsFilesTableName           = "secrets_files"
+	SecretsFilesRegistriesTableName = "secrets_files_registries"
+)
+
+// Secrets holds the Gorm model for Postgres table `secrets`.
+type Secrets struct {
+	Id          string     `gorm:"column:id;type:varchar;primaryKey"`
+	Name        string     `gorm:"column:name;type:varchar"`
+	ClusterId   string     `gorm:"column:clusterid;type:varchar"`
+	ClusterName string     `gorm:"column:clustername;type:varchar"`
+	Namespace   string     `gorm:"column:namespace;type:varchar"`
+	CreatedAt   *time.Time `gorm:"column:createdat;type:timestamp"`
+	Serialized  []byte     `gorm:"column:serialized;type:bytea"`
+}
+
+// SecretsFiles holds the Gorm model for Postgres table `secrets_files`.
+type SecretsFiles struct {
+	SecretsId   string             `gorm:"column:secrets_id;type:varchar;primaryKey"`
+	Idx         int                `gorm:"column:idx;type:integer;primaryKey;index:secretsfiles_idx,type:btree"`
+	Type        storage.SecretType `gorm:"column:type;type:integer"`
+	CertEndDate *time.Time         `gorm:"column:cert_enddate;type:timestamp"`
+	SecretsRef  Secrets            `gorm:"foreignKey:secrets_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
+
+// SecretsFilesRegistries holds the Gorm model for Postgres table `secrets_files_registries`.
+type SecretsFilesRegistries struct {
+	SecretsId       string       `gorm:"column:secrets_id;type:varchar;primaryKey"`
+	SecretsFilesIdx int          `gorm:"column:secrets_files_idx;type:integer;primaryKey"`
+	Idx             int          `gorm:"column:idx;type:integer;primaryKey;index:secretsfilesregistries_idx,type:btree"`
+	Name            string       `gorm:"column:name;type:varchar"`
+	SecretsFilesRef SecretsFiles `gorm:"foreignKey:secrets_id,secrets_files_idx;references:secrets_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
+}

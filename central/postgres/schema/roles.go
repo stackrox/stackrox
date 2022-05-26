@@ -21,8 +21,9 @@ var (
                    PRIMARY KEY(Name)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*Roles)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// RolesSchema is the go schema for table `roles`.
@@ -36,3 +37,13 @@ var (
 		return schema
 	}()
 )
+
+const (
+	RolesTableName = "roles"
+)
+
+// Roles holds the Gorm model for Postgres table `roles`.
+type Roles struct {
+	Name       string `gorm:"column:name;type:varchar;primaryKey"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}

@@ -21,8 +21,9 @@ var (
                    PRIMARY KEY(DeploymentId)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*NetworkBaselines)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// NetworkBaselinesSchema is the go schema for table `network_baselines`.
@@ -36,3 +37,13 @@ var (
 		return schema
 	}()
 )
+
+const (
+	NetworkBaselinesTableName = "network_baselines"
+)
+
+// NetworkBaselines holds the Gorm model for Postgres table `network_baselines`.
+type NetworkBaselines struct {
+	DeploymentId string `gorm:"column:deploymentid;type:varchar;primaryKey"`
+	Serialized   []byte `gorm:"column:serialized;type:bytea"`
+}

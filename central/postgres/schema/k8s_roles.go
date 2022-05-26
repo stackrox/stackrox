@@ -30,8 +30,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*K8sRoles)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// K8sRolesSchema is the go schema for table `k8s_roles`.
@@ -46,3 +47,20 @@ var (
 		return schema
 	}()
 )
+
+const (
+	K8sRolesTableName = "k8s_roles"
+)
+
+// K8sRoles holds the Gorm model for Postgres table `k8s_roles`.
+type K8sRoles struct {
+	Id          string            `gorm:"column:id;type:varchar;primaryKey"`
+	Name        string            `gorm:"column:name;type:varchar"`
+	Namespace   string            `gorm:"column:namespace;type:varchar"`
+	ClusterId   string            `gorm:"column:clusterid;type:varchar"`
+	ClusterName string            `gorm:"column:clustername;type:varchar"`
+	ClusterRole bool              `gorm:"column:clusterrole;type:bool"`
+	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
+	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
+	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
+}

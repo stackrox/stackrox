@@ -22,8 +22,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*SignatureIntegrations)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// SignatureIntegrationsSchema is the go schema for table `signature_integrations`.
@@ -37,3 +38,14 @@ var (
 		return schema
 	}()
 )
+
+const (
+	SignatureIntegrationsTableName = "signature_integrations"
+)
+
+// SignatureIntegrations holds the Gorm model for Postgres table `signature_integrations`.
+type SignatureIntegrations struct {
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Name       string `gorm:"column:name;type:varchar;unique"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}

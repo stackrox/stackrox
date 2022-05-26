@@ -21,8 +21,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*IntegrationHealths)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// IntegrationHealthsSchema is the go schema for table `integration_healths`.
@@ -36,3 +37,13 @@ var (
 		return schema
 	}()
 )
+
+const (
+	IntegrationHealthsTableName = "integration_healths"
+)
+
+// IntegrationHealths holds the Gorm model for Postgres table `integration_healths`.
+type IntegrationHealths struct {
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}

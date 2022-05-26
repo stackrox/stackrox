@@ -22,8 +22,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*Notifiers)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// NotifiersSchema is the go schema for table `notifiers`.
@@ -37,3 +38,14 @@ var (
 		return schema
 	}()
 )
+
+const (
+	NotifiersTableName = "notifiers"
+)
+
+// Notifiers holds the Gorm model for Postgres table `notifiers`.
+type Notifiers struct {
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Name       string `gorm:"column:name;type:varchar;unique"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}

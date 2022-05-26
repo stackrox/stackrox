@@ -4,7 +4,9 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
+	"github.com/lib/pq"
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -36,7 +38,8 @@ var (
                    PRIMARY KEY(Key1, Key2)
                )
                `,
-		Indexes: []string{},
+		GormModel: (*TestMultiKeyStructs)(nil),
+		Indexes:   []string{},
 		Children: []*postgres.CreateStmts{
 			&postgres.CreateStmts{
 				Table: `
@@ -54,6 +57,7 @@ var (
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (test_multi_key_structs_Key1, test_multi_key_structs_Key2) REFERENCES test_multi_key_structs(Key1, Key2) ON DELETE CASCADE
                )
                `,
+				GormModel: (*TestMultiKeyStructsNesteds)(nil),
 				Indexes: []string{
 					"create index if not exists testMultiKeyStructsNesteds_idx on test_multi_key_structs_nesteds using btree(idx)",
 				},
@@ -74,3 +78,41 @@ var (
 		return schema
 	}()
 )
+
+const (
+	TestMultiKeyStructsTableName        = "test_multi_key_structs"
+	TestMultiKeyStructsNestedsTableName = "test_multi_key_structs_nesteds"
+)
+
+// TestMultiKeyStructs holds the Gorm model for Postgres table `test_multi_key_structs`.
+type TestMultiKeyStructs struct {
+	Key1              string                          `gorm:"column:key1;type:varchar;primaryKey"`
+	Key2              string                          `gorm:"column:key2;type:varchar;primaryKey"`
+	StringSlice       *pq.StringArray                 `gorm:"column:stringslice;type:text[]"`
+	Bool              bool                            `gorm:"column:bool;type:bool"`
+	Uint64            uint64                          `gorm:"column:uint64;type:integer"`
+	Int64             int64                           `gorm:"column:int64;type:integer"`
+	Float             float32                         `gorm:"column:float;type:numeric"`
+	Labels            map[string]string               `gorm:"column:labels;type:jsonb"`
+	Timestamp         *time.Time                      `gorm:"column:timestamp;type:timestamp"`
+	Enum              storage.TestMultiKeyStruct_Enum `gorm:"column:enum;type:integer"`
+	Enums             *pq.Int32Array                  `gorm:"column:enums;type:int[]"`
+	String            string                          `gorm:"column:string_;type:varchar"`
+	IntSlice          *pq.Int32Array                  `gorm:"column:intslice;type:int[]"`
+	OneofnestedNested string                          `gorm:"column:oneofnested_nested;type:varchar"`
+	Serialized        []byte                          `gorm:"column:serialized;type:bytea"`
+}
+
+// TestMultiKeyStructsNesteds holds the Gorm model for Postgres table `test_multi_key_structs_nesteds`.
+type TestMultiKeyStructsNesteds struct {
+	TestMultiKeyStructsKey1 string              `gorm:"column:test_multi_key_structs_key1;type:varchar;primaryKey"`
+	TestMultiKeyStructsKey2 string              `gorm:"column:test_multi_key_structs_key2;type:varchar;primaryKey"`
+	Idx                     int                 `gorm:"column:idx;type:integer;primaryKey;index:testmultikeystructsnesteds_idx,type:btree"`
+	Nested                  string              `gorm:"column:nested;type:varchar"`
+	IsNested                bool                `gorm:"column:isnested;type:bool"`
+	Int64                   int64               `gorm:"column:int64;type:integer"`
+	Nested2Nested2          string              `gorm:"column:nested2_nested2;type:varchar"`
+	Nested2IsNested         bool                `gorm:"column:nested2_isnested;type:bool"`
+	Nested2Int64            int64               `gorm:"column:nested2_int64;type:integer"`
+	TestMultiKeyStructsRef  TestMultiKeyStructs `gorm:"foreignKey:test_multi_key_structs_key1,test_multi_key_structs_key2;references:key1,key2;belongsTo;constraint:OnDelete:CASCADE"`
+}

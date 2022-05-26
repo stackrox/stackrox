@@ -21,6 +21,8 @@ func getSerializedField(s *Schema) Field {
 		Name:       "serialized",
 		ColumnName: "serialized",
 		SQLType:    "bytea",
+		Type:       "[]byte",
+		ModelType:  "[]byte",
 		Schema:     s,
 	}
 }
@@ -37,6 +39,7 @@ func getIdxField(s *Schema) Field {
 		ColumnName: "idx",
 		DataType:   Integer,
 		SQLType:    "integer",
+		ModelType:  reflect.TypeOf(0).String(),
 		Options: PostgresOptions{
 			Ignored:    false,
 			Index:      "btree",
@@ -60,6 +63,24 @@ type SchemaRelationship struct {
 	// NoConstraint indicates that this relationship is not enforced at the SQL
 	// level by a foreign key constraint.
 	NoConstraint bool
+}
+
+// ThisSchemaColumnNames generates the sequence of column names for this schema
+func (s *SchemaRelationship) ThisSchemaColumnNames() []string {
+	var seq []string
+	for _, p := range s.MappedColumnNames {
+		seq = append(seq, p.ColumnNameInThisSchema)
+	}
+	return seq
+}
+
+// OtherSchemaColumnNames generates the list of column names for the other schema
+func (s *SchemaRelationship) OtherSchemaColumnNames() []string {
+	var seq []string
+	for _, p := range s.MappedColumnNames {
+		seq = append(seq, p.ColumnNameInOtherSchema)
+	}
+	return seq
 }
 
 // Schema is the go representation of the schema for a table
@@ -112,6 +133,7 @@ func (s *Schema) AddFieldWithType(field Field, dt DataType) {
 	}
 	field.DataType = dt
 	field.SQLType = DataTypeToSQLType(dt)
+	field.ModelType = GetToGormModelType(field.Type, field.DataType)
 	s.Fields = append(s.Fields, field)
 }
 
@@ -392,10 +414,11 @@ type Field struct {
 	Type string
 
 	// DataType is the internal type
-	DataType DataType
-	SQLType  string
-	Options  PostgresOptions
-	Search   SearchField
+	DataType  DataType
+	SQLType   string
+	ModelType string
+	Options   PostgresOptions
+	Search    SearchField
 }
 
 // Getter returns the path to the object. If variable is true, then the value is just
