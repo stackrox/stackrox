@@ -505,13 +505,13 @@ generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
 image: main-image
 
 .PHONY: all-builds
-all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build
+all-builds: cli main-build $(MERGED_API_SWAGGER_SPEC) ui-build
 
 .PHONY: main-image
 main-image: all-builds
 	make docker-build-main-image
 
-$(CURDIR)/image/rhel/bundle.tar.gz:
+$(CURDIR)/image/rhel/bundle.tar.gz: image/rhel/create-bundle.sh
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
 
 .PHONY: $(CURDIR)/image/rhel/Dockerfile.gen
@@ -618,7 +618,7 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
 		integration-tests/mock-grpc-server/image
 
-$(CURDIR)/image/postgres/bundle.tar.gz:
+$(CURDIR)/image/postgres/bundle.tar.gz: image/postgres/create-bundle.sh
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
 
 .PHONY: $(CURDIR)/image/postgres/Dockerfile.gen
