@@ -67,8 +67,8 @@ func (w *WorkloadManager) manageNetworkPolicy(ctx context.Context, resources *ne
 	w.manageNetworkPolicyLifecycle(ctx, resources)
 
 	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles; count++ {
-		np := w.getNetworkPolicy(resources.workload)
-		if _, err := w.client.Kubernetes().NetworkingV1().NetworkPolicies(np.networkPolicy.Namespace).Create(ctx, np.networkPolicy, metav1.CreateOptions{}); err != nil {
+		resources = w.getNetworkPolicy(resources.workload)
+		if _, err := w.client.Kubernetes().NetworkingV1().NetworkPolicies(resources.networkPolicy.Namespace).Create(ctx, resources.networkPolicy, metav1.CreateOptions{}); err != nil {
 			log.Errorf("error creating networkPolicy: %v", err)
 		}
 		w.manageNetworkPolicyLifecycle(ctx, resources)
