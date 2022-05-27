@@ -1962,7 +1962,7 @@ commands:
             fi
 
             if [[ "${CI_JOBNAME}" == "race-condition-tests" ]]; then
-              MAIN_IMAGE_TAG="$(make --quiet tag)-rcd"
+              export MAIN_IMAGE_TAG="$(make --quiet tag)-rcd"
             fi
 
             deploy_dir="deploy/<< parameters.orchestrator-flavor >>"
