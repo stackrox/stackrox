@@ -22,7 +22,7 @@ func Singleton() store.Store {
 	instanceInit.Do(func() {
 		var underlying store.UnderlyingStore
 		if features.PostgresDatastore.Enabled() {
-			underlying = postgres.New(context.TODO(), globaldb.GetPostgres())
+			underlying = postgres.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB())
 		} else {
 			var err error
 			underlying, err = rocksdb.New(globaldb.GetRocksDB())

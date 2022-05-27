@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -26,6 +27,8 @@ import (
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func TestRiskDataStoreSAC(t *testing.T) {
@@ -62,7 +65,13 @@ func (s *riskDatastoreSACSuite) SetupSuite() {
 		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
 		s.Require().NoError(err)
 		pgStore.Destroy(ctx, s.pool)
-		s.storage = pgStore.New(ctx, s.pool)
+
+		var gormDB *gorm.DB
+		src = pgutils.PgxpoolDsnToPgxDsn(src)
+		gormDB, err = gorm.Open(postgres.Open(src), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
+		s.Require().NoError(err)
+
+		s.storage = pgStore.New(ctx, s.pool, gormDB)
 		s.indexer = pgStore.NewIndexer(s.pool)
 		s.optionsMap = schema.RisksSchema.OptionsMap
 	} else {

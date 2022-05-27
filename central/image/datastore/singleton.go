@@ -21,7 +21,7 @@ var (
 
 func initialize() {
 	if features.PostgresDatastore.Enabled() {
-		storage := postgres.New(context.TODO(), globaldb.GetPostgres(), false)
+		storage := postgres.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB(), false)
 		indexer := postgres.NewIndexer(globaldb.GetPostgres())
 		ad = NewWithPostgres(storage, indexer, riskDS.Singleton(), ranking.ImageRanker(), ranking.ComponentRanker())
 		return

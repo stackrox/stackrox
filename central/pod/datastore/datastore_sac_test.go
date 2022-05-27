@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
@@ -26,6 +27,8 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func TestPodDatastoreSAC(t *testing.T) {
@@ -68,10 +71,15 @@ func (s *podDatastoreSACSuite) SetupSuite() {
 		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
 		s.Require().NoError(err)
 		pgStore.Destroy(ctx, s.pool)
-		s.storage = pgStore.New(ctx, s.pool)
+		src = pgutils.PgxpoolDsnToPgxDsn(src)
+		var gormDB *gorm.DB
+		gormDB, err = gorm.Open(postgres.Open(src), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
+		s.Require().NoError(err)
+
+		s.storage = pgStore.New(ctx, s.pool, gormDB)
 		s.indexer = pgStore.NewIndexer(s.pool)
 
-		s.datastore, err = NewPostgresDB(s.pool, s.processStore, s.filter)
+		s.datastore, err = NewPostgresDB(s.pool, gormDB, s.processStore, s.filter)
 		s.Require().NoError(err)
 	} else {
 		s.engine, err = rocksdb.NewTemp("podSACTest")

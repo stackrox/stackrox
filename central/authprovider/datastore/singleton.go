@@ -20,7 +20,7 @@ var (
 func Singleton() authproviders.Store {
 	once.Do(func() {
 		if features.PostgresDatastore.Enabled() {
-			soleInstance = New(postgres.New(context.TODO(), globaldb.GetPostgres()))
+			soleInstance = New(postgres.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB()))
 		} else {
 			soleInstance = New(bolt.New(globaldb.GetGlobalDB()))
 		}

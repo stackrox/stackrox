@@ -10,9 +10,12 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 var (
@@ -30,7 +33,12 @@ func TestStore(t *testing.T) {
 	t.Cleanup(pool.Close)
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool)
+
+	var gormDB *gorm.DB
+	source = pgutils.PgxpoolDsnToPgxDsn(source)
+	gormDB, err = gorm.Open(postgres.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
+	require.NoError(t, err)
+	store := New(ctx, pool, gormDB)
 
 	testStruct := singleKey.Clone()
 	dep, exists, err := store.Get(ctx, testStruct.GetKey())

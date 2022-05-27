@@ -25,7 +25,7 @@ func Singleton() DataStore {
 	once.Do(func() {
 		var err error
 		if features.PostgresDatastore.Enabled() {
-			ps, err = NewPostgresDB(globaldb.GetPostgres(), piDS.Singleton(), filter.Singleton())
+			ps, err = NewPostgresDB(globaldb.GetPostgres(), globaldb.GetGormDB(), piDS.Singleton(), filter.Singleton())
 		} else {
 			ps, err = NewRocksDB(
 				globaldb.GetRocksDB(),

@@ -24,7 +24,7 @@ var (
 func initialize() {
 	if features.PostgresDatastore.Enabled() {
 		var err error
-		storage := postgres.New(context.TODO(), globaldb.GetPostgres())
+		storage := postgres.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB())
 		indexer := postgres.NewIndexer(globaldb.GetPostgres())
 		searcher := search.NewV2(storage, indexer)
 		ad, err = New(nil, storage, indexer, searcher)

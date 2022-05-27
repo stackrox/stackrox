@@ -13,9 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 var (
@@ -50,7 +53,12 @@ func (suite *NetworkBaselineDataStoreTestSuite) SetupSuite() {
 		suite.pool, err = pgxpool.ConnectConfig(ctx, config)
 		suite.NoError(err)
 		pgStore.Destroy(ctx, suite.pool)
-		suite.storage = pgStore.New(ctx, suite.pool)
+
+		var gormDB *gorm.DB
+		source = pgutils.PgxpoolDsnToPgxDsn(source)
+		gormDB, err = gorm.Open(postgres.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
+		suite.NoError(err)
+		suite.storage = pgStore.New(ctx, suite.pool, gormDB)
 	} else {
 		var err error
 		suite.engine, err = rocksdb.NewTemp(suite.T().Name())

@@ -17,7 +17,7 @@ var (
 )
 
 func initialize() {
-	storage := postgres.New(context.TODO(), globaldb.GetPostgres())
+	storage := postgres.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB())
 	indexer := postgres.NewIndexer(globaldb.GetPostgres())
 
 	var err error

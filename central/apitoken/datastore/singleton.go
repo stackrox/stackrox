@@ -19,7 +19,7 @@ var (
 func initialize() {
 	var storage store.Store
 	if features.PostgresDatastore.Enabled() {
-		storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+		storage = postgres.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB())
 	} else {
 		storage = rocksdb.New(globaldb.GetRocksDB())
 	}

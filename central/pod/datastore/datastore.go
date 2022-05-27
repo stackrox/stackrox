@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"gorm.io/gorm"
 )
 
 // DataStore is an intermediary to PodStorage.
@@ -43,8 +44,8 @@ func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS
 }
 
 // NewPostgresDB creates a pod datastore based on Postgres
-func NewPostgresDB(db *pgxpool.Pool, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
-	store := cache.NewCachedStore(postgres.New(context.TODO(), db))
+func NewPostgresDB(db *pgxpool.Pool, gormDB *gorm.DB, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
+	store := cache.NewCachedStore(postgres.New(context.TODO(), db, gormDB))
 	indexer := postgres.NewIndexer(db)
 	searcher := search.New(store, indexer)
 	return newDatastoreImpl(context.TODO(), store, indexer, searcher, indicators, processFilter)

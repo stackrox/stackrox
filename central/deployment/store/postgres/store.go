@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
+	"gorm.io/gorm"
 )
 
 const (
@@ -66,9 +67,9 @@ type storeImpl struct {
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNamespacesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableDeploymentsStmt)
+func New(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNamespacesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableDeploymentsStmt)
 
 	return &storeImpl{
 		db: db,

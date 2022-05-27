@@ -19,7 +19,7 @@ var (
 func Singleton() DataStore {
 	once.Do(func() {
 		if features.PostgresDatastore.Enabled() {
-			instance = New(postgres.New(context.TODO(), globaldb.GetPostgres()))
+			instance = New(postgres.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB()))
 		} else {
 			instance = New(rocksdb.New(globaldb.GetRocksDB()))
 		}

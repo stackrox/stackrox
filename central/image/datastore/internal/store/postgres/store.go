@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+	"gorm.io/gorm"
 )
 
 const (
@@ -51,13 +52,13 @@ var (
 )
 
 // New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool, noUpdateTimestamps bool) store.Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImagesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentsStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCvesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentEdgesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentCveEdgesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCveEdgesStmt)
+func New(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) store.Store {
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImagesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentsStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCvesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentEdgesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentCveEdgesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCveEdgesStmt)
 
 	return &storeImpl{
 		db:                 db,

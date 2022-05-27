@@ -14,12 +14,15 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 const (
@@ -59,7 +62,11 @@ func (s *networkBaselineDatastoreSACTestSuite) SetupSuite() {
 		s.pool, err = pgxpool.ConnectConfig(ctx, config)
 		s.NoError(err)
 		pgStore.Destroy(ctx, s.pool)
-		s.storage = pgStore.New(ctx, s.pool)
+		var gormDB *gorm.DB
+		source = pgutils.PgxpoolDsnToPgxDsn(source)
+		gormDB, err = gorm.Open(postgres.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
+		s.Require().NoError(err)
+		s.storage = pgStore.New(ctx, s.pool, gormDB)
 	} else {
 		s.engine, err = rocksdb.NewTemp(networkBaselineObj)
 		s.NoError(err)

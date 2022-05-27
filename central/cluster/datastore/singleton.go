@@ -46,8 +46,8 @@ func initialize() {
 	var err error
 
 	if features.PostgresDatastore.Enabled() {
-		clusterStorage = clusterPostgres.New(context.TODO(), globaldb.GetPostgres())
-		clusterHealthStorage = clusterHealthPostgres.New(context.TODO(), globaldb.GetPostgres())
+		clusterStorage = clusterPostgres.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB())
+		clusterHealthStorage = clusterHealthPostgres.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB())
 		indexer = clusterPostgres.NewIndexer(globaldb.GetPostgres())
 	} else {
 		clusterStorage, err = clusterRocksDB.New(globaldb.GetRocksDB())

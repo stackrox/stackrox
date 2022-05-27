@@ -21,10 +21,13 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func TestClusterDataStoreWithPostgres(t *testing.T) {
@@ -67,7 +70,12 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
 	nsPostgres.Destroy(s.ctx, s.db)
 	clusterPostgres.Destroy(s.ctx, s.db)
 
-	ds, err := namespace.New(nsPostgres.New(s.ctx, s.db), nil, nsPostgres.NewIndexer(s.db), nil, ranking.NamespaceRanker(), nil)
+	var gormDB *gorm.DB
+	source = pgutils.PgxpoolDsnToPgxDsn(source)
+	gormDB, err = gorm.Open(postgres.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
+	s.Require().NoError(err)
+
+	ds, err := namespace.New(nsPostgres.New(s.ctx, s.db, gormDB), nil, nsPostgres.NewIndexer(s.db), nil, ranking.NamespaceRanker(), nil)
 	s.NoError(err)
 	s.nsDatastore = ds
 
@@ -78,7 +86,7 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
 
 	s.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	s.netEntities.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
-	clusterDS, err := New(clusterPostgres.New(s.ctx, s.db), clusterHealthPostgres.New(s.ctx, s.db), clusterPostgres.NewIndexer(s.db), nil, ds, nil, s.nodeDataStore, nil, nil, s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), nil)
+	clusterDS, err := New(clusterPostgres.New(s.ctx, s.db, gormDB), clusterHealthPostgres.New(s.ctx, s.db, gormDB), clusterPostgres.NewIndexer(s.db), nil, ds, nil, s.nodeDataStore, nil, nil, s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), nil)
 	s.NoError(err)
 	s.clusterDatastore = clusterDS
 }

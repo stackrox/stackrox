@@ -18,7 +18,7 @@ var (
 
 func initialize() {
 	if features.PostgresDatastore.Enabled() {
-		as = New(postgres.New(context.TODO(), globaldb.GetPostgres()))
+		as = New(postgres.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB()))
 	} else {
 		as = New(bolt.New(globaldb.GetGlobalDB()))
 	}

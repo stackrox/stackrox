@@ -26,7 +26,7 @@ func Singleton() EntityDataStore {
 		var storage store.EntityStore
 		var err error
 		if features.PostgresDatastore.Enabled() {
-			storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+			storage = postgres.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB())
 		} else {
 			storage, err = rocksdb.New(globaldb.GetRocksDB())
 			utils.CrashOnError(err)

@@ -7,12 +7,13 @@ import (
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/deployment/store/types"
 	"github.com/stackrox/rox/generated/storage"
+	"gorm.io/gorm"
 )
 
 // NewFullStore augments the generated store with ListDeployment functions
-func NewFullStore(ctx context.Context, db *pgxpool.Pool) store.Store {
+func NewFullStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) store.Store {
 	return &fullStoreImpl{
-		Store: New(ctx, db),
+		Store: New(ctx, db, gormDB),
 	}
 }
 

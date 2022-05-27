@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -24,6 +25,8 @@ import (
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/multitest/postgres"
 	"github.com/stretchr/testify/suite"
+	pgDriver "gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 var (
@@ -61,7 +64,11 @@ func (s *IndexSuite) SetupTest() {
 	s.Require().NoError(err)
 
 	postgres.Destroy(ctx, s.pool)
-	s.store = postgres.New(ctx, s.pool)
+	var gormDB *gorm.DB
+	source = pgutils.PgxpoolDsnToPgxDsn(source)
+	gormDB, err = gorm.Open(pgDriver.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
+	s.Require().NoError(err)
+	s.store = postgres.New(ctx, s.pool, gormDB)
 	s.indexer = postgres.NewIndexer(s.pool)
 }
 

@@ -33,9 +33,9 @@ func Singleton() DataStore {
 		var permissionSetStorage permissionSetPGStore.Store
 		var accessScopeStorage simpleAccessScopeStore.Store
 		if features.PostgresDatastore.Enabled() {
-			roleStorage = postgresRolePGStore.New(context.TODO(), globaldb.GetPostgres())
-			permissionSetStorage = PermissionSetPGStore.New(context.TODO(), globaldb.GetPostgres())
-			accessScopeStorage = postgresSimpleAccessScopeStore.New(context.TODO(), globaldb.GetPostgres())
+			roleStorage = postgresRolePGStore.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB())
+			permissionSetStorage = PermissionSetPGStore.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB())
+			accessScopeStorage = postgresSimpleAccessScopeStore.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB())
 		} else {
 			var err error
 			roleStorage, err = roleStore.New(globaldb.GetRocksDB())

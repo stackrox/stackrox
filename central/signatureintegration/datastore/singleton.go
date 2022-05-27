@@ -24,7 +24,7 @@ func Singleton() DataStore {
 	once.Do(func() {
 		var storage store.SignatureIntegrationStore
 		if features.PostgresDatastore.Enabled() {
-			storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+			storage = postgres.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB())
 		} else {
 			var err error
 			storage, err = rocksdb.New(globaldb.GetRocksDB())

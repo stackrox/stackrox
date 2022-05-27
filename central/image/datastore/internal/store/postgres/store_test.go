@@ -10,9 +10,12 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type ImagesStoreSuite struct {
@@ -49,7 +52,12 @@ func (s *ImagesStoreSuite) TestStore() {
 	defer pool.Close()
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool, false)
+	var gormDB *gorm.DB
+	source = pgutils.PgxpoolDsnToPgxDsn(source)
+	gormDB, err = gorm.Open(postgres.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
+	s.NoError(err)
+
+	store := New(ctx, pool, gormDB, false)
 
 	image := fixtures.GetImage()
 	s.NoError(testutils.FullInit(image, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))

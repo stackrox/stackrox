@@ -41,7 +41,7 @@ func initialize() {
 	var searcher search.Searcher
 
 	if features.PostgresDatastore.Enabled() {
-		storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+		storage = postgres.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 		searcher = search.NewV2(storage, indexer)
 		ad, err = New(nil, storage, indexer, searcher, riskDataStore.Singleton(), ranking.ComponentRanker())
