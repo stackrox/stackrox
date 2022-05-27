@@ -1961,6 +1961,10 @@ commands:
               fi
             fi
 
+            if [[ "${CI_JOBNAME}" == "race-condition-tests" ]]; then
+              MAIN_IMAGE_TAG="$(make --quiet tag)-rcd"
+            fi
+
             deploy_dir="deploy/<< parameters.orchestrator-flavor >>"
             "${deploy_dir}/central.sh"
 
@@ -2859,12 +2863,6 @@ jobs:
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/scanner-db:${SCANNER_VERSION}" "quay.io/rhacs-eng/scanner-db:${MAIN_TAG}"
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}"      "quay.io/rhacs-eng/collector:${MAIN_TAG}"
             ./scripts/ci/pull-retag-push.sh "quay.io/rhacs-eng/collector:${COLLECTOR_VERSION}-slim" "quay.io/rhacs-eng/collector-slim:${MAIN_TAG}"
-
-      - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
-          paths:
-            - CI_TAG
-            - bin/linux/roxctl
 
   build-operator:
     executor: custom
@@ -4223,7 +4221,6 @@ jobs:
       ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       IS_RACE_BUILD: "true"
 
-
     steps:
       - run-qa-tests:
           cluster-id: race-condition-tests
@@ -4951,6 +4948,7 @@ workflows:
             - build-race-condition-debug-image
             - build-scale-monitoring-and-mock-server
             - provision-race-condition-tests
+            - pre-build-cli
       - roxctl-windows-test:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
