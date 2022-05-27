@@ -359,7 +359,7 @@ func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
 	log.Infof("[STARTUP] Found %d alerts to index", len(alertIDs))
 	alertBatcher := batcher.New(len(alertIDs), alertBatchSize)
 	for start, end, valid := alertBatcher.Next(); valid; start, end, valid = alertBatcher.Next() {
-		listAlerts, _, err := ds.storage.GetListAlerts(ctx, alertIDs[start:end])
+		listAlerts, _, err := ds.getListAlerts(ctx, alertIDs[start:end])
 		if err != nil {
 			return err
 		}
@@ -412,7 +412,7 @@ func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
 
 	alertBatcher := batcher.New(len(keysToIndex), alertBatchSize)
 	for start, end, valid := alertBatcher.Next(); valid; start, end, valid = alertBatcher.Next() {
-		listAlerts, missingIndices, err := ds.storage.GetListAlerts(ctx, keysToIndex[start:end])
+		listAlerts, missingIndices, err := ds.getListAlerts(ctx, keysToIndex[start:end])
 		if err != nil {
 			return err
 		}
@@ -441,6 +441,23 @@ func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
 	return nil
 }
 
+func (ds *datastoreImpl) getListAlerts(ctx context.Context, ids []string) ([]*storage.ListAlert, []int, error) {
+	listAlerts := make([]*storage.ListAlert, 0, len(ids))
+	var missingIndices []int
+	for idx, id := range ids {
+		alert, exists, err := ds.storage.Get(ctx, id)
+		if err != nil {
+			return nil, nil, err
+		}
+		if !exists {
+			missingIndices = append(missingIndices, idx)
+			continue
+		}
+		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
+	}
+	return listAlerts, missingIndices, nil
+}
+
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert) error) error {
 	if ok, err := alertSAC.ReadAllowed(ctx); err != nil {
 		return err
@@ -448,5 +465,8 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.Walk(ctx, fn)
+	return ds.storage.Walk(ctx, func(alert *storage.Alert) error {
+		listAlert := convert.AlertToListAlert(alert)
+		return fn(listAlert)
+	})
 }

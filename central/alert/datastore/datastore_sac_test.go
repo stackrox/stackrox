@@ -71,7 +71,7 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 		s.pool, err = pgxpool.ConnectConfig(context.Background(), config)
 		s.NoError(err)
 		pgStore.Destroy(ctx, s.pool)
-		s.storage = store.NewFullPgStore(pgStore.New(ctx, s.pool))
+		s.storage = pgStore.New(ctx, s.pool)
 		s.indexer = pgStore.NewIndexWrapper(s.pool)
 		s.optionsMap = mappings.PostgresOptionsMap
 	} else {
@@ -82,7 +82,7 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 		s.index = &bleveindex
 		s.NoError(err)
 
-		s.storage = store.NewFullStore(rocksdbStore.New(s.engine))
+		s.storage = rocksdbStore.New(s.engine)
 		s.indexer = index.New(*s.index)
 		s.optionsMap = mappings.OptionsMap
 	}
