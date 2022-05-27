@@ -24,7 +24,7 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) GetNetworkPolicy(ctx context.Context, id string) (*storage.NetworkPolicy, bool, error) {
-	np, found, err := ds.getNetworkPolicy(id)
+	np, found, err := ds.getNetworkPolicy(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -36,12 +36,27 @@ func (ds *datastoreImpl) GetNetworkPolicy(ctx context.Context, id string) (*stor
 	return np, true, nil
 }
 
+func (ds *datastoreImpl) doForMatching(ctx context.Context, clusterID, namespace string, fn func(np *storage.NetworkPolicy)) error {
+	return ds.storage.Walk(ctx, func(np *storage.NetworkPolicy) error {
+		if clusterID != "" && np.GetClusterId() != clusterID {
+			return nil
+		}
+		if namespace != "" && np.GetNamespace() != namespace {
+			return nil
+		}
+		fn(np)
+		return nil
+	})
+}
+
 func (ds *datastoreImpl) GetNetworkPolicies(ctx context.Context, clusterID, namespace string) ([]*storage.NetworkPolicy, error) {
-	netPols, err := ds.storage.GetNetworkPolicies(clusterID, namespace)
+	var netPols []*storage.NetworkPolicy
+	err := ds.doForMatching(ctx, clusterID, namespace, func(np *storage.NetworkPolicy) {
+		netPols = append(netPols, np)
+	})
 	if err != nil {
 		return nil, err
 	}
-
 	if namespace == "" {
 		return filterResults(ctx, netpolSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS), netPols)
 	}
@@ -67,31 +82,28 @@ func (ds *datastoreImpl) CountMatchingNetworkPolicies(ctx context.Context, clust
 	if ok, err := netpolSAC.AccessAllowed(ctx, storage.Access_READ_ACCESS, scopeKeys...); err != nil || !ok {
 		return 0, err
 	}
-	return ds.storage.CountMatchingNetworkPolicies(clusterID, namespace)
+	var count int
+	err := ds.doForMatching(ctx, clusterID, namespace, func(np *storage.NetworkPolicy) {
+		count++
+	})
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
-func (ds *datastoreImpl) AddNetworkPolicy(ctx context.Context, np *storage.NetworkPolicy) error {
+func (ds *datastoreImpl) UpsertNetworkPolicy(ctx context.Context, np *storage.NetworkPolicy) error {
 	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(np).Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.AddNetworkPolicy(np)
-}
-
-func (ds *datastoreImpl) UpdateNetworkPolicy(ctx context.Context, np *storage.NetworkPolicy) error {
-	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(np).Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	return ds.storage.UpdateNetworkPolicy(np)
+	return ds.storage.Upsert(ctx, np)
 }
 
 func (ds *datastoreImpl) RemoveNetworkPolicy(ctx context.Context, id string) error {
-	np, found, err := ds.getNetworkPolicy(id)
+	np, found, err := ds.getNetworkPolicy(ctx, id)
 	if err != nil || !found {
 		return err
 	}
@@ -102,7 +114,7 @@ func (ds *datastoreImpl) RemoveNetworkPolicy(ctx context.Context, id string) err
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.RemoveNetworkPolicy(id)
+	return ds.storage.Delete(ctx, id)
 }
 
 // UndoDataStore functionality.
@@ -156,8 +168,8 @@ func (ds *datastoreImpl) UpsertUndoDeploymentRecord(ctx context.Context, undoRec
 	return ds.undoDeploymentStorage.Upsert(ctx, undoRecord)
 }
 
-func (ds *datastoreImpl) getNetworkPolicy(id string) (*storage.NetworkPolicy, bool, error) {
-	netpol, found, err := ds.storage.GetNetworkPolicy(id)
+func (ds *datastoreImpl) getNetworkPolicy(ctx context.Context, id string) (*storage.NetworkPolicy, bool, error) {
+	netpol, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
