@@ -71,21 +71,20 @@ func (s *SchemaTestSuite) SetupTest() {
 	s.pool = pool
 	s.tmpDir, err = os.MkdirTemp("", "schema_test")
 	s.Require().NoError(err)
-	source = pgtest.GetGormConnectionString(s.T())
-	fmt.Println("source:", source)
 	s.gorm, err = gorm.Open(postgres.Open(source), &gorm.Config{})
 	s.Require().NoError(err)
 }
 
 func (s *SchemaTestSuite) TearDownTest() {
+	s.envIsolator.RestoreAll()
+	if s.pool == nil {
+		return
+	}
+	defer s.pool.Close()
 	_, err := s.pool.Exec(s.ctx, "DROP SCHEMA public CASCADE")
 	s.Require().NoError(err)
 	_, err = s.pool.Exec(s.ctx, "CREATE SCHEMA public")
 	s.Require().NoError(err)
-	if s.pool != nil {
-		s.pool.Close()
-	}
-	s.envIsolator.RestoreAll()
 }
 
 func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
