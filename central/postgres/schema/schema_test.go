@@ -126,6 +126,26 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 			createStmts: CreateTableClusterInitBundlesStmt,
 		},
 		{
+			name:        ComplianceoperatorcheckresultsTableName,
+			createStmts: CreateTableComplianceoperatorcheckresultsStmt,
+		},
+		{
+			name:        ComplianceoperatorprofilesTableName,
+			createStmts: CreateTableComplianceoperatorprofilesStmt,
+		},
+		{
+			name:        ComplianceoperatorrulesTableName,
+			createStmts: CreateTableComplianceoperatorrulesStmt,
+		},
+		{
+			name:        ComplianceoperatorscansTableName,
+			createStmts: CreateTableComplianceoperatorscansStmt,
+		},
+		{
+			name:        ComplianceoperatorscansettingbindingsTableName,
+			createStmts: CreateTableComplianceoperatorscansettingbindingsStmt,
+		},
+		{
 			name:        DeploymentsTableName,
 			createStmts: CreateTableDeploymentsStmt,
 		},
