@@ -6,9 +6,8 @@ import (
 	store "github.com/stackrox/rox/central/complianceoperator/rules/store"
 	"github.com/stackrox/rox/central/complianceoperator/rules/store/postgres"
 	"github.com/stackrox/rox/central/complianceoperator/rules/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
-
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
