@@ -1,8 +1,8 @@
 package runner
 
 import (
-	_ "github.com/stackrox/rox/migrator/migrations/m_100_to_m_101_cluster_id_netpol_undo_store"
 	// Import these packages to trigger the registration.
+	_ "github.com/stackrox/rox/migrator/migrations/m_100_to_m_101_cluster_id_netpol_undo_store"
 	_ "github.com/stackrox/rox/migrator/migrations/m_55_to_m_56_node_scanning_empty"
 	_ "github.com/stackrox/rox/migrator/migrations/m_56_to_m_57_compliance_policy_categories"
 	_ "github.com/stackrox/rox/migrator/migrations/m_57_to_m_58_update_run_secrets_volume_policy_regex"
