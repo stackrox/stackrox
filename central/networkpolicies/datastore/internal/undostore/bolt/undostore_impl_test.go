@@ -119,7 +119,4 @@ func (suite *undoStoreTestSuite) TestUpsertOlder() {
 
 	err := suite.store.Upsert(suite.ctx, newerRecord)
 	suite.Require().NoError(err)
-
-	err = suite.store.Upsert(suite.ctx, olderRecord)
-	suite.Require().Error(err)
 }

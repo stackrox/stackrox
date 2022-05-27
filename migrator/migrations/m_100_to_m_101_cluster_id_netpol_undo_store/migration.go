@@ -11,8 +11,8 @@ import (
 
 var (
 	migration = types.Migration{
-		StartingSeqNum: 98,
-		VersionAfter:   storage.Version{SeqNum: 99},
+		StartingSeqNum: 100,
+		VersionAfter:   storage.Version{SeqNum: 101},
 		Run: func(databases *types.Databases) error {
 			if err := addClusterIDToNetworkPolicyApplicationUndoRecord(databases.BoltDB); err != nil {
 				return errors.Wrap(err,

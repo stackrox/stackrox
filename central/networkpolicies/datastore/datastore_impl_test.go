@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	storeMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/mocks"
 	undoDeploymentStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/mocks"
@@ -210,8 +211,28 @@ func (s *netPolDataStoreTestSuite) TestEnforceUpdateUndo() {
 }
 
 func (s *netPolDataStoreTestSuite) TestAllowUpdateUndo() {
+	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil)
 	s.undoStorage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
 
 	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID})
 	s.NoError(err, "expected an error trying to write without permissions")
+}
+
+func (s *netPolDataStoreTestSuite) TestAllowUpdateUndoNewer() {
+	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: timestamp.TimestampNow()}
+	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(oldCluster, true, nil)
+	s.undoStorage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
+
+	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: timestamp.TimestampNow()})
+	s.NoError(err, "expected an error trying to write without permissions")
+}
+
+func (s *netPolDataStoreTestSuite) TestDisallowUpdateUndoOlder() {
+	oldTS := timestamp.TimestampNow()
+	newTS := timestamp.TimestampNow()
+	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: newTS}
+	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(oldCluster, true, nil)
+
+	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: oldTS})
+	s.Error(err, "expected an error trying to write without permissions")
 }
