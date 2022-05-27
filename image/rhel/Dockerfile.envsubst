@@ -35,6 +35,8 @@ COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=extracted_bundle /bundle/ui/ /ui/
 COPY --from=extracted_bundle /bundle/usr/local/bin/ldb /usr/local/bin/
 COPY --from=extracted_bundle /bundle/snappy.rpm /tmp/
+COPY --from=extracted_bundle /bundle/postgres-libs.rpm /tmp/
+COPY --from=extracted_bundle /bundle/postgres.rpm /tmp/
 COPY --from=extracted_bundle /bundle/go/ /go/
 
 RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
@@ -45,9 +47,11 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     rpm --import RPM-GPG-KEY-CentOS-Official && \
     microdnf upgrade && \
     rpm -i /tmp/snappy.rpm && \
+    rpm -i --nodeps /tmp/postgres-libs.rpm && \
+    rpm -i --nodeps /tmp/postgres.rpm && \
     microdnf install lz4 bzip2 util-linux && \
     microdnf clean all && \
-    rm /tmp/snappy.rpm RPM-GPG-KEY-CentOS-Official && \
+    rm /tmp/snappy.rpm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum && \
