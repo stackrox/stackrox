@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -41,14 +42,13 @@ type SchemaTestSuite struct {
 	pool        *pgxpool.Pool
 	gorm        *gorm.DB
 	ctx         context.Context
-	tmpDir      string
 }
 
 func TestSchema(t *testing.T) {
 	suite.Run(t, new(SchemaTestSuite))
 }
 
-func (s *SchemaTestSuite) SetupTest() {
+func (s *SchemaTestSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -68,7 +68,6 @@ func (s *SchemaTestSuite) SetupTest() {
 
 	s.ctx = ctx
 	s.pool = pool
-	s.tmpDir, err = os.MkdirTemp("", "schema_test")
 	s.Require().NoError(err)
 	s.gorm, err = gorm.Open(postgres.Open(source), &gorm.Config{})
 	s.Require().NoError(err)
@@ -79,15 +78,21 @@ func (s *SchemaTestSuite) TearDownTest() {
 	if s.pool == nil {
 		return
 	}
-	defer s.pool.Close()
 	_, err := s.pool.Exec(s.ctx, "DROP SCHEMA public CASCADE")
 	s.Require().NoError(err)
 	_, err = s.pool.Exec(s.ctx, "CREATE SCHEMA public")
 	s.Require().NoError(err)
 }
 
+func (s *SchemaTestSuite) TearDownSuite() {
+	s.envIsolator.RestoreAll()
+	if s.pool == nil {
+		return
+	}
+	s.pool.Close()
+}
+
 func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
-	allTestCases := set.NewStringSet(s.getAllTestCases()...)
 	testCases := []struct {
 		name        string
 		createStmts *pkgPostgres.CreateStmts
@@ -312,23 +317,29 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 		},
 	}
 	for _, testCase := range testCases {
-		s.T().Run(testCase.name, func(t *testing.T) {
-			s.Require().Contains(allTestCases, testCase.name)
-			allTestCases.Remove(testCase.name)
+		s.T().Run(fmt.Sprintf("check if %q schemas are equal", testCase.name), func(t *testing.T) {
 			schema := globaldb.GetSchemaForTable(testCase.name)
 			gormSchemas := s.getGormTableSchemas(schema, testCase.createStmts)
 			pgutils.CreateTable(s.ctx, s.pool, testCase.createStmts)
 			for table, gormSchema := range gormSchemas {
 				sqlSchema := s.dumpSchema(table)
-				s.Require().Equal(sqlSchema, gormSchema)
+				assert.Equal(t, sqlSchema, gormSchema)
 			}
-			// Check if the table name is reversible.
+		})
+		s.T().Run(fmt.Sprintf("check if %q name is reversible", testCase.name), func(t *testing.T) {
 			// Gorm may have wrong behavior if the table name is not reversible.
 			schemaName := pgutils.NamingStrategy.SchemaName(testCase.name)
-			s.Require().Equal(testCase.name, pgutils.NamingStrategy.TableName(schemaName))
+			assert.Equal(t, testCase.name, pgutils.NamingStrategy.TableName(schemaName))
 		})
 	}
-	s.Require().Len(allTestCases, 0)
+	s.T().Run("should cover all test cases", func(t *testing.T) {
+		allTestCases := set.NewStringSet(s.getAllTestCases()...)
+		testCasesNames := set.NewStringSet()
+		for _, testCase := range testCases {
+			testCasesNames.Add(testCase.name)
+		}
+		assert.Equal(t, allTestCases, testCasesNames)
+	})
 }
 
 func (s *SchemaTestSuite) getAllTestCases() []string {
@@ -366,7 +377,9 @@ func (s *SchemaTestSuite) dumpSchema(table string) string {
 		"-U", s.connConfig.User,
 		"-p", fmt.Sprintf("%d", s.connConfig.Port),
 		"-t", table,
+		"--no-password", // never prompt for password
 	)
+	cmd.Env = append(cmd.Env, fmt.Sprintf("PGPASSWORD=%s", s.connConfig.Password))
 	out, err := cmd.Output()
 	s.Require().NoError(err, fmt.Sprintf("Failed to get schema dump\n output: %s\n err: %v\n", out, err))
 	return fKConstraintRegex.ReplaceAllString(addConstraintRegex.ReplaceAllString(string(out), ""), "")
