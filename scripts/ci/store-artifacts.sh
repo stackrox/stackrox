@@ -133,8 +133,8 @@ make_artifacts_help() {
 
     local help_file
     if is_OPENSHIFT_CI; then
-        require_environment "ARTIFACT_DIR"
-        help_file="$ARTIFACT_DIR/custom-link-howto-locate-other-artifacts.html"
+        mkdir -p "$ARTIFACT_DIR/links" # note: a subdir is reqd for the spyglass html lens regex
+        help_file="$ARTIFACT_DIR/links/custom-link-howto-locate-other-artifacts.html"
     elif is_CIRCLECI; then
         help_file="/tmp/howto-locate-artifacts.html"
     else
