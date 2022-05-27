@@ -54,7 +54,6 @@ func (s *SchemaTestSuite) SetupTest() {
 
 	if !features.PostgresDatastore.Enabled() {
 		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
 	}
 
 	ctx := sac.WithAllAccess(context.Background())
