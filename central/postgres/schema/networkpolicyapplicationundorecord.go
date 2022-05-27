@@ -21,8 +21,9 @@ var (
                    PRIMARY KEY(ClusterId)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*Networkpolicyapplicationundorecord)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// NetworkpolicyapplicationundorecordSchema is the go schema for table `networkpolicyapplicationundorecord`.
@@ -36,3 +37,13 @@ var (
 		return schema
 	}()
 )
+
+const (
+	NetworkpolicyapplicationundorecordTableName = "networkpolicyapplicationundorecord"
+)
+
+// Networkpolicyapplicationundorecord holds the Gorm model for Postgres table `networkpolicyapplicationundorecord`.
+type Networkpolicyapplicationundorecord struct {
+	ClusterId  string `gorm:"column:clusterid;type:varchar;primaryKey"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
