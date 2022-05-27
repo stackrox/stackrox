@@ -16,6 +16,8 @@ var (
 		Table: `
                create table if not exists network_baselines (
                    DeploymentId varchar,
+                   ClusterId varchar,
+                   Namespace varchar,
                    serialized bytea,
                    PRIMARY KEY(DeploymentId)
                )
@@ -44,5 +46,7 @@ const (
 // NetworkBaselines holds the Gorm model for Postgres table `network_baselines`.
 type NetworkBaselines struct {
 	DeploymentId string `gorm:"column:deploymentid;type:varchar;primaryKey"`
+	ClusterId    string `gorm:"column:clusterid;type:varchar"`
+	Namespace    string `gorm:"column:namespace;type:varchar"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }

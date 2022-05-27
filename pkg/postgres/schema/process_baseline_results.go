@@ -16,6 +16,8 @@ var (
 		Table: `
                create table if not exists process_baseline_results (
                    DeploymentId varchar,
+                   ClusterId varchar,
+                   Namespace varchar,
                    serialized bytea,
                    PRIMARY KEY(DeploymentId)
                )
@@ -44,5 +46,7 @@ const (
 // ProcessBaselineResults holds the Gorm model for Postgres table `process_baseline_results`.
 type ProcessBaselineResults struct {
 	DeploymentId string `gorm:"column:deploymentid;type:varchar;primaryKey"`
+	ClusterId    string `gorm:"column:clusterid;type:varchar"`
+	Namespace    string `gorm:"column:namespace;type:varchar"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }

@@ -16,6 +16,8 @@ var (
 		Table: `
                create table if not exists networkpolicies (
                    Id varchar,
+                   ClusterId varchar,
+                   Namespace varchar,
                    serialized bytea,
                    PRIMARY KEY(Id)
                )
@@ -44,5 +46,7 @@ const (
 // Networkpolicies holds the Gorm model for Postgres table `networkpolicies`.
 type Networkpolicies struct {
 	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	ClusterId  string `gorm:"column:clusterid;type:varchar"`
+	Namespace  string `gorm:"column:namespace;type:varchar"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }
