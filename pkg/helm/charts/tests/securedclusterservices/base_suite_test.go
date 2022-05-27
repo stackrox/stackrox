@@ -96,7 +96,7 @@ scanner:
   disable: false
 
 system:
-    enableDeprecatedPodSecurityPolicies: true
+    enablePodSecurityPolicies: true
 `
 )
 
