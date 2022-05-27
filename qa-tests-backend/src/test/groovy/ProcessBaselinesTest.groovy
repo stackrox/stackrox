@@ -232,7 +232,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         sleep 30000
         orchestrator.execInContainer(deployment, "pwd")
 
-        println "Locked Process Baseline: ${lockProcessBaselines}"
+        log.info "Locked Process Baseline: ${lockProcessBaselines}"
 
         // Give the reprocessing some time.
         sleep 30000
