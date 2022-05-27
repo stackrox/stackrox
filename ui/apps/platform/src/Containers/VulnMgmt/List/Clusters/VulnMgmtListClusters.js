@@ -9,7 +9,7 @@ import {
 } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
 import StatusChip from 'Components/StatusChip';
-import TableCountLink from 'Components/workflow/TableCountLink';
+import ClusterTableCountLinks from 'Components/workflow/ClusterTableCountLinks';
 import entityTypes from 'constants/entityTypes';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import CVEStackedPill from 'Components/CVEStackedPill';
@@ -118,55 +118,14 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
             //     sortField: clusterSortFields.CREATED
             // },
             {
-                Header: `Namespaces`,
-                entityType: entityTypes.NAMESPACE,
+                Header: `Entities`,
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => (
-                    <TableCountLink
-                        entityType={entityTypes.NAMESPACE}
-                        count={original.namespaceCount}
-                        textOnly={pdf}
-                        selectedRowId={original.id}
-                    />
+                    <ClusterTableCountLinks row={original} textOnly={pdf} />
                 ),
-                id: clusterSortFields.NAMESPACE_COUNT,
-                accessor: 'namespaceCount',
-                sortField: clusterSortFields.NAMESPACE_COUNT,
-            },
-            {
-                Header: `Deployments`,
-                entityType: entityTypes.DEPLOYMENT,
-                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => (
-                    <TableCountLink
-                        entityType={entityTypes.DEPLOYMENT}
-                        count={original.deploymentCount}
-                        textOnly={pdf}
-                        selectedRowId={original.id}
-                    />
-                ),
-                id: clusterSortFields.DEPLOYMENT_COUNT,
-                accessor: 'deploymentCount',
-                sortField: clusterSortFields.DEPLOYMENT_COUNT,
-            },
-            {
-                Header: `Nodes`,
-                entityType: entityTypes.NODE,
-                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => (
-                    <TableCountLink
-                        entityType={entityTypes.NODE}
-                        count={original.nodeCount}
-                        textOnly={pdf}
-                        selectedRowId={original.id}
-                    />
-                ),
-                id: clusterSortFields.NODE_COUNT,
-                accessor: 'nodeCount',
-                sortField: clusterSortFields.NODE_COUNT,
+                accessor: 'entities',
+                sortable: false,
             },
             // @TODD, restore the Policy Counts column once its performance is improved,
             //   or remove the comment if we determine that it cannot be made performant
