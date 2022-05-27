@@ -21,8 +21,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*Networkpolicies)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// NetworkpoliciesSchema is the go schema for table `networkpolicies`.
@@ -36,3 +37,13 @@ var (
 		return schema
 	}()
 )
+
+const (
+	NetworkpoliciesTableName = "networkpolicies"
+)
+
+// Networkpolicies holds the Gorm model for Postgres table `networkpolicies`.
+type Networkpolicies struct {
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
