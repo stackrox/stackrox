@@ -338,7 +338,8 @@ func (resolver *nodeResolver) NodeComponents(ctx context.Context, args Paginated
 	}
 
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeComponents(resolver.nodeScopeContext(ctx), args)
+		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
+		return resolver.root.NodeComponents(resolver.nodeScopeContext(ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver NodeComponents in nodeResolver does not support postgres yet")
@@ -352,7 +353,8 @@ func (resolver *nodeResolver) NodeComponentCount(ctx context.Context, args RawQu
 	}
 
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeComponentCount(resolver.nodeScopeContext(ctx), args)
+		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
+		return resolver.root.NodeComponentCount(resolver.nodeScopeContext(ctx), RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
 	return 0, errors.New("Sub-resolver NodeComponentCount in nodeResolver does not support postgres yet")
