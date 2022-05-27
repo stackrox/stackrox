@@ -102,5 +102,5 @@ message NetworkPolicyApplicationUndoDeploymentRecord {
     string cluster_id                               = 2;
     string namespace                                = 3;
 
-    NetworkPolicyApplicationUndoRecord undo_record  = 4;
+    NetworkPolicyApplicationUndoRecord undo_record  = 4  [(gogoproto.moretags) = 'sql:"-"'];
 }
