@@ -17,8 +17,9 @@ var (
 		Table: `
                create table if not exists networkpoliciesundodeployments (
                    DeploymentId varchar,
+                   UndoRecord_ClusterId varchar,
                    serialized bytea,
-                   PRIMARY KEY(DeploymentId)
+                   PRIMARY KEY(DeploymentId, UndoRecord_ClusterId)
                )
                `,
 		GormModel: (*Networkpoliciesundodeployments)(nil),
@@ -44,6 +45,7 @@ const (
 
 // Networkpoliciesundodeployments holds the Gorm model for Postgres table `networkpoliciesundodeployments`.
 type Networkpoliciesundodeployments struct {
-	DeploymentId string `gorm:"column:deploymentid;type:varchar;primaryKey"`
-	Serialized   []byte `gorm:"column:serialized;type:bytea"`
+	DeploymentId        string `gorm:"column:deploymentid;type:varchar;primaryKey"`
+	UndoRecordClusterId string `gorm:"column:undorecord_clusterid;type:varchar;primaryKey"`
+	Serialized          []byte `gorm:"column:serialized;type:bytea"`
 }

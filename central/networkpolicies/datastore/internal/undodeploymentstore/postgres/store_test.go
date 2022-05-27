@@ -67,13 +67,13 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 	networkPolicyApplicationUndoDeploymentRecord := &storage.NetworkPolicyApplicationUndoDeploymentRecord{}
 	s.NoError(testutils.FullInit(networkPolicyApplicationUndoDeploymentRecord, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundNetworkPolicyApplicationUndoDeploymentRecord, exists, err := store.Get(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
+	foundNetworkPolicyApplicationUndoDeploymentRecord, exists, err := store.Get(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId(), networkPolicyApplicationUndoDeploymentRecord.GetUndoRecord().GetClusterId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkPolicyApplicationUndoDeploymentRecord)
 
 	s.NoError(store.Upsert(ctx, networkPolicyApplicationUndoDeploymentRecord))
-	foundNetworkPolicyApplicationUndoDeploymentRecord, exists, err = store.Get(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
+	foundNetworkPolicyApplicationUndoDeploymentRecord, exists, err = store.Get(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId(), networkPolicyApplicationUndoDeploymentRecord.GetUndoRecord().GetClusterId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(networkPolicyApplicationUndoDeploymentRecord, foundNetworkPolicyApplicationUndoDeploymentRecord)
@@ -82,18 +82,18 @@ func (s *NetworkpoliciesundodeploymentsStoreSuite) TestStore() {
 	s.NoError(err)
 	s.Equal(1, networkPolicyApplicationUndoDeploymentRecordCount)
 
-	networkPolicyApplicationUndoDeploymentRecordExists, err := store.Exists(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
+	networkPolicyApplicationUndoDeploymentRecordExists, err := store.Exists(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId(), networkPolicyApplicationUndoDeploymentRecord.GetUndoRecord().GetClusterId())
 	s.NoError(err)
 	s.True(networkPolicyApplicationUndoDeploymentRecordExists)
 	s.NoError(store.Upsert(ctx, networkPolicyApplicationUndoDeploymentRecord))
 
-	foundNetworkPolicyApplicationUndoDeploymentRecord, exists, err = store.Get(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
+	foundNetworkPolicyApplicationUndoDeploymentRecord, exists, err = store.Get(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId(), networkPolicyApplicationUndoDeploymentRecord.GetUndoRecord().GetClusterId())
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(networkPolicyApplicationUndoDeploymentRecord, foundNetworkPolicyApplicationUndoDeploymentRecord)
 
-	s.NoError(store.Delete(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId()))
-	foundNetworkPolicyApplicationUndoDeploymentRecord, exists, err = store.Get(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId())
+	s.NoError(store.Delete(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId(), networkPolicyApplicationUndoDeploymentRecord.GetUndoRecord().GetClusterId()))
+	foundNetworkPolicyApplicationUndoDeploymentRecord, exists, err = store.Get(ctx, networkPolicyApplicationUndoDeploymentRecord.GetDeploymentId(), networkPolicyApplicationUndoDeploymentRecord.GetUndoRecord().GetClusterId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNetworkPolicyApplicationUndoDeploymentRecord)

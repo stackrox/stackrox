@@ -9,7 +9,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -17,13 +16,16 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
 	baseTable = "networkpoliciesundodeployments"
+
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM networkpoliciesundodeployments WHERE DeploymentId = $1 AND UndoRecord_ClusterId = $2)"
+	getStmt    = "SELECT serialized FROM networkpoliciesundodeployments WHERE DeploymentId = $1 AND UndoRecord_ClusterId = $2"
+	deleteStmt = "DELETE FROM networkpoliciesundodeployments WHERE DeploymentId = $1 AND UndoRecord_ClusterId = $2"
 
 	batchAfter = 100
 
@@ -40,14 +42,11 @@ var (
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, deploymentId string) (bool, error)
-	Get(ctx context.Context, deploymentId string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error)
+	Exists(ctx context.Context, deploymentId string, undoRecordClusterId string) (bool, error)
+	Get(ctx context.Context, deploymentId string, undoRecordClusterId string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error)
 	Upsert(ctx context.Context, obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error
 	UpsertMany(ctx context.Context, objs []*storage.NetworkPolicyApplicationUndoDeploymentRecord) error
-	Delete(ctx context.Context, deploymentId string) error
-	GetIDs(ctx context.Context) ([]string, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.NetworkPolicyApplicationUndoDeploymentRecord, []int, error)
-	DeleteMany(ctx context.Context, ids []string) error
+	Delete(ctx context.Context, deploymentId string, undoRecordClusterId string) error
 
 	Walk(ctx context.Context, fn func(obj *storage.NetworkPolicyApplicationUndoDeploymentRecord) error) error
 
@@ -79,10 +78,11 @@ func insertIntoNetworkpoliciesundodeployments(ctx context.Context, tx pgx.Tx, ob
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetDeploymentId(),
+		obj.GetUndoRecord().GetClusterId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO networkpoliciesundodeployments (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO networkpoliciesundodeployments (DeploymentId, UndoRecord_ClusterId, serialized) VALUES($1, $2, $3) ON CONFLICT(DeploymentId, UndoRecord_ClusterId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, UndoRecord_ClusterId = EXCLUDED.UndoRecord_ClusterId, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -97,13 +97,11 @@ func (s *storeImpl) copyFromNetworkpoliciesundodeployments(ctx context.Context, 
 
 	var err error
 
-	// This is a copy so first we must delete the rows and re-add them
-	// Which is essentially the desired behaviour of an upsert.
-	var deletes []string
-
 	copyCols := []string{
 
 		"deploymentid",
+
+		"undorecord_clusterid",
 
 		"serialized",
 	}
@@ -121,22 +119,19 @@ func (s *storeImpl) copyFromNetworkpoliciesundodeployments(ctx context.Context, 
 
 			obj.GetDeploymentId(),
 
+			obj.GetUndoRecord().GetClusterId(),
+
 			serialized,
 		})
 
-		// Add the id to be deleted.
-		deletes = append(deletes, obj.GetDeploymentId())
+		if err := s.Delete(ctx, obj.GetDeploymentId(), obj.GetUndoRecord().GetClusterId()); err != nil {
+			return err
+		}
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
-
-			if err := s.DeleteMany(ctx, deletes); err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkpoliciesundodeployments"}, copyCols, pgx.CopyFromRows(inputRows))
 
@@ -234,33 +229,30 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, deploymentId string) (bool, error) {
+func (s *storeImpl) Exists(ctx context.Context, deploymentId string, undoRecordClusterId string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NetworkPolicyApplicationUndoDeploymentRecord")
 
-	var sacQueryFilter *v1.Query
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
-	)
-
-	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
-	return count == 1, err
+	row := s.db.QueryRow(ctx, existsStmt, deploymentId, undoRecordClusterId)
+	var exists bool
+	if err := row.Scan(&exists); err != nil {
+		return false, pgutils.ErrNilIfNoRows(err)
+	}
+	return exists, nil
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, deploymentId string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error) {
+func (s *storeImpl) Get(ctx context.Context, deploymentId string, undoRecordClusterId string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NetworkPolicyApplicationUndoDeploymentRecord")
 
-	var sacQueryFilter *v1.Query
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
-	)
-
-	data, err := postgres.RunGetQueryForSchema(ctx, schema, q, s.db)
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkPolicyApplicationUndoDeploymentRecord")
 	if err != nil {
+		return nil, false, err
+	}
+	defer release()
+
+	row := conn.QueryRow(ctx, getStmt, deploymentId, undoRecordClusterId)
+	var data []byte
+	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
@@ -281,97 +273,19 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 }
 
 // Delete removes the specified ID from the store
-func (s *storeImpl) Delete(ctx context.Context, deploymentId string) error {
+func (s *storeImpl) Delete(ctx context.Context, deploymentId string, undoRecordClusterId string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "NetworkPolicyApplicationUndoDeploymentRecord")
 
-	var sacQueryFilter *v1.Query
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(deploymentId).ProtoQuery(),
-	)
-
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
-}
-
-// GetIDs returns all the IDs for the store
-func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.NetworkPolicyApplicationUndoDeploymentRecordIDs")
-	var sacQueryFilter *v1.Query
-
-	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkPolicyApplicationUndoDeploymentRecord")
 	if err != nil {
-		return nil, err
+		return err
 	}
+	defer release()
 
-	ids := make([]string, 0, len(result))
-	for _, entry := range result {
-		ids = append(ids, entry.ID)
+	if _, err := conn.Exec(ctx, deleteStmt, deploymentId, undoRecordClusterId); err != nil {
+		return err
 	}
-
-	return ids, nil
-}
-
-// GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.NetworkPolicyApplicationUndoDeploymentRecord, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NetworkPolicyApplicationUndoDeploymentRecord")
-
-	if len(ids) == 0 {
-		return nil, nil, nil
-	}
-
-	var sacQueryFilter *v1.Query
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
-	)
-
-	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(ids))
-			for i := range ids {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
-		return nil, nil, err
-	}
-	resultsByID := make(map[string]*storage.NetworkPolicyApplicationUndoDeploymentRecord)
-	for _, data := range rows {
-		msg := &storage.NetworkPolicyApplicationUndoDeploymentRecord{}
-		if err := proto.Unmarshal(data, msg); err != nil {
-			return nil, nil, err
-		}
-		resultsByID[msg.GetDeploymentId()] = msg
-	}
-	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
-	// It is important that the elems are populated in the same order as the input ids
-	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.NetworkPolicyApplicationUndoDeploymentRecord, 0, len(resultsByID))
-	for i, id := range ids {
-		if result, ok := resultsByID[id]; !ok {
-			missingIndices = append(missingIndices, i)
-		} else {
-			elems = append(elems, result)
-		}
-	}
-	return elems, missingIndices, nil
-}
-
-// Delete removes the specified IDs from the store
-func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkPolicyApplicationUndoDeploymentRecord")
-
-	var sacQueryFilter *v1.Query
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
-	)
-
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
+	return nil
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
