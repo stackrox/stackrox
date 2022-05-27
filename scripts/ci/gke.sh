@@ -122,7 +122,7 @@ create_cluster() {
     if [[ "${POD_SECURITY_POLICIES}" == "true" ]]; then
         PSP_ARG="--enable-pod-security-policy"
     fi
-    zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ')
+    zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ' | shuf)
     success=0
     for zone in $zones; do
         if is_CIRCLECI; then
@@ -133,7 +133,7 @@ create_cluster() {
         gcloud config set compute/zone "${zone}"
         status=0
         # shellcheck disable=SC2153
-        timeout 420 gcloud beta container clusters create \
+        timeout 630 gcloud beta container clusters create \
             --machine-type "${MACHINE_TYPE}" \
             --num-nodes "${NUM_NODES}" \
             --disk-type=pd-standard \
@@ -158,12 +158,12 @@ create_cluster() {
             if ! gcloud container clusters describe "${CLUSTER_NAME}" >/dev/null; then
                 echo >&2 "Create cluster did not create the cluster in Google. Trying a different zone..."
             else
-                for i in {1..120}; do
+                for i in {1..60}; do
                     if [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --format json | jq -r .status)" == "RUNNING" ]]; then
                         success=1
                         break
                     fi
-                    sleep 5
+                    sleep 20
                     echo "Currently have waited $((i * 5)) for cluster ${CLUSTER_NAME} in ${zone} to move to running state"
                 done
             fi
