@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/telemetry/manager"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -12,7 +11,7 @@ var (
 )
 
 func initialize() {
-	as = New(manager.Singleton())
+	as = New()
 }
 
 // Singleton provides the instance of the Service interface to register.
