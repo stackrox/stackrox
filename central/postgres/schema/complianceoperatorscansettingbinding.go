@@ -21,8 +21,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*Complianceoperatorscansettingbinding)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ComplianceoperatorscansettingbindingSchema is the go schema for table `complianceoperatorscansettingbinding`.
@@ -36,3 +37,13 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ComplianceoperatorscansettingbindingTableName = "complianceoperatorscansettingbinding"
+)
+
+// Complianceoperatorscansettingbinding holds the Gorm model for Postgres table `complianceoperatorscansettingbinding`.
+type Complianceoperatorscansettingbinding struct {
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}

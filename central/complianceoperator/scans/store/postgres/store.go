@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	pkgSchema "github.com/stackrox/rox/central/postgres/schema"
 	"github.com/stackrox/rox/central/role/resources"
@@ -20,13 +21,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
 	baseTable = "complianceoperatorscans"
-
-	walkStmt    = "SELECT serialized FROM complianceoperatorscans"
-	getManyStmt = "SELECT serialized FROM complianceoperatorscans WHERE Id = ANY($1::text[])"
 
 	batchAfter = 100
 
@@ -60,7 +59,8 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	mutex sync.Mutex
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -228,6 +228,12 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ComplianceOp
 		return sac.ErrResourceAccessDenied
 	}
 
+	// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
+	// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
+	// violations
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	if len(objs) < batchAfter {
 		return s.upsert(ctx, objs...)
 	} else {
@@ -357,22 +363,26 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ComplianceOperatorScan, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ComplianceOperatorScan")
 
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+
+	var sacQueryFilter *v1.Query
+
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
 	if ok, err := scopeChecker.Allowed(ctx); err != nil {
 		return nil, nil, err
 	} else if !ok {
 		return nil, nil, nil
 	}
+	q := search.ConjunctionQuery(
+		sacQueryFilter,
+		search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(),
+	)
 
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "ComplianceOperatorScan")
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, q, s.db)
 	if err != nil {
-		return nil, nil, err
-	}
-	defer release()
-
-	rows, err := conn.Query(ctx, getManyStmt, ids)
-	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			missingIndices := make([]int, 0, len(ids))
 			for i := range ids {
 				missingIndices = append(missingIndices, i)
@@ -381,13 +391,8 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Compl
 		}
 		return nil, nil, err
 	}
-	defer rows.Close()
 	resultsByID := make(map[string]*storage.ComplianceOperatorScan)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, nil, err
-		}
+	for _, data := range rows {
 		msg := &storage.ComplianceOperatorScan{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
@@ -431,16 +436,18 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 
 // Walk iterates over all of the objects in the store and applies the closure
 func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ComplianceOperatorScan) error) error {
-	rows, err := s.db.Query(ctx, walkStmt)
+	var sacQueryFilter *v1.Query
+	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(targetResource)
+	if ok, err := scopeChecker.Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return nil
+	}
+	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
-		}
+	for _, data := range rows {
 		var msg storage.ComplianceOperatorScan
 		if err := proto.Unmarshal(data, &msg); err != nil {
 			return err

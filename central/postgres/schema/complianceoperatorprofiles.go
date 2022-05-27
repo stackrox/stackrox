@@ -21,8 +21,9 @@ var (
                    PRIMARY KEY(Id)
                )
                `,
-		Indexes:  []string{},
-		Children: []*postgres.CreateStmts{},
+		GormModel: (*Complianceoperatorprofiles)(nil),
+		Indexes:   []string{},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// ComplianceoperatorprofilesSchema is the go schema for table `complianceoperatorprofiles`.
@@ -36,3 +37,13 @@ var (
 		return schema
 	}()
 )
+
+const (
+	ComplianceoperatorprofilesTableName = "complianceoperatorprofiles"
+)
+
+// Complianceoperatorprofiles holds the Gorm model for Postgres table `complianceoperatorprofiles`.
+type Complianceoperatorprofiles struct {
+	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	Serialized []byte `gorm:"column:serialized;type:bytea"`
+}
