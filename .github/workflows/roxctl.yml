@@ -23,7 +23,7 @@ jobs:
       env:
         ROX_API_TOKEN: ${{ secrets.STACKROX_CI_INSTANCE_API_KEY }}
         ROX_CENTRAL_ADDRESS: ${{ secrets.STACKROX_CI_INSTANCE_CENTRAL_HOST }}
-      run: ./roxctl image scan -e $ROX_CENTRAL_ADDRESS:443 -i quay.io/stackrox-io/main
+      run: ./roxctl image scan -e $ROX_CENTRAL_ADDRESS:443 -i quay.io/stackrox-io/main -o table
     - name: Image check
       env:
         ROX_API_TOKEN: ${{ secrets.STACKROX_CI_INSTANCE_API_KEY }}
