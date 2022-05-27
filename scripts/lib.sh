@@ -77,6 +77,38 @@ require_executable() {
     fi
 }
 
+# retry() - retry a command up to a specific numer of times until it exits
+# successfully, with exponential back off.
+# (original source: https://gist.github.com/sj26/88e1c6584397bb7c13bd11108a579746)
+
+retry() {
+    if [[ "$#" -lt 3 ]]; then
+        die "usage: retry <try count> <delay true|false> <command> <args...>"
+    fi
+
+    local tries=$1
+    local delay=$2
+    shift; shift;
+
+    local count=0
+    until "$@"; do
+        exit=$?
+        wait=$((2 ** count))
+        count=$((count + 1))
+        if [[ $count -lt $tries ]]; then
+            info "Retry $count/$tries exited $exit"
+            if $delay; then
+                info "Retrying in $wait seconds..."
+                sleep $wait
+            fi
+        else
+            echo "Retry $count/$tries exited $exit, no more retries left."
+            return $exit
+        fi
+    done
+    return 0
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         usage
