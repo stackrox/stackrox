@@ -36,7 +36,7 @@ UI_BUILD_LOG="/tmp/ui_build_log.txt"
 background_build_ui() {
     info "Building the UI in the background"
 
-    (make -C ui build > "$UI_BUILD_LOG" 2>&1)&
+    (retry 3 false make -C ui build > "$UI_BUILD_LOG" 2>&1)&
     ui_build_pid=$!
 }
 
