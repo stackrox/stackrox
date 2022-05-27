@@ -18,6 +18,7 @@ import (
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/ternary"
 )
 
 var (
@@ -47,11 +48,6 @@ func replaceVars(s string) string {
 	return s
 }
 
-type selectQuery struct {
-	Query  string
-	Fields []pgsearch.SelectQueryField
-}
-
 type innerJoin struct {
 	leftTable       string
 	rightTable      string
@@ -64,9 +60,31 @@ type query struct {
 	SelectedFields []pgsearch.SelectQueryField
 	From           string
 	Where          string
-	Pagination     string
+	Pagination     parsedPaginationQuery
 	InnerJoins     []innerJoin
 	Data           []interface{}
+}
+
+// ExtraSelectedFieldPaths includes extra fields to add to the select clause.
+// We don't care about actually reading the values of these fields, they're
+// there to make SQL happy.
+func (q *query) ExtraSelectedFieldPaths() []pgsearch.SelectQueryField {
+	if !q.DistinctAppliedOnPrimaryKeySelect() {
+		return nil
+	}
+	var out []pgsearch.SelectQueryField
+	for _, orderByEntry := range q.Pagination.OrderBys {
+		var alreadyExists bool
+		for _, selectedField := range q.SelectedFields {
+			if selectedField.SelectPath == orderByEntry.Field.SelectPath {
+				alreadyExists = true
+			}
+		}
+		if !alreadyExists {
+			out = append(out, orderByEntry.Field)
+		}
+	}
+	return out
 }
 
 func (q *query) getPortionBeforeFromClause() string {
@@ -88,11 +106,14 @@ func (q *query) getPortionBeforeFromClause() string {
 		if q.DistinctAppliedOnPrimaryKeySelect() {
 			primaryKeyPortion = fmt.Sprintf("distinct(%s)", primaryKeyPortion)
 		}
-		var otherSelectedFieldPaths []string
+		var remainingFieldPaths []string
 		for _, selectedField := range q.SelectedFields {
-			otherSelectedFieldPaths = append(otherSelectedFieldPaths, selectedField.SelectPath)
+			remainingFieldPaths = append(remainingFieldPaths, selectedField.SelectPath)
 		}
-		remainingPortion := strings.Join(otherSelectedFieldPaths, ", ")
+		for _, field := range q.ExtraSelectedFieldPaths() {
+			remainingFieldPaths = append(remainingFieldPaths, field.SelectPath)
+		}
+		remainingPortion := strings.Join(remainingFieldPaths, ", ")
 		return "select " + stringutils.JoinNonEmpty(", ", primaryKeyPortion, remainingPortion)
 	}
 	panic(fmt.Sprintf("unhandled query type %s", q.QueryType))
@@ -126,9 +147,9 @@ func (q *query) AsSQL() string {
 		querySB.WriteString(" where ")
 		querySB.WriteString(replaceVars(q.Where))
 	}
-	if q.Pagination != "" {
+	if paginationSQL := q.Pagination.AsSQL(); paginationSQL != "" {
 		querySB.WriteString(" ")
-		querySB.WriteString(q.Pagination)
+		querySB.WriteString(paginationSQL)
 	}
 	return querySB.String()
 }
@@ -137,37 +158,58 @@ func qualifyColumn(table, column string) string {
 	return table + "." + column
 }
 
-func getPaginationQuery(pagination *v1.QueryPagination, schema *walker.Schema, queryFields map[string]*walker.Field) (string, error) {
+type parsedPaginationQuery struct {
+	OrderBys []orderByEntry
+	Limit    int
+	Offset   int
+}
+
+type orderByEntry struct {
+	Field      pgsearch.SelectQueryField
+	Descending bool
+}
+
+func (p *parsedPaginationQuery) AsSQL() string {
+	var paginationSB strings.Builder
+	if len(p.OrderBys) > 0 {
+		orderByClauses := make([]string, 0, len(p.OrderBys))
+		for _, entry := range p.OrderBys {
+			orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s", entry.Field.SelectPath, ternary.String(entry.Descending, "desc", "asc")))
+		}
+		paginationSB.WriteString(fmt.Sprintf("order by %s", strings.Join(orderByClauses, ", ")))
+	}
+	if p.Limit > 0 {
+		paginationSB.WriteString(fmt.Sprintf(" LIMIT %d", p.Limit))
+	}
+	if p.Offset > 0 {
+		paginationSB.WriteString(fmt.Sprintf(" OFFSET %d", p.Offset))
+	}
+	return paginationSB.String()
+}
+
+func parsePaginationQuery(pagination *v1.QueryPagination, schema *walker.Schema, queryFields map[string]*walker.Field) (parsedPaginationQuery, error) {
 	if pagination == nil {
-		return "", nil
+		return parsedPaginationQuery{}, nil
 	}
 
-	var orderByClauses []string
+	out := parsedPaginationQuery{}
+
 	for _, so := range pagination.GetSortOptions() {
-		direction := "asc"
-		if so.GetReversed() {
-			direction = "desc"
-		}
 		dbField := queryFields[so.GetField()]
 		if dbField == nil {
-			return "", errors.Errorf("field %s does not exist in table %s or connected tables", so.GetField(), schema.Table)
+			return parsedPaginationQuery{}, errors.Errorf("field %s does not exist in table %s or connected tables", so.GetField(), schema.Table)
 		}
-		orderByClauses = append(
-			orderByClauses,
-			fmt.Sprintf("%s %s", qualifyColumn(dbField.Schema.Table, dbField.ColumnName), direction),
-		)
+		out.OrderBys = append(out.OrderBys, orderByEntry{
+			Field: pgsearch.SelectQueryField{
+				SelectPath: qualifyColumn(dbField.Schema.Table, dbField.ColumnName),
+				FieldType:  dbField.DataType,
+			},
+			Descending: so.GetReversed(),
+		})
 	}
-	var paginationClause strings.Builder
-	if len(orderByClauses) > 0 {
-		paginationClause.WriteString(fmt.Sprintf("order by %s", strings.Join(orderByClauses, ", ")))
-	}
-	if pagination.GetLimit() > 0 {
-		paginationClause.WriteString(fmt.Sprintf(" LIMIT %d", pagination.GetLimit()))
-	}
-	if pagination.GetOffset() > 0 {
-		paginationClause.WriteString(fmt.Sprintf(" OFFSET %d", pagination.GetOffset()))
-	}
-	return paginationClause.String(), nil
+	out.Limit = int(pagination.GetLimit())
+	out.Offset = int(pagination.GetOffset())
+	return out, nil
 }
 
 func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
@@ -186,7 +228,7 @@ func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryTy
 		return nil, nil
 	}
 
-	pagination, err := getPaginationQuery(q.GetPagination(), schema, dbFields)
+	pagination, err := parsePaginationQuery(q.GetPagination(), schema, dbFields)
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +291,6 @@ func entriesFromQueries(
 }
 
 func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[string]*walker.Field) (*pgsearch.QueryEntry, error) {
-
 	switch sub := q.GetQuery().(type) {
 	case *v1.Query_BaseQuery:
 		switch subBQ := q.GetBaseQuery().Query.(type) {
@@ -398,6 +439,7 @@ func RunSearchRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.P
 
 	// Assumes that ids are strings.
 	numPrimaryKeys := len(schema.PrimaryKeys())
+	extraSelectedFields := query.ExtraSelectedFieldPaths()
 	var numFieldsForPrimaryKey int
 	if query.DistinctAppliedOnPrimaryKeySelect() {
 		numFieldsForPrimaryKey = 1
@@ -406,7 +448,7 @@ func RunSearchRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.P
 	}
 	primaryKeysComposite := numPrimaryKeys > 1 && numFieldsForPrimaryKey == 1
 
-	bufferToScanRowInto := make([]interface{}, numFieldsForPrimaryKey+len(query.SelectedFields))
+	bufferToScanRowInto := make([]interface{}, numFieldsForPrimaryKey+len(query.SelectedFields)+len(extraSelectedFields))
 	if primaryKeysComposite {
 		var outputSlice []interface{}
 		bufferToScanRowInto[0] = &outputSlice
@@ -417,6 +459,9 @@ func RunSearchRequestForSchema(schema *walker.Schema, q *v1.Query, db *pgxpool.P
 	}
 	for i, field := range query.SelectedFields {
 		bufferToScanRowInto[i+numFieldsForPrimaryKey] = mustAllocForDataType(field.FieldType)
+	}
+	for i, field := range extraSelectedFields {
+		bufferToScanRowInto[i+len(query.SelectedFields)+numFieldsForPrimaryKey] = mustAllocForDataType(field.FieldType)
 	}
 	for rows.Next() {
 		if err := rows.Scan(bufferToScanRowInto...); err != nil {
