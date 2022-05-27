@@ -2,21 +2,16 @@ package postgres
 
 import (
 	"reflect"
-	"strings"
-	"testing"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/search"
-	mappings "github.com/stackrox/rox/pkg/search/options/deployments"
-	"github.com/stretchr/testify/assert"
 )
 
 var (
 	deploymentBaseSchema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 )
 
+/*
 func TestMultiTableQueries(t *testing.T) {
 	t.Parallel()
 
@@ -174,3 +169,4 @@ func TestMultiTableQueries(t *testing.T) {
 		})
 	}
 }
+*/

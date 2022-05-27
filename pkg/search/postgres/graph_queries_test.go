@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-
 	testChild1 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testchild1"
 	testChild2 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testchild2"
 	testG2Grandchild1 "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/testgraphtables/testg2grandchild1"
@@ -70,7 +69,7 @@ type GraphQueriesTestSuite struct {
 	testParent2Store       testParent2.Store
 	testParent3Store       testParent3.Store
 	testGrandChild1Store   testGrandchild1.Store
-	testGGranchild1Store   testGGrandchild1.Store
+	testGGrandchild1Store  testGGrandchild1.Store
 	testG2Grandchild1Store testG2Grandchild1.Store
 	testG3Grandchild1Store testG3Grandchild1.Store
 }
@@ -99,7 +98,7 @@ func (s *GraphQueriesTestSuite) SetupTest() {
 	s.testParent2Store = testParent2.New(testCtx, pool)
 	s.testParent3Store = testParent3.New(testCtx, pool)
 	s.testGrandChild1Store = testGrandchild1.New(testCtx, pool)
-	s.testGGranchild1Store = testGGrandchild1.New(testCtx, pool)
+	s.testGGrandchild1Store = testGGrandchild1.New(testCtx, pool)
 	s.testG2Grandchild1Store = testG2Grandchild1.New(testCtx, pool)
 	s.testG3Grandchild1Store = testG3Grandchild1.New(testCtx, pool)
 	s.initializeTestGraph()
@@ -188,15 +187,15 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 		ChildId:  "3",
 		Val:      "Grandchild13",
 	}))
-	s.Require().NoError(s.testGGranchild1Store.Upsert(testCtx, &storage.TestGGrandChild1{
+	s.Require().NoError(s.testGGrandchild1Store.Upsert(testCtx, &storage.TestGGrandChild1{
 		Id:  "1",
 		Val: "GGrandchild11",
 	}))
-	s.Require().NoError(s.testGGranchild1Store.Upsert(testCtx, &storage.TestGGrandChild1{
+	s.Require().NoError(s.testGGrandchild1Store.Upsert(testCtx, &storage.TestGGrandChild1{
 		Id:  "2",
 		Val: "GGrandchild11",
 	}))
-	s.Require().NoError(s.testGGranchild1Store.Upsert(testCtx, &storage.TestGGrandChild1{
+	s.Require().NoError(s.testGGrandchild1Store.Upsert(testCtx, &storage.TestGGrandChild1{
 		Id:  "3",
 		Val: "GGrandchild11",
 	}))
