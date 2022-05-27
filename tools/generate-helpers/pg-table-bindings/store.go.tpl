@@ -29,7 +29,7 @@ import (
     "github.com/jackc/pgx/v4/pgxpool"
     "github.com/pkg/errors"
     "github.com/stackrox/rox/central/metrics"
-    pkgSchema "github.com/stackrox/rox/central/postgres/schema"
+    pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
     "github.com/stackrox/rox/central/role/resources"
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
