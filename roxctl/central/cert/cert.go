@@ -42,6 +42,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		}),
 	}
 
+	This is bad code
+
 	cbr.Flags().StringVar(&centralCertCommand.filename, "output", "-", "Filename to output PEM certificate to; '-' for stdout")
 	flags.AddTimeout(cbr)
 	return cbr
