@@ -26,7 +26,7 @@ func initialize() {
 	var indexer index.Indexer
 
 	if features.PostgresDatastore.Enabled() {
-		storage = store.NewFullStore(postgres.New(context.TODO(), globaldb.GetPostgres()))
+		storage = store.NewFullStore(postgres.New(context.TODO(), globaldb.GetPostgres(), globaldb.GetGormDB()))
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 	} else {
 		storage = store.NewFullStore(rocksdb.New(globaldb.GetRocksDB()))

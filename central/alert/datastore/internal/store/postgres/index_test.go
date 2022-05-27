@@ -12,10 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 var (
@@ -50,8 +53,13 @@ func (s *AlertsIndexSuite) SetupTest() {
 	s.pool, err = pgxpool.ConnectConfig(context.Background(), config)
 	s.Require().NoError(err)
 
+	source = pgutils.PgxpoolDsnToPgxDsn(source)
+	var gormDB *gorm.DB
+	gormDB, err = gorm.Open(postgres.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
+	s.Require().NoError(err)
+
 	Destroy(ctx, s.pool)
-	s.store = New(ctx, s.pool)
+	s.store = New(ctx, s.pool, gormDB)
 	s.indexer = NewIndexer(s.pool)
 }
 

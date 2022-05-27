@@ -19,12 +19,15 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/driver/postgres"
+    "gorm.io/gorm"
 )
 
 type {{$namePrefix}}StoreSuite struct {
@@ -58,7 +61,13 @@ func (s *{{$namePrefix}}StoreSuite) SetupTest() {
 	Destroy(ctx, pool)
 
 	s.pool = pool
-	s.store = New(ctx, pool)
+
+    var gormDB *gorm.DB
+    source = pgutils.PgxpoolDsnToPgxDsn(source)
+    gormDB, err = gorm.Open(postgres.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
+    s.Require().NoError(err)
+
+    s.store = New(ctx, pool, gormDB)
 }
 
 func (s *{{$namePrefix}}StoreSuite) TearDownTest() {

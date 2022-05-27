@@ -41,6 +41,7 @@ import (
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/sync"
+    "gorm.io/gorm"
 )
 
 const (
@@ -106,11 +107,11 @@ type storeImpl struct {
 {{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 {{- define "createTable" }}
 {{- $schema := . }}
-pgutils.CreateTable(ctx, db, {{template "createTableStmtVar" $schema}})
+pgutils.CreateTableFromModel(ctx, gormDB, {{template "createTableStmtVar" $schema}})
 {{- end }}
 
 // New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
+func New(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
     {{- range $reference := .Schema.References }}
     {{- template "createTable" $reference.OtherSchema }}
     {{- end }}
