@@ -1961,7 +1961,7 @@ commands:
               fi
             fi
 
-            if [[ "${CI_JOBNAME}" == "race-condition-tests" ]]; then
+            if [[ "${CIRCLE_JOB}" == "race-condition-tests" ]]; then
               export MAIN_IMAGE_TAG="$(make --quiet tag)-rcd"
             fi
 
