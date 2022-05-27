@@ -190,14 +190,22 @@ func (eicr *imageComponentResolver) NodeComponentLastScanned(ctx context.Context
 
 // TopVuln returns the first vulnerability with the top CVSS score.
 func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityResolver, error) {
-	return eicr.unwrappedTopVulnQuery(ctx)
+	vulnResolver, err := eicr.unwrappedTopVulnQuery(ctx)
+	if err != nil || vulnResolver == nil {
+		return nil, err
+	}
+	return vulnResolver, nil
 }
 
 // TopNodeVulnerability returns the first node component vulnerability with the top CVSS score.
 func (eicr *imageComponentResolver) TopNodeVulnerability(ctx context.Context) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "TopNodeVulnerability")
 	if !features.PostgresDatastore.Enabled() {
-		return eicr.unwrappedTopVulnQuery(ctx)
+		vulnResolver, err := eicr.unwrappedTopVulnQuery(ctx)
+		if err != nil || vulnResolver == nil {
+			return nil, err
+		}
+		return vulnResolver, nil
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver TopNodeVulnerability in NodeComponentResolver does not support postgres yet")

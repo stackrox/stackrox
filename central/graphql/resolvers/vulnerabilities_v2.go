@@ -193,22 +193,32 @@ func (resolver *cVEResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error
 }
 
 func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
-	return resolver.unwrappedVulnerabilityV2(ctx, args)
+	vulnResolver, err := resolver.unwrappedVulnerabilityV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	return vulnResolver, nil
 }
 
 func (resolver *Resolver) vulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
 	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
 	ret := make([]VulnerabilityResolver, 0, len(vulnResolvers))
 	for _, res := range vulnResolvers {
 		res.ctx = ctx
 		ret = append(ret, res)
 	}
-	return ret, err
+	return ret, nil
 }
 
 // imageVulnerabilitiesV2 wraps the resolvers as ImageVulnerabilityResolver objects to restrict the supported API
 func (resolver *Resolver) imageVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
 	ret := make([]ImageVulnerabilityResolver, 0, len(vulnResolvers))
 	for _, res := range vulnResolvers {
 		res.ctx = ctx
@@ -218,27 +228,37 @@ func (resolver *Resolver) imageVulnerabilitiesV2(ctx context.Context, args Pagin
 }
 
 func (resolver *Resolver) nodeVulnerabilityV2(ctx context.Context, args IDQuery) (NodeVulnerabilityResolver, error) {
-	return resolver.unwrappedVulnerabilityV2(ctx, args)
+	vulnResolver, err := resolver.unwrappedVulnerabilityV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	return vulnResolver, nil
 }
 
 func (resolver *Resolver) nodeVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
 	ret := make([]NodeVulnerabilityResolver, 0, len(vulnResolvers))
 	for _, res := range vulnResolvers {
 		res.ctx = ctx
 		ret = append(ret, res)
 	}
-	return ret, err
+	return ret, nil
 }
 
 func (resolver *Resolver) clusterVulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2(ctx, args)
+	if err != nil {
+		return nil, err
+	}
 	ret := make([]ClusterVulnerabilityResolver, 0, len(vulnResolvers))
 	for _, res := range vulnResolvers {
 		res.ctx = ctx
 		ret = append(ret, res)
 	}
-	return ret, err
+	return ret, nil
 }
 
 func (resolver *Resolver) unwrappedVulnerabilityV2(ctx context.Context, args IDQuery) (*cVEResolver, error) {
@@ -282,12 +302,15 @@ func (resolver *Resolver) unwrappedVulnerabilitiesV2(ctx context.Context, args P
 
 func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.Query) ([]VulnerabilityResolver, error) {
 	vulnResolvers, err := resolver.unwrappedVulnerabilitiesV2Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
 	ret := make([]VulnerabilityResolver, 0, len(vulnResolvers))
 	for _, res := range vulnResolvers {
 		res.ctx = ctx
 		ret = append(ret, res)
 	}
-	return ret, err
+	return ret, nil
 }
 
 func (resolver *Resolver) unwrappedVulnerabilitiesV2Query(ctx context.Context, query *v1.Query) ([]*cVEResolver, error) {
@@ -455,6 +478,10 @@ func (resolver *cVEResolver) CVE(ctx context.Context) string {
 
 func (resolver *cVEResolver) getCVEQuery() *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).ProtoQuery()
+}
+
+func (resolver *cVEResolver) getCVERawQuery() string {
+	return search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).Query()
 }
 
 // IsFixable returns whether vulnerability is fixable by any component.
@@ -680,7 +707,8 @@ func (resolver *cVEResolver) ComponentCount(ctx context.Context, args RawQuery) 
 func (resolver *cVEResolver) NodeComponents(_ context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "NodeComponents")
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeComponents(resolver.addVulnScopeContext(resolver.ctx), args)
+		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
+		return resolver.root.NodeComponents(resolver.addVulnScopeContext(resolver.ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver NodeComponents in cVEResolver does not support postgres yet")
@@ -690,7 +718,8 @@ func (resolver *cVEResolver) NodeComponents(_ context.Context, args PaginatedQue
 func (resolver *cVEResolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "NodeComponentCount")
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.root.NodeComponentCount(resolver.addVulnScopeContext(resolver.ctx), args)
+		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getCVERawQuery())
+		return resolver.root.NodeComponentCount(resolver.addVulnScopeContext(resolver.ctx), RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
 	return 0, errors.New("Sub-resolver NodeComponentCount in cVEResolver does not support postgres yet")

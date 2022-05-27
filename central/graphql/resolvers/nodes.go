@@ -365,7 +365,11 @@ func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (Vulne
 		return nil, err
 	}
 
-	return resolver.unwrappedTopVulnQuery(ctx, args)
+	vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx, args)
+	if err != nil || vulnResolver == nil {
+		return nil, err
+	}
+	return vulnResolver, nil
 }
 
 // TopNodeVulnerability returns the first node vulnerability with the top CVSS score.
@@ -376,7 +380,11 @@ func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args Raw
 	}
 
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.unwrappedTopVulnQuery(ctx, args)
+		vulnResolver, err := resolver.unwrappedTopVulnQuery(ctx, args)
+		if err != nil || vulnResolver == nil {
+			return nil, err
+		}
+		return vulnResolver, nil
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver TopVulnerability in nodeResolver does not support postgres yet")
