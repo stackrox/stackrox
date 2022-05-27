@@ -190,6 +190,10 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 			createStmts: CreateTableNetworkpolicyapplicationundorecordsStmt,
 		},
 		{
+			name:        NetworkpoliciesundodeploymentsTableName,
+			createStmts: CreateTableNetworkpoliciesundodeploymentsStmt,
+		},
+		{
 			name:        NodeComponentsTableName,
 			createStmts: CreateTableNodeComponentsStmt,
 		},
