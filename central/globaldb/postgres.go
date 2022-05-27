@@ -10,9 +10,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 const (
@@ -66,6 +69,7 @@ var (
 	postgresOpenRetries        = 10
 	postgresTimeBetweenRetries = 10 * time.Second
 	postgresDB                 *pgxpool.Pool
+	gormDB                     *gorm.DB
 	pgSync                     sync.Once
 
 	postgresQueryTimeout = 10 * time.Second
@@ -80,41 +84,53 @@ func RegisterTable(schema *walker.Schema) {
 	registeredTables[schema.Table] = schema
 }
 
+func initPostgres() {
+	centralConfig := config.GetConfig()
+	password, err := os.ReadFile(dbPasswordFile)
+	if err != nil {
+		log.Fatalf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
+		return
+	}
+	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
+
+	config, err := pgxpool.ParseConfig(source)
+	if err != nil {
+		log.Fatalf("Could not parse postgres config: %v", err)
+	}
+
+	if err := retry.WithRetry(func() error {
+		postgresDB, err = pgxpool.ConnectConfig(context.Background(), config)
+		return err
+	}, retry.Tries(postgresOpenRetries), retry.BetweenAttempts(func(attempt int) {
+		time.Sleep(postgresTimeBetweenRetries)
+	}), retry.OnFailedAttempts(func(err error) {
+		log.Errorf("open database: %v", err)
+	})); err != nil {
+		log.Fatalf("Timed out trying to open database: %v", err)
+	}
+
+	_, err = postgresDB.Exec(context.TODO(), "create extension if not exists pg_stat_statements")
+	if err != nil {
+		log.Errorf("Could not create pg_stat_statements extension: %v", err)
+	}
+	source = pgutils.PgxpoolDsnToPgxDsn(source)
+	gormDB, err = gorm.Open(postgres.Open(source), &gorm.Config{NamingStrategy: pgutils.NamingStrategy})
+	if err != nil {
+		log.Errorf("Cannot create GormDB %v", err)
+	}
+	go startMonitoringPostgres(postgresDB)
+}
+
 // GetPostgres returns a global database instance
 func GetPostgres() *pgxpool.Pool {
-	pgSync.Do(func() {
-		centralConfig := config.GetConfig()
-		password, err := os.ReadFile(dbPasswordFile)
-		if err != nil {
-			log.Fatalf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
-			return
-		}
-		source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
-
-		config, err := pgxpool.ParseConfig(source)
-		if err != nil {
-			log.Fatalf("Could not parse postgres config: %v", err)
-		}
-
-		if err := retry.WithRetry(func() error {
-			postgresDB, err = pgxpool.ConnectConfig(context.Background(), config)
-			return err
-		}, retry.Tries(postgresOpenRetries), retry.BetweenAttempts(func(attempt int) {
-			time.Sleep(postgresTimeBetweenRetries)
-		}), retry.OnFailedAttempts(func(err error) {
-			log.Errorf("open database: %v", err)
-		})); err != nil {
-			log.Fatalf("Timed out trying to open database: %v", err)
-		}
-
-		_, err = postgresDB.Exec(context.TODO(), "create extension if not exists pg_stat_statements")
-		if err != nil {
-			log.Errorf("Could not create pg_stat_statements extension: %v", err)
-		}
-		go startMonitoringPostgres(postgresDB)
-
-	})
+	pgSync.Do(initPostgres)
 	return postgresDB
+}
+
+// GetGormDB returns a global Gorm database instance
+func GetGormDB() *gorm.DB {
+	pgSync.Do(initPostgres)
+	return gormDB
 }
 
 func collectPostgresStats(db *pgxpool.Pool) {

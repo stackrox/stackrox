@@ -71,9 +71,8 @@ func (s *SchemaTestSuite) SetupTest() {
 	s.pool = pool
 	s.tmpDir, err = os.MkdirTemp("", "schema_test")
 	s.Require().NoError(err)
-	source = pgtest.GetGormConnectionString(s.T())
 	fmt.Println("source:", source)
-	s.gorm, err = gorm.Open(postgres.Open(source), &gorm.Config{})
+	s.gorm, err = gorm.Open(postgres.Open(pgutils.PgxpoolDsnToPgxDsn(source)), &gorm.Config{})
 	s.Require().NoError(err)
 }
 
@@ -349,7 +348,7 @@ func (s *SchemaTestSuite) getAllTestCases() []string {
 }
 
 func (s *SchemaTestSuite) getGormTableSchemas(schema *walker.Schema, createStmt *pkgPostgres.CreateStmts) map[string]string {
-	pgutils.CreateTableFromModel(s.gorm, createStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.gorm, createStmt)
 	defer s.dropTableFromModel(createStmt)
 	tables := s.tablesForSchema(schema)
 
