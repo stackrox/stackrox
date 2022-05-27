@@ -373,6 +373,87 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 // Note: DeleteAlerts has a slightly different scope management behaviour: only users with
 // full access scope on the alert resource are allowed to delete alerts
 
+func (s *alertDatastoreSACTestSuite) TestDeleteAlert() {
+
+	cases := map[string]crudTest{
+		"(full) read-only cannot delete": {
+			scopeKey:      testutils.UnrestrictedReadCtx,
+			expectError:   true,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"full read-write can delete": {
+			scopeKey: testutils.UnrestrictedReadWriteCtx,
+		},
+		"full read-write on wrong cluster cannot delete": {
+			scopeKey:      testutils.Cluster1ReadWriteCtx,
+			expectError:   true,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"read-write on wrong cluster and wrong namespace name cannot delete": {
+			scopeKey:      testutils.Cluster1NamespaceAReadWriteCtx,
+			expectError:   true,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"read-write on wrong cluster and matching namespace name cannot delete": {
+			scopeKey:      testutils.Cluster1NamespaceBReadWriteCtx,
+			expectError:   true,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"read-write on right cluster but wrong namespaces cannot delete": {
+			scopeKey:      testutils.Cluster2NamespacesACReadWriteCtx,
+			expectError:   true,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"full read-write on right cluster cannot delete": {
+			scopeKey:      testutils.Cluster2ReadWriteCtx,
+			expectError:   true,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"read-write on the right cluster and namespace cannot delete": {
+			scopeKey:      testutils.Cluster2NamespaceBReadWriteCtx,
+			expectError:   true,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+		"read-write on the right cluster and at least the right namespace cannot delete": {
+			scopeKey:      testutils.Cluster2NamespacesABReadWriteCtx,
+			expectError:   true,
+			expectedError: sac.ErrResourceAccessDenied,
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			// Inject two scoped alerts to the storage
+			// The test will validate, depending on the scope present in the operation context,
+			// whether the data should be seen by the requester or not
+			var err error
+			alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
+			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert1)
+			s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
+			s.NoError(err)
+			alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
+			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert2)
+			s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
+			s.NoError(err)
+			ctx := s.testContexts[c.scopeKey]
+			err1 := s.datastore.DeleteAlerts(ctx, alert1.GetId())
+			if c.expectError {
+				s.Error(err1)
+				s.ErrorIs(c.expectedError, err1)
+			} else {
+				s.NoError(err1)
+			}
+			err2 := s.datastore.DeleteAlerts(ctx, alert1.GetId(), alert2.GetId())
+			if c.expectError {
+				s.Error(err2)
+				s.ErrorIs(c.expectedError, err2)
+			} else {
+				s.NoError(err2)
+			}
+		})
+	}
+}
+
 type alertSACSearchResult struct {
 	scopeKey     string
 	resultCounts map[string]map[string]int // Top level key is the cluster ID, then namespace
@@ -554,6 +635,9 @@ var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 }
 
 func (s *alertDatastoreSACTestSuite) runSearchTest(testparams alertSACSearchResult) {
+	if features.PostgresDatastore.Enabled() {
+		s.T().Skip("Skipping alert search tests for postgres until SAC search is wired.")
+	}
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.Search(ctx, nil)
 	s.NoError(err)
@@ -578,6 +662,9 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearch() {
 }
 
 func (s *alertDatastoreSACTestSuite) runCountTest(testparams alertSACSearchResult) {
+	if features.PostgresDatastore.Enabled() {
+		s.T().Skip("Skipping alert search tests for postgres until SAC search is wired.")
+	}
 	ctx := s.testContexts[testparams.scopeKey]
 	resultCount, err := s.datastore.Count(ctx, nil)
 	s.NoError(err)
@@ -602,6 +689,9 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedCount() {
 }
 
 func (s *alertDatastoreSACTestSuite) runCountAlertsTest(testparams alertSACSearchResult) {
+	if features.PostgresDatastore.Enabled() {
+		s.T().Skip("Skipping alert search tests for postgres until SAC search is wired.")
+	}
 	ctx := s.testContexts[testparams.scopeKey]
 	resultCount, err := s.datastore.CountAlerts(ctx)
 	s.NoError(err)
@@ -626,6 +716,9 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedCountAlerts() {
 }
 
 func (s *alertDatastoreSACTestSuite) runSearchAlertsTest(testparams alertSACSearchResult) {
+	if features.PostgresDatastore.Enabled() {
+		s.T().Skip("Skipping alert search tests for postgres until SAC search is wired.")
+	}
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.SearchAlerts(ctx, nil)
 	s.NoError(err)
@@ -669,6 +762,9 @@ func countListAlertsResultsPerClusterAndNamespace(results []*storage.ListAlert) 
 }
 
 func (s *alertDatastoreSACTestSuite) runSearchListAlertsTest(testparams alertSACSearchResult) {
+	if features.PostgresDatastore.Enabled() {
+		s.T().Skip("Skipping alert search tests for postgres until SAC search is wired.")
+	}
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.SearchListAlerts(ctx, nil)
 	s.NoError(err)
@@ -693,6 +789,9 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearchListAlerts() {
 }
 
 func (s *alertDatastoreSACTestSuite) runListAlertsTest(testparams alertSACSearchResult) {
+	if features.PostgresDatastore.Enabled() {
+		s.T().Skip("Skipping alert search tests for postgres until SAC search is wired.")
+	}
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.ListAlerts(ctx, nil)
 	s.NoError(err)
@@ -745,6 +844,9 @@ func countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert)
 }
 
 func (s *alertDatastoreSACTestSuite) runSearchRawAlertsTest(testparams alertSACSearchResult) {
+	if features.PostgresDatastore.Enabled() {
+		s.T().Skip("Skipping alert search tests for postgres until SAC search is wired.")
+	}
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.SearchRawAlerts(ctx, nil)
 	s.NoError(err)
