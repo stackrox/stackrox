@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	baseTable = "networkpolicyapplicationundorecord"
+	baseTable = "networkpolicyapplicationundorecords"
 
 	batchAfter = 100
 
@@ -35,7 +35,7 @@ const (
 
 var (
 	log    = logging.LoggerForModule()
-	schema = pkgSchema.NetworkpolicyapplicationundorecordSchema
+	schema = pkgSchema.NetworkpolicyapplicationundorecordsSchema
 )
 
 type Store interface {
@@ -62,14 +62,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNetworkpolicyapplicationundorecordStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNetworkpolicyapplicationundorecordsStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoNetworkpolicyapplicationundorecord(ctx context.Context, tx pgx.Tx, obj *storage.NetworkPolicyApplicationUndoRecord) error {
+func insertIntoNetworkpolicyapplicationundorecords(ctx context.Context, tx pgx.Tx, obj *storage.NetworkPolicyApplicationUndoRecord) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -82,7 +82,7 @@ func insertIntoNetworkpolicyapplicationundorecord(ctx context.Context, tx pgx.Tx
 		serialized,
 	}
 
-	finalStr := "INSERT INTO networkpolicyapplicationundorecord (ClusterId, serialized) VALUES($1, $2) ON CONFLICT(ClusterId) DO UPDATE SET ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO networkpolicyapplicationundorecords (ClusterId, serialized) VALUES($1, $2) ON CONFLICT(ClusterId) DO UPDATE SET ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func insertIntoNetworkpolicyapplicationundorecord(ctx context.Context, tx pgx.Tx
 	return nil
 }
 
-func (s *storeImpl) copyFromNetworkpolicyapplicationundorecord(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkPolicyApplicationUndoRecord) error {
+func (s *storeImpl) copyFromNetworkpolicyapplicationundorecords(ctx context.Context, tx pgx.Tx, objs ...*storage.NetworkPolicyApplicationUndoRecord) error {
 
 	inputRows := [][]interface{}{}
 
@@ -138,7 +138,7 @@ func (s *storeImpl) copyFromNetworkpolicyapplicationundorecord(ctx context.Conte
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkpolicyapplicationundorecord"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"networkpolicyapplicationundorecords"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -164,7 +164,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.NetworkPolicy
 		return err
 	}
 
-	if err := s.copyFromNetworkpolicyapplicationundorecord(ctx, tx, objs...); err != nil {
+	if err := s.copyFromNetworkpolicyapplicationundorecords(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -189,7 +189,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.NetworkPolicyAp
 			return err
 		}
 
-		if err := insertIntoNetworkpolicyapplicationundorecord(ctx, tx, obj); err != nil {
+		if err := insertIntoNetworkpolicyapplicationundorecords(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -395,13 +395,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkPolicy
 
 //// Used for testing
 
-func dropTableNetworkpolicyapplicationundorecord(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkpolicyapplicationundorecord CASCADE")
+func dropTableNetworkpolicyapplicationundorecords(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS networkpolicyapplicationundorecords CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableNetworkpolicyapplicationundorecord(ctx, db)
+	dropTableNetworkpolicyapplicationundorecords(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces
