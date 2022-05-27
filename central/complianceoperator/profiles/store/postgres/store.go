@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	baseTable = "complianceoperatorprofiles"
+	baseTable = "compliance_operator_profiles"
 
 	batchAfter = 100
 
@@ -37,7 +37,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ComplianceoperatorprofilesSchema
+	schema         = pkgSchema.ComplianceOperatorProfilesSchema
 	targetResource = resources.ComplianceOperator
 )
 
@@ -65,14 +65,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableComplianceoperatorprofilesStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableComplianceOperatorProfilesStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoComplianceoperatorprofiles(ctx context.Context, tx pgx.Tx, obj *storage.ComplianceOperatorProfile) error {
+func insertIntoComplianceOperatorProfiles(ctx context.Context, tx pgx.Tx, obj *storage.ComplianceOperatorProfile) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -85,7 +85,7 @@ func insertIntoComplianceoperatorprofiles(ctx context.Context, tx pgx.Tx, obj *s
 		serialized,
 	}
 
-	finalStr := "INSERT INTO complianceoperatorprofiles (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_profiles (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -94,7 +94,7 @@ func insertIntoComplianceoperatorprofiles(ctx context.Context, tx pgx.Tx, obj *s
 	return nil
 }
 
-func (s *storeImpl) copyFromComplianceoperatorprofiles(ctx context.Context, tx pgx.Tx, objs ...*storage.ComplianceOperatorProfile) error {
+func (s *storeImpl) copyFromComplianceOperatorProfiles(ctx context.Context, tx pgx.Tx, objs ...*storage.ComplianceOperatorProfile) error {
 
 	inputRows := [][]interface{}{}
 
@@ -141,7 +141,7 @@ func (s *storeImpl) copyFromComplianceoperatorprofiles(ctx context.Context, tx p
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"complianceoperatorprofiles"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_profiles"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -167,7 +167,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ComplianceOpe
 		return err
 	}
 
-	if err := s.copyFromComplianceoperatorprofiles(ctx, tx, objs...); err != nil {
+	if err := s.copyFromComplianceOperatorProfiles(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -192,7 +192,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ComplianceOpera
 			return err
 		}
 
-		if err := insertIntoComplianceoperatorprofiles(ctx, tx, obj); err != nil {
+		if err := insertIntoComplianceOperatorProfiles(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -461,13 +461,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ComplianceOpe
 
 //// Used for testing
 
-func dropTableComplianceoperatorprofiles(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS complianceoperatorprofiles CASCADE")
+func dropTableComplianceOperatorProfiles(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_profiles CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableComplianceoperatorprofiles(ctx, db)
+	dropTableComplianceOperatorProfiles(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

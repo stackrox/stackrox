@@ -18,18 +18,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ComplianceoperatorprofilesStoreSuite struct {
+type ComplianceOperatorProfilesStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestComplianceoperatorprofilesStore(t *testing.T) {
-	suite.Run(t, new(ComplianceoperatorprofilesStoreSuite))
+func TestComplianceOperatorProfilesStore(t *testing.T) {
+	suite.Run(t, new(ComplianceOperatorProfilesStoreSuite))
 }
 
-func (s *ComplianceoperatorprofilesStoreSuite) SetupTest() {
+func (s *ComplianceOperatorProfilesStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -52,14 +52,14 @@ func (s *ComplianceoperatorprofilesStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *ComplianceoperatorprofilesStoreSuite) TearDownTest() {
+func (s *ComplianceOperatorProfilesStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *ComplianceoperatorprofilesStoreSuite) TestStore() {
+func (s *ComplianceOperatorProfilesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store

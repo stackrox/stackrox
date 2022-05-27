@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	baseTable = "complianceoperatorscansettingbindings"
+	baseTable = "compliance_operator_scan_setting_bindings"
 
 	batchAfter = 100
 
@@ -37,7 +37,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ComplianceoperatorscansettingbindingsSchema
+	schema         = pkgSchema.ComplianceOperatorScanSettingBindingsSchema
 	targetResource = resources.ComplianceOperator
 )
 
@@ -65,14 +65,14 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableComplianceoperatorscansettingbindingsStmt)
+	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableComplianceOperatorScanSettingBindingsStmt)
 
 	return &storeImpl{
 		db: db,
 	}
 }
 
-func insertIntoComplianceoperatorscansettingbindings(ctx context.Context, tx pgx.Tx, obj *storage.ComplianceOperatorScanSettingBinding) error {
+func insertIntoComplianceOperatorScanSettingBindings(ctx context.Context, tx pgx.Tx, obj *storage.ComplianceOperatorScanSettingBinding) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -85,7 +85,7 @@ func insertIntoComplianceoperatorscansettingbindings(ctx context.Context, tx pgx
 		serialized,
 	}
 
-	finalStr := "INSERT INTO complianceoperatorscansettingbindings (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_setting_bindings (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -94,7 +94,7 @@ func insertIntoComplianceoperatorscansettingbindings(ctx context.Context, tx pgx
 	return nil
 }
 
-func (s *storeImpl) copyFromComplianceoperatorscansettingbindings(ctx context.Context, tx pgx.Tx, objs ...*storage.ComplianceOperatorScanSettingBinding) error {
+func (s *storeImpl) copyFromComplianceOperatorScanSettingBindings(ctx context.Context, tx pgx.Tx, objs ...*storage.ComplianceOperatorScanSettingBinding) error {
 
 	inputRows := [][]interface{}{}
 
@@ -141,7 +141,7 @@ func (s *storeImpl) copyFromComplianceoperatorscansettingbindings(ctx context.Co
 			// clear the inserts and vals for the next batch
 			deletes = nil
 
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{"complianceoperatorscansettingbindings"}, copyCols, pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_setting_bindings"}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -167,7 +167,7 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.ComplianceOpe
 		return err
 	}
 
-	if err := s.copyFromComplianceoperatorscansettingbindings(ctx, tx, objs...); err != nil {
+	if err := s.copyFromComplianceOperatorScanSettingBindings(ctx, tx, objs...); err != nil {
 		if err := tx.Rollback(ctx); err != nil {
 			return err
 		}
@@ -192,7 +192,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.ComplianceOpera
 			return err
 		}
 
-		if err := insertIntoComplianceoperatorscansettingbindings(ctx, tx, obj); err != nil {
+		if err := insertIntoComplianceOperatorScanSettingBindings(ctx, tx, obj); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
@@ -461,13 +461,13 @@ func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ComplianceOpe
 
 //// Used for testing
 
-func dropTableComplianceoperatorscansettingbindings(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS complianceoperatorscansettingbindings CASCADE")
+func dropTableComplianceOperatorScanSettingBindings(ctx context.Context, db *pgxpool.Pool) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_scan_setting_bindings CASCADE")
 
 }
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
-	dropTableComplianceoperatorscansettingbindings(ctx, db)
+	dropTableComplianceOperatorScanSettingBindings(ctx, db)
 }
 
 //// Stubs for satisfying legacy interfaces

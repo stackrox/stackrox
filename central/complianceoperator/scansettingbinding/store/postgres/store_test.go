@@ -18,18 +18,18 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ComplianceoperatorscansettingbindingsStoreSuite struct {
+type ComplianceOperatorScanSettingBindingsStoreSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	store       Store
 	pool        *pgxpool.Pool
 }
 
-func TestComplianceoperatorscansettingbindingsStore(t *testing.T) {
-	suite.Run(t, new(ComplianceoperatorscansettingbindingsStoreSuite))
+func TestComplianceOperatorScanSettingBindingsStore(t *testing.T) {
+	suite.Run(t, new(ComplianceOperatorScanSettingBindingsStoreSuite))
 }
 
-func (s *ComplianceoperatorscansettingbindingsStoreSuite) SetupTest() {
+func (s *ComplianceOperatorScanSettingBindingsStoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -52,14 +52,14 @@ func (s *ComplianceoperatorscansettingbindingsStoreSuite) SetupTest() {
 	s.store = New(ctx, pool)
 }
 
-func (s *ComplianceoperatorscansettingbindingsStoreSuite) TearDownTest() {
+func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
 	s.envIsolator.RestoreAll()
 }
 
-func (s *ComplianceoperatorscansettingbindingsStoreSuite) TestStore() {
+func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store

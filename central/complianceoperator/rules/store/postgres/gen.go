@@ -1,3 +1,3 @@
 package postgres
 
-//go:generate pg-table-bindings-wrapper --type=storage.ComplianceOperatorRule --table=complianceoperatorrules
+//go:generate pg-table-bindings-wrapper --type=storage.ComplianceOperatorRule
