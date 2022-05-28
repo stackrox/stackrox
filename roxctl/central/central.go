@@ -26,7 +26,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		db.Command(cliEnvironment),
 		backup.Command(cliEnvironment, pointers.Bool(true)),
 		debug.Command(cliEnvironment),
-		license.Command(cliEnvironment),
+		license.Command(),
 		userpki.Command(cliEnvironment),
 		whoami.Command(cliEnvironment),
 		initbundles.Command(cliEnvironment),

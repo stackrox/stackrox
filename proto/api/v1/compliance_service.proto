@@ -85,7 +85,7 @@ message GetComplianceRunResultsRequest {
 }
 
 message GetComplianceRunResultsResponse {
-    storage.ComplianceRunResults results = 1;
+    storage.ComplianceRunResults           results     = 1;
     repeated storage.ComplianceRunMetadata failed_runs = 2;
 }
 

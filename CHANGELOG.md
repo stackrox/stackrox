@@ -18,6 +18,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - New permission `DeploymentExtension` will deprecate the permissions `Indicator, NetworkBaseline, ProcessWhitelist, Risk`.
   - New permission `Integration` will deprecate the permissions `APIToken, BackupPlugins, ImageIntegration, Notifier, SignatureIntegration`.
   Each deprecated permission will be removed in a future release.
+- /v1/telemetry and /v1/licenses endpoints, and related CLI functionality, are now deprecated and will be removed in 2 releases.
+  - These endpoints are deprecated as license files are not required to run the platform
 
 ## [70.0]
 

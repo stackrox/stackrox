@@ -110,7 +110,7 @@ var (
 	User = newDeprecatedResourceMetadata("User", permissions.GlobalScope, Access)
 
 	// Internal Resources.
-	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
+	ComplianceOperator = newResourceMetadata("ComplianceOperator", permissions.GlobalScope)
 
 	resourceToMetadata         = make(map[permissions.Resource]permissions.ResourceMetadata)
 	disabledResourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
