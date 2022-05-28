@@ -2,14 +2,17 @@
 
 # Fetches data used by the stackrox:main image
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+source "$ROOT/scripts/ci/lib.sh"
+
 set -euo pipefail
 
 wget_with_retries() {
-    wget --tries=5 --retry-on-http-error=524 -O "$1" "$2"
+    retry 5 true wget -O "$1" "$2"
 }
 
 quiet_wget_with_retries() {
-    wget -q --tries=5 --retry-on-http-error=524 -O "$1" "$2"
+    retry 5 true wget -q -O "$1" "$2"
 }
 
 fetch_stackrox_data() {
