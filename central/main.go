@@ -68,7 +68,6 @@ import (
 	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
 	"github.com/stackrox/rox/central/jwt"
 	licenseService "github.com/stackrox/rox/central/license/service"
-	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
@@ -251,12 +250,6 @@ func main() {
 	pkgMetrics.NewDefaultHTTPServer().RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
-	licenseMgr := licenseSingletons.ManagerSingleton()
-	_, err := licenseMgr.Initialize()
-	if err != nil {
-		log.Warnf("Could not initialize license manager: %v", err)
-	}
-
 	go startGRPCServer()
 
 	waitForTerminationSignal()
@@ -319,7 +312,7 @@ func servicesToRegister(registry authproviders.Registry, authzTraceSink observe.
 		helmcharts.NewService(),
 		imageService.Singleton(),
 		iiService.Singleton(),
-		licenseService.New(false, licenseSingletons.ManagerSingleton()),
+		licenseService.New(),
 		integrationHealthService.Singleton(),
 		metadataService.New(),
 		mitreService.Singleton(),

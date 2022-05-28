@@ -3,7 +3,6 @@ package fetcher
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -12,12 +11,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
 	"github.com/stackrox/rox/central/cve/converter"
-	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
 	"github.com/stackrox/rox/pkg/fileutils"
-	"github.com/stackrox/rox/pkg/license"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 const (
@@ -45,24 +41,6 @@ var (
 
 	log = logging.LoggerForModule()
 )
-
-func maybeAddLicenseIDAsQueryParam(baseURL string) (string, error) {
-	var params url.Values
-	if licenseID := getCurrentLicenseID(); licenseID != "" {
-		params = license.IDAsURLParam(licenseID)
-	}
-	u, err := urlfmt.FullyQualifiedURL(baseURL, params)
-	if err != nil {
-		return "", err
-	}
-	return u, nil
-}
-
-func getCurrentLicenseID() string {
-	lic := licenseSingletons.ManagerSingleton().GetActiveLicense()
-
-	return lic.GetMetadata().GetId()
-}
 
 func getLocalCVEChecksum(cveChecksumFile string) (string, error) {
 	b, err := os.ReadFile(cveChecksumFile)

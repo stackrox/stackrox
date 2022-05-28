@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 type istioCVEManager struct {
@@ -121,12 +123,12 @@ func (m *istioCVEManager) reconcileOnlineModeCVEs(forceUpdate bool) error {
 		return nil
 	}
 
-	url, err := maybeAddLicenseIDAsQueryParam(urls.cveChecksumURL)
+	endpoint, err := urlfmt.FullyQualifiedURL(urls.cveURL, url.Values{})
 	if err != nil {
 		return err
 	}
 
-	remoteCVEChecksumBytes, err := httputil.HTTPGet(url)
+	remoteCVEChecksumBytes, err := httputil.HTTPGet(endpoint)
 	if err != nil {
 		return err
 	}
@@ -138,12 +140,12 @@ func (m *istioCVEManager) reconcileOnlineModeCVEs(forceUpdate bool) error {
 		return nil
 	}
 
-	url, err = maybeAddLicenseIDAsQueryParam(urls.cveURL)
+	endpoint, err = urlfmt.FullyQualifiedURL(urls.cveURL, url.Values{})
 	if err != nil {
 		return err
 	}
 
-	data, err := httputil.HTTPGet(url)
+	data, err := httputil.HTTPGet(endpoint)
 	if err != nil {
 		return err
 	}
