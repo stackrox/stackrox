@@ -2,18 +2,7 @@
 
 # Fetches data used by the stackrox:main image
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
-source "$ROOT/scripts/ci/lib.sh"
-
 set -euo pipefail
-
-wget_with_retries() {
-    retry 5 true wget -O "$1" "$2"
-}
-
-quiet_wget_with_retries() {
-    retry 5 true wget -q -O "$1" "$2"
-}
 
 fetch_stackrox_data() {
     mkdir -p /stackrox-data/cve/istio
@@ -30,6 +19,46 @@ fetch_stackrox_data() {
     mkdir /stackrox-data/external-networks
     zip -jr /stackrox-data/external-networks/external-networks.zip /tmp/external-networks
     rm -rf /tmp/external-networks
+}
+
+wget_with_retries() {
+    retry 5 true wget -O "$1" "$2"
+}
+
+quiet_wget_with_retries() {
+    retry 5 true wget -q -O "$1" "$2"
+}
+
+# retry() - retry a command up to a specific numer of times until it exits
+# successfully, with exponential back off.
+# (original source: https://gist.github.com/sj26/88e1c6584397bb7c13bd11108a579746)
+
+retry() {
+    if [[ "$#" -lt 3 ]]; then
+        die "usage: retry <try count> <delay true|false> <command> <args...>"
+    fi
+
+    local tries=$1
+    local delay=$2
+    shift; shift;
+
+    local count=0
+    until "$@"; do
+        exit=$?
+        wait=$((2 ** count))
+        count=$((count + 1))
+        if [[ $count -lt $tries ]]; then
+            info "Retry $count/$tries exited $exit"
+            if $delay; then
+                info "Retrying in $wait seconds..."
+                sleep $wait
+            fi
+        else
+            echo "Retry $count/$tries exited $exit, no more retries left."
+            return $exit
+        fi
+    done
+    return 0
 }
 
 fetch_stackrox_data
