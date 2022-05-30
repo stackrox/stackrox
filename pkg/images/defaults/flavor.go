@@ -218,7 +218,7 @@ func OpenSourceImageFlavor() ImageFlavor {
 		ScannerDBSlimImageName: "scanner-db-slim",
 
 		ChartRepo: ChartRepo{
-			URL: "https://github.com/stackrox/helm-charts/opensource/",
+			URL: "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/",
 		},
 		ImagePullSecrets: ImagePullSecrets{
 			AllowNone: true,
