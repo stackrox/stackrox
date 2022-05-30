@@ -155,6 +155,11 @@ replace (
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9
 	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.8-0.20220506091602-3764c49abfb3
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
+
+	// There is a vulnerability within a transitive dependency of cosign (CVE-2022-29173).
+	// A PR has already been created against cosign (https://github.com/sigstore/cosign/pull/1894).
+	// Awaiting the release of cosign 1.9.0, we preemtively change the dependency.
+	github.com/theupdateframework/go-tuf => github.com/theupdateframework/go-tuf v0.3.0
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
 
 	// Our fork has a change exposing a method to do generic POST requests
