@@ -185,7 +185,7 @@ func (s *ServiceAccountResolverTestSuite) getMockContext(extraPerms ...permissio
 	resKeys := make([]permissions.ResourceHandle, 0, len(extraPerms))
 	for _, p := range extraPerms {
 		perms[p.String()] = storage.Access_READ_WRITE_ACCESS
-		resKeys = append(resKeys, p.GetResource())
+		resKeys = append(resKeys, p)
 	}
 	id.EXPECT().Permissions().Return(perms).AnyTimes()
 

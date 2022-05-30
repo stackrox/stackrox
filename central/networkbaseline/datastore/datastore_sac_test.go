@@ -68,7 +68,7 @@ func (s *networkBaselineDatastoreSACTestSuite) SetupSuite() {
 	}
 	s.datastore = newNetworkBaselineDataStore(s.storage)
 
-	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkBaseline.GetResource())
+	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkBaseline)
 }
 
 func (s *networkBaselineDatastoreSACTestSuite) TearDownSuite() {
