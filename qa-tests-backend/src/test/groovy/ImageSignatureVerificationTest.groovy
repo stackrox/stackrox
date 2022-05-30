@@ -1,4 +1,6 @@
+import static Services.checkForNoViolations
 import static Services.waitForViolation
+
 import groups.BAT
 import groups.Integration
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -206,7 +208,11 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
     def "Check violations of policy '#policyName' for deployment '#deployment.name'"() {
         expect:
         "Verify deployment has expected violations"
-        assert waitForViolation(deployment.name, policyName, WAIT_FOR_VIOLATION_TIMEOUT) == expectViolations
+        if (expectViolations) {
+            assert waitForViolation(deployment.name, policyName, WAIT_FOR_VIOLATION_TIMEOUT) == expectViolations
+        } else {
+            assert checkForNoViolations(deployment.name, policyName)
+        }
 
         where:
         policyName                                 | deployment                   | expectViolations
