@@ -118,7 +118,9 @@ func main() {
 	defer shutdownFakeServer()
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
-	s, err := sensor.CreateSensor(fakeClient, nil, fakeConnectionFactory, true)
+	s, err := sensor.CreateSensor(fakeClient, sensor.ConfigWithDefaults().
+		WithCentralConnectionFactory(fakeConnectionFactory).
+		WithLocalSensor(true))
 	if err != nil {
 		panic(err)
 	}

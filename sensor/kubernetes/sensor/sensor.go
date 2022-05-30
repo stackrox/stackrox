@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/satoken"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
-	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/compliance"
@@ -43,7 +42,6 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
-	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/localscanner"
@@ -58,7 +56,7 @@ var (
 )
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
-func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager, centralConnFactory centralclient.CentralConnectionFactory, localSensor bool) (*sensor.Sensor, error) {
+func CreateSensor(client client.Interface, cfg *CreateOptions) (*sensor.Sensor, error) {
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
 
 	var helmManagedConfig *central.HelmManagedConfigInit
@@ -105,7 +103,8 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager, resources.NetworkPolicySingleton())
-	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener.New(client, configHandler, policyDetector, k8sNodeName.Setting()))
+	resourceListener := listener.New(client, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod)
+	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, resourceListener)
 
 	imageService := image.NewService(imageCache)
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
@@ -133,7 +132,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache),
 	}
 
-	if !localSensor {
+	if !cfg.localSensor {
 		upgradeCmdHandler, err := upgrade.NewCommandHandler(configHandler)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating upgrade command handler")
@@ -169,12 +168,12 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		configHandler,
 		policyDetector,
 		imageService,
-		centralConnFactory,
+		cfg.centralConnFactory,
 		components...,
 	)
 
-	if workloadHandler != nil {
-		workloadHandler.SetSignalHandlers(processPipeline, networkFlowManager)
+	if cfg.workloadManager != nil {
+		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)
 	}
 
 	networkFlowService := service.NewService(networkFlowManager)
