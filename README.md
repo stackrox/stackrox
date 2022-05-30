@@ -20,6 +20,7 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
 ## Table of contents
 
 * [Deployment](#deployment)
+    + [Helm Charts](#helm-charts)
 * [Development](#development)
     + [Quickstart](#quickstart)
       - [Build Tooling](#build-tooling)
@@ -51,6 +52,14 @@ When the deployment has completed a port-forward should exist so you can connect
 to https://localhost:8000/. Credentials for the 'admin' user can be found in
 `./deploy/k8s/central-deploy/password`
 (`deploy/openshift/central-deploy/password` in the OpenShift case).
+
+### Helm Charts
+
+Alternatively, there are also opensource flavor [Helm Charts](https://helm.sh/) available at [github.com/stackrox/helm-charts](https://github.com/stackrox/helm-charts/tree/main/opensource) which can be used to install StackRox
+```
+helm repo add stackroxhelm https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
+helm install -n stackrox --create-namespace stackrox-central-services stackroxhelm/stackrox-central-services --devel
+```
 
 ## Development
 
