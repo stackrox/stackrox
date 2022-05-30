@@ -1,6 +1,8 @@
 package central
 
 import (
+	"io"
+	"log"
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
@@ -15,8 +17,6 @@ import (
 type FakeService struct {
 	ConnectionStarted concurrency.Signal
 	KillSwitch        concurrency.Signal
-
-	stream central.SensorService_CommunicateServer
 
 	// initialMessages are messages to be sent to sensor once connection is open
 	initialMessages []*central.MsgToSensor
@@ -62,33 +62,29 @@ func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor)
 	}
 }
 
-// BlockReceive will read from the connection stream if the connection was already established.
-// Messages read here were sent from Sensor.
-// The caller might get blocked because it waits until connection is available.
-func (s *FakeService) BlockReceive() (*central.MsgFromSensor, error) {
-	s.ConnectionStarted.Wait()
-	return s.stream.Recv()
+func (s *FakeService) ingestMessageWithLock(msg *central.MsgFromSensor) {
+	s.receivedLock.Lock()
+	defer s.receivedLock.Unlock()
+	s.receivedMessages = append(s.receivedMessages, msg)
+	s.messageCallback(msg)
 }
 
-// BlockSend will send to the connection stream if the connection was already established.
-// This message will be received by Sensor.
-// The caller might get blocked because it waits until connection is available.
-func (s *FakeService) BlockSend(msg *central.MsgToSensor) error {
+func (s *FakeService) startInputIngestion(stream central.SensorService_CommunicateServer) {
 	s.ConnectionStarted.Wait()
-	return s.stream.Send(msg)
-}
-
-func (s *FakeService) startInputIngestion() {
 	for {
-		// ignore gRPC stream errors for now
-		msg, _ := s.BlockReceive()
+		var msg central.MsgFromSensor
+		err := stream.RecvMsg(&msg)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Fatalf("error receiving message from sensor: %s", err)
+		}
 		if s.KillSwitch.IsDone() {
 			return
 		}
-		s.receivedLock.Lock()
-		s.receivedMessages = append(s.receivedMessages, msg)
-		s.receivedLock.Unlock()
-		s.messageCallback(msg.Clone())
+
+		go s.ingestMessageWithLock(msg.Clone())
 	}
 
 }
@@ -104,16 +100,14 @@ func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer
 		return err
 	}
 
-	s.ConnectionStarted.Signal()
-
 	for _, msg := range s.initialMessages {
 		if err := stream.Send(msg); err != nil {
 			s.t.Fatalf("failed to send initial message on gRPC stream: %s", err)
 		}
 	}
 
-	s.stream = stream
-	go s.startInputIngestion()
+	s.ConnectionStarted.Signal()
+	go s.startInputIngestion(stream)
 	s.KillSwitch.Wait()
 	return nil
 }
