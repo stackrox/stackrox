@@ -14,14 +14,13 @@ import groups.Integration
 import services.AlertService
 import services.ApiTokenService
 import services.NetworkBaselineService
-import util.Env
 import util.SplunkUtil
 import util.Timer
 
 import org.junit.Rule
 import org.junit.experimental.categories.Category
 import org.junit.rules.Timeout
-import spock.lang.IgnoreIf
+import spock.lang.Ignore
 
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
     @Rule
@@ -84,7 +83,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     @Category(Integration)
-    @IgnoreIf({ Env.CI_JOBNAME.contains("postgres") })
+    @Ignore("ROX-11138")
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
