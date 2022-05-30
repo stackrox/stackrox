@@ -80,7 +80,7 @@ func (s *k8sRoleSACSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
-		resources.K8sRole.GetResource())
+		resources.K8sRole)
 }
 
 func (s *k8sRoleSACSuite) TearDownSuite() {

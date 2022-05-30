@@ -33,7 +33,7 @@ const (
 )
 
 // GetNamespaceScopedTestContexts provides a set of pre-defined scoped contexts for use in scoped access control tests
-func GetNamespaceScopedTestContexts(ctx context.Context, t *testing.T, resource permissions.Resource) map[string]context.Context {
+func GetNamespaceScopedTestContexts(ctx context.Context, t *testing.T, resource permissions.ResourceMetadata) map[string]context.Context {
 	contextMap := make(map[string]context.Context, 0)
 
 	contextMap[UnrestrictedReadCtx] =
@@ -170,7 +170,7 @@ func GetNamespaceScopedTestContexts(ctx context.Context, t *testing.T, resource 
 			sac.TestScopeCheckerCoreFromFullScopeMap(t,
 				sac.TestScopeMap{
 					storage.Access_READ_ACCESS: {
-						resource: &sac.TestResourceScope{
+						resource.GetResource(): &sac.TestResourceScope{
 							Clusters: map[string]*sac.TestClusterScope{
 								testconsts.Cluster1: {Namespaces: []string{testconsts.NamespaceA}},
 								testconsts.Cluster2: {Included: true},

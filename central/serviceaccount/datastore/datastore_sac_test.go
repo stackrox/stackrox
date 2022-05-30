@@ -81,7 +81,7 @@ func (s *serviceAccountSACSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
-		resources.ServiceAccount.GetResource())
+		resources.ServiceAccount)
 }
 
 func (s *serviceAccountSACSuite) TearDownSuite() {
