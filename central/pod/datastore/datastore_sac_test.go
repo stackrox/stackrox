@@ -88,7 +88,7 @@ func (s *podDatastoreSACSuite) SetupSuite() {
 	}
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
-		resources.Deployment.GetResource())
+		resources.Deployment)
 }
 
 func (s *podDatastoreSACSuite) TearDownSuite() {

@@ -82,7 +82,7 @@ func (s *riskDatastoreSACSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
-		resources.Risk.GetResource())
+		resources.Risk)
 }
 
 func (s *riskDatastoreSACSuite) TearDownSuite() {

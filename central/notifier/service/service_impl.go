@@ -77,27 +77,25 @@ func (s *serviceImpl) GetNotifier(ctx context.Context, request *v1.ResourceByID)
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "notifier id must be provided")
 	}
-	notifier, exists, err := s.storage.GetNotifier(ctx, request.GetId())
+	notifier, exists, err := s.storage.GetScrubbedNotifier(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
 		return nil, errors.Wrapf(errox.NotFound, "notifier %v not found", request.GetId())
 	}
-	secrets.ScrubSecretsFromStructWithReplacement(notifier, secrets.ScrubReplacementStr)
+
 	return notifier, nil
 }
 
 // GetNotifiers retrieves all notifiers that match the request filters
 func (s *serviceImpl) GetNotifiers(ctx context.Context, _ *v1.GetNotifiersRequest) (*v1.GetNotifiersResponse, error) {
-	notifiers, err := s.storage.GetNotifiers(ctx)
+	scrubbedNotifiers, err := s.storage.GetScrubbedNotifiers(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for _, n := range notifiers {
-		secrets.ScrubSecretsFromStructWithReplacement(n, secrets.ScrubReplacementStr)
-	}
-	return &v1.GetNotifiersResponse{Notifiers: notifiers}, nil
+
+	return &v1.GetNotifiersResponse{Notifiers: scrubbedNotifiers}, nil
 }
 
 func validateNotifier(notifier *storage.Notifier) error {

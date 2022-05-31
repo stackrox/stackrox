@@ -82,7 +82,7 @@ func (s *k8sRoleBindingSACSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
-		resources.K8sRoleBinding.GetResource())
+		resources.K8sRoleBinding)
 }
 
 func (s *k8sRoleBindingSACSuite) TearDownSuite() {

@@ -23,17 +23,17 @@ import (
 
 func (k *listenerImpl) handleAllEvents() {
 	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), noResyncPeriod)
-	resyncingSif := informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncingPeriod)
+	resyncingSif := informers.NewSharedInformerFactory(k.client.Kubernetes(), k.resyncPeriod)
 
 	// Create informer factories for needed orchestrators.
 	var osAppsFactory osAppsExtVersions.SharedInformerFactory
 	if k.client.OpenshiftApps() != nil {
-		osAppsFactory = osAppsExtVersions.NewSharedInformerFactory(k.client.OpenshiftApps(), resyncingPeriod)
+		osAppsFactory = osAppsExtVersions.NewSharedInformerFactory(k.client.OpenshiftApps(), k.resyncPeriod)
 	}
 
 	var osRouteFactory osRouteExtVersions.SharedInformerFactory
 	if k.client.OpenshiftRoute() != nil {
-		osRouteFactory = osRouteExtVersions.NewSharedInformerFactory(k.client.OpenshiftRoute(), resyncingPeriod)
+		osRouteFactory = osRouteExtVersions.NewSharedInformerFactory(k.client.OpenshiftRoute(), k.resyncPeriod)
 	}
 
 	// We want creates to be treated as updates while existing objects are loaded.

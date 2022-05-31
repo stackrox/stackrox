@@ -22,7 +22,7 @@ func BenchmarkDBs(b *testing.B) {
 		defer rocksdbtest.TearDownRocksDB(db)
 
 		require.NoError(b, err)
-		benchmarkLoad(b, store.NewFullStore(rocksDBStore.New(db)))
+		benchmarkLoad(b, rocksDBStore.New(db))
 	})
 }
 

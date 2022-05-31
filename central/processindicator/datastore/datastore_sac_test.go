@@ -83,7 +83,7 @@ func (s *processIndicatorDatastoreSACSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
-		resources.Indicator.GetResource())
+		resources.Indicator)
 }
 
 func (s *processIndicatorDatastoreSACSuite) TearDownSuite() {
