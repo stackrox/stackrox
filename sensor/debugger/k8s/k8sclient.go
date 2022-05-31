@@ -82,6 +82,7 @@ func (c *ClientSet) Dynamic() dynamic.Interface {
 	return c.dynamic
 }
 
+// SetupExampleCluster creates a fake node and default namespace in the fake k8s client.
 func (c *ClientSet) SetupExampleCluster(t *testing.T) {
 	_, err := c.k8s.CoreV1().Nodes().Create(context.Background(), &v1.Node{
 		ObjectMeta: metav1.ObjectMeta{
@@ -104,29 +105,8 @@ func (c *ClientSet) SetupExampleCluster(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func (c *ClientSet) ResetDeployments(t *testing.T) {
-	deletionPropagation := metav1.DeletionPropagation("foreground")
-	err := c.k8s.AppsV1().Deployments("default").DeleteCollection(context.Background(), metav1.DeleteOptions{
-		TypeMeta:           metav1.TypeMeta{},
-		PropagationPolicy:  &deletionPropagation,
-	}, metav1.ListOptions{})
-	require.NoError(t, err)
-
-	err = c.k8s.CoreV1().Namespaces().Delete(context.Background(), "default", metav1.DeleteOptions{
-		TypeMeta:           metav1.TypeMeta{},
-		PropagationPolicy:  &deletionPropagation,
-	})
-	require.NoError(t, err)
-	_, err = c.k8s.CoreV1().Namespaces().Create(context.Background(), &v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "default",
-		},
-		Spec:   v1.NamespaceSpec{},
-		Status: v1.NamespaceStatus{},
-	}, metav1.CreateOptions{})
-}
-
-func (c *ClientSet) MustCreateRole(t *testing.T, name string, ) {
+// MustCreateRole creates a k8s role. Test fails if creation fails.
+func (c *ClientSet) MustCreateRole(t *testing.T, name string) {
 	_, err := c.k8s.RbacV1().Roles("default").Create(context.Background(), &v12.Role{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -146,20 +126,21 @@ func (c *ClientSet) MustCreateRole(t *testing.T, name string, ) {
 	require.NoError(t, err)
 }
 
-func (c *ClientSet) MustCreateRoleBinding(t *testing.T, bindingName, roleName, serviceAccountName string ) {
+// MustCreateRoleBinding creates a k8s role binding. Test fails if creation fails.
+func (c *ClientSet) MustCreateRoleBinding(t *testing.T, bindingName, roleName, serviceAccountName string) {
 	_, err := c.k8s.RbacV1().RoleBindings("default").Create(context.Background(), &v12.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:                       bindingName,
-			Namespace:                  "default",
+			Name:      bindingName,
+			Namespace: "default",
 		},
-		Subjects:   []v12.Subject{
+		Subjects: []v12.Subject{
 			{
 				Name:      serviceAccountName,
-				Kind: "ServiceAccount",
+				Kind:      "ServiceAccount",
 				Namespace: "default",
 			},
 		},
-		RoleRef:    v12.RoleRef{
+		RoleRef: v12.RoleRef{
 			APIGroup: "",
 			Kind:     "",
 			Name:     roleName,
@@ -168,14 +149,17 @@ func (c *ClientSet) MustCreateRoleBinding(t *testing.T, bindingName, roleName, s
 	require.NoError(t, err)
 }
 
+// DeploymentOpts defines a function type for changing deployments before being applied.
 type DeploymentOpts func(obj *appsv1.Deployment)
 
+// WithServiceAccountName injects service account name to deployment before applying.
 func WithServiceAccountName(name string) DeploymentOpts {
 	return func(obj *appsv1.Deployment) {
 		obj.Spec.Template.Spec.ServiceAccountName = name
 	}
 }
 
+// MustCreateDeployment creates a k8s deployment. Test fails if creation fails.
 func (c *ClientSet) MustCreateDeployment(t *testing.T, name string, opts ...DeploymentOpts) {
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

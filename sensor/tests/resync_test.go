@@ -123,8 +123,6 @@ func Test_DeploymentInconsistent(t *testing.T) {
 	fakeClient.SetupExampleCluster(t)
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
-			// Execute each update in order on a clear namespace
-			fakeClient.ResetDeployments(t)
 			for _, fn := range testCase.orderedEvents {
 				// This function will create the fake k8s event and wait for one second.
 				// This way we guarantee some level of order for the events. Since sensor
@@ -173,9 +171,9 @@ func CreateRole(id string) func(t *testing.T, k *k8s.ClientSet) {
 	}
 }
 
-func CreateRoleBinding(bindingId, roldId, serviceAccount string) func(t *testing.T, k *k8s.ClientSet) {
+func CreateRoleBinding(bindingID, roleID, serviceAccount string) func(t *testing.T, k *k8s.ClientSet) {
 	return func(t *testing.T, k *k8s.ClientSet) {
-		k.MustCreateRoleBinding(t, bindingId, roldId, serviceAccount)
+		k.MustCreateRoleBinding(t, bindingID, roleID, serviceAccount)
 	}
 }
 
