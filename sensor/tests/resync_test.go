@@ -70,7 +70,12 @@ func Test_DeploymentInconsistent(t *testing.T) {
 	defer shutdownFakeServer()
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
-	s, err := sensor.CreateSensor(fakeClient, nil, fakeConnectionFactory, true)
+	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
+		WithK8sClient(fakeClient).
+		WithLocalSensor(true).
+		WithResyncPeriod(1 * time.Second).
+		WithCentralConnectionFactory(fakeConnectionFactory))
+
 	if err != nil {
 		panic(err)
 	}
