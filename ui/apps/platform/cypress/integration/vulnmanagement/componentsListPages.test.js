@@ -16,9 +16,11 @@ describe('Components list Page and its entity detail page, (related entities) su
         hasExpectedHeaderColumns([
             'Component',
             'CVEs',
+            'Fixed In',
             'Top CVSS',
             'Images',
             'Deployments',
+            'Nodes',
             'Risk Priority',
         ]);
         cy.get(selectors.tableBodyColumn).each(($el) => {

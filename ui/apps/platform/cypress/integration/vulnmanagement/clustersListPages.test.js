@@ -18,6 +18,7 @@ describe('Clusters list Page and its single entity detail page, and sub list val
             'CVEs',
             'K8S Version',
             'Entities',
+            'Policy Status',
             'Latest Violation',
             'Risk Priority',
         ]);
