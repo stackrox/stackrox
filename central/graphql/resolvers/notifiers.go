@@ -27,7 +27,7 @@ func (resolver *Resolver) Notifiers(ctx context.Context) ([]*notifierResolver, e
 		return nil, err
 	}
 	return resolver.wrapNotifiers(
-		resolver.NotifierStore.GetNotifiers(ctx, &v1.GetNotifiersRequest{}))
+		resolver.NotifierStore.GetScrubbedNotifiers(ctx, &v1.GetNotifiersRequest{}))
 }
 
 // Notifier gets a single notifier by ID
@@ -37,5 +37,5 @@ func (resolver *Resolver) Notifier(ctx context.Context, args struct{ graphql.ID 
 		return nil, err
 	}
 	return resolver.wrapNotifier(
-		resolver.NotifierStore.GetNotifier(ctx, string(args.ID)))
+		resolver.NotifierStore.GetScrubbedNotifier(ctx, string(args.ID)))
 }
