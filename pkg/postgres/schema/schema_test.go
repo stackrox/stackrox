@@ -181,6 +181,10 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 			createStmts: CreateTableIntegrationHealthsStmt,
 		},
 		{
+			name:        ImageIntegrationsTableName,
+			createStmts: CreateTableImageIntegrationsStmt,
+		},
+		{
 			name:        K8sRolesTableName,
 			createStmts: CreateTableK8sRolesStmt,
 		},
