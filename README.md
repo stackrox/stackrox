@@ -41,7 +41,7 @@ StackRox offers quick installation via Helm Charts, the following software is re
 * [Helm](https://helm.sh/)
   * or `brew install helm`
 
-Next, add the [Stackrox helm-charts/opensource GitHub Repo](https://github.com/stackrox/helm-charts/tree/main/opensource) to Helm.
+First, add the [stackrox/helm-charts/opensource](https://github.com/stackrox/helm-charts/tree/main/opensource) repository to Helm.
 ```
 helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
 ```
@@ -49,12 +49,24 @@ To see all available Helm charts in the repo run
 ```
 helm search repo stackrox --devel
 ```
-From here you can install stackrox-central-services or stackrox-secured-cluster-services
+From here you can install stackrox-central-services to install the centralized components (Central and Scanner)
 ```
 helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --devel
-helm install -n stackrox --create-namespace stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services --devel
 ```
-to your Docker instance running Kubernetes.
+To create a secured cluster you first need to create an init bundle, using the roxctl CLI after configuring the `ROX_CENTRAL_ADDRESS` environment variable.
+```
+roxctl -e "$ROX_CENTRAL_ADDRESS" central init-bundles generate <cluster_init_bundle_name> --output cluster_init_bundle.yaml
+```
+Then install the secured cluster using this command:
+```
+helm install -n stackrox --create-namespace stackrox-secured-cluster-services stackrox/secured-cluster-services \
+    -f <path_to_cluster_init_bundle.yaml> \ 
+    --set clusterName=<name_of_the_secured_cluster> \
+    --set centralEndpoint=<endpoint_of_central_service> 
+```
+While specifying the path to the init bundle created in the previous step, the name of the secured cluster, and the endpoint (address and port number) for Central.
+
+To further customize your Helm installation consult this [document](https://docs.openshift.com/acs/3.69/installing/installing_helm/install-helm-customization.html).
 
 ## Manual Deployment
 
