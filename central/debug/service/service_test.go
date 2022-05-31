@@ -126,24 +126,10 @@ func (s *DebugServiceTestSuite) TestGetRoles() {
 }
 
 func (s *DebugServiceTestSuite) TestGetNotifiers() {
-	s.notifiersMock.EXPECT().GetNotifiers(gomock.Any()).Return(nil, errors.New("Test"))
+	s.notifiersMock.EXPECT().GetScrubbedNotifiers(gomock.Any()).Return(nil, errors.New("Test"))
 	_, err := s.service.getNotifiers(s.noneCtx)
 	s.Error(err, "expected error propagation")
 
-	notifiers := []*storage.Notifier{
-		{
-			Name: "test",
-			Config: &storage.Notifier_Pagerduty{
-				Pagerduty: &storage.PagerDuty{
-					ApiKey: "test",
-				},
-			},
-		},
-	}
-	s.notifiersMock.EXPECT().GetNotifiers(gomock.Any()).Return(notifiers, nil)
-	actualNotifiers, err := s.service.getNotifiers(s.noneCtx)
-
-	// Set new value in order to avoid comparing with referenced objects.
 	expectedNotifiers := []*storage.Notifier{
 		{
 			Name: "test",
@@ -154,6 +140,8 @@ func (s *DebugServiceTestSuite) TestGetNotifiers() {
 			},
 		},
 	}
+	s.notifiersMock.EXPECT().GetScrubbedNotifiers(gomock.Any()).Return(expectedNotifiers, nil)
+	actualNotifiers, err := s.service.getNotifiers(s.noneCtx)
 
 	s.NoError(err)
 	s.EqualValues(expectedNotifiers, actualNotifiers)
