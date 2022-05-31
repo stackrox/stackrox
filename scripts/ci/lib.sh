@@ -268,14 +268,16 @@ push_matching_collector_scanner_images() {
     done
 }
 
-poll_for_opensource_images() {
-    info "Polling for opensource images required for system tests"
+poll_for_system_test_images() {
+    info "Polling for images required for system tests"
 
     if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: poll_for_opensource_images <seconds to wait>"
+        die "missing arg. usage: poll_for_system_test_images <seconds to wait>"
     fi
 
     local time_limit="$1"
+
+    require_environment "QUAY_RHACS_ENG_BEARER_TOKEN"
 
     local tag
     tag="$(make --quiet tag)"
@@ -284,9 +286,12 @@ poll_for_opensource_images() {
 
     _image_exists() {
         local name="$1"
-        local url="https://quay.io/v2/stackrox-io/$name/manifests/$tag"
+        local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"
         info "Checking for $name using $url"
-        curl -sS --head --fail "$url"
+        local check
+        check=$(curl -sS -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" "$url")
+        echo "$check"
+        [[ "$(jq -r '.tags | first' <<<"$check")" != "null" ]]
     }
 
     while true; do
