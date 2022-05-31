@@ -24,7 +24,7 @@ func (ds *dataStoreImpl) GetServiceIdentities(ctx context.Context) ([]*storage.S
 		return nil, nil
 	}
 
-	return ds.storage.GetServiceIdentities()
+	return ds.storage.GetAll(ctx)
 }
 
 func (ds *dataStoreImpl) AddServiceIdentity(ctx context.Context, identity *storage.ServiceIdentity) error {
@@ -34,5 +34,5 @@ func (ds *dataStoreImpl) AddServiceIdentity(ctx context.Context, identity *stora
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.AddServiceIdentity(identity)
+	return ds.storage.Upsert(ctx, identity)
 }

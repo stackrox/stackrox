@@ -158,12 +158,12 @@
     "storageServiceIdentity": {
       "type": "object",
       "properties": {
+        "serialStr": {
+          "type": "string"
+        },
         "serial": {
           "type": "string",
           "format": "int64"
-        },
-        "serialStr": {
-          "type": "string"
         },
         "id": {
           "type": "string"

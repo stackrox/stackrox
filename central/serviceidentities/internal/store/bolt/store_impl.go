@@ -1,22 +1,33 @@
-package store
+package bolt
 
 import (
-	"strconv"
+	"context"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	bolt "go.etcd.io/bbolt"
 )
+
+var serviceIdentityBucket = []byte("service_identities")
+
+// New returns a new Store instance using the provided bolt DB instance.
+func New(db *bolt.DB) *storeImpl {
+	bolthelper.RegisterBucketOrPanic(db, serviceIdentityBucket)
+	return &storeImpl{
+		DB: db,
+	}
+}
 
 type storeImpl struct {
 	*bolt.DB
 }
 
-// GetServiceIdentities retrieves serviceIdentities from Bolt.
-func (b *storeImpl) GetServiceIdentities() ([]*storage.ServiceIdentity, error) {
+// GetAll retrieves serviceIdentities from Bolt.
+func (b *storeImpl) GetAll(_ context.Context) ([]*storage.ServiceIdentity, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ServiceIdentity")
 	var serviceIdentities []*storage.ServiceIdentity
 	err := b.View(func(tx *bolt.Tx) error {
@@ -40,21 +51,13 @@ func (b *storeImpl) upsertServiceIdentity(serviceIdentity *storage.ServiceIdenti
 		if err != nil {
 			return err
 		}
-		err = b.Put(serviceIdentityKey(serviceIdentity), bytes)
+		err = b.Put([]byte(serviceIdentity.GetSerialStr()), bytes)
 		return err
 	})
 }
 
-// AddServiceIdentity adds a serviceIdentity to bolt
-func (b *storeImpl) AddServiceIdentity(serviceIdentity *storage.ServiceIdentity) error {
+// Upsert adds a serviceIdentity to bolt
+func (b *storeImpl) Upsert(_ context.Context, serviceIdentity *storage.ServiceIdentity) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "ServiceIdentity")
 	return b.upsertServiceIdentity(serviceIdentity)
-}
-
-func serviceIdentityKey(serviceID *storage.ServiceIdentity) []byte {
-	serialStr := serviceID.GetSerialStr()
-	if serialStr == "" {
-		serialStr = strconv.FormatInt(serviceID.GetSerial(), 10)
-	}
-	return []byte(serialStr)
 }
