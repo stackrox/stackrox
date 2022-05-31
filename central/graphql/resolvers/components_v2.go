@@ -208,7 +208,7 @@ func (eicr *imageComponentResolver) TopNodeVulnerability(ctx context.Context) (N
 		return vulnResolver, nil
 	}
 	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver TopNodeVulnerability in NodeComponentResolver does not support postgres yet")
+	return nil, errors.New("Sub-resolver TopNodeVulnerability in NodeComponent does not support postgres yet")
 }
 
 func (eicr *imageComponentResolver) unwrappedTopVulnQuery(ctx context.Context) (*cVEResolver, error) {
@@ -339,7 +339,7 @@ func (eicr *imageComponentResolver) NodeVulnerabilities(_ context.Context, args 
 		return eicr.root.NodeVulnerabilities(eicr.imageComponentScopeContext(), args)
 	}
 	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeVulnerabilities in NodeComponentResolver does not support postgres yet")
+	return nil, errors.New("Sub-resolver NodeVulnerabilities in NodeComponent does not support postgres yet")
 }
 
 // NodeVulnerabilityCount resolves the number of node vulnerabilities contained in the node component.
@@ -349,7 +349,7 @@ func (eicr *imageComponentResolver) NodeVulnerabilityCount(_ context.Context, ar
 		return eicr.root.NodeVulnerabilityCount(eicr.imageComponentScopeContext(), args)
 	}
 	// TODO : Add postgres support
-	return 0, errors.New("Sub-resolver NodeVulnerabilityCount in NodeComponentResolver does not support postgres yet")
+	return 0, errors.New("Sub-resolver NodeVulnerabilityCount in NodeComponent does not support postgres yet")
 }
 
 // NodeVulnerabilityCounter resolves the number of different types of node vulnerabilities contained in a node component.
@@ -359,7 +359,7 @@ func (eicr *imageComponentResolver) NodeVulnerabilityCounter(_ context.Context, 
 		return eicr.root.NodeVulnCounter(eicr.imageComponentScopeContext(), args)
 	}
 	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeVulnerabilityCounter in NodeComponentResolver does not support postgres yet")
+	return nil, errors.New("Sub-resolver NodeVulnerabilityCounter in NodeComponent does not support postgres yet")
 }
 
 func (eicr *imageComponentResolver) imageComponentScopeContext() context.Context {
@@ -597,7 +597,7 @@ func (eicr *imageComponentResolver) PlottedNodeVulnerabilities(ctx context.Conte
 		return eicr.PlottedVulns(ctx, args)
 	}
 	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver PlottedNodeVulnerabilities in NodeComponentResolver does not support postgres yet")
+	return nil, errors.New("Sub-resolver PlottedNodeVulnerabilities in NodeComponent does not support postgres yet")
 }
 
 // UnusedVarSink represents a query sink

@@ -568,7 +568,7 @@ func (resolver *clusterResolver) NodeComponents(ctx context.Context, args Pagina
 		return resolver.root.NodeComponents(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
 	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeComponents in clusterResolver does not support postgres yet")
+	return nil, errors.New("Sub-resolver NodeComponents in Cluster does not support postgres yet")
 }
 
 // NodeComponentCount returns the number of node components in the cluster
@@ -580,7 +580,7 @@ func (resolver *clusterResolver) NodeComponentCount(ctx context.Context, args Ra
 		return resolver.root.NodeComponentCount(ctx, RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
-	return 0, errors.New("Sub-resolver NodeComponentCount in clusterResolver does not support postgres yet")
+	return 0, errors.New("Sub-resolver NodeComponentCount in Cluster does not support postgres yet")
 }
 
 func (resolver *clusterResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
@@ -607,6 +607,7 @@ func (resolver *clusterResolver) VulnCounter(ctx context.Context, args RawQuery)
 	return resolver.root.VulnCounter(ctx, RawQuery{Query: &query})
 }
 
+// NodeVulnerabilities returns the node vulnerabilities in the cluster.
 func (resolver *clusterResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilities")
 
@@ -615,9 +616,10 @@ func (resolver *clusterResolver) NodeVulnerabilities(ctx context.Context, args P
 		return resolver.root.NodeVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
 	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeVulnerabilities in clusterResolver does not support postgres yet")
+	return nil, errors.New("Sub-resolver NodeVulnerabilities in Cluster does not support postgres yet")
 }
 
+// NodeVulnerabilityCount returns the number of node vulnerabilities in the cluster.
 func (resolver *clusterResolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilityCount")
 
@@ -626,9 +628,10 @@ func (resolver *clusterResolver) NodeVulnerabilityCount(ctx context.Context, arg
 		return resolver.root.NodeVulnerabilityCount(ctx, RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
-	return 0, errors.New("Sub-resolver NodeVulnerabilityCount in clusterResolver does not support postgres yet")
+	return 0, errors.New("Sub-resolver NodeVulnerabilityCount in Cluster does not support postgres yet")
 }
 
+// NodeVulnerabilityCounter resolves the number of different types of node vulnerabilities contained in the cluster.
 func (resolver *clusterResolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilityCounter")
 
@@ -637,7 +640,7 @@ func (resolver *clusterResolver) NodeVulnerabilityCounter(ctx context.Context, a
 		return resolver.root.NodeVulnCounter(ctx, RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeVulnerabilityCounter in clusterResolver does not support postgres yet")
+	return nil, errors.New("Sub-resolver NodeVulnerabilityCounter in Cluster does not support postgres yet")
 }
 
 func (resolver *clusterResolver) vulnQueryScoping(ctx context.Context, query string) (context.Context, string) {

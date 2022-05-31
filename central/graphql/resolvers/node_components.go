@@ -78,6 +78,7 @@ func (resolver *Resolver) NodeComponent(ctx context.Context, args IDQuery) (Node
 	return nil, errors.New("Resolver NodeComponent does not support postgres yet")
 }
 
+// NodeComponents returns node components that match the input query.
 func (resolver *Resolver) NodeComponents(ctx context.Context, q PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeComponents")
 	if !features.PostgresDatastore.Enabled() {
@@ -89,6 +90,7 @@ func (resolver *Resolver) NodeComponents(ctx context.Context, q PaginatedQuery) 
 	return nil, errors.New("Resolver NodeComponents does not support postgres yet")
 }
 
+// NodeComponentCount returns count of node components that match the input query
 func (resolver *Resolver) NodeComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeComponentCount")
 	if !features.PostgresDatastore.Enabled() {

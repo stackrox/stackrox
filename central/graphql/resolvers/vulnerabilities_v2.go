@@ -711,7 +711,7 @@ func (resolver *cVEResolver) NodeComponents(_ context.Context, args PaginatedQue
 		return resolver.root.NodeComponents(resolver.addVulnScopeContext(resolver.ctx), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
 	// TODO : Add postgres support
-	return nil, errors.New("Sub-resolver NodeComponents in cVEResolver does not support postgres yet")
+	return nil, errors.New("Sub-resolver NodeComponents in NodeVulnerability does not support postgres yet")
 }
 
 // NodeComponentCount is the number of node components that contain the CVE/Vulnerability.
@@ -722,7 +722,7 @@ func (resolver *cVEResolver) NodeComponentCount(ctx context.Context, args RawQue
 		return resolver.root.NodeComponentCount(resolver.addVulnScopeContext(resolver.ctx), RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
-	return 0, errors.New("Sub-resolver NodeComponentCount in cVEResolver does not support postgres yet")
+	return 0, errors.New("Sub-resolver NodeComponentCount in NodeVulnerability does not support postgres yet")
 }
 
 // Images are the images that contain the CVE/Vulnerability.
