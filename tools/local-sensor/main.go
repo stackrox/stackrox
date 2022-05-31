@@ -79,7 +79,7 @@ func main() {
 	durationFlag := flag.String("duration", "", "duration that the scenario should run (leave it empty to run it without timeout)")
 	outputFileFlag := flag.String("output", "results.json", "output all messages received to file")
 	verboseFlag := flag.Bool("verbose", false, "prints all messages to stdout as well as to the output file")
-	resyncPeriod := flag.Duration("resync", 1 * time.Minute, "resync period")
+	resyncPeriod := flag.Duration("resync", 1*time.Minute, "resync period")
 
 	flag.Parse()
 
