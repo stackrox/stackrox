@@ -128,22 +128,6 @@ func (mr *MockStoreMockRecorder) GetKeysToIndex(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeysToIndex", reflect.TypeOf((*MockStore)(nil).GetKeysToIndex), ctx)
 }
 
-// GetListAlerts mocks base method.
-func (m *MockStore) GetListAlerts(arg0 context.Context, arg1 []string) ([]*storage.ListAlert, []int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetListAlerts", arg0, arg1)
-	ret0, _ := ret[0].([]*storage.ListAlert)
-	ret1, _ := ret[1].([]int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetListAlerts indicates an expected call of GetListAlerts.
-func (mr *MockStoreMockRecorder) GetListAlerts(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetListAlerts", reflect.TypeOf((*MockStore)(nil).GetListAlerts), arg0, arg1)
-}
-
 // GetMany mocks base method.
 func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.Alert, []int, error) {
 	m.ctrl.T.Helper()
@@ -158,22 +142,6 @@ func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.Alert
 func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
-}
-
-// ListAlert mocks base method.
-func (m *MockStore) ListAlert(ctx context.Context, id string) (*storage.ListAlert, bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListAlert", ctx, id)
-	ret0, _ := ret[0].(*storage.ListAlert)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// ListAlert indicates an expected call of ListAlert.
-func (mr *MockStoreMockRecorder) ListAlert(ctx, id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAlert", reflect.TypeOf((*MockStore)(nil).ListAlert), ctx, id)
 }
 
 // Upsert mocks base method.
@@ -191,7 +159,7 @@ func (mr *MockStoreMockRecorder) Upsert(ctx, alert interface{}) *gomock.Call {
 }
 
 // Walk mocks base method.
-func (m *MockStore) Walk(ctx context.Context, fn func(*storage.ListAlert) error) error {
+func (m *MockStore) Walk(ctx context.Context, fn func(*storage.Alert) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Walk", ctx, fn)
 	ret0, _ := ret[0].(error)

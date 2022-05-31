@@ -337,13 +337,16 @@ func (suite *AlertReindexSuite) SetupTest() {
 func (suite *AlertReindexSuite) TestReconciliationFullReindex() {
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(true, nil)
 
-	alert1 := convert.AlertToListAlert(fixtures.GetAlertWithID("A"))
-	alert2 := convert.AlertToListAlert(fixtures.GetAlertWithID("B"))
+	fullAlert1 := fixtures.GetAlertWithID("A")
+	fullAlert2 := fixtures.GetAlertWithID("B")
+	alert1 := convert.AlertToListAlert(fullAlert1)
+	alert2 := convert.AlertToListAlert(fullAlert2)
 
+	alerts := []*storage.Alert{fullAlert1, fullAlert2}
 	listAlerts := []*storage.ListAlert{alert1, alert2}
 
 	suite.storage.EXPECT().GetIDs(gomock.Any()).Return([]string{"A", "B"}, nil)
-	suite.storage.EXPECT().GetListAlerts(gomock.Any(), []string{"A", "B"}).Return(listAlerts, nil, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B"}).Return(alerts, nil, nil)
 	suite.indexer.EXPECT().AddListAlerts(listAlerts).Return(nil)
 
 	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"D", "E"}, nil)
@@ -359,26 +362,30 @@ func (suite *AlertReindexSuite) TestReconciliationPartialReindex() {
 	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
-	alert1 := convert.AlertToListAlert(fixtures.GetAlertWithID("A"))
-	alert2 := convert.AlertToListAlert(fixtures.GetAlertWithID("B"))
-	alert3 := convert.AlertToListAlert(fixtures.GetAlertWithID("C"))
+	fullAlert1 := fixtures.GetAlertWithID("A")
+	fullAlert2 := fixtures.GetAlertWithID("B")
+	fullAlert3 := fixtures.GetAlertWithID("C")
+	alert1 := convert.AlertToListAlert(fullAlert1)
+	alert2 := convert.AlertToListAlert(fullAlert2)
+	alert3 := convert.AlertToListAlert(fullAlert3)
 
+	alerts := []*storage.Alert{fullAlert1, fullAlert2, fullAlert3}
 	listAlerts := []*storage.ListAlert{alert1, alert2, alert3}
 
-	suite.storage.EXPECT().GetListAlerts(gomock.Any(), []string{"A", "B", "C"}).Return(listAlerts, nil, nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B", "C"}).Return(alerts, nil, nil)
 	suite.indexer.EXPECT().AddListAlerts(listAlerts).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"A", "B", "C"}).Return(nil)
 
 	_, err := New(suite.storage, suite.indexer, suite.searcher)
 	suite.NoError(err)
-
 	// Make listAlerts just A,B so C should be deleted
-	listAlerts = listAlerts[:1]
+	alerts2 := []*storage.Alert{fullAlert1, fullAlert2}
+	listAlerts2 := []*storage.ListAlert{alert1, alert2}
 	suite.storage.EXPECT().GetKeysToIndex(gomock.Any()).Return([]string{"A", "B", "C"}, nil)
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
-	suite.storage.EXPECT().GetListAlerts(gomock.Any(), []string{"A", "B", "C"}).Return(listAlerts, []int{2}, nil)
-	suite.indexer.EXPECT().AddListAlerts(listAlerts).Return(nil)
+	suite.storage.EXPECT().GetMany(gomock.Any(), []string{"A", "B", "C"}).Return(alerts2, []int{2}, nil)
+	suite.indexer.EXPECT().AddListAlerts(listAlerts2).Return(nil)
 	suite.indexer.EXPECT().DeleteListAlerts([]string{"C"}).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(gomock.Any(), []string{"A", "B", "C"}).Return(nil)
 
