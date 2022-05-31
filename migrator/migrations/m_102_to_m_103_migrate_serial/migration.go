@@ -38,7 +38,7 @@ func migrateSerials(db *bolt.DB) error {
 			if err := proto.Unmarshal(v, si); err != nil {
 				return err
 			}
-			if serial, ok := si.Srl.(*storage.ServiceIdentity_Serial); ok {
+			if serial, ok := si.Srl.(*storage.ServiceIdentity_Serial); ok && si.GetSerialStr() == "" {
 				si.SerialStr = strconv.FormatInt(serial.Serial, 10)
 			}
 			data, err := si.Marshal()

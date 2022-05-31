@@ -289,6 +289,10 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 			createStmts: CreateTableServiceAccountsStmt,
 		},
 		{
+			name:        ServiceIdentitiesTableName,
+			createStmts: CreateTableServiceIdentitiesStmt,
+		},
+		{
 			name:        SignatureIntegrationsTableName,
 			createStmts: CreateTableSignatureIntegrationsStmt,
 		},
