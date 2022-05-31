@@ -421,7 +421,7 @@ endif
 .PHONY: scale-build
 scale-build: build-prep
 	@echo "+ $@"
-	CGO_ENABLED=0 $(GOBUILD) scale/mocksensor scale/mockcollector scale/profiler scale/chaos
+	CGO_ENABLED=0 $(GOBUILD) scale/mockcollector scale/profiler scale/chaos
 
 .PHONY: webhookserver-build
 webhookserver-build: build-prep
@@ -598,7 +598,6 @@ endif
 
 .PHONY: scale-image
 scale-image: scale-build clean-image
-	cp bin/linux/mocksensor scale/image/bin/mocksensor
 	cp bin/linux/mockcollector scale/image/bin/mockcollector
 	cp bin/linux/profiler scale/image/bin/profiler
 	cp bin/linux/chaos scale/image/bin/chaos
