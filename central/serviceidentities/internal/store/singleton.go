@@ -1,7 +1,12 @@
 package store
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/serviceidentities/internal/store/bolt"
+	"github.com/stackrox/rox/central/serviceidentities/internal/store/postgres"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -12,7 +17,11 @@ var (
 )
 
 func initialize() {
-	s = New(globaldb.GetGlobalDB())
+	if features.PostgresDatastore.Enabled() {
+		s = postgres.New(context.TODO(), globaldb.GetPostgres())
+	} else {
+		s = bolt.New(globaldb.GetGlobalDB())
+	}
 }
 
 // Singleton provides the instance of the Service interface to register.
