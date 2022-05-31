@@ -50,24 +50,21 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 				Id: "case1",
 			},
 			newSerial: &storage.ServiceIdentity{
-				Srl: &storage.ServiceIdentity_SerialStr{
-					SerialStr: "12345",
+				SerialStr: "12345",
+				Srl: &storage.ServiceIdentity_Serial{
+					Serial: 12345,
 				},
 				Id: "case1",
 			},
 		},
 		{
 			oldSerial: &storage.ServiceIdentity{
-				Srl: &storage.ServiceIdentity_SerialStr{
-					SerialStr: "ABC",
-				},
-				Id: "case2",
+				SerialStr: "ABC",
+				Id:        "case2",
 			},
 			newSerial: &storage.ServiceIdentity{
-				Srl: &storage.ServiceIdentity_SerialStr{
-					SerialStr: "ABC",
-				},
-				Id: "case2",
+				SerialStr: "ABC",
+				Id:        "case2",
 			},
 		},
 	}
