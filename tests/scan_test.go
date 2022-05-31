@@ -9,7 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -39,7 +39,7 @@ func TestScan(t *testing.T) {
 	setupDeployment(t, image, deployment)
 	defer teardownDeployment(t, deployment)
 
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	imageService := v1.NewImageServiceClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)

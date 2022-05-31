@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/tar"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +40,7 @@ func doTestBackup(t *testing.T, includeCerts bool) {
 	out, err := os.Create(zipFilePath)
 	require.NoError(t, err)
 
-	client := testutils.HTTPClientForCentral(t)
+	client := centralgrpc.HTTPClientForCentral(t)
 	endpoint := "/db/backup"
 	if includeCerts {
 		endpoint = "/api/extensions/backup"

@@ -10,7 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -44,7 +44,7 @@ func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlert
 }
 
 func verifyNoAlertForExcludedScopes(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewPolicyServiceClient(conn)
 
@@ -83,7 +83,7 @@ func verifyNoAlertForExcludedScopes(t *testing.T) {
 }
 
 func verifyAlertForExcludedScopesRemoval(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewPolicyServiceClient(conn)
 

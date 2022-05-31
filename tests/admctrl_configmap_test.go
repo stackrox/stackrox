@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,7 +46,7 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 	var config storage.DynamicClusterConfig
 	require.NoError(t, proto.Unmarshal(configData, &config), "could not unmarshal config")
 
-	cc := testutils.GRPCConnectionToCentral(t)
+	cc := centralgrpc.GRPCConnectionToCentral(t)
 
 	policyServiceClient := v1.NewPolicyServiceClient(cc)
 	newPolicy := &storage.Policy{
