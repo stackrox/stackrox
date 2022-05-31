@@ -479,7 +479,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-cci-0.3.36-7-gb2858ef939 # TODO(do not merge): After upstream PR is merged, cut a tag and update this
+      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-cci-0.3.36-7-gb2858ef939
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -2285,7 +2285,7 @@ jobs:
           path: go-unit-release-junit-reports
   go-postgres-tests:
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.36-7-gb2858ef939 # TODO(do not merge): After upstream PR is merged, cut a tag and update this
+      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.36-7-gb2858ef939
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
