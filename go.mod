@@ -165,7 +165,7 @@ replace (
 	//       there is a mix of header auth and body auth in existence, which
 	//       the library solves with autosensing + caching, and what we don't
 	//       want to reimplement in our code.
-	golang.org/x/oauth2 => github.com/misberner/oauth2 v0.0.0-20210904010302-0b4d90ae6a84
+	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.0.0-20220531064142-8b312376cb4c
 
 	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1
 	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
