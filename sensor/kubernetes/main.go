@@ -51,7 +51,10 @@ func main() {
 		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing gRPC client to endpoint %s", env.CentralEndpoint.Setting()))
 	}
 
-	s, err := sensor.CreateSensor(sharedClientInterface, workloadManager, centralConnFactory, false)
+	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
+		WithK8sClient(sharedClientInterface).
+		WithCentralConnectionFactory(centralConnFactory).
+		WithWorkloadManager(workloadManager))
 	utils.CrashOnError(err)
 
 	s.Start()
