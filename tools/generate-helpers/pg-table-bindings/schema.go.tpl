@@ -10,7 +10,6 @@ import (
     "context"
     "fmt"
 
-    "github.com/stackrox/rox/central/globaldb"
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
     "github.com/stackrox/rox/pkg/postgres"
@@ -54,7 +53,7 @@ var (
 
     // {{template "schemaVar" .Schema.Table}} is the go schema for table `{{.Schema.Table|lowerCase}}`.
     {{template "schemaVar" .Schema.Table}} = func() *walker.Schema {
-        schema := globaldb.GetSchemaForTable("{{.Schema.Table}}")
+        schema := GetSchemaForTable("{{.Schema.Table}}")
         if schema != nil {
             return schema
         }
@@ -80,7 +79,7 @@ var (
             {{- end}}
             schema.SetOptionsMap(search.Walk(v1.{{.SearchCategory}}, "{{.Schema.TypeName|lower}}", ({{$ty}})(nil)))
         {{- end }}
-        globaldb.RegisterTable(schema)
+        RegisterTable(schema)
         return schema
     }()
 )
