@@ -13,7 +13,7 @@ push_images() {
     fi
 
     info "Images from OpenShift CI builds:"
-    env | grep IMAGE
+    env | grep IMAGE || true
 
     [[ "${OPENSHIFT_CI:-false}" == "true" ]] || { die "Only supported in OpenShift CI"; }
 
@@ -24,9 +24,7 @@ push_images() {
         branch="master"
     fi
 
-    oc registry login
-
     push_main_image_set "$branch" "$brand"
 }
 
-push_images "$*"
+push_images "$@"
