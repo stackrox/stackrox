@@ -183,7 +183,14 @@ func (m *managerImpl) flushIndicatorQueue() {
 	// Map copiedQueue to slice
 	indicatorSlice := make([]*storage.ProcessIndicator, 0, len(copiedQueue))
 	for _, indicator := range copiedQueue {
+		if indicator.ContainerName == "pb-deploymentnginx-violation-resolve" {
+			log.Info("SHREWS -- we have the pb-deploymentnginx-violation-resolve add indicator")
+			log.Infof("SHREWS -- %s", indicator.Signal.Name)
+		}
 		if deleted, _ := m.deletedDeploymentsCache.Get(indicator.GetDeploymentId()).(bool); deleted {
+			if indicator.ContainerName == "pb-deploymentnginx-violation-resolve" {
+				log.Info("SHREWS -- we have the pb-deploymentnginx-violation-resolve but the deployment is deletd already")
+			}
 			continue
 		}
 		indicatorSlice = append(indicatorSlice, indicator)
@@ -228,6 +235,10 @@ func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.Process
 	// Group the processes into particular baseline segments
 	baselineMap := make(map[processBaselineKey][]*storage.ProcessIndicator)
 	for _, indicator := range indicatorSlice {
+		if indicator.ContainerName == "pb-deploymentnginx-violation-resolve" {
+			log.Info("SHREWS -- we have the pb-deploymentnginx-violation-resolve -- adding it to the map to check for")
+			log.Infof("SHREWS -- %s", indicator.Signal.Name)
+		}
 		key := indicatorToBaselineKey(indicator)
 		baselineMap[key] = append(baselineMap[key], indicator)
 	}
@@ -240,6 +251,11 @@ func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.Process
 }
 
 func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator) (bool, error) {
+
+	if baselineKey.containerName == "pb-deploymentnginx-violation-resolve" {
+		log.Info("SHREWS -- baseline key for pb-deploymentnginx-violation-resolve")
+	}
+
 	key := &storage.ProcessBaselineKey{
 		DeploymentId:  baselineKey.deploymentID,
 		ContainerName: baselineKey.containerName,
@@ -256,12 +272,19 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 	// If the baseline does not exist AND this deployment is in the observation period, we
 	// need not process further at this time.
 	if !exists && m.deploymentObservationQueue.InObservation(key.GetDeploymentId()) {
+		if baselineKey.containerName == "pb-deploymentnginx-violation-resolve" {
+			log.Info("SHREWS -- baseline key for pb-deploymentnginx-violation-resolve BUT it either does not exist or in observation")
+		}
 		return false, nil
 	}
 
 	existingProcess := set.NewStringSet()
 	for _, element := range baseline.GetElements() {
 		existingProcess.Add(element.GetElement().GetProcessName())
+		if baselineKey.containerName == "pb-deploymentnginx-violation-resolve" {
+			log.Info("SHREWS -- baseline key for pb-deploymentnginx-violation-resolve existing")
+			log.Infof("SHREWS -- %s", element.GetElement().GetProcessName())
+		}
 	}
 
 	var elements []*storage.BaselineItem
@@ -272,6 +295,10 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		}
 		baselineItem := processBaselinePkg.BaselineItemFromProcess(indicator)
 		if !existingProcess.Add(baselineItem) {
+			if baselineKey.containerName == "pb-deploymentnginx-violation-resolve" {
+				log.Info("SHREWS -- baseline key for pb-deploymentnginx-violation-resolve could not add to existing process list")
+				log.Infof("SHREWS -- %s", baselineItem)
+			}
 			continue
 		}
 		insertableElement := &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: baselineItem}}
@@ -288,9 +315,17 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 	userBaseline := processbaseline.IsUserLocked(baseline)
 	roxBaseline := processbaseline.IsRoxLocked(baseline) && hasNonStartupProcess
 	if userBaseline || roxBaseline {
+		if baselineKey.containerName == "pb-deploymentnginx-violation-resolve" {
+			log.Info("SHREWS -- baseline key for pb-deploymentnginx-violation-resolve reprocess risks")
+			log.Infof("SHREWS -- %s", baseline)
+		}
 		// We already checked if it's in the baseline and it is not, so reprocess risk to mark the results are suspicious if necessary
 		m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
 	} else {
+		if baselineKey.containerName == "pb-deploymentnginx-violation-resolve" {
+			log.Info("SHREWS -- baseline key for pb-deploymentnginx-violation-resolve add to baseline")
+			log.Infof("SHREWS -- %s", baseline)
+		}
 		// So we have a baseline, but not locked.  Now we need to add these elements to the unlocked baseline
 		_, err = m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true)
 	}
