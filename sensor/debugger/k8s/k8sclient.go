@@ -13,7 +13,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	v12 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
+	fake2 "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	k8sConfig "sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -22,7 +24,8 @@ import (
 // MakeFakeClient creates a k8s client that is not connected to any cluster
 func MakeFakeClient() *ClientSet {
 	return &ClientSet{
-		k8s: fake.NewSimpleClientset(),
+		k8s:     fake.NewSimpleClientset(),
+		dynamic: fake2.NewSimpleDynamicClient(runtime.NewScheme()),
 	}
 }
 
@@ -48,8 +51,14 @@ func MakeOutOfClusterClient() (*ClientSet, error) {
 		return nil, errors.Wrap(err, "creating ClientSet")
 	}
 
+	d, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating ClientSet")
+	}
+
 	return &ClientSet{
-		k8s: k8sClient,
+		k8s:     k8sClient,
+		dynamic: d,
 	}, nil
 }
 

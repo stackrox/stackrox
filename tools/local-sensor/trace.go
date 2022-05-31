@@ -59,8 +59,34 @@ func (tw *traceReader) Init() error {
 	}
 	tw.mu.Lock()
 	defer tw.mu.Unlock()
-	tw.lineNo = 0
+	tw.lineNo = 1
 	return os.MkdirAll(path.Dir(tw.source), os.ModePerm)
+}
+
+func (tw *traceReader) ReadFile(handle func([]byte)) error {
+	if !tw.enabled {
+		return nil
+	}
+	file, err := os.OpenFile(tw.source, os.O_RDONLY, 0644)
+	if err != nil {
+		return errors.Wrapf(err, "Error opening file: %s\n", tw.source)
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	buf := bufio.NewReader(file)
+	for {
+		line, err := buf.ReadBytes('\n')
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+		handle(line)
+	}
 }
 
 // Read reads one line from the trace file. This line corresponds to a single K8s event
@@ -84,6 +110,7 @@ func (tw *traceReader) Read(p []byte) (n int, err error) {
 		if lno < tw.lineNo {
 			continue
 		}
+		tw.lineNo++
 		b := scanner.Bytes()
 		n = copy(p, b)
 		return n, scanner.Err()
