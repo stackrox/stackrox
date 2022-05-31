@@ -79,6 +79,7 @@ func main() {
 	durationFlag := flag.String("duration", "", "duration that the scenario should run (leave it empty to run it without timeout)")
 	outputFileFlag := flag.String("output", "results.json", "output all messages received to file")
 	verboseFlag := flag.Bool("verbose", false, "prints all messages to stdout as well as to the output file")
+	resyncPeriod := flag.Duration("resync", 1*time.Minute, "resync period")
 
 	flag.Parse()
 
@@ -118,7 +119,11 @@ func main() {
 	defer shutdownFakeServer()
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
-	s, err := sensor.CreateSensor(fakeClient, nil, fakeConnectionFactory, true)
+	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
+		WithK8sClient(fakeClient).
+		WithCentralConnectionFactory(fakeConnectionFactory).
+		WithLocalSensor(true).
+		WithResyncPeriod(*resyncPeriod))
 	if err != nil {
 		panic(err)
 	}

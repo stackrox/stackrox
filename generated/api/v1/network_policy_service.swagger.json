@@ -859,6 +859,9 @@
     "storageNetworkPolicyApplicationUndoRecord": {
       "type": "object",
       "properties": {
+        "clusterId": {
+          "type": "string"
+        },
         "user": {
           "type": "string"
         },

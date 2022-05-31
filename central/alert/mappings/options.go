@@ -10,3 +10,6 @@ import (
 
 // OptionsMap is exposed for e2e test.
 var OptionsMap = search.Walk(v1.SearchCategory_ALERTS, "list_alert", (*storage.ListAlert)(nil))
+
+// PostgresOptionsMap is exposed for integration test.
+var PostgresOptionsMap = search.Walk(v1.SearchCategory_ALERTS, "alerts", (*storage.ListAlert)(nil))

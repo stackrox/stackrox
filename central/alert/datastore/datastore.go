@@ -61,7 +61,7 @@ func New(alertStore store.Store, indexer index.Indexer, searcher search.Searcher
 
 // NewWithDb returns a new soleInstance of DataStore using the input indexer, and searcher.
 func NewWithDb(db *rocksdbBase.RocksDB, bIndex bleve.Index) DataStore {
-	alertStore := store.NewFullStore(rocksdb.New(db))
+	alertStore := rocksdb.New(db)
 	indexer := index.New(bIndex)
 	searcher := search.New(alertStore, indexer)
 
