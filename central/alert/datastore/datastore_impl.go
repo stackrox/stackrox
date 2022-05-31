@@ -442,17 +442,12 @@ func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
 }
 
 func (ds *datastoreImpl) getListAlerts(ctx context.Context, ids []string) ([]*storage.ListAlert, []int, error) {
+	alerts, missingIndices, err := ds.storage.GetMany(ctx, ids)
+	if err != nil {
+		return nil, nil, err
+	}
 	listAlerts := make([]*storage.ListAlert, 0, len(ids))
-	var missingIndices []int
-	for idx, id := range ids {
-		alert, exists, err := ds.storage.Get(ctx, id)
-		if err != nil {
-			return nil, nil, err
-		}
-		if !exists {
-			missingIndices = append(missingIndices, idx)
-			continue
-		}
+	for _, alert := range alerts {
 		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
 	}
 	return listAlerts, missingIndices, nil

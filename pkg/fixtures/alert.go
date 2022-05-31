@@ -11,7 +11,7 @@ import (
 // GetScopedDeploymentAlert returns a Mock alert attached to a deployment belonging to the input scope
 func GetScopedDeploymentAlert(ID string, clusterID string, namespace string) *storage.Alert {
 	return &storage.Alert{
-		Id: ID, // "Alert1",
+		Id: ID,
 		Violations: []*storage.Alert_Violation{
 			{
 				Message: "Deployment is affected by 'CVE-2017-15804'",
@@ -40,9 +40,9 @@ func GetScopedDeploymentAlert(ID string, clusterID string, namespace string) *st
 			Deployment: &storage.Alert_Deployment{
 				Name:        "nginx_server",
 				Id:          "s79mdvmb6dsl",
-				ClusterId:   clusterID, // "prod cluster",
+				ClusterId:   clusterID,
 				ClusterName: "prod cluster",
-				Namespace:   namespace, // "stackrox",
+				Namespace:   namespace,
 				Labels: map[string]string{
 					"com.docker.stack.namespace":    "prevent",
 					"com.docker.swarm.service.name": "prevent_sensor",
