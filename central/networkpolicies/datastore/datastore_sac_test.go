@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -195,11 +196,11 @@ func (s *networkPolicySACSuite) TestGetNetworkPolicies() {
 		"read-write on matching cluster but wrong namespace cannot get": {
 			scopeKey: testutils.Cluster2NamespaceAReadWriteCtx,
 		},
-		"read-write on matching cluster and namespace can get (partial)": {
+		"read-write on matching cluster and namespace can get": {
 			scopeKey:      testutils.Cluster2NamespaceBReadWriteCtx,
 			expectedFound: []*storage.NetworkPolicy{networkPolicy1},
 		},
-		"read-write on matching cluster and at least one matching namespace can get (partial)": {
+		"read-write on matching cluster and at least one matching namespace can get": {
 			scopeKey:      testutils.Cluster2NamespacesABReadWriteCtx,
 			expectedFound: []*storage.NetworkPolicy{networkPolicy1},
 		},
@@ -211,6 +212,185 @@ func (s *networkPolicySACSuite) TestGetNetworkPolicies() {
 			policies, err := s.datastore.GetNetworkPolicies(ctx, testconsts.Cluster2, testconsts.NamespaceB)
 			s.ElementsMatch(c.expectedFound, policies)
 			s.ErrorIs(err, c.expectedErr)
+		})
+	}
+}
+
+func (s *networkPolicySACSuite) TestCountMatchingNetworkPolicies() {
+	var err error
+	networkPolicy1 := fixtures.GetScopedNetworkPolicy(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
+	err = s.datastore.UpsertNetworkPolicy(s.testContexts[testutils.UnrestrictedReadWriteCtx], networkPolicy1)
+	s.NoError(err)
+	s.testNetworkPolicyIDs = append(s.testNetworkPolicyIDs, networkPolicy1.GetId())
+	networkPolicy2 := fixtures.GetScopedNetworkPolicy(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB)
+	err = s.datastore.UpsertNetworkPolicy(s.testContexts[testutils.UnrestrictedReadWriteCtx], networkPolicy2)
+	s.NoError(err)
+	s.testNetworkPolicyIDs = append(s.testNetworkPolicyIDs, networkPolicy2.GetId())
+	cases := map[string]struct {
+		scopeKey      string
+		expectedCount int
+	}{
+		"global read-only can count": {
+			scopeKey:      testutils.UnrestrictedReadCtx,
+			expectedCount: 1,
+		},
+		"global read-write can count": {
+			scopeKey:      testutils.UnrestrictedReadWriteCtx,
+			expectedCount: 1,
+		},
+		"read-write on wrong cluster cannot count": {
+			scopeKey: testutils.Cluster1ReadWriteCtx,
+		},
+		"read-write on wrong cluster and namespace cannot count": {
+			scopeKey: testutils.Cluster1NamespaceAReadWriteCtx,
+		},
+		"read-write on wrong cluster and matching namespace cannot count": {
+			scopeKey: testutils.Cluster1NamespaceBReadWriteCtx,
+		},
+		"read-write on matching cluster can count": {
+			scopeKey:      testutils.Cluster2ReadWriteCtx,
+			expectedCount: 1,
+		},
+		"read-write on matching cluster but wrong namespace cannot count": {
+			scopeKey: testutils.Cluster2NamespaceAReadWriteCtx,
+		},
+		"read-write on matching cluster and namespace can count": {
+			scopeKey:      testutils.Cluster2NamespaceBReadWriteCtx,
+			expectedCount: 1,
+		},
+		"read-write on matching cluster and at least one matching namespace can count": {
+			scopeKey:      testutils.Cluster2NamespacesABReadWriteCtx,
+			expectedCount: 1,
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.scopeKey]
+			count, err := s.datastore.CountMatchingNetworkPolicies(ctx, testconsts.Cluster2, testconsts.NamespaceB)
+			s.Equal(c.expectedCount, count)
+			s.Nil(err)
+		})
+	}
+}
+
+func (s *networkPolicySACSuite) TestUpsertNetworkPolicy() {
+	cases := map[string]struct {
+		scopeKey      string
+		expectedError bool
+	}{
+		"global read-only cannot upsert": {
+			scopeKey:      testutils.UnrestrictedReadCtx,
+			expectedError: true,
+		},
+		"global read-write can upsert": {
+			scopeKey: testutils.UnrestrictedReadWriteCtx,
+		},
+		"read-write on wrong cluster cannot upsert": {
+			scopeKey:      testutils.Cluster1ReadWriteCtx,
+			expectedError: true,
+		},
+		"read-write on wrong cluster and namespace cannot upsert": {
+			scopeKey:      testutils.Cluster1NamespaceAReadWriteCtx,
+			expectedError: true,
+		},
+		"read-write on wrong cluster and matching namespace cannot upsert": {
+			scopeKey:      testutils.Cluster1NamespaceBReadWriteCtx,
+			expectedError: true,
+		},
+		"read-write on matching cluster can upsert": {
+			scopeKey: testutils.Cluster2ReadWriteCtx,
+		},
+		"read-write on matching cluster but wrong namespace cannot upsert": {
+			scopeKey:      testutils.Cluster2NamespaceAReadWriteCtx,
+			expectedError: true,
+		},
+		"read-write on matching cluster and namespace can upsert": {
+			scopeKey: testutils.Cluster2NamespaceBReadWriteCtx,
+		},
+		"read-write on matching cluster and at least one matching namespace can upsert": {
+			scopeKey: testutils.Cluster2NamespacesABReadWriteCtx,
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			unrestrictedCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
+			ctx := s.testContexts[c.scopeKey]
+			policy := fixtures.GetScopedNetworkPolicy(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
+			err := s.datastore.UpsertNetworkPolicy(ctx, policy)
+			defer s.deleteNetworkPolicy(policy.GetId())
+			if c.expectedError {
+				s.ErrorIs(err, sac.ErrResourceAccessDenied)
+			} else {
+				s.NoError(err)
+				count, countErr := s.datastore.CountMatchingNetworkPolicies(unrestrictedCtx, testconsts.Cluster2, testconsts.NamespaceB)
+				s.Equal(1, count)
+				s.NoError(countErr)
+			}
+		})
+	}
+}
+
+func (s *networkPolicySACSuite) TestRemoveNetworkPolicy() {
+	cases := map[string]struct {
+		scopeKey      string
+		expectedError bool
+	}{
+		"global read-only cannot remove": {
+			scopeKey:      testutils.UnrestrictedReadCtx,
+			expectedError: true,
+		},
+		"global read-write can remove": {
+			scopeKey: testutils.UnrestrictedReadWriteCtx,
+		},
+		"read-write on wrong cluster cannot remove": {
+			scopeKey:      testutils.Cluster1ReadWriteCtx,
+			expectedError: true,
+		},
+		"read-write on wrong cluster and namespace cannot remove": {
+			scopeKey:      testutils.Cluster1NamespaceAReadWriteCtx,
+			expectedError: true,
+		},
+		"read-write on wrong cluster and matching namespace cannot remove": {
+			scopeKey:      testutils.Cluster1NamespaceBReadWriteCtx,
+			expectedError: true,
+		},
+		"read-write on matching cluster can remove": {
+			scopeKey: testutils.Cluster2ReadWriteCtx,
+		},
+		"read-write on matching cluster but wrong namespace cannot remove": {
+			scopeKey:      testutils.Cluster2NamespaceAReadWriteCtx,
+			expectedError: true,
+		},
+		"read-write on matching cluster and namespace can remove": {
+			scopeKey: testutils.Cluster2NamespaceBReadWriteCtx,
+		},
+		"read-write on matching cluster and at least one matching namespace can remove": {
+			scopeKey: testutils.Cluster2NamespacesABReadWriteCtx,
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			unrestrictedCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
+			ctx := s.testContexts[c.scopeKey]
+			policy := fixtures.GetScopedNetworkPolicy(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
+			err := s.datastore.UpsertNetworkPolicy(unrestrictedCtx, policy)
+			s.NoError(err)
+			deleteErr := s.datastore.RemoveNetworkPolicy(ctx, policy.GetId())
+			defer s.deleteNetworkPolicy(policy.GetId())
+			if c.expectedError {
+				s.ErrorIs(deleteErr, sac.ErrResourceAccessDenied)
+				count, countErr := s.datastore.CountMatchingNetworkPolicies(unrestrictedCtx, policy.GetClusterId(), policy.GetNamespace())
+				s.Equal(1, count)
+				s.NoError(countErr)
+			} else {
+				s.NoError(deleteErr)
+				count, countErr := s.datastore.CountMatchingNetworkPolicies(unrestrictedCtx, testconsts.Cluster2, testconsts.NamespaceB)
+				s.Equal(0, count)
+				s.NoError(countErr)
+			}
 		})
 	}
 }

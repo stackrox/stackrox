@@ -29,12 +29,17 @@ spec:
 
 // GetNetworkPolicy returns a network policy
 func GetNetworkPolicy() *storage.NetworkPolicy {
+	return GetScopedNetworkPolicy("network-policy-id", "cluster-id", "namespace")
+}
+
+// GetScopedNetworkPolicy returns a network policy holding the provided scope information
+func GetScopedNetworkPolicy(id string, clusterID string, namespace string) *storage.NetworkPolicy {
 	return &storage.NetworkPolicy{
-		Id:          "network-policy-id",
+		Id:          id,
 		Name:        "network-policy-name",
-		ClusterId:   "cluster-id",
+		ClusterId:   clusterID,
 		ClusterName: "",
-		Namespace:   "namespace",
+		Namespace:   namespace,
 		Labels:      nil,
 		Annotations: nil,
 		Spec: &storage.NetworkPolicySpec{
