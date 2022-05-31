@@ -19,8 +19,8 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
 
 ## Table of contents
 
-* [Deployment](#deployment)
-    + [Helm Charts](#helm-charts)
+* [Quick Installation via Helm](#quick-installation-via-helm)
+* [Manual Deployment](#manual-deployment)
 * [Development](#development)
     + [Quickstart](#quickstart)
       - [Build Tooling](#build-tooling)
@@ -33,9 +33,32 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
     + [How to Deploy](#how-to-deploy)
 * [Generating portable installers](#generating-portable-installers)
 
-## Deployment
+## Quick Installation via Helm
 
-To quickly deploy the latest development version of StackRox to your kubernetes
+StackRox offers quick installation via Helm Charts, the following software is required for installing this way:
+* [Docker](https://www.docker.com/)
+  * or `brew install docker`
+* [Helm](https://helm.sh/)
+  * or `brew install helm`
+
+Next, add the [Stackrox helm-charts/opensource GitHub Repo](https://github.com/stackrox/helm-charts/tree/main/opensource) to Helm.
+```
+helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
+```
+To see all available Helm charts in the repo run
+```
+helm search repo stackrox --devel
+```
+From here you can install stackrox-central-services or stackrox-secured-cluster-services
+```
+helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --devel
+helm install -n stackrox --create-namespace stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services --devel
+```
+to your Docker instance running Kubernetes.
+
+## Manual Deployment
+
+To manually deploy the latest development version of StackRox to your kubernetes
 cluster in the stackrox namespace:
 
 ```
@@ -52,14 +75,6 @@ When the deployment has completed a port-forward should exist so you can connect
 to https://localhost:8000/. Credentials for the 'admin' user can be found in
 `./deploy/k8s/central-deploy/password`
 (`deploy/openshift/central-deploy/password` in the OpenShift case).
-
-### Helm Charts
-
-Alternatively, there are also opensource flavor [Helm Charts](https://helm.sh/) available at [github.com/stackrox/helm-charts](https://github.com/stackrox/helm-charts/tree/main/opensource) which can be used to install StackRox
-```
-helm repo add stackroxhelm https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
-helm install -n stackrox --create-namespace stackrox-central-services stackroxhelm/stackrox-central-services --devel
-```
 
 ## Development
 
