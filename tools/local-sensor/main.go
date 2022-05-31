@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -80,9 +79,9 @@ func mustGetCommandLineArgs() localSensorConfig {
 
 	recordTrace := flag.Bool("record", false, "whether to record a trace with k8s events")
 	traceOutFile := flag.String("record-out", "k8s-trace.jsonl", "a file where recorded trace would be stored")
-	replayTrace := flag.Bool("reply", false, "whether to reply recorded a trace with k8s events")
-	traceInFile := flag.String("reply-in", "k8s-trace.jsonl", "a file where recorded trace would be read from")
-	//resyncPeriod := flag.Duration("resync", 1*time.Minute, "resync period")
+	replayTrace := flag.Bool("replay", false, "whether to reply recorded a trace with k8s events")
+	traceInFile := flag.String("replay-in", "k8s-trace.jsonl", "a file where recorded trace would be read from")
+	resyncPeriod := flag.Duration("resync", 1*time.Minute, "resync period")
 	flag.Parse()
 
 	fsc.Duration = *durationFlag
@@ -104,6 +103,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	fsc.ShallReplayK8sTrace = *replayTrace
 	fsc.ReplayK8sTraceFile = path.Clean(*traceInFile)
 	fsc.Verbose = *verboseFlag
+	fsc.ResyncPeriod = *resyncPeriod
 	return fsc
 }
 
@@ -172,27 +172,21 @@ func main() {
 
 	// DIRTY-area
 	if trReader.enabled {
-		for i := 0; i < 5; i++ {
-			buf := make([]byte, 4096)
-			n, err := trReader.Read(buf)
-			if err != nil {
-				log.Fatalf("error reading using the trReader")
-			}
-			fmt.Printf("read %d bytes from the file\n", n)
+		trReader.ReadFile(func(line []byte) {
 			obj := resources.InformerK8sMsg{}
-
-			if err := json.Unmarshal(buf[:n], &obj); err != nil {
+			if err := json.Unmarshal(line, &obj); err != nil {
 				log.Fatalf("cannot unmarshal: %s\n", err)
-			} else {
-				fmt.Printf("payload: %s\n", obj.Payload)
 			}
-			// depending on a mode - sleep or do sth else
-			// fakeClient.Dynamic().Resource(? inject here the 'obj' somehow ?)
-		}
+			log.Println("Create Event: ", obj.ObjectType)
+			if err := createEvent(fakeClient, obj); err != nil {
+				log.Printf("cannot create event for %s %s", obj.ObjectType, err)
+				//log.Fatalf("cannot create event: ", err)
+			}
+		})
+		return
 	}
 	// DIRTY-area-end
 
-	// TODO: remove the trReader dependency from CreateSensor
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(fakeClient).
 		WithCentralConnectionFactory(fakeConnectionFactory).
