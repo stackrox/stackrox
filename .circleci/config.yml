@@ -32,13 +32,6 @@ runOnAllTagsWithQuayIOPullCtx: &runOnAllTagsWithQuayIOPullCtx
   <<: *runOnAllTags
   context: quay-rhacs-eng-readonly
 
-ensureCompilation: &ensureCompilation
-  requires:
-  - pre-build-go-binaries
-  - pre-build-ui-rhacs
-  - pre-build-cli
-  - pre-build-ui-stackrox
-
 runOnAllTagsWithPushCtx: &runOnAllTagsWithPushCtx
   <<: *runOnAllTags
   context:
@@ -4795,7 +4788,6 @@ workflows:
           <<: *runOnAllTagsWithPushCtx
       - provision-gke-api-nongroovy-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-          <<: *ensureCompilation
       - gke-api-nongroovy-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -4809,7 +4801,6 @@ workflows:
             - pre-build-cli
       - provision-gke-ui-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-          <<: *ensureCompilation
       - gke-ui-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -4819,7 +4810,6 @@ workflows:
             - provision-gke-ui-e2e-tests
       - provision-gke-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-          <<: *ensureCompilation
       - gke-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -4829,7 +4819,6 @@ workflows:
             - provision-gke-api-e2e-tests
       - provision-gke-postgres-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-          <<: *ensureCompilation
       - gke-postgres-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -4839,7 +4828,6 @@ workflows:
             - provision-gke-postgres-api-e2e-tests
       - provision-gke-kernel-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-          <<: *ensureCompilation
       - gke-kernel-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -4849,7 +4837,6 @@ workflows:
             - provision-gke-kernel-api-e2e-tests
       - provision-gke-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-          <<: *ensureCompilation
       - gke-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -4859,7 +4846,6 @@ workflows:
             - provision-gke-api-scale-tests
       - provision-gke-postgres-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-          <<: *ensureCompilation
       - gke-postgres-api-scale-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -4869,8 +4855,6 @@ workflows:
           - provision-gke-postgres-api-scale-tests
       - provision-openshift-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-          <<: *ensureCompilation
-
       - openshift-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -4880,8 +4864,6 @@ workflows:
             - provision-openshift-api-e2e-tests
       - provision-openshift-crio-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-          <<: *ensureCompilation
-
       - openshift-crio-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -4891,8 +4873,6 @@ workflows:
             - provision-openshift-crio-api-e2e-tests
       - provision-eks-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-          <<: *ensureCompilation
-
       - eks-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -4912,8 +4892,6 @@ workflows:
       #       - provision-aks-api-e2e-tests
       - provision-openshift-4-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-          <<: *ensureCompilation
-
       - openshift-4-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -4923,10 +4901,8 @@ workflows:
             - provision-openshift-4-api-e2e-tests
       - provision-openshift-4-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-          <<: *ensureCompilation
       - provision-openshift-4-6-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-          <<: *ensureCompilation
       - openshift-4-operator-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -4943,8 +4919,6 @@ workflows:
             - provision-openshift-4-6-operator-e2e-tests
       - provision-race-condition-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
-          <<: *ensureCompilation
-
       - race-condition-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
           requires:
@@ -4971,7 +4945,6 @@ workflows:
           context:
             - osd-cluster-manager
             - quay-rhacs-eng-readonly
-          <<: *ensureCompilation
 
       - openshift-rosa-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -5001,7 +4974,6 @@ workflows:
             - azure-ci
             - aro-cluster-manager
             - osd-cluster-manager
-          <<: *ensureCompilation
 
       - openshift-aro-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -5022,7 +4994,6 @@ workflows:
           context:
             - quay-rhacs-eng-readonly
             - osd-cluster-manager
-          <<: *ensureCompilation
 
       - osd-aws-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
@@ -5040,7 +5011,6 @@ workflows:
           context:
             - quay-rhacs-eng-readonly
             - osd-cluster-manager
-          <<: *ensureCompilation
 
       - osd-gcp-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
