@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/sensor/common/centralclient"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 )
 
@@ -14,6 +15,7 @@ type CreateOptions struct {
 	centralConnFactory centralclient.CentralConnectionFactory
 	localSensor        bool
 	resyncPeriod       time.Duration
+	k8sClient          client.Interface
 }
 
 // ConfigWithDefaults creates a new config object with default properties.
@@ -26,9 +28,17 @@ func ConfigWithDefaults() *CreateOptions {
 	return &CreateOptions{
 		workloadManager:    nil,
 		centralConnFactory: nil,
+		k8sClient:          nil,
 		localSensor:        false,
 		resyncPeriod:       1 * time.Minute,
 	}
+}
+
+// WithK8sClient sets the k8s client.
+// Default: nil
+func (cfg *CreateOptions) WithK8sClient(k8s client.Interface) *CreateOptions {
+	cfg.k8sClient = k8s
+	return cfg
 }
 
 // WithWorkloadManager sets workload manager.

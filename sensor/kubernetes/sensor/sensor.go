@@ -37,7 +37,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
-	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
 	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
@@ -56,7 +55,7 @@ var (
 )
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
-func CreateSensor(client client.Interface, cfg *CreateOptions) (*sensor.Sensor, error) {
+func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
 
 	var helmManagedConfig *central.HelmManagedConfigInit
@@ -86,24 +85,24 @@ func CreateSensor(client client.Interface, cfg *CreateOptions) (*sensor.Sensor, 
 		}
 	}
 
-	deploymentIdentification := fetchDeploymentIdentification(context.Background(), client.Kubernetes())
+	deploymentIdentification := fetchDeploymentIdentification(context.Background(), cfg.k8sClient.Kubernetes())
 	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
 	auditLogCollectionManager := compliance.NewAuditLogCollectionManager()
 
-	o := orchestrator.New(client.Kubernetes())
+	o := orchestrator.New(cfg.k8sClient.Kubernetes())
 	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager)
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig, auditLogCollectionManager)
-	enforcer, err := enforcer.New(client)
+	enforcer, err := enforcer.New(cfg.k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating enforcer")
 	}
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager, resources.NetworkPolicySingleton())
-	resourceListener := listener.New(client, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod)
+	resourceListener := listener.New(cfg.k8sClient, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod)
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, resourceListener)
 
 	imageService := image.NewService(imageCache)
@@ -119,13 +118,13 @@ func CreateSensor(client client.Interface, cfg *CreateOptions) (*sensor.Sensor, 
 		admCtrlMsgForwarder,
 		enforcer,
 		networkFlowManager,
-		networkpolicies.NewCommandHandler(client.Kubernetes()),
-		clusterstatus.NewUpdater(client),
-		clusterhealth.NewUpdater(client.Kubernetes(), 0),
-		clustermetrics.New(client.Kubernetes()),
+		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
+		clusterstatus.NewUpdater(cfg.k8sClient),
+		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
+		clustermetrics.New(cfg.k8sClient.Kubernetes()),
 		complianceCommandHandler,
 		processSignals,
-		telemetry.NewCommandHandler(client.Kubernetes()),
+		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes()),
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
@@ -153,7 +152,7 @@ func CreateSensor(client client.Interface, cfg *CreateOptions) (*sensor.Sensor, 
 	}
 
 	if admCtrlSettingsMgr != nil {
-		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(client.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
+		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(cfg.k8sClient.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
 	}
 
 	// Local scanner can be started even if scanner-tls certs are available in the same namespace because
@@ -161,7 +160,7 @@ func CreateSensor(client client.Interface, cfg *CreateOptions) (*sensor.Sensor, 
 	if features.LocalImageScanning.Enabled() && securedClusterIsNotManagedManually(helmManagedConfig) && env.LocalImageScanningEnabled.BooleanSetting() {
 		podName := os.Getenv("POD_NAME")
 		components = append(components,
-			localscanner.NewLocalScannerTLSIssuer(client.Kubernetes(), sensorNamespace, podName))
+			localscanner.NewLocalScannerTLSIssuer(cfg.k8sClient.Kubernetes(), sensorNamespace, podName))
 	}
 
 	s := sensor.NewSensor(
@@ -189,7 +188,7 @@ func CreateSensor(client client.Interface, cfg *CreateOptions) (*sensor.Sensor, 
 		apiServices = append(apiServices, admissioncontroller.NewManagementService(admCtrlSettingsMgr, admissioncontroller.AlertHandlerSingleton()))
 	}
 
-	apiServices = append(apiServices, certdistribution.NewService(client.Kubernetes(), sensorNamespace))
+	apiServices = append(apiServices, certdistribution.NewService(cfg.k8sClient.Kubernetes(), sensorNamespace))
 
 	s.AddAPIServices(apiServices...)
 	return s, nil

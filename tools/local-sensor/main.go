@@ -119,7 +119,8 @@ func main() {
 	defer shutdownFakeServer()
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
-	s, err := sensor.CreateSensor(fakeClient, sensor.ConfigWithDefaults().
+	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
+		WithK8sClient(fakeClient).
 		WithCentralConnectionFactory(fakeConnectionFactory).
 		WithLocalSensor(true).
 		WithResyncPeriod(*resyncPeriod))
