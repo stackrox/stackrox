@@ -10,7 +10,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
 	"github.com/stackrox/rox/pkg/config"
-	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -60,9 +59,6 @@ SELECT TABLE_NAME
 )
 
 var (
-	// registeredTables is map of sql table name to go schema of the sql table.
-	registeredTables = make(map[string]*walker.Schema)
-
 	postgresOpenRetries        = 10
 	postgresTimeBetweenRetries = 10 * time.Second
 	postgresDB                 *pgxpool.Pool
@@ -70,15 +66,6 @@ var (
 
 	postgresQueryTimeout = 10 * time.Second
 )
-
-// RegisterTable maps a table to an object type for the purposes of metrics gathering
-func RegisterTable(schema *walker.Schema) {
-	if _, ok := registeredTables[schema.Table]; ok {
-		log.Fatalf("table %q is already registered for %s", schema.Table, schema.Type)
-		return
-	}
-	registeredTables[schema.Table] = schema
-}
 
 // GetPostgres returns a global database instance
 func GetPostgres() *pgxpool.Pool {
@@ -156,18 +143,4 @@ func startMonitoringPostgres(db *pgxpool.Pool) {
 	for range t.C {
 		collectPostgresStats(db)
 	}
-}
-
-// GetSchemaForTable return the schema registered for specified table name.
-func GetSchemaForTable(tableName string) *walker.Schema {
-	return registeredTables[tableName]
-}
-
-// GetAllRegisteredSchemas returns all registered schemas.
-func GetAllRegisteredSchemas() map[string]*walker.Schema {
-	ret := make(map[string]*walker.Schema)
-	for k, v := range registeredTables {
-		ret[k] = v
-	}
-	return ret
 }
