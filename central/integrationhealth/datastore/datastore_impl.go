@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/integrationhealth/store/rocksdb"
+	"github.com/stackrox/rox/central/integrationhealth/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -18,7 +18,7 @@ var (
 )
 
 type datastoreImpl struct {
-	store rocksdb.Store
+	store store.Store
 }
 
 func (ds *datastoreImpl) GetRegistriesAndScanners(ctx context.Context) ([]*storage.IntegrationHealth, error) {
