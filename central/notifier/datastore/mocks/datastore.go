@@ -82,6 +82,37 @@ func (mr *MockDataStoreMockRecorder) GetNotifiers(ctx, request interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNotifiers", reflect.TypeOf((*MockDataStore)(nil).GetNotifiers), ctx, request)
 }
 
+// GetScrubbedNotifier mocks base method.
+func (m *MockDataStore) GetScrubbedNotifier(ctx context.Context, id string) (*storage.Notifier, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetScrubbedNotifier", ctx, id)
+	ret0, _ := ret[0].(*storage.Notifier)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetScrubbedNotifier indicates an expected call of GetScrubbedNotifier.
+func (mr *MockDataStoreMockRecorder) GetScrubbedNotifier(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScrubbedNotifier", reflect.TypeOf((*MockDataStore)(nil).GetScrubbedNotifier), ctx, id)
+}
+
+// GetScrubbedNotifiers mocks base method.
+func (m *MockDataStore) GetScrubbedNotifiers(ctx context.Context, request *v1.GetNotifiersRequest) ([]*storage.Notifier, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetScrubbedNotifiers", ctx, request)
+	ret0, _ := ret[0].([]*storage.Notifier)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetScrubbedNotifiers indicates an expected call of GetScrubbedNotifiers.
+func (mr *MockDataStoreMockRecorder) GetScrubbedNotifiers(ctx, request interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetScrubbedNotifiers", reflect.TypeOf((*MockDataStore)(nil).GetScrubbedNotifiers), ctx, request)
+}
+
 // RemoveNotifier mocks base method.
 func (m *MockDataStore) RemoveNotifier(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
