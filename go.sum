@@ -2197,8 +2197,6 @@ github.com/miekg/pkcs11 v1.1.1/go.mod h1:XsNlhZGX73bx86s2hdc/FuaLm2CPZJemRLMA+WT
 github.com/mikefarah/yq/v2 v2.4.1/go.mod h1:i8SYf1XdgUvY2OFwSqGAtWOOgimD2McJ6iutoxRm4k0=
 github.com/minio/minio-go/v6 v6.0.49/go.mod h1:qD0lajrGW49lKZLtXKtCB4X/qkMf0a5tBvN2PaZg7Gg=
 github.com/minio/sha256-simd v0.1.1/go.mod h1:B5e1o+1/KgNmWrSQK08Y6Z1Vb5pwIktudl0J58iy0KM=
-github.com/misberner/oauth2 v0.0.0-20210904010302-0b4d90ae6a84 h1:bBqMmK/kh43mIB7FOKxQYwiIA98XL10fc6wHLqo+wz0=
-github.com/misberner/oauth2 v0.0.0-20210904010302-0b4d90ae6a84/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
 github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea h1:joZvk/UMpLFmOmQ1KgErXuT4tWGXQUkiS5KW7uSeHV4=
 github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea/go.mod h1:qZiCRLLkPiVnl3sPY6zs/mPb6W5QXUPrg1zhb4Sfrd4=
 github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible/go.mod h1:8AuVvqP/mXw1px98n46wfvcGfQ4ci2FwoAjKYxuo3Z4=
@@ -2782,6 +2780,8 @@ github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5 h1:0
 github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20210422200002-d89f671ac4f5/go.mod h1:GEtZ9DYAzmOtyqQPCJCEIzXJ7NcrHbMy6ZPJbcyfmLM=
 github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56 h1:D2wYiy+hcKy8qZAg9SxSWfZgbvmEgD9AdV0g0lJqGZ0=
 github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56/go.mod h1:AIeN7k60Q/kcW9aeiMpA0PY8CU3zsrLV0UhIksolMn4=
+github.com/stackrox/oauth2 v0.0.0-20220531064142-8b312376cb4c h1:lpB76HIH2VEIOgrvZlE5pWCOCHmbJJwVoaG++vk58V4=
+github.com/stackrox/oauth2 v0.0.0-20220531064142-8b312376cb4c/go.mod h1:DAh4E804XQdzx2j+YRIaUnCqCV2RuMz24cGBJ5QYIrc=
 github.com/stackrox/scanner v0.0.0-20220426001230-9ab6777c9581 h1:RtbHwBxqH1ghFRoV56ruy8dAUqRcIkL3jJxEUiWwd7s=
 github.com/stackrox/scanner v0.0.0-20220426001230-9ab6777c9581/go.mod h1:2bfJIIKJeNQRQA4mAc+zRgjLZON+sImIsZ1mcaoTT1A=
 github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d h1:jeM6QMtwE9BU0rfDYcmkI/aOChOUfIO18LDp/DSnZpI=
