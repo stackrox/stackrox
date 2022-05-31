@@ -9,7 +9,7 @@ require github.com/stackrox/scanner v0.0.0-20220426001230-9ab6777c9581
 require (
 	cloud.google.com/go/compute v1.6.1
 	cloud.google.com/go/containeranalysis v0.3.0
-	cloud.google.com/go/storage v1.22.0
+	cloud.google.com/go/storage v1.22.1
 	github.com/BurntSushi/toml v1.0.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.2
@@ -18,7 +18,7 @@ require (
 	github.com/RoaringBitmap/roaring v1.1.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/andygrunwald/go-jira v1.15.1
-	github.com/aws/aws-sdk-go v1.44.20
+	github.com/aws/aws-sdk-go v1.44.24
 	github.com/blevesearch/bleve v1.0.14
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/ckaznocha/protoc-gen-lint v0.2.4
@@ -47,7 +47,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/certificate-transparency-go v1.1.3
 	github.com/google/go-cmp v0.5.8
-	github.com/google/go-containerregistry v0.8.1-0.20220125170349-50dfc2733d10
+	github.com/google/go-containerregistry v0.9.0
 	github.com/googleapis/gnostic v0.5.5
 	github.com/gorilla/schema v1.2.0
 	github.com/graph-gophers/graphql-go v1.3.0
@@ -67,8 +67,6 @@ require (
 	github.com/machinebox/graphql v0.2.2
 	github.com/magiconair/properties v1.8.6
 	github.com/mailru/easyjson v0.7.7
-	github.com/matryer/is v1.4.0 // indirect
-	github.com/mattn/go-sqlite3 v1.14.12 // indirect
 	github.com/mauricelam/genny v0.0.0-20190320071652-0800202903e5
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure v1.1.0
@@ -76,7 +74,7 @@ require (
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.0.3-0.20211202193544-a5463b7f9c84
+	github.com/opencontainers/image-spec v1.0.3-0.20220114050600-8b9d41f48198
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
 	github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
 	github.com/operator-framework/helm-operator-plugins v0.0.7
@@ -88,8 +86,8 @@ require (
 	github.com/russellhaering/gosaml2 v0.7.0
 	github.com/russellhaering/goxmldsig v1.2.0
 	github.com/sergi/go-diff v1.2.0
-	github.com/sigstore/cosign v1.5.1
-	github.com/sigstore/sigstore v1.1.1-0.20220130134424-bae9b66b8442
+	github.com/sigstore/cosign v1.8.1-0.20220530190726-3a43ddc93914
+	github.com/sigstore/sigstore v1.2.1-0.20220528141235-6d98e7d59dee
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stackrox/default-authz-plugin v0.0.0-20210608105219-00ad9c9f3855
@@ -105,31 +103,31 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
-	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4
+	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6
+	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29
+	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	golang.org/x/tools v0.1.10
 	golang.stackrox.io/grpc-http1 v0.2.4
-	google.golang.org/api v0.80.0
-	google.golang.org/genproto v0.0.0-20220505152158-f39f71e6c8f3
-	google.golang.org/grpc v1.46.0
+	google.golang.org/api v0.81.0
+	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd
+	google.golang.org/grpc v1.46.2
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gopkg.in/yaml.v3 v3.0.0
 	gorm.io/driver/postgres v1.3.5
 	gorm.io/gorm v1.23.5
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.2
-	k8s.io/api v0.23.1
-	k8s.io/apimachinery v0.23.1
-	k8s.io/apiserver v0.23.1
-	k8s.io/client-go v0.23.1
+	k8s.io/api v0.23.5
+	k8s.io/apimachinery v0.23.5
+	k8s.io/apiserver v0.23.4
+	k8s.io/client-go v0.23.5
 	k8s.io/kubectl v0.23.1
 	k8s.io/kubelet v0.22.9
-	k8s.io/utils v0.0.0-20211208161948-7d6a63dca704
+	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	sigs.k8s.io/controller-runtime v0.11.0
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -154,9 +152,14 @@ replace (
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9
 	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.8-0.20220506091602-3764c49abfb3
+
+	// sigstore/sigstore is used as a dependency within cosign and rekor. The version pulled in by cosign is using
+	// a vulnerable go-tuf version
+	// (https://github.com/theupdateframework/go-tuf/security/advisories/GHSA-66x3-6cw3-v5gj).
+	// Once the upstream patches and release has landed, we can remove this replace directive.
+	github.com/sigstore/sigstore => github.com/sigstore/sigstore v1.2.1-0.20220528141235-6d98e7d59dee
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
-
 	// Our fork has a change exposing a method to do generic POST requests
 	// against the OAuth server in order to realize the refresh token flow.
 	// The problem is that:
