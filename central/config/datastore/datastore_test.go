@@ -57,7 +57,7 @@ func (s *configDataStoreTestSuite) TearDownTest() {
 }
 
 func (s *configDataStoreTestSuite) TestEnforcesGet() {
-	s.storage.EXPECT().GetConfig().Times(0)
+	s.storage.EXPECT().Get(gomock.Any()).Times(0)
 
 	config, err := s.dataStore.GetConfig(s.hasNoneCtx)
 	s.NoError(err, "expected no error, should return nil without access")
@@ -65,12 +65,12 @@ func (s *configDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (s *configDataStoreTestSuite) TestAllowsGet() {
-	s.storage.EXPECT().GetConfig().Return(nil, nil)
+	s.storage.EXPECT().Get(gomock.Any()).Return(nil, false, nil)
 
 	_, err := s.dataStore.GetConfig(s.hasReadCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
 
-	s.storage.EXPECT().GetConfig().Return(nil, nil).Times(2)
+	s.storage.EXPECT().Get(gomock.Any()).Return(nil, false, nil).Times(2)
 
 	_, err = s.dataStore.GetConfig(s.hasWriteCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
@@ -80,7 +80,7 @@ func (s *configDataStoreTestSuite) TestAllowsGet() {
 }
 
 func (s *configDataStoreTestSuite) TestEnforcesUpdate() {
-	s.storage.EXPECT().UpsertConfig(gomock.Any()).Times(0)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Times(0)
 
 	err := s.dataStore.UpsertConfig(s.hasNoneCtx, &storage.Config{})
 	s.Error(err, "expected an error trying to write without permissions")
@@ -90,7 +90,7 @@ func (s *configDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (s *configDataStoreTestSuite) TestAllowsUpdate() {
-	s.storage.EXPECT().UpsertConfig(gomock.Any()).Return(nil).Times(2)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 
 	err := s.dataStore.UpsertConfig(s.hasWriteCtx, &storage.Config{})
 	s.NoError(err, "expected no error trying to write with permissions")

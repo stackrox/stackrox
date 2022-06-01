@@ -21,7 +21,12 @@ var (
 )
 
 func (d *dataStore) initialize() error {
-	cfg, err := d.store.GetSensorUpgradeConfig()
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.SensorUpgradeConfig)))
+
+	cfg, _, err := d.store.Get(ctx)
 	if err != nil {
 		return err
 	}
@@ -35,7 +40,8 @@ func (d *dataStore) GetSensorUpgradeConfig(ctx context.Context) (*storage.Sensor
 	} else if !ok {
 		return nil, nil
 	}
-	return d.store.GetSensorUpgradeConfig()
+	config, _, err := d.store.Get(ctx)
+	return config, err
 }
 
 func (d *dataStore) UpsertSensorUpgradeConfig(ctx context.Context, sensorUpgradeConfig *storage.SensorUpgradeConfig) error {
@@ -45,7 +51,7 @@ func (d *dataStore) UpsertSensorUpgradeConfig(ctx context.Context, sensorUpgrade
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.store.UpsertSensorUpgradeConfig(sensorUpgradeConfig); err != nil {
+	if err := d.store.Upsert(ctx, sensorUpgradeConfig); err != nil {
 		return err
 	}
 	d.autoTrigger.Set(sensorUpgradeConfig.GetEnableAutoUpgrade())
