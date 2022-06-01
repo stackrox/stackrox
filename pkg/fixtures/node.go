@@ -48,17 +48,23 @@ func getNodeWithComponents(components []*storage.EmbeddedNodeScanComponent) *sto
 
 func GetScopedNode(ID string, clusterID string) *storage.Node {
 	return &storage.Node{
-		Id:              ID,
-		Name:            ID,
-		ClusterId:       clusterID,
-		ClusterName:     clusterID,
-		OperatingSystem: "Linux",
+		Id:          ID,
+		Name:        ID,
+		ClusterId:   clusterID,
+		ClusterName: clusterID,
+		ContainerRuntime: &storage.ContainerRuntimeInfo{
+			Type:    storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+			Version: "20.10.10",
+		},
+		JoinedAt:        &types.Timestamp{Seconds: 1654103379},
+		OperatingSystem: "Docker Desktop",
 		Scan:            generateNodeScan(),
 	}
 }
 
 func generateNodeScan() *storage.NodeScan {
 	return &storage.NodeScan{
+		ScanTime:        &types.Timestamp{Seconds: 1654103579},
 		OperatingSystem: "Linux",
 		Components:      generateNodeScanComponents(),
 	}
