@@ -21,7 +21,7 @@ class PreSystemTests:
         subprocess.run(
             [
                 "scripts/ci/lib.sh",
-                "poll_for_opensource_images",
+                "poll_for_system_test_images",
                 str(PreSystemTests.POLL_TIMEOUT),
             ],
             check=True,
