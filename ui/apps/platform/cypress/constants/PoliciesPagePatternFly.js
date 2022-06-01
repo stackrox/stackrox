@@ -1,6 +1,6 @@
 import scopeSelectors from '../helpers/scopeSelectors';
 
-export const url = '/main/policies';
+export const url = '/main/policy-management/policies';
 
 export const selectors = {
     table: {

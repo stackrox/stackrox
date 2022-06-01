@@ -198,15 +198,15 @@ function PoliciesTablePage({
                 />
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light" className="pf-u-py-md">
+            <PageSection variant="light" className="pf-u-py-0">
                 <Toolbar inset={{ default: 'insetNone' }}>
                     <ToolbarContent>
                         <ToolbarItem>
-                            <div className="pf-u-font-size-sm pf-u-pt-sm">
+                            <div className="pf-u-font-size-sm">
                                 Configure security policies for your resources.
                             </div>
                         </ToolbarItem>
-                        <ToolbarItem>
+                        <ToolbarItem alignment={{ default: 'alignRight' }}>
                             <Flex>
                                 <Button variant="primary" onClick={onClickCreatePolicy}>
                                     Create policy

@@ -1,7 +1,7 @@
-import * as api from '../../../constants/apiEndpoints';
-import { selectors } from '../../../constants/PoliciesPagePatternFly';
-import withAuth from '../../../helpers/basicAuth';
-import { doPolicyRowAction, visitPolicies } from '../../../helpers/policiesPatternFly';
+import * as api from '../../constants/apiEndpoints';
+import { selectors } from '../../constants/PoliciesPagePatternFly';
+import withAuth from '../../helpers/basicAuth';
+import { doPolicyRowAction, visitPolicies } from '../../helpers/policiesPatternFly';
 
 describe('Import policy', () => {
     withAuth();
