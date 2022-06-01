@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -73,7 +74,7 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 		pgStore.Destroy(ctx, s.pool)
 		s.storage = pgStore.New(ctx, s.pool)
 		s.indexer = pgStore.NewIndexWrapper(s.pool)
-		s.optionsMap = mappings.PostgresOptionsMap
+		s.optionsMap = schema.AlertsSchema.OptionsMap
 	} else {
 		s.engine, err = rocksdb.NewTemp(alertObj)
 		s.NoError(err)
