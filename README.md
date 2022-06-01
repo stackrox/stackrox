@@ -53,18 +53,19 @@ From here you can install stackrox-central-services to install the centralized c
 ```
 helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --devel
 ```
-To create a secured cluster you first need to create an init bundle, using the roxctl CLI after configuring the `ROX_CENTRAL_ADDRESS` environment variable.
+To create a secured cluster you first need to create an init bundle containing all of the secrets.
 ```
-roxctl -e "$ROX_CENTRAL_ADDRESS" central init-bundles generate <cluster_init_bundle_name> --output cluster_init_bundle.yaml
+kubectl -n rhacs-operator exec deploy/central -- roxctl --insecure-skip-tls-verify \
+    --password "$(kubectl -n rhacs-operator get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}')" \
+    central init-bundles generate stackrox-cli-bundle --output - > ~/tmp/cli-bundle.yaml
 ```
 Then install the secured cluster using this command:
 ```
 helm install -n stackrox --create-namespace stackrox-secured-cluster-services stackrox/secured-cluster-services \
-    -f <path_to_cluster_init_bundle.yaml> \ 
+    -f ~/tmp/cli-bundle.yaml \ 
     --set clusterName=<name_of_the_secured_cluster> \
-    --set centralEndpoint=<endpoint_of_central_service> 
 ```
-While specifying the path to the init bundle created in the previous step, the name of the secured cluster, and the endpoint (address and port number) for Central.
+While specifying the path to the init bundle created in the previous step, and the name of the secured cluster. When creating clusters hosted elsewhere, you will also need to specify the endpoint (address and port number) for Central.
 
 To further customize your Helm installation consult this [document](https://docs.openshift.com/acs/3.69/installing/installing_helm/install-helm-customization.html).
 
