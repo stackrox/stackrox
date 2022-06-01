@@ -22,8 +22,32 @@ var (
 	ad DataStore
 )
 
-func initialize() {
+func initializeDefaultIntegrations(ctx context.Context, storage store.Store) {
+	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
+	utils.CrashOnError(err)
+	if !env.OfflineModeEnv.BooleanSetting() && len(integrations) == 0 {
+		// Add default integrations
+		for _, ii := range store.DefaultImageIntegrations {
+			utils.Must(storage.Upsert(ctx, ii))
+		}
+	}
+}
 
+func initializeManager(ctx context.Context) {
+	// Initialize the integration set with all present integrations.
+	integrationManager := enrichment.ManagerSingleton()
+	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
+	if err != nil {
+		log.Errorf("unable to use previous integrations: %s", err)
+	}
+	for _, ii := range integrations {
+		if err := integrationManager.Upsert(ii); err != nil {
+			log.Errorf("unable to use previous integration %s: %v", ii.GetName(), err)
+		}
+	}
+}
+
+func initialize() {
 	// Create underlying store and datastore.
 	var storage store.Store
 	if features.PostgresDatastore.Enabled() {
@@ -34,26 +58,8 @@ func initialize() {
 	ad = New(storage)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
-	utils.CrashOnError(err)
-	if !env.OfflineModeEnv.BooleanSetting() && len(integrations) == 0 {
-		// Add default integrations
-		for _, ii := range store.DefaultImageIntegrations {
-			utils.Must(storage.Upsert(ctx, ii))
-		}
-	}
-
-	// Initialize the integration set with all present integrations.
-	integrationManager := enrichment.ManagerSingleton()
-	integrations, err = ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
-	if err != nil {
-		log.Errorf("unable to use previous integrations: %s", err)
-	}
-	for _, ii := range integrations {
-		if err := integrationManager.Upsert(ii); err != nil {
-			log.Errorf("unable to use previous integration %s: %v", ii.GetName(), err)
-		}
-	}
+	initializeDefaultIntegrations(ctx, storage)
+	initializeManager(ctx)
 }
 
 // Singleton provides the interface for non-service external interaction.
