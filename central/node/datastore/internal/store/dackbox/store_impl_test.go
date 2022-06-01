@@ -121,7 +121,6 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 		for _, component := range d.GetScan().GetComponents() {
 			for _, vuln := range component.GetVulns() {
 				vuln.FirstSystemOccurrence = got.GetLastUpdated()
-				vuln.FirstNodeOccurrence = got.GetLastUpdated()
 				vuln.VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
 				vuln.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 			}
@@ -201,7 +200,6 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	suite.NoError(err)
 	suite.True(exists)
 	nodes[1].GetScan().GetComponents()[0].GetVulns()[0].FirstSystemOccurrence = nodes[0].GetScan().GetComponents()[1].GetVulns()[0].FirstSystemOccurrence
-	nodes[1].GetScan().GetComponents()[0].GetVulns()[0].FirstNodeOccurrence = got.GetLastUpdated()
 	nodes[1].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
 	nodes[1].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 	suite.Equal(nodes[1], got)
@@ -219,7 +217,6 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	suite.NoError(err)
 	suite.True(exists)
 	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].FirstSystemOccurrence = nodes[0].GetScan().GetComponents()[1].GetVulns()[0].FirstSystemOccurrence
-	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].FirstNodeOccurrence = nodes[0].GetScan().GetComponents()[1].GetVulns()[0].FirstNodeOccurrence
 	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
 	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 	suite.Equal(nodes[0], got)
