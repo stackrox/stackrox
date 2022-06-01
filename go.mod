@@ -152,7 +152,12 @@ replace (
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9
 	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.8-0.20220506091602-3764c49abfb3
-
+	// github.com/sigstore/rekor is a transitive dep pulled in by cosign. The version pulled in by cosign is using
+	// a vulnerable go-tuf version
+	// (https://github.com/theupdateframework/go-tuf/security/advisories/GHSA-66x3-6cw3-v5gj).
+	// An upstream patch within rekor bumps this dep, once the upstream patch of rekor has landed within cosign, we can remove this
+	// replace redirective.
+	github.com/sigstore/rekor => github.com/sigstore/rekor v0.7.1-0.20220531123351-0c1de2a6239c
 	// sigstore/sigstore is used as a dependency within cosign and rekor. The version pulled in by cosign is using
 	// a vulnerable go-tuf version
 	// (https://github.com/theupdateframework/go-tuf/security/advisories/GHSA-66x3-6cw3-v5gj).
