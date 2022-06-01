@@ -45,3 +45,26 @@ func getNodeWithComponents(components []*storage.EmbeddedNodeScanComponent) *sto
 		},
 	}
 }
+
+func GetScopedNode(ID string, clusterID string) *storage.Node {
+	return &storage.Node{
+		Id:              ID,
+		Name:            ID,
+		ClusterId:       clusterID,
+		ClusterName:     clusterID,
+		OperatingSystem: "Linux",
+		Scan:            generateNodeScan(),
+	}
+}
+
+func generateNodeScan() *storage.NodeScan {
+	return &storage.NodeScan{
+		OperatingSystem: "Linux",
+		Components:      generateNodeScanComponents(),
+	}
+}
+
+func generateNodeScanComponents() []*storage.EmbeddedNodeScanComponent {
+	return nil
+}
+
