@@ -42,59 +42,59 @@ const DataRetentionDetailWidget = ({
 }: DataRetentionDetailWidgetProps): ReactElement => {
     return (
         <Card data-testid="data-retention-config">
-            <CardTitle>Data Retention Configuration</CardTitle>
+            <CardTitle>Data retention configuration</CardTitle>
             <Divider component="div" />
             <CardBody>
                 <Gallery hasGutter>
                     <GalleryItem>
                         <NumberBox
-                            label="All Runtime Violations"
+                            label="All runtime violations"
                             value={privateConfig?.alertConfig?.allRuntimeRetentionDurationDays}
-                            suffix="Day"
+                            suffix="day"
                         />
                     </GalleryItem>
                     <GalleryItem>
                         <NumberBox
-                            label="Runtime Violations For Deleted Deployments"
+                            label="Runtime violations for deleted deployments"
                             value={privateConfig?.alertConfig?.deletedRuntimeRetentionDurationDays}
-                            suffix="Day"
+                            suffix="day"
                         />
                     </GalleryItem>
                     <GalleryItem>
                         <NumberBox
-                            label="Resolved Deploy-Phase Violations"
+                            label="Resolved deploy-phase violations"
                             value={privateConfig?.alertConfig?.resolvedDeployRetentionDurationDays}
-                            suffix="Day"
+                            suffix="day"
                         />
                     </GalleryItem>
                     <GalleryItem>
                         <NumberBox
-                            label="Attempted Deploy-Phase Violations"
+                            label="Attempted deploy-phase violations"
                             value={privateConfig?.alertConfig?.attemptedDeployRetentionDurationDays}
-                            suffix="Day"
+                            suffix="day"
                         />
                     </GalleryItem>
                     <GalleryItem>
                         <NumberBox
-                            label="Attempted Runtime Violations"
+                            label="Attempted runtime violations"
                             value={
                                 privateConfig?.alertConfig?.attemptedRuntimeRetentionDurationDays
                             }
-                            suffix="Day"
+                            suffix="day"
                         />
                     </GalleryItem>
                     <GalleryItem>
                         <NumberBox
-                            label="Images No Longer Deployed"
+                            label="Images no longer deployed"
                             value={privateConfig?.imageRetentionDurationDays}
-                            suffix="Day"
+                            suffix="day"
                         />
                     </GalleryItem>
                     <GalleryItem>
                         <NumberBox
-                            label="Expired Vulnerability Requests"
+                            label="Expired vulnerability requests"
                             value={privateConfig?.expiredVulnReqRetentionDurationDays}
-                            suffix="Day"
+                            suffix="day"
                         />
                     </GalleryItem>
                 </Gallery>
