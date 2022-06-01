@@ -331,7 +331,7 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 				image.Id = digest
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
 				if features.LocalImageScanning.Enabled() {
-					log.Infof("Checking if image %s is internal", image.GetName().GetFullName())
+					log.Infof("Checking if image %+v is internal", image.GetName())
 					// imageutil.IsInternalImage requires Sensor to already know about the OpenShift internal registries,
 					// which is ok because Sensor listens for Secrets before it starts listening for Deployment-like resources.
 					image.IsClusterLocal = imageutil.IsInternalImage(image.GetName())
