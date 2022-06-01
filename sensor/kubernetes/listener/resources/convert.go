@@ -279,6 +279,8 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
+	log.Infof("Populating images for deployment %s", w.Name)
+
 	// All containers have a container status
 	// The downside to this is that if different pods have different versions then we will miss that fact that pods are running
 	// different versions and clobber it. I've added a log to illustrate the clobbering so we can see how often it happens
@@ -301,17 +303,26 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 		sort.SliceStable(p.Spec.Containers, func(i, j int) bool {
 			return p.Spec.Containers[i].Name < p.Spec.Containers[j].Name
 		})
+		// Determine each image's ID, if not already populated, as well as if the image is pullable and/or cluster-local.
 		for i, c := range p.Status.ContainerStatuses {
 			if i >= len(w.Deployment.Containers) || i >= len(p.Spec.Containers) {
-				// This should not happened, but could happen if w.Deployment.Containers and container status are out of sync
+				// This should not happen, but could happen if w.Deployment.Containers and container status are out of sync
 				break
 			}
 
 			image := w.Deployment.Containers[i].Image
 
 			// If there already is an image ID for the image then that implies that the name of the image was fully qualified
-			// with an image digest. e.g. stackrox.io/main@sha256:xyz
+			// with an image digest. e.g. stackrox.io/main@sha256:xyz.
+			//
 			if image.GetId() != "" {
+				log.Infof("Image %+v already has an ID", image.GetName())
+				image.NotPullable = !imageUtils.IsPullable(image.GetId())
+				if features.LocalImageScanning.Enabled() {
+					log.Infof("Checking if image %+v is internal", image.GetName())
+					image.IsClusterLocal = imageutil.IsInternalImage(image.GetName())
+					log.Infof("Is image %s internal? %v", image.GetName().GetFullName(), image.IsClusterLocal)
+				}
 				continue
 			}
 
@@ -322,7 +333,7 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 				continue
 			}
 
-			// If the pod spec image doesn't match the top level image, then it is an old spec so we should ignore its digest
+			// If the pod spec image doesn't match the top level image, then it is an old spec, so we should ignore its digest
 			if parsedName.GetName().GetFullName() != image.GetName().GetFullName() {
 				continue
 			}
