@@ -27,7 +27,8 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddType("PolicyStatus", []string{"status: String!", "failingPolicies: [Policy!]!"}),
-		schema.AddExtraResolvers("Cluster", []string{ // note: alphabetically ordered
+		// NOTE: This list is and should remain alphabetically ordered
+		schema.AddExtraResolvers("Cluster", []string{
 			"alerts(query: String, pagination: Pagination): [Alert!]!",
 			"alertCount(query: String): Int!",
 			"latestViolation(query: String): Time",
@@ -54,9 +55,9 @@ func init() {
 			"imageCount(query: String): Int!",
 			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
 			"componentCount(query: String): Int!",
-			`nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!`,
-			`nodeVulnerabilityCount(query: String): Int!`,
-			`nodeVulnerabilityCounter(query: String): VulnerabilityCounter!`,
+			"nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!",
+			"nodeVulnerabilityCount(query: String): Int!",
+			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!",
 			"imageVulnerabilityCount(query: String): Int!",
 			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
