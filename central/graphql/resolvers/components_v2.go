@@ -55,13 +55,13 @@ func (resolver *Resolver) nodeComponentsV2(ctx context.Context, args PaginatedQu
 		return nil, err
 	}
 
-	imgCompResolvers, err := resolver.imageComponentsLoaderQuery(ctx, query)
+	nodeCompResolvers, err := resolver.imageComponentsLoaderQuery(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]NodeComponentResolver, 0, len(imgCompResolvers))
-	for _, res := range imgCompResolvers {
+	ret := make([]NodeComponentResolver, 0, len(nodeCompResolvers))
+	for _, res := range nodeCompResolvers {
 		res.ctx = ctx
 		ret = append(ret, res)
 	}
@@ -182,7 +182,7 @@ func (eicr *imageComponentResolver) NodeComponentLastScanned(ctx context.Context
 	if err != nil || len(nodes) == 0 {
 		return nil, err
 	} else if len(nodes) > 1 {
-		return nil, errors.New("multiple images matched for last scanned component query")
+		return nil, errors.New("multiple nodes matched for last scanned component query")
 	}
 
 	return timestamp(nodes[0].GetScan().GetScanTime())
