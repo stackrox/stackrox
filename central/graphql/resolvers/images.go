@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -34,24 +35,30 @@ func registerImageWatchStatus(s string) string {
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddExtraResolvers("Image", []string{ // note: alphabetically ordered
+		// NOTE: This list is and should remain alphabetically ordered
+		schema.AddExtraResolvers("Image", []string{
 			"componentCount(query: String): Int!",
 			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
 			"deploymentCount(query: String): Int!",
 			"deployments(query: String, pagination: Pagination): [Deployment!]!",
+			"imageVulnerabilityCount(query: String): Int!",
+			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
+			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!",
 			"plottedVulns(query: String): PlottedVulnerabilities!",
-			"topVuln(query: String): EmbeddedVulnerability",
+			"topImageVulnerability(query: String): ImageVulnerability",
 			"unusedVarSink(query: String): Int",
-			"vulnerabilityCount(query: String): Int!",
-			"vulnerabilityCounter(query: String): VulnerabilityCounter!",
-			"vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!",
 			"watchStatus: ImageWatchStatus!",
 		}),
 		// deprecated fields
 		schema.AddExtraResolvers("Image", []string{
-			"vulnCount(query: String): Int! @deprecated(reason: \"use 'vulnerabilityCount'\")",
-			"vulnCounter(query: String): VulnerabilityCounter! @deprecated(reason: \"use 'vulnerabilityCounter'\")",
-			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! @deprecated(reason: \"use 'vulnerabilities'\")",
+			"topVuln(query: String): EmbeddedVulnerability " +
+				"@deprecated(reason: \"use 'topImageVulnerability'\")",
+			"vulnCount(query: String): Int! " +
+				"@deprecated(reason: \"use 'imageVulnerabilityCount'\")",
+			"vulnCounter(query: String): VulnerabilityCounter! " +
+				"@deprecated(reason: \"use 'imageVulnerabilityCounter'\")",
+			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! " +
+				"@deprecated(reason: \"use 'imageVulnerabilities'\")",
 		}),
 		schema.AddQuery("images(query: String, pagination: Pagination): [Image!]!"),
 		schema.AddQuery("imageCount(query: String): Int!"),
@@ -135,9 +142,19 @@ func (resolver *imageResolver) DeploymentCount(ctx context.Context, args RawQuer
 	return resolver.root.DeploymentCount(ctx, RawQuery{Query: &query})
 }
 
+// TopImageVulnerability returns the image vulnerability with the top CVSS score.
+func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopImageVulnerability")
+	if !features.PostgresDatastore.Enabled() {
+		return resolver.topVulnV2(ctx, args)
+	}
+	// TODO postgres support
+	return nil, errors.New("Sub-resolver TopVulnerability in image does not support postgres")
+}
+
 // TopVuln returns the first vulnerability with the top CVSS score.
 func (resolver *imageResolver) TopVuln(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopVulnerability")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopVuln")
 	return resolver.topVulnV2(ctx, args)
 }
 
@@ -208,25 +225,25 @@ func (resolver *imageResolver) vulnQueryScoping(ctx context.Context) context.Con
 	return ctx
 }
 
-// Vulnerabilities returns, as ImageVulnerabilityResolver, the vulnerabilities for the image
-func (resolver *imageResolver) Vulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "Vulnerabilities")
+// ImageVulnerabilities returns, as ImageVulnerabilityResolver, the vulnerabilities for the image
+func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilities")
 
 	ctx = resolver.vulnQueryScoping(ctx)
 
 	return resolver.root.ImageVulnerabilities(ctx, args)
 }
 
-func (resolver *imageResolver) VulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnerabilityCount")
+func (resolver *imageResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCount")
 
 	ctx = resolver.vulnQueryScoping(ctx)
 
 	return resolver.root.ImageVulnerabilityCount(ctx, args)
 }
 
-func (resolver *imageResolver) VulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "VulnerabilityCounter")
+func (resolver *imageResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilityCounter")
 
 	ctx = resolver.vulnQueryScoping(ctx)
 
