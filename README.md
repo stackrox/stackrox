@@ -35,40 +35,39 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
 
 ## Quick Installation via Helm
 
-StackRox offers quick installation via Helm Charts, the following software is required for installing this way:
-* [Docker](https://www.docker.com/)
-  * or `brew install docker`
-* [Helm](https://helm.sh/)
-  * or `brew install helm`
+StackRox offers quick installation via Helm Charts, follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) for system specific instructions and requirements.
 
 First, add the [stackrox/helm-charts/opensource](https://github.com/stackrox/helm-charts/tree/main/opensource) repository to Helm.
+```sh
+helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
 ```
-helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
+To see all available Helm charts in the repo run (you may add the option `--devel` to show non-release builds as well)
+```sh
+helm search repo stackrox-oss
 ```
-To see all available Helm charts in the repo run
-```
-helm search repo stackrox --devel
-```
-From here you can install stackrox-central-services to install the centralized components (Central and Scanner)
-```
-helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --devel
+From here you can install stackrox-central-services to get Central and Scanner components deployed on your cluster. Note that you need only one deployed instance of stackrox-central-services even if you plan to secure multiple clusters.
+```sh
+helm install -n stackrox-oss --create-namespace stackrox-central-services stackrox-oss/stackrox-central-services --devel
 ```
 To create a secured cluster you first need to create an init bundle containing all of the secrets.
+```sh
+kubectl -n s/rhacs-operator/stackrox/g exec deploy/central -- roxctl --insecure-skip-tls-verify \
+    --password "$(kubectl -n s/rhacs-operator/stackrox/g get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}')" \
+    central init-bundles generate stackrox-init-bundle --output - > stackrox-init-bundle.yaml
 ```
-kubectl -n rhacs-operator exec deploy/central -- roxctl --insecure-skip-tls-verify \
-    --password "$(kubectl -n rhacs-operator get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}')" \
-    central init-bundles generate stackrox-cli-bundle --output - > ~/tmp/cli-bundle.yaml
+Then install Secured Cluster Services in the same cluster using this command:
+```sh
+helm install -n stackrox-oss --create-namespace stackrox-secured-cluster-services stackrox-oss/secured-cluster-services \
+    -f stackrox-init-bundle.yaml \ 
+    --set clusterName=<name_of_the_secured_cluster> 
 ```
-Then install the secured cluster using this command:
-```
-helm install -n stackrox --create-namespace stackrox-secured-cluster-services stackrox/secured-cluster-services \
-    -f ~/tmp/cli-bundle.yaml \ 
-    --set clusterName=<name_of_the_secured_cluster> \
-```
-While specifying the path to the init bundle created in the previous step, and the name of the secured cluster. When creating clusters hosted elsewhere, you will also need to specify the endpoint (address and port number) for Central.
+Make sure to provide some name in `clusterName` argument meaningful to you. The cluster will be identified by this name in clusters list in StackRox UI.
 
-To further customize your Helm installation consult this [document](https://docs.openshift.com/acs/3.69/installing/installing_helm/install-helm-customization.html).
+When deploying Secured Cluster Services on a different cluster, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
 
+To further customize your Helm installation consult these documents:
+* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html>
+* <https://docs.openshift.com/acs/installing/installing_helm/install-helm-customization.html>
 ## Manual Deployment
 
 To manually deploy the latest development version of StackRox to your kubernetes
