@@ -189,17 +189,17 @@ func (mr *MockStoreMockRecorder) RenamePolicyCategory(request interface{}) *gomo
 }
 
 // Upsert mocks base method.
-func (m *MockStore) Upsert(ctx context.Context, obj *storage.Policy) error {
+func (m *MockStore) Upsert(ctx context.Context, policy *storage.Policy) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", ctx, obj)
+	ret := m.ctrl.Call(m, "Upsert", ctx, policy)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert.
-func (mr *MockStoreMockRecorder) Upsert(ctx, obj interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Upsert(ctx, policy interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, obj)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, policy)
 }
 
 // UpsertMany mocks base method.

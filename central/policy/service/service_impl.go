@@ -742,29 +742,30 @@ func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interfac
 
 func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoliciesRequest) (*storage.ExportPoliciesResponse, error) {
 	// missingIndices and policyErrors should not overlap
-	policyList, missingIndices, policyErrors, err := s.policies.GetPolicies(ctx, request.PolicyIds)
+	policyList, missingIndices, err := s.policies.GetPolicies(ctx, request.PolicyIds)
 	if err != nil {
 		return nil, err
 	}
-	if len(policyErrors) > 0 {
-		errDetails := &v1.ExportPoliciesErrorList{}
-		for i, missingIndex := range missingIndices {
-			policyError := policyErrors[i].Error()
-			policyID := request.PolicyIds[missingIndex]
-			log.Warnf("A policy error ocurred for id %s: '%v'", policyID, policyError)
-			errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
-				PolicyId: request.PolicyIds[missingIndex],
-				Error: &v1.PolicyError{
-					Error: policyErrors[i].Error(),
-				},
-			})
-		}
+	errDetails := &v1.ExportPoliciesErrorList{}
+	for _, missingIndex := range missingIndices {
+		policyID := request.PolicyIds[missingIndex]
+		errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
+			PolicyId: request.PolicyIds[missingIndex],
+			Error: &v1.PolicyError{
+				Error: "not found",
+			},
+		})
+		log.Warnf("A policy error ocurred for id %s: not found", policyID)
+
+	}
+	if len(missingIndices) > 0 {
 		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be retrieved. Check the error details for a list of policies that could not be found").WithDetails(errDetails)
 		if err != nil {
 			return nil, utils.Should(errors.Errorf("unexpected error creating status proto: %v", err))
 		}
 		return nil, statusMsg.Err()
 	}
+
 	for _, policy := range policyList {
 		removeInternal(policy)
 	}
