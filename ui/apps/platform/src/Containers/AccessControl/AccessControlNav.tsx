@@ -20,7 +20,7 @@ export type AccessControlNavProps = {
 function AccessControlNav({ entityType, isDisabled }: AccessControlNavProps): ReactElement {
     const tabLinks = Object.keys(entityPathSegment).map((itemType) => {
         return {
-            link: getEntityPath(itemType as AccessControlEntityType),
+            href: getEntityPath(itemType as AccessControlEntityType),
             title: pluralize(accessControlLabels[itemType]),
         };
     });

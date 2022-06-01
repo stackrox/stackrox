@@ -9,11 +9,12 @@ import {
     AlertGroup,
     AlertActionCloseButton,
     AlertVariant,
-    Split,
-    SplitItem,
     Divider,
     Button,
     Flex,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
@@ -186,35 +187,37 @@ function PoliciesTablePage({
 
     return (
         <>
-            <PageTitle title="Policy management" />
+            <PageTitle title="Policy Management - Policies" />
             <PageSection variant="light">
                 <Title headingLevel="h1">Policy Management</Title>
             </PageSection>
             <PageSection variant="light" className="pf-u-px-sm pf-u-py-0">
                 <TabNav
                     currentTabTitle="Policies"
-                    tabLinks={[{ title: 'Policies', link: policiesBasePath }]}
+                    tabLinks={[{ title: 'Policies', href: policiesBasePath }]}
                 />
             </PageSection>
             <Divider component="div" />
             <PageSection variant="light" className="pf-u-py-md">
-                <Split>
-                    <SplitItem isFilled>
-                        <div className="pf-u-font-size-sm pf-u-pt-sm">
-                            Configure security policies for your resources.
-                        </div>
-                    </SplitItem>
-                    <SplitItem>
-                        <Flex>
-                            <Button variant="primary" onClick={onClickCreatePolicy}>
-                                Create policy
-                            </Button>
-                            <Button variant="secondary" onClick={onClickImportPolicy}>
-                                Import policy
-                            </Button>
-                        </Flex>
-                    </SplitItem>
-                </Split>
+                <Toolbar inset={{ default: 'insetNone' }}>
+                    <ToolbarContent>
+                        <ToolbarItem>
+                            <div className="pf-u-font-size-sm pf-u-pt-sm">
+                                Configure security policies for your resources.
+                            </div>
+                        </ToolbarItem>
+                        <ToolbarItem>
+                            <Flex>
+                                <Button variant="primary" onClick={onClickCreatePolicy}>
+                                    Create policy
+                                </Button>
+                                <Button variant="secondary" onClick={onClickImportPolicy}>
+                                    Import policy
+                                </Button>
+                            </Flex>
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
             </PageSection>
             <Divider component="div" />
             {errorMessage ? (
