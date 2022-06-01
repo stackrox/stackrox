@@ -9,7 +9,6 @@ import io.stackrox.proto.storage.ScopeOuterClass
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.CosignPublicKeyVerification
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass.SignatureIntegration
 import objects.Deployment
-import orchestratormanager.OrchestratorTypes
 import org.junit.experimental.categories.Category
 import services.PolicyService
 import services.SignatureIntegrationService
@@ -21,9 +20,6 @@ import util.Env
 // Do not run tests on crio due to an issue with crio trying to pull images referenced by digest from gcr.io.
 @IgnoreIf({ Env.CI_JOBNAME.contains("crio") })
 class ImageSignatureVerificationTest extends BaseSpecification {
-    // https://issues.redhat.com/browse/ROX-6891
-    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
-            isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 30)
 
     static final private String SIGNATURE_TESTING_NAMESPACE = "qa-signature-tests"
 
@@ -209,9 +205,9 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
         expect:
         "Verify deployment has expected violations"
         if (expectViolations) {
-            assert waitForViolation(deployment.name, policyName, WAIT_FOR_VIOLATION_TIMEOUT) == expectViolations
+            assert waitForViolation(deployment.name, policyName, 15) == expectViolations
         } else {
-            assert checkForNoViolations(deployment.name, policyName)
+            assert checkForNoViolations(deployment.name, policyName, 15)
         }
 
         where:
