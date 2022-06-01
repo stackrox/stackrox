@@ -5,16 +5,9 @@ source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
 
-# check-policy-files-up-to-date:
-#    steps:
-#      - checkout
-#      - restore-go-mod-cache
-#      - setup-go-build-env
-
-# name: Ensure all JSON policies in "./pkg/defaults/policies/" are of latest version. (If this fails, run `policyutil` on failed policies and commit the result.)
-
 check_policy_files() {
     info 'Ensure all JSON policies in "./pkg/defaults/policies/" are of latest version.'
+    # shellcheck disable=SC2016
     info '(If this fails, run `policyutil` on failed policies and commit the result.)'
     
     make deps
@@ -27,9 +20,6 @@ check_policy_files() {
         exit 1
     fi
 
-    # - ci-artifacts/store:
-    #    path: /tmp/policies-diff
-    #    destination: policies-diff
     store_test_results /tmp/policies-diff policies-diff
 }
 
