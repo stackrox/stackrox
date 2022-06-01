@@ -289,9 +289,9 @@ poll_for_system_test_images() {
         local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"
         info "Checking for $name using $url"
         local check
-        check=$(curl -sS -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" "$url")
+        check=$(curl --location -sS -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" "$url")
         echo "$check"
-        [[ "$(jq -r '.tags | first' <<<"$check")" != "null" ]]
+        [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
     }
 
     while true; do
