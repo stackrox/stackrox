@@ -14,13 +14,13 @@ describe('Deployments list Page and its entity detail page , (related entities) 
     it('should display all the columns and links expected in deployments list page', () => {
         visitVulnerabilityManagementEntities('deployments');
         hasExpectedHeaderColumns([
-            'Cluster',
-            'CVEs',
-            'Images',
-            'Namespace',
             'Deployment',
-            'Policy Status',
+            'CVEs',
             'Latest Violation',
+            'Policy Status',
+            'Cluster',
+            'Namespace',
+            'Images',
             'Risk Priority',
         ]);
         cy.get(selectors.tableBodyColumn).each(($el) => {

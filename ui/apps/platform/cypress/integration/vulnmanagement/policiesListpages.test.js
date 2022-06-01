@@ -9,17 +9,20 @@ describe('Policies list Page and its entity detail page , related entities sub l
 
     it('should display all the columns and links expected in clusters list page', () => {
         visitVulnerabilityManagementEntities('policies');
-        hasExpectedHeaderColumns([
-            'Policy',
-            'Description',
-            'Policy Status',
-            'Last Updated',
-            'Latest Violation',
-            'Severity',
-            'Deployments',
-            // 'Lifecycle',
-            'Enforcement',
-        ]);
+        hasExpectedHeaderColumns(
+            [
+                'Policy',
+                'Description',
+                'Policy Status',
+                'Last Updated',
+                'Latest Violation',
+                'Severity',
+                'Deployments',
+                'Lifecycle',
+                'Enforcement',
+            ],
+            2 // skip 2 additional columns to account for checkbox column, and untitled Statuses column
+        );
         cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
             if (
