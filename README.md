@@ -51,8 +51,8 @@ helm install -n stackrox-oss --create-namespace stackrox-central-services stackr
 ```
 To create a secured cluster you first need to create an init bundle containing all of the secrets.
 ```sh
-kubectl -n s/rhacs-operator/stackrox/g exec deploy/central -- roxctl --insecure-skip-tls-verify \
-    --password "$(kubectl -n s/rhacs-operator/stackrox/g get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}')" \
+kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
+    --password "$(kubectl -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}')" \
     central init-bundles generate stackrox-init-bundle --output - > stackrox-init-bundle.yaml
 ```
 Then install Secured Cluster Services in the same cluster using this command:
