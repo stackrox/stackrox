@@ -8,8 +8,10 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
@@ -81,9 +83,9 @@ func CreateTable(ctx context.Context, db *pgxpool.Pool, createStmt *postgres.Cre
 // CreateTableFromModel executes input create statement using the input connection.
 func CreateTableFromModel(db *gorm.DB, createStmt *postgres.CreateStmts) {
 	err := db.AutoMigrate(createStmt.GormModel)
-	if err != nil {
-		log.Panicf("Error creating table %s: %v", createStmt.Table, err)
-	}
+	err = errors.Wrapf(err, "Error creating table %s: %v", createStmt.Table, err)
+	utils.Must(err)
+
 	for _, child := range createStmt.Children {
 		CreateTableFromModel(db, child)
 	}

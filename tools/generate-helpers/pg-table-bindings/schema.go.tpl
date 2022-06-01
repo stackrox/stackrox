@@ -79,7 +79,7 @@ var (
             {{- end}}
             schema.SetOptionsMap(search.Walk(v1.{{.SearchCategory}}, "{{.Schema.TypeName|lower}}", ({{$ty}})(nil)))
         {{- end }}
-        RegisterTable(schema)
+        RegisterTable(schema, {{template "createTableStmtVar" .Schema }})
         return schema
     }()
 )
