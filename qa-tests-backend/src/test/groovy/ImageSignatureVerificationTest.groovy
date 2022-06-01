@@ -205,7 +205,7 @@ w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
         expect:
         "Verify deployment has expected violations"
         if (expectViolations) {
-            assert waitForViolation(deployment.name, policyName, 15) == expectViolations
+            assert waitForViolation(deployment.name, policyName, 5)
         } else {
             assert checkForNoViolations(deployment.name, policyName, 15)
         }
