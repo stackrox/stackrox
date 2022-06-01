@@ -8,12 +8,9 @@ import (
 	cveStore "github.com/stackrox/rox/central/cve/store"
 	cveDackBoxStore "github.com/stackrox/rox/central/cve/store/dackbox"
 	"github.com/stackrox/rox/central/node/datastore/internal/store"
-	nodeCVEEdgeStore "github.com/stackrox/rox/central/nodecveedge/store"
-	nodeCVEEdgeDackBox "github.com/stackrox/rox/central/nodecveedge/store/dackbox"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -30,9 +27,8 @@ type NodeStoreTestSuite struct {
 	db    *rocksdb.RocksDB
 	dacky *dackbox.DackBox
 
-	store            store.Store
-	cveStorage       cveStore.Store
-	nodeCVEEdgeStore nodeCVEEdgeStore.Store
+	store      store.Store
+	cveStorage cveStore.Store
 }
 
 func (suite *NodeStoreTestSuite) SetupSuite() {
@@ -45,7 +41,6 @@ func (suite *NodeStoreTestSuite) SetupSuite() {
 	}
 	suite.store = New(suite.dacky, concurrency.NewKeyFence(), false)
 	suite.cveStorage = cveDackBoxStore.New(suite.dacky, concurrency.NewKeyFence())
-	suite.nodeCVEEdgeStore = nodeCVEEdgeDackBox.New(suite.dacky)
 }
 
 func (suite *NodeStoreTestSuite) TearDownSuite() {
@@ -141,14 +136,6 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	vuln, _, err = suite.cveStorage.Get(ctx, "cve2")
 	suite.NoError(err)
 	suite.Equal(nodes[0].GetLastUpdated(), vuln.GetCreatedAt())
-
-	// Check that the Node CVE Edges were written with the correct timestamp.
-	nodeCVEEdge, _, err := suite.nodeCVEEdgeStore.Get(edges.EdgeID{ParentID: "id1", ChildID: "cve1"}.ToString())
-	suite.NoError(err)
-	suite.Equal(nodes[0].GetLastUpdated(), nodeCVEEdge.GetFirstNodeOccurrence())
-	nodeCVEEdge, _, err = suite.nodeCVEEdgeStore.Get(edges.EdgeID{ParentID: "id1", ChildID: "cve1"}.ToString())
-	suite.NoError(err)
-	suite.Equal(nodes[0].GetLastUpdated(), nodeCVEEdge.GetFirstNodeOccurrence())
 
 	// Test Update
 	for _, d := range nodes {
@@ -250,11 +237,6 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 
 	// Check that the CVEs are removed.
 	count, err = suite.cveStorage.Count(ctx)
-	suite.NoError(err)
-	suite.Equal(0, count)
-
-	// Check that the Node CVE Edges are removed.
-	count, err = suite.nodeCVEEdgeStore.Count()
 	suite.NoError(err)
 	suite.Equal(0, count)
 }
