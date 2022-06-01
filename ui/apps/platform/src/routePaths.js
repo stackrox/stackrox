@@ -51,6 +51,9 @@ export const productDocsPath = '/docs/product';
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 export const vulnManagementPoliciesPath = `${vulnManagementPath}/policies`;
 export const vulnManagementCVEsPath = `${vulnManagementPath}/cves`;
+export const vulnManagementImageCVEsPath = `${vulnManagementPath}/image-cves`;
+export const vulnManagementNodeCVEsPath = `${vulnManagementPath}/node-cves`;
+export const vulnManagementPlatformCVEsPath = `${vulnManagementPath}/cluster-cves`;
 export const vulnManagementClustersPath = `${vulnManagementPath}/clusters`;
 export const vulnManagementNamespacesPath = `${vulnManagementPath}/namespaces`;
 export const vulnManagementDeploymentsPath = `${vulnManagementPath}/deployments`;
@@ -80,6 +83,9 @@ export const urlEntityListTypes = {
     [resourceTypes.SECRET]: 'secrets',
     [resourceTypes.POLICY]: 'policies',
     [resourceTypes.CVE]: 'cves',
+    [resourceTypes.IMAGE_CVE]: 'image-cves',
+    [resourceTypes.NODE_CVE]: 'node-cves',
+    [resourceTypes.CLUSTER_CVE]: 'cluster-cves',
     [resourceTypes.COMPONENT]: 'components',
     [standardEntityTypes.CONTROL]: 'controls',
     [rbacConfigTypes.SERVICE_ACCOUNT]: 'serviceaccounts',
@@ -96,6 +102,9 @@ export const urlEntityTypes = {
     [resourceTypes.SECRET]: 'secret',
     [resourceTypes.POLICY]: 'policy',
     [resourceTypes.CVE]: 'cve',
+    [resourceTypes.IMAGE_CVE]: 'image-cve',
+    [resourceTypes.NODE_CVE]: 'node-cve',
+    [resourceTypes.CLUSTER_CVE]: 'cluster-cve',
     [resourceTypes.COMPONENT]: 'component',
     [standardEntityTypes.CONTROL]: 'control',
     [standardEntityTypes.STANDARD]: 'standard',
