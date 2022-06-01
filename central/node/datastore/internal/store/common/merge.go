@@ -59,11 +59,11 @@ func generateEmbeddedComponent(cp *ComponentParts) *storage.EmbeddedNodeScanComp
 }
 
 func generateEmbeddedCVE(cp *CVEParts) *storage.EmbeddedVulnerability {
-	if cp.Cve == nil || cp.Edge == nil {
+	if cp.CVE == nil || cp.Edge == nil {
 		return nil
 	}
 
-	ret := converter.ProtoCVEToEmbeddedCVE(cp.Cve)
+	ret := converter.ProtoCVEToEmbeddedCVE(cp.CVE)
 	if cp.Edge.IsFixable {
 		ret.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: cp.Edge.GetFixedBy(),

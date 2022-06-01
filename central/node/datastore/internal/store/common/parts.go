@@ -27,5 +27,5 @@ type ComponentParts struct {
 // CVEParts represents the pieces of data in a CVE.
 type CVEParts struct {
 	Edge *storage.ComponentCVEEdge
-	Cve  *storage.CVE
+	CVE  *storage.CVE
 }

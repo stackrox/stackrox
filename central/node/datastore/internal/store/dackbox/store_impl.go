@@ -298,7 +298,7 @@ func gatherKeysForNodeParts(parts *common.NodeParts) [][]byte {
 	for _, componentParts := range parts.Children {
 		allKeys = append(allKeys, componentDackBox.BucketHandler.GetKey(componentParts.Component.GetId()))
 		for _, cveParts := range componentParts.Children {
-			allKeys = append(allKeys, cveDackBox.BucketHandler.GetKey(cveParts.Cve.GetId()))
+			allKeys = append(allKeys, cveDackBox.BucketHandler.GetKey(cveParts.CVE.GetId()))
 		}
 	}
 	return allKeys
@@ -313,7 +313,7 @@ func (b *storeImpl) writeNodeParts(parts *common.NodeParts, clusterKey []byte, i
 
 	var componentKeys [][]byte
 	// Update the node components and cves iff the node upsert has updated scan.
-	// Note: In such cases, the loops in following block will not be entered anyways since len(parts.Children) and len(parts.NodeCVEEdges) is 0.
+	// Note: In such cases, the loops in following block will not be entered anyway since len(parts.Children) is 0.
 	// This is more for good readability amidst the complex code.
 	if scanUpdated {
 		for _, componentData := range parts.Children {
@@ -368,38 +368,38 @@ func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *common.CVEPar
 		return nil, err
 	}
 
-	currCVEMsg, err := cveDackBox.Reader.ReadIn(cveDackBox.BucketHandler.GetKey(parts.Cve.GetId()), txn)
+	currCVEMsg, err := cveDackBox.Reader.ReadIn(cveDackBox.BucketHandler.GetKey(parts.CVE.GetId()), txn)
 	if err != nil {
 		return nil, err
 	}
 	if currCVEMsg != nil {
 		currCVE := currCVEMsg.(*storage.CVE)
-		parts.Cve.Suppressed = currCVE.GetSuppressed()
-		parts.Cve.CreatedAt = currCVE.GetCreatedAt()
-		parts.Cve.SuppressActivation = currCVE.GetSuppressActivation()
-		parts.Cve.SuppressExpiry = currCVE.GetSuppressExpiry()
+		parts.CVE.Suppressed = currCVE.GetSuppressed()
+		parts.CVE.CreatedAt = currCVE.GetCreatedAt()
+		parts.CVE.SuppressActivation = currCVE.GetSuppressActivation()
+		parts.CVE.SuppressExpiry = currCVE.GetSuppressExpiry()
 
-		parts.Cve.Types = cveUtil.AddCVETypeIfAbsent(currCVE.GetTypes(), storage.CVE_NODE_CVE)
+		parts.CVE.Types = cveUtil.AddCVETypeIfAbsent(currCVE.GetTypes(), storage.CVE_NODE_CVE)
 
-		if parts.Cve.DistroSpecifics == nil {
-			parts.Cve.DistroSpecifics = make(map[string]*storage.CVE_DistroSpecific)
+		if parts.CVE.DistroSpecifics == nil {
+			parts.CVE.DistroSpecifics = make(map[string]*storage.CVE_DistroSpecific)
 		}
 		for k, v := range currCVE.GetDistroSpecifics() {
-			parts.Cve.DistroSpecifics[k] = v
+			parts.CVE.DistroSpecifics[k] = v
 		}
 	} else {
-		parts.Cve.CreatedAt = iTime
+		parts.CVE.CreatedAt = iTime
 
 		// Populate the types slice for the new CVE.
-		parts.Cve.Types = []storage.CVE_CVEType{storage.CVE_NODE_CVE}
+		parts.CVE.Types = []storage.CVE_CVEType{storage.CVE_NODE_CVE}
 	}
 
-	parts.Cve.Type = storage.CVE_UNKNOWN_CVE
+	parts.CVE.Type = storage.CVE_UNKNOWN_CVE
 
-	if err := cveDackBox.Upserter.UpsertIn(nil, parts.Cve, txn); err != nil {
+	if err := cveDackBox.Upserter.UpsertIn(nil, parts.CVE, txn); err != nil {
 		return nil, err
 	}
-	return cveDackBox.KeyFunc(parts.Cve), nil
+	return cveDackBox.KeyFunc(parts.CVE), nil
 }
 
 // Deleting a node and it's keys from the graph.
@@ -540,7 +540,7 @@ func (b *storeImpl) readNodeParts(txn *dackbox.Transaction, keys *nodeKeySet) (*
 			cve := cveMsg.(*storage.CVE)
 			componentPart.Children = append(componentPart.Children, &common.CVEParts{
 				Edge: cveEdgeMsg.(*storage.ComponentCVEEdge),
-				Cve:  cve,
+				CVE:  cve,
 			})
 		}
 		parts.Children = append(parts.Children, componentPart)

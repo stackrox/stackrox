@@ -45,8 +45,8 @@ func splitCVEs(os string, component *ComponentParts, embedded *storage.EmbeddedN
 	ret := make([]*CVEParts, 0, len(cves))
 	for _, cve := range cves {
 		cp := &CVEParts{}
-		cp.Cve = converter.EmbeddedCVEToProtoCVE(os, cve)
-		cp.Edge = generateComponentCVEEdge(component.Component, cp.Cve, cve)
+		cp.CVE = converter.EmbeddedCVEToProtoCVE(os, cve)
+		cp.Edge = generateComponentCVEEdge(component.Component, cp.CVE, cve)
 
 		ret = append(ret, cp)
 	}
