@@ -262,6 +262,9 @@ func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability
 		Suppressed:            protoCVE.GetSuppressed(),
 		SuppressActivation:    protoCVE.GetSuppressActivation(),
 		SuppressExpiry:        protoCVE.GetSuppressExpiry(),
+
+		// When reading out the severity,for image vulns, is overwritten during merge anyway.
+		Severity: protoCVE.GetSeverity(),
 	}
 	if features.PostgresDatastore.Enabled() {
 		embeddedCVE.Cve = protoCVE.GetCve()
@@ -322,6 +325,12 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 		ret.ScoreVersion = storage.CVE_V2
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
+
+	if features.PostgresDatastore.Enabled() {
+		ret.Severity = from.GetSeverity()
+		return ret
+	}
+
 	// If the OS is empty, then the OS is unknown and we don't need to save
 	// any distro specific settings
 	if os == "" {

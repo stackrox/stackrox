@@ -9147,7 +9147,13 @@
                 "id": 2,
                 "name": "components",
                 "type": "EmbeddedNodeScanComponent",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"-\""
+                  }
+                ]
               },
               {
                 "id": 4,
@@ -11792,66 +11798,6 @@
                   {
                     "name": "(gogoproto.moretags)",
                     "value": "sql:\"pk,fk(ImageComponent:id),no-fk-constraint\""
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "name": "NodeComponentCVEEdge",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,id\""
-                  }
-                ]
-              },
-              {
-                "id": 2,
-                "name": "is_fixable",
-                "type": "bool",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Fixable,store\""
-                  }
-                ]
-              },
-              {
-                "id": 3,
-                "name": "fixed_by",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\"Fixed By,store,hidden\""
-                  }
-                ]
-              },
-              {
-                "id": 4,
-                "name": "component_id",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(ImageComponent:id)\""
-                  }
-                ]
-              },
-              {
-                "id": 5,
-                "name": "cve_id",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(CVE:id),no-fk-constraint\""
                   }
                 ]
               }
@@ -15351,11 +15297,6 @@
                 "type": "google.protobuf.Timestamp"
               },
               {
-                "id": 17,
-                "name": "first_node_occurrence",
-                "type": "google.protobuf.Timestamp"
-              },
-              {
                 "id": 19,
                 "name": "severity",
                 "type": "VulnerabilitySeverity",
@@ -15377,6 +15318,9 @@
                   }
                 ]
               }
+            ],
+            "reserved_ids": [
+              17
             ]
           }
         ],
