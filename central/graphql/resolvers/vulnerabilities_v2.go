@@ -268,7 +268,8 @@ func (resolver *Resolver) unwrappedVulnerabilityV2(ctx context.Context, args IDQ
 	vuln, exists, err := resolver.CVEDataStore.Get(ctx, string(*args.ID))
 	if err != nil {
 		return nil, err
-	} else if !exists {
+	}
+	if !exists {
 		return nil, errors.Errorf("cve not found: %s", string(*args.ID))
 	}
 	vulnResolver, err := resolver.wrapCVE(vuln, true, nil)

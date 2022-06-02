@@ -104,5 +104,5 @@ func (resolver *Resolver) NodeComponentCount(ctx context.Context, args RawQuery)
 
 func queryWithNodeIDRegexFilter(q string) string {
 	return search.AddRawQueriesAsConjunction(q,
-		search.NewQueryBuilder().AddRegexes(search.NodeID, ".+", ".*").Query())
+		search.NewQueryBuilder().AddRegexes(search.NodeID, ".+").Query())
 }

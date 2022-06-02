@@ -564,8 +564,7 @@ func (resolver *clusterResolver) NodeComponents(ctx context.Context, args Pagina
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponents")
 
 	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-		return resolver.root.NodeComponents(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+		return resolver.root.NodeComponents(resolver.clusterScopeContext(ctx), args)
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver NodeComponents in Cluster does not support postgres yet")
@@ -576,8 +575,7 @@ func (resolver *clusterResolver) NodeComponentCount(ctx context.Context, args Ra
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponents")
 
 	if !features.PostgresDatastore.Enabled() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-		return resolver.root.NodeComponentCount(ctx, RawQuery{Query: &query})
+		return resolver.root.NodeComponentCount(resolver.clusterScopeContext(ctx), args)
 	}
 	// TODO : Add postgres support
 	return 0, errors.New("Sub-resolver NodeComponentCount in Cluster does not support postgres yet")
@@ -612,6 +610,7 @@ func (resolver *clusterResolver) NodeVulnerabilities(ctx context.Context, args P
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilities")
 
 	if !features.PostgresDatastore.Enabled() {
+		// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
 		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
 		return resolver.root.NodeVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 	}
@@ -624,6 +623,7 @@ func (resolver *clusterResolver) NodeVulnerabilityCount(ctx context.Context, arg
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilityCount")
 
 	if !features.PostgresDatastore.Enabled() {
+		// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
 		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
 		return resolver.root.NodeVulnerabilityCount(ctx, RawQuery{Query: &query})
 	}
@@ -1096,6 +1096,13 @@ func (resolver *clusterResolver) PlottedVulns(ctx context.Context, args RawQuery
 
 func (resolver *clusterResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
 	return nil
+}
+
+func (resolver *clusterResolver) clusterScopeContext(ctx context.Context) context.Context {
+	return scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_CLUSTERS,
+		ID:    resolver.data.GetId(),
+	})
 }
 
 func (resolver *orchestratorMetadataResolver) OpenShiftVersion() (string, error) {

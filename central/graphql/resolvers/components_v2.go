@@ -24,12 +24,12 @@ import (
 ///////////////////////
 
 func (resolver *Resolver) componentV2(ctx context.Context, args IDQuery) (ComponentResolver, error) {
-	imgCompRes, err := resolver.imageComponentDataStoreQuery(ctx, args)
+	compRes, err := resolver.imageComponentDataStoreQuery(ctx, args)
 	if err != nil {
 		return nil, err
 	}
-	imgCompRes.ctx = ctx
-	return imgCompRes, nil
+	compRes.ctx = ctx
+	return compRes, nil
 }
 
 func (resolver *Resolver) componentsV2(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
@@ -41,12 +41,12 @@ func (resolver *Resolver) componentsV2(ctx context.Context, args PaginatedQuery)
 }
 
 func (resolver *Resolver) nodeComponentV2(ctx context.Context, args IDQuery) (NodeComponentResolver, error) {
-	imgCompRes, err := resolver.imageComponentDataStoreQuery(ctx, args)
+	nodeCompRes, err := resolver.imageComponentDataStoreQuery(ctx, args)
 	if err != nil {
 		return nil, err
 	}
-	imgCompRes.ctx = ctx
-	return imgCompRes, nil
+	nodeCompRes.ctx = ctx
+	return nodeCompRes, nil
 }
 
 func (resolver *Resolver) nodeComponentsV2(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
