@@ -1,4 +1,7 @@
-/* z index override for sticky table header in PF */
-#policies-table-header div.react-select__menu {
-    z-index: 200 !important;
+/* z index override for sticky table header in PF
+ * following recommendation to lower table z-index as suggested here:
+ * https://www.patternfly.org/v4/components/table/#sticky-table-modifiers 
+ */
+[data-testid="policies-table"] {
+    z-index: 55;
 }

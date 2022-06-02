@@ -1,15 +1,39 @@
-import * as api from '../../../constants/apiEndpoints';
-import { selectors, url } from '../../../constants/PoliciesPagePatternFly';
-import withAuth from '../../../helpers/basicAuth';
-import { generateNameWithDate } from '../../../helpers/formHelpers';
+import * as api from '../../constants/apiEndpoints';
+import { selectors, url } from '../../constants/PoliciesPagePatternFly';
+import withAuth from '../../helpers/basicAuth';
+import { generateNameWithDate } from '../../helpers/formHelpers';
 import {
     doPolicyRowAction,
     searchPolicies,
     visitPolicies,
     visitPoliciesCallback,
     visitPoliciesFromLeftNav,
-} from '../../../helpers/policiesPatternFly';
-import navSelectors from '../../../selectors/navigation';
+} from '../../helpers/policiesPatternFly';
+import navSelectors from '../../selectors/navigation';
+
+describe('Policy Management URL redirect', () => {
+    withAuth();
+
+    it('should redirect old policies URL to new policy management URL', () => {
+        cy.intercept('GET', `${api.policies.policies}?query=`).as('getPolicies');
+        cy.visit('main/policies');
+        cy.wait('@getPolicies');
+
+        cy.location('pathname').should('eq', url);
+    });
+
+    it('should redirect old policies URL to new policy management URL with params', () => {
+        visitPolicies();
+        cy.get(`${selectors.table.policyLink}:first`).click();
+        cy.location('pathname').then((pathname) => {
+            const policyId = pathname.split('/').pop();
+            cy.intercept('GET', api.policies.policy).as('getPolicy');
+            cy.visit(`main/policies/${policyId}`);
+            cy.wait('@getPolicy');
+            cy.location('pathname').should('eq', `${url}/${policyId}`);
+        });
+    });
+});
 
 describe('Policies table', () => {
     withAuth();
@@ -18,20 +42,20 @@ describe('Policies table', () => {
         visitPoliciesFromLeftNav();
 
         cy.location('pathname').should('eq', url);
-        cy.get('h1:contains("Policies")');
+        cy.get('h1:contains("Policy Management")');
     });
 
     it('should have selected item in nav bar', () => {
         visitPolicies();
 
         cy.get(`${navSelectors.navExpandable}:contains("Platform Configuration")`);
-        cy.get(`${navSelectors.nestedNavLinks}:contains("Policies")`).should(
+        cy.get(`${navSelectors.nestedNavLinks}:contains("Policy Management")`).should(
             'have.class',
             'pf-m-current'
         );
     });
 
-    it('table should have columnms', () => {
+    it('table should have columns', () => {
         visitPolicies();
 
         cy.get('th[scope="col"]:contains("Policy")');
@@ -154,7 +178,8 @@ describe('Policies table', () => {
                     cy.wait('@getPolicies');
 
                     // Policy table
-                    cy.get(`h1:contains("Policies")`);
+                    cy.get(`.pf-c-title:contains('Policy Management')`);
+                    cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
                 });
         });
     });
@@ -183,7 +208,8 @@ describe('Policies table', () => {
                     cy.wait('@getPolicies');
 
                     // Policy table
-                    cy.get(`h1:contains("Policies")`);
+                    cy.get(`.pf-c-title:contains('Policy Management')`);
+                    cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
                 });
         });
     });
@@ -265,7 +291,8 @@ describe('Policies table', () => {
         cy.get('[role="dialog"][aria-label="Confirm delete"] button:contains("Delete")').click();
         cy.wait(['@deletePolicy', '@getPolicies']);
 
-        cy.get('h1:contains("Policies")');
+        cy.get(`.pf-c-title:contains('Policy Management')`);
+        cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
         cy.get(`${selectors.table.policyLink}:contains("${name}")`).should('not.exist');
     });
 });

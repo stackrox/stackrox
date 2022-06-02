@@ -2,15 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
     PageSection,
+    Title,
     Bullseye,
     Alert,
     Spinner,
     AlertGroup,
     AlertActionCloseButton,
     AlertVariant,
+    Divider,
+    Button,
+    Flex,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
+import PageTitle from 'Components/PageTitle';
 import { policiesBasePath } from 'routePaths';
 import {
     getPolicies,
@@ -28,6 +36,7 @@ import { SearchFilter } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
+import TabNav from 'Components/TabNav';
 import ImportPolicyJSONModal from '../Modal/ImportPolicyJSONModal';
 import PoliciesTable from './PoliciesTable';
 
@@ -178,6 +187,39 @@ function PoliciesTablePage({
 
     return (
         <>
+            <PageTitle title="Policy Management - Policies" />
+            <PageSection variant="light">
+                <Title headingLevel="h1">Policy Management</Title>
+            </PageSection>
+            <PageSection variant="light" className="pf-u-px-sm pf-u-py-0">
+                <TabNav
+                    currentTabTitle="Policies"
+                    tabLinks={[{ title: 'Policies', href: policiesBasePath }]}
+                />
+            </PageSection>
+            <Divider component="div" />
+            <PageSection variant="light" className="pf-u-py-0">
+                <Toolbar inset={{ default: 'insetNone' }}>
+                    <ToolbarContent>
+                        <ToolbarItem>
+                            <div className="pf-u-font-size-sm">
+                                Configure security policies for your resources.
+                            </div>
+                        </ToolbarItem>
+                        <ToolbarItem alignment={{ default: 'alignRight' }}>
+                            <Flex>
+                                <Button variant="primary" onClick={onClickCreatePolicy}>
+                                    Create policy
+                                </Button>
+                                <Button variant="secondary" onClick={onClickImportPolicy}>
+                                    Import policy
+                                </Button>
+                            </Flex>
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
+            </PageSection>
+            <Divider component="div" />
             {errorMessage ? (
                 <PageSection variant="light" isFilled id="policies-table-error">
                     <Bullseye>
@@ -196,8 +238,6 @@ function PoliciesTablePage({
                     enablePoliciesHandler={enablePoliciesHandler}
                     disablePoliciesHandler={disablePoliciesHandler}
                     handleChangeSearchFilter={handleChangeSearchFilter}
-                    onClickCreatePolicy={onClickCreatePolicy}
-                    onClickImportPolicy={onClickImportPolicy}
                     onClickReassessPolicies={onClickReassessPolicies}
                     searchFilter={searchFilter}
                     searchOptions={searchOptions}
