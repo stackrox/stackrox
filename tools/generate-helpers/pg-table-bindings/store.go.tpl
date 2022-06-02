@@ -41,7 +41,7 @@ import (
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/sync"
-	"gorm.io/gorm"
+    "gorm.io/gorm"
 )
 
 const (

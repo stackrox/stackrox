@@ -105,9 +105,6 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 
 	for _, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("check if %q schemas are equal", testCase.name), func(t *testing.T) {
-			if testCase.name == NetworkFlowsTableName {
-				fmt.Printf("here")
-			}
 			schema := GetSchemaForTable(testCase.name)
 			gormSchemas := s.getGormTableSchemas(schema, testCase.createStmts)
 			pgutils.CreateTable(s.ctx, s.pool, testCase.createStmts)

@@ -16,10 +16,6 @@ const (
 	dbPasswordFile = "/run/secrets/stackrox.io/db-password/password"
 )
 
-var (
-	postgresDB *gorm.DB
-)
-
 // Load loads a Postgres instance and returns a GormDB.
 func Load(conf *config.Config) (*gorm.DB, error) {
 	password, err := os.ReadFile(dbPasswordFile)
@@ -31,11 +27,11 @@ func Load(conf *config.Config) (*gorm.DB, error) {
 	source = pgutils.PgxpoolDsnToPgxDsn(source)
 	log.WriteToStderrf(source)
 
-	postgresDB, err = gorm.Open(postgres.Open(source), &gorm.Config{
+	gormDB, err := gorm.Open(postgres.Open(source), &gorm.Config{
 		NamingStrategy:  pgutils.NamingStrategy,
 		CreateBatchSize: 1000})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open postgres db")
 	}
-	return postgresDB, nil
+	return gormDB, nil
 }
