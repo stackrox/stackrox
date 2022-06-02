@@ -56,21 +56,30 @@ func GetScopedNode(ID string, clusterID string) *storage.Node {
 			Type:    storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
 			Version: "20.10.10",
 		},
-		JoinedAt:        &types.Timestamp{Seconds: 1654103379},
+		JoinedAt:        &types.Timestamp{Seconds: 1643789433},
 		OperatingSystem: "Docker Desktop",
 		Scan:            generateNodeScan(),
+		SetComponents: &storage.Node_Components{Components: 4},
+		SetCves: &storage.Node_Cves{Cves: 10},
+		SetFixable: &storage.Node_FixableCves{FixableCves: 4},
+		SetTopCvss: &storage.Node_TopCvss{TopCvss: 8.4}
 	}
 }
 
 func generateNodeScan() *storage.NodeScan {
 	return &storage.NodeScan{
-		ScanTime:        &types.Timestamp{Seconds: 1654103579},
+		ScanTime:        &types.Timestamp{Seconds: 1654154292, Nanos: 870002400},
 		OperatingSystem: "Linux",
 		Components:      generateNodeScanComponents(),
 	}
 }
 
 func generateNodeScanComponents() []*storage.EmbeddedNodeScanComponent {
-	return nil
+	return []*storage.EmbeddedNodeScanComponent{
+		GetEmbeddedLinux_5_10_47_linuxkit(),
+		GetEmbeddedKubelet_v1_21_5(),
+		GetEmbeddedKube_Proxy_v1_21_5(),
+		GetEmbeddedDocker_20_10_10(),
+	}
 }
 
