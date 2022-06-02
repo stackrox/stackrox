@@ -374,7 +374,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*{{.Type}}) error {
             if ok, err := subScopeChecker.Allowed(ctx); err != nil {
                 return err
             } else if !ok {
-                deniedIds = append(deniedIds, obj.GetId())
+                deniedIds = append(deniedIds, {{ "obj" | .Obj.GetID }})
             }
         }
         if len(deniedIds) != 0 {

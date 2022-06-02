@@ -243,7 +243,7 @@ func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.ProcessBasel
 			if ok, err := subScopeChecker.Allowed(ctx); err != nil {
 				return err
 			} else if !ok {
-				deniedIds = append(deniedIds, obj.GetId())
+				deniedIds = append(deniedIds, obj.GetDeploymentId())
 			}
 		}
 		if len(deniedIds) != 0 {

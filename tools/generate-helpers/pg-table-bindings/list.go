@@ -92,6 +92,13 @@ func resourceMetadataFromString(resource string) permissions.ResourceMetadata {
 	panic("unknown resource: " + resource)
 }
 
+func identifierGetter(prefix string, schema *walker.Schema) string {
+	if len(schema.PrimaryKeys()) == 1 {
+		return schema.ID().Getter(prefix)
+	}
+	panic(schema.TypeName + " has multiple primary keys.")
+}
+
 func clusterGetter(prefix string, schema *walker.Schema) string {
 	for _, f := range schema.Fields {
 		if f.Search.FieldName == search.ClusterID.String() {
