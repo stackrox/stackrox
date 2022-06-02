@@ -32,7 +32,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ExternalBackup)(nil)), "external_backups")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableExternalBackupsStmt)
 		return schema
 	}()
 )

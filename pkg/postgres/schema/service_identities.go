@@ -32,7 +32,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ServiceIdentity)(nil)), "service_identities")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableServiceIdentitiesStmt)
 		return schema
 	}()
 )
