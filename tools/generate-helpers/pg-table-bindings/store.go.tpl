@@ -47,13 +47,6 @@ import (
 const (
         baseTable = "{{.Table}}"
 
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if gt (len $pks) 1 }}
-        existsStmt = "SELECT EXISTS(SELECT 1 FROM {{.Table}} WHERE {{template "whereMatch" $pks}})"
-        getStmt = "SELECT serialized FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
-        deleteStmt = "DELETE FROM {{.Table}} WHERE {{template "whereMatch" $pks}}"
-{{- end }}
-
         batchAfter = 100
 
         // using copyFrom, we may not even want to batch.  It would probably be simpler
@@ -442,10 +435,8 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 // Exists returns if the id exists in the store
 func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "{{.TrimmedType}}")
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if eq (len $pks) 1 }}
+
     var sacQueryFilter *v1.Query
-{{- end }}
     {{- if .PermissionChecker }}
     if ok, err := {{ .PermissionChecker }}.ExistsAllowed(ctx); err != nil || !ok {
         return false, err
@@ -473,38 +464,26 @@ func (s *storeImpl) Exists(ctx context.Context, {{template "paramList" $pks}}) (
 	}
     {{- end }}
 
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if eq (len $pks) 1 }}
     q := search.ConjunctionQuery(
         sacQueryFilter,
     {{- range $idx, $pk := $pks}}
         {{- if eq $pk.Name $singlePK.Name }}
         search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- else }}
-        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ $pk.Search.FieldName }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- end}}
     {{- end}}
     )
 
 	count, err := postgres.RunCountRequestForSchema(schema, q, s.db)
 	return count == 1, err
-{{- else }}
-    row := s.db.QueryRow(ctx, existsStmt, {{template "argList" $pks}})
-    var exists bool
-    if err := row.Scan(&exists); err != nil {
-    return false, pgutils.ErrNilIfNoRows(err)
-    }
-    return exists, nil
-{{- end }}
 }
 
 // Get returns the object, if it exists from the store
 func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{.Type}}, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if eq (len $pks) 1 }}
+
     var sacQueryFilter *v1.Query
-{{- end }}
     {{ if .PermissionChecker -}}
     if ok, err := {{ .PermissionChecker }}.GetAllowed(ctx); err != nil || !ok {
         return nil, false, err
@@ -531,15 +510,14 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
         return nil, false, err
 	}
     {{- end }}
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if eq (len $pks) 1 }}
+
     q := search.ConjunctionQuery(
     sacQueryFilter,
     {{- range $idx, $pk := $pks}}
         {{- if eq $pk.Name $singlePK.Name }}
             search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- else }}
-            search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ $pk.Search.FieldName }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
+            search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- end}}
     {{- end}}
     )
@@ -548,19 +526,6 @@ func (s *storeImpl) Get(ctx context.Context, {{template "paramList" $pks}}) (*{{
 	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
-{{- else }}
-	conn, release, err := s.acquireConn(ctx, ops.Get, "{{.TrimmedType}}")
-	if err != nil {
-	    return nil, false, err
-	}
-	defer release()
-
-	row := conn.QueryRow(ctx, getStmt, {{template "argList" $pks}})
-	var data []byte
-	if err := row.Scan(&data); err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-{{- end }}
 
 	var msg {{.Type}}
 	if err := proto.Unmarshal(data, &msg); err != nil {
@@ -595,10 +560,8 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 // Delete removes the specified ID from the store
 func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if eq (len $pks) 1 }}
+
     var sacQueryFilter *v1.Query
-{{- end }}
     {{- if .PermissionChecker }}
     if ok, err := {{ .PermissionChecker }}.DeleteAllowed(ctx); err != nil {
         return err
@@ -628,32 +591,18 @@ func (s *storeImpl) Delete(ctx context.Context, {{template "paramList" $pks}}) e
 	}
     {{- end }}
 
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if eq (len $pks) 1 }}
     q := search.ConjunctionQuery(
         sacQueryFilter,
     {{- range $idx, $pk := $pks}}
         {{- if eq $pk.Name $singlePK.Name }}
         search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- else }}
-        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ $pk.Search.FieldName }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
+        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
         {{- end}}
     {{- end}}
     )
 
 	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
-{{- else }}
-    conn, release, err := s.acquireConn(ctx, ops.Remove, "{{.TrimmedType}}")
-	if err != nil {
-	    return err
-	}
-	defer release()
-
-	if _, err := conn.Exec(ctx, deleteStmt, {{template "argList" $pks}}); err != nil {
-		return err
-	}
-	return nil
-{{- end }}
 }
 {{- end}}
 
