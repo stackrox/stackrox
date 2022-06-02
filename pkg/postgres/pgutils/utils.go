@@ -89,4 +89,8 @@ func CreateTableFromModel(db *gorm.DB, createStmt *postgres.CreateStmts) {
 	for _, child := range createStmt.Children {
 		CreateTableFromModel(db, child)
 	}
+	for _, stmt := range createStmt.PostStmts {
+		rdb := db.Exec(stmt)
+		utils.Must(rdb.Error)
+	}
 }
