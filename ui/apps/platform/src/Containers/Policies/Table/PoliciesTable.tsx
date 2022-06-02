@@ -3,7 +3,6 @@ import { useHistory } from 'react-router-dom';
 import {
     Button,
     ButtonVariant,
-    Divider,
     Dropdown,
     DropdownItem,
     DropdownSeparator,
@@ -11,7 +10,6 @@ import {
     Flex,
     PageSection,
     Pagination,
-    Title,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
@@ -94,8 +92,6 @@ type PoliciesTableProps = {
     enablePoliciesHandler: (ids) => void;
     disablePoliciesHandler: (ids) => void;
     handleChangeSearchFilter: (searchFilter: SearchFilter) => void;
-    onClickCreatePolicy: () => void;
-    onClickImportPolicy: () => void;
     onClickReassessPolicies: () => void;
     searchFilter?: SearchFilter;
     searchOptions: string[];
@@ -112,8 +108,6 @@ function PoliciesTable({
     enablePoliciesHandler,
     disablePoliciesHandler,
     handleChangeSearchFilter,
-    onClickCreatePolicy,
-    onClickImportPolicy,
     onClickReassessPolicies,
     searchFilter,
     searchOptions,
@@ -234,35 +228,7 @@ function PoliciesTable({
     // dropdownItems={hasWriteAccessForPolicy ? [Enable, Disable, Export, Delete] : [Export]} see PolicyDetail.tsx
     return (
         <>
-            <PageSection
-                variant="light"
-                id="policies-table-header"
-                padding={{ default: 'noPadding' }}
-            >
-                <Toolbar>
-                    <ToolbarContent>
-                        <ToolbarItem>
-                            <Title headingLevel="h1">Policies</Title>
-                        </ToolbarItem>
-                        <ToolbarGroup
-                            alignment={{ default: 'alignRight' }}
-                            spaceItems={{ default: 'spaceItemsSm' }}
-                            variant="button-group"
-                        >
-                            <ToolbarItem>
-                                <Button variant="primary" onClick={onClickCreatePolicy}>
-                                    Create policy
-                                </Button>
-                            </ToolbarItem>
-                            <ToolbarItem>
-                                <Button variant="secondary" onClick={onClickImportPolicy}>
-                                    Import policy
-                                </Button>
-                            </ToolbarItem>
-                        </ToolbarGroup>
-                    </ToolbarContent>
-                </Toolbar>
-                <Divider component="div" />
+            <PageSection isFilled id="policies-table">
                 <Toolbar>
                     <ToolbarContent>
                         <ToolbarItem
@@ -374,14 +340,6 @@ function PoliciesTable({
                         </ToolbarItem>
                     </ToolbarContent>
                 </Toolbar>
-            </PageSection>
-            <Divider component="div" />
-            <PageSection
-                isFilled
-                padding={{ default: 'noPadding' }}
-                hasOverflowScroll
-                id="policies-table"
-            >
                 <TableComposable
                     isStickyHeader
                     aria-label="Policies table"

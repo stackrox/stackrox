@@ -19,7 +19,7 @@ describe('Search Sagas Test', () => {
             .put(globalSearchActions.setGlobalSearchSuggestions(options))
             .not.put(globalSearchActions.setGlobalSearchModifiers(options)) // should not do it second time
             .dispatch(createLocationChange('/main/dashboard'))
-            .dispatch(createLocationChange('/main/policies'))
+            .dispatch(createLocationChange('/main/policy-management/policies'))
             .silentRun();
     });
 
@@ -34,7 +34,7 @@ describe('Search Sagas Test', () => {
         ])
             .put(policiesActions.setPoliciesSearchModifiers(options))
             .put(policiesActions.setPoliciesSearchSuggestions(options))
-            .dispatch(createLocationChange('/main/policies'))
+            .dispatch(createLocationChange('/main/policy-management/policies'))
             .silentRun();
     });
 });

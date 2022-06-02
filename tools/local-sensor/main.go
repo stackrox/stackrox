@@ -76,21 +76,12 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 //
 // If a KUBECONFIG file is provided, then local-sensor will use that file to connect to a remote cluster.
 func main() {
-	durationFlag := flag.String("duration", "", "duration that the scenario should run (leave it empty to run it without timeout)")
+	durationFlag := flag.Duration("duration", 0, "duration that the scenario should run (leave it empty to run it without timeout)")
 	outputFileFlag := flag.String("output", "results.json", "output all messages received to file")
 	verboseFlag := flag.Bool("verbose", false, "prints all messages to stdout as well as to the output file")
 	resyncPeriod := flag.Duration("resync", 1*time.Minute, "resync period")
 
 	flag.Parse()
-
-	var scenarioDuration time.Duration
-	if *durationFlag != "" {
-		var err error
-		scenarioDuration, err = time.ParseDuration(*durationFlag)
-		if err != nil {
-			log.Fatalf("cannot parse duration value %s: %s", *durationFlag, err)
-		}
-	}
 
 	fakeClient, err := k8s.MakeOutOfClusterClient()
 	utils.CrashOnError(err)
@@ -133,8 +124,7 @@ func main() {
 
 	spyCentral.ConnectionStarted.Wait()
 
-	log.Printf("Running scenario for %f minutes\n", scenarioDuration.Minutes())
-	<-time.Tick(scenarioDuration)
+	<-time.Tick(*durationFlag)
 	endTime := time.Now()
 	allMessages := fakeCentral.GetAllMessages()
 	dumpMessages(allMessages, startTime, endTime, *outputFileFlag)

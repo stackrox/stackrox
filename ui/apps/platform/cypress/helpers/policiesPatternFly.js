@@ -23,7 +23,7 @@ export function visitPoliciesCallback(callback) {
 export function visitPoliciesFromLeftNav() {
     // Include empty search query to distinguish from intercept with search query.
     cy.intercept('GET', `${api.policies.policies}?query=`).as('getPolicies');
-    visitFromLeftNavExpandable('Platform Configuration', 'Policies');
+    visitFromLeftNavExpandable('Platform Configuration', 'Policy Management');
     cy.wait('@getPolicies');
 }
 

@@ -4,6 +4,11 @@ ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 
+# UNIT_TEST_IGNORE ignores a set of file patterns from the unit test make command.
+# the pattern is passed to: grep -Ev
+#  usage: "path/to/ignored|another/path"
+UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests"
+
 ifeq ($(TAG),)
 ifeq (,$(wildcard CI_TAG))
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
@@ -448,7 +453,7 @@ test-prep:
 go-unit-tests: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
+		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee test-output/test.log
 	# Exercise the logging package for all supported logging levels to make sure that initialization works properly
 	for encoding in console json; do \
@@ -462,7 +467,7 @@ go-postgres-unit-tests: build-prep test-prep
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
 	CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 ROX_POSTGRES_DATASTORE=true GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
+		$(shell git ls-files -- '*postgres/*_test.go' '*postgres_test.go' '*datastore_sac_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee test-output/test.log
 
 .PHONY: shell-unit-tests
@@ -505,13 +510,15 @@ generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
 image: main-image
 
 .PHONY: all-builds
-all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build
+all-builds: cli main-build $(MERGED_API_SWAGGER_SPEC) ui-build
 
 .PHONY: main-image
 main-image: all-builds
 	make docker-build-main-image
 
-$(CURDIR)/image/rhel/bundle.tar.gz:
+# Exclude ephemeral files in dependencies.
+IMAGE_RHEL_FILES = $(shell find $(CURDIR)/image/rhel/ -type f ! -name "bundle.tar.gz*" ! -name "Dockerfile.gen")
+$(CURDIR)/image/rhel/bundle.tar.gz: $(IMAGE_RHEL_FILES)
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
 
 .PHONY: $(CURDIR)/image/rhel/Dockerfile.gen
@@ -618,7 +625,9 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
 		integration-tests/mock-grpc-server/image
 
-$(CURDIR)/image/postgres/bundle.tar.gz:
+# Exclude ephemeral files in dependencies.
+IMAGE_POSTGRES_FILES = $(shell find $(CURDIR)/image/postgres/ -type f ! -name "bundle.tar.gz*" ! -name "Dockerfile.gen")
+$(CURDIR)/image/postgres/bundle.tar.gz: $(IMAGE_POSTGRES_FILES)
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
 
 .PHONY: $(CURDIR)/image/postgres/Dockerfile.gen
