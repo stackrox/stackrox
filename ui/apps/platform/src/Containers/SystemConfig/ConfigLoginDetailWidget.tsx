@@ -28,7 +28,7 @@ const ConfigLoginDetailWidget = ({ publicConfig }: ConfigLoginDetailWidgetProps)
         <Card data-testid="login-notice-config">
             <CardHeader>
                 <CardHeaderMain>
-                    <CardTitle>Login Notice Configuration</CardTitle>
+                    <CardTitle>Login configuration</CardTitle>
                 </CardHeaderMain>
                 <CardActions data-testid="login-notice-state">
                     {isEnabled ? <Label color="green">Enabled</Label> : <Label>Disabled</Label>}
@@ -38,7 +38,7 @@ const ConfigLoginDetailWidget = ({ publicConfig }: ConfigLoginDetailWidgetProps)
             <CardBody>
                 <DescriptionList>
                     <DescriptionListGroup>
-                        <DescriptionListTerm>Text (2000 character limit):</DescriptionListTerm>
+                        <DescriptionListTerm>Text (2000 character limit)</DescriptionListTerm>
                         <DescriptionListDescription>{loginNoticeText}</DescriptionListDescription>
                     </DescriptionListGroup>
                 </DescriptionList>
