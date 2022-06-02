@@ -1,46 +1,75 @@
 package n1ton2
 
 import (
+	"context"
 	"strconv"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/bolthelpers"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
+	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
 	"gorm.io/gorm"
 )
 
 func TestMigration(t *testing.T) {
-	suite.Run(t, new(migrateServiceIdentitySerial))
+	suite.Run(t, new(postgresMigrationAlertsSuite))
 }
 
-type migrateServiceIdentitySerial struct {
+type postgresMigrationAlertsSuite struct {
 	suite.Suite
+	envIsolator *envisolator.EnvIsolator
+	ctx         context.Context
 
-	db *bolt.DB
+	// RocksDB
+	rocksDB *rocksdb.RocksDB
+	db      *gorocksdb.DB
 
+	// PostgresDB
+	pool   *pgxpool.Pool
 	gormDB *gorm.DB
 }
 
-func (suite *migrateServiceIdentitySerial) SetupTest() {
-	db, err := bolthelpers.NewTemp(testutils.DBFileName(suite))
-	if err != nil {
-		suite.FailNow("Failed to make BoltDB", err.Error())
+var _ suite.TearDownTestSuite = (*postgresMigrationAlertsSuite)(nil)
+
+func (s *postgresMigrationAlertsSuite) SetupTest() {
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
+	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
+	if !features.PostgresDatastore.Enabled() {
+		s.T().Skip("Skip postgres store tests")
+		s.T().SkipNow()
 	}
-	suite.db = db
+
+	var err error
+	s.rocksDB, err = rocksdb.NewTemp(s.T().Name())
+	s.NoError(err)
+
+	s.db = s.rocksDB.DB
+
+	source := pgtest.GetConnectionString(s.T())
+	config, err := pgxpool.ParseConfig(source)
+	s.Require().NoError(err)
+
+	s.ctx = context.Background()
+	s.pool, err = pgxpool.ConnectConfig(s.ctx, config)
+	s.Require().NoError(err)
+
+	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 }
 
-func (suite *migrateServiceIdentitySerial) TearDownTest() {
-	testutils.TearDownDB(suite.db)
+func (s *postgresMigrationAlertsSuite) TearDownTest() {
+	rocksdbtest.TearDownRocksDB(s.rocksDB)
+	pgtest.OpenGormDB()
 }
 
-func (suite *migrateServiceIdentitySerial) TestMigrate() {
-	// Buckets don't exist should succeed still
-	suite.NoError(migrateSerials(suite.db))
-
+func (s *postgresMigrationAlertsSuite() {
 	cases := []struct {
 		oldSerial *storage.ServiceIdentity
 		newSerial *storage.ServiceIdentity
@@ -71,38 +100,38 @@ func (suite *migrateServiceIdentitySerial) TestMigrate() {
 			},
 		},
 	}
-	err := suite.db.Update(func(tx *bolt.Tx) error {
+	err := s.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(bucketName)
-		suite.NoError(err)
+		s.NoError(err)
 		for _, c := range cases {
 			si, err := c.oldSerial.Marshal()
-			suite.NoError(err)
+			s.NoError(err)
 
 			if c.oldSerial.GetSerialStr() != "" {
-				suite.NoError(bucket.Put([]byte(c.oldSerial.GetSerialStr()), si))
+				s.NoError(bucket.Put([]byte(c.oldSerial.GetSerialStr()), si))
 			} else {
-				suite.NoError(bucket.Put([]byte(strconv.FormatInt(c.oldSerial.GetSerial(), 10)), si))
+				s.NoError(bucket.Put([]byte(strconv.FormatInt(c.oldSerial.GetSerial(), 10)), si))
 			}
 		}
 		return nil
 	})
-	suite.NoError(err)
+	s.NoError(err)
 
-	suite.NoError(migrateSerials(suite.db))
+	s.NoError(migrateSerials(s.db))
 
-	err = suite.db.View(func(tx *bolt.Tx) error {
+	err = s.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(bucketName)
 
 		idx := 0
 		err := bucket.ForEach(func(k, v []byte) error {
 			var si storage.ServiceIdentity
-			suite.NoError(proto.Unmarshal(v, &si))
-			suite.Equal(cases[idx].newSerial, &si)
+			s.NoError(proto.Unmarshal(v, &si))
+			s.Equal(cases[idx].newSerial, &si)
 			idx++
 			return nil
 		})
-		suite.NoError(err)
+		s.NoError(err)
 		return nil
 	})
-	suite.NoError(err)
+	s.NoError(err)
 }
