@@ -169,11 +169,11 @@ message TestGrandparent {
 
 message TestParent1 {
    string id        = 1 [(gogoproto.moretags) = 'search:"Test Parent1 ID" sql:"pk"'];
-   string parent_id = 2 [(gogoproto.moretags) = 'search:"Test Grandparent ID" sql:"fk(TestGrandparent:id)"'];
+   string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestGrandparent:id)"'];
 
 
    message Child1Ref {
-     string child_id = 1 [(gogoproto.moretags) = 'search:"Test Child1 ID" sql:"fk(TestChild1:id),no-fk-constraint"'];
+     string child_id = 1 [(gogoproto.moretags) = 'sql:"fk(TestChild1:id),no-fk-constraint"'];
    }
 
    repeated Child1Ref children = 3;
@@ -190,8 +190,8 @@ message TestChild1 {
 
 message TestGrandChild1 {
   string id        = 1 [(gogoproto.moretags) = 'search:"Test Grandchild1 ID" sql:"pk"'];
-  string parent_id = 2 [(gogoproto.moretags) = 'search:"Test Child1 ID" sql:"fk(TestChild1:id)"'];
-  string child_id  = 3 [(gogoproto.moretags) = 'search:"Test GGrandchild1 ID" sql:"fk(TestGGrandChild1:id),no-fk-constraint"'];
+  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestChild1:id)"'];
+  string child_id  = 3 [(gogoproto.moretags) = 'sql:"fk(TestGGrandChild1:id),no-fk-constraint"'];
 
   string val = 4 [(gogoproto.moretags) = 'search:"Test Grandchild1 Val"'];
 }
@@ -204,8 +204,8 @@ message TestGGrandChild1 {
 
 message TestG2GrandChild1 {
   string id        = 1 [(gogoproto.moretags) = 'search:"Test G2Grandchild1 ID" sql:"pk"'];
-  string parent_id = 2 [(gogoproto.moretags) = 'search:"Test GGrandchild1 ID" sql:"fk(TestGGrandChild1:id)"'];
-  string child_id  = 3 [(gogoproto.moretags) = 'search:"Test G3Grandchild1 ID" sql:"fk(TestG3GrandChild1:id),no-fk-constraint"'];
+  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestGGrandChild1:id)"'];
+  string child_id  = 3 [(gogoproto.moretags) = 'sql:"fk(TestG3GrandChild1:id),no-fk-constraint"'];
 
   string val = 4 [(gogoproto.moretags) = 'search:"Test G2Grandchild1 Val"'];
 }
@@ -219,24 +219,24 @@ message TestG3GrandChild1 {
 
 message TestParent2 {
   string id        = 1 [(gogoproto.moretags) = 'search:"Test Parent2 ID" sql:"pk"'];
-  string parent_id = 2 [(gogoproto.moretags) = 'search:"Test Grandparent ID" sql:"fk(TestGrandparent:id)"'];
+  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestGrandparent:id)"'];
 
   string val = 3 [(gogoproto.moretags) = 'search:"Test Parent2 Val"'];
 }
 
 message TestChild2 {
   string id        = 1 [(gogoproto.moretags) = 'search:"Test Child2 ID" sql:"pk"'];
-  string parent_id = 2 [(gogoproto.moretags) = 'search:"Test Parent2 ID" sql:"fk(TestParent2:id)"'];
+  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestParent2:id)"'];
 
   // For a potential optimization, insert a direct link from child to grandparent.
-  string grandparent_id = 3 [(gogoproto.moretags) = 'search:"Test Grandparent ID" sql:"fk(TestGrandparent:id),no-fk-constraint"'];
+  string grandparent_id = 3 [(gogoproto.moretags) = 'sql:"fk(TestGrandparent:id),no-fk-constraint"'];
 
   string val = 4 [(gogoproto.moretags) = 'search:"Test Child2 Val"'];
 }
 
 message TestParent3 {
   string id        = 1 [(gogoproto.moretags) = 'search:"Test Parent3 ID" sql:"pk"'];
-  string parent_id = 2 [(gogoproto.moretags) = 'search:"Test Grandparent ID" sql:"fk(TestGrandparent:id)"'];
+  string parent_id = 2 [(gogoproto.moretags) = 'sql:"fk(TestGrandparent:id)"'];
 
   string val = 3 [(gogoproto.moretags) = 'search:"Test Parent3 Val"'];
 

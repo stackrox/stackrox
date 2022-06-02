@@ -1,13 +1,13 @@
-import { selectors } from '../../../constants/PoliciesPagePatternFly';
-import withAuth from '../../../helpers/basicAuth';
-import DndSimulatorDataTransfer from '../../../helpers/dndSimulatorDataTransfer';
+import { selectors } from '../../constants/PoliciesPagePatternFly';
+import withAuth from '../../helpers/basicAuth';
+import DndSimulatorDataTransfer from '../../helpers/dndSimulatorDataTransfer';
 import {
     visitPolicies,
     doPolicyRowAction,
     editFirstPolicyFromTable,
     cloneFirstPolicyFromTable,
     goToStep3,
-} from '../../../helpers/policiesPatternFly';
+} from '../../helpers/policiesPatternFly';
 
 const dataTransfer = new DndSimulatorDataTransfer();
 

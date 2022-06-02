@@ -479,7 +479,7 @@ executors:
         default: medium
     resource_class: << parameters.resource_class >>
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-cci-0.3.35
+      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-cci-0.3.37
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -2285,7 +2285,7 @@ jobs:
           path: go-unit-release-junit-reports
   go-postgres-tests:
     docker:
-      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.36-4-g645f6152d7
+      - image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.37
         auth:
           username: $QUAY_RHACS_ENG_RO_USERNAME
           password: $QUAY_RHACS_ENG_RO_PASSWORD
@@ -2299,7 +2299,9 @@ jobs:
     - pre-go-unit-tests
     - run:
         name: Run Go postgres unit tests
-        command:  make go-postgres-unit-tests
+        command: |
+          export PATH=/usr/pgsql-14/bin:$PATH
+          make go-postgres-unit-tests
     - post-go-unit-tests:
         path: go-unit-release-junit-reports
 

@@ -78,6 +78,10 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
 
     const metadataKeyValuePairs = [
         {
+            key: 'SHA',
+            value: safeData.id,
+        },
+        {
             key: 'Created',
             value: (metadata?.v1 && <DateTimeField date={metadata.v1.created} asString />) || '-',
         },

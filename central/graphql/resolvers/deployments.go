@@ -22,7 +22,8 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddExtraResolvers("Deployment", []string{ // note: alphabetically ordered
+		// NOTE: This list is and should remain alphabetically ordered
+		schema.AddExtraResolvers("Deployment", []string{
 			"cluster: Cluster",
 			"complianceResults(query: String): [ControlResult!]!",
 			"componentCount(query: String): Int!",
@@ -38,6 +39,9 @@ func init() {
 			"groupedProcesses: [ProcessNameGroup!]!",
 			"imageCount(query: String): Int!",
 			"images(query: String, pagination: Pagination): [Image!]!",
+			"imageVulnerabilityCount(query: String): Int!",
+			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
+			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!",
 			"latestViolation(query: String): Time",
 			"namespaceObject: Namespace",
 			"plottedVulns(query: String): PlottedVulnerabilities!",
@@ -51,15 +55,15 @@ func init() {
 			"serviceAccountID: String!",
 			"serviceAccountObject: ServiceAccount",
 			"unusedVarSink(query: String): Int",
-			"vulnerabilityCount(query: String): Int!",
-			"vulnerabilityCounter(query: String): VulnerabilityCounter!",
-			"vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!",
 		}),
 		// deprecated fields
 		schema.AddExtraResolvers("Deployment", []string{
-			"vulnCount(query: String): Int! @deprecated(reason: \"use 'vulnerabilityCount'\")",
-			"vulnCounter(query: String): VulnerabilityCounter! @deprecated(reason: \"use 'vulnerabilityCounter'\")",
-			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! @deprecated(reason: \"use 'vulnerabilities'\")",
+			"vulnCount(query: String): Int! " +
+				"@deprecated(reason: \"use 'imageVulnerabilityCount'\")",
+			"vulnCounter(query: String): VulnerabilityCounter! " +
+				"@deprecated(reason: \"use 'imageVulnerabilityCounter'\")",
+			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! " +
+				"@deprecated(reason: \"use 'imageVulnerabilities'\")",
 		}),
 		schema.AddQuery("deployment(id: ID): Deployment"),
 		schema.AddQuery("deployments(query: String, pagination: Pagination): [Deployment!]!"),
@@ -577,24 +581,24 @@ func (resolver *deploymentResolver) vulnQueryScoping(ctx context.Context) contex
 	return ctx
 }
 
-func (resolver *deploymentResolver) Vulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Vulnerabilities")
+func (resolver *deploymentResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilities")
 
 	ctx = resolver.vulnQueryScoping(ctx)
 
 	return resolver.root.ImageVulnerabilities(ctx, args)
 }
 
-func (resolver *deploymentResolver) VulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "VulnerabilityCount")
+func (resolver *deploymentResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilityCount")
 
 	ctx = resolver.vulnQueryScoping(ctx)
 
 	return resolver.root.ImageVulnerabilityCount(ctx, args)
 }
 
-func (resolver *deploymentResolver) VulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "VulnerabilityCounter")
+func (resolver *deploymentResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilityCounter")
 
 	ctx = resolver.vulnQueryScoping(ctx)
 

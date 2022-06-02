@@ -39,10 +39,6 @@ var (
                    NamespaceId varchar,
                    Deployment_Id varchar,
                    Deployment_Name varchar,
-                   Deployment_Namespace varchar,
-                   Deployment_NamespaceId varchar,
-                   Deployment_ClusterId varchar,
-                   Deployment_ClusterName varchar,
                    Deployment_Inactive bool,
                    Image_Id varchar,
                    Image_Name_Registry varchar,
@@ -107,10 +103,6 @@ type Alerts struct {
 	NamespaceId              string                              `gorm:"column:namespaceid;type:varchar"`
 	DeploymentId             string                              `gorm:"column:deployment_id;type:varchar;index:alerts_deployment_id,type:hash"`
 	DeploymentName           string                              `gorm:"column:deployment_name;type:varchar"`
-	DeploymentNamespace      string                              `gorm:"column:deployment_namespace;type:varchar"`
-	DeploymentNamespaceId    string                              `gorm:"column:deployment_namespaceid;type:varchar"`
-	DeploymentClusterId      string                              `gorm:"column:deployment_clusterid;type:varchar"`
-	DeploymentClusterName    string                              `gorm:"column:deployment_clustername;type:varchar"`
 	DeploymentInactive       bool                                `gorm:"column:deployment_inactive;type:bool"`
 	ImageId                  string                              `gorm:"column:image_id;type:varchar"`
 	ImageNameRegistry        string                              `gorm:"column:image_name_registry;type:varchar"`

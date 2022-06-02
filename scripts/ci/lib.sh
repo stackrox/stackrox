@@ -268,14 +268,16 @@ push_matching_collector_scanner_images() {
     done
 }
 
-poll_for_opensource_images() {
-    info "Polling for opensource images required for system tests"
+poll_for_system_test_images() {
+    info "Polling for images required for system tests"
 
     if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: poll_for_opensource_images <seconds to wait>"
+        die "missing arg. usage: poll_for_system_test_images <seconds to wait>"
     fi
 
     local time_limit="$1"
+
+    require_environment "QUAY_RHACS_ENG_BEARER_TOKEN"
 
     local tag
     tag="$(make --quiet tag)"
@@ -284,9 +286,12 @@ poll_for_opensource_images() {
 
     _image_exists() {
         local name="$1"
-        local url="https://quay.io/v2/stackrox-io/$name/manifests/$tag"
+        local url="https://quay.io/api/v1/repository/rhacs-eng/$name/tag?specificTag=$tag"
         info "Checking for $name using $url"
-        curl -sS --head --fail "$url"
+        local check
+        check=$(curl --location -sS -H "Authorization: Bearer ${QUAY_RHACS_ENG_BEARER_TOKEN}" "$url")
+        echo "$check"
+        [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
     }
 
     while true; do
@@ -727,27 +732,6 @@ openshift_ci_mods() {
     if [[ -n "${NAMESPACE:-}" ]]; then
         export OPENSHIFT_CI_NAMESPACE="$NAMESPACE"
         unset NAMESPACE
-    fi
-
-    # Prow tests PRs rebased against master. This is a pain during migration
-    # because Circle CI does not and so images built in Circle CI have different
-    # tags.
-    local pr_details
-    local exitstatus=0
-    pr_details="${2:-$(get_pr_details)}" || exitstatus="$?"
-    if [[ "$exitstatus" == "0" && "$(jq -r .base.repo.full_name <<<"$pr_details")" == "stackrox/stackrox" ]]; then
-        info "Switching to the PR branch"
-
-        # Clone the target repo
-        cd ..
-        mv stackrox stackrox-osci
-        git clone https://github.com/stackrox/stackrox.git
-        cd stackrox
-
-        # Checkout the PR branch
-        head_ref="$(jq -r '.head.ref' <<<"$pr_details")"
-        info "Checking out a matching PR branch using: $head_ref"
-        git checkout "$head_ref"
     fi
 }
 

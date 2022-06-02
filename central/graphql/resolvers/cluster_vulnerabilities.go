@@ -16,6 +16,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("ClusterVulnerability",
 			append(commonVulnerabilitySubResolvers,
 				"vulnerabilityType: String!",

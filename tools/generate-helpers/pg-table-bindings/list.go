@@ -17,6 +17,7 @@ var typeRegistry = make(map[string]string)
 func init() {
 	for s, r := range map[proto.Message]permissions.ResourceHandle{
 		&storage.ClusterHealthStatus{}:                          resources.Cluster,
+		&storage.ExternalBackup{}:                               resources.BackupPlugins,
 		&storage.ImageComponentEdge{}:                           resources.ImageComponent,
 		&storage.K8SRoleBinding{}:                               resources.K8sRoleBinding,
 		&storage.K8SRole{}:                                      resources.K8sRole,

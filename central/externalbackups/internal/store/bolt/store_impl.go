@@ -1,6 +1,8 @@
-package store
+package bolt
 
 import (
+	"context"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -25,14 +27,14 @@ type storeImpl struct {
 }
 
 // New returns a new Node store
-func New(db *bolt.DB) Store {
+func New(db *bolt.DB) *storeImpl {
 	bolthelper.RegisterBucketOrPanic(db, backupBucketKey)
 
 	crud := protoCrud.NewMessageCrudForBucket(bolthelper.TopLevelRef(db, backupBucketKey), key, alloc)
 	return &storeImpl{crud: crud}
 }
 
-func (s *storeImpl) ListBackups() ([]*storage.ExternalBackup, error) {
+func (s *storeImpl) GetAll(_ context.Context) ([]*storage.ExternalBackup, error) {
 	entries, err := s.crud.ReadAll()
 	if err != nil {
 		return nil, err
@@ -44,23 +46,20 @@ func (s *storeImpl) ListBackups() ([]*storage.ExternalBackup, error) {
 	return backups, nil
 }
 
-func (s *storeImpl) GetBackup(id string) (*storage.ExternalBackup, error) {
+func (s *storeImpl) Get(_ context.Context, id string) (*storage.ExternalBackup, bool, error) {
 	value, err := s.crud.Read(id)
-	if err != nil {
-		return nil, err
+	if err != nil || value == nil {
+		return nil, false, err
 	}
-	if value == nil {
-		return nil, nil
-	}
-	return value.(*storage.ExternalBackup), nil
+	return value.(*storage.ExternalBackup), true, nil
 }
 
-func (s *storeImpl) UpsertBackup(backup *storage.ExternalBackup) error {
+func (s *storeImpl) Upsert(_ context.Context, backup *storage.ExternalBackup) error {
 	_, _, err := s.crud.Upsert(backup)
 	return err
 }
 
-func (s *storeImpl) RemoveBackup(id string) error {
+func (s *storeImpl) Delete(_ context.Context, id string) error {
 	_, _, err := s.crud.Delete(id)
 	return err
 }
