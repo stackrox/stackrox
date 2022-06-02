@@ -41,6 +41,7 @@ import (
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/sync"
+	"gorm.io/gorm"
 )
 
 const (
@@ -106,7 +107,7 @@ type storeImpl struct {
 {{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
 
 // New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
+func New(db *pgxpool.Pool) Store {
     return &storeImpl{
         db: db,
     }
@@ -888,6 +889,12 @@ func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *pgx
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
     {{template "dropTableFunctionName" .Schema}}(ctx, db)
+}
+
+// NewTestStore returns a new Store instance for testing
+func NewTestStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchema(ctx, gormDB, baseTable)
+	return New(db)
 }
 
 //// Stubs for satisfying legacy interfaces

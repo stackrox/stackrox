@@ -1,8 +1,6 @@
 package datastore
 
 import (
-	"context"
-
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/index"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
@@ -46,8 +44,8 @@ func initialize() {
 	var err error
 
 	if features.PostgresDatastore.Enabled() {
-		clusterStorage = clusterPostgres.New(context.TODO(), globaldb.GetPostgres())
-		clusterHealthStorage = clusterHealthPostgres.New(context.TODO(), globaldb.GetPostgres())
+		clusterStorage = clusterPostgres.New(globaldb.GetPostgres())
+		clusterHealthStorage = clusterHealthPostgres.New(globaldb.GetPostgres())
 		indexer = clusterPostgres.NewIndexer(globaldb.GetPostgres())
 	} else {
 		clusterStorage, err = clusterRocksDB.New(globaldb.GetRocksDB())

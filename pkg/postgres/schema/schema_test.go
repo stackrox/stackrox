@@ -1,3 +1,6 @@
+//go:build sql_integration
+// +build sql_integration
+
 package schema
 
 import (
@@ -21,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -65,8 +67,7 @@ func (s *SchemaTestSuite) SetupSuite() {
 	s.ctx = ctx
 	s.pool = pool
 	s.Require().NoError(err)
-	s.gorm, err = gorm.Open(postgres.Open(source), &gorm.Config{})
-	s.Require().NoError(err)
+	s.gorm = pgtest.OpenGormDB(s.T(), source)
 }
 
 func (s *SchemaTestSuite) TearDownTest() {
@@ -86,6 +87,10 @@ func (s *SchemaTestSuite) TearDownSuite() {
 		return
 	}
 	s.pool.Close()
+}
+
+func (s *SchemaTestSuite) TestA() {
+
 }
 
 func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
@@ -143,7 +148,7 @@ func (s *SchemaTestSuite) getAllTestCases() []string {
 }
 
 func (s *SchemaTestSuite) getGormTableSchemas(schema *walker.Schema, createStmt *pkgPostgres.CreateStmts) map[string]string {
-	pgutils.CreateTableFromModel(s.gorm, createStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.gorm, createStmt)
 	defer s.dropTableFromModel(createStmt)
 	tables := s.tablesForSchema(schema)
 

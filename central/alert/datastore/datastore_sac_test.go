@@ -71,7 +71,8 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 		s.pool, err = pgxpool.ConnectConfig(context.Background(), config)
 		s.NoError(err)
 		pgStore.Destroy(ctx, s.pool)
-		s.storage = pgStore.New(ctx, s.pool)
+		gormDB := pgtest.OpenGormDB(s.T(), source)
+		s.storage = pgStore.NewTestStore(ctx, s.pool, gormDB)
 		s.indexer = pgStore.NewIndexWrapper(s.pool)
 		s.optionsMap = mappings.PostgresOptionsMap
 	} else {

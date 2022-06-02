@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"context"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/logging"
@@ -63,14 +64,21 @@ func getRegisteredTablesFor(visited set.StringSet, table string) []*RegisteredTa
 	return rts
 }
 
-// ApplyCurrentSchema creates or auto migrate according to the current schema
-func ApplyCurrentSchema(gormDB *gorm.DB) error {
+// ApplyAllSchemas creates or auto migrate according to the current schema
+func ApplyAllSchemas(ctx context.Context, gormDB *gorm.DB) {
 	for _, rt := range getAllRegisteredTableInOrder() {
 		// Exclude tests
 		if strings.HasPrefix(rt.Schema.Table, "test_") {
 			continue
 		}
-		pgutils.CreateTableFromModel(gormDB, rt.CreateStmt)
+		pgutils.CreateTableFromModel(ctx, gormDB, rt.CreateStmt)
 	}
-	return nil
+}
+
+// ApplySchemaForTable creates or auto migrate according to the current schema
+func ApplySchemaForTable(ctx context.Context, gormDB *gorm.DB, table string) {
+	rts := getRegisteredTablesFor(set.NewStringSet(), table)
+	for _, rt := range rts {
+		pgutils.CreateTableFromModel(ctx, gormDB, rt.CreateStmt)
+	}
 }

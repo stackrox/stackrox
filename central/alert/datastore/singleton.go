@@ -1,8 +1,6 @@
 package datastore
 
 import (
-	"context"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
@@ -26,7 +24,7 @@ func initialize() {
 	var indexer index.Indexer
 
 	if features.PostgresDatastore.Enabled() {
-		storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+		storage = postgres.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 	} else {
 		storage = rocksdb.New(globaldb.GetRocksDB())

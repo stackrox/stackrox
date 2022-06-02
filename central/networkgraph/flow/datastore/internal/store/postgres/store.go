@@ -13,9 +13,11 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"gorm.io/gorm"
 )
 
 // This Flow is custom to match the existing interface and how the functionality works through the system.
@@ -177,7 +179,7 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx pgx.Tx, objs
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(_ context.Context, db *pgxpool.Pool, clusterID string) FlowStore {
+func New(db *pgxpool.Pool, clusterID string) FlowStore {
 	return &flowStoreImpl{
 		db:        db,
 		clusterID: clusterID,
@@ -648,6 +650,12 @@ func dropTableNetworkflow(ctx context.Context, db *pgxpool.Pool) {
 // Destroy destroys the tables
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableNetworkflow(ctx, db)
+}
+
+// NewTestStore returns a new Store instance for testing
+func NewTestStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, clusterID string) FlowStore {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db, clusterID)
 }
 
 //// Stubs for satisfying legacy interfaces

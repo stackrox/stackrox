@@ -49,7 +49,8 @@ func (s *ImageComponentsStoreSuite) SetupTest() {
 	Destroy(ctx, pool)
 
 	s.pool = pool
-	s.store = New(ctx, pool)
+	gormDB := pgtest.OpenGormDB(s.T(), source)
+	s.store = NewTestStore(ctx, pool, gormDB)
 }
 
 func (s *ImageComponentsStoreSuite) TearDownTest() {

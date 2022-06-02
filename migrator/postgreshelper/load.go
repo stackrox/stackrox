@@ -3,8 +3,6 @@ package postgreshelper
 import (
 	"fmt"
 	"os"
-	"regexp"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/log"
@@ -19,8 +17,7 @@ const (
 )
 
 var (
-	postgresDB      *gorm.DB
-	pgxPoolDSNRegex = regexp.MustCompile(`(^| )(pool_max_conns|pool_min_conns|pool_max_conn_lifetime|pool_max_conn_idle_time|pool_health_check_period)=\S+`)
+	postgresDB *gorm.DB
 )
 
 func Load(conf *config.Config) (*gorm.DB, error) {
@@ -30,7 +27,7 @@ func Load(conf *config.Config) (*gorm.DB, error) {
 		return nil, err
 	}
 	source := fmt.Sprintf("%s password=%s", conf.CentralDB.Source, password)
-	source = PgxpoolDsnToPgxDsn(source)
+	source = pgutils.PgxpoolDsnToPgxDsn(source)
 	log.WriteToStderrf(source)
 
 	postgresDB, err = gorm.Open(postgres.Open(source), &gorm.Config{
@@ -40,8 +37,4 @@ func Load(conf *config.Config) (*gorm.DB, error) {
 		return nil, errors.Wrap(err, "failed to open postgres db")
 	}
 	return postgresDB, nil
-}
-
-func PgxpoolDsnToPgxDsn(pgxpoolDsn string) string {
-	return strings.TrimSpace(pgxPoolDSNRegex.ReplaceAllString(pgxpoolDsn, ""))
 }

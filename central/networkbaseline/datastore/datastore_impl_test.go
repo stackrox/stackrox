@@ -50,7 +50,8 @@ func (suite *NetworkBaselineDataStoreTestSuite) SetupSuite() {
 		suite.pool, err = pgxpool.ConnectConfig(ctx, config)
 		suite.NoError(err)
 		pgStore.Destroy(ctx, suite.pool)
-		suite.storage = pgStore.New(ctx, suite.pool)
+		gormDB := pgtest.OpenGormDB(suite.T(), source)
+		suite.storage = pgStore.NewTestStore(ctx, suite.pool, gormDB)
 	} else {
 		var err error
 		suite.engine, err = rocksdb.NewTemp(suite.T().Name())

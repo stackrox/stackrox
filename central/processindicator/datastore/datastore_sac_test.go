@@ -63,7 +63,8 @@ func (s *processIndicatorDatastoreSACSuite) SetupSuite() {
 		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
 		s.Require().NoError(err)
 		pgStore.Destroy(ctx, s.pool)
-		s.storage = pgStore.New(ctx, s.pool)
+		gormDB := pgtest.OpenGormDB(s.T(), src)
+		s.storage = pgStore.NewTestStore(ctx, s.pool, gormDB)
 		s.indexer = pgStore.NewIndexer(s.pool)
 		s.optionsMap = schema.ProcessIndicatorsSchema.OptionsMap
 	} else {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 
@@ -121,7 +122,7 @@ func upgrade(conf *config.Config) error {
 	}
 
 	if features.PostgresDatastore.Enabled() {
-		err = pkgSchema.ApplyCurrentSchema(gormDB)
+		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
 	}
 
 	return nil

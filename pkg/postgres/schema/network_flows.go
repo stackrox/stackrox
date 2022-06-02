@@ -70,3 +70,8 @@ type NetworkFlows struct {
 	LastSeenTimestamp  *time.Time                     `gorm:"column:lastseentimestamp;type:timestamp"`
 	ClusterId          string                         `gorm:"column:clusterid;type:varchar;index:network_flows_cluster,type:btree;index:network_flows_src,type:btree;index:network_flows_dst,type:btree"`
 }
+
+type NetworkFlowws struct {
+	FlowId            string     `gorm:"column:flow_id;type:bigserial;primaryKey"`
+	LastSeenTimestamp *time.Time `gorm:"column:lastseentimestamp;type:timestamp;index:network_flows_last,type:brin"`
+}

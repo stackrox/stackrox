@@ -51,7 +51,8 @@ func (s *AlertsIndexSuite) SetupTest() {
 	s.Require().NoError(err)
 
 	Destroy(ctx, s.pool)
-	s.store = New(ctx, s.pool)
+	gormDB := pgtest.OpenGormDB(s.T(), source)
+	s.store = NewTestStore(ctx, s.pool, gormDB)
 	s.indexer = NewIndexer(s.pool)
 }
 

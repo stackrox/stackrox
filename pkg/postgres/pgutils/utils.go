@@ -3,6 +3,8 @@ package pgutils
 import (
 	"context"
 	"reflect"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -29,6 +31,7 @@ var (
 		NameReplacer:  nil,
 		NoLowerCase:   false,
 	}
+	pgxPoolDSNRegex = regexp.MustCompile(`(^| )(pool_max_conns|pool_min_conns|pool_max_conn_lifetime|pool_max_conn_idle_time|pool_health_check_period)=\S+`)
 )
 
 // ErrNilIfNoRows returns nil if the error is pgx.ErrNoRows
@@ -81,16 +84,20 @@ func CreateTable(ctx context.Context, db *pgxpool.Pool, createStmt *postgres.Cre
 }
 
 // CreateTableFromModel executes input create statement using the input connection.
-func CreateTableFromModel(db *gorm.DB, createStmt *postgres.CreateStmts) {
-	err := db.AutoMigrate(createStmt.GormModel)
+func CreateTableFromModel(ctx context.Context, db *gorm.DB, createStmt *postgres.CreateStmts) {
+	err := db.WithContext(ctx).AutoMigrate(createStmt.GormModel)
 	err = errors.Wrapf(err, "Error creating table %s: %v", createStmt.Table, err)
 	utils.Must(err)
 
 	for _, child := range createStmt.Children {
-		CreateTableFromModel(db, child)
+		CreateTableFromModel(ctx, db, child)
 	}
 	for _, stmt := range createStmt.PostStmts {
-		rdb := db.Exec(stmt)
+		rdb := db.WithContext(ctx).Exec(stmt)
 		utils.Must(rdb.Error)
 	}
+}
+
+func PgxpoolDsnToPgxDsn(pgxpoolDsn string) string {
+	return strings.TrimSpace(pgxPoolDSNRegex.ReplaceAllString(pgxpoolDsn, ""))
 }
