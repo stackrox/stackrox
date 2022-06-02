@@ -64,8 +64,8 @@ func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor)
 
 func (s *FakeService) ingestMessageWithLock(msg *central.MsgFromSensor) {
 	s.receivedLock.Lock()
-	defer s.receivedLock.Unlock()
 	s.receivedMessages = append(s.receivedMessages, msg)
+	s.receivedLock.Unlock()
 	s.messageCallback(msg)
 }
 
@@ -83,7 +83,6 @@ func (s *FakeService) startInputIngestion(stream central.SensorService_Communica
 		if s.KillSwitch.IsDone() {
 			return
 		}
-
 		go s.ingestMessageWithLock(msg.Clone())
 	}
 
