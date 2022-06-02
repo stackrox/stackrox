@@ -256,8 +256,8 @@ func (s *{{$namePrefix}}StoreSuite) TestSACWalk() {
 	}
 }
 
-
-
+{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
+{{- if eq (len .Schema.PrimaryKeys) 1 }}
 func (s *{{$namePrefix}}StoreSuite) TestSACGetIDs() {
 	objA := &{{.Type}}{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -271,12 +271,12 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetIDs() {
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
 	for name, expectedIds := range map[string][]string{
-		withAllAccess:           []string{objA.GetId(), objB.GetId()},
+		withAllAccess:           []string{ {{ "objA" | .Obj.GetID }}, {{ "objB" | .Obj.GetID }} },
 		withNoAccess:            []string{},
 		withNoAccessToCluster:   []string{},
 		withAccessToDifferentNs: []string{},
-		withAccess:              []string{objA.GetId()},
-		withAccessToCluster:     []string{objA.GetId()},
+		withAccess:              []string{ {{ "objA" | .Obj.GetID }} },
+		withAccessToCluster:     []string{ {{ "objA" | .Obj.GetID }} },
 	} {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			ids, err := s.store.GetIDs(ctxs[name])
@@ -303,7 +303,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACExists() {
 		withAccessToCluster:     true,
 	} {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			exists, err := s.store.Exists(ctxs[name], objA.GetId())
+			exists, err := s.store.Exists(ctxs[name], {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "objA"}}, {{end}})
 			assert.NoError(t, err)
 			assert.Equal(t, expected, exists)
 		})
@@ -327,7 +327,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGet() {
 		withAccessToCluster:     true,
 	} {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			actual, exists, err := s.store.Get(ctxs[name], objA.GetId())
+			actual, exists, err := s.store.Get(ctxs[name], {{ range $field := .Schema.PrimaryKeys }}{{$field.Getter "objA"}}, {{end}})
 			assert.NoError(t, err)
 			assert.Equal(t, expected, exists)
 			if expected == true {
@@ -431,7 +431,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetMany() {
 		withAccessToCluster:     { elems: []*{{ .Type }}{objA}, missingIndices: []int{1}},
 	} {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			actual, missingIndices, err := s.store.GetMany(ctxs[name], []string{objA.GetId(), objB.GetId()})
+			actual, missingIndices, err := s.store.GetMany(ctxs[name], []string{ {{ "objA" | .Obj.GetID }}, {{ "objB" | .Obj.GetID }} })
 			assert.NoError(t, err)
 			assert.Equal(t, expected.elems, actual)
 			assert.Equal(t, expected.missingIndices, missingIndices)

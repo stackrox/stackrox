@@ -238,12 +238,12 @@ func (s *NetworkBaselinesStoreSuite) TestSACGetIDs() {
 
 	ctxs := getSACContexts(objA, storage.Access_READ_ACCESS)
 	for name, expectedIds := range map[string][]string{
-		withAllAccess:           []string{objA.GetId(), objB.GetId()},
+		withAllAccess:           []string{objA.GetDeploymentId(), objB.GetDeploymentId()},
 		withNoAccess:            []string{},
 		withNoAccessToCluster:   []string{},
 		withAccessToDifferentNs: []string{},
-		withAccess:              []string{objA.GetId()},
-		withAccessToCluster:     []string{objA.GetId()},
+		withAccess:              []string{objA.GetDeploymentId()},
+		withAccessToCluster:     []string{objA.GetDeploymentId()},
 	} {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			ids, err := s.store.GetIDs(ctxs[name])
@@ -270,7 +270,7 @@ func (s *NetworkBaselinesStoreSuite) TestSACExists() {
 		withAccessToCluster:     true,
 	} {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			exists, err := s.store.Exists(ctxs[name], objA.GetId())
+			exists, err := s.store.Exists(ctxs[name], objA.GetDeploymentId())
 			assert.NoError(t, err)
 			assert.Equal(t, expected, exists)
 		})
@@ -294,7 +294,7 @@ func (s *NetworkBaselinesStoreSuite) TestSACGet() {
 		withAccessToCluster:     true,
 	} {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			actual, exists, err := s.store.Get(ctxs[name], objA.GetId())
+			actual, exists, err := s.store.Get(ctxs[name], objA.GetDeploymentId())
 			assert.NoError(t, err)
 			assert.Equal(t, expected, exists)
 			if expected == true {
@@ -398,7 +398,7 @@ func (s *NetworkBaselinesStoreSuite) TestSACGetMany() {
 		withAccessToCluster:     {elems: []*storage.NetworkBaseline{objA}, missingIndices: []int{1}},
 	} {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
-			actual, missingIndices, err := s.store.GetMany(ctxs[name], []string{objA.GetId(), objB.GetId()})
+			actual, missingIndices, err := s.store.GetMany(ctxs[name], []string{objA.GetDeploymentId(), objB.GetDeploymentId()})
 			assert.NoError(t, err)
 			assert.Equal(t, expected.elems, actual)
 			assert.Equal(t, expected.missingIndices, missingIndices)
