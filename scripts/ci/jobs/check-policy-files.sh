@@ -25,3 +25,4 @@ check_policy_files() {
     store_test_results /tmp/policies-diff policies-diff
 }
 
+check_policy_files "$*"
