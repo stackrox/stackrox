@@ -92,6 +92,7 @@ class QaE2eDBBackupRestoreTest(BaseTest):
             post_start_hook=set_dirs_after_start,
         )
 
+
 class UIE2eTest(BaseTest):
     TEST_TIMEOUT = 60 * 60
     TEST_OUTPUT_DIR = "ui/test-results/artifacts"

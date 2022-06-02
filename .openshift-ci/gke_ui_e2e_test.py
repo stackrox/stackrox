@@ -22,8 +22,8 @@ ClusterTestRunner(
     cluster=GKECluster("ui-e2e-test"),
     pre_test=PreSystemTests(),
     test=UIE2eTest(),
-    post_test=PostClusterTest(),
-    final_post=FinalPost(
+    post_test=PostClusterTest(
         check_stackrox_logs=True,
     ),
+    final_post=FinalPost(),
 ).run()
