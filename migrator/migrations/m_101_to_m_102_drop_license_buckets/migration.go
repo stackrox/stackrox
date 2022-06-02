@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	buckets = []string{"licenseKeys", "telemetry"}
+	buckets = []string{"licenseKeys", "telemetry", "transactions"}
 
 	migration = types.Migration{
 		StartingSeqNum: 101,
