@@ -98,6 +98,7 @@ func CreateTableFromModel(ctx context.Context, db *gorm.DB, createStmt *postgres
 	}
 }
 
+// PgxpoolDsnToPgxDsn removes pgxpoool specific Dsn entries
 func PgxpoolDsnToPgxDsn(pgxpoolDsn string) string {
 	return strings.TrimSpace(pgxPoolDSNRegex.ReplaceAllString(pgxpoolDsn, ""))
 }

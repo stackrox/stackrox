@@ -15,10 +15,10 @@ import (
 var (
 	log = logging.LoggerForModule()
 	// registeredTables is map of sql table name to go schema of the sql table.
-	registeredTables = make(map[string]*RegisteredTable)
+	registeredTables = make(map[string]*registeredTable)
 )
 
-type RegisteredTable struct {
+type registeredTable struct {
 	Schema     *walker.Schema
 	CreateStmt *postgres.CreateStmts
 }
@@ -29,7 +29,7 @@ func RegisterTable(schema *walker.Schema, stmt *postgres.CreateStmts) {
 		log.Fatalf("table %q is already registered for %s", schema.Table, schema.Type)
 		return
 	}
-	registeredTables[schema.Table] = &RegisteredTable{Schema: schema, CreateStmt: stmt}
+	registeredTables[schema.Table] = &registeredTable{Schema: schema, CreateStmt: stmt}
 }
 
 // GetSchemaForTable return the schema registered for specified table name.
@@ -40,21 +40,21 @@ func GetSchemaForTable(tableName string) *walker.Schema {
 	return nil
 }
 
-func getAllRegisteredTableInOrder() []*RegisteredTable {
+func getAllRegisteredTablesInOrder() []*registeredTable {
 	visited := set.NewStringSet()
 
-	var rts []*RegisteredTable
-	for table, _ := range registeredTables {
+	var rts []*registeredTable
+	for table := range registeredTables {
 		rts = append(rts, getRegisteredTablesFor(visited, table)...)
 	}
 	return rts
 }
 
-func getRegisteredTablesFor(visited set.StringSet, table string) []*RegisteredTable {
+func getRegisteredTablesFor(visited set.StringSet, table string) []*registeredTable {
 	if visited.Contains(table) {
 		return nil
 	}
-	var rts []*RegisteredTable
+	var rts []*registeredTable
 	rt := registeredTables[table]
 	for _, ref := range rt.Schema.References {
 		rts = append(rts, getRegisteredTablesFor(visited, ref.OtherSchema.Table)...)
@@ -66,7 +66,7 @@ func getRegisteredTablesFor(visited set.StringSet, table string) []*RegisteredTa
 
 // ApplyAllSchemas creates or auto migrate according to the current schema
 func ApplyAllSchemas(ctx context.Context, gormDB *gorm.DB) {
-	for _, rt := range getAllRegisteredTableInOrder() {
+	for _, rt := range getAllRegisteredTablesInOrder() {
 		// Exclude tests
 		if strings.HasPrefix(rt.Schema.Table, "test_") {
 			continue

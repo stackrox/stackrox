@@ -893,7 +893,7 @@ func Destroy(ctx context.Context, db *pgxpool.Pool) {
 
 // NewTestStore returns a new Store instance for testing
 func NewTestStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
-	pkgSchema.ApplySchema(ctx, gormDB, baseTable)
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }
 

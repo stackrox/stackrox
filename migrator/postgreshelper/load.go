@@ -20,6 +20,7 @@ var (
 	postgresDB *gorm.DB
 )
 
+// Load loads a Postgres instance and returns a GormDB.
 func Load(conf *config.Config) (*gorm.DB, error) {
 	password, err := os.ReadFile(dbPasswordFile)
 	if err != nil {

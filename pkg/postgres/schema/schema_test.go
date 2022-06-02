@@ -99,7 +99,7 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 		createStmts *pkgPostgres.CreateStmts
 	}
 	var testCases []testCaseStruct
-	for _, rt := range getAllRegisteredTableInOrder() {
+	for _, rt := range getAllRegisteredTablesInOrder() {
 		testCases = append(testCases, testCaseStruct{rt.Schema.Table, rt.CreateStmt})
 	}
 
