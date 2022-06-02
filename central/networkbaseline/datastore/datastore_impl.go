@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkbaseline/store"
 	"github.com/stackrox/rox/central/role/resources"
@@ -114,8 +115,13 @@ func (ds *dataStoreImpl) DeleteNetworkBaseline(ctx context.Context, deploymentID
 
 func (ds *dataStoreImpl) DeleteNetworkBaselines(ctx context.Context, deploymentIDs []string) error {
 	// First check permission
+	elevatedCheckForDeleteCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkBaseline),
+		))
 	for _, id := range deploymentIDs {
-		baseline, found, err := ds.storage.Get(ctx, id)
+		baseline, found, err := ds.storage.Get(elevatedCheckForDeleteCtx, id)
 		if err != nil {
 			return err
 		} else if !found {
@@ -127,6 +133,7 @@ func (ds *dataStoreImpl) DeleteNetworkBaselines(ctx context.Context, deploymentI
 			return sac.ErrResourceAccessDenied
 		}
 	}
+	log.Infof("Access allowed while checking write permissions for Baselines")
 
 	if err := ds.storage.DeleteMany(ctx, deploymentIDs); err != nil {
 		return errors.Wrapf(err, "deleting network baselines %q from storage", deploymentIDs)

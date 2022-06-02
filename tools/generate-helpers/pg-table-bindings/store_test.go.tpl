@@ -256,8 +256,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACWalk() {
 	}
 }
 
-{{/* TODO(ROX-10624): Remove this condition after all PKs fields were search tagged (PR #1653) */}}
-{{- if eq (len .Schema.PrimaryKeys) 1 }}
+{{ if eq (len .Schema.PrimaryKeys) 1 }}
 func (s *{{$namePrefix}}StoreSuite) TestSACGetIDs() {
 	objA := &{{.Type}}{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -285,6 +284,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetIDs() {
 		})
 	}
 }
+{{ end }}
 
 func (s *{{$namePrefix}}StoreSuite) TestSACExists() {
 	objA := &{{.Type}}{}
@@ -372,6 +372,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACDelete() {
 	}
 }
 
+{{ if eq (len .Schema.PrimaryKeys) 1 }}
 func (s *{{$namePrefix}}StoreSuite) TestSACDeleteMany() {
 	objA := &{{.Type}}{}
 	s.NoError(testutils.FullInit(objA, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
@@ -445,6 +446,7 @@ func (s *{{$namePrefix}}StoreSuite) TestSACGetMany() {
 		assert.Nil(t, missingIndices)
 	})
 }
+{{ end }}
 
 const (
 	withAllAccess = "AllAccess"

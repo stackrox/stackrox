@@ -38,7 +38,6 @@ func init() {
 		&storage.NetworkPolicyApplicationUndoDeploymentRecord{}: resources.NetworkPolicy,
 		&storage.NetworkPolicyApplicationUndoRecord{}:           resources.NetworkPolicy,
 		&storage.NodeComponentEdge{}:                            resources.Node,
-		&storage.NodeCVEEdge{}:                                  resources.Node,
 		&storage.PermissionSet{}:                                resources.Role,
 		&storage.Pod{}:                                          resources.Deployment,
 		&storage.ProcessBaselineResults{}:                       resources.ProcessWhitelist,

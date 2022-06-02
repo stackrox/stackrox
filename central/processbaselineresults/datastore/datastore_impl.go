@@ -28,7 +28,12 @@ func (d *datastoreImpl) UpsertBaselineResults(ctx context.Context, results *stor
 }
 
 func (d *datastoreImpl) GetBaselineResults(ctx context.Context, deploymentID string) (*storage.ProcessBaselineResults, error) {
-	pWResults, exists, err := d.storage.Get(ctx, deploymentID)
+	elevatedPreSACReadCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.ProcessWhitelist),
+		))
+	pWResults, exists, err := d.storage.Get(elevatedPreSACReadCtx, deploymentID)
 	if err != nil || !exists {
 		return nil, err
 	}
@@ -43,7 +48,12 @@ func (d *datastoreImpl) GetBaselineResults(ctx context.Context, deploymentID str
 }
 
 func (d *datastoreImpl) DeleteBaselineResults(ctx context.Context, deploymentID string) error {
-	pWResults, exists, err := d.storage.Get(ctx, deploymentID)
+	elevatedPreSACCheckCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.ProcessWhitelist),
+		))
+	pWResults, exists, err := d.storage.Get(elevatedPreSACCheckCtx, deploymentID)
 	if err != nil || !exists {
 		return err
 	}
