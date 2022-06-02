@@ -133,7 +133,7 @@ make_artifacts_help() {
 
     local help_file
     if is_OPENSHIFT_CI; then
-        help_file="$ARTIFACT_DIR/custom-link-howto.html"
+        help_file="$ARTIFACT_DIR/custom-link-howto-summary.html"
     elif is_CIRCLECI; then
         help_file="/tmp/howto-locate-artifacts.html"
     else
