@@ -1,12 +1,4 @@
 {
-    "policy-checks": {
-        "run_with_labels": [],
-        "skip_with_label": "",
-        "run_with_changed_path": "^.*$",
-        "changed_path_to_ignore": "",
-        "run_on_master": "true",
-        "run_on_tags": "true"
-    },
     "go-unit-tests": {
         "run_with_labels": [],
         "skip_with_label": "",
