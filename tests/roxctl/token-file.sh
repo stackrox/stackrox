@@ -15,7 +15,7 @@ eecho() {
 
 # Retrieve API token
 TOKEN_FILE=$(mktemp)
-curl -k -f \
+curl -k -f --silent \
   -u "admin:$ROX_PASSWORD" \
   -d '{"name": "test", "role": "Admin"}' \
   "https://$API_ENDPOINT/v1/apitokens/generate" \
@@ -29,6 +29,7 @@ test_roxctl_cmd() {
 
   # Verify that specifying a token file works.
   if OUTPUT=$(roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    --timeout 2m \
     --token-file "$TOKEN_FILE" \
     "$@" \
     2>&1); then
@@ -42,6 +43,7 @@ test_roxctl_cmd() {
 
   # Verify that specifying a token file and password at the same time fails.
   if OUTPUT=$(roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    --timeout 2m \
     --token-file "$TOKEN_FILE" \
     --password "secret" \
     "$@" \
@@ -61,6 +63,7 @@ test_roxctl_cmd() {
 
   # Verify that token on the command line has precedence over token in the environment
   if OUTPUT=$(ROX_API_TOKEN="invalid-token" roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    --timeout 2m \
     --token-file "$TOKEN_FILE" \
     "$@" \
     2>&1); then
@@ -74,6 +77,7 @@ test_roxctl_cmd() {
 
   # Verify that a password on the command line has precedence over token in the environment
   if OUTPUT=$(ROX_API_TOKEN="invalid-token" roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    --timeout 2m \
     --password "$ROX_PASSWORD" \
     "$@" \
     2>&1); then
@@ -93,6 +97,7 @@ test_roxctl_cmd() {
   fi
 
   if OUTPUT=$(roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    --timeout 2m \
     --token-file "$NON_EXISTING" \
     "$@" \
     2>&1); then
