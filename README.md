@@ -36,7 +36,7 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
 
 ## Quick Installation via Helm
 
-StackRox offers quick installation via Helm Charts, follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) for system specific instructions and requirements.
+StackRox offers quick installation via Helm Charts, follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) for system specific instructions and requirements. 
 First, add the [stackrox/helm-charts/opensource](https://github.com/stackrox/helm-charts/tree/main/opensource) repository to Helm.
 ```sh
 helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
@@ -74,12 +74,12 @@ To further customize your Helm installation consult these documents:
 Follow these steps to get to StackRox UI
 
 1. Obtain admin password:
-   `kubectl -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}'`
+   ```kubectl -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}'```
 
 2. Setup port forward to central:
-   `kubectl -n stackrox port-forward deploy/central 8000:8443`
+   ```kubectl -n stackrox port-forward deploy/central 8000:8443```
 
-3. Open https://localhost:8000 in your browser.
+3. Open <https://localhost:8000> in your browser.
 
 4. Accept certificate warnings and proceed.
 
