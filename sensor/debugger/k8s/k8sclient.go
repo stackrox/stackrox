@@ -1,10 +1,14 @@
 package k8s
 
 import (
+	"context"
+
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	fake2 "k8s.io/client-go/dynamic/fake"
@@ -81,4 +85,31 @@ func (c *ClientSet) OpenshiftRoute() routeVersioned.Interface {
 // This is not used in tests!
 func (c *ClientSet) Dynamic() dynamic.Interface {
 	return c.dynamic
+}
+
+func (c *ClientSet) SetupExampleCluster() error {
+	_, err := c.k8s.CoreV1().Nodes().Create(context.Background(), &v1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "go-test-node",
+		},
+		Spec:   v1.NodeSpec{},
+		Status: v1.NodeStatus{},
+	}, metav1.CreateOptions{})
+
+	if err != nil {
+		return err
+	}
+
+	_, err = c.k8s.CoreV1().Namespaces().Create(context.Background(), &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "default",
+		},
+		Spec:   v1.NamespaceSpec{},
+		Status: v1.NamespaceStatus{},
+	}, metav1.CreateOptions{})
+
+	if err != nil {
+		return err
+	}
+	return nil
 }

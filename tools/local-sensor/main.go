@@ -68,6 +68,7 @@ type localSensorConfig struct {
 	ReplayK8sTraceFile  string
 	Verbose             bool
 	ResyncPeriod        time.Duration
+	CreateMode          string
 }
 
 func mustGetCommandLineArgs() localSensorConfig {
@@ -94,6 +95,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	replayTrace := flag.Bool("replay", false, "whether to reply recorded a trace with k8s events")
 	traceInFile := flag.String("replay-in", "k8s-trace.jsonl", "a file where recorded trace would be read from")
 	resyncPeriod := flag.Duration("resync", 1*time.Minute, "resync period")
+	createMode := flag.String("create-mode", "ignoreTimestamps", "event creation mode")
 	flag.Parse()
 
 	dur, err := time.ParseDuration(*duration)
@@ -120,6 +122,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	fsc.ReplayK8sTraceFile = path.Clean(*traceInFile)
 	fsc.Verbose = *verboseFlag
 	fsc.ResyncPeriod = *resyncPeriod
+	fsc.CreateMode = *createMode
 	return fsc
 }
 
@@ -146,6 +149,7 @@ func main() {
 	// when replying a trace, there is no need to connect to K8s cluster
 	if fsc.ShallReplayK8sTrace {
 		fakeClient = k8s.MakeFakeClient()
+		fakeClient.SetupExampleCluster()
 	}
 	utils.CrashOnError(err)
 
@@ -182,19 +186,20 @@ func main() {
 	trReader := &traceReader{
 		source:  path.Clean(fsc.ReplayK8sTraceFile),
 		enabled: fsc.ShallReplayK8sTrace,
-		mode:    "ignoreTimestamps",
+		//mode:    "ignoreTimestamps",
+		mode: fsc.CreateMode,
 	}
 	_ = trReader.Init()
 
 	// DIRTY-area
 	if trReader.enabled {
-		trReader.ReadFile(func(line []byte) {
+		trReader.ReadFile(getModeFromStr(trReader.mode), func(line []byte, mode CreateMode) {
 			obj := resources.InformerK8sMsg{}
 			if err := json.Unmarshal(line, &obj); err != nil {
 				log.Fatalf("cannot unmarshal: %s\n", err)
 			}
-			log.Println("Create Event: ", obj.ObjectType)
-			if err := createEvent(fakeClient, obj); err != nil {
+			log.Printf("%s Event: %s", obj.Action, obj.ObjectType)
+			if err := createEvent(fakeClient, obj, mode); err != nil {
 				log.Printf("cannot create event for %s %s", obj.ObjectType, err)
 				//log.Fatalf("cannot create event: ", err)
 			}
