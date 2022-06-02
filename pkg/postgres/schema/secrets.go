@@ -77,7 +77,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Secret)(nil)), "secrets")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SECRETS, "secret", (*storage.Secret)(nil)))
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableSecretsStmt)
 		return schema
 	}()
 )

@@ -62,10 +62,6 @@ type storeImpl struct {
 
 // New returns a new Store instance using the provided sql instance.
 func New(ctx context.Context, db *pgxpool.Pool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestChild1Stmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestGGrandChild1Stmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableTestGrandChild1Stmt)
-
 	return &storeImpl{
 		db: db,
 	}

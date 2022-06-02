@@ -39,7 +39,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Risk)(nil)), "risks")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_RISKS, "risk", (*storage.Risk)(nil)))
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableRisksStmt)
 		return schema
 	}()
 )
