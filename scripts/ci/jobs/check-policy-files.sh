@@ -3,7 +3,7 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
 source "$ROOT/scripts/ci/lib.sh"  
 
-set -euo pipefail
+set -evxuo pipefail
 
 check_policy_files() {
     info 'Ensure all JSON policies in "./pkg/defaults/policies/" are of latest version.'
