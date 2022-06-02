@@ -85,7 +85,10 @@ describe('Global Search Modal', () => {
         cy.get(`section#All ${selectors.viewOnChip}:contains("POLICIES")`).click();
         // TODO because 404 for /v1/policies/0ea8d235-b02a-41ee-a61d-edcb2c1b0eac
         // replace button with anchor and assert on href attribute?
-        cy.location('pathname').should('eq', '/main/policies/0ea8d235-b02a-41ee-a61d-edcb2c1b0eac');
+        cy.location('pathname').should(
+            'eq',
+            '/main/policy-management/policies/0ea8d235-b02a-41ee-a61d-edcb2c1b0eac'
+        );
     });
 
     it('Should send you to the Images page', () => {

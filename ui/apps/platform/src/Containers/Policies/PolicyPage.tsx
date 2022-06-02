@@ -144,7 +144,7 @@ function PolicyPage({
 
     return (
         <>
-            <PageTitle title="Policies - Policy" />
+            <PageTitle title="Policy Management - Policy" />
             {isLoading ? (
                 <Bullseye>
                     <Spinner isSVG />
