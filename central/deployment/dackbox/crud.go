@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 var (
@@ -60,8 +61,10 @@ func ListAlloc() proto.Message {
 }
 
 func init() {
-	globaldb.RegisterBucket(Bucket, "Deployment")
-	globaldb.RegisterBucket(ListBucket, "List Deployment")
+	if !features.PostgresDatastore.Enabled() {
+		globaldb.RegisterBucket(Bucket, "Deployment")
+		globaldb.RegisterBucket(ListBucket, "List Deployment")
+	}
 }
 
 // KeyFunc returns the key for a deployment.
