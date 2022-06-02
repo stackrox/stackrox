@@ -4,7 +4,7 @@
   "description": "Alert on deployments with wget present",
   "rationale": "Leaving download tools like wget in an image makes it easier for attackers to use compromised containers, since they can easily download software.",
   "remediation": "Use your package manager's \"remove\" command to remove wget from the image build for production containers.",
-  "disabled": true,
+  "disabled": false,
   "categories": [
     "Security Best Practices"
   ],
