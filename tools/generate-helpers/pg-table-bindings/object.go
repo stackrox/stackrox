@@ -28,6 +28,10 @@ func (o object) IsDirectlyScoped() bool {
 	return o.isResourceType(directlyScoped)
 }
 
+func (o object) IsIndirectlyScoped() bool {
+	return o.isResourceType(indirectlyScoped)
+}
+
 func (o object) IsGloballyScoped() bool {
 	return o.isResourceType(globallyScoped)
 }
