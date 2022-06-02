@@ -359,12 +359,12 @@ func writeTelemetryData(zipWriter *zip.Writer, telemetryInfo *data.TelemetryData
 	return addJSONToZip(zipWriter, "telemetry-data.json", telemetryInfo)
 }
 
-func (s *serviceImpl) getLogImbue(zipWriter *zip.Writer) error {
+func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zip.Writer) error {
 	w, err := zipWriter.Create("logimbue-data.json")
 	if err != nil {
 		return err
 	}
-	logs, err := s.store.GetLogs()
+	logs, err := s.store.GetAll(ctx)
 	if err != nil {
 		return err
 	}
@@ -564,7 +564,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	}
 
 	if opts.withLogImbue {
-		if err := s.getLogImbue(zipWriter); err != nil {
+		if err := s.getLogImbue(ctx, zipWriter); err != nil {
 			log.Error(err)
 		}
 	}

@@ -21,6 +21,7 @@ func init() {
 		&storage.ImageComponentEdge{}:                           resources.ImageComponent,
 		&storage.K8SRoleBinding{}:                               resources.K8sRoleBinding,
 		&storage.K8SRole{}:                                      resources.K8sRole,
+		&storage.LogImbue{}:                                     resources.DebugLogs,
 		&storage.NamespaceMetadata{}:                            resources.Namespace,
 		&storage.NetworkEntity{}:                                resources.NetworkGraph,
 		&storage.NetworkPolicyApplicationUndoDeploymentRecord{}: resources.NetworkPolicy,

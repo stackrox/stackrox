@@ -5,9 +5,11 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	storage "github.com/stackrox/rox/generated/storage"
 )
 
 // MockStore is a mock of Store interface.
@@ -33,61 +35,31 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// AddLog mocks base method.
-func (m *MockStore) AddLog(log string) error {
+// GetAll mocks base method.
+func (m *MockStore) GetAll(ctx context.Context) ([]*storage.LogImbue, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddLog", log)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddLog indicates an expected call of AddLog.
-func (mr *MockStoreMockRecorder) AddLog(log interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddLog", reflect.TypeOf((*MockStore)(nil).AddLog), log)
-}
-
-// GetLogs mocks base method.
-func (m *MockStore) GetLogs() ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLogs")
-	ret0, _ := ret[0].([]string)
+	ret := m.ctrl.Call(m, "GetAll", ctx)
+	ret0, _ := ret[0].([]*storage.LogImbue)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetLogs indicates an expected call of GetLogs.
-func (mr *MockStoreMockRecorder) GetLogs() *gomock.Call {
+// GetAll indicates an expected call of GetAll.
+func (mr *MockStoreMockRecorder) GetAll(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogs", reflect.TypeOf((*MockStore)(nil).GetLogs))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockStore)(nil).GetAll), ctx)
 }
 
-// GetLogsRange mocks base method.
-func (m *MockStore) GetLogsRange() (int64, int64, error) {
+// Upsert mocks base method.
+func (m *MockStore) Upsert(ctx context.Context, log *storage.LogImbue) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLogsRange")
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(int64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetLogsRange indicates an expected call of GetLogsRange.
-func (mr *MockStoreMockRecorder) GetLogsRange() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogsRange", reflect.TypeOf((*MockStore)(nil).GetLogsRange))
-}
-
-// RemoveLogs mocks base method.
-func (m *MockStore) RemoveLogs(from, to int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveLogs", from, to)
+	ret := m.ctrl.Call(m, "Upsert", ctx, log)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RemoveLogs indicates an expected call of RemoveLogs.
-func (mr *MockStoreMockRecorder) RemoveLogs(from, to interface{}) *gomock.Call {
+// Upsert indicates an expected call of Upsert.
+func (mr *MockStoreMockRecorder) Upsert(ctx, log interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveLogs", reflect.TypeOf((*MockStore)(nil).RemoveLogs), from, to)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, log)
 }
