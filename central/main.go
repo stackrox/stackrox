@@ -133,6 +133,7 @@ import (
 	"github.com/stackrox/rox/central/ui"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
+	"github.com/stackrox/rox/central/version/store"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
 	"github.com/stackrox/rox/generated/storage"
@@ -275,7 +276,14 @@ func main() {
 }
 
 func ensureDB() {
-	err := version.Ensure(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
+	var versionStore store.Store
+	if features.PostgresDatastore.Enabled() {
+		versionStore = store.NewPostgres(globaldb.GetPostgres())
+	} else {
+		versionStore = store.New(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
+	}
+
+	err := version.Ensure(versionStore)
 	if err != nil {
 		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
 	}

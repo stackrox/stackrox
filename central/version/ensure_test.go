@@ -43,7 +43,8 @@ func (suite *EnsurerTestSuite) TearDownTest() {
 }
 
 func (suite *EnsurerTestSuite) TestWithEmptyDB() {
-	suite.NoError(Ensure(suite.boltDB, suite.rocksDB))
+
+	suite.NoError(Ensure(store.New(suite.boltDB, suite.rocksDB)))
 	version, err := suite.versionStore.GetVersion()
 	suite.NoError(err)
 	suite.Equal(migrations.CurrentDBVersionSeqNum(), int(version.GetSeqNum()))
@@ -51,7 +52,7 @@ func (suite *EnsurerTestSuite) TestWithEmptyDB() {
 
 func (suite *EnsurerTestSuite) TestWithCurrentVersion() {
 	suite.NoError(suite.versionStore.UpdateVersion(&storage.Version{SeqNum: int32(migrations.CurrentDBVersionSeqNum())}))
-	suite.NoError(Ensure(suite.boltDB, suite.rocksDB))
+	suite.NoError(Ensure(store.New(suite.boltDB, suite.rocksDB)))
 
 	version, err := suite.versionStore.GetVersion()
 	suite.NoError(err)
@@ -60,5 +61,5 @@ func (suite *EnsurerTestSuite) TestWithCurrentVersion() {
 
 func (suite *EnsurerTestSuite) TestWithIncorrectVersion() {
 	suite.NoError(suite.versionStore.UpdateVersion(&storage.Version{SeqNum: int32(migrations.CurrentDBVersionSeqNum()) - 2}))
-	suite.Error(Ensure(suite.boltDB, suite.rocksDB))
+	suite.Error(Ensure(store.New(suite.boltDB, suite.rocksDB)))
 }

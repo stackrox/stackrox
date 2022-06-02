@@ -41,8 +41,6 @@ var (
 	Detection           = newResourceMetadata("Detection", permissions.GlobalScope)
 	Image               = newResourceMetadata("Image", permissions.NamespaceScope)
 
-	InstallationInfo = newResourceMetadata("InstallationInfo", permissions.GlobalScope)
-
 	// Integration is the new  resource grouping all integration resources.
 	Integration                      = newResourceMetadata("Integration", permissions.GlobalScope)
 	K8sRole                          = newResourceMetadata("K8sRole", permissions.NamespaceScope)
@@ -115,9 +113,12 @@ var (
 
 	// Internal Resources.
 	ComplianceOperator = newResourceMetadata("ComplianceOperator", permissions.GlobalScope)
+	InstallationInfo   = newResourceMetadata("InstallationInfo", permissions.GlobalScope)
+	Version            = newResourceMetadata("Version", permissions.GlobalScope)
 
 	resourceToMetadata         = make(map[permissions.Resource]permissions.ResourceMetadata)
 	disabledResourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
+	internalResourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
 )
 
 func newResourceMetadata(name permissions.Resource, scope permissions.ResourceScope) permissions.ResourceMetadata {
@@ -197,6 +198,18 @@ func ListAllMetadata() []permissions.ResourceMetadata {
 func ListAllDisabledMetadata() []permissions.ResourceMetadata {
 	metadatas := make([]permissions.ResourceMetadata, 0, len(disabledResourceToMetadata))
 	for _, metadata := range disabledResourceToMetadata {
+		metadatas = append(metadatas, metadata)
+	}
+	sort.SliceStable(metadatas, func(i, j int) bool {
+		return string(metadatas[i].Resource) < string(metadatas[j].Resource)
+	})
+	return metadatas
+}
+
+// ListAllInternalMetadata returns a list of all resource metadata that are internal only
+func ListAllInternalMetadata() []permissions.ResourceMetadata {
+	metadatas := make([]permissions.ResourceMetadata, 0, len(internalResourceToMetadata))
+	for _, metadata := range internalResourceToMetadata {
 		metadatas = append(metadatas, metadata)
 	}
 	sort.SliceStable(metadatas, func(i, j int) bool {
