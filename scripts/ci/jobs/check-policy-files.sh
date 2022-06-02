@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
-source "$ROOT/scripts/ci/lib.sh"  
+source "$ROOT/scripts/ci/lib.sh"
 
 set -evxuo pipefail
 
@@ -9,7 +9,7 @@ check_policy_files() {
     info 'Ensure all JSON policies in "./pkg/defaults/policies/" are of latest version.'
     # shellcheck disable=SC2016
     info '(If this fails, run `policyutil` on failed policies and commit the result.)'
-    
+
     make deps
     make policyutil
     policyutil upgrade -d pkg/defaults/policies/files -o /tmp/policies-in-standard-form --ensure-read-only mitre --ensure-read-only criteria
