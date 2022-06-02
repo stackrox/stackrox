@@ -9,9 +9,7 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	boltStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/bolt"
 	pgdbStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
 	undodeploymentstoremock "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/mocks"
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
 	undostoremock "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -40,11 +38,7 @@ type networkPolicySACSuite struct {
 
 	engine *bolt.DB
 
-	storage             store.Store
-	undoStore           undostore.UndoStore
-	undoDeploymentStore undodeploymentstore.UndoDeploymentStore
-
-	mockCtrl *gomock.Controller
+	storage store.Store
 
 	testContexts         map[string]context.Context
 	testNetworkPolicyIDs []string
@@ -56,19 +50,19 @@ func (s *networkPolicySACSuite) SetupSuite() {
 		ctx := context.Background()
 		src := pgtest.GetConnectionString(s.T())
 		cfg, err := pgxpool.ParseConfig(src)
-		s.NoError(err)
+		s.Require().NoError(err)
 		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
-		s.NoError(err)
+		s.Require().NoError(err)
 		pgdbStore.Destroy(ctx, s.pool)
 		s.storage = pgdbStore.New(ctx, s.pool)
 	} else {
 		s.engine, err = bolthelper.NewTemp(s.T().Name() + ".db")
-		s.NoError(err)
+		s.Require().NoError(err)
 		s.storage = boltStore.New(s.engine)
 	}
-	s.mockCtrl = gomock.NewController(s.T())
-	undomock := undostoremock.NewMockUndoStore(s.mockCtrl)
-	undodeploymentmock := undodeploymentstoremock.NewMockUndoDeploymentStore(s.mockCtrl)
+	mockCtrl := gomock.NewController(s.T())
+	undomock := undostoremock.NewMockUndoStore(mockCtrl)
+	undodeploymentmock := undodeploymentstoremock.NewMockUndoDeploymentStore(mockCtrl)
 
 	s.datastore = New(s.storage, undomock, undodeploymentmock)
 
@@ -144,13 +138,12 @@ func (s *networkPolicySACSuite) TestGetNetworkPolicy() {
 		s.Run(name, func() {
 			ctx := s.testContexts[c.scopeKey]
 			policy, found, err := s.datastore.GetNetworkPolicy(ctx, networkPolicy.GetId())
+			s.NoError(err)
 			if c.found {
 				s.True(found)
-				s.NoError(err)
 				s.Equal(networkPolicy, policy)
 			} else {
 				s.False(found)
-				s.NoError(err)
 				s.Nil(policy)
 			}
 		})
@@ -169,7 +162,6 @@ func (s *networkPolicySACSuite) TestGetNetworkPolicies() {
 	s.testNetworkPolicyIDs = append(s.testNetworkPolicyIDs, networkPolicy2.GetId())
 	cases := map[string]struct {
 		scopeKey      string
-		expectedErr   error
 		expectedFound []*storage.NetworkPolicy
 	}{
 		"global read-only can get": {
@@ -210,8 +202,8 @@ func (s *networkPolicySACSuite) TestGetNetworkPolicies() {
 		s.Run(name, func() {
 			ctx := s.testContexts[c.scopeKey]
 			policies, err := s.datastore.GetNetworkPolicies(ctx, testconsts.Cluster2, testconsts.NamespaceB)
+			s.NoError(err)
 			s.ElementsMatch(c.expectedFound, policies)
-			s.ErrorIs(err, c.expectedErr)
 		})
 	}
 }
@@ -268,8 +260,8 @@ func (s *networkPolicySACSuite) TestCountMatchingNetworkPolicies() {
 		s.Run(name, func() {
 			ctx := s.testContexts[c.scopeKey]
 			count, err := s.datastore.CountMatchingNetworkPolicies(ctx, testconsts.Cluster2, testconsts.NamespaceB)
+			s.NoError(err)
 			s.Equal(c.expectedCount, count)
-			s.Nil(err)
 		})
 	}
 }
@@ -325,8 +317,8 @@ func (s *networkPolicySACSuite) TestUpsertNetworkPolicy() {
 			} else {
 				s.NoError(err)
 				count, countErr := s.datastore.CountMatchingNetworkPolicies(unrestrictedCtx, testconsts.Cluster2, testconsts.NamespaceB)
-				s.Equal(1, count)
 				s.NoError(countErr)
+				s.Equal(1, count)
 			}
 		})
 	}
@@ -382,14 +374,14 @@ func (s *networkPolicySACSuite) TestRemoveNetworkPolicy() {
 			defer s.deleteNetworkPolicy(policy.GetId())
 			if c.expectedError {
 				s.ErrorIs(deleteErr, sac.ErrResourceAccessDenied)
-				count, countErr := s.datastore.CountMatchingNetworkPolicies(unrestrictedCtx, policy.GetClusterId(), policy.GetNamespace())
-				s.Equal(1, count)
+				count, countErr := s.datastore.CountMatchingNetworkPolicies(unrestrictedCtx, testconsts.Cluster2, testconsts.NamespaceB)
 				s.NoError(countErr)
+				s.Equal(1, count)
 			} else {
 				s.NoError(deleteErr)
 				count, countErr := s.datastore.CountMatchingNetworkPolicies(unrestrictedCtx, testconsts.Cluster2, testconsts.NamespaceB)
-				s.Equal(0, count)
 				s.NoError(countErr)
+				s.Empty(count)
 			}
 		})
 	}

@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// GetYAML returns a network policy yaml
+// GetYAML returns a network policy yaml.
 func GetYAML() string {
 	return `kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -27,12 +27,12 @@ spec:
 						role: api`
 }
 
-// GetNetworkPolicy returns a network policy
+// GetNetworkPolicy returns a network policy.
 func GetNetworkPolicy() *storage.NetworkPolicy {
 	return GetScopedNetworkPolicy("network-policy-id", "cluster-id", "namespace")
 }
 
-// GetScopedNetworkPolicy returns a network policy holding the provided scope information
+// GetScopedNetworkPolicy returns a network policy holding the provided scope information.
 func GetScopedNetworkPolicy(id string, clusterID string, namespace string) *storage.NetworkPolicy {
 	return &storage.NetworkPolicy{
 		Id:          id,
