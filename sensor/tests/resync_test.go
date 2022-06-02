@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
@@ -52,6 +53,8 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 	return conn, fakeCentral, closeF
 }
 
+type resourceCreationFunction func(*testing.T, *k8s.ClientSet, chan *central.MsgFromSensor)
+
 func Test_DeploymentInconsistent(t *testing.T) {
 	fakeClient := k8s.MakeFakeClient()
 
@@ -86,35 +89,35 @@ func Test_DeploymentInconsistent(t *testing.T) {
 	spyCentral.ConnectionStarted.Wait()
 
 	testCases := map[string]struct {
-		orderedEvents  []func(t *testing.T, k *k8s.ClientSet)
+		orderedEvents  []resourceCreationFunction
 		deploymentName string
 	}{
 		// This should not work if re-sync is disabled, because deployment will be
 		// sent to central before RBAC is computed fully.
 		"Deployment first": {
-			orderedEvents: []func(t *testing.T, k *k8s.ClientSet){
-				CreateDeployment("dep1", "sa1"),
-				CreateRole("r1"),
-				CreateRoleBinding("b1", "r1", "sa1"),
+			orderedEvents: []resourceCreationFunction{
+				createDeployment("dep1", "sa1"),
+				createRole("r1"),
+				createRoleBinding("b1", "r1", "sa1"),
 			},
 			deploymentName: "dep1",
 		},
 		// This should also not work, if just the role or just the bindings is
 		// available, the correct permission level won't be determined correctly.
 		"Deployment second": {
-			orderedEvents: []func(t *testing.T, k *k8s.ClientSet){
-				CreateRole("r2"),
-				CreateDeployment("dep2", "sa2"),
-				CreateRoleBinding("b2", "r2", "sa2"),
+			orderedEvents: []resourceCreationFunction{
+				createRole("r2"),
+				createDeployment("dep2", "sa2"),
+				createRoleBinding("b2", "r2", "sa2"),
 			},
 			deploymentName: "dep2",
 		},
 		// This is the only case that should work if re-sync isn't enabled.
 		"Deployment last": {
-			orderedEvents: []func(t *testing.T, k *k8s.ClientSet){
-				CreateRole("r3"),
-				CreateRoleBinding("b3", "r3", "sa3"),
-				CreateDeployment("dep3", "sa3"),
+			orderedEvents: []resourceCreationFunction{
+				createRole("r3"),
+				createRoleBinding("b3", "r3", "sa3"),
+				createDeployment("dep3", "sa3"),
 			},
 			deploymentName: "dep3",
 		},
@@ -123,19 +126,18 @@ func Test_DeploymentInconsistent(t *testing.T) {
 	fakeClient.SetupExampleCluster(t)
 	for name, testCase := range testCases {
 		t.Run(name, func(t *testing.T) {
+			fakeCentral.ClearReceivedBuffer()
+			receivedMessagesCh := make(chan *central.MsgFromSensor, 10)
+			fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
+				receivedMessagesCh <- msg
+			})
+
 			for _, fn := range testCase.orderedEvents {
-				// This function will create the fake k8s event and wait for one second.
-				// This way we guarantee some level of order for the events. Since sensor
-				// processes events in different goroutines, some events take more time to
-				// be processed than others. Therefore, even if we send two different events
-				// at a particular order, e.g. Deployment and role respectively, it might be
-				// that Role finishes first and is sent to Central before deployment gets to
-				// the point of checking for permission levels.
-				// To force what would happen in conditions where deployment is fully processed
-				// before a Role is received, a timer was introduced here as well.
-				// TODO: This should be done by checking the received event rather than arbitrarily waiting.
-				fn(t, fakeClient)
-				time.Sleep(1 * time.Second)
+				// This function will create the fake k8s event and wait for the event to be fully flushed through
+				// sensor. This allows the tests to have a little more control in the order that events are being
+				// sent. Since each event is processed separately, the order they are received, doesn't necessarily
+				// guarantee that they will be fully processed first.
+				fn(t, fakeClient, receivedMessagesCh)
 			}
 			// Give some time for re-sync to happen (K8s client doesn't allow resync-time to be less than 1s)
 			time.Sleep(5 * time.Second)
@@ -165,20 +167,40 @@ func getAllDeploymentEventsWithName(messages []*central.MsgFromSensor, name stri
 	return events
 }
 
-func CreateRole(id string) func(t *testing.T, k *k8s.ClientSet) {
-	return func(t *testing.T, k *k8s.ClientSet) {
+func createRole(id string) resourceCreationFunction {
+	return func(t *testing.T, k *k8s.ClientSet, received chan *central.MsgFromSensor) {
 		k.MustCreateRole(t, id)
+		require.NoError(t, waitForResource(received, "Role", 2*time.Second))
 	}
 }
 
-func CreateRoleBinding(bindingID, roleID, serviceAccount string) func(t *testing.T, k *k8s.ClientSet) {
-	return func(t *testing.T, k *k8s.ClientSet) {
+func createRoleBinding(bindingID, roleID, serviceAccount string) resourceCreationFunction {
+	return func(t *testing.T, k *k8s.ClientSet, received chan *central.MsgFromSensor) {
 		k.MustCreateRoleBinding(t, bindingID, roleID, serviceAccount)
+		require.NoError(t, waitForResource(received, "Binding", 2*time.Second))
 	}
 }
 
-func CreateDeployment(depName, serviceAccount string) func(t *testing.T, k *k8s.ClientSet) {
-	return func(t *testing.T, k *k8s.ClientSet) {
+func createDeployment(depName, serviceAccount string) resourceCreationFunction {
+	return func(t *testing.T, k *k8s.ClientSet, received chan *central.MsgFromSensor) {
 		k.MustCreateDeployment(t, depName, k8s.WithServiceAccountName(serviceAccount))
+		require.NoError(t, waitForResource(received, "Deployment", 2*time.Second))
+	}
+}
+
+func waitForResource(received chan *central.MsgFromSensor, resource string, timeout time.Duration) error {
+	afterTimeout := time.After(timeout)
+	for {
+		select {
+		case <-afterTimeout:
+			return errors.New("timeout reached waiting for event")
+		case d, more := <-received:
+			if !more {
+				return errors.New("channel closed")
+			}
+			if d.GetEvent() != nil && d.GetEvent().GetTiming().GetResource() == resource {
+				return nil
+			}
+		}
 	}
 }
