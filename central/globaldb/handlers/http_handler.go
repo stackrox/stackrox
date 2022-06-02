@@ -56,7 +56,12 @@ func deferredRestart(ctx context.Context) {
 // RestoreDB is a handler that takes in a DB and restores Central to it
 func RestoreDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		log.Info("Starting DB restore ...")
+		// This is the old v1 API.  No need to support that for Postgres
+		if features.PostgresDatastore.Enabled() {
+			logAndWriteErrorMsg(w, http.StatusInternalServerError, "api is deprecated and does not support Postgres.")
+			return
+		}
+
 		filename := filepath.Join(os.TempDir(), time.Now().Format(restoreFileFormat))
 
 		f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
