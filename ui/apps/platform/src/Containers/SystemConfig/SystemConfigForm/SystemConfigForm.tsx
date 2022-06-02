@@ -109,7 +109,7 @@ const SystemConfigForm = ({
                     <Card>
                         <CardHeader>
                             <CardHeaderMain>
-                                <CardTitle>Data Retention Configuration</CardTitle>
+                                <CardTitle>Data retention configuration</CardTitle>
                             </CardHeaderMain>
                         </CardHeader>
                         <Divider component="div" />
@@ -118,7 +118,7 @@ const SystemConfigForm = ({
                                 <Grid hasGutter md={6}>
                                     <GridItem>
                                         <FormGroup
-                                            label="All Runtime Violations"
+                                            label="All runtime violations"
                                             isRequired
                                             fieldId="privateConfig.alertConfig.allRuntimeRetentionDurationDays"
                                         >
@@ -137,7 +137,7 @@ const SystemConfigForm = ({
                                     </GridItem>
                                     <GridItem>
                                         <FormGroup
-                                            label="Runtime Violations For Deleted Deployments"
+                                            label="Runtime violations for deleted deployments"
                                             isRequired
                                             fieldId="privateConfig.alertConfig.deletedRuntimeRetentionDurationDays"
                                         >
@@ -156,7 +156,7 @@ const SystemConfigForm = ({
                                     </GridItem>
                                     <GridItem>
                                         <FormGroup
-                                            label="Resolved Deploy-Phase Violations"
+                                            label="Resolved deploy-phase violations"
                                             isRequired
                                             fieldId="privateConfig.alertConfig.resolvedDeployRetentionDurationDays"
                                         >
@@ -175,7 +175,7 @@ const SystemConfigForm = ({
                                     </GridItem>
                                     <GridItem>
                                         <FormGroup
-                                            label="Attempted Deploy-Phase Violations"
+                                            label="Attempted deploy-phase violations"
                                             isRequired
                                             fieldId="privateConfig.alertConfig.attemptedDeployRetentionDurationDays"
                                         >
@@ -194,7 +194,7 @@ const SystemConfigForm = ({
                                     </GridItem>
                                     <GridItem>
                                         <FormGroup
-                                            label="Attempted Runtime Violations"
+                                            label="Attempted runtime violations"
                                             isRequired
                                             fieldId="privateConfig.alertConfig.attemptedRuntimeRetentionDurationDays"
                                         >
@@ -213,7 +213,7 @@ const SystemConfigForm = ({
                                     </GridItem>
                                     <GridItem>
                                         <FormGroup
-                                            label="Images No Longer Deployed"
+                                            label="Images no longer deployed"
                                             isRequired
                                             fieldId="privateConfig.imageRetentionDurationDays"
                                         >
@@ -232,7 +232,7 @@ const SystemConfigForm = ({
                                     </GridItem>
                                     <GridItem>
                                         <FormGroup
-                                            label="Expired Vulnerability Requests"
+                                            label="Expired vulnerability requests"
                                             isRequired
                                             fieldId="privateConfig.expiredVulnReqRetentionDurationDays"
                                         >
@@ -258,7 +258,7 @@ const SystemConfigForm = ({
                     <Card data-testid="header-config">
                         <CardHeader>
                             <CardHeaderMain>
-                                <CardTitle>Header Configuration</CardTitle>
+                                <CardTitle>Header configuration</CardTitle>
                             </CardHeaderMain>
                             <CardActions>
                                 <Switch
@@ -291,7 +291,7 @@ const SystemConfigForm = ({
                                     </GridItem>
                                     <GridItem md={3}>
                                         <FormGroup
-                                            label="Text Color"
+                                            label="Text color"
                                             isRequired
                                             fieldId="publicConfig.header.color"
                                         >
@@ -304,7 +304,7 @@ const SystemConfigForm = ({
                                     </GridItem>
                                     <GridItem md={9}>
                                         <FormGroup
-                                            label="Text Size"
+                                            label="Text size"
                                             isRequired
                                             fieldId="publicConfig.header.size"
                                         >
@@ -323,7 +323,7 @@ const SystemConfigForm = ({
                                     </GridItem>
                                     <GridItem md={3}>
                                         <FormGroup
-                                            label="Background Color"
+                                            label="Background color"
                                             isRequired
                                             fieldId="publicConfig.header.backgroundColor"
                                         >
@@ -345,7 +345,7 @@ const SystemConfigForm = ({
                     <Card data-testid="footer-config">
                         <CardHeader>
                             <CardHeaderMain>
-                                <CardTitle>Footer Configuration</CardTitle>
+                                <CardTitle>Footer configuration</CardTitle>
                             </CardHeaderMain>
                             <CardActions>
                                 <Switch
@@ -378,7 +378,7 @@ const SystemConfigForm = ({
                                     </GridItem>
                                     <GridItem md={3}>
                                         <FormGroup
-                                            label="Text Color"
+                                            label="Text color"
                                             isRequired
                                             fieldId="publicConfig.footer.color"
                                         >
@@ -391,7 +391,7 @@ const SystemConfigForm = ({
                                     </GridItem>
                                     <GridItem md={9}>
                                         <FormGroup
-                                            label="Text Size"
+                                            label="Text size"
                                             isRequired
                                             fieldId="publicConfig.footer.size"
                                         >
@@ -410,7 +410,7 @@ const SystemConfigForm = ({
                                     </GridItem>
                                     <GridItem md={3}>
                                         <FormGroup
-                                            label="Background Color"
+                                            label="Background color"
                                             isRequired
                                             fieldId="publicConfig.footer.backgroundColor"
                                         >
@@ -432,7 +432,7 @@ const SystemConfigForm = ({
                     <Card data-testid="login-notice-config">
                         <CardHeader>
                             <CardHeaderMain>
-                                <CardTitle>Login Configuration</CardTitle>
+                                <CardTitle>Login configuration</CardTitle>
                             </CardHeaderMain>
                             <CardActions>
                                 <Switch
@@ -469,7 +469,7 @@ const SystemConfigForm = ({
                         <Card>
                             <CardHeader>
                                 <CardHeaderMain>
-                                    <CardTitle>Online Telemetry Data Collection</CardTitle>
+                                    <CardTitle>Online telemetry data collection</CardTitle>
                                 </CardHeaderMain>
                                 <CardActions>
                                     <Switch

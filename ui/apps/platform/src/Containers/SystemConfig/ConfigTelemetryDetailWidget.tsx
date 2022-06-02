@@ -77,7 +77,7 @@ const ConfigTelemetryDetailWidget = ({
         <Card>
             <CardHeader>
                 <CardHeaderMain>
-                    <CardTitle>Online Telemetry Data Collection</CardTitle>
+                    <CardTitle>Online telemetry data collection</CardTitle>
                 </CardHeaderMain>
                 <CardActions>{getTextOrToggle(telemetryConfig, editable)}</CardActions>
             </CardHeader>
