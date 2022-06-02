@@ -1,12 +1,14 @@
-package store
+package bolt
 
 import (
+	"context"
 	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
 )
@@ -20,7 +22,7 @@ type ImageIntegrationStoreTestSuite struct {
 
 	db *bolt.DB
 
-	store Store
+	store *storeImpl
 }
 
 func (suite *ImageIntegrationStoreTestSuite) SetupTest() {
@@ -40,6 +42,7 @@ func (suite *ImageIntegrationStoreTestSuite) TearDownTest() {
 func (suite *ImageIntegrationStoreTestSuite) TestIntegrations() {
 	integration := []*storage.ImageIntegration{
 		{
+			Id:   uuid.NewV4().String(),
 			Name: "registry1",
 			IntegrationConfig: &storage.ImageIntegration_Docker{
 				Docker: &storage.DockerConfig{
@@ -48,6 +51,7 @@ func (suite *ImageIntegrationStoreTestSuite) TestIntegrations() {
 			},
 		},
 		{
+			Id:   uuid.NewV4().String(),
 			Name: "registry2",
 			IntegrationConfig: &storage.ImageIntegration_Docker{
 				Docker: &storage.DockerConfig{
@@ -58,14 +62,14 @@ func (suite *ImageIntegrationStoreTestSuite) TestIntegrations() {
 	}
 
 	// Test Add
+	ctx := context.Background()
 	for _, r := range integration {
-		id, err := suite.store.AddImageIntegration(r)
+		err := suite.store.Upsert(ctx, r)
 		suite.NoError(err)
-		suite.NotEmpty(id)
 	}
 
 	for _, r := range integration {
-		got, exists, err := suite.store.GetImageIntegration(r.GetId())
+		got, exists, err := suite.store.Get(ctx, r.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, r)
@@ -76,17 +80,17 @@ func (suite *ImageIntegrationStoreTestSuite) TestIntegrations() {
 		r.Name += "-ext"
 	}
 	for _, r := range integration {
-		suite.NoError(suite.store.UpdateImageIntegration(r))
+		suite.NoError(suite.store.Upsert(ctx, r))
 	}
 	for _, r := range integration {
 		r.Name = strings.TrimSuffix(r.Name, "-ext")
 	}
 	for _, r := range integration {
-		suite.NoError(suite.store.UpdateImageIntegration(r))
+		suite.NoError(suite.store.Upsert(ctx, r))
 	}
 
 	for _, r := range integration {
-		got, exists, err := suite.store.GetImageIntegration(r.GetId())
+		got, exists, err := suite.store.Get(ctx, r.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, r)
@@ -94,11 +98,11 @@ func (suite *ImageIntegrationStoreTestSuite) TestIntegrations() {
 
 	// Test Remove
 	for _, r := range integration {
-		suite.NoError(suite.store.RemoveImageIntegration(r.GetId()))
+		suite.NoError(suite.store.Delete(ctx, r.GetId()))
 	}
 
 	for _, r := range integration {
-		_, exists, err := suite.store.GetImageIntegration(r.GetId())
+		_, exists, err := suite.store.Get(ctx, r.GetId())
 		suite.NoError(err)
 		suite.False(exists)
 	}
