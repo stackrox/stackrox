@@ -454,6 +454,10 @@ is_nightly_tag() {
     [[ "$tags" =~ nightly ]]
 }
 
+is_in_PR_context() {
+    (is_CIRCLECI && [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]) || (is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]])
+}
+
 is_openshift_CI_rehearse_PR() {
     [[ "$(get_repo_full_name)" == "openshift/release" ]]
 }
