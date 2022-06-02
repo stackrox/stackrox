@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -33,21 +32,6 @@ func NewMockClusterStore(ctrl *gomock.Controller) *MockClusterStore {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockClusterStore) EXPECT() *MockClusterStoreMockRecorder {
 	return m.recorder
-}
-
-// CreateFlowStore mocks base method.
-func (m *MockClusterStore) CreateFlowStore(ctx context.Context, clusterID string) (store.FlowStore, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateFlowStore", ctx, clusterID)
-	ret0, _ := ret[0].(store.FlowStore)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateFlowStore indicates an expected call of CreateFlowStore.
-func (mr *MockClusterStoreMockRecorder) CreateFlowStore(ctx, clusterID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFlowStore", reflect.TypeOf((*MockClusterStore)(nil).CreateFlowStore), ctx, clusterID)
 }
 
 // GetFlowStore mocks base method.
