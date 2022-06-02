@@ -15,7 +15,8 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
 # Override test env defaults here:
 # (for defaults see: tests/e2e/lib.sh export_test_environment())
-os.environ["LOAD_BALANCER"] = "lb"
+os.environ["LOAD_BALANCER"] = "none"
+os.environ["LOCAL_PORT"] = "8000"
 os.environ["OUTPUT_FORMAT"] = "helm"
 
 ClusterTestRunner(
