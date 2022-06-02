@@ -2,20 +2,17 @@ package dbs
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
 const (
-	dumpTmpPath    = "pg_backup"
-	dbPasswordFile = "/run/secrets/stackrox.io/db-password/password"
+	dumpTmpPath = "pg_backup"
 )
 
 var (
@@ -45,18 +42,9 @@ func (bu *PostgresBackup) getPostgresSize(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
-// WriteDirectory writes a backup of RocksDB to the input path.
+// WriteDirectory writes a backup of Postgres to the input path.
 func (bu *PostgresBackup) WriteDirectory(ctx context.Context) (string, error) {
-	centralConfig := config.GetConfig()
-	password, err := os.ReadFile(dbPasswordFile)
-	if err != nil {
-		log.Fatalf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
-		return "", err
-	}
-	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
-	sourceMap := bu.parseSource(source)
-
-	config, err := pgxpool.ParseConfig(source)
+	sourceMap, config, err := globaldb.GetPostgresConfig()
 	if err != nil {
 		log.Fatalf("Could not parse postgres config: %v", err)
 		return "", err
@@ -77,33 +65,19 @@ func (bu *PostgresBackup) WriteDirectory(ctx context.Context) (string, error) {
 		strconv.FormatUint(uint64(config.ConnConfig.Port), 10),
 		"-d",
 		config.ConnConfig.Database,
-		"-Fd",
+		"-Fd", // Custom format.  Compressed files written to a directory.
 		"-f",
 		backupPath,
-		"-j",
-		"5",
+		"-j", // Allows for work to be spread across jobs
+		"5",  // The number of jobs
 	}
 
 	cmd := exec.Command("pg_dump", options...)
-	cmd.Env = os.Environ()
 
-	if _, found := sourceMap["sslmode"]; found {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("PGSSLMODE=%s", sourceMap["sslmode"]))
-	}
-	if _, found := sourceMap["sslrootcert"]; found {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("PGSSLROOTCERT=%s", sourceMap["sslrootcert"]))
-	}
-	cmd.Env = append(cmd.Env, fmt.Sprintf("PGPASSWORD=%s", config.ConnConfig.Password))
+	common.SetPostgresCmdEnv(cmd, sourceMap, config)
 
-	// Run the command
-	err = cmd.Start()
+	err = common.ExecutePostgresCmd(cmd)
 	if err != nil {
-		return "", err
-	}
-	err = cmd.Wait()
-
-	if exitError, ok := err.(*exec.ExitError); ok {
-		log.Error(exitError)
 		return "", err
 	}
 
@@ -117,15 +91,4 @@ func (bu *PostgresBackup) findScratchPath(ctx context.Context) (string, error) {
 	}
 
 	return findTmpPath(dbSize, dumpTmpPath)
-}
-
-func (bu *PostgresBackup) parseSource(source string) map[string]string {
-	sourceSlice := strings.Split(source, " ")
-	sourceMap := make(map[string]string)
-	for _, pair := range sourceSlice {
-		configSetting := strings.Split(pair, "=")
-		sourceMap[configSetting[0]] = configSetting[1]
-	}
-
-	return sourceMap
 }

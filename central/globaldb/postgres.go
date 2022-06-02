@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -70,15 +71,7 @@ var (
 // GetPostgres returns a global database instance
 func GetPostgres() *pgxpool.Pool {
 	pgSync.Do(func() {
-		centralConfig := config.GetConfig()
-		password, err := os.ReadFile(dbPasswordFile)
-		if err != nil {
-			log.Fatalf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
-			return
-		}
-		source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
-
-		config, err := pgxpool.ParseConfig(source)
+		_, config, err := GetPostgresConfig()
 		if err != nil {
 			log.Fatalf("Could not parse postgres config: %v", err)
 		}
@@ -102,6 +95,37 @@ func GetPostgres() *pgxpool.Pool {
 
 	})
 	return postgresDB
+}
+
+// GetPostgresConfig - gets the configuration used to connect to Postgres
+func GetPostgresConfig() (map[string]string, *pgxpool.Config, error) {
+	centralConfig := config.GetConfig()
+	password, err := os.ReadFile(dbPasswordFile)
+	if err != nil {
+		log.Fatalf("pgsql: could not load password file %q: %v", dbPasswordFile, err)
+		return nil, nil, err
+	}
+	source := fmt.Sprintf("%s password=%s", centralConfig.CentralDB.Source, password)
+
+	config, err := pgxpool.ParseConfig(source)
+	if err != nil {
+		log.Fatalf("Could not parse postgres config: %v", err)
+		return nil, nil, err
+	}
+
+	return parseSource(source), config, nil
+}
+
+// parseSource - parses source string into a map for easier use
+func parseSource(source string) map[string]string {
+	sourceSlice := strings.Split(source, " ")
+	sourceMap := make(map[string]string)
+	for _, pair := range sourceSlice {
+		configSetting := strings.Split(pair, "=")
+		sourceMap[configSetting[0]] = configSetting[1]
+	}
+
+	return sourceMap
 }
 
 func collectPostgresStats(db *pgxpool.Pool) {

@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
-// Command controls all of the functions being applied to a sensor
+// Command controls all of the functions being applied to a central
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "db",
