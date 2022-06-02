@@ -34,6 +34,7 @@ var (
 		"sensor/admission-control",
 		"sensor/upgrader",
 		"sensor/debugger",
+		"sensor/tests",
 		"tools",
 		"webhookserver",
 		"operator",
@@ -202,6 +203,10 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	// This is not a problem since none of this code is used in prod anyway.
 	if validImportRoot == "scale" {
 		allowedPackages = append(allowedPackages, "central")
+	}
+
+	if validImportRoot == "sensor/tests" {
+		allowedPackages = append(allowedPackages, "sensor/common", "sensor/kubernetes", "sensor/debugger")
 	}
 
 	for _, imp := range imports {
