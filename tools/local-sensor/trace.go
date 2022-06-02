@@ -63,7 +63,52 @@ func (tw *traceReader) Init() error {
 	return os.MkdirAll(path.Dir(tw.source), os.ModePerm)
 }
 
-func (tw *traceReader) ReadFile(handle func([]byte)) error {
+func (tw *traceReader) ReadFile(mode CreateMode, handle func([]byte, CreateMode)) error {
+	if !tw.enabled {
+		return nil
+	}
+	for {
+		buf := make([]byte, 8*4096)
+		n, err := tw.Read(buf)
+		if err != nil {
+			return err
+		}
+		handle(buf[:n], mode)
+	}
+}
+
+// Read reads one line from the trace file. This line corresponds to a single K8s event
+func (tw *traceReader) Read(p []byte) (n int, err error) {
+	if !tw.enabled {
+		return 0, nil
+	}
+	file, err := os.OpenFile(tw.source, os.O_RDONLY, 0644)
+	if err != nil {
+		return 0, errors.Wrapf(err, "Error opening file: %s\n", tw.source)
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	scanner := bufio.NewScanner(file)
+	scBuf := make([]byte, 0, 64*1024)
+	scanner.Buffer(scBuf, 1024*1024)
+	var lno int64
+	for scanner.Scan() {
+		lno++
+		if lno < tw.lineNo {
+			continue
+		}
+		tw.lineNo++
+		b := scanner.Bytes()
+		n = copy(p, b)
+		return n, scanner.Err()
+	}
+	return 0, io.EOF
+}
+
+func (tw *traceReader) ReadFileBlocking(handle func([]byte)) error {
 	if !tw.enabled {
 		return nil
 	}
@@ -87,33 +132,4 @@ func (tw *traceReader) ReadFile(handle func([]byte)) error {
 		}
 		handle(line)
 	}
-}
-
-// Read reads one line from the trace file. This line corresponds to a single K8s event
-func (tw *traceReader) Read(p []byte) (n int, err error) {
-	if !tw.enabled {
-		return 0, nil
-	}
-	file, err := os.OpenFile(tw.source, os.O_RDONLY, 0644)
-	if err != nil {
-		return 0, errors.Wrapf(err, "Error opening file: %s\n", tw.source)
-	}
-	defer func() {
-		_ = file.Close()
-	}()
-	tw.mu.Lock()
-	defer tw.mu.Unlock()
-	scanner := bufio.NewScanner(file)
-	var lno int64
-	for scanner.Scan() {
-		lno++
-		if lno < tw.lineNo {
-			continue
-		}
-		tw.lineNo++
-		b := scanner.Bytes()
-		n = copy(p, b)
-		return n, scanner.Err()
-	}
-	return 0, scanner.Err()
 }
