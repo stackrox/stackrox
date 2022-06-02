@@ -145,6 +145,10 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 			createStmts: CreateTableComplianceOperatorScanSettingBindingsStmt,
 		},
 		{
+			name:        ConfigsTableName,
+			createStmts: CreateTableConfigsStmt,
+		},
+		{
 			name:        DeploymentsTableName,
 			createStmts: CreateTableDeploymentsStmt,
 		},
@@ -183,6 +187,10 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 		{
 			name:        ImageIntegrationsTableName,
 			createStmts: CreateTableImageIntegrationsStmt,
+		},
+		{
+			name:        InstallationInfosTableName,
+			createStmts: CreateTableInstallationInfosStmt,
 		},
 		{
 			name:        K8sRolesTableName,
@@ -287,6 +295,10 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 		{
 			name:        SecretsTableName,
 			createStmts: CreateTableSecretsStmt,
+		},
+		{
+			name:        SensorUpgradeConfigsTableName,
+			createStmts: CreateTableSensorUpgradeConfigsStmt,
 		},
 		{
 			name:        ServiceAccountsTableName,

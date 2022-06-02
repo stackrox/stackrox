@@ -32,6 +32,12 @@ import (
 //go:embed schema.go.tpl
 var schemaFile string
 
+//go:embed singleton.go.tpl
+var singletonFile string
+
+//go:embed singleton_test.go.tpl
+var singletonTestFile string
+
 //go:embed store.go.tpl
 var storeFile string
 
@@ -46,6 +52,8 @@ var permissionCheckerFile string
 
 var (
 	schemaTemplate            = newTemplate(schemaFile)
+	singletonTemplate         = newTemplate(singletonFile)
+	singletonTestTemplate     = newTemplate(singletonTestFile)
 	storeTemplate             = newTemplate(storeFile)
 	storeTestTemplate         = newTemplate(storeTestFile)
 	indexTemplate             = newTemplate(indexFile)
@@ -82,6 +90,9 @@ type properties struct {
 
 	// Indicates that we want to generate a GetAll function. Defaults to false because this can be dangerous on high cardinality stores
 	GetAll bool
+
+	// Indicates that we should just generate the singleton store
+	SingletonStore bool
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -149,6 +160,7 @@ func main() {
 	c.Flags().BoolVar(&props.SchemaOnly, "schema-only", false, "if true, generates only the schema and not store and index")
 	c.Flags().BoolVar(&props.GetAll, "get-all-func", false, "if true, generates a GetAll function")
 	c.Flags().StringVar(&props.SchemaDirectory, "schema-directory", "", "the directory in which to generate the schema")
+	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
 
 	c.RunE = func(*cobra.Command, []string) error {
@@ -163,7 +175,7 @@ func main() {
 			props.Table = pgutils.NamingStrategy.TableName(trimmedType)
 		}
 		schema := walker.Walk(mt, props.Table)
-		if schema.NoPrimaryKey() {
+		if schema.NoPrimaryKey() && !props.SingletonStore {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
 		if len(schema.PrimaryKeys()) > 1 {
@@ -208,6 +220,12 @@ func main() {
 		}
 		if props.SchemaOnly {
 			return nil
+		}
+		if props.SingletonStore {
+			if err := renderFile(templateMap, singletonTemplate, "store.go"); err != nil {
+				return err
+			}
+			return renderFile(templateMap, singletonTestTemplate, "store_test.go")
 		}
 		if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
 			return err
