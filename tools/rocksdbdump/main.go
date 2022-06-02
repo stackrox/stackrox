@@ -97,6 +97,7 @@ var knownUnhandledBuckets = set.NewStringSet(
 	"dackbox_graph",
 	"dackbox_dirty",
 	"dackbox_reindex",
+	"node_to_cve",
 )
 
 var ignoreUnmarshallErrors = set.NewStringSet(
