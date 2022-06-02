@@ -190,8 +190,4 @@ describe('Vuln Management Dashboard Page', () => {
     it('clicking the "Top risky images by CVE count & CVSS score" widget\'s "View All" button should take you to the images list', () => {
         validateTopRiskyEntities('images');
     });
-
-    it('clicking the "Top risky clusters by CVE count & CVSS score" widget\'s "View All" button should take you to the clusters list', () => {
-        validateTopRiskyEntities('clusters');
-    });
 });
