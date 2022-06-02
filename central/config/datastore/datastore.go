@@ -39,7 +39,8 @@ func (d *datastoreImpl) GetConfig(ctx context.Context) (*storage.Config, error) 
 		return nil, nil
 	}
 
-	return d.store.GetConfig()
+	conf, _, err := d.store.Get(ctx)
+	return conf, err
 }
 
 // UpsertConfig updates Central's config
@@ -50,5 +51,5 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 		return sac.ErrResourceAccessDenied
 	}
 
-	return d.store.UpsertConfig(config)
+	return d.store.Upsert(ctx, config)
 }

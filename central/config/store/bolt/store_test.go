@@ -1,6 +1,7 @@
-package store
+package bolt
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -15,9 +16,11 @@ func TestStore(t *testing.T) {
 
 	store := New(db)
 
-	config, err := store.GetConfig()
-	require.NoError(t, err)
+	ctx := context.Background()
 
+	config, exists, err := store.Get(ctx)
+	require.NoError(t, err)
+	assert.False(t, exists)
 	assert.Nil(t, config)
 
 	newConfig := &storage.Config{
@@ -27,9 +30,10 @@ func TestStore(t *testing.T) {
 			},
 		},
 	}
-	assert.NoError(t, store.UpsertConfig(newConfig))
+	assert.NoError(t, store.Upsert(ctx, newConfig))
 
-	config, err = store.GetConfig()
+	config, exists, err = store.Get(ctx)
 	assert.NoError(t, err)
+	assert.True(t, exists)
 	assert.Equal(t, newConfig, config)
 }
