@@ -14,17 +14,13 @@ check_policy_files() {
     make policyutil
     policyutil upgrade -d pkg/defaults/policies/files -o /tmp/policies-in-standard-form --ensure-read-only mitre --ensure-read-only criteria
     diff pkg/defaults/policies/files /tmp/policies-in-standard-form > /tmp/policies-diff
-    echo "After:"
     stat /tmp/policies-diff
     if [[ -s /tmp/policies-diff ]]; then
-        echo 'fail: Found policies that are not in standard form. Check "policies-diff" for affected policies; use "policyutil" to fix them.'
+        echo 'error: Found policies that are not in standard form. Check "policies-diff" for affected policies; use "policyutil" to fix them.'
         cat /tmp/policies-diff
         exit 1
     fi
     echo "error: did not fail"
-    echo "fail: did not fail"
-    echo "failure: did not fail"
-    echo "Fatal: did not fail"
 
     store_test_results /tmp/policies-diff policies-diff
 }
