@@ -60,11 +60,11 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 			return defaults.DevelopmentBuildImageFlavor()
 		},
 		"stackrox": func() defaults.ImageFlavor {
-			testutils.SetVersion(t, testutils.GetExampleVersionUnified(t))
+			testutils.SetVersion(t, testutils.GetExampleVersion(t))
 			return defaults.StackRoxIOReleaseImageFlavor()
 		},
 		"rhacs": func() defaults.ImageFlavor {
-			testutils.SetVersion(t, testutils.GetExampleVersionUnified(t))
+			testutils.SetVersion(t, testutils.GetExampleVersion(t))
 			return defaults.RHACSReleaseImageFlavor()
 		},
 		"custom": func() defaults.ImageFlavor {
