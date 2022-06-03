@@ -46,9 +46,3 @@ func GetEmbeddedDocker_20_10_10() *storage.EmbeddedNodeScanComponent {
 	}
 }
 
-func GetImgCmpLinux5_10_47() *storage.ImageComponent {
-	return &storage.ImageComponent{
-		Id:   uuid.NewV4().String(),
-		Name: "kernel 5.10.47-linuxkit",
-	}
-}
