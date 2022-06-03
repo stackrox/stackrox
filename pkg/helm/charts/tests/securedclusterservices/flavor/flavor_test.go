@@ -33,35 +33,23 @@ func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
 
 func TestWithDifferentImageFlavors(t *testing.T) {
 	testbuildinfo.SetForTest(t)
-	// having a function as value allows to successfully run this test without dependency to GOTAGS='' and GOTAGS='release'
-	imageFlavorCases := map[string]func() defaults.ImageFlavor{
-		"development": func() defaults.ImageFlavor {
-			testutils.SetVersion(t, testutils.GetExampleVersion(t))
-			return defaults.DevelopmentBuildImageFlavor()
-		},
-		"stackrox": func() defaults.ImageFlavor {
-			testutils.SetVersion(t, testutils.GetExampleVersion(t))
-			return defaults.StackRoxIOReleaseImageFlavor()
-		},
-		"rhacs": func() defaults.ImageFlavor {
-			testutils.SetVersion(t, testutils.GetExampleVersion(t))
-			return defaults.RHACSReleaseImageFlavor()
-		},
+	testutils.SetVersion(t, testutils.GetExampleVersion(t))
+	imageFlavorCases := map[string]defaults.ImageFlavor{
+		"development": defaults.DevelopmentBuildImageFlavor(),
+		"stackrox":    defaults.StackRoxIOReleaseImageFlavor(),
+		"rhacs":       defaults.RHACSReleaseImageFlavor(),
 	}
-	opensourceDir := "opensource-development"
 	if buildinfo.ReleaseBuild {
-		opensourceDir = "opensource-release"
-	}
-	imageFlavorCases[opensourceDir] = func() defaults.ImageFlavor {
-		testutils.SetVersion(t, testutils.GetExampleVersion(t))
-		return defaults.OpenSourceImageFlavor()
+		imageFlavorCases["opensource-release"] = defaults.OpenSourceImageFlavor()
+	} else {
+		imageFlavorCases["opensource-development"] = defaults.OpenSourceImageFlavor()
 	}
 
 	for name, f := range imageFlavorCases {
-		imageFlavor := f()
 		t.Run(name, func(t *testing.T) {
+			f := f
 			helmChartTestUtils.RunHelmTestSuite(t, testDir, image.SecuredClusterServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
-				Flavor: &imageFlavor,
+				Flavor: &f,
 				MetaValuesOverridesFunc: func(values *charts.MetaValues) {
 					values.ClusterName = "test"
 				},
