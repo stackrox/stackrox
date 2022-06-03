@@ -2404,3 +2404,80 @@ var (
 		{"zzrot/whale-awkward", "sha256:af96027106a08cb077dab02c1622bc895097e25af7a8326e90cc6f9dbdf71630"},
 	}
 )
+
+func GetCoreDNS_1_8_0() *storage.Image {
+	return &storage.Image{
+		Id: "sha256:cc8fb77bc2a0541949d1d9320a641b82fd392b0d3d8145469ca4709ae769980e",
+		Name: &storage.ImageName{
+			Registry: "k8s.gcr.io",
+			Remote:   "coredns/coredns",
+			Tag:      "v1.8.0",
+			FullName: "k8s.gcr.io/coredns/coredns:v1.8.0",
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Digest:  "sha256:296a6d5035e2d6919249e02709a488d680ddca91357602bd65e605eac967b899",
+				Created: types.Timestamp{Seconds: 1603357152, Nanos: 209577235},
+				Layers: []*storage.ImageLayer{
+					{
+						Instruction: "COPY",
+						Value:       "dir:0284c6efacdcf29cb632136811b7130fbe84998aefe3d1c36a0570424c7a2c92 in /etc/ssl/certs",
+						Created:     &types.Timestamp{Seconds: 1564345107, Nanos: 224802511},
+					},
+					{
+						Instruction: "ADD",
+						Value:       "file:fb9f8b6a2956bd4aec7adca64f942eec68ec2e4e31c68f7607cae38816092b4d in /coredns",
+						Created:     &types.Timestamp{Seconds: 1603357151, Nanos: 602874521},
+					},
+					{
+						Instruction: "EXPOSE",
+						Value:       "53 53/udp",
+						Created:     &types.Timestamp{Seconds: 1603357152, Nanos: 11927682},
+						Empty:       true,
+					},
+					{
+						Instruction: "ENTRYPOINT",
+						Value:       "[\"/coredns\"]",
+						Created:     &types.Timestamp{Seconds: 1603357152, Nanos: 209577235},
+						Empty:       true,
+					},
+				},
+				User:       "root",
+				Entrypoint: "/coredns",
+			},
+			V2: &storage.V2Metadata{
+				Digest: "sha256:10ecc12177735e5a6fd6fa0127202776128d860ed7ab0341780ddaeb1f6dfe61",
+			},
+			LayerShas: []string{
+				"sha256:c6568d217a0023041ef9f729e8836b19f863bcdb612bb3a329ebc165539f5a80",
+				"sha256:5984b6d55edf1b88d59e46252fee6d46c4adb56b37b8f5b3acbe5d7fe2555396",
+			},
+			DataSource: &storage.DataSource{
+				Id:   "c6a1a26d-8947-4cb0-a50d-a018856f9390",
+				Name: "Public Kubernetes GCR",
+			},
+		},
+		Scan: &storage.ImageScan{
+			ScannerVersion:  "2.24.0-11-g05cf175999",
+			ScanTime:        &types.Timestamp{Seconds: 1654154295, Nanos: 671968500},
+			OperatingSystem: "unknown",
+			DataSource: &storage.DataSource{
+				Id:   "169b0d3f-8277-4900-bbce-1127077defae",
+				Name: "Stackrox Scanner",
+			},
+			Notes: []storage.ImageScan_Note{
+				storage.ImageScan_OS_CVES_UNAVAILABLE,
+				storage.ImageScan_PARTIAL_SCAN_DATA,
+			},
+		},
+		SetComponents: &storage.Image_Components{Components: 0},
+		SetCves:       &storage.Image_Cves{Cves: 0},
+		SetFixable:    &storage.Image_FixableCves{FixableCves: 0},
+		LastUpdated:   types.Timestamp{Seconds: 1654154296, Nanos: 614608600},
+		RiskScore:     1.5,
+		Notes: []storage.Image_Note{
+			storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA,
+			storage.Image_MISSING_SIGNATURE,
+		},
+	}
+}
