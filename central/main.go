@@ -567,18 +567,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
-			Route:         "/db/backup",
-			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), false),
-			Compression:   true,
-		},
-		{
-			Route:         "/api/extensions/backup",
-			Authorizer:    user.WithRole(role.Admin),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), true),
-			Compression:   true,
-		},
-		{
 			Route:         "/db/restore",
 			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
 			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB()),
@@ -647,6 +635,34 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: logimbueHandler.Singleton(),
 			Compression:   false,
 		},
+	}
+
+	if features.PostgresDatastore.Enabled() {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/db/backup",
+			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
+			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), false),
+			Compression:   true,
+		})
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/extensions/backup",
+			Authorizer:    user.WithRole(role.Admin),
+			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), globaldb.GetPostgres(), true),
+			Compression:   true,
+		})
+	} else {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/db/backup",
+			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
+			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, false),
+			Compression:   true,
+		})
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/extensions/backup",
+			Authorizer:    user.WithRole(role.Admin),
+			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), nil, true),
+			Compression:   true,
+		})
 	}
 
 	customRoutes = append(customRoutes, routes.CustomRoute{
