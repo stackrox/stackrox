@@ -68,14 +68,8 @@ func (s *SchemaTestSuite) SetupSuite() {
 	s.pool = pool
 	s.Require().NoError(err)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
-}
 
-func (s *SchemaTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
-	if s.pool == nil {
-		return
-	}
-	_, err := s.pool.Exec(s.ctx, "DROP SCHEMA public CASCADE")
+	_, err = s.pool.Exec(s.ctx, "DROP SCHEMA public CASCADE")
 	s.Require().NoError(err)
 	_, err = s.pool.Exec(s.ctx, "CREATE SCHEMA public")
 	s.Require().NoError(err)

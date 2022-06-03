@@ -31,7 +31,7 @@ func TestRoleBindingsStore(t *testing.T) {
 	suite.Run(t, new(RoleBindingsStoreSuite))
 }
 
-func (s *RoleBindingsStoreSuite) SetupTest() {
+func (s *RoleBindingsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -56,7 +56,14 @@ func (s *RoleBindingsStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *RoleBindingsStoreSuite) TearDownTest() {
+func (s *RoleBindingsStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE role_bindings CASCADE")
+	s.T().Log("role_bindings", tag)
+	s.NoError(err)
+}
+
+func (s *RoleBindingsStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

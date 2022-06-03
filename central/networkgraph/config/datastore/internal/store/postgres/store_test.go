@@ -29,7 +29,7 @@ func TestNetworkGraphConfigsStore(t *testing.T) {
 	suite.Run(t, new(NetworkGraphConfigsStoreSuite))
 }
 
-func (s *NetworkGraphConfigsStoreSuite) SetupTest() {
+func (s *NetworkGraphConfigsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *NetworkGraphConfigsStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *NetworkGraphConfigsStoreSuite) TearDownTest() {
+func (s *NetworkGraphConfigsStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE network_graph_configs CASCADE")
+	s.T().Log("network_graph_configs", tag)
+	s.NoError(err)
+}
+
+func (s *NetworkGraphConfigsStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
