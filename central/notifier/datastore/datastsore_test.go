@@ -74,6 +74,23 @@ func (s *notifierDataStoreTestSuite) TestAllowsGet() {
 	s.True(exists, "expected exists to be set to false")
 }
 
+func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifier() {
+	testNotifier := &storage.Notifier{
+		Config: &storage.Notifier_Generic{
+			Generic: &storage.Generic{
+				Password: "test",
+			},
+		},
+	}
+
+	s.storage.EXPECT().GetNotifier(gomock.Any()).Return(testNotifier, true, nil).Times(1)
+
+	scrubbedNotifier, exists, err := s.dataStore.GetScrubbedNotifier(s.hasReadCtx, "test")
+	s.NoError(err, "expected no error trying to read with permissions")
+	s.True(exists, "expected exists to be set to false")
+	s.Equal("******", scrubbedNotifier.Config.(*storage.Notifier_Generic).Generic.Password)
+}
+
 func (s *notifierDataStoreTestSuite) TestEnforcesGetMany() {
 	s.storage.EXPECT().GetNotifiers(gomock.Any()).Times(0)
 
@@ -92,6 +109,23 @@ func (s *notifierDataStoreTestSuite) TestAllowsGetMany() {
 
 	_, err = s.dataStore.GetNotifiers(s.hasWriteCtx, &v1.GetNotifiersRequest{})
 	s.NoError(err, "expected no error trying to read with permissions")
+}
+
+func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifiers() {
+	testNotifier := &storage.Notifier{
+		Config: &storage.Notifier_Generic{
+			Generic: &storage.Generic{
+				Password: "test",
+			},
+		},
+	}
+
+	s.storage.EXPECT().GetNotifiers(gomock.Any()).Return([]*storage.Notifier{testNotifier}, nil).Times(1)
+
+	scrubbedNotifiers, err := s.dataStore.GetScrubbedNotifiers(s.hasReadCtx, &v1.GetNotifiersRequest{})
+	s.NoError(err, "expected no error trying to read with permissions")
+	s.Equal(1, len(scrubbedNotifiers), "expected one notifier in the list")
+	s.Equal("******", scrubbedNotifiers[0].Config.(*storage.Notifier_Generic).Generic.Password)
 }
 
 func (s *notifierDataStoreTestSuite) TestEnforcesAdd() {
