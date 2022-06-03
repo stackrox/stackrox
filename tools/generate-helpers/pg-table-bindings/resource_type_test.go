@@ -68,7 +68,6 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.NetworkPolicyApplicationUndoDeploymentRecord{}, resourceType: indirectlyScoped},
 		{typ: &storage.Node{}, resourceType: directlyScoped},
 		{typ: &storage.NodeComponentEdge{}, resourceType: indirectlyScoped},
-		{typ: &storage.NodeCVEEdge{}, resourceType: indirectlyScoped},
 		{typ: &storage.Notifier{}, resourceType: globallyScoped},
 		{typ: &storage.Pod{}, resourceType: directlyScoped},
 		{typ: &storage.Policy{}, resourceType: globallyScoped},
