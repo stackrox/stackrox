@@ -69,7 +69,7 @@ func (s *NodeComponentCveEdgesStoreSuite) TestStore() {
 	nodeComponentCVEEdge := &storage.NodeComponentCVEEdge{}
 	s.NoError(testutils.FullInit(nodeComponentCVEEdge, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundNodeComponentCVEEdge, exists, err := store.Get(ctx, nodeComponentCVEEdge.GetId(), nodeComponentCVEEdge.GetComponentId(), nodeComponentCVEEdge.GetCveId())
+	foundNodeComponentCVEEdge, exists, err := store.Get(ctx, nodeComponentCVEEdge.GetId())
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundNodeComponentCVEEdge)

@@ -25,7 +25,7 @@ var (
                    ImageId varchar,
                    ImageCveId varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, ImageId, ImageCveId),
+                   PRIMARY KEY(Id),
                    CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageId) REFERENCES images(Id) ON DELETE CASCADE
                )
                `,
@@ -64,8 +64,8 @@ type ImageCveEdges struct {
 	Id                   string                     `gorm:"column:id;type:varchar;primaryKey"`
 	FirstImageOccurrence *time.Time                 `gorm:"column:firstimageoccurrence;type:timestamp"`
 	State                storage.VulnerabilityState `gorm:"column:state;type:integer"`
-	ImageId              string                     `gorm:"column:imageid;type:varchar;primaryKey"`
-	ImageCveId           string                     `gorm:"column:imagecveid;type:varchar;primaryKey"`
+	ImageId              string                     `gorm:"column:imageid;type:varchar"`
+	ImageCveId           string                     `gorm:"column:imagecveid;type:varchar"`
 	Serialized           []byte                     `gorm:"column:serialized;type:bytea"`
 	ImagesRef            Images                     `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
