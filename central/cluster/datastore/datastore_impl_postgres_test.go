@@ -68,6 +68,7 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
 	clusterPostgres.Destroy(s.ctx, s.db)
 
 	gormDB := pgtest.OpenGormDB(s.T(), source)
+	defer pgtest.CloseGormDB(s.T(), gormDB)
 	ds, err := namespace.New(nsPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), nil, nsPostgres.NewIndexer(s.db), nil, ranking.NamespaceRanker(), nil)
 	s.NoError(err)
 	s.nsDatastore = ds

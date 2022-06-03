@@ -62,6 +62,7 @@ func (s *IndexSuite) SetupTest() {
 
 	postgres.Destroy(ctx, s.pool)
 	gormDB := pgtest.OpenGormDB(s.T(), source)
+	defer pgtest.CloseGormDB(s.T(), gormDB)
 	s.store = postgres.CreateTableAndNewStore(ctx, s.pool, gormDB)
 	s.indexer = postgres.NewIndexer(s.pool)
 }

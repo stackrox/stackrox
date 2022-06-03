@@ -90,6 +90,7 @@ func (s *GraphQueriesTestSuite) SetupTest() {
 	s.Require().NoError(err)
 
 	gormDB := pgtest.OpenGormDB(s.T(), source)
+	defer pgtest.CloseGormDB(s.T(), gormDB)
 	s.pool = pool
 	s.testGrandparentStore = testGrandparent.CreateTableAndNewStore(testCtx, pool, gormDB)
 	s.testGrandparentStore = testGrandparent.CreateTableAndNewStore(testCtx, pool, gormDB)
