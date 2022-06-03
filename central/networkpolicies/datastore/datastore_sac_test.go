@@ -73,7 +73,7 @@ func (s *networkPolicySACSuite) TearDownSuite() {
 	if features.PostgresDatastore.Enabled() {
 		s.pool.Close()
 	} else {
-		s.NoError(s.engine.Close())
+		s.Require().NoError(s.engine.Close())
 	}
 }
 
@@ -88,13 +88,13 @@ func (s *networkPolicySACSuite) TearDownTest() {
 }
 
 func (s *networkPolicySACSuite) deleteNetworkPolicy(id string) {
-	s.NoError(s.datastore.RemoveNetworkPolicy(s.testContexts[testutils.UnrestrictedReadWriteCtx], id))
+	s.Require().NoError(s.datastore.RemoveNetworkPolicy(s.testContexts[testutils.UnrestrictedReadWriteCtx], id))
 }
 
 func (s *networkPolicySACSuite) TestGetNetworkPolicy() {
 	networkPolicy := fixtures.GetScopedNetworkPolicy(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	err := s.datastore.UpsertNetworkPolicy(s.testContexts[testutils.UnrestrictedReadWriteCtx], networkPolicy)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.testNetworkPolicyIDs = append(s.testNetworkPolicyIDs, networkPolicy.GetId())
 	cases := map[string]struct {
 		scopeKey string
@@ -154,11 +154,11 @@ func (s *networkPolicySACSuite) TestGetNetworkPolicies() {
 	var err error
 	networkPolicy1 := fixtures.GetScopedNetworkPolicy(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	err = s.datastore.UpsertNetworkPolicy(s.testContexts[testutils.UnrestrictedReadWriteCtx], networkPolicy1)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.testNetworkPolicyIDs = append(s.testNetworkPolicyIDs, networkPolicy1.GetId())
 	networkPolicy2 := fixtures.GetScopedNetworkPolicy(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB)
 	err = s.datastore.UpsertNetworkPolicy(s.testContexts[testutils.UnrestrictedReadWriteCtx], networkPolicy2)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.testNetworkPolicyIDs = append(s.testNetworkPolicyIDs, networkPolicy2.GetId())
 	cases := map[string]struct {
 		scopeKey      string
@@ -212,11 +212,11 @@ func (s *networkPolicySACSuite) TestCountMatchingNetworkPolicies() {
 	var err error
 	networkPolicy1 := fixtures.GetScopedNetworkPolicy(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	err = s.datastore.UpsertNetworkPolicy(s.testContexts[testutils.UnrestrictedReadWriteCtx], networkPolicy1)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.testNetworkPolicyIDs = append(s.testNetworkPolicyIDs, networkPolicy1.GetId())
 	networkPolicy2 := fixtures.GetScopedNetworkPolicy(uuid.NewV4().String(), testconsts.Cluster3, testconsts.NamespaceB)
 	err = s.datastore.UpsertNetworkPolicy(s.testContexts[testutils.UnrestrictedReadWriteCtx], networkPolicy2)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.testNetworkPolicyIDs = append(s.testNetworkPolicyIDs, networkPolicy2.GetId())
 	cases := map[string]struct {
 		scopeKey      string
@@ -369,7 +369,7 @@ func (s *networkPolicySACSuite) TestRemoveNetworkPolicy() {
 			ctx := s.testContexts[c.scopeKey]
 			policy := fixtures.GetScopedNetworkPolicy(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 			err := s.datastore.UpsertNetworkPolicy(unrestrictedCtx, policy)
-			s.NoError(err)
+			s.Require().NoError(err)
 			deleteErr := s.datastore.RemoveNetworkPolicy(ctx, policy.GetId())
 			defer s.deleteNetworkPolicy(policy.GetId())
 			if c.expectedError {
