@@ -70,7 +70,7 @@ Make sure to provide some name in `clusterName` argument meaningful to you. The 
 
 When deploying Secured Cluster Services on a different cluster, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
 
-If you're deploying StackRox on a small node like local development cluster, run the following command to reduce StackRox resource requirements. Please don't run this command against a production cluster.
+If you're deploying StackRox on a small node like a local development cluster, run the following command to reduce StackRox resource requirements. Please don't run this command against a production cluster.
 ```sh
 helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-services \
   --set central.resources.requests.memory=1Gi \
