@@ -17,14 +17,15 @@ describe('Clusters list Page and its single entity detail page, and sub list val
             'Cluster',
             'CVEs',
             'K8S Version',
-            'Namespaces',
-            'Deployments',
+            'Entities',
             'Policy Status',
             'Latest Violation',
             'Risk Priority',
         ]);
         cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
+            // TODO: replace this helper function for individual entity columns
+            //       with one that checks each count in the combined Entities column
             if (columnValue !== 'no namespaces' && columnValue.includes('namespace')) {
                 allChecksForEntities(url.list.clusters, 'namespaces');
             }
