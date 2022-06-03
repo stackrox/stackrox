@@ -63,7 +63,7 @@ func (tw *traceReader) Init() error {
 	return os.MkdirAll(path.Dir(tw.source), os.ModePerm)
 }
 
-func (tw *traceReader) ReadFile(mode CreateMode, handle func([]byte, CreateMode)) error {
+func (tw *traceReader) ReadFile(mode CreateMode, done chan int, handle func([]byte, CreateMode)) error {
 	if !tw.enabled {
 		return nil
 	}
@@ -71,6 +71,7 @@ func (tw *traceReader) ReadFile(mode CreateMode, handle func([]byte, CreateMode)
 		buf := make([]byte, 8*4096)
 		n, err := tw.Read(buf)
 		if err != nil {
+			done <- 0
 			return err
 		}
 		handle(buf[:n], mode)
