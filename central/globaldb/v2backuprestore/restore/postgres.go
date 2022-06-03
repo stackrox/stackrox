@@ -115,8 +115,8 @@ func runRestore(dumpPath string, sourceMap map[string]string, config *pgxpool.Co
 	return nil
 }
 
-// Restore a Postgres database from a dump
-func Restore(dumpPath string) error {
+// LoadRestore a Postgres database from a dump
+func LoadRestore(dumpPath string) error {
 	log.Info("Starting Postgres Restore")
 	sourceMap, config, err := globaldb.GetPostgresConfig()
 	if err != nil {
@@ -133,9 +133,36 @@ func Restore(dumpPath string) error {
 
 	// Execute the restore on the temporary restore database
 	err = runRestore(dumpPath, sourceMap, config)
+	if err != nil {
+		log.Errorf("Could load the Postgres backup: %v", err)
+		return err
+	}
+
+	log.Info("Postgres Restore Complete")
+	return nil
+}
+
+func renameRestoreDB(connectPool *pgxpool.Pool) error {
+	sqlStmt := fmt.Sprintf("ALTER DATABASE %s RENAME TO %s", restoreDB, "postgres")
+
+	_, err := connectPool.Exec(context.TODO(), sqlStmt)
+	if err != nil {
+		log.Errorf("Could rename the DB: %v", err)
+	}
+
+	return err
+}
+
+func SwitchToRestoredDB() error {
+	log.Info("Switching to restored database")
+	sourceMap, config, err := globaldb.GetPostgresConfig()
+	if err != nil {
+		log.Fatalf("Could not parse postgres config: %v", err)
+		return err
+	}
 
 	// connect on template1
-	connectPool := renamePool(config)
+	connectPool := adminPool(config)
 
 	// Restore succeeded to the separate DB, so we need to drop the original in order to rename
 	// the new one.
@@ -154,22 +181,10 @@ func Restore(dumpPath string) error {
 	// Close the connection pool on template1 to support changing name.
 	connectPool.Close()
 
-	log.Info("Postgres Restore Complete")
 	return nil
 }
 
-func renameRestoreDB(connectPool *pgxpool.Pool) error {
-	sqlStmt := fmt.Sprintf("ALTER DATABASE %s RENAME TO %s", restoreDB, "postgres")
-
-	_, err := connectPool.Exec(context.TODO(), sqlStmt)
-	if err != nil {
-		log.Errorf("Could rename the DB: %v", err)
-	}
-
-	return err
-}
-
-func renamePool(config *pgxpool.Config) *pgxpool.Pool {
+func adminPool(config *pgxpool.Config) *pgxpool.Pool {
 	var err error
 
 	// Clone config to connect to template DB
@@ -190,4 +205,27 @@ func renamePool(config *pgxpool.Config) *pgxpool.Pool {
 	}
 
 	return postgresDB
+}
+
+func CheckIfRestoreDBExists() bool {
+	log.Info("CheckIfRestoreDBExists")
+	_, config, err := globaldb.GetPostgresConfig()
+	if err != nil {
+		log.Fatalf("Could not parse postgres config: %v", err)
+		return false
+	}
+	// connect on template1
+	connectPool := adminPool(config)
+
+	existsStmt := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_database WHERE datname = $1)")
+
+	row := connectPool.QueryRow(context.Background(), existsStmt, restoreDB)
+	var exists bool
+	if err := row.Scan(&exists); err != nil {
+		return false
+	}
+
+	log.Infof("Restore database exists => %t", exists)
+	return exists
+
 }
