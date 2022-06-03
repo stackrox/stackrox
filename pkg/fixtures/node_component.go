@@ -2,7 +2,6 @@ package fixtures
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 func GetEmbeddedLinux_5_10_47_linuxkit() *storage.EmbeddedNodeScanComponent {
