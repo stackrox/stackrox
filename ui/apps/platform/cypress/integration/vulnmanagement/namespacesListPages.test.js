@@ -14,11 +14,11 @@ describe('Namespaces list Page and its entity detail page , (related entities) s
     it('should display all the columns and links expected in namespaces list page', () => {
         visitVulnerabilityManagementEntities('namespaces');
         hasExpectedHeaderColumns([
-            'Cluster',
-            'CVEs',
-            'Images',
             'Namespace',
+            'CVEs',
+            'Cluster',
             'Deployments',
+            'Images',
             'Policy Status',
             'Latest Violation',
             'Risk Priority',
