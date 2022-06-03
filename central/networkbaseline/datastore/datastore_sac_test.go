@@ -60,7 +60,8 @@ func (s *networkBaselineDatastoreSACTestSuite) SetupSuite() {
 		s.NoError(err)
 		pgStore.Destroy(ctx, s.pool)
 		gormDB := pgtest.OpenGormDB(s.T(), source)
-		s.storage = pgStore.NewTestStore(ctx, s.pool, gormDB)
+		defer pgtest.CloseGormDB(s.T(), gormDB)
+		s.storage = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
 	} else {
 		s.engine, err = rocksdb.NewTemp(networkBaselineObj)
 		s.NoError(err)

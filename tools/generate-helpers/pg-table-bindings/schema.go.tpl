@@ -23,9 +23,9 @@ import (
     Table: `
                create table if not exists {{$schema.Table}} (
                {{- range $idx, $field := $schema.DBColumnFields }}
-                   {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}},
+                   {{$field.ColumnName}} {{$field.SQLType}}{{if $field.Options.Unique}} UNIQUE{{end}}{{ if $schema.PrimaryKeys }},{{end}}
                {{- end}}
-                   PRIMARY KEY({{template "commmaSeparatedColumnNamesFromField" $schema.PrimaryKeys }})
+                   {{ if $schema.PrimaryKeys }}PRIMARY KEY({{template "commmaSeparatedColumnNamesFromField" $schema.PrimaryKeys }}){{end}}
                {{- range $idx, $rel := $schema.RelationshipsToDefineAsForeignKeys -}},
                    CONSTRAINT fk_parent_table_{{$idx}} FOREIGN KEY ({{template "commaSeparatedColumnsInThisTable" $rel.MappedColumnNames}}) REFERENCES {{$rel.OtherSchema.Table}}({{template "commaSeparatedColumnsInOtherTable" $rel.MappedColumnNames}}) ON DELETE CASCADE
                {{- end}}

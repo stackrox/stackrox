@@ -50,7 +50,8 @@ func (s *NetworkflowStoreSuite) TestStore() {
 
 	Destroy(ctx, pool)
 	gormDB := pgtest.OpenGormDB(s.T(), source)
-	store := NewTestStore(ctx, pool, gormDB, clusterID)
+	defer pgtest.CloseGormDB(s.T(), gormDB)
+	store := CreateTableAndNewStore(ctx, pool, gormDB, clusterID)
 
 	networkFlow := &storage.NetworkFlow{
 		Props: &storage.NetworkFlowProperties{

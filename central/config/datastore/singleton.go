@@ -3,7 +3,7 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/config/store"
+	"github.com/stackrox/rox/central/config/store/bolt"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -50,7 +50,7 @@ var (
 )
 
 func initialize() {
-	d = New(store.New(globaldb.GetGlobalDB()))
+	d = New(bolt.New(globaldb.GetGlobalDB()))
 
 	ctx := sac.WithGlobalAccessScopeChecker(
 		context.Background(),

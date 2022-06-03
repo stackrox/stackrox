@@ -68,7 +68,8 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
 	clusterPostgres.Destroy(s.ctx, s.db)
 
 	gormDB := pgtest.OpenGormDB(s.T(), source)
-	ds, err := namespace.New(nsPostgres.NewTestStore(s.ctx, s.db, gormDB), nil, nsPostgres.NewIndexer(s.db), nil, ranking.NamespaceRanker(), nil)
+	defer pgtest.CloseGormDB(s.T(), gormDB)
+	ds, err := namespace.New(nsPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), nil, nsPostgres.NewIndexer(s.db), nil, ranking.NamespaceRanker(), nil)
 	s.NoError(err)
 	s.nsDatastore = ds
 
@@ -79,7 +80,7 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupSuite() {
 
 	s.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	s.netEntities.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
-	clusterDS, err := New(clusterPostgres.NewTestStore(s.ctx, s.db, gormDB), clusterHealthPostgres.NewTestStore(s.ctx, s.db, gormDB), clusterPostgres.NewIndexer(s.db), nil, ds, nil, s.nodeDataStore, nil, nil, s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), nil)
+	clusterDS, err := New(clusterPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), clusterHealthPostgres.CreateTableAndNewStore(s.ctx, s.db, gormDB), clusterPostgres.NewIndexer(s.db), nil, ds, nil, s.nodeDataStore, nil, nil, s.netFlows, s.netEntities, nil, nil, nil, nil, nil, nil, ranking.ClusterRanker(), nil)
 	s.NoError(err)
 	s.clusterDatastore = clusterDS
 }

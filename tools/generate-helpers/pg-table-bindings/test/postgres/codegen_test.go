@@ -32,7 +32,8 @@ func TestStore(t *testing.T) {
 	Destroy(ctx, pool)
 
 	gormDB := pgtest.OpenGormDB(t, source)
-	store := NewTestStore(ctx, pool, gormDB)
+	defer pgtest.CloseGormDB(t, gormDB)
+	store := CreateTableAndNewStore(ctx, pool, gormDB)
 
 	testStruct := singleKey.Clone()
 	dep, exists, err := store.Get(ctx, testStruct.GetKey())

@@ -652,8 +652,8 @@ func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableNetworkflow(ctx, db)
 }
 
-// NewTestStore returns a new Store instance for testing
-func NewTestStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, clusterID string) FlowStore {
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, clusterID string) FlowStore {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db, clusterID)
 }

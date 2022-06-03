@@ -10,8 +10,8 @@ package storage;
 
 // Next Tag: 21
 message ImageIntegration {
-    string id                                    = 1;
-    string name                                  = 2;
+    string id                                    = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string name                                  = 2 [(gogoproto.moretags) = 'sql:"unique"'];
     string type                                  = 3;
     // Accidentally skipped or accidentally deleted?
     reserved 4;

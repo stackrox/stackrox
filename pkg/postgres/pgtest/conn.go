@@ -31,8 +31,14 @@ func OpenGormDB(t *testing.T, source string) *gorm.DB {
 	return gormDB
 }
 
-// CloseGormDB opens a Gorm DB to the Postgres DB
-func CloseGormDB(t *testing.T, gormDB *gorm.DB) {
-	db, err := gormDB.DB()
-	errdb.Close()
+// CloseGormDB closes connection to a Gorm DB
+func CloseGormDB(t *testing.T, db *gorm.DB) {
+	if db == nil {
+		return
+	}
+	genericDB, err := db.DB()
+	require.NoError(t, err)
+	if err == nil {
+		_ = genericDB.Close()
+	}
 }

@@ -5,12 +5,14 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/imageintegration/store"
+	boltStore "github.com/stackrox/rox/central/imageintegration/store/bolt"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
@@ -61,7 +63,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 	}
 
 	suite.db = db
-	suite.store = store.New(db)
+	suite.store = boltStore.New(db)
 	suite.datastore = New(suite.store)
 }
 
@@ -78,13 +80,9 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrations() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
-	// Remove the default integrations
-	for _, i := range store.DefaultImageIntegrations {
-		suite.NoError(suite.datastore.RemoveImageIntegration(suite.hasWriteCtx, i.GetId()))
-	}
-
 	integrations := []*storage.ImageIntegration{
 		{
+			Id:   uuid.NewV4().String(),
 			Name: "registry1",
 			IntegrationConfig: &storage.ImageIntegration_Docker{
 				Docker: &storage.DockerConfig{
@@ -93,6 +91,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
 			},
 		},
 		{
+			Id:   uuid.NewV4().String(),
 			Name: "registry2",
 			IntegrationConfig: &storage.ImageIntegration_Docker{
 				Docker: &storage.DockerConfig{
@@ -120,6 +119,7 @@ func testIntegrations(t *testing.T, insertStorage store.Store, retrievalStorage 
 		sac.ResourceScopeKeys(resources.ImageIntegration)))
 	integrations := []*storage.ImageIntegration{
 		{
+			Id:   uuid.NewV4().String(),
 			Name: "registry1",
 			IntegrationConfig: &storage.ImageIntegration_Docker{
 				Docker: &storage.DockerConfig{
@@ -128,6 +128,7 @@ func testIntegrations(t *testing.T, insertStorage store.Store, retrievalStorage 
 			},
 		},
 		{
+			Id:   uuid.NewV4().String(),
 			Name: "registry2",
 			IntegrationConfig: &storage.ImageIntegration_Docker{
 				Docker: &storage.DockerConfig{
@@ -139,9 +140,8 @@ func testIntegrations(t *testing.T, insertStorage store.Store, retrievalStorage 
 
 	// Test Add
 	for _, r := range integrations {
-		id, err := insertStorage.AddImageIntegration(r)
+		err := insertStorage.Upsert(ctx, r)
 		assert.NoError(t, err)
-		assert.NotEmpty(t, id)
 	}
 	for _, r := range integrations {
 		got, exists, err := retrievalStorage.GetImageIntegration(ctx, r.GetId())
@@ -156,7 +156,7 @@ func testIntegrations(t *testing.T, insertStorage store.Store, retrievalStorage 
 	}
 
 	for _, r := range integrations {
-		assert.NoError(t, insertStorage.UpdateImageIntegration(r))
+		assert.NoError(t, insertStorage.Upsert(ctx, r))
 	}
 
 	for _, r := range integrations {
@@ -168,7 +168,7 @@ func testIntegrations(t *testing.T, insertStorage store.Store, retrievalStorage 
 
 	// Test Remove
 	for _, r := range integrations {
-		assert.NoError(t, insertStorage.RemoveImageIntegration(r.GetId()))
+		assert.NoError(t, insertStorage.Delete(ctx, r.GetId()))
 	}
 
 	for _, r := range integrations {
@@ -180,6 +180,7 @@ func testIntegrations(t *testing.T, insertStorage store.Store, retrievalStorage 
 
 func getIntegration(name string) *storage.ImageIntegration {
 	return &storage.ImageIntegration{
+		Id:   uuid.NewV4().String(),
 		Name: name,
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
@@ -191,9 +192,8 @@ func getIntegration(name string) *storage.ImageIntegration {
 
 func (suite *ImageIntegrationDataStoreTestSuite) storeIntegration(name string) *storage.ImageIntegration {
 	integration := getIntegration(name)
-	id, err := suite.store.AddImageIntegration(integration)
+	err := suite.store.Upsert(suite.hasReadCtx, integration)
 	suite.NoError(err)
-	suite.NotEmpty(id)
 	return integration
 }
 

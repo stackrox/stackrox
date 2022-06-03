@@ -653,8 +653,8 @@ func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableRoleBindings(ctx, db)
 }
 
-// NewTestStore returns a new Store instance for testing
-func NewTestStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }

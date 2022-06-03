@@ -134,33 +134,6 @@ const TopRiskyEntitiesByVulnerabilities = ({
         ${VULN_FRAGMENT}
     `;
 
-    const CLUSTER_QUERY = gql`
-        query topRiskyClusters(
-            $query: String
-            $vulnQuery: String
-            $entityPagination: Pagination
-            $vulnPagination: Pagination
-        ) {
-            results: clusters(query: $query, pagination: $entityPagination) {
-                id
-                name
-                priority
-                plottedVulns(query: $vulnQuery) {
-                    basicVulnCounter {
-                        all {
-                            total
-                            fixable
-                        }
-                    }
-                    vulns(pagination: $vulnPagination) {
-                        ...vulnFields
-                    }
-                }
-            }
-        }
-        ${VULN_FRAGMENT}
-    `;
-
     const NAMESPACE_QUERY = gql`
         query topRiskyNamespaces(
             $query: String
@@ -250,7 +223,6 @@ const TopRiskyEntitiesByVulnerabilities = ({
     const queryMap = {
         [entityTypes.DEPLOYMENT]: DEPLOYMENT_QUERY,
         [entityTypes.NAMESPACE]: NAMESPACE_QUERY,
-        [entityTypes.CLUSTER]: CLUSTER_QUERY,
         [entityTypes.COMPONENT]: COMPONENT_QUERY,
         [entityTypes.IMAGE]: IMAGE_QUERY,
         [entityTypes.NODE]: NODE_QUERY,
@@ -433,12 +405,7 @@ TopRiskyEntitiesByVulnerabilities.propTypes = {
 
 TopRiskyEntitiesByVulnerabilities.defaultProps = {
     entityContext: {},
-    riskEntityTypes: [
-        entityTypes.DEPLOYMENT,
-        entityTypes.NAMESPACE,
-        entityTypes.IMAGE,
-        entityTypes.CLUSTER,
-    ],
+    riskEntityTypes: [entityTypes.DEPLOYMENT, entityTypes.NAMESPACE, entityTypes.IMAGE],
     cveFilter: 'All',
     small: false,
 };

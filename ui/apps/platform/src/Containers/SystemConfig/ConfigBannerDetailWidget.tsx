@@ -37,7 +37,7 @@ const ConfigBannerDetailWidget = ({
         text = 'None',
     } = publicConfig?.[type] || {};
 
-    const title = `${capitalize(type)} Configuration`;
+    const title = `${capitalize(type)} configuration`;
 
     return (
         <Card data-testid={`${type}-config`}>
@@ -57,22 +57,22 @@ const ConfigBannerDetailWidget = ({
                     }}
                 >
                     <DescriptionListGroup>
-                        <DescriptionListTerm>Text (2000 character limit):</DescriptionListTerm>
+                        <DescriptionListTerm>Text (2000 character limit)</DescriptionListTerm>
                         <DescriptionListDescription>{text}</DescriptionListDescription>
                     </DescriptionListGroup>
                     <DescriptionListGroup>
-                        <DescriptionListTerm>Text Color:</DescriptionListTerm>
+                        <DescriptionListTerm>Text color</DescriptionListTerm>
                         <DescriptionListDescription>
                             <ColorPicker color={color} disabled />
                             {color || 'None'}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
                     <DescriptionListGroup>
-                        <DescriptionListTerm>Text Size:</DescriptionListTerm>
+                        <DescriptionListTerm>Text size</DescriptionListTerm>
                         <DescriptionListDescription>{capitalize(size)}</DescriptionListDescription>
                     </DescriptionListGroup>
                     <DescriptionListGroup>
-                        <DescriptionListTerm>Background Color:</DescriptionListTerm>
+                        <DescriptionListTerm>Background color</DescriptionListTerm>
                         <DescriptionListDescription>
                             <ColorPicker color={backgroundColor} disabled />
                             {backgroundColor || 'None'}
