@@ -21,8 +21,6 @@ var (
 )
 
 func restorePostgresDB(ctx common.RestoreFileContext, fileReader io.Reader, size int64) error {
-	log.Infof("SHREWS -- size == %d", size)
-
 	tmpDir, err := common.FindTmpPath(size, scratchPath)
 	if err != nil {
 		return err
