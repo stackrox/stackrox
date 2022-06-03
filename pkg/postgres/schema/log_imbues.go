@@ -32,7 +32,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.LogImbue)(nil)), "log_imbues")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableLogImbuesStmt)
 		return schema
 	}()
 )
