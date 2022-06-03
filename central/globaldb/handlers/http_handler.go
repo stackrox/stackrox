@@ -57,7 +57,6 @@ func deferredRestart(ctx context.Context) {
 func RestoreDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		log.Info("Starting DB restore ...")
-		
 		// This is the old v1 API.  No need to support that for Postgres
 		if features.PostgresDatastore.Enabled() {
 			logAndWriteErrorMsg(w, http.StatusInternalServerError, "api is deprecated and does not support Postgres.")
