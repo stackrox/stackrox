@@ -94,7 +94,7 @@ class QaE2eDBBackupRestoreTest(BaseTest):
 
 
 class UIE2eTest(BaseTest):
-    TEST_TIMEOUT = 60 * 60
+    TEST_TIMEOUT = 90 * 60
     TEST_OUTPUT_DIR = "ui/test-results/artifacts"
 
     def run(self):
