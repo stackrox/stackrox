@@ -17,7 +17,7 @@ func WriteLogs(w io.Writer, logs []*storage.LogImbue) error {
 		return err
 	}
 	for _, alog := range logs {
-		err = jsonWriter.WriteObject(alog)
+		err = jsonWriter.WriteObject(string(alog.Log))
 		if err != nil {
 			return err
 		}
