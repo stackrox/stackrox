@@ -84,6 +84,26 @@ func (s *imageFlavorTestSuite) TestGetImageFlavorFromEnv() {
 	}
 }
 
+func (s *imageFlavorTestSuite) TestOpenSourceImageFlavorDevReleaseTags() {
+	f := OpenSourceImageFlavor()
+	s.Equal(f.MainImageTag, f.CentralDBImageTag)
+	if buildinfo.ReleaseBuild {
+		s.Equal(f.MainImageTag, f.CollectorImageTag)
+		s.Equal(f.MainImageTag, f.CollectorSlimImageTag)
+		s.Equal(f.MainImageTag, f.ScannerImageTag)
+
+		s.Contains(f.CollectorSlimImageName, "-slim")
+	} else {
+		s.NotEqual(f.MainImageTag, f.CollectorImageTag)
+		s.NotEqual(f.MainImageTag, f.CollectorSlimImageTag)
+		s.NotEqual(f.MainImageTag, f.ScannerImageTag)
+
+		s.Contains(f.CollectorImageTag, "-latest")
+		s.NotContains(f.CollectorSlimImageName, "-slim")
+		s.Contains(f.CollectorSlimImageTag, "-slim")
+	}
+}
+
 func (s *imageFlavorTestSuite) TestGetImageFlavorByName() {
 	testCases := map[string]struct {
 		expectedFlavor          ImageFlavor
