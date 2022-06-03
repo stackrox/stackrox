@@ -152,6 +152,7 @@ func renameRestoreDB(connectPool *pgxpool.Pool, updatedDB, primaryDB string) err
 	return err
 }
 
+// SwitchToRestoredDB - switches the restore DB to be the active DB
 func SwitchToRestoredDB() error {
 	log.Info("Switching to restored database")
 	sourceMap, config, err := globaldb.GetPostgresConfig()
@@ -208,6 +209,7 @@ func adminPool(config *pgxpool.Config) *pgxpool.Pool {
 	return postgresDB
 }
 
+// CheckIfRestoreDBExists - checks to see if a restore database exists
 func CheckIfRestoreDBExists() bool {
 	log.Info("CheckIfRestoreDBExists")
 	_, config, err := globaldb.GetPostgresConfig()
@@ -218,7 +220,7 @@ func CheckIfRestoreDBExists() bool {
 	// connect on template1
 	connectPool := adminPool(config)
 
-	existsStmt := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_database WHERE datname = $1)")
+	existsStmt := "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_database WHERE datname = $1)"
 
 	row := connectPool.QueryRow(context.Background(), existsStmt, restoreDB)
 	var exists bool

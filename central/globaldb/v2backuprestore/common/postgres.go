@@ -13,6 +13,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// ExecutePostgresCmd -- executes a command
 func ExecutePostgresCmd(cmd *exec.Cmd) error {
 	log.Info(cmd)
 
@@ -33,6 +34,7 @@ func ExecutePostgresCmd(cmd *exec.Cmd) error {
 	return nil
 }
 
+// SetPostgresCmdEnv - sets command environment for postgres commands
 func SetPostgresCmdEnv(cmd *exec.Cmd, sourceMap map[string]string, config *pgxpool.Config) {
 	cmd.Env = os.Environ()
 
