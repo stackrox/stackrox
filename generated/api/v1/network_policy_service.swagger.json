@@ -40,6 +40,12 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "namespaceId",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
