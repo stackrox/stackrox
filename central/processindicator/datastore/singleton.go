@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"context"
 	"time"
 
 	"github.com/pkg/errors"
@@ -36,7 +35,7 @@ func initialize() {
 	var storage store.Store
 	var indexer index.Indexer
 	if features.PostgresDatastore.Enabled() {
-		storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+		storage = postgres.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 	} else {
 		storage = rocksdb.New(globaldb.GetRocksDB())

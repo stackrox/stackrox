@@ -32,7 +32,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NetworkBaseline)(nil)), "network_baselines")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableNetworkBaselinesStmt)
 		return schema
 	}()
 )

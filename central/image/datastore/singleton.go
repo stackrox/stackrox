@@ -1,8 +1,6 @@
 package datastore
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
@@ -21,7 +19,7 @@ var (
 
 func initialize() {
 	if features.PostgresDatastore.Enabled() {
-		storage := postgres.New(context.TODO(), globaldb.GetPostgres(), false)
+		storage := postgres.New(globaldb.GetPostgres(), false)
 		indexer := postgres.NewIndexer(globaldb.GetPostgres())
 		ad = NewWithPostgres(storage, indexer, riskDS.Singleton(), ranking.ImageRanker(), ranking.ComponentRanker())
 		return

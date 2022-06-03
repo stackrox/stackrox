@@ -114,6 +114,18 @@ rpm_suffix="el8.x86_64.rpm"
 
 curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-3.${rpm_suffix}"
 
+# Install Postgres Client so central can initiate backups/restores
+# Get postgres RPMs directly
+postgres_major="14"
+pg_rhel_version="8.5"
+postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_version}-x86_64"
+postgres_minor="14.2-1PGDG.rhel8.x86_64"
+
+curl -sS --fail -o "${bundle_root}/postgres.rpm" \
+    "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
+curl -sS --fail -o "${bundle_root}/postgres-libs.rpm" \
+    "${postgres_url}/postgresql${postgres_major}-libs-${postgres_minor}.rpm"
+
 # =============================================================================
 
 # Files should have owner/group equal to root:root

@@ -6,4 +6,5 @@ type CreateStmts struct {
 	Indexes   []string
 	GormModel interface{}
 	Children  []*CreateStmts
+	PostStmts []string
 }

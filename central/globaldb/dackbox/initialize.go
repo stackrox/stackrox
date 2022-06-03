@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 type bucketRef struct {
@@ -72,28 +73,10 @@ var (
 			wrapper:  imagecomponentIndex.Wrapper{},
 		},
 		{
-			bucket:   imagecomponentEdgeDackBox.Bucket,
-			reader:   imagecomponentEdgeDackBox.Reader,
-			category: v1.SearchCategory_IMAGE_COMPONENT_EDGE,
-			wrapper:  imagecomponentEdgeIndex.Wrapper{},
-		},
-		{
-			bucket:   imageDackBox.Bucket,
-			reader:   imageDackBox.Reader,
-			category: v1.SearchCategory_IMAGES,
-			wrapper:  imageIndex.Wrapper{},
-		},
-		{
 			bucket:   activeComponentDackBox.Bucket,
 			reader:   activeComponentDackBox.Reader,
 			category: v1.SearchCategory_ACTIVE_COMPONENT,
 			wrapper:  activeComponentIndex.Wrapper{},
-		},
-		{
-			bucket:   deploymentDackBox.Bucket,
-			reader:   deploymentDackBox.Reader,
-			category: v1.SearchCategory_DEPLOYMENTS,
-			wrapper:  deploymentIndex.Wrapper{},
 		},
 		{
 			bucket:   nodeComponentEdgeDackBox.Bucket,
@@ -107,14 +90,40 @@ var (
 			category: v1.SearchCategory_NODES,
 			wrapper:  nodeIndex.Wrapper{},
 		},
-		{
-			bucket:   imageCVEEdgeDackbox.Bucket,
-			reader:   imageCVEEdgeDackbox.Reader,
-			category: v1.SearchCategory_IMAGE_VULN_EDGE,
-			wrapper:  imageCVEEdgeIndex.Wrapper{},
-		},
 	}
 )
+
+func init() {
+	if !features.PostgresDatastore.Enabled() {
+		migratedBuckets := []bucketRef{
+			{
+				bucket:   imagecomponentEdgeDackBox.Bucket,
+				reader:   imagecomponentEdgeDackBox.Reader,
+				category: v1.SearchCategory_IMAGE_COMPONENT_EDGE,
+				wrapper:  imagecomponentEdgeIndex.Wrapper{},
+			},
+			{
+				bucket:   imageDackBox.Bucket,
+				reader:   imageDackBox.Reader,
+				category: v1.SearchCategory_IMAGES,
+				wrapper:  imageIndex.Wrapper{},
+			},
+			{
+				bucket:   deploymentDackBox.Bucket,
+				reader:   deploymentDackBox.Reader,
+				category: v1.SearchCategory_DEPLOYMENTS,
+				wrapper:  deploymentIndex.Wrapper{},
+			},
+			{
+				bucket:   imageCVEEdgeDackbox.Bucket,
+				reader:   imageCVEEdgeDackbox.Reader,
+				category: v1.SearchCategory_IMAGE_VULN_EDGE,
+				wrapper:  imageCVEEdgeIndex.Wrapper{},
+			},
+		}
+		initializedBuckets = append(initializedBuckets, migratedBuckets...)
+	}
+}
 
 // Init runs all registered initialization functions.
 func Init(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, registry indexer.WrapperRegistry, reindexBucket, dirtyBucket, reindexValue []byte) error {

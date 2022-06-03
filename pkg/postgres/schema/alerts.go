@@ -72,7 +72,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Alert)(nil)), "alerts")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ALERTS, "alert", (*storage.ListAlert)(nil)))
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableAlertsStmt)
 		return schema
 	}()
 )

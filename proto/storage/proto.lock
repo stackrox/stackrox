@@ -373,46 +373,22 @@
                   {
                     "id": 5,
                     "name": "namespace",
-                    "type": "string",
-                    "options": [
-                      {
-                        "name": "(gogoproto.moretags)",
-                        "value": "search:\"Namespace\""
-                      }
-                    ]
+                    "type": "string"
                   },
                   {
                     "id": 16,
                     "name": "namespace_id",
-                    "type": "string",
-                    "options": [
-                      {
-                        "name": "(gogoproto.moretags)",
-                        "value": "search:\"Namespace ID,hidden\""
-                      }
-                    ]
+                    "type": "string"
                   },
                   {
                     "id": 9,
                     "name": "cluster_id",
-                    "type": "string",
-                    "options": [
-                      {
-                        "name": "(gogoproto.moretags)",
-                        "value": "search:\"Cluster ID,hidden\""
-                      }
-                    ]
+                    "type": "string"
                   },
                   {
                     "id": 10,
                     "name": "cluster_name",
-                    "type": "string",
-                    "options": [
-                      {
-                        "name": "(gogoproto.moretags)",
-                        "value": "search:\"Cluster,hidden\""
-                      }
-                    ]
+                    "type": "string"
                   },
                   {
                     "id": 11,
@@ -1181,6 +1157,12 @@
                 "id": 10,
                 "name": "active",
                 "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "required_attributes",
+                "type": "RequiredAttribute",
+                "is_repeated": true
               }
             ],
             "maps": [
@@ -1191,6 +1173,23 @@
                   "name": "config",
                   "type": "string"
                 }
+              }
+            ],
+            "messages": [
+              {
+                "name": "RequiredAttribute",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "attribute_key",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "attribute_value",
+                    "type": "string"
+                  }
+                ]
               }
             ]
           }
@@ -1810,7 +1809,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"ignore_pk\""
+                    "value": "sql:\"-\""
                   }
                 ]
               },
@@ -2063,7 +2062,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk,fk(Cluster:id)\""
                   }
                 ]
               },
@@ -2935,7 +2934,13 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -2993,7 +2998,13 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -3059,7 +3070,13 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -3117,7 +3134,13 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -3173,7 +3196,13 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -3209,6 +3238,11 @@
                 }
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -5474,7 +5508,13 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -8417,11 +8457,27 @@
             "name": "NetworkGraphConfig",
             "fields": [
               {
+                "id": 2,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
+              },
+              {
                 "id": 1,
                 "name": "hide_default_external_srcs",
                 "type": "bool"
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -8477,7 +8533,13 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -8692,6 +8754,17 @@
             "name": "NetworkPolicyApplicationUndoRecord",
             "fields": [
               {
+                "id": 5,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
+              },
+              {
                 "id": 1,
                 "name": "user",
                 "type": "string"
@@ -8740,7 +8813,13 @@
               {
                 "id": 4,
                 "name": "undo_record",
-                "type": "NetworkPolicyApplicationUndoRecord"
+                "type": "NetworkPolicyApplicationUndoRecord",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"-\""
+                  }
+                ]
               }
             ]
           }
@@ -11719,21 +11798,6 @@
             ]
           },
           {
-            "name": "NodeCVEEdge",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "first_node_occurrence",
-                "type": "google.protobuf.Timestamp"
-              }
-            ]
-          },
-          {
             "name": "NodeComponentCVEEdge",
             "fields": [
               {
@@ -13291,6 +13355,17 @@
             "name": "ServiceIdentity",
             "fields": [
               {
+                "id": 4,
+                "name": "serial_str",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
+              },
+              {
                 "id": 1,
                 "name": "serial",
                 "type": "int64",
@@ -13300,11 +13375,6 @@
                     "value": "true"
                   }
                 ]
-              },
-              {
-                "id": 4,
-                "name": "serial_str",
-                "type": "string"
               },
               {
                 "id": 2,
@@ -13368,6 +13438,11 @@
                 "is_repeated": true
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -14291,7 +14366,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Test Grandparent ID\"sql:\"fk(TestGrandparent:id)\""
+                    "value": "sql:\"fk(TestGrandparent:id)\""
                   }
                 ]
               },
@@ -14324,7 +14399,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\"Test Child1 ID\"sql:\"fk(TestChild1:id),no-fk-constraint\""
+                        "value": "sql:\"fk(TestChild1:id),no-fk-constraint\""
                       }
                     ]
                   }
@@ -14380,7 +14455,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Test Child1 ID\"sql:\"fk(TestChild1:id)\""
+                    "value": "sql:\"fk(TestChild1:id)\""
                   }
                 ]
               },
@@ -14391,7 +14466,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Test GGrandchild1 ID\"sql:\"fk(TestGGrandChild1:id),no-fk-constraint\""
+                    "value": "sql:\"fk(TestGGrandChild1:id),no-fk-constraint\""
                   }
                 ]
               },
@@ -14456,7 +14531,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Test GGrandchild1 ID\"sql:\"fk(TestGGrandChild1:id)\""
+                    "value": "sql:\"fk(TestGGrandChild1:id)\""
                   }
                 ]
               },
@@ -14467,7 +14542,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Test G3Grandchild1 ID\"sql:\"fk(TestG3GrandChild1:id),no-fk-constraint\""
+                    "value": "sql:\"fk(TestG3GrandChild1:id),no-fk-constraint\""
                   }
                 ]
               },
@@ -14532,7 +14607,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Test Grandparent ID\"sql:\"fk(TestGrandparent:id)\""
+                    "value": "sql:\"fk(TestGrandparent:id)\""
                   }
                 ]
               },
@@ -14570,7 +14645,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Test Parent2 ID\"sql:\"fk(TestParent2:id)\""
+                    "value": "sql:\"fk(TestParent2:id)\""
                   }
                 ]
               },
@@ -14581,7 +14656,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Test Grandparent ID\"sql:\"fk(TestGrandparent:id),no-fk-constraint\""
+                    "value": "sql:\"fk(TestGrandparent:id),no-fk-constraint\""
                   }
                 ]
               },
@@ -14619,7 +14694,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Test Grandparent ID\"sql:\"fk(TestGrandparent:id)\""
+                    "value": "sql:\"fk(TestGrandparent:id)\""
                   }
                 ]
               },

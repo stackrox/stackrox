@@ -1,8 +1,6 @@
 package datastore
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/integrationhealth/store/postgres"
 	"github.com/stackrox/rox/central/integrationhealth/store/rocksdb"
@@ -18,7 +16,7 @@ var (
 
 func initialize() {
 	if features.PostgresDatastore.Enabled() {
-		ad = New(postgres.New(context.TODO(), globaldb.GetPostgres()))
+		ad = New(postgres.New(globaldb.GetPostgres()))
 	} else {
 		ad = New(rocksdb.New(globaldb.GetRocksDB()))
 	}

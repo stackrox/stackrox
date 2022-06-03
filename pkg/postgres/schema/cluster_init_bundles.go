@@ -32,7 +32,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.InitBundleMeta)(nil)), "cluster_init_bundles")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableClusterInitBundlesStmt)
 		return schema
 	}()
 )

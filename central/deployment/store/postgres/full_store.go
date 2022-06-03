@@ -12,7 +12,7 @@ import (
 // NewFullStore augments the generated store with ListDeployment functions
 func NewFullStore(ctx context.Context, db *pgxpool.Pool) store.Store {
 	return &fullStoreImpl{
-		Store: New(ctx, db),
+		Store: New(db),
 	}
 }
 

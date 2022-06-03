@@ -51,7 +51,7 @@ func initialize() {
 	// Create underlying store and datastore.
 	var storage store.Store
 	if features.PostgresDatastore.Enabled() {
-		storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+		storage = postgres.New(globaldb.GetPostgres())
 	} else {
 		storage = bolt.New(globaldb.GetGlobalDB())
 	}

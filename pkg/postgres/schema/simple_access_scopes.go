@@ -33,7 +33,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.SimpleAccessScope)(nil)), "simple_access_scopes")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableSimpleAccessScopesStmt)
 		return schema
 	}()
 )

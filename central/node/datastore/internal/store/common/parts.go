@@ -1,4 +1,4 @@
-package dackbox
+package common
 
 import (
 	"github.com/stackrox/rox/generated/storage"
@@ -11,23 +11,21 @@ var (
 
 // NodeParts represents the pieces of data in an node.
 type NodeParts struct {
-	node *storage.Node
+	Node *storage.Node
 
-	children []*ComponentParts
-	// nodeCVEEdges stores CVE ID to *storage.NodeCVEEdge object mappings
-	nodeCVEEdges map[string]*storage.NodeCVEEdge
+	Children []*ComponentParts
 }
 
 // ComponentParts represents the pieces of data in a component.
 type ComponentParts struct {
-	edge      *storage.NodeComponentEdge
-	component *storage.ImageComponent
+	Edge      *storage.NodeComponentEdge
+	Component *storage.ImageComponent
 
-	children []*CVEParts
+	Children []*CVEParts
 }
 
 // CVEParts represents the pieces of data in a CVE.
 type CVEParts struct {
-	edge *storage.ComponentCVEEdge
-	cve  *storage.CVE
+	Edge *storage.ComponentCVEEdge
+	CVE  *storage.CVE
 }

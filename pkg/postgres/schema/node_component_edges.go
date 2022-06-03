@@ -47,7 +47,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_COMPONENT_EDGE, "nodecomponentedge", (*storage.NodeComponentEdge)(nil)))
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableNodeComponentEdgesStmt)
 		return schema
 	}()
 )

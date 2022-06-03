@@ -64,7 +64,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory(62), "testparent1", (*storage.TestParent1)(nil)))
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableTestParent1Stmt)
 		return schema
 	}()
 )

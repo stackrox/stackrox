@@ -1,8 +1,6 @@
 package store
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/central/externalbackups/internal/store/bolt"
 	"github.com/stackrox/rox/central/externalbackups/internal/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
@@ -20,7 +18,7 @@ var (
 func Singleton() Store {
 	once.Do(func() {
 		if features.PostgresDatastore.Enabled() {
-			s = postgres.New(context.TODO(), globaldb.GetPostgres())
+			s = postgres.New(globaldb.GetPostgres())
 		} else {
 			s = bolt.New(globaldb.GetGlobalDB())
 		}

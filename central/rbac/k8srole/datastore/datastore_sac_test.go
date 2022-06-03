@@ -61,7 +61,9 @@ func (s *k8sRoleSACSuite) SetupSuite() {
 		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
 		s.Require().NoError(err)
 		pgStore.Destroy(ctx, s.pool)
-		s.storage = pgStore.New(ctx, s.pool)
+		gormDB := pgtest.OpenGormDB(s.T(), src)
+		defer pgtest.CloseGormDB(s.T(), gormDB)
+		s.storage = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
 		s.indexer = pgStore.NewIndexer(s.pool)
 		s.optionsMap = schema.K8sRolesSchema.OptionsMap
 	} else {

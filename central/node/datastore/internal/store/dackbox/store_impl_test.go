@@ -8,12 +8,9 @@ import (
 	cveStore "github.com/stackrox/rox/central/cve/store"
 	cveDackBoxStore "github.com/stackrox/rox/central/cve/store/dackbox"
 	"github.com/stackrox/rox/central/node/datastore/internal/store"
-	nodeCVEEdgeStore "github.com/stackrox/rox/central/nodecveedge/store"
-	nodeCVEEdgeDackBox "github.com/stackrox/rox/central/nodecveedge/store/dackbox"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -30,9 +27,8 @@ type NodeStoreTestSuite struct {
 	db    *rocksdb.RocksDB
 	dacky *dackbox.DackBox
 
-	store            store.Store
-	cveStorage       cveStore.Store
-	nodeCVEEdgeStore nodeCVEEdgeStore.Store
+	store      store.Store
+	cveStorage cveStore.Store
 }
 
 func (suite *NodeStoreTestSuite) SetupSuite() {
@@ -45,7 +41,6 @@ func (suite *NodeStoreTestSuite) SetupSuite() {
 	}
 	suite.store = New(suite.dacky, concurrency.NewKeyFence(), false)
 	suite.cveStorage = cveDackBoxStore.New(suite.dacky, concurrency.NewKeyFence())
-	suite.nodeCVEEdgeStore = nodeCVEEdgeDackBox.New(suite.dacky)
 }
 
 func (suite *NodeStoreTestSuite) TearDownSuite() {
@@ -126,7 +121,6 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 		for _, component := range d.GetScan().GetComponents() {
 			for _, vuln := range component.GetVulns() {
 				vuln.FirstSystemOccurrence = got.GetLastUpdated()
-				vuln.FirstNodeOccurrence = got.GetLastUpdated()
 				vuln.VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
 				vuln.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 			}
@@ -141,14 +135,6 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	vuln, _, err = suite.cveStorage.Get(ctx, "cve2")
 	suite.NoError(err)
 	suite.Equal(nodes[0].GetLastUpdated(), vuln.GetCreatedAt())
-
-	// Check that the Node CVE Edges were written with the correct timestamp.
-	nodeCVEEdge, _, err := suite.nodeCVEEdgeStore.Get(edges.EdgeID{ParentID: "id1", ChildID: "cve1"}.ToString())
-	suite.NoError(err)
-	suite.Equal(nodes[0].GetLastUpdated(), nodeCVEEdge.GetFirstNodeOccurrence())
-	nodeCVEEdge, _, err = suite.nodeCVEEdgeStore.Get(edges.EdgeID{ParentID: "id1", ChildID: "cve1"}.ToString())
-	suite.NoError(err)
-	suite.Equal(nodes[0].GetLastUpdated(), nodeCVEEdge.GetFirstNodeOccurrence())
 
 	// Test Update
 	for _, d := range nodes {
@@ -214,7 +200,6 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	suite.NoError(err)
 	suite.True(exists)
 	nodes[1].GetScan().GetComponents()[0].GetVulns()[0].FirstSystemOccurrence = nodes[0].GetScan().GetComponents()[1].GetVulns()[0].FirstSystemOccurrence
-	nodes[1].GetScan().GetComponents()[0].GetVulns()[0].FirstNodeOccurrence = got.GetLastUpdated()
 	nodes[1].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
 	nodes[1].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 	suite.Equal(nodes[1], got)
@@ -232,7 +217,6 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	suite.NoError(err)
 	suite.True(exists)
 	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].FirstSystemOccurrence = nodes[0].GetScan().GetComponents()[1].GetVulns()[0].FirstSystemOccurrence
-	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].FirstNodeOccurrence = nodes[0].GetScan().GetComponents()[1].GetVulns()[0].FirstNodeOccurrence
 	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
 	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 	suite.Equal(nodes[0], got)
@@ -250,11 +234,6 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 
 	// Check that the CVEs are removed.
 	count, err = suite.cveStorage.Count(ctx)
-	suite.NoError(err)
-	suite.Equal(0, count)
-
-	// Check that the Node CVE Edges are removed.
-	count, err = suite.nodeCVEEdgeStore.Count()
 	suite.NoError(err)
 	suite.Equal(0, count)
 }

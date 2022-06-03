@@ -1008,11 +1008,6 @@
           "format": "date-time",
           "description": "Time when the CVE was first seen in the image."
         },
-        "firstNodeOccurrence": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Time when the CVE was first seen in the node."
-        },
         "severity": {
           "$ref": "#/definitions/storageVulnerabilitySeverity"
         },

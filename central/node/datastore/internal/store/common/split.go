@@ -1,4 +1,4 @@
-package dackbox
+package common
 
 import (
 	"github.com/stackrox/rox/central/cve/converter"
@@ -10,30 +10,29 @@ import (
 // Split splits the input node into a set of parts.
 func Split(node *storage.Node, withComponents bool) *NodeParts {
 	parts := &NodeParts{
-		node: node.Clone(),
+		Node: node.Clone(),
 	}
 
 	if withComponents {
-		parts.children = splitComponents(parts)
+		parts.Children = splitComponents(parts)
 	}
-	parts.nodeCVEEdges = generateNodeToCVEEdges(parts)
 
 	// Clear components in the top level node.
-	if parts.node.GetScan() != nil {
-		parts.node.Scan.Components = nil
+	if parts.Node.GetScan() != nil {
+		parts.Node.Scan.Components = nil
 	}
 
 	return parts
 }
 
 func splitComponents(parts *NodeParts) []*ComponentParts {
-	components := parts.node.GetScan().GetComponents()
+	components := parts.Node.GetScan().GetComponents()
 	ret := make([]*ComponentParts, 0, len(components))
 	for _, component := range components {
 		cp := &ComponentParts{}
-		cp.component = generateNodeComponent(component)
-		cp.edge = generateNodeComponentEdge(parts.node, cp.component)
-		cp.children = splitCVEs(parts.node.GetScan().GetOperatingSystem(), cp, component)
+		cp.Component = generateNodeComponent(component)
+		cp.Edge = generateNodeComponentEdge(parts.Node, cp.Component)
+		cp.Children = splitCVEs(parts.Node.GetScan().GetOperatingSystem(), cp, component)
 
 		ret = append(ret, cp)
 	}
@@ -46,8 +45,8 @@ func splitCVEs(os string, component *ComponentParts, embedded *storage.EmbeddedN
 	ret := make([]*CVEParts, 0, len(cves))
 	for _, cve := range cves {
 		cp := &CVEParts{}
-		cp.cve = converter.EmbeddedCVEToProtoCVE(os, cve)
-		cp.edge = generateComponentCVEEdge(component.component, cp.cve, cve)
+		cp.CVE = converter.EmbeddedCVEToProtoCVE(os, cve)
+		cp.Edge = generateComponentCVEEdge(component.Component, cp.CVE, cve)
 
 		ret = append(ret, cp)
 	}
@@ -87,18 +86,4 @@ func generateNodeComponentEdge(node *storage.Node, converted *storage.ImageCompo
 	return &storage.NodeComponentEdge{
 		Id: edges.EdgeID{ParentID: node.GetId(), ChildID: converted.GetId()}.ToString(),
 	}
-}
-
-func generateNodeToCVEEdges(parts *NodeParts) map[string]*storage.NodeCVEEdge {
-	nodeCVEEdges := make(map[string]*storage.NodeCVEEdge)
-	for _, componentParts := range parts.children {
-		for _, cveParts := range componentParts.children {
-			if _, ok := nodeCVEEdges[cveParts.cve.GetId()]; !ok {
-				nodeCVEEdges[cveParts.cve.GetId()] = &storage.NodeCVEEdge{
-					Id: edges.EdgeID{ParentID: parts.node.GetId(), ChildID: cveParts.cve.GetId()}.ToString(),
-				}
-			}
-		}
-	}
-	return nodeCVEEdges
 }

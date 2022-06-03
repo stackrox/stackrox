@@ -48,7 +48,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Policy)(nil)), "policies")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_POLICIES, "policy", (*storage.Policy)(nil)))
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTablePoliciesStmt)
 		return schema
 	}()
 )

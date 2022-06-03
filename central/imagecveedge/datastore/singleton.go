@@ -1,8 +1,6 @@
 package datastore
 
 import (
-	"context"
-
 	clusterIndexer "github.com/stackrox/rox/central/cluster/index"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
@@ -34,7 +32,7 @@ func initialize() {
 	var searcher search.Searcher
 
 	if features.PostgresDatastore.Enabled() {
-		storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+		storage = postgres.New(globaldb.GetPostgres())
 		indexer = postgres.NewIndexer(globaldb.GetPostgres())
 		searcher = search.NewV2(storage, indexer)
 		ad = New(nil, storage, searcher)

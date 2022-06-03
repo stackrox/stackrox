@@ -34,6 +34,9 @@ case "$ci_job" in
     style-checks)
         make style
         ;;
+    policy-checks)
+        "$ROOT/scripts/ci/jobs/check-policy-files.sh"
+        ;;
     go-unit-tests-release)
         GOTAGS=release "$ROOT/scripts/ci/jobs/go-unit-tests.sh"
         ;;

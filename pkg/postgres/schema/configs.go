@@ -31,7 +31,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Config)(nil)), "configs")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableConfigsStmt)
 		return schema
 	}()
 )

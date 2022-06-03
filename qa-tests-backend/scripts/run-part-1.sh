@@ -157,20 +157,20 @@ run_tests_part_1() {
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
-    local base_ref
-    base_ref="$(get_base_ref)"
-
     if is_openshift_CI_rehearse_PR; then
         info "On an openshift rehearse PR, running BAT tests only..."
         make -C qa-tests-backend bat-test || touch FAIL
-    elif [[ "$base_ref" == "master" ]] || is_tagged; then
-        info "On master or tagged, running all QA tests..."
-        make -C qa-tests-backend test || touch FAIL
     elif pr_has_label ci-all-qa-tests; then
         info "ci-all-qa-tests label was specified, so running all QA tests..."
         make -C qa-tests-backend test || touch FAIL
+    elif is_in_PR_context; then
+        info "In a PR context without ci-all-qa-tests, running BAT tests only..."
+        make -C qa-tests-backend bat-test || touch FAIL
+    elif is_tagged; then
+        info "Tagged, running all QA tests..."
+        make -C qa-tests-backend test || touch FAIL
     else
-        info "On a PR branch without ci-all-qa-tests, running BAT tests only..."
+        info "An unexpected context. Defaulting to BAT tests only..."
         make -C qa-tests-backend bat-test || touch FAIL
     fi
 

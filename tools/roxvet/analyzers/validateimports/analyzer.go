@@ -185,9 +185,28 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	// will need to be protected by strict compatibility guarantees.
 	if validImportRoot == "migrator" {
 		allowedPackages = append(allowedPackages,
-			"pkg/auth", "pkg/env", "pkg/rocksdb", "pkg/process/id", "pkg/migrations", "pkg/testutils", "pkg/batcher",
-			"pkg/config", "pkg/features", "pkg/grpc/routes", "pkg/logging", "pkg/set", "pkg/version", "pkg/uuid",
-			"pkg/utils", "pkg/fileutils", "pkg/buildinfo", "pkg/fsutils", "pkg/sliceutils")
+			"pkg/auth",
+			"pkg/batcher",
+			"pkg/buildinfo",
+			"pkg/config",
+			"pkg/env",
+			"pkg/features",
+			"pkg/fileutils",
+			"pkg/fsutils",
+			"pkg/grpc/routes",
+			"pkg/logging",
+			"pkg/migrations",
+			"pkg/postgres/pgutils",
+			"pkg/postgres/schema",
+			"pkg/process/id",
+			"pkg/rocksdb",
+			"pkg/set",
+			"pkg/sliceutils",
+			"pkg/testutils",
+			"pkg/utils",
+			"pkg/uuid",
+			"pkg/version",
+		)
 	}
 
 	if validImportRoot == "tools" {

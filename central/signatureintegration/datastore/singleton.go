@@ -1,8 +1,6 @@
 package datastore
 
 import (
-	"context"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -24,7 +22,7 @@ func Singleton() DataStore {
 	once.Do(func() {
 		var storage store.SignatureIntegrationStore
 		if features.PostgresDatastore.Enabled() {
-			storage = postgres.New(context.TODO(), globaldb.GetPostgres())
+			storage = postgres.New(globaldb.GetPostgres())
 		} else {
 			var err error
 			storage, err = rocksdb.New(globaldb.GetRocksDB())

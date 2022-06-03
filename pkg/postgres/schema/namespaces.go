@@ -48,7 +48,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NAMESPACES, "namespacemetadata", (*storage.NamespaceMetadata)(nil)))
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableNamespacesStmt)
 		return schema
 	}()
 )

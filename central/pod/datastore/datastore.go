@@ -44,7 +44,7 @@ func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS
 
 // NewPostgresDB creates a pod datastore based on Postgres
 func NewPostgresDB(db *pgxpool.Pool, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
-	store := cache.NewCachedStore(postgres.New(context.TODO(), db))
+	store := cache.NewCachedStore(postgres.New(db))
 	indexer := postgres.NewIndexer(db)
 	searcher := search.New(store, indexer)
 	return newDatastoreImpl(context.TODO(), store, indexer, searcher, indicators, processFilter)

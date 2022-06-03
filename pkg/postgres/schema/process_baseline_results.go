@@ -32,7 +32,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ProcessBaselineResults)(nil)), "process_baseline_results")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableProcessBaselineResultsStmt)
 		return schema
 	}()
 )

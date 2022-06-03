@@ -64,7 +64,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PODS, "pod", (*storage.Pod)(nil)))
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTablePodsStmt)
 		return schema
 	}()
 )

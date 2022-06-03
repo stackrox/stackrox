@@ -192,7 +192,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployment", (*storage.Deployment)(nil)))
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableDeploymentsStmt)
 		return schema
 	}()
 )

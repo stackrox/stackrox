@@ -24,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -39,7 +38,7 @@ type SchemaTestSuite struct {
 	envIsolator *envisolator.EnvIsolator
 	connConfig  *pgx.ConnConfig
 	pool        *pgxpool.Pool
-	gorm        *gorm.DB
+	gormDB      *gorm.DB
 	ctx         context.Context
 }
 
@@ -68,8 +67,7 @@ func (s *SchemaTestSuite) SetupSuite() {
 	s.ctx = ctx
 	s.pool = pool
 	s.Require().NoError(err)
-	s.gorm, err = gorm.Open(postgres.Open(source), &gorm.Config{})
-	s.Require().NoError(err)
+	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 }
 
 func (s *SchemaTestSuite) TearDownTest() {
@@ -89,288 +87,19 @@ func (s *SchemaTestSuite) TearDownSuite() {
 		return
 	}
 	s.pool.Close()
+	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
 
 func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
-	testCases := []struct {
+	type testCaseStruct struct {
 		name        string
 		createStmts *pkgPostgres.CreateStmts
-	}{
-		{
-			name:        AlertsTableName,
-			createStmts: CreateTableAlertsStmt,
-		},
-		{
-			name:        ApiTokensTableName,
-			createStmts: CreateTableApiTokensStmt,
-		},
-		{
-			name:        AuthProvidersTableName,
-			createStmts: CreateTableAuthProvidersStmt,
-		},
-		{
-			name:        ClustersTableName,
-			createStmts: CreateTableClustersStmt,
-		},
-		{
-			name:        ClusterCvesTableName,
-			createStmts: CreateTableClusterCvesStmt,
-		},
-		{
-			name:        ClusterHealthStatusesTableName,
-			createStmts: CreateTableClusterHealthStatusesStmt,
-		},
-		{
-			name:        ClusterInitBundlesTableName,
-			createStmts: CreateTableClusterInitBundlesStmt,
-		},
-		{
-			name:        ComplianceOperatorCheckResultsTableName,
-			createStmts: CreateTableComplianceOperatorCheckResultsStmt,
-		},
-		{
-			name:        ComplianceOperatorProfilesTableName,
-			createStmts: CreateTableComplianceOperatorProfilesStmt,
-		},
-		{
-			name:        ComplianceOperatorRulesTableName,
-			createStmts: CreateTableComplianceOperatorRulesStmt,
-		},
-		{
-			name:        ComplianceOperatorScansTableName,
-			createStmts: CreateTableComplianceOperatorScansStmt,
-		},
-		{
-			name:        ComplianceOperatorScanSettingBindingsTableName,
-			createStmts: CreateTableComplianceOperatorScanSettingBindingsStmt,
-		},
-		{
-			name:        ConfigsTableName,
-			createStmts: CreateTableConfigsStmt,
-		},
-		{
-			name:        DeploymentsTableName,
-			createStmts: CreateTableDeploymentsStmt,
-		},
-		{
-			name:        ExternalBackupsTableName,
-			createStmts: CreateTableExternalBackupsStmt,
-		},
-		{
-			name:        ImagesTableName,
-			createStmts: CreateTableImagesStmt,
-		},
-		{
-			name:        ImageComponentsTableName,
-			createStmts: CreateTableImageComponentsStmt,
-		},
-		{
-			name:        ImageComponentCveEdgesTableName,
-			createStmts: CreateTableImageComponentCveEdgesStmt,
-		},
-		{
-			name:        ImageComponentEdgesTableName,
-			createStmts: CreateTableImageComponentEdgesStmt,
-		},
-		{
-			name:        ImageCveEdgesTableName,
-			createStmts: CreateTableImageCveEdgesStmt,
-		},
-		{
-			name:        ImageCvesTableName,
-			createStmts: CreateTableImageCvesStmt,
-		},
-		{
-			name:        IntegrationHealthsTableName,
-			createStmts: CreateTableIntegrationHealthsStmt,
-		},
-		{
-			name:        ImageIntegrationsTableName,
-			createStmts: CreateTableImageIntegrationsStmt,
-		},
-		{
-			name:        InstallationInfosTableName,
-			createStmts: CreateTableInstallationInfosStmt,
-		},
-		{
-			name:        K8sRolesTableName,
-			createStmts: CreateTableK8sRolesStmt,
-		},
-		{
-			name:        TestMultiKeyStructsTableName,
-			createStmts: CreateTableTestMultiKeyStructsStmt,
-		},
-		{
-			name:        NamespacesTableName,
-			createStmts: CreateTableNamespacesStmt,
-		},
-		{
-			name:        NetworkBaselinesTableName,
-			createStmts: CreateTableNetworkBaselinesStmt,
-		},
-		{
-			name:        NetworkEntitiesTableName,
-			createStmts: CreateTableNetworkEntitiesStmt,
-		},
-		{
-			name:        NetworkGraphConfigsTableName,
-			createStmts: CreateTableNetworkGraphConfigsStmt,
-		},
-		{
-			name:        NetworkpoliciesTableName,
-			createStmts: CreateTableNetworkpoliciesStmt,
-		},
-		{
-			name:        NetworkpolicyapplicationundorecordsTableName,
-			createStmts: CreateTableNetworkpolicyapplicationundorecordsStmt,
-		},
-		{
-			name:        NetworkpoliciesundodeploymentsTableName,
-			createStmts: CreateTableNetworkpoliciesundodeploymentsStmt,
-		},
-		{
-			name:        NodeComponentsTableName,
-			createStmts: CreateTableNodeComponentsStmt,
-		},
-		{
-			name:        NodeComponentCveEdgesTableName,
-			createStmts: CreateTableNodeComponentCveEdgesStmt,
-		},
-		{
-			name:        NodeCvesTableName,
-			createStmts: CreateTableNodeCvesStmt,
-		},
-		{
-			name:        NodesTableName,
-			createStmts: CreateTableNodesStmt,
-		},
-		{
-			name:        NodeComponentEdgesTableName,
-			createStmts: CreateTableNodeComponentEdgesStmt,
-		},
-		{
-			name:        NotifiersTableName,
-			createStmts: CreateTableNotifiersStmt,
-		},
-		{
-			name:        PermissionSetsTableName,
-			createStmts: CreateTablePermissionSetsStmt,
-		},
-		{
-			name:        PodsTableName,
-			createStmts: CreateTablePodsStmt,
-		},
-		{
-			name:        PoliciesTableName,
-			createStmts: CreateTablePoliciesStmt,
-		},
-		{
-			name:        ProcessBaselineResultsTableName,
-			createStmts: CreateTableProcessBaselineResultsStmt,
-		},
-		{
-			name:        ProcessBaselinesTableName,
-			createStmts: CreateTableProcessBaselinesStmt,
-		},
-		{
-			name:        ProcessIndicatorsTableName,
-			createStmts: CreateTableProcessIndicatorsStmt,
-		},
-		{
-			name:        ReportConfigurationsTableName,
-			createStmts: CreateTableReportConfigurationsStmt,
-		},
-		{
-			name:        RisksTableName,
-			createStmts: CreateTableRisksStmt,
-		},
-		{
-			name:        RoleBindingsTableName,
-			createStmts: CreateTableRoleBindingsStmt,
-		},
-		{
-			name:        RolesTableName,
-			createStmts: CreateTableRolesStmt,
-		},
-		{
-			name:        SecretsTableName,
-			createStmts: CreateTableSecretsStmt,
-		},
-		{
-			name:        SensorUpgradeConfigsTableName,
-			createStmts: CreateTableSensorUpgradeConfigsStmt,
-		},
-		{
-			name:        ServiceAccountsTableName,
-			createStmts: CreateTableServiceAccountsStmt,
-		},
-		{
-			name:        ServiceIdentitiesTableName,
-			createStmts: CreateTableServiceIdentitiesStmt,
-		},
-		{
-			name:        SignatureIntegrationsTableName,
-			createStmts: CreateTableSignatureIntegrationsStmt,
-		},
-		{
-			name:        SimpleAccessScopesTableName,
-			createStmts: CreateTableSimpleAccessScopesStmt,
-		},
-		{
-			name:        VulnerabilityRequestsTableName,
-			createStmts: CreateTableVulnerabilityRequestsStmt,
-		},
-		{
-			name:        WatchedImagesTableName,
-			createStmts: CreateTableWatchedImagesStmt,
-		},
-		{
-			name:        TestSingleKeyStructsTableName,
-			createStmts: CreateTableTestSingleKeyStructsStmt,
-		},
-
-		{
-			name:        TestChild1TableName,
-			createStmts: CreateTableTestChild1Stmt,
-		},
-		{
-			name:        TestGrandparentsTableName,
-			createStmts: CreateTableTestGrandparentsStmt,
-		},
-		{
-			name:        TestParent1TableName,
-			createStmts: CreateTableTestParent1Stmt,
-		},
-
-		{
-			name:        TestParent3TableName,
-			createStmts: CreateTableTestParent3Stmt,
-		},
-		{
-			name:        TestParent2TableName,
-			createStmts: CreateTableTestParent2Stmt,
-		},
-		{
-			name:        TestGrandChild1TableName,
-			createStmts: CreateTableTestGrandChild1Stmt,
-		},
-		{
-			name:        TestG2GrandChild1TableName,
-			createStmts: CreateTableTestG2GrandChild1Stmt,
-		},
-		{
-			name:        TestG3GrandChild1TableName,
-			createStmts: CreateTableTestG3GrandChild1Stmt,
-		},
-		{
-			name:        TestGGrandChild1TableName,
-			createStmts: CreateTableTestGGrandChild1Stmt,
-		},
-		{
-			name:        TestChild2TableName,
-			createStmts: CreateTableTestChild2Stmt,
-		},
 	}
+	var testCases []testCaseStruct
+	for _, rt := range getAllRegisteredTablesInOrder() {
+		testCases = append(testCases, testCaseStruct{rt.Schema.Table, rt.CreateStmt})
+	}
+
 	for _, testCase := range testCases {
 		s.T().Run(fmt.Sprintf("check if %q schemas are equal", testCase.name), func(t *testing.T) {
 			schema := GetSchemaForTable(testCase.name)
@@ -413,7 +142,7 @@ func (s *SchemaTestSuite) getAllTestCases() []string {
 }
 
 func (s *SchemaTestSuite) getGormTableSchemas(schema *walker.Schema, createStmt *pkgPostgres.CreateStmts) map[string]string {
-	pgutils.CreateTableFromModel(s.gorm, createStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.gormDB, createStmt)
 	defer s.dropTableFromModel(createStmt)
 	tables := s.tablesForSchema(schema)
 
@@ -441,13 +170,13 @@ func (s *SchemaTestSuite) dumpSchema(table string) string {
 }
 
 func (s *SchemaTestSuite) dropTableFromModel(createStmt *pkgPostgres.CreateStmts) {
-	err := s.gorm.Migrator().DropTable(createStmt.GormModel)
+	err := s.gormDB.Migrator().DropTable(createStmt.GormModel)
 	s.Require().NoError(err)
 
 	for _, child := range createStmt.Children {
 		s.dropTableFromModel(child)
 	}
-	s.Require().False(s.gorm.Migrator().HasTable(createStmt.GormModel))
+	s.Require().False(s.gormDB.Migrator().HasTable(createStmt.GormModel))
 }
 
 func (s *SchemaTestSuite) tablesForSchema(schema *walker.Schema) []string {

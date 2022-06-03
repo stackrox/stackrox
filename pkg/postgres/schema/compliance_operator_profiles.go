@@ -32,7 +32,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorProfile)(nil)), "compliance_operator_profiles")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableComplianceOperatorProfilesStmt)
 		return schema
 	}()
 )

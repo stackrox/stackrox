@@ -20,6 +20,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   Each deprecated permission will be removed in a future release.
 - /v1/telemetry and /v1/licenses endpoints, and related CLI functionality, are now deprecated and will be removed in 2 releases.
   - These endpoints are deprecated as license files are not required to run the platform
+- `firstNodeOccurrence` field of `storage.Node` object, which is in the response of Node endpoints, has been deprecated.
 
 ## [70.0]
 

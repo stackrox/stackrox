@@ -74,7 +74,6 @@ var bucketToProtoInterface = map[string]proto.Message{
 	"networkentity":                        (*storage.NetworkEntity)(nil),
 	"networkgraphconfig":                   (*storage.NetworkGraphConfig)(nil),
 	"node_to_comp":                         (*storage.NodeComponentEdge)(nil),
-	"node_to_cve":                          (*storage.NodeCVEEdge)(nil),
 	"nodes":                                (*storage.Node)(nil),
 	"permission_sets":                      (*storage.PermissionSet)(nil),
 	"pods":                                 (*storage.Pod)(nil),
@@ -98,6 +97,7 @@ var knownUnhandledBuckets = set.NewStringSet(
 	"dackbox_graph",
 	"dackbox_dirty",
 	"dackbox_reindex",
+	"node_to_cve",
 )
 
 var ignoreUnmarshallErrors = set.NewStringSet(

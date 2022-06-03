@@ -1,8 +1,13 @@
 import { selectors as vulnManagementSelectors } from '../constants/VulnManagementPage';
 
-export const hasExpectedHeaderColumns = (colNames) => {
-    colNames.forEach((col) => {
-        cy.get(`${vulnManagementSelectors.tableColumn}:contains('${col}')`);
+const idColumnOffset = 1;
+export const hasExpectedHeaderColumns = (colNames, additionalColumnsToSkip = 0) => {
+    colNames.forEach((col, idx) => {
+        cy.get(
+            `.rt-th.leading-normal:nth-child(${
+                idx + idColumnOffset + additionalColumnsToSkip + 1
+            }) > div:contains('${col}')`
+        );
     });
 };
 
