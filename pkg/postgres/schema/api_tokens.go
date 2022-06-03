@@ -32,7 +32,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TokenMetadata)(nil)), "api_tokens")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableApiTokensStmt)
 		return schema
 	}()
 )

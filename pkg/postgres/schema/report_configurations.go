@@ -37,7 +37,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ReportConfiguration)(nil)), "report_configurations")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_REPORT_CONFIGURATIONS, "reportconfiguration", (*storage.ReportConfiguration)(nil)))
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableReportConfigurationsStmt)
 		return schema
 	}()
 )

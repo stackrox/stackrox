@@ -32,7 +32,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.WatchedImage)(nil)), "watched_images")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableWatchedImagesStmt)
 		return schema
 	}()
 )

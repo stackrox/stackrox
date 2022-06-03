@@ -33,7 +33,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Notifier)(nil)), "notifiers")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableNotifiersStmt)
 		return schema
 	}()
 )

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 
@@ -9,13 +10,17 @@ import (
 	"github.com/stackrox/rox/migrator/compact"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/option"
+	"github.com/stackrox/rox/migrator/postgreshelper"
 	"github.com/stackrox/rox/migrator/replica"
 	"github.com/stackrox/rox/migrator/rockshelper"
 	"github.com/stackrox/rox/migrator/runner"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -98,12 +103,26 @@ func upgrade(conf *config.Config) error {
 			rocksdb.Close()
 		}
 	}()
+
+	var gormDB *gorm.DB
+	if features.PostgresDatastore.Enabled() {
+		gormDB, err = postgreshelper.Load(conf)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to connect to postgres DB with Gorm %v", err)
+		}
+	}
+
 	err = runner.Run(&types.Databases{
 		BoltDB:  boltDB,
 		RocksDB: rocksdb,
+		GormDB:  gormDB,
 	})
 	if err != nil {
 		return errors.Wrap(err, "migrations failed")
+	}
+
+	if features.PostgresDatastore.Enabled() {
+		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
 	}
 
 	return nil

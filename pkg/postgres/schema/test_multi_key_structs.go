@@ -73,7 +73,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestMultiKeyStruct)(nil)), "test_multi_key_structs")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "testmultikeystruct", (*storage.TestMultiKeyStruct)(nil)))
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableTestMultiKeyStructsStmt)
 		return schema
 	}()
 )

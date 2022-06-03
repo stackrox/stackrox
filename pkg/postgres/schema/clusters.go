@@ -37,7 +37,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Cluster)(nil)), "clusters")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTERS, "cluster", (*storage.Cluster)(nil)))
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableClustersStmt)
 		return schema
 	}()
 )

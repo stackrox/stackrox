@@ -33,7 +33,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.PermissionSet)(nil)), "permission_sets")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTablePermissionSetsStmt)
 		return schema
 	}()
 )

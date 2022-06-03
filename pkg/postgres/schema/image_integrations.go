@@ -33,7 +33,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ImageIntegration)(nil)), "image_integrations")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableImageIntegrationsStmt)
 		return schema
 	}()
 )
