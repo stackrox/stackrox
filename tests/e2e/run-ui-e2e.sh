@@ -37,9 +37,9 @@ run_ui_e2e_tests() {
     info "Running UI e2e tests"
 
     if [[ "${LOAD_BALANCER}" == "lb" ]]; then
-        local hostname
-        hostname=$("$ROOT/tests/e2e/get_hostname.py" "${API_HOSTNAME}")
-        export UI_BASE_URL="https://${hostname}:443"
+        echo "central-lb ${API_HOSTNAME}" > /tmp/hostaliases
+        export HOSTALIASES=/tmp/hostaliases
+        export UI_BASE_URL="https://central-lb:443"
     else
         export UI_BASE_URL="https://localhost:${LOCAL_PORT}"
     fi
