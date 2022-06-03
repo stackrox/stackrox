@@ -30,7 +30,7 @@ var (
 
 // dropDB - drops a database.  This is so we can restore to a new database then flip the name
 // of the restored database to the original for consistency
-func dropDB(sourceMap map[string]string, config *pgxpool.Config) error {
+func dropDB(sourceMap map[string]string, config *pgxpool.Config, databaseName string) error {
 	// Set the options for pg_dump from the connection config
 	options := []string{
 		"-U",
@@ -41,7 +41,7 @@ func dropDB(sourceMap map[string]string, config *pgxpool.Config) error {
 		strconv.FormatUint(uint64(config.ConnConfig.Port), 10),
 		"-f",
 		"--if-exists",
-		config.ConnConfig.Database,
+		databaseName,
 	}
 
 	cmd := exec.Command("dropdb", options...)
@@ -93,7 +93,6 @@ func runRestore(dumpPath string, sourceMap map[string]string, config *pgxpool.Co
 		"-d",
 		restoreDB,
 		"--no-owner",
-		//"-C",
 		"--clean",
 		"--if-exists",
 		"--exit-on-error",
@@ -109,6 +108,8 @@ func runRestore(dumpPath string, sourceMap map[string]string, config *pgxpool.Co
 	common.SetPostgresCmdEnv(cmd, sourceMap, config)
 	err := common.ExecutePostgresCmd(cmd)
 	if err != nil {
+		// Clean up the restore DB since the restore failed
+		_ = dropDB(sourceMap, config, restoreDB)
 		return err
 	}
 
@@ -134,7 +135,7 @@ func LoadRestore(dumpPath string) error {
 	// Execute the restore on the temporary restore database
 	err = runRestore(dumpPath, sourceMap, config)
 	if err != nil {
-		log.Errorf("Could load the Postgres backup: %v", err)
+		log.Errorf("Could not load the Postgres backup: %v", err)
 		return err
 	}
 
@@ -142,8 +143,9 @@ func LoadRestore(dumpPath string) error {
 	return nil
 }
 
-func renameRestoreDB(connectPool *pgxpool.Pool) error {
-	sqlStmt := fmt.Sprintf("ALTER DATABASE %s RENAME TO %s", restoreDB, "postgres")
+func renameRestoreDB(connectPool *pgxpool.Pool, updatedDB, primaryDB string) error {
+	log.Info("Flipping the restored DB to the active DB")
+	sqlStmt := fmt.Sprintf("ALTER DATABASE %s RENAME TO %s", updatedDB, primaryDB)
 
 	_, err := connectPool.Exec(context.TODO(), sqlStmt)
 	if err != nil {
@@ -166,19 +168,19 @@ func SwitchToRestoredDB() error {
 
 	// Restore succeeded to the separate DB, so we need to drop the original in order to rename
 	// the new one.
-	err = dropDB(sourceMap, config)
+	err = dropDB(sourceMap, config, config.ConnConfig.Database)
 	if err != nil {
-		log.Errorf("Could drop the DB: %v", err)
+		log.Errorf("Could not drop the DB: %v", err)
 		return err
 	}
 
 	// rename central_restore to postgres
-	err = renameRestoreDB(connectPool)
+	err = renameRestoreDB(connectPool, restoreDB, config.ConnConfig.Database)
 	if err != nil {
 		return err
 	}
 
-	// Close the connection pool on template1 to support changing name.
+	// Close the connection pool on template1
 	connectPool.Close()
 
 	return nil
@@ -224,6 +226,9 @@ func CheckIfRestoreDBExists() bool {
 	if err := row.Scan(&exists); err != nil {
 		return false
 	}
+
+	// Close the connection pool on template1
+	connectPool.Close()
 
 	log.Infof("Restore database exists => %t", exists)
 	return exists

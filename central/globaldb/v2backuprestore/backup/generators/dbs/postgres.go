@@ -90,5 +90,5 @@ func (bu *PostgresBackup) findScratchPath(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return findTmpPath(dbSize, dumpTmpPath)
+	return common.FindTmpPath(dbSize, dumpTmpPath)
 }

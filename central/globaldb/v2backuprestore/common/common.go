@@ -1,4 +1,4 @@
-package dbs
+package common
 
 import (
 	"os"
@@ -14,7 +14,7 @@ const (
 	marginOfSafety = 0.5
 )
 
-func findTmpPath(dbSize int64, tmpLocation string) (string, error) {
+func FindTmpPath(dbSize int64, tmpLocation string) (string, error) {
 	requiredBytes := float64(dbSize) * (1.0 + marginOfSafety)
 
 	// Check tmp for space to produce a backup.
