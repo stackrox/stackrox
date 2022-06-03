@@ -44,9 +44,12 @@ func init() {
 		}),
 		schema.AddExtraResolver("ImageScan", `components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!`),
 		schema.AddExtraResolver("ImageScan", `componentCount(query: String): Int!`),
-		schema.AddQuery("component(id: ID): EmbeddedImageScanComponent"),
-		schema.AddQuery("components(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedImageScanComponent!]!"),
-		schema.AddQuery("componentCount(query: String): Int!"),
+		schema.AddQuery("component(id: ID): EmbeddedImageScanComponent"+
+			"@deprecated(reason: \"use 'imageComponent' or 'nodeComponent'\")"),
+		schema.AddQuery("components(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedImageScanComponent!]!"+
+			"@deprecated(reason: \"use 'imageComponents' or 'nodeComponents'\")"),
+		schema.AddQuery("componentCount(query: String): Int!"+
+			"@deprecated(reason: \"use 'imageComponentCount' or 'nodeComponentCount'\")"),
 		schema.AddExtraResolver("EmbeddedImageScanComponent", `unusedVarSink(query: String): Int`),
 		schema.AddExtraResolver("EmbeddedImageScanComponent", "plottedVulns(query: String): PlottedVulnerabilities!"),
 	)
