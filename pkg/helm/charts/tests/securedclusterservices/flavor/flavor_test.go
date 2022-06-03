@@ -6,6 +6,7 @@ import (
 
 	helmTest "github.com/stackrox/helmtest/pkg/framework"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmChartTestUtils "github.com/stackrox/rox/pkg/helm/charts/testutils"
@@ -46,6 +47,14 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 			testutils.SetVersion(t, testutils.GetExampleVersionUnified(t))
 			return defaults.RHACSReleaseImageFlavor()
 		},
+	}
+	opensourceDir := "opensource-development"
+	if buildinfo.ReleaseBuild {
+		opensourceDir = "opensource-release"
+	}
+	imageFlavorCases[opensourceDir] = func() defaults.ImageFlavor {
+		testutils.SetVersion(t, testutils.GetExampleVersion(t))
+		return defaults.OpenSourceImageFlavor()
 	}
 
 	for name, f := range imageFlavorCases {
