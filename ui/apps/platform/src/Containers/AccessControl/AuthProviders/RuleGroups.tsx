@@ -69,12 +69,12 @@ function RuleGroups({
                                     <FormGroup
                                         label="Key"
                                         fieldId={`groups[${index}].props.key`}
-                                        helperTextInvalid={errors[index]?.props?.key || ''}
+                                        helperTextInvalid={errors[index]?.props?.key ?? ''}
                                         validated={errors[index]?.props?.key ? 'error' : 'default'}
                                     >
                                         <SelectSingle
                                             id={`groups[${index}].props.key`}
-                                            value={groups[`${index}`].props.key}
+                                            value={groups[`${index}`].props.key ?? ''}
                                             isDisabled={disabled}
                                             handleSelect={setFieldValue}
                                             direction="up"
