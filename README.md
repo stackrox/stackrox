@@ -39,31 +39,51 @@ For alternative ways, stop by our Community Hub [stackrox.io](https://www.stackr
 StackRox offers quick installation via Helm Charts, follow the [Helm Installation Guide](https://helm.sh/docs/intro/install/) for system specific instructions and requirements. 
 First, add the [stackrox/helm-charts/opensource](https://github.com/stackrox/helm-charts/tree/main/opensource) repository to Helm.
 ```sh
-helm repo add stackrox-oss https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
+helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
 ```
 To see all available Helm charts in the repo run (you may add the option `--devel` to show non-release builds as well)
 ```sh
-helm search repo stackrox-oss
+helm search repo stackrox
 ```
+In order to install stackrox-central-services you will need a secure password. This password will be needed later when creating an init bundle.
+```sh
+openssl rand -base64 20 | tr -d '/=+' > stackrox-admin-password.txt
+```
+
 From here you can install stackrox-central-services to get Central and Scanner components deployed on your cluster. Note that you need only one deployed instance of stackrox-central-services even if you plan to secure multiple clusters.
 ```sh
-helm install -n stackrox-oss --create-namespace stackrox-central-services stackrox-oss/stackrox-central-services --devel
+helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services --set central.adminPassword.value="$(cat stackrox-admin-password.txt)"
 ```
 To create a secured cluster, you first need to generate an init bundle containing initialization secrets. The init bundle will be saved in `stackrox-init-bundle.yaml`. Use it to provision secured clusters as shown below.
 ```sh
 kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
-    --password "$(kubectl -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}')" \
-    central init-bundles generate stackrox-init-bundle --output - > stackrox-init-bundle.yaml
+  --password "$(cat stackrox-admin-password.txt)" \
+  central init-bundles generate stackrox-init-bundle --output - > stackrox-init-bundle.yaml
 ```
 Then install stackrox-secured-cluster-services in the same cluster using this command with the init bundle you just generated:
 ```sh
-helm install -n stackrox-oss --create-namespace stackrox-secured-cluster-services stackrox-oss/secured-cluster-services \
-    -f stackrox-init-bundle.yaml \ 
-    --set clusterName=<name_of_the_secured_cluster> 
+helm install -n stackrox --create-namespace stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
+  -f stackrox-init-bundle.yaml \ 
+  --set clusterName=<name_of_the_secured_cluster> 
 ```
 Make sure to provide some name in `clusterName` argument meaningful to you. The cluster will be identified by this name in clusters list in StackRox UI.
 
 When deploying Secured Cluster Services on a different cluster, you will also need to specify the endpoint (address and port number) of Central via `--set centralEndpoint=<endpoint_of_central_service>` command-line argument.
+
+If you're deploying StackRox on a small node like local development cluster, run the following command to reduce StackRox resource requirements. Please don't run this command against a production cluster.
+```sh
+helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-services \
+  --set central.resources.requests.memory=1Gi \
+  --set central.resources.requests.cpu=1 \
+  --set central.resources.limits.memory=4Gi \
+  --set central.resources.limits.cpu=1 \
+  --set scanner.autoscaling.disable=true \
+  --set scanner.replicas=1 \
+  --set scanner.resources.requests.memory=500Mi \
+  --set scanner.resources.requests.cpu=500m \
+  --set scanner.resources.limits.memory=2500Mi \
+  --set scanner.resources.limits.cpu=2000m
+```
 
 To further customize your Helm installation consult these documents:
 * <https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html>
@@ -73,17 +93,16 @@ To further customize your Helm installation consult these documents:
 
 Follow these steps to get to StackRox UI
 
-1. Obtain admin password:
-   ```kubectl -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}'```
+1.Setup port forward to central:
+```
+kubectl -n stackrox port-forward deploy/central 8000:8443
+```
 
-2. Setup port forward to central:
-   ```kubectl -n stackrox port-forward deploy/central 8000:8443```
+2.Open <https://localhost:8000> in your browser.
 
-3. Open <https://localhost:8000> in your browser.
+3.Accept certificate warnings and proceed.
 
-4. Accept certificate warnings and proceed.
-
-5. Log in as `admin` using password printed by the command above.
+4.Log in as `admin` using the password in `stackrox-admin-password.txt`
 
 ## Manual Deployment
 
