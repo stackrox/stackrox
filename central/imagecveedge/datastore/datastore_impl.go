@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	sacFilters "github.com/stackrox/rox/central/imagecveedge/sac"
 	"github.com/stackrox/rox/central/imagecveedge/search"
 	"github.com/stackrox/rox/central/imagecveedge/store"
@@ -13,13 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
-	"github.com/stackrox/rox/pkg/search/postgres"
 )
-
-type imageCVEEdgePks struct {
-	imageID string
-	cveID   string
-}
 
 type datastoreImpl struct {
 	graphProvider graph.Provider
@@ -51,17 +44,7 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageCVEE
 		}
 	}
 
-	var pks imageCVEEdgePks
-	var err error
-	if features.PostgresDatastore.Enabled() {
-		pks, err = getPKs(id)
-		if err != nil {
-			return nil, false, err
-		}
-	}
-	// For dackbox, we do not need all the primary keys.
-
-	edge, found, err := ds.storage.Get(ctx, id, pks.imageID, pks.cveID)
+	edge, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -75,19 +58,4 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 		filteredIDs, err = filtered.ApplySACFilter(graphContext, ids, sacFilters.GetSACFilter())
 	})
 	return filteredIDs, err
-}
-
-func getPKs(id string) (imageCVEEdgePks, error) {
-	parts := postgres.IDToParts(id)
-	if len(parts) != 3 {
-		return imageCVEEdgePks{}, errors.Errorf("unexpected number of primary keys (%v) found for component-cve relation. Expected 3 parts", parts)
-	}
-
-	imageID := parts[0]
-	cve := parts[1]
-	cveOS := parts[2]
-	return imageCVEEdgePks{
-		imageID: imageID,
-		cveID:   postgres.IDFromPks([]string{cve, cveOS}),
-	}, nil
 }

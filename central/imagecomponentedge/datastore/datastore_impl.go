@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/imagecomponentedge/index"
 	sacFilters "github.com/stackrox/rox/central/imagecomponentedge/sac"
 	"github.com/stackrox/rox/central/imagecomponentedge/search"
@@ -14,13 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
-	"github.com/stackrox/rox/pkg/search/postgres"
 )
-
-type imageComponentEdgePks struct {
-	imageID string
-	compID  string
-}
 
 type datastoreImpl struct {
 	storage       store.Store
@@ -57,17 +50,7 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComp
 		}
 	}
 
-	var pks imageComponentEdgePks
-	var err error
-	if features.PostgresDatastore.Enabled() {
-		pks, err = getPKs(id)
-		if err != nil {
-			return nil, false, err
-		}
-	}
-	// For dackbox, we do not need all the primary keys.
-
-	edge, found, err := ds.storage.Get(ctx, id, pks.imageID, pks.compID)
+	edge, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -82,17 +65,7 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 		}
 	}
 
-	var pks imageComponentEdgePks
-	var err error
-	if features.PostgresDatastore.Enabled() {
-		pks, err = getPKs(id)
-		if err != nil {
-			return false, err
-		}
-	}
-	// For dackbox, we do not need all the primary keys.
-
-	found, err := ds.storage.Exists(ctx, id, pks.imageID, pks.compID)
+	found, err := ds.storage.Exists(ctx, id)
 	if err != nil || !found {
 		return false, err
 	}
@@ -122,20 +95,4 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 		filteredIDs, err = filtered.ApplySACFilter(graphContext, ids, sacFilters.GetSACFilter())
 	})
 	return filteredIDs, err
-}
-
-func getPKs(id string) (imageComponentEdgePks, error) {
-	parts := postgres.IDToParts(id)
-	if len(parts) != 4 {
-		return imageComponentEdgePks{}, errors.Errorf("unexpected number of primary keys (%v) found for image-component relation. Expected 4 parts", parts)
-	}
-
-	imageID := parts[0]
-	compName := parts[1]
-	compVersion := parts[2]
-	compOS := parts[3]
-	return imageComponentEdgePks{
-		imageID: imageID,
-		compID:  postgres.IDFromPks([]string{compName, compVersion, compOS}),
-	}, nil
 }
