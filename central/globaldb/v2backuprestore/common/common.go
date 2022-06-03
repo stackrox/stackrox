@@ -14,6 +14,7 @@ const (
 	marginOfSafety = 0.5
 )
 
+// FindTmpPath -- finds a temporary place to put a database dump
 func FindTmpPath(dbSize int64, tmpLocation string) (string, error) {
 	requiredBytes := float64(dbSize) * (1.0 + marginOfSafety)
 
