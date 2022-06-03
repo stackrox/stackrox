@@ -43,7 +43,7 @@
       "tty":true,
       "container":"sensor",
       "command":[
-        "/bin/sh"
+        "/bin/bash"
       ]
     },
     "oldObject":null,
