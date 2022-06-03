@@ -48,6 +48,10 @@ run_ui_e2e_tests() {
 
     store_test_results "ui/test-results/reports" "reports"
 
+    if is_OPENSHIFT_CI; then
+        cp -a ui/test-results/artifacts/* "${ARTIFACT_DIR}/" || true
+    fi
+
     [[ ! -f FAIL ]] || die "UI e2e tests failed"
 }
 

@@ -95,19 +95,13 @@ class QaE2eDBBackupRestoreTest(BaseTest):
 
 class UIE2eTest(BaseTest):
     TEST_TIMEOUT = 90 * 60
-    TEST_OUTPUT_DIR = "ui/test-results/artifacts"
 
     def run(self):
         print("Executing UI e2e test")
-
-        def set_dirs_after_start():
-            # let post test know where logs are
-            self.test_output_dirs = [UIE2eTest.TEST_OUTPUT_DIR]
 
         self.run_with_graceful_kill(
             [
                 "tests/e2e/run-ui-e2e.sh",
             ],
             UIE2eTest.TEST_TIMEOUT,
-            post_start_hook=set_dirs_after_start,
         )
