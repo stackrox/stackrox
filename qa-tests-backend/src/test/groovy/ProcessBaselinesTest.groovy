@@ -218,8 +218,19 @@ class ProcessBaselinesTest extends BaseSpecification {
         assert deploymentId != null
 
         String containerName = deployment.getName()
-        ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
+        // Need to make sure the processes show up before we lock.
+        def baseline = evaluateWithRetry(30, 4) {
+            def tmpBaseline = ProcessBaselineService.
                  getProcessBaseline(clusterId, deployment, containerName)
+            if (tmpBaseline.elementsList.size() == 0) {
+                throw new RuntimeException(
+                    "No processes in baseline for deployment ${deploymentId} yet. Baseline is ${tmpBaseline}"
+                )
+            }
+            return tmpBaseline
+        }
+//         ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
+//                  getProcessBaseline(clusterId, deployment, containerName)
         assert (baseline != null)
         log.info "Baseline Before locking: ${baseline}"
         assert ((baseline.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
