@@ -510,15 +510,13 @@ generate-junit-reports: $(GO_JUNIT_REPORT_BIN)
 image: main-image
 
 .PHONY: all-builds
-all-builds: cli main-build $(MERGED_API_SWAGGER_SPEC) ui-build
+all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build
 
 .PHONY: main-image
 main-image: all-builds
 	make docker-build-main-image
 
-# Exclude ephemeral files in dependencies.
-IMAGE_RHEL_FILES = $(shell find $(CURDIR)/image/rhel/ -type f ! -name "bundle.tar.gz*" ! -name "Dockerfile.gen")
-$(CURDIR)/image/rhel/bundle.tar.gz: $(IMAGE_RHEL_FILES)
+$(CURDIR)/image/rhel/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(BUILD_IMAGE) $(CURDIR)/image/rhel
 
 .PHONY: $(CURDIR)/image/rhel/Dockerfile.gen
@@ -625,9 +623,7 @@ mock-grpc-server-image: mock-grpc-server-build clean-image
 		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
 		integration-tests/mock-grpc-server/image
 
-# Exclude ephemeral files in dependencies.
-IMAGE_POSTGRES_FILES = $(shell find $(CURDIR)/image/postgres/ -type f ! -name "bundle.tar.gz*" ! -name "Dockerfile.gen")
-$(CURDIR)/image/postgres/bundle.tar.gz: $(IMAGE_POSTGRES_FILES)
+$(CURDIR)/image/postgres/bundle.tar.gz:
 	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" $(CURDIR)/image/postgres/create-bundle.sh $(CURDIR)/image/postgres $(CURDIR)/image/postgres
 
 .PHONY: $(CURDIR)/image/postgres/Dockerfile.gen
