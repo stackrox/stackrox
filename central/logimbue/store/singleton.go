@@ -19,7 +19,7 @@ var (
 func Singleton() Store {
 	storeInstanceInit.Do(func() {
 		if features.PostgresDatastore.Enabled() {
-			storeInstance = postgres.New(context.TODO(), globaldb.GetPostgres())
+storeInstance = postgres.New(globaldb.GetPostgres())
 		} else {
 			storeInstance = bolt.NewStore(globaldb.GetGlobalDB())
 		}
