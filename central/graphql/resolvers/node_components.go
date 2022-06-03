@@ -26,6 +26,9 @@ func init() {
 			"name: String!",
 			"nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!",
 			"nodeCount(query: String, scopeQuery: String): Int!",
+			"nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability]!",
+			"nodeVulnerabilityCount(query: String, scopeQuery: String): Int!",
+			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"plottedNodeVulnerabilities(query: String): PlottedVulnerabilities!",
 			"priority: Int!",
 			"riskScore: Float!",
@@ -33,9 +36,6 @@ func init() {
 			"topNodeVulnerability: NodeVulnerability",
 			"unusedVarSink(query: String): Int",
 			"version: String!",
-			"nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability]!",
-			"nodeVulnerabilityCount(query: String, scopeQuery: String): Int!",
-			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
 		}),
 
 		schema.AddQuery("nodeComponent(id: ID): NodeComponent"),
@@ -56,6 +56,9 @@ type NodeComponentResolver interface {
 	Name(ctx context.Context) string
 	Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error)
 	NodeCount(ctx context.Context, args RawQuery) (int32, error)
+	NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error)
+	NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error)
+	NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error)
 	PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error)
 	Priority(ctx context.Context) int32
 	RiskScore(ctx context.Context) float64
@@ -63,9 +66,6 @@ type NodeComponentResolver interface {
 	TopNodeVulnerability(ctx context.Context) (NodeVulnerabilityResolver, error)
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 	Version(ctx context.Context) string
-	NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error)
-	NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error)
-	NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error)
 }
 
 // NodeComponent returns a node component based on an input id (name:version)

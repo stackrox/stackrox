@@ -35,8 +35,8 @@ func init() {
 			"controlStatus(query: String): String!",
 			"failingControls(query: String): [ComplianceControl!]!",
 			"nodeComplianceControlCount(query: String) : ComplianceControlCount!",
-			"nodeComponents(query: String, pagination: Pagination): [NodeComponent!]!",
 			"nodeComponentCount(query: String): Int!",
+			"nodeComponents(query: String, pagination: Pagination): [NodeComponent!]!",
 			"nodeStatus(query: String): String!",
 			"nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability]!",
 			"nodeVulnerabilityCount(query: String): Int!",
@@ -376,7 +376,7 @@ func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (Vulne
 
 // TopNodeVulnerability returns the first node vulnerability with the top CVSS score.
 func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args RawQuery) (NodeVulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopVulnerability")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopNodeVulnerability")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
@@ -476,7 +476,7 @@ func (resolver *nodeResolver) VulnCounter(ctx context.Context, args RawQuery) (*
 
 // NodeVulnerabilities returns the vulnerabilities in the node.
 func (resolver *nodeResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Vulnerabilities")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeVulnerabilities")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
@@ -490,7 +490,7 @@ func (resolver *nodeResolver) NodeVulnerabilities(ctx context.Context, args Pagi
 
 // NodeVulnerabilityCount returns the number of vulnerabilities the node has.
 func (resolver *nodeResolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "VulnerabilityCount")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeVulnerabilityCount")
 	if err := readNodes(ctx); err != nil {
 		return 0, err
 	}
@@ -504,7 +504,7 @@ func (resolver *nodeResolver) NodeVulnerabilityCount(ctx context.Context, args R
 
 // NodeVulnerabilityCounter resolves the number of different types of vulnerabilities contained in a node.
 func (resolver *nodeResolver) NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "VulnCounter")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeVulnerabilityCounter")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
