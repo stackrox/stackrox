@@ -29,7 +29,7 @@ func TestTestSingleKeyStructsStore(t *testing.T) {
 	suite.Run(t, new(TestSingleKeyStructsStoreSuite))
 }
 
-func (s *TestSingleKeyStructsStoreSuite) SetupTest() {
+func (s *TestSingleKeyStructsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *TestSingleKeyStructsStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *TestSingleKeyStructsStoreSuite) TearDownTest() {
+func (s *TestSingleKeyStructsStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE test_single_key_structs CASCADE")
+	s.T().Log("test_single_key_structs", tag)
+	s.NoError(err)
+}
+
+func (s *TestSingleKeyStructsStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

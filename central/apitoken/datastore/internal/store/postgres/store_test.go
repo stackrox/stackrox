@@ -29,7 +29,7 @@ func TestApiTokensStore(t *testing.T) {
 	suite.Run(t, new(ApiTokensStoreSuite))
 }
 
-func (s *ApiTokensStoreSuite) SetupTest() {
+func (s *ApiTokensStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *ApiTokensStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *ApiTokensStoreSuite) TearDownTest() {
+func (s *ApiTokensStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE api_tokens CASCADE")
+	s.T().Log("api_tokens", tag)
+	s.NoError(err)
+}
+
+func (s *ApiTokensStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

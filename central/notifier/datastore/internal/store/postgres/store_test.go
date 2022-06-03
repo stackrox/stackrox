@@ -29,7 +29,7 @@ func TestNotifiersStore(t *testing.T) {
 	suite.Run(t, new(NotifiersStoreSuite))
 }
 
-func (s *NotifiersStoreSuite) SetupTest() {
+func (s *NotifiersStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *NotifiersStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *NotifiersStoreSuite) TearDownTest() {
+func (s *NotifiersStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE notifiers CASCADE")
+	s.T().Log("notifiers", tag)
+	s.NoError(err)
+}
+
+func (s *NotifiersStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

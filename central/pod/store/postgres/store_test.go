@@ -31,7 +31,7 @@ func TestPodsStore(t *testing.T) {
 	suite.Run(t, new(PodsStoreSuite))
 }
 
-func (s *PodsStoreSuite) SetupTest() {
+func (s *PodsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -56,7 +56,14 @@ func (s *PodsStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *PodsStoreSuite) TearDownTest() {
+func (s *PodsStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE pods CASCADE")
+	s.T().Log("pods", tag)
+	s.NoError(err)
+}
+
+func (s *PodsStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

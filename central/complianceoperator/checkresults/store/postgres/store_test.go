@@ -29,7 +29,7 @@ func TestComplianceOperatorCheckResultsStore(t *testing.T) {
 	suite.Run(t, new(ComplianceOperatorCheckResultsStoreSuite))
 }
 
-func (s *ComplianceOperatorCheckResultsStoreSuite) SetupTest() {
+func (s *ComplianceOperatorCheckResultsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *ComplianceOperatorCheckResultsStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *ComplianceOperatorCheckResultsStoreSuite) TearDownTest() {
+func (s *ComplianceOperatorCheckResultsStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE compliance_operator_check_results CASCADE")
+	s.T().Log("compliance_operator_check_results", tag)
+	s.NoError(err)
+}
+
+func (s *ComplianceOperatorCheckResultsStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

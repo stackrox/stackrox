@@ -29,7 +29,7 @@ func TestImageComponentCveEdgesStore(t *testing.T) {
 	suite.Run(t, new(ImageComponentCveEdgesStoreSuite))
 }
 
-func (s *ImageComponentCveEdgesStoreSuite) SetupTest() {
+func (s *ImageComponentCveEdgesStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *ImageComponentCveEdgesStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *ImageComponentCveEdgesStoreSuite) TearDownTest() {
+func (s *ImageComponentCveEdgesStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE image_component_cve_edges CASCADE")
+	s.T().Log("image_component_cve_edges", tag)
+	s.NoError(err)
+}
+
+func (s *ImageComponentCveEdgesStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

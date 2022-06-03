@@ -29,7 +29,7 @@ func TestNetworkpoliciesStore(t *testing.T) {
 	suite.Run(t, new(NetworkpoliciesStoreSuite))
 }
 
-func (s *NetworkpoliciesStoreSuite) SetupTest() {
+func (s *NetworkpoliciesStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *NetworkpoliciesStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *NetworkpoliciesStoreSuite) TearDownTest() {
+func (s *NetworkpoliciesStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE networkpolicies CASCADE")
+	s.T().Log("networkpolicies", tag)
+	s.NoError(err)
+}
+
+func (s *NetworkpoliciesStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

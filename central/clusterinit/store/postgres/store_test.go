@@ -29,7 +29,7 @@ func TestClusterInitBundlesStore(t *testing.T) {
 	suite.Run(t, new(ClusterInitBundlesStoreSuite))
 }
 
-func (s *ClusterInitBundlesStoreSuite) SetupTest() {
+func (s *ClusterInitBundlesStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *ClusterInitBundlesStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *ClusterInitBundlesStoreSuite) TearDownTest() {
+func (s *ClusterInitBundlesStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE cluster_init_bundles CASCADE")
+	s.T().Log("cluster_init_bundles", tag)
+	s.NoError(err)
+}
+
+func (s *ClusterInitBundlesStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
