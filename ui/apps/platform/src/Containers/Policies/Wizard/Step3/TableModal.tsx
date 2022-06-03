@@ -18,10 +18,10 @@ import useTableSelection from 'hooks/useTableSelection';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
 
 type TableModalProps = {
-    setValue: (value: any) => void;
+    setValue: (value: unknown) => void;
     value: any;
     readOnly?: boolean;
-    rows: any;
+    rows: { id: string; link: string }[];
     columns: any;
     typeText: string;
 };
