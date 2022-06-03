@@ -3,17 +3,23 @@ package postgreshelper
 import (
 	"fmt"
 	"os"
+	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/retry"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 const (
 	dbPasswordFile = "/run/secrets/stackrox.io/db-password/password"
+)
+
+const (
+	postgresConnectionRetries    = 18
+	postgresConnectRetryInterval = 10 * time.Second
 )
 
 // Load loads a Postgres instance and returns a GormDB.
@@ -25,13 +31,22 @@ func Load(conf *config.Config) (*gorm.DB, error) {
 	}
 	source := fmt.Sprintf("%s password=%s", conf.CentralDB.Source, password)
 	source = pgutils.PgxpoolDsnToPgxDsn(source)
-	log.WriteToStderrf(source)
 
-	gormDB, err := gorm.Open(postgres.Open(source), &gorm.Config{
-		NamingStrategy:  pgutils.NamingStrategy,
-		CreateBatchSize: 1000})
+	// Central waits for central-db ready with retries
+	var gormDB *gorm.DB
+	err = retry.WithRetry(func() error {
+		gormDB, err = gorm.Open(postgres.Open(source), &gorm.Config{
+			NamingStrategy:  pgutils.NamingStrategy,
+			CreateBatchSize: 1000})
+		return err
+	}, retry.Tries(postgresConnectionRetries), retry.BetweenAttempts(func(attempt int) {
+		time.Sleep(postgresConnectRetryInterval)
+	}), retry.OnFailedAttempts(func(err error) {
+		log.WriteToStderrf("fail to connect to central database: %v", err)
+	}))
+
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to open postgres db")
+		log.WriteToStderrf("timed out connecting to database: %v, is central-db alive?", err)
 	}
-	return gormDB, nil
+	return gormDB, err
 }
