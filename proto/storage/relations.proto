@@ -20,8 +20,8 @@ message ImageComponentEdge {
   }
 
   string    location                          = 3 [(gogoproto.moretags) = 'search:"Component Location,store,hidden"'];
-  string    image_id                          = 4 [(gogoproto.moretags) = 'search:"Image Sha,store,hidden" sql:"pk,fk(Image:id)"'];
-  string    image_component_id                = 5 [(gogoproto.moretags) = 'search:"Component ID,store,hidden" sql:"pk,fk(ImageComponent:id),no-fk-constraint"'];
+  string    image_id                          = 4 [(gogoproto.moretags) = 'sql:"pk,fk(Image:id)"'];
+  string    image_component_id                = 5 [(gogoproto.moretags) = 'sql:"pk,fk(ImageComponent:id),no-fk-constraint"'];
 }
 
 message ComponentCVEEdge {
@@ -34,8 +34,8 @@ message ComponentCVEEdge {
   oneof has_fixed_by {
     string  fixed_by                          = 3 [(gogoproto.moretags) = 'search:"Fixed By,store,hidden"'];
   }
-  string    image_component_id                = 4 [(gogoproto.moretags) = 'search:"Component ID,store,hidden" sql:"pk,fk(ImageComponent:id)"'];
-  string    image_cve_id                      = 5 [(gogoproto.moretags) = 'search:"CVE ID,store,hidden" sql:"pk,fk(CVE:id),no-fk-constraint"'];
+  string    image_component_id                = 4 [(gogoproto.moretags) = 'sql:"pk,fk(ImageComponent:id)"'];
+  string    image_cve_id                      = 5 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:id),no-fk-constraint"'];
 }
 
 message ImageCVEEdge {
@@ -43,8 +43,8 @@ message ImageCVEEdge {
   string                    id                          = 1 [(gogoproto.moretags) = 'sql:"pk,id"'];
   google.protobuf.Timestamp first_image_occurrence      = 2 [(gogoproto.moretags) = 'search:"First Image Occurrence Timestamp,hidden"'];
   VulnerabilityState        state                       = 3 [(gogoproto.moretags) = 'search:"Vulnerability State"'];
-  string                    image_id                    = 4 [(gogoproto.moretags) = 'search:"Image Sha,store,hidden" sql:"pk,fk(Image:id)"'];
-  string                    image_cve_id                = 5 [(gogoproto.moretags) = 'search:"CVE ID,store,hidden" sql:"pk,fk(CVE:id),no-fk-constraint"'];
+  string                    image_id                    = 4 [(gogoproto.moretags) = 'sql:"pk,fk(Image:id)"'];
+  string                    image_cve_id                = 5 [(gogoproto.moretags) = 'sql:"pk,fk(CVE:id),no-fk-constraint"'];
 }
 
 //// Node related relations.
