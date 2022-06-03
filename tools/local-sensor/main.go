@@ -18,7 +18,6 @@ import (
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/debugger/message"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -68,7 +67,8 @@ type localSensorConfig struct {
 	ReplayK8sTraceFile  string
 	Verbose             bool
 	ResyncPeriod        time.Duration
-	CreateMode          string
+	CreateMode          CreateMode
+	Delay               time.Duration
 }
 
 func mustGetCommandLineArgs() localSensorConfig {
@@ -83,7 +83,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	replayTrace := flag.Bool("replay", false, "whether to reply recorded a trace with k8s events")
 	traceInFile := flag.String("replay-in", "k8s-trace.jsonl", "a file where recorded trace would be read from")
 	resyncPeriod := flag.Duration("resync", 1*time.Minute, "resync period")
-	createMode := flag.String("create-mode", "ignoreTimestamps", "event creation mode")
+	delay := flag.Duration("delay", 10*time.Second, "create events with a given delay")
 	flag.Parse()
 
 	fsc.Duration = *durationFlag
@@ -106,7 +106,8 @@ func mustGetCommandLineArgs() localSensorConfig {
 	fsc.ReplayK8sTraceFile = path.Clean(*traceInFile)
 	fsc.Verbose = *verboseFlag
 	fsc.ResyncPeriod = *resyncPeriod
-	fsc.CreateMode = *createMode
+	fsc.Delay = *delay
+	fsc.CreateMode = Delay
 	return fsc
 }
 
@@ -169,27 +170,20 @@ func main() {
 	trReader := &traceReader{
 		source:  path.Clean(fsc.ReplayK8sTraceFile),
 		enabled: fsc.ShallReplayK8sTrace,
-		//mode:    "ignoreTimestamps",
-		mode: fsc.CreateMode,
 	}
 	_ = trReader.Init()
 
-	// DIRTY-area
 	if trReader.enabled {
-		trReader.ReadFile(getModeFromStr(trReader.mode), func(line []byte, mode CreateMode) {
-			obj := resources.InformerK8sMsg{}
-			if err := json.Unmarshal(line, &obj); err != nil {
-				log.Fatalf("cannot unmarshal: %s\n", err)
-			}
-			log.Printf("%s Event: %s", obj.Action, obj.ObjectType)
-			if err := createEvent(fakeClient, obj, mode); err != nil {
-				log.Printf("cannot create event for %s %s", obj.ObjectType, err)
-				//log.Fatalf("cannot create event: ", err)
-			}
-		})
-		return
+		fm := FakeEventsManager{
+			Delay:  fsc.Delay,
+			Mode:   fsc.CreateMode,
+			Client: fakeClient,
+			Reader: trReader,
+		}
+		if err := fm.CreateEvents(); err != nil {
+			log.Fatalln(err)
+		}
 	}
-	// DIRTY-area-end
 
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(fakeClient).
