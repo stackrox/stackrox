@@ -2417,7 +2417,7 @@ func GetCoreDNS_1_8_0() *storage.Image {
 		Metadata: &storage.ImageMetadata{
 			V1: &storage.V1Metadata{
 				Digest:  "sha256:296a6d5035e2d6919249e02709a488d680ddca91357602bd65e605eac967b899",
-				Created: types.Timestamp{Seconds: 1603357152, Nanos: 209577235},
+				Created: &types.Timestamp{Seconds: 1603357152, Nanos: 209577235},
 				Layers: []*storage.ImageLayer{
 					{
 						Instruction: "COPY",
@@ -2443,7 +2443,7 @@ func GetCoreDNS_1_8_0() *storage.Image {
 					},
 				},
 				User:       "root",
-				Entrypoint: "/coredns",
+				Entrypoint: []string{"/coredns"},
 			},
 			V2: &storage.V2Metadata{
 				Digest: "sha256:10ecc12177735e5a6fd6fa0127202776128d860ed7ab0341780ddaeb1f6dfe61",
@@ -2473,7 +2473,7 @@ func GetCoreDNS_1_8_0() *storage.Image {
 		SetComponents: &storage.Image_Components{Components: 0},
 		SetCves:       &storage.Image_Cves{Cves: 0},
 		SetFixable:    &storage.Image_FixableCves{FixableCves: 0},
-		LastUpdated:   types.Timestamp{Seconds: 1654154296, Nanos: 614608600},
+		LastUpdated:   &types.Timestamp{Seconds: 1654154296, Nanos: 614608600},
 		RiskScore:     1.5,
 		Notes: []storage.Image_Note{
 			storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA,
