@@ -67,17 +67,10 @@ func (s *ImagesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(exists)
 	cloned := image.Clone()
-	// Reconcile the timestamps that are set during upsert.
-	for _, component := range foundImage.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			vuln.FirstNodeOccurrence = foundImage.GetLastUpdated()
-		}
-	}
 	for _, component := range cloned.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			vuln.FirstSystemOccurrence = foundImage.GetLastUpdated()
 			vuln.FirstImageOccurrence = foundImage.GetLastUpdated()
-			vuln.FirstNodeOccurrence = foundImage.GetLastUpdated()
 		}
 	}
 	s.Equal(cloned, foundImage)
@@ -97,16 +90,6 @@ func (s *ImagesStoreSuite) TestStore() {
 
 	// Reconcile the timestamps that are set during upsert.
 	cloned.LastUpdated = foundImage.LastUpdated
-	for _, component := range foundImage.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			vuln.FirstNodeOccurrence = foundImage.GetLastUpdated()
-		}
-	}
-	for _, component := range cloned.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			vuln.FirstNodeOccurrence = foundImage.GetLastUpdated()
-		}
-	}
 	s.Equal(cloned, foundImage)
 
 	s.NoError(store.Delete(ctx, image.GetId()))

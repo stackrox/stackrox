@@ -56,15 +56,12 @@ const selectors = {
     },
     dataRetention: {
         widget: '[data-testid="data-retention-config"]',
-        allRuntimeViolationsBox: '[data-testid="number-box"]:contains("All Runtime Violations")',
+        allRuntimeViolationsBox: '[data-testid="number-box"]:contains("All runtime violations")',
         deletedRuntimeViolationsBox:
-            '[data-testid="number-box"]:contains("Runtime Violations For Deleted Deployments")',
+            '[data-testid="number-box"]:contains("Runtime violations for deleted deployments")',
         resolvedDeployViolationsBox:
-            '[data-testid="number-box"]:contains("Resolved Deploy-Phase Violations")',
-        imagesBox: '[data-testid="number-box"]:contains("Images No Longer Deployed")',
-    },
-    downloadTelemetry: {
-        link: '[data-testid="download-telemetry"] a:contains("System Health")',
+            '[data-testid="number-box"]:contains("Resolved deploy-phase violations")',
+        imagesBox: '[data-testid="number-box"]:contains("Images no longer deployed")',
     },
 };
 

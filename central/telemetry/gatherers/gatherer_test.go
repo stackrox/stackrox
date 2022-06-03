@@ -9,7 +9,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/grpc/metrics"
-	installation "github.com/stackrox/rox/central/installation/store"
+	installation "github.com/stackrox/rox/central/installation/store/bolt"
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
