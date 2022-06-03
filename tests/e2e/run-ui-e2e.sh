@@ -46,7 +46,7 @@ run_ui_e2e_tests() {
 
     make -C ui test-e2e || touch FAIL
 
-    store_test_results "ui/test-results/reports"
+    store_test_results "ui/test-results/reports" "reports"
 
     [[ ! -f FAIL ]] || die "UI e2e tests failed"
 }
