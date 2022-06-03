@@ -1,8 +1,6 @@
 package store
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/logimbue/store/bolt"
 	"github.com/stackrox/rox/central/logimbue/store/postgres"
@@ -19,7 +17,7 @@ var (
 func Singleton() Store {
 	storeInstanceInit.Do(func() {
 		if features.PostgresDatastore.Enabled() {
-storeInstance = postgres.New(globaldb.GetPostgres())
+			storeInstance = postgres.New(globaldb.GetPostgres())
 		} else {
 			storeInstance = bolt.NewStore(globaldb.GetGlobalDB())
 		}
