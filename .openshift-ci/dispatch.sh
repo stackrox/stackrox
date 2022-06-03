@@ -37,6 +37,9 @@ case "$ci_job" in
     policy-checks)
         "$ROOT/scripts/ci/jobs/check-policy-files.sh"
         ;;
+    mitre-bundles-checks)
+        "$ROOT/scripts/ci/jobs/check-mitre-bundles.sh"
+        ;;
     go-unit-tests-release)
         GOTAGS=release "$ROOT/scripts/ci/jobs/go-unit-tests.sh"
         ;;
