@@ -54,7 +54,9 @@ func (s *networkPolicySACSuite) SetupSuite() {
 		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
 		s.Require().NoError(err)
 		pgdbStore.Destroy(ctx, s.pool)
-		s.storage = pgdbStore.New(ctx, s.pool)
+		gormDB := pgtest.OpenGormDB(s.T(), src)
+		defer pgtest.CloseGormDB(s.T(), gormDB)
+		s.storage = pgdbStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
 	} else {
 		s.engine, err = bolthelper.NewTemp(s.T().Name() + ".db")
 		s.Require().NoError(err)

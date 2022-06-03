@@ -109,7 +109,12 @@ func (ds *datastoreImpl) UpsertNetworkPolicy(ctx context.Context, np *storage.Ne
 }
 
 func (ds *datastoreImpl) RemoveNetworkPolicy(ctx context.Context, id string) error {
-	np, found, err := ds.getNetworkPolicy(ctx, id)
+	elevatedRemoveCheckCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkPolicy),
+		))
+	np, found, err := ds.getNetworkPolicy(elevatedRemoveCheckCtx, id)
 	if err != nil || !found {
 		return err
 	}
