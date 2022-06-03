@@ -38,7 +38,7 @@ type SchemaTestSuite struct {
 	envIsolator *envisolator.EnvIsolator
 	connConfig  *pgx.ConnConfig
 	pool        *pgxpool.Pool
-	gorm        *gorm.DB
+	gormDB      *gorm.DB
 	ctx         context.Context
 }
 
@@ -67,7 +67,7 @@ func (s *SchemaTestSuite) SetupSuite() {
 	s.ctx = ctx
 	s.pool = pool
 	s.Require().NoError(err)
-	s.gorm = pgtest.OpenGormDB(s.T(), source)
+	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 }
 
 func (s *SchemaTestSuite) TearDownTest() {
@@ -87,10 +87,7 @@ func (s *SchemaTestSuite) TearDownSuite() {
 		return
 	}
 	s.pool.Close()
-}
-
-func (s *SchemaTestSuite) TestA() {
-
+	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
 
 func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
@@ -145,7 +142,7 @@ func (s *SchemaTestSuite) getAllTestCases() []string {
 }
 
 func (s *SchemaTestSuite) getGormTableSchemas(schema *walker.Schema, createStmt *pkgPostgres.CreateStmts) map[string]string {
-	pgutils.CreateTableFromModel(s.ctx, s.gorm, createStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.gormDB, createStmt)
 	defer s.dropTableFromModel(createStmt)
 	tables := s.tablesForSchema(schema)
 
@@ -173,13 +170,13 @@ func (s *SchemaTestSuite) dumpSchema(table string) string {
 }
 
 func (s *SchemaTestSuite) dropTableFromModel(createStmt *pkgPostgres.CreateStmts) {
-	err := s.gorm.Migrator().DropTable(createStmt.GormModel)
+	err := s.gormDB.Migrator().DropTable(createStmt.GormModel)
 	s.Require().NoError(err)
 
 	for _, child := range createStmt.Children {
 		s.dropTableFromModel(child)
 	}
-	s.Require().False(s.gorm.Migrator().HasTable(createStmt.GormModel))
+	s.Require().False(s.gormDB.Migrator().HasTable(createStmt.GormModel))
 }
 
 func (s *SchemaTestSuite) tablesForSchema(schema *walker.Schema) []string {

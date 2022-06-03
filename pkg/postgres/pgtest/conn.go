@@ -30,3 +30,15 @@ func OpenGormDB(t *testing.T, source string) *gorm.DB {
 	require.NoError(t, err, "failed to connect to connect with gorm db")
 	return gormDB
 }
+
+// CloseGormDB closes connection to a Gorm DB
+func CloseGormDB(t *testing.T, db *gorm.DB) {
+	if db == nil {
+		return
+	}
+	genericDB, err := db.DB()
+	require.NoError(t, err)
+	if err == nil {
+		genericDB.Close()
+	}
+}

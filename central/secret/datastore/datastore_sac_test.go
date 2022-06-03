@@ -65,7 +65,7 @@ func (s *secretDatastoreSACTestSuite) SetupSuite() {
 		s.NoError(err)
 		pgStore.Destroy(ctx, s.pool)
 		gormDB := pgtest.OpenGormDB(s.T(), source)
-		s.storage = pgStore.NewTestStore(ctx, s.pool, gormDB)
+		s.storage = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
 		s.indexer = pgStore.NewIndexer(s.pool)
 	} else {
 		s.engine, err = rocksdb.NewTemp(secretObj)

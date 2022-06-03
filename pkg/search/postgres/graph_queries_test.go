@@ -91,17 +91,17 @@ func (s *GraphQueriesTestSuite) SetupTest() {
 
 	gormDB := pgtest.OpenGormDB(s.T(), source)
 	s.pool = pool
-	s.testGrandparentStore = testGrandparent.NewTestStore(testCtx, pool, gormDB)
-	s.testGrandparentStore = testGrandparent.NewTestStore(testCtx, pool, gormDB)
-	s.testChild1Store = testChild1.NewTestStore(testCtx, pool, gormDB)
-	s.testChild2Store = testChild2.NewTestStore(testCtx, pool, gormDB)
-	s.testParent1Store = testParent1.NewTestStore(testCtx, pool, gormDB)
-	s.testParent2Store = testParent2.NewTestStore(testCtx, pool, gormDB)
-	s.testParent3Store = testParent3.NewTestStore(testCtx, pool, gormDB)
-	s.testGrandChild1Store = testGrandchild1.NewTestStore(testCtx, pool, gormDB)
-	s.testGGrandchild1Store = testGGrandchild1.NewTestStore(testCtx, pool, gormDB)
-	s.testG2Grandchild1Store = testG2Grandchild1.NewTestStore(testCtx, pool, gormDB)
-	s.testG3Grandchild1Store = testG3Grandchild1.NewTestStore(testCtx, pool, gormDB)
+	s.testGrandparentStore = testGrandparent.CreateTableAndNewStore(testCtx, pool, gormDB)
+	s.testGrandparentStore = testGrandparent.CreateTableAndNewStore(testCtx, pool, gormDB)
+	s.testChild1Store = testChild1.CreateTableAndNewStore(testCtx, pool, gormDB)
+	s.testChild2Store = testChild2.CreateTableAndNewStore(testCtx, pool, gormDB)
+	s.testParent1Store = testParent1.CreateTableAndNewStore(testCtx, pool, gormDB)
+	s.testParent2Store = testParent2.CreateTableAndNewStore(testCtx, pool, gormDB)
+	s.testParent3Store = testParent3.CreateTableAndNewStore(testCtx, pool, gormDB)
+	s.testGrandChild1Store = testGrandchild1.CreateTableAndNewStore(testCtx, pool, gormDB)
+	s.testGGrandchild1Store = testGGrandchild1.CreateTableAndNewStore(testCtx, pool, gormDB)
+	s.testG2Grandchild1Store = testG2Grandchild1.CreateTableAndNewStore(testCtx, pool, gormDB)
+	s.testG3Grandchild1Store = testG3Grandchild1.CreateTableAndNewStore(testCtx, pool, gormDB)
 	s.initializeTestGraph()
 }
 

@@ -51,7 +51,7 @@ func (s *ImagesStoreSuite) TestStore() {
 	Destroy(ctx, pool)
 
 	gormDB := pgtest.OpenGormDB(s.T(), source)
-	store := NewTestStore(ctx, pool, gormDB, false)
+	store := CreateTableAndNewStore(ctx, pool, gormDB, false)
 
 	image := fixtures.GetImage()
 	s.NoError(testutils.FullInit(image, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))

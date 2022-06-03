@@ -73,7 +73,7 @@ func (s *alertDatastoreSACTestSuite) SetupSuite() {
 		s.NoError(err)
 		pgStore.Destroy(ctx, s.pool)
 		gormDB := pgtest.OpenGormDB(s.T(), source)
-		s.storage = pgStore.NewTestStore(ctx, s.pool, gormDB)
+		s.storage = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
 		s.indexer = pgStore.NewIndexWrapper(s.pool)
 		s.optionsMap = schema.AlertsSchema.OptionsMap
 	} else {

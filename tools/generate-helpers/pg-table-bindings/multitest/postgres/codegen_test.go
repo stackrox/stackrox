@@ -26,7 +26,7 @@ func TestStore(t *testing.T) {
 
 	Destroy(ctx, pool)
 	gormDB := pgtest.OpenGormDB(t, source)
-	store := NewTestStore(ctx, pool, gormDB)
+	store := CreateTableAndNewStore(ctx, pool, gormDB)
 
 	multiKey := &storage.TestMultiKeyStruct{
 		Key1: "key1",

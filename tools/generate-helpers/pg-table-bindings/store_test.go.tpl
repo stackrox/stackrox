@@ -59,7 +59,7 @@ func (s *{{$namePrefix}}StoreSuite) SetupTest() {
 
 	s.pool = pool
 	gormDB := pgtest.OpenGormDB(s.T(), source)
-	s.store = NewTestStore(ctx, pool, gormDB)
+	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
 func (s *{{$namePrefix}}StoreSuite) TearDownTest() {
