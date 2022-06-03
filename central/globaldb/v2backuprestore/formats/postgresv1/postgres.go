@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/restore"
+	"github.com/stackrox/rox/pkg/logging"
 	pkgTar "github.com/stackrox/rox/pkg/tar"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -15,8 +16,14 @@ const (
 	scratchPath = "postgresScratch"
 )
 
+var (
+	log = logging.LoggerForModule()
+)
+
 func restorePostgresDB(ctx common.RestoreFileContext, fileReader io.Reader, size int64) error {
-	tmpDir, err := os.MkdirTemp("", scratchPath)
+	log.Infof("SHREWS -- size == %d", size)
+
+	tmpDir, err := common.FindTmpPath(size, scratchPath)
 	if err != nil {
 		return err
 	}
