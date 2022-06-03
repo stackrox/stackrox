@@ -32,7 +32,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NetworkPolicyApplicationUndoDeploymentRecord)(nil)), "networkpoliciesundodeployments")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableNetworkpoliciesundodeploymentsStmt)
 		return schema
 	}()
 )

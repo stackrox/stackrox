@@ -1,8 +1,6 @@
 package datastore
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/central/cve/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/cve/image/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
@@ -17,7 +15,7 @@ var (
 )
 
 func initialize() {
-	storage := postgres.New(context.TODO(), globaldb.GetPostgres())
+	storage := postgres.New(globaldb.GetPostgres())
 	indexer := postgres.NewIndexer(globaldb.GetPostgres())
 
 	var err error

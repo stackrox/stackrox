@@ -33,7 +33,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.SignatureIntegration)(nil)), "signature_integrations")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableSignatureIntegrationsStmt)
 		return schema
 	}()
 )

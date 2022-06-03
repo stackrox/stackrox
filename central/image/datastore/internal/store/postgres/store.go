@@ -20,6 +20,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+	"gorm.io/gorm"
 )
 
 const (
@@ -51,14 +52,7 @@ var (
 )
 
 // New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool, noUpdateTimestamps bool) store.Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImagesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentsStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCvesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentEdgesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageComponentCveEdgesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableImageCveEdgesStmt)
-
+func New(db *pgxpool.Pool, noUpdateTimestamps bool) store.Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
@@ -1039,6 +1033,17 @@ func dropTableImageComponentRelations(ctx context.Context, db *pgxpool.Pool) {
 // Destroy drops image table.
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
 	dropTableImages(ctx, db)
+}
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) store.Store {
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImagesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentsStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCvesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentEdgesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageComponentCveEdgesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableImageCveEdgesStmt)
+	return New(db, noUpdateTimestamps)
 }
 
 //// Stubs for satisfying legacy interfaces

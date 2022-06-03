@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/gorm"
 )
 
 func TestImageDataStoreWithPostgres(t *testing.T) {
@@ -38,6 +39,7 @@ type ImagePostgresDataStoreTestSuite struct {
 
 	ctx       context.Context
 	db        *pgxpool.Pool
+	gormDB    *gorm.DB
 	datastore DataStore
 	mockRisk  *mockRisks.MockDataStore
 
@@ -59,6 +61,7 @@ func (s *ImagePostgresDataStoreTestSuite) SetupSuite() {
 
 	pool, err := pgxpool.ConnectConfig(s.ctx, config)
 	s.NoError(err)
+	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.db = pool
 }
 
@@ -66,12 +69,13 @@ func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
 	postgres.Destroy(s.ctx, s.db)
 
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
-	s.datastore = NewWithPostgres(postgres.New(s.ctx, s.db, false), postgres.NewIndexer(s.db), s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
+	s.datastore = NewWithPostgres(postgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), postgres.NewIndexer(s.db), s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
 }
 
 func (s *ImagePostgresDataStoreTestSuite) TearDownSuite() {
 	s.envIsolator.RestoreAll()
 	s.db.Close()
+	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
 
 func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {

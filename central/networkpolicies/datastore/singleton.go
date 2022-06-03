@@ -1,8 +1,6 @@
 package store
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
@@ -23,7 +21,7 @@ var (
 func initialize() {
 	var undoDeploymentStorage undodeploymentstore.UndoDeploymentStore
 	if features.PostgresDatastore.Enabled() {
-		undoDeploymentStorage = postgres.New(context.TODO(), globaldb.GetPostgres())
+		undoDeploymentStorage = postgres.New(globaldb.GetPostgres())
 	} else {
 		var err error
 		undoDeploymentStorage, err = rocksdb.New(globaldb.GetRocksDB())

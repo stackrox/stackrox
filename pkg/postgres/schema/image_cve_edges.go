@@ -50,7 +50,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_VULN_EDGE, "imagecveedge", (*storage.ImageCVEEdge)(nil)))
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableImageCveEdgesStmt)
 		return schema
 	}()
 )

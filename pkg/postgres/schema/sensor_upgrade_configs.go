@@ -31,7 +31,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.SensorUpgradeConfig)(nil)), "sensor_upgrade_configs")
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableSensorUpgradeConfigsStmt)
 		return schema
 	}()
 )

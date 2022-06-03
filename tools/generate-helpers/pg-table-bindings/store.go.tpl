@@ -41,6 +41,7 @@ import (
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/sync"
+    "gorm.io/gorm"
 )
 
 const (
@@ -104,18 +105,9 @@ type storeImpl struct {
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
 {{define "createTableStmtVar"}}pkgSchema.CreateTable{{.Table|upperCamelCase}}Stmt{{end}}
-{{- define "createTable" }}
-{{- $schema := . }}
-pgutils.CreateTable(ctx, db, {{template "createTableStmtVar" $schema}})
-{{- end }}
 
 // New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool) Store {
-    {{- range $reference := .Schema.References }}
-    {{- template "createTable" $reference.OtherSchema }}
-    {{- end }}
-    {{- template "createTable" .Schema}}
-
+func New(db *pgxpool.Pool) Store {
     return &storeImpl{
         db: db,
     }
@@ -897,6 +889,12 @@ func {{ template "dropTableFunctionName" $schema }}(ctx context.Context, db *pgx
 
 func Destroy(ctx context.Context, db *pgxpool.Pool) {
     {{template "dropTableFunctionName" .Schema}}(ctx, db)
+}
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) Store {
+	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
+	return New(db)
 }
 
 //// Stubs for satisfying legacy interfaces

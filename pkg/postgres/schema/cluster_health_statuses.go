@@ -46,7 +46,7 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableClusterHealthStatusesStmt)
 		return schema
 	}()
 )

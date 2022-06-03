@@ -49,7 +49,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), "process_indicators")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_INDICATORS, "processindicator", (*storage.ProcessIndicator)(nil)))
-		RegisterTable(schema)
+		RegisterTable(schema, CreateTableProcessIndicatorsStmt)
 		return schema
 	}()
 )
