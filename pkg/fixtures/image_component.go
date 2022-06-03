@@ -21,27 +21,27 @@ func GetEmbeddedLinux_5_10_47_linuxkit() *storage.EmbeddedNodeScanComponent {
 			GetEmbeddedNodeCVE_2022_0185(),
 			GetEmbeddedNodeCVE_2022_30594(),
 		},
-		SetTopCvss: &storage.ImageComponent_TopCvss{TopCvss: 8.4}
+		SetTopCvss: &storage.ImageComponent_TopCvss{TopCvss: 8.4},
 	}
 }
 
 func GetEmbeddedKubelet_v1_21_5() *storage.EmbeddedNodeScanComponent {
 	return &storage.EmbeddedNodeScanComponent{
-		Name: "kubelet",
+		Name:    "kubelet",
 		Version: "v1.21.5",
 	}
 }
 
 func GetEmbeddedKube_Proxy_v1_21_5() *storage.EmbeddedNodeScanComponent {
 	return &storage.EmbeddedNodeScanComponent{
-		Name: "kube-proxy",
+		Name:    "kube-proxy",
 		Version: "v1.21.5",
 	}
 }
 
 func GetEmbeddedDocker_20_10_10() *storage.EmbeddedNodeScanComponent {
 	return &storage.EmbeddedNodeScanComponent{
-		Name: "docker",
+		Name:    "docker",
 		Version: "20.10.10",
 	}
 }

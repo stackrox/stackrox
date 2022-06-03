@@ -59,10 +59,10 @@ func GetScopedNode(ID string, clusterID string) *storage.Node {
 		JoinedAt:        &types.Timestamp{Seconds: 1643789433},
 		OperatingSystem: "Docker Desktop",
 		Scan:            generateNodeScan(),
-		SetComponents: &storage.Node_Components{Components: 4},
-		SetCves: &storage.Node_Cves{Cves: 10},
-		SetFixable: &storage.Node_FixableCves{FixableCves: 4},
-		SetTopCvss: &storage.Node_TopCvss{TopCvss: 8.4}
+		SetComponents:   &storage.Node_Components{Components: 4},
+		SetCves:         &storage.Node_Cves{Cves: 10},
+		SetFixable:      &storage.Node_FixableCves{FixableCves: 4},
+		SetTopCvss:      &storage.Node_TopCvss{TopCvss: 8.4},
 	}
 }
 
