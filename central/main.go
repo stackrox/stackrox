@@ -237,12 +237,9 @@ func main() {
 
 	devmode.StartOnDevBuilds("central")
 
-	log.Info("WTF")
 	if features.PostgresDatastore.Enabled() {
-		log.Info("Checking to see if restore DB exists")
 		// Check to see if a restore DB exists, if so use it.
 		if restore.CheckIfRestoreDBExists() {
-			log.Info("Restore DB exists, attempting to use")
 			// Now flip the restore DB to be the primary DB
 			err := restore.SwitchToRestoredDB()
 			if err != nil {

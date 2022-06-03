@@ -14,7 +14,6 @@ var (
 )
 
 func ExecutePostgresCmd(cmd *exec.Cmd) error {
-	// TODO:  Remove
 	log.Info(cmd)
 
 	cmd.Stderr = os.Stderr
@@ -44,6 +43,4 @@ func SetPostgresCmdEnv(cmd *exec.Cmd, sourceMap map[string]string, config *pgxpo
 		cmd.Env = append(cmd.Env, fmt.Sprintf("PGSSLROOTCERT=%s", sourceMap["sslrootcert"]))
 	}
 	cmd.Env = append(cmd.Env, fmt.Sprintf("PGPASSWORD=%s", config.ConnConfig.Password))
-
-	log.Info(cmd.Env)
 }

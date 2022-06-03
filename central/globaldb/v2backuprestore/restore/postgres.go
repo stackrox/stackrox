@@ -15,9 +15,12 @@ import (
 )
 
 const (
-	restoreDB      = "central_restore"
-	connectDB      = "template1"
+	// restoreDB - temporary database to apply the postgres dump
+	restoreDB = "central_restore"
+	// createTemplate - template DB to base the temporary DB off of.
 	createTemplate = "template0"
+	// connectDB - database we can connect to in order to perform the rename
+	connectDB = "template1"
 )
 
 var (
@@ -25,7 +28,6 @@ var (
 
 	postgresOpenRetries        = 10
 	postgresTimeBetweenRetries = 10 * time.Second
-	postgresDB                 *pgxpool.Pool
 )
 
 // dropDB - drops a database.  This is so we can restore to a new database then flip the name
@@ -49,6 +51,7 @@ func dropDB(sourceMap map[string]string, config *pgxpool.Config, databaseName st
 	common.SetPostgresCmdEnv(cmd, sourceMap, config)
 	err := common.ExecutePostgresCmd(cmd)
 	if err != nil {
+		log.Errorf("Unable to drop database %s", databaseName)
 		return err
 	}
 
@@ -73,12 +76,8 @@ func createDB(sourceMap map[string]string, config *pgxpool.Config) error {
 	cmd := exec.Command("createdb", options...)
 
 	common.SetPostgresCmdEnv(cmd, sourceMap, config)
-	err := common.ExecutePostgresCmd(cmd)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return common.ExecutePostgresCmd(cmd)
 }
 
 func runRestore(dumpPath string, sourceMap map[string]string, config *pgxpool.Config) error {
@@ -110,6 +109,7 @@ func runRestore(dumpPath string, sourceMap map[string]string, config *pgxpool.Co
 	if err != nil {
 		// Clean up the restore DB since the restore failed
 		_ = dropDB(sourceMap, config, restoreDB)
+		log.Errorf("Unable to restore the postgres dump.")
 		return err
 	}
 
@@ -148,9 +148,6 @@ func renameRestoreDB(connectPool *pgxpool.Pool, updatedDB, primaryDB string) err
 	sqlStmt := fmt.Sprintf("ALTER DATABASE %s RENAME TO %s", updatedDB, primaryDB)
 
 	_, err := connectPool.Exec(context.TODO(), sqlStmt)
-	if err != nil {
-		log.Errorf("Could rename the DB: %v", err)
-	}
 
 	return err
 }
@@ -177,6 +174,7 @@ func SwitchToRestoredDB() error {
 	// rename central_restore to postgres
 	err = renameRestoreDB(connectPool, restoreDB, config.ConnConfig.Database)
 	if err != nil {
+		log.Errorf("Could not rename the DB: %v", err)
 		return err
 	}
 
@@ -188,6 +186,7 @@ func SwitchToRestoredDB() error {
 
 func adminPool(config *pgxpool.Config) *pgxpool.Pool {
 	var err error
+	var postgresDB *pgxpool.Pool
 
 	// Clone config to connect to template DB
 	tempConfig := config.Copy()
