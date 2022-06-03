@@ -70,7 +70,7 @@ function SummaryCounts() {
         );
     }
 
-    const tileData = {
+    const tileData: Record<TileEntity, number> = {
         Cluster: data.clusterCount,
         Node: data.nodeCount,
         Violation: data.violationCount,
