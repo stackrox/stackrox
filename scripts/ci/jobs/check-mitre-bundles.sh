@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -xveou pipefail
+
 #  check-mitre-attack-bundle-up-to-date:
 #    executor: custom
 #    resource_class: small
@@ -23,17 +25,23 @@
 #      - setup-go-build-env
 #
 #      - run:
-#          name: Ensure MITRE ATT&CK bundle at "./pkg/mitre/files/mitre.json" is up-to-date. (If this fails, run `mitreutil fetch` and commit the result.)
-#          command: |
-#            make deps
-#            make mitre
-#            mitre fetch --domain enterprise --out /tmp/enterprise-mitre.json
-#            diff pkg/mitre/files/mitre.json /tmp/enterprise-mitre.json > /tmp/mitre-diff
-#            if [[ -s /tmp/mitre-diff ]]; then
-#              echo 'MITRE ATT&CK bundle at 'pkg/mitre/files/mitre.json' is not up-to-date. Check "mitre-diff" for more informtaion.'
-#              cat /tmp/mitre-diff
-#              exit 1
-#            fi
+
+# shellcheck disable=SC2016
+echo 'Ensure MITRE ATT&CK bundle at "./pkg/mitre/files/mitre.json" is up-to-date. (If this fails, run `mitreutil fetch` and commit the result.)'
+
+function check_mitre_attach_bundle_up_to_date() {
+    make deps
+    make mitre
+    mitre fetch --domain enterprise --out /tmp/enterprise-mitre.json
+    diff pkg/mitre/files/mitre.json /tmp/enterprise-mitre.json > /tmp/mitre-diff || true
+    if [[ -s /tmp/mitre-diff ]]; then
+        echo 'error: MITRE ATT&CK bundle at 'pkg/mitre/files/mitre.json' is not up-to-date. Check "mitre-diff" for more informtaion.'
+        cat /tmp/mitre-diff
+        exit 1
+    fi
+}
 #      - ci-artifacts/store:
 #          path: /tmp/mitre-diff
 #          destination: mitre-diff
+
+check_mitre_attach_bundle_up_to_date
