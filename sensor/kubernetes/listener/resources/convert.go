@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/imageutil"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"k8s.io/api/batch/v1beta1"
@@ -58,6 +59,9 @@ type deploymentWrap struct {
 	original         interface{}
 	portConfigs      map[portRef]*storage.PortConfig
 	pods             []*v1.Pod
+	// registryStore is the Sensor's registry store to use.
+	// This is typically only used for testing purposes.
+	registryStore *registry.Store
 	// TODO(ROX-9984): we could have the networkPoliciesApplied stored here. This would require changes in the ProcessDeployment functions of the detector.
 	// networkPoliciesApplied augmentedobjs.NetworkPoliciesApplied
 
@@ -273,10 +277,13 @@ func (w *deploymentWrap) getPods(hierarchy references.ParentHierarchy, labelSele
 
 func (w *deploymentWrap) populateDataFromPods(pods ...*v1.Pod) {
 	w.pods = pods
-	w.populateImageIDs(pods...)
+	w.populateImageMetadata(pods...)
 }
 
-func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
+// populateImageMetadata populates metadata for each image in the deployment.
+// This metadata includes: ImageID, NotPullable, and IsClusterLocal.
+// Note: NotPullable and IsClusterLocal are only determined if the image's ID can be determined.
+func (w *deploymentWrap) populateImageMetadata(pods ...*v1.Pod) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
@@ -295,6 +302,7 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 		return pods[j].CreationTimestamp.Before(&pods[i].CreationTimestamp)
 	})
 
+	// Determine each image's ID, if not already populated, as well as if the image is pullable and/or cluster-local.
 	for _, p := range pods {
 		sort.SliceStable(p.Status.ContainerStatuses, func(i, j int) bool {
 			return p.Status.ContainerStatuses[i].Name < p.Status.ContainerStatuses[j].Name
@@ -304,7 +312,7 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 		})
 		for i, c := range p.Status.ContainerStatuses {
 			if i >= len(w.Deployment.Containers) || i >= len(p.Spec.Containers) {
-				// This should not happened, but could happen if w.Deployment.Containers and container status are out of sync
+				// This should not happen, but could happen if w.Deployment.Containers and container status are out of sync
 				break
 			}
 
@@ -312,7 +320,17 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 
 			// If there already is an image ID for the image then that implies that the name of the image was fully qualified
 			// with an image digest. e.g. stackrox.io/main@sha256:xyz
+			// If the ID already exists, populate NotPullable and IsClusterLocal.
 			if image.GetId() != "" {
+				// Use the image ID from the pod's ContainerStatus.
+				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
+				if features.LocalImageScanning.Enabled() {
+					// imageutil.IsInternalImage requires Sensor to already know about the OpenShift internal registries,
+					// which is ok because Sensor listens for Secrets before it starts listening for Deployment-like resources.
+					image.IsClusterLocal = imageutil.IsInternalImage(image.GetName(), &imageutil.IsInternalImageOptions{
+						RegistryStore: w.registryStore,
+					})
+				}
 				continue
 			}
 
@@ -323,7 +341,7 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 				continue
 			}
 
-			// If the pod spec image doesn't match the top level image, then it is an old spec so we should ignore its digest
+			// If the pod spec image doesn't match the top level image, then it is an old spec, so we should ignore its digest
 			if parsedName.GetName().GetFullName() != image.GetName().GetFullName() {
 				continue
 			}
@@ -334,7 +352,9 @@ func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
 				if features.LocalImageScanning.Enabled() {
 					// imageutil.IsInternalImage requires Sensor to already know about the OpenShift internal registries,
 					// which is ok because Sensor listens for Secrets before it starts listening for Deployment-like resources.
-					image.IsClusterLocal = imageutil.IsInternalImage(image.GetName())
+					image.IsClusterLocal = imageutil.IsInternalImage(image.GetName(), &imageutil.IsInternalImageOptions{
+						RegistryStore: w.registryStore,
+					})
 				}
 			}
 		}

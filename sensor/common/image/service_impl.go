@@ -55,7 +55,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 
 	// Note: The Admission Controller does NOT know if the image is cluster-local,
 	// so we determine it here.
-	req.Image.IsClusterLocal = imageutil.IsInternalImage(req.GetImage().GetName())
+	req.Image.IsClusterLocal = imageutil.IsInternalImage(req.GetImage().GetName(), nil)
 
 	// Ask Central to scan the image if the image is not internal.
 	if !features.LocalImageScanning.Enabled() || !req.GetImage().GetIsClusterLocal() {

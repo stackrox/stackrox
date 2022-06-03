@@ -149,7 +149,7 @@ func Reference(img *storage.Image) string {
 	return "latest"
 }
 
-// IsPullable returns whether or not Kubernetes things the image is pullable
+// IsPullable returns whether Kubernetes thinks the image is pullable.
 func IsPullable(imageStr string) bool {
 	parts := strings.SplitN(imageStr, "://", 2)
 	if len(parts) == 2 {
