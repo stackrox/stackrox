@@ -54,6 +54,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	dbAuthz "github.com/stackrox/rox/central/globaldb/authz"
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
+	"github.com/stackrox/rox/central/globaldb/v2backuprestore/restore"
 	backupRestoreService "github.com/stackrox/rox/central/globaldb/v2backuprestore/service"
 	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
@@ -234,6 +235,20 @@ func main() {
 	proxy.WatchProxyConfig(context.Background(), proxyConfigPath, proxyConfigFile, true)
 
 	devmode.StartOnDevBuilds("central")
+
+	log.Info("WTF")
+	if features.PostgresDatastore.Enabled() {
+		log.Info("Checking to see if restore DB exists")
+		// Check to see if a restore DB exists, if so use it.
+		if restore.CheckIfRestoreDBExists() {
+			log.Info("Restore DB exists, attempting to use")
+			// Now flip the restore DB to be the primary DB
+			err := restore.SwitchToRestoredDB()
+			if err != nil {
+				log.Errorf("Unable to switch to restored DB: %v", err)
+			}
+		}
+	}
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
 	ensureDB()

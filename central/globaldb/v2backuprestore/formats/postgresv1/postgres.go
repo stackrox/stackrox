@@ -28,7 +28,7 @@ func restorePostgresDB(ctx common.RestoreFileContext, fileReader io.Reader, size
 		return errors.Wrap(err, "unable to untar postgres backup to scratch path")
 	}
 
-	err = restore.Restore(tmpDir)
+	err = restore.LoadRestore(tmpDir)
 	if err != nil {
 		return errors.Wrap(err, "unable to restore postgres")
 	}
