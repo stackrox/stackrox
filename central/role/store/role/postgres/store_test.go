@@ -29,7 +29,7 @@ func TestRolesStore(t *testing.T) {
 	suite.Run(t, new(RolesStoreSuite))
 }
 
-func (s *RolesStoreSuite) SetupTest() {
+func (s *RolesStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *RolesStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *RolesStoreSuite) TearDownTest() {
+func (s *RolesStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE roles CASCADE")
+	s.T().Log("roles", tag)
+	s.NoError(err)
+}
+
+func (s *RolesStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

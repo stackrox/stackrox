@@ -29,7 +29,7 @@ func TestProcessBaselineResultsStore(t *testing.T) {
 	suite.Run(t, new(ProcessBaselineResultsStoreSuite))
 }
 
-func (s *ProcessBaselineResultsStoreSuite) SetupTest() {
+func (s *ProcessBaselineResultsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *ProcessBaselineResultsStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *ProcessBaselineResultsStoreSuite) TearDownTest() {
+func (s *ProcessBaselineResultsStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE process_baseline_results CASCADE")
+	s.T().Log("process_baseline_results", tag)
+	s.NoError(err)
+}
+
+func (s *ProcessBaselineResultsStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

@@ -29,7 +29,7 @@ func TestWatchedImagesStore(t *testing.T) {
 	suite.Run(t, new(WatchedImagesStoreSuite))
 }
 
-func (s *WatchedImagesStoreSuite) SetupTest() {
+func (s *WatchedImagesStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *WatchedImagesStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *WatchedImagesStoreSuite) TearDownTest() {
+func (s *WatchedImagesStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE watched_images CASCADE")
+	s.T().Log("watched_images", tag)
+	s.NoError(err)
+}
+
+func (s *WatchedImagesStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

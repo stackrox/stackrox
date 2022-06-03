@@ -29,7 +29,7 @@ func TestAuthProvidersStore(t *testing.T) {
 	suite.Run(t, new(AuthProvidersStoreSuite))
 }
 
-func (s *AuthProvidersStoreSuite) SetupTest() {
+func (s *AuthProvidersStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *AuthProvidersStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *AuthProvidersStoreSuite) TearDownTest() {
+func (s *AuthProvidersStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE auth_providers CASCADE")
+	s.T().Log("auth_providers", tag)
+	s.NoError(err)
+}
+
+func (s *AuthProvidersStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
