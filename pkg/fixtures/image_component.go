@@ -21,7 +21,7 @@ func GetEmbeddedLinux_5_10_47_linuxkit() *storage.EmbeddedNodeScanComponent {
 			GetEmbeddedNodeCVE_2022_0185(),
 			GetEmbeddedNodeCVE_2022_30594(),
 		},
-		SetTopCvss: &storage.ImageComponent_TopCvss{TopCvss: 8.4},
+		SetTopCvss: &storage.EmbeddedNodeScanComponent_TopCvss{TopCvss: 8.4},
 	}
 }
 
