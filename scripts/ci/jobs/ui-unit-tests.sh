@@ -7,10 +7,12 @@ set -euo pipefail
 
 ui_unit_tests() {
     info "Starting UI unit tests"
-    make ui-test
+    make ui-test || touch FAIL
     
     info "Saving junit XML report"
     store_test_results ui/test-results/reports reports
+
+    [[ ! -f FAIL ]] || die "Unit tests failed"
 }
 
 ui_unit_tests "$*"

@@ -19,12 +19,14 @@ integration_unit_tests() {
     done
     if [[ "${success}" == 0 ]]; then
         echo "Failed after ${max_tries} tries"
-        exit 1
+        touch FAIL
     fi
     
     info "Saving junit XML report"
-    make generate-junit-reports
+    make generate-junit-reports || touch FAIL
     store_test_results junit-reports reports
+
+    [[ ! -f FAIL ]] || die "Unit tests failed"
 }
 
 integration_unit_tests "$*"
