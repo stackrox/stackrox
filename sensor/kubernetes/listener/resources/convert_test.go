@@ -368,8 +368,8 @@ func TestPopulateImageMetadata(t *testing.T) {
 			wrap.populateImageMetadata(pods...)
 			for i, m := range c.expectedMetadata {
 				assert.Equal(t, m.expectedID, wrap.Deployment.Containers[i].Image.Id)
-				assert.Equal(t, m.expectedNotPullable, wrap.Deployment.Containers[i].Image.NotPullable, m.expectedID)
-				assert.Equal(t, m.expectedIsClusterLocal, wrap.Deployment.Containers[i].Image.IsClusterLocal, m.expectedID)
+				assert.Equal(t, m.expectedNotPullable, wrap.Deployment.Containers[i].Image.NotPullable)
+				assert.Equal(t, m.expectedIsClusterLocal, wrap.Deployment.Containers[i].Image.IsClusterLocal)
 			}
 		})
 	}
