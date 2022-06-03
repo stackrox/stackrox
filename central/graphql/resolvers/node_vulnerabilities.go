@@ -19,6 +19,8 @@ func init() {
 		// NOTE: This list is and should remain alphabetically ordered
 		schema.AddType("NodeVulnerability",
 			append(commonVulnerabilitySubResolvers,
+				"nodeComponentCount(query: String): Int!",
+				"nodeComponents(query: String, pagination: Pagination): [NodeComponent!]!",
 				"nodeCount(query: String): Int!",
 				"nodes(query: String, pagination: Pagination): [Node!]!",
 			)),
@@ -33,6 +35,8 @@ func init() {
 type NodeVulnerabilityResolver interface {
 	CommonVulnerabilityResolver
 
+	NodeComponentCount(ctx context.Context, args RawQuery) (int32, error)
+	NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error)
 	NodeCount(ctx context.Context, args RawQuery) (int32, error)
 	Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error)
 }
@@ -41,7 +45,7 @@ type NodeVulnerabilityResolver interface {
 func (resolver *Resolver) NodeVulnerability(ctx context.Context, args IDQuery) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerability")
 	if !features.PostgresDatastore.Enabled() {
-		return resolver.vulnerabilityV2(ctx, args)
+		return resolver.nodeVulnerabilityV2(ctx, args)
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Resolver NodeVulnerability does not support postgres yet")
