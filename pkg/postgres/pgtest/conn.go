@@ -39,6 +39,6 @@ func CloseGormDB(t *testing.T, db *gorm.DB) {
 	genericDB, err := db.DB()
 	require.NoError(t, err)
 	if err == nil {
-		genericDB.Close()
+		_ = genericDB.Close()
 	}
 }

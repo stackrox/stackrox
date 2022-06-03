@@ -75,6 +75,7 @@ func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
 func (s *ImagePostgresDataStoreTestSuite) TearDownSuite() {
 	s.envIsolator.RestoreAll()
 	s.db.Close()
+	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
 
 func (s *ImagePostgresDataStoreTestSuite) TestSearchWithPostgres() {
