@@ -88,9 +88,9 @@ run_tests_part_1() {
     elif is_tagged; then
         info "Tagged, running all QA tests..."
         make -C qa-tests-backend test || touch FAIL
-    elif [[ -n "${QA_TEST_GROUP:-}" ]]; then
-        info "Directed to run the '""${QA_TEST_GROUP:-}""' target..."
-        make -C qa-tests-backend "${QA_TEST_GROUP:-}" || touch FAIL
+    elif [[ -n "${QA_TEST_TARGET:-}" ]]; then
+        info "Directed to run the '""${QA_TEST_TARGET:-}""' target..."
+        make -C qa-tests-backend "${QA_TEST_TARGET:-}" || touch FAIL
     else
         info "An unexpected context. Defaulting to BAT tests only..."
         make -C qa-tests-backend bat-test || touch FAIL
