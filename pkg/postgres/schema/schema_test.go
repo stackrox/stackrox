@@ -120,6 +120,12 @@ func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 	})
 }
 
+// TestReentry checks if we can apply the schema multiple times.
+func (s *SchemaTestSuite) TestReentry() {
+	ApplyAllSchemas(s.ctx, s.gormDB)
+	ApplyAllSchemas(s.ctx, s.gormDB)
+}
+
 func (s *SchemaTestSuite) getAllTestCases() []string {
 	files, err := os.ReadDir(".")
 	s.Require().NoError(err)
