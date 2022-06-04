@@ -2,28 +2,31 @@ package n1ton2
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 	"github.com/tecbot/gorocksdb"
-	bolt "go.etcd.io/bbolt"
 	"gorm.io/gorm"
 )
 
 func TestMigration(t *testing.T) {
-	suite.Run(t, new(postgresMigrationAlertsSuite))
+	suite.Run(t, new(postgresMigrationSuite))
 }
 
-type postgresMigrationAlertsSuite struct {
+type postgresMigrationSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 	ctx         context.Context
@@ -37,9 +40,9 @@ type postgresMigrationAlertsSuite struct {
 	gormDB *gorm.DB
 }
 
-var _ suite.TearDownTestSuite = (*postgresMigrationAlertsSuite)(nil)
+var _ suite.TearDownTestSuite = (*postgresMigrationSuite)(nil)
 
-func (s *postgresMigrationAlertsSuite) SetupTest() {
+func (s *postgresMigrationSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 	if !features.PostgresDatastore.Enabled() {
@@ -62,76 +65,45 @@ func (s *postgresMigrationAlertsSuite) SetupTest() {
 	s.Require().NoError(err)
 
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
+	_ = s.gormDB.Migrator().DropTable(pkgSchema.CreateTableAlertsStmt.GormModel)
 }
 
-func (s *postgresMigrationAlertsSuite) TearDownTest() {
+func (s *postgresMigrationSuite) TearDownTest() {
 	rocksdbtest.TearDownRocksDB(s.rocksDB)
-	pgtest.OpenGormDB()
+	_ = s.gormDB.Migrator().DropTable(pkgSchema.CreateTableAlertsStmt.GormModel)
+	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
 
-func (s *postgresMigrationAlertsSuite() {
-	cases := []struct {
-		oldSerial *storage.ServiceIdentity
-		newSerial *storage.ServiceIdentity
-	}{
-		{
-			oldSerial: &storage.ServiceIdentity{
-				Srl: &storage.ServiceIdentity_Serial{
-					Serial: 12345,
-				},
-				Id: "case1",
-			},
-			newSerial: &storage.ServiceIdentity{
-				SerialStr: "12345",
-				Srl: &storage.ServiceIdentity_Serial{
-					Serial: 12345,
-				},
-				Id: "case1",
-			},
-		},
-		{
-			oldSerial: &storage.ServiceIdentity{
-				SerialStr: "ABC",
-				Id:        "case2",
-			},
-			newSerial: &storage.ServiceIdentity{
-				SerialStr: "ABC",
-				Id:        "case2",
-			},
-		},
+func (s *postgresMigrationSuite) TestMigration() {
+	// Prepare data and write to legacy DB
+	batchSize = 48
+	rocksWriteBatch := gorocksdb.NewWriteBatch()
+	defer rocksWriteBatch.Destroy()
+	var alerts []*storage.Alert
+	for i := 0; i < 200; i++ {
+		alert := &storage.Alert{}
+		s.NoError(testutils.FullInit(alert, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		bytes, err := proto.Marshal(alert)
+		s.NoError(err, "failed to marshal data")
+		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(rocksdbBucket, []byte(alert.Id)), bytes)
+		alerts = append(alerts, alert)
 	}
-	err := s.db.Update(func(tx *bolt.Tx) error {
-		bucket, err := tx.CreateBucketIfNotExists(bucketName)
-		s.NoError(err)
-		for _, c := range cases {
-			si, err := c.oldSerial.Marshal()
-			s.NoError(err)
 
-			if c.oldSerial.GetSerialStr() != "" {
-				s.NoError(bucket.Put([]byte(c.oldSerial.GetSerialStr()), si))
-			} else {
-				s.NoError(bucket.Put([]byte(strconv.FormatInt(c.oldSerial.GetSerial(), 10)), si))
-			}
-		}
-		return nil
-	})
+	s.NoError(s.db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch))
+	s.NoError(moveAlerts(s.rocksDB.DB, s.gormDB, s.pool))
+	var count int64
+	s.gormDB.Model(pkgSchema.CreateTableAlertsStmt.GormModel).Count(&count)
+	s.Equal(int64(len(alerts)), count)
+	for _, alert := range alerts {
+		s.Equal(alert, s.get(alert.Id))
+	}
+}
+
+func (s *postgresMigrationSuite) get(id string) *storage.Alert {
+	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
+	data, err := postgres.RunGetQueryForSchema(s.ctx, schema, q, s.pool)
 	s.NoError(err)
-
-	s.NoError(migrateSerials(s.db))
-
-	err = s.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(bucketName)
-
-		idx := 0
-		err := bucket.ForEach(func(k, v []byte) error {
-			var si storage.ServiceIdentity
-			s.NoError(proto.Unmarshal(v, &si))
-			s.Equal(cases[idx].newSerial, &si)
-			idx++
-			return nil
-		})
-		s.NoError(err)
-		return nil
-	})
-	s.NoError(err)
+	var msg storage.Alert
+	s.NoError(proto.Unmarshal(data, &msg))
+	return &msg
 }

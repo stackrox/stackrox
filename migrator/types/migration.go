@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
@@ -10,9 +11,10 @@ import (
 // Databases encapsulates all the different databases we are using
 // This struct helps avoid adding a new parameter when we switch DBs
 type Databases struct {
-	BoltDB  *bolt.DB
-	RocksDB *gorocksdb.DB
-	GormDB  *gorm.DB
+	BoltDB     *bolt.DB
+	RocksDB    *gorocksdb.DB
+	GormDB     *gorm.DB
+	PostgresDB *pgxpool.Pool
 }
 
 // A Migration represents a migration.

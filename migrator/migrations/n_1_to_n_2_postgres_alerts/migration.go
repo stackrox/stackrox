@@ -3,29 +3,30 @@
 package n1ton2
 
 import (
-	"fmt"
+	"context"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	"github.com/prometheus/alertmanager/api/v2/models"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
-	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/tecbot/gorocksdb"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 var (
+	batchSize = 10000
+
+	schema = pkgSchema.AlertsSchema
+
 	migration = types.Migration{
-		StartingSeqNum: pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres(),
-		VersionAfter:   storage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNumWithoutPostgres()) + 1},
+		StartingSeqNum: 100,
+		VersionAfter:   storage.Version{SeqNum: 101},
 		Run: func(databases *types.Databases) error {
-			if err := moveAlerts(databases.RocksDB, databases.GormDB); err != nil {
+			if err := moveAlerts(databases.RocksDB, databases.GormDB, databases.PostgresDB); err != nil {
 				return errors.Wrap(err,
 					"moving alerts from rocksdb to postgres")
 			}
@@ -33,65 +34,36 @@ var (
 		},
 	}
 	rocksdbBucket = []byte("alerts")
-	postgresTable = []byte("alerts")
 )
 
-func moveAlerts(rocksDB *gorocksdb.DB, gormDB *gorm.DB) error {
+func moveAlerts(rocksDB *gorocksdb.DB, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
+	ctx := context.Background()
+	store := newStore(postgresDB)
 	it := rocksDB.NewIterator(gorocksdb.NewDefaultReadOptions())
 	defer it.Close()
+	pkgSchema.ApplySchemaForTable(context.Background(), gormDB, "alerts")
 
-	if err := gormDB.AutoMigrate(&pkgSchema.Alerts{}); err != nil {
-		log.Errorf("failed to auto migrate alerts %v", err)
-		return err
-	}
-	var conv []*pkgSchema.Alerts
+	var alerts []*storage.Alert
 	for it.Seek(rocksdbBucket); it.ValidForPrefix(rocksdbBucket); it.Next() {
 		r := &storage.Alert{}
 		if err := proto.Unmarshal(it.Value().Data(), r); err != nil {
-			return errors.Wrapf(err, "Failed to unmarshal alert data for key %v", it.Key().Data())
+			return errors.Wrapf(err, "failed to unmarshal alert data for key %v", it.Key().Data())
 		}
-		conv = append(conv, &pkgSchema.Alerts{
-			Id:                       r.GetId(),
-			PolicyId:                 r.GetPolicy().GetId(),
-			PolicyName:               r.GetPolicy().GetName(),
-			PolicyDescription:        r.GetPolicy().GetDescription(),
-			PolicyDisabled:           r.GetPolicy().GetDisabled(),
-			PolicyCategories:         pq.Array(r.GetPolicy().GetCategories()).(*pq.StringArray),
-			PolicyLifecycleStages:    pq.Array(pgutils.ConvertEnumSliceToIntArray(r.GetPolicy().GetLifecycleStages())).(*pq.Int32Array),
-			PolicySeverity:           r.GetPolicy().GetSeverity(),
-			PolicyEnforcementActions: pq.Array(pgutils.ConvertEnumSliceToIntArray(r.GetPolicy().GetEnforcementActions())).(*pq.Int32Array),
-			PolicyLastUpdated:        pgutils.NilOrTime(r.GetPolicy().GetLastUpdated()),
-			PolicySORTName:           r.GetPolicy().GetSORTName(),
-			PolicySORTLifecycleStage: r.GetPolicy().GetSORTLifecycleStage(),
-			PolicySORTEnforcement:    r.GetPolicy().GetSORTEnforcement(),
-			LifecycleStage:           r.GetLifecycleStage(),
-			ClusterId:                r.GetClusterId(),
-			ClusterName:              r.GetClusterName(),
-			Namespace:                r.GetNamespace(),
-			NamespaceId:              r.GetNamespaceId(),
-			DeploymentId:             r.GetDeployment().GetId(),
-			DeploymentName:           r.GetDeployment().GetName(),
-			DeploymentInactive:       r.GetDeployment().GetInactive(),
-			ImageId:                  r.GetImage().GetId(),
-			ImageNameRegistry:        r.GetImage().GetName().GetRegistry(),
-			ImageNameRemote:          r.GetImage().GetName().GetRemote(),
-			ImageNameTag:             r.GetImage().GetName().GetTag(),
-			ImageNameFullName:        r.GetImage().GetName().GetFullName(),
-			ResourceResourceType:     r.GetResource().GetResourceType(),
-			ResourceName:             r.GetResource().GetName(),
-			EnforcementAction:        r.GetEnforcement().GetAction(),
-			Time:                     pgutils.NilOrTime(r.GetTime()),
-			State:                    r.GetState(),
-			Tags:                     pq.Array(r.GetTags()).(*pq.StringArray),
-			Serialized:               it.Value().Data(),
-		})
+		alerts = append(alerts, r)
+		if len(alerts) == 10*batchSize {
+			if err := store.copyFrom(ctx, alerts...); err != nil {
+				log.WriteToStderrf("failed to persist alerts to store %v", err)
+				return err
+			}
+			alerts = alerts[:0]
+		}
 	}
 
-	log.Errorf(fmt.Sprintf("converted %d alerts", len(conv)))
-	tx := gormDB.Model(&models.Alert{}).Clauses(clause.OnConflict{UpdateAll: true}).CreateInBatches(conv, 5000)
-	if tx.Error != nil {
-		tx.Rollback()
-		return tx.Error
+	if len(alerts) > 0 {
+		if err := store.copyFrom(ctx, alerts...); err != nil {
+			log.WriteToStderrf("failed to persist alerts to store %v", err)
+			return err
+		}
 	}
 	return nil
 }
