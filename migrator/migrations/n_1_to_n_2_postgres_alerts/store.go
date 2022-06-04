@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres"
 )
@@ -15,6 +16,11 @@ import (
 type storeImpl struct {
 	db *pgxpool.Pool
 }
+
+var (
+	batchSize = 10000
+	schema    = pkgSchema.AlertsSchema
+)
 
 // newStore returns a new Store instance using the provided sql instance.
 func newStore(db *pgxpool.Pool) *storeImpl {

@@ -18,10 +18,6 @@ import (
 )
 
 var (
-	batchSize = 10000
-
-	schema = pkgSchema.AlertsSchema
-
 	migration = types.Migration{
 		StartingSeqNum: 100,
 		VersionAfter:   storage.Version{SeqNum: 101},

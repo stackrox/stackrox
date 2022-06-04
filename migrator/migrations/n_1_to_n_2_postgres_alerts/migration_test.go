@@ -79,23 +79,23 @@ func (s *postgresMigrationSuite) TestMigration() {
 	batchSize = 48
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
-	var alerts []*storage.Alert
+	var objs []*storage.Alert
 	for i := 0; i < 200; i++ {
-		alert := &storage.Alert{}
-		s.NoError(testutils.FullInit(alert, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		bytes, err := proto.Marshal(alert)
+		obj := &storage.Alert{}
+		s.NoError(testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		bytes, err := proto.Marshal(obj)
 		s.NoError(err, "failed to marshal data")
-		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(rocksdbBucket, []byte(alert.Id)), bytes)
-		alerts = append(alerts, alert)
+		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(rocksdbBucket, []byte(obj.Id)), bytes)
+		objs = append(objs, obj)
 	}
 
 	s.NoError(s.db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch))
 	s.NoError(moveAlerts(s.rocksDB.DB, s.gormDB, s.pool))
 	var count int64
 	s.gormDB.Model(pkgSchema.CreateTableAlertsStmt.GormModel).Count(&count)
-	s.Equal(int64(len(alerts)), count)
-	for _, alert := range alerts {
-		s.Equal(alert, s.get(alert.Id))
+	s.Equal(int64(len(objs)), count)
+	for _, obj := range objs {
+		s.Equal(obj, s.get(obj.Id))
 	}
 }
 
