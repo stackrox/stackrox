@@ -270,6 +270,7 @@ var (
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
+	TestKey2              = newFieldLabel("Test Key 2")
 	TestName              = newFieldLabel("Test Name")
 	TestString            = newFieldLabel("Test String")
 	TestStringSlice       = newFieldLabel("Test String Slice")

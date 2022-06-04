@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -38,7 +37,7 @@ func Test{{$namePrefix}}Store(t *testing.T) {
 	suite.Run(t, new({{$namePrefix}}StoreSuite))
 }
 
-func (s *{{$namePrefix}}StoreSuite) SetupTest() {
+func (s *{{$namePrefix}}StoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -63,7 +62,14 @@ func (s *{{$namePrefix}}StoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *{{$namePrefix}}StoreSuite) TearDownTest() {
+func (s *{{$namePrefix}}StoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE {{ .Schema.Table }} CASCADE")
+	s.T().Log("{{ .Schema.Table }}", tag)
+	s.NoError(err)
+}
+
+func (s *{{$namePrefix}}StoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

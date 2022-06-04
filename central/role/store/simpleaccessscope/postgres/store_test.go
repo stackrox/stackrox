@@ -29,7 +29,7 @@ func TestSimpleAccessScopesStore(t *testing.T) {
 	suite.Run(t, new(SimpleAccessScopesStoreSuite))
 }
 
-func (s *SimpleAccessScopesStoreSuite) SetupTest() {
+func (s *SimpleAccessScopesStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *SimpleAccessScopesStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *SimpleAccessScopesStoreSuite) TearDownTest() {
+func (s *SimpleAccessScopesStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE simple_access_scopes CASCADE")
+	s.T().Log("simple_access_scopes", tag)
+	s.NoError(err)
+}
+
+func (s *SimpleAccessScopesStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

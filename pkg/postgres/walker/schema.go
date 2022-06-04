@@ -1,6 +1,7 @@
 package walker
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -391,6 +392,19 @@ type foreignKeyRef struct {
 	// time.
 	OtherSchema *Schema
 	ColumnName  string
+}
+
+// FieldInOtherSchema returns the `Field` in the other schema that has the specific column name.
+func (f *foreignKeyRef) FieldInOtherSchema() (Field, error) {
+	if f.OtherSchema == nil {
+		return Field{}, errors.New("OtherSchema is nil, please call ResolveReferences first")
+	}
+	for _, field := range f.OtherSchema.Fields {
+		if field.ColumnName == f.ColumnName {
+			return field, nil
+		}
+	}
+	return Field{}, fmt.Errorf("no field found in schema %s with column %s", f.OtherSchema.Table, f.ColumnName)
 }
 
 // ObjectGetter is wrapper around determining how to represent the variable in the

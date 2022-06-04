@@ -31,7 +31,7 @@ func TestAlertsStore(t *testing.T) {
 	suite.Run(t, new(AlertsStoreSuite))
 }
 
-func (s *AlertsStoreSuite) SetupTest() {
+func (s *AlertsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -56,7 +56,14 @@ func (s *AlertsStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *AlertsStoreSuite) TearDownTest() {
+func (s *AlertsStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE alerts CASCADE")
+	s.T().Log("alerts", tag)
+	s.NoError(err)
+}
+
+func (s *AlertsStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

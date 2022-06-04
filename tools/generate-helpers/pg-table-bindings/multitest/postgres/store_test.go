@@ -29,7 +29,7 @@ func TestTestMultiKeyStructsStore(t *testing.T) {
 	suite.Run(t, new(TestMultiKeyStructsStoreSuite))
 }
 
-func (s *TestMultiKeyStructsStoreSuite) SetupTest() {
+func (s *TestMultiKeyStructsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *TestMultiKeyStructsStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *TestMultiKeyStructsStoreSuite) TearDownTest() {
+func (s *TestMultiKeyStructsStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE test_multi_key_structs CASCADE")
+	s.T().Log("test_multi_key_structs", tag)
+	s.NoError(err)
+}
+
+func (s *TestMultiKeyStructsStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

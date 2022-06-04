@@ -29,7 +29,7 @@ func TestExternalBackupsStore(t *testing.T) {
 	suite.Run(t, new(ExternalBackupsStoreSuite))
 }
 
-func (s *ExternalBackupsStoreSuite) SetupTest() {
+func (s *ExternalBackupsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *ExternalBackupsStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *ExternalBackupsStoreSuite) TearDownTest() {
+func (s *ExternalBackupsStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE external_backups CASCADE")
+	s.T().Log("external_backups", tag)
+	s.NoError(err)
+}
+
+func (s *ExternalBackupsStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

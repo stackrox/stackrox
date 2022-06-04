@@ -11,6 +11,7 @@ from ci_tests import UpgradeTest
 from post_tests import PostClusterTest, FinalPost
 
 # Override test env defaults here:
+# (for defaults see: tests/e2e/lib.sh export_test_environment())
 os.environ["LOAD_BALANCER"] = "lb"
 
 ClusterTestRunner(

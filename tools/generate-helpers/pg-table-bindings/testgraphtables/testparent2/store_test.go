@@ -29,7 +29,7 @@ func TestTestParent2Store(t *testing.T) {
 	suite.Run(t, new(TestParent2StoreSuite))
 }
 
-func (s *TestParent2StoreSuite) SetupTest() {
+func (s *TestParent2StoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *TestParent2StoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *TestParent2StoreSuite) TearDownTest() {
+func (s *TestParent2StoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE test_parent2 CASCADE")
+	s.T().Log("test_parent2", tag)
+	s.NoError(err)
+}
+
+func (s *TestParent2StoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

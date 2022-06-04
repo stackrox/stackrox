@@ -91,3 +91,17 @@ class QaE2eDBBackupRestoreTest(BaseTest):
             QaE2eDBBackupRestoreTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
+
+
+class UIE2eTest(BaseTest):
+    TEST_TIMEOUT = 90 * 60
+
+    def run(self):
+        print("Executing UI e2e test")
+
+        self.run_with_graceful_kill(
+            [
+                "tests/e2e/run-ui-e2e.sh",
+            ],
+            UIE2eTest.TEST_TIMEOUT,
+        )

@@ -385,7 +385,10 @@ restoreDB: &restoreDB
   run:
     name: Restore DB
     command: |
-      roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore `ls -t central-backup/stackrox_db_* |head -n1`
+      # TODO ROX-10087 figure out how to make it work for rocks and postgres
+      if [ -z "${ROX_POSTGRES_DATASTORE}" ] || [ "${ROX_POSTGRES_DATASTORE}" == "false" ]; then
+        roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore `ls -t central-backup/stackrox_db_* |head -n1`
+      fi
 
 getPrometheusMetricParser: &getPrometheusMetricParser
   run:
@@ -2944,21 +2947,6 @@ jobs:
           cluster-id: ui-e2e-tests
           num-nodes: 2
 
-  provision-gke-api-e2e-tests:
-    executor: custom
-    resource_class: small
-    environment:
-      - GCP_IMAGE_TYPE: "COS"
-      - POD_SECURITY_POLICIES: "true"
-    steps:
-      - checkout
-      - check-backend-changes
-      - check-label-to-skip-tests:
-          label: ci-no-qa-tests
-
-      - provision-gke-cluster:
-          cluster-id: api-e2e-tests
-
   provision-gke-postgres-api-e2e-tests:
     executor: custom
     resource_class: small
@@ -3591,29 +3579,6 @@ jobs:
 
       - *storeUITestReports
       - *storeUITestArtifacts
-
-  gke-api-e2e-tests:
-    executor: custom
-    environment:
-      - LOCAL_PORT: 443
-      - COLLECTION_METHOD: ebpf
-      - GCP_IMAGE_TYPE: "COS"
-      - MONITORING_SUPPORT: false
-      - SCANNER_SUPPORT: true
-      - ROX_BASELINE_GENERATION_DURATION: 1m
-      - LOAD_BALANCER: lb
-      - ADMISSION_CONTROLLER: true
-      - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-      - ROX_NEW_POLICY_CATEGORIES: true
-
-    steps:
-      - run-qa-tests:
-          cluster-id: api-e2e-tests
-          sensor-deploy-flavor: helm
-          determine-whether-to-run:
-            - check-label-to-skip-tests:
-                label: ci-no-qa-tests
 
   gke-postgres-api-e2e-tests:
     executor: custom
@@ -4812,15 +4777,6 @@ workflows:
             - build-rhacs
             - build-scale-monitoring-and-mock-server
             - provision-gke-ui-e2e-tests
-      - provision-gke-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-      - gke-api-e2e-tests:
-          <<: *runOnAllTagsWithQuayIOPullCtx
-          requires:
-            - build-stackrox
-            - build-rhacs
-            - build-scale-monitoring-and-mock-server
-            - provision-gke-api-e2e-tests
       - provision-gke-postgres-api-e2e-tests:
           <<: *runOnAllTagsWithQuayIOPullCtx
       - gke-postgres-api-e2e-tests:
