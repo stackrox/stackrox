@@ -873,41 +873,38 @@ commands:
 
           when: always
 
-  continue-when-in-a-pr-context:
+  continue-when-in-a-pr-or-nightly-context:
     steps:
       - run:
-          name: Continue when in a PR context
+          name: Continue when in a PR or nightly build context
           command: |
             if [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
               echo "This is a PR, will continue with the remaining steps in this job"
+              exit 0
+            fi
+            if .circleci/is-nightly-tag.sh; then
+              echo "This is a nightly build, will continue with the remaining steps in this job"
               exit 0
             fi
             echo "This is not a PR, will skip the remaining steps in this job"
             circleci step halt
 
-  poll-for-builds-when-not-in-a-pr-context:
+  poll-for-builds-when-not-in-a-pr-or-nightly-context:
     steps:
       - run:
-          name: Poll for builds from OpenShift CI when not in a PR context
+          name: Poll for builds from OpenShift CI when not in a PR or nightly context
           command: |
             if [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
               echo "This is a PR, will continue with the remaining steps in this job"
+              exit 0
+            fi
+            if .circleci/is-nightly-tag.sh; then
+              echo "This is a nightly build, will continue with the remaining steps in this job"
               exit 0
             fi
             source scripts/ci/lib.sh
             poll_for_system_test_images 3600
             echo "The required images were built"
-
-  skip-remaining-when-not-in-a-pr-context:
-    steps:
-      - run:
-          name: Skip when not in a PR context
-          command: |
-            if [[ -n "${CIRCLE_PULL_REQUEST:-}" ]]; then
-              echo "This is a PR, will continue with the remaining steps in this job"
-              exit 0
-            fi
-            circleci step halt
 
   pre-build-ui:
     parameters:
@@ -915,7 +912,7 @@ commands:
         type: string
         default: stackrox
     steps:
-      - continue-when-in-a-pr-context
+      - continue-when-in-a-pr-or-nightly-context
       - checkout
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -969,7 +966,7 @@ commands:
   build:
     steps:
       - checkout-with-submodules
-      - poll-for-builds-when-not-in-a-pr-context
+      - poll-for-builds-when-not-in-a-pr-or-nightly-context
       - check-docs-step:
           only-on-release: true
       - check-scanner-and-collector-release-step:
@@ -2725,7 +2722,7 @@ jobs:
       - EKS_AUTOMATION_VERSION: 0.2.17
     steps:
       - checkout
-      - continue-when-in-a-pr-context
+      - continue-when-in-a-pr-or-nightly-context
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
       - restore-go-mod-cache
@@ -2763,7 +2760,7 @@ jobs:
     resource_class: large
     steps:
       - checkout
-      - continue-when-in-a-pr-context
+      - continue-when-in-a-pr-or-nightly-context
       - attach_workspace:
           at: ~/go/src/github.com/stackrox/rox
       - run:
@@ -2824,7 +2821,7 @@ jobs:
       EKS_AUTOMATION_VERSION: 0.2.17
       ROX_PRODUCT_BRANDING: "STACKROX_BRANDING"
     steps:
-      - skip-remaining-when-not-in-a-pr-context
+      - continue-when-in-a-pr-or-nightly-context
       - build
 
   build-rhacs:
@@ -2834,8 +2831,8 @@ jobs:
       EKS_AUTOMATION_VERSION: 0.2.17
       ROX_PRODUCT_BRANDING: "RHACS_BRANDING"
     steps:
-      - poll-for-builds-when-not-in-a-pr-context
-      - skip-remaining-when-not-in-a-pr-context
+      - poll-for-builds-when-not-in-a-pr-or-nightly-context
+      - continue-when-in-a-pr-or-nightly-context
       - build
 
   build-race-condition-debug-image:
