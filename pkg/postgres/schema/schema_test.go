@@ -84,10 +84,6 @@ func (s *SchemaTestSuite) TearDownSuite() {
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
 
-func (s *SchemaTestSuite) TestA() {
-
-}
-
 func (s *SchemaTestSuite) TestGormConsistentWithSQL() {
 	type testCaseStruct struct {
 		name        string
