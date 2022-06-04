@@ -143,7 +143,7 @@ make_artifacts_help() {
     cat > "$help_file" <<- EOH
 <html>
     <head>
-        <title><h3>Stackrox Artifacts</h3></title>
+        <title><h4>Stackrox Extended Artifacts</h4></title>
     </head>
     <body>
         <style>

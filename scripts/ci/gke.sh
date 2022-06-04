@@ -14,6 +14,9 @@ provision_gke_cluster() {
     setup_gcp
     assign_env_variables "$@"
     create_cluster
+    if is_OPENSHIFT_CI; then
+        help_for_cluster_access
+    fi
 }
 
 assign_env_variables() {
@@ -267,6 +270,36 @@ teardown_gke_cluster() {
 
     info "Cluster deleting asynchronously"
 }
+
+help_for_cluster_access() {
+    local help_file="$ARTIFACT_DIR/cluster-access-summary.html"
+    local project
+    project="$(gcloud config get-value project)"
+
+    cat > "$help_file" <<- EOH
+<html>
+    <head>
+        <title><h4>E2e Test Cluster Access</h4></title>
+    </head>
+    <body>
+        <style>
+        /* style for prow spyglass html lens */
+        #wrapper {
+            color: #fff !important;
+        }
+        </style>
+
+        <p>If you have the required GCP account privilege you can connect to the cluster in use in this test with:</p>
+
+        <pre>gcloud container clusters get-credentials "${CLUSTER_NAME}" --project "${project}" --zone "${ZONE}"</pre>
+
+        <br>
+        <br>
+    </body>
+</html>
+EOH
+}
+
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
