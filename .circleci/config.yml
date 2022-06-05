@@ -967,6 +967,7 @@ commands:
     steps:
       - checkout-with-submodules
       - poll-for-builds-when-not-in-a-pr-or-nightly-context
+      - continue-when-in-a-pr-or-nightly-context
       - check-docs-step:
           only-on-release: true
       - check-scanner-and-collector-release-step:
@@ -2821,7 +2822,6 @@ jobs:
       EKS_AUTOMATION_VERSION: 0.2.17
       ROX_PRODUCT_BRANDING: "STACKROX_BRANDING"
     steps:
-      - continue-when-in-a-pr-or-nightly-context
       - build
 
   build-rhacs:
@@ -2831,8 +2831,6 @@ jobs:
       EKS_AUTOMATION_VERSION: 0.2.17
       ROX_PRODUCT_BRANDING: "RHACS_BRANDING"
     steps:
-      - poll-for-builds-when-not-in-a-pr-or-nightly-context
-      - continue-when-in-a-pr-or-nightly-context
       - build
 
   build-race-condition-debug-image:
