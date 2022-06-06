@@ -1,7 +1,6 @@
 import { takeLatest, all, call, fork, put, select } from 'redux-saga/effects';
 import { fetchGlobalSearchResults } from 'services/SearchService';
 import { actions, types } from 'reducers/globalSearch';
-import { actions as secretsActions } from 'reducers/secrets';
 import { actions as policiesActions } from 'reducers/policies/search';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
@@ -33,9 +32,6 @@ export function* getGlobalSearchResults() {
 
 export function* passthroughGlobalSearchOptions({ searchOptions, category }) {
     switch (category) {
-        case 'SECRETS':
-            yield put(secretsActions.setSecretsSearchOptions(searchOptions));
-            break;
         case 'POLICIES':
             yield put(policiesActions.setPoliciesSearchOptions(searchOptions));
             break;
