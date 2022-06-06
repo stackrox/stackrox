@@ -1,4 +1,4 @@
-import { useRef, useLayoutEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import throttle from 'lodash/throttle';
 
 type UseResizeObserverOptions = { throttleInterval: number };
@@ -15,7 +15,7 @@ function useResizeObserver(
 
     const disconnect = useCallback(() => resizeObserverRef.current?.disconnect(), []);
 
-    useLayoutEffect(() => {
+    useEffect(() => {
         if (element) {
             const callback = throttle(([firstEntry]) => setEntry(firstEntry), throttleInterval);
             resizeObserverRef.current = new ResizeObserver(callback);
