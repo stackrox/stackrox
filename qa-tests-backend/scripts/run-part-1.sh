@@ -79,7 +79,7 @@ run_tests_part_1() {
     if is_openshift_CI_rehearse_PR; then
         info "On an openshift rehearse PR, running BAT tests only..."
         make -C qa-tests-backend bat-test || touch FAIL
-    elif pr_has_label ci-all-qa-tests; then
+    elif is_in_PR_context && pr_has_label ci-all-qa-tests; then
         info "ci-all-qa-tests label was specified, so running all QA tests..."
         make -C qa-tests-backend test || touch FAIL
     elif is_in_PR_context; then
@@ -88,6 +88,9 @@ run_tests_part_1() {
     elif is_tagged; then
         info "Tagged, running all QA tests..."
         make -C qa-tests-backend test || touch FAIL
+    elif [[ -n "${QA_TEST_TARGET:-}" ]]; then
+        info "Directed to run the '""${QA_TEST_TARGET:-}""' target..."
+        make -C qa-tests-backend "${QA_TEST_TARGET:-}" || touch FAIL
     else
         info "An unexpected context. Defaulting to BAT tests only..."
         make -C qa-tests-backend bat-test || touch FAIL
