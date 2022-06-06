@@ -31,7 +31,7 @@ func TestProcessIndicatorsStore(t *testing.T) {
 	suite.Run(t, new(ProcessIndicatorsStoreSuite))
 }
 
-func (s *ProcessIndicatorsStoreSuite) SetupTest() {
+func (s *ProcessIndicatorsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -56,7 +56,14 @@ func (s *ProcessIndicatorsStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *ProcessIndicatorsStoreSuite) TearDownTest() {
+func (s *ProcessIndicatorsStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE process_indicators CASCADE")
+	s.T().Log("process_indicators", tag)
+	s.NoError(err)
+}
+
+func (s *ProcessIndicatorsStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

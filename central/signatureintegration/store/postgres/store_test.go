@@ -29,7 +29,7 @@ func TestSignatureIntegrationsStore(t *testing.T) {
 	suite.Run(t, new(SignatureIntegrationsStoreSuite))
 }
 
-func (s *SignatureIntegrationsStoreSuite) SetupTest() {
+func (s *SignatureIntegrationsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *SignatureIntegrationsStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *SignatureIntegrationsStoreSuite) TearDownTest() {
+func (s *SignatureIntegrationsStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE signature_integrations CASCADE")
+	s.T().Log("signature_integrations", tag)
+	s.NoError(err)
+}
+
+func (s *SignatureIntegrationsStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

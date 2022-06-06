@@ -31,7 +31,7 @@ func TestRisksStore(t *testing.T) {
 	suite.Run(t, new(RisksStoreSuite))
 }
 
-func (s *RisksStoreSuite) SetupTest() {
+func (s *RisksStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -56,7 +56,14 @@ func (s *RisksStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *RisksStoreSuite) TearDownTest() {
+func (s *RisksStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE risks CASCADE")
+	s.T().Log("risks", tag)
+	s.NoError(err)
+}
+
+func (s *RisksStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

@@ -29,7 +29,7 @@ func TestNodeComponentsStore(t *testing.T) {
 	suite.Run(t, new(NodeComponentsStoreSuite))
 }
 
-func (s *NodeComponentsStoreSuite) SetupTest() {
+func (s *NodeComponentsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *NodeComponentsStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *NodeComponentsStoreSuite) TearDownTest() {
+func (s *NodeComponentsStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE node_components CASCADE")
+	s.T().Log("node_components", tag)
+	s.NoError(err)
+}
+
+func (s *NodeComponentsStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

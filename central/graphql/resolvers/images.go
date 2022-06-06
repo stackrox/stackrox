@@ -131,7 +131,7 @@ func (resolver *imageResolver) Deployments(ctx context.Context, args PaginatedQu
 	return resolver.root.Deployments(ctx, PaginatedQuery{Pagination: args.Pagination, Query: &query})
 }
 
-// Deployments returns the deployments which use this image for the identified image, if it exists
+// DeploymentCount returns the number of deployments which use this image for the identified image, if it exists
 func (resolver *imageResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	if err := readDeployments(ctx); err != nil {
 		return 0, err

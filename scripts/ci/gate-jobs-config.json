@@ -46,5 +46,13 @@
         "changed_path_to_ignore": "",
         "run_on_master": "true",
         "run_on_tags": "true"
+    },
+    "gke-ui-e2e-tests": {
+        "run_with_labels": [],
+        "skip_with_label": "ci-no-ui-tests",
+        "run_with_changed_path": "^ui/",
+        "changed_path_to_ignore": "",
+        "run_on_master": "true",
+        "run_on_tags": "true"
     }
 }

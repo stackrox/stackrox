@@ -31,7 +31,7 @@ func TestNamespacesStore(t *testing.T) {
 	suite.Run(t, new(NamespacesStoreSuite))
 }
 
-func (s *NamespacesStoreSuite) SetupTest() {
+func (s *NamespacesStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -56,7 +56,14 @@ func (s *NamespacesStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *NamespacesStoreSuite) TearDownTest() {
+func (s *NamespacesStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE namespaces CASCADE")
+	s.T().Log("namespaces", tag)
+	s.NoError(err)
+}
+
+func (s *NamespacesStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

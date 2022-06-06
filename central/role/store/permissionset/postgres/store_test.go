@@ -29,7 +29,7 @@ func TestPermissionSetsStore(t *testing.T) {
 	suite.Run(t, new(PermissionSetsStoreSuite))
 }
 
-func (s *PermissionSetsStoreSuite) SetupTest() {
+func (s *PermissionSetsStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *PermissionSetsStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *PermissionSetsStoreSuite) TearDownTest() {
+func (s *PermissionSetsStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE permission_sets CASCADE")
+	s.T().Log("permission_sets", tag)
+	s.NoError(err)
+}
+
+func (s *PermissionSetsStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

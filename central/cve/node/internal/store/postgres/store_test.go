@@ -29,7 +29,7 @@ func TestNodeCvesStore(t *testing.T) {
 	suite.Run(t, new(NodeCvesStoreSuite))
 }
 
-func (s *NodeCvesStoreSuite) SetupTest() {
+func (s *NodeCvesStoreSuite) SetupSuite() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
@@ -54,7 +54,14 @@ func (s *NodeCvesStoreSuite) SetupTest() {
 	s.store = CreateTableAndNewStore(ctx, pool, gormDB)
 }
 
-func (s *NodeCvesStoreSuite) TearDownTest() {
+func (s *NodeCvesStoreSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	tag, err := s.pool.Exec(ctx, "TRUNCATE node_cves CASCADE")
+	s.T().Log("node_cves", tag)
+	s.NoError(err)
+}
+
+func (s *NodeCvesStoreSuite) TearDownSuite() {
 	if s.pool != nil {
 		s.pool.Close()
 	}

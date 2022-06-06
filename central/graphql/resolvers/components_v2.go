@@ -3,16 +3,19 @@ package resolvers
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	acConverter "github.com/stackrox/rox/central/activecomponent/converter"
 	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/features"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 )
@@ -21,18 +24,12 @@ import (
 ///////////////////////
 
 func (resolver *Resolver) componentV2(ctx context.Context, args IDQuery) (ComponentResolver, error) {
-	component, exists, err := resolver.ImageComponentDataStore.Get(ctx, string(*args.ID))
-	if err != nil {
-		return nil, err
-	} else if !exists {
-		return nil, errors.Errorf("component not found: %s", string(*args.ID))
-	}
-	componentResolver, err := resolver.wrapImageComponent(component, true, nil)
+	compRes, err := resolver.imageComponentDataStoreQuery(ctx, args)
 	if err != nil {
 		return nil, err
 	}
-	componentResolver.ctx = ctx
-	return componentResolver, nil
+	compRes.ctx = ctx
+	return compRes, nil
 }
 
 func (resolver *Resolver) componentsV2(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
@@ -43,23 +40,65 @@ func (resolver *Resolver) componentsV2(ctx context.Context, args PaginatedQuery)
 	return resolver.componentsV2Query(ctx, query)
 }
 
-func (resolver *Resolver) componentsV2Query(ctx context.Context, query *v1.Query) ([]ComponentResolver, error) {
-	componentLoader, err := loaders.GetComponentLoader(ctx)
+func (resolver *Resolver) nodeComponentV2(ctx context.Context, args IDQuery) (NodeComponentResolver, error) {
+	nodeCompRes, err := resolver.imageComponentDataStoreQuery(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	nodeCompRes.ctx = ctx
+	return nodeCompRes, nil
+}
+
+func (resolver *Resolver) nodeComponentsV2(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
+	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
 
-	compRes, err := resolver.wrapImageComponents(componentLoader.FromQuery(ctx, query))
+	nodeCompResolvers, err := resolver.imageComponentsLoaderQuery(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]NodeComponentResolver, 0, len(nodeCompResolvers))
+	for _, res := range nodeCompResolvers {
+		res.ctx = ctx
+		ret = append(ret, res)
+	}
+	return ret, err
+}
+
+func (resolver *Resolver) componentsV2Query(ctx context.Context, query *v1.Query) ([]ComponentResolver, error) {
+	compRes, err := resolver.imageComponentsLoaderQuery(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 
 	ret := make([]ComponentResolver, 0, len(compRes))
-	for _, resolver := range compRes {
-		resolver.ctx = ctx
-		ret = append(ret, resolver)
+	for _, res := range compRes {
+		res.ctx = ctx
+		ret = append(ret, res)
 	}
 	return ret, err
+}
+
+func (resolver *Resolver) imageComponentDataStoreQuery(ctx context.Context, args IDQuery) (*imageComponentResolver, error) {
+	component, exists, err := resolver.ImageComponentDataStore.Get(ctx, string(*args.ID))
+	if err != nil {
+		return nil, err
+	} else if !exists {
+		return nil, errors.Errorf("component not found: %s", string(*args.ID))
+	}
+	return resolver.wrapImageComponent(component, true, nil)
+}
+
+func (resolver *Resolver) imageComponentsLoaderQuery(ctx context.Context, query *v1.Query) ([]*imageComponentResolver, error) {
+	componentLoader, err := loaders.GetComponentLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return resolver.wrapImageComponents(componentLoader.FromQuery(ctx, query))
 }
 
 func (resolver *Resolver) componentCountV2(ctx context.Context, args RawQuery) (int32, error) {
@@ -117,8 +156,62 @@ func (eicr *imageComponentResolver) LastScanned(ctx context.Context) (*graphql.T
 	return timestamp(images[0].GetScan().GetScanTime())
 }
 
+// NodeComponentLastScanned is the last time the node component was scanned in a node.
+func (eicr *imageComponentResolver) NodeComponentLastScanned(ctx context.Context) (*graphql.Time, error) {
+	if err := readNodes(ctx); err != nil {
+		return nil, nil
+	}
+	nodeLoader, err := loaders.GetNodeLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	componentQuery := eicr.componentQuery()
+	componentQuery.Pagination = &v1.QueryPagination{
+		Limit:  1,
+		Offset: 0,
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.NodeScanTime.String(),
+				Reversed: true,
+			},
+		},
+	}
+
+	nodes, err := nodeLoader.FromQuery(ctx, componentQuery)
+	if err != nil || len(nodes) == 0 {
+		return nil, err
+	} else if len(nodes) > 1 {
+		return nil, errors.New("multiple nodes matched for last scanned component query")
+	}
+
+	return timestamp(nodes[0].GetScan().GetScanTime())
+}
+
 // TopVuln returns the first vulnerability with the top CVSS score.
 func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityResolver, error) {
+	vulnResolver, err := eicr.unwrappedTopVulnQuery(ctx)
+	if err != nil || vulnResolver == nil {
+		return nil, err
+	}
+	return vulnResolver, nil
+}
+
+// TopNodeVulnerability returns the first node component vulnerability with the top CVSS score.
+func (eicr *imageComponentResolver) TopNodeVulnerability(ctx context.Context) (NodeVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "TopNodeVulnerability")
+	if !features.PostgresDatastore.Enabled() {
+		vulnResolver, err := eicr.unwrappedTopVulnQuery(ctx)
+		if err != nil || vulnResolver == nil {
+			return nil, err
+		}
+		return vulnResolver, nil
+	}
+	// TODO : Add postgres support
+	return nil, errors.New("Sub-resolver TopNodeVulnerability in NodeComponent does not support postgres yet")
+}
+
+func (eicr *imageComponentResolver) unwrappedTopVulnQuery(ctx context.Context) (*cVEResolver, error) {
 	if eicr.data.GetSetTopCvss() == nil {
 		return nil, nil
 	}
@@ -237,6 +330,43 @@ func (eicr *imageComponentResolver) VulnCounter(ctx context.Context, args RawQue
 		return nil, err
 	}
 	return mapCVEsToVulnerabilityCounter(fixableVulns, unFixableCVEs), nil
+}
+
+// NodeVulnerabilities resolves the node vulnerabilities contained in the node component.
+func (eicr *imageComponentResolver) NodeVulnerabilities(_ context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "NodeVulnerabilities")
+	if !features.PostgresDatastore.Enabled() {
+		return eicr.root.NodeVulnerabilities(eicr.imageComponentScopeContext(), args)
+	}
+	// TODO : Add postgres support
+	return nil, errors.New("Sub-resolver NodeVulnerabilities in NodeComponent does not support postgres yet")
+}
+
+// NodeVulnerabilityCount resolves the number of node vulnerabilities contained in the node component.
+func (eicr *imageComponentResolver) NodeVulnerabilityCount(_ context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "NodeVulnerabilityCount")
+	if !features.PostgresDatastore.Enabled() {
+		return eicr.root.NodeVulnerabilityCount(eicr.imageComponentScopeContext(), args)
+	}
+	// TODO : Add postgres support
+	return 0, errors.New("Sub-resolver NodeVulnerabilityCount in NodeComponent does not support postgres yet")
+}
+
+// NodeVulnerabilityCounter resolves the number of different types of node vulnerabilities contained in a node component.
+func (eicr *imageComponentResolver) NodeVulnerabilityCounter(_ context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "NodeVulnerabilityCounter")
+	if !features.PostgresDatastore.Enabled() {
+		return eicr.root.NodeVulnCounter(eicr.imageComponentScopeContext(), args)
+	}
+	// TODO : Add postgres support
+	return nil, errors.New("Sub-resolver NodeVulnerabilityCounter in NodeComponent does not support postgres yet")
+}
+
+func (eicr *imageComponentResolver) imageComponentScopeContext() context.Context {
+	return scoped.Context(eicr.ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGE_COMPONENTS,
+		ID:    eicr.data.GetId(),
+	})
 }
 
 // Images are the images that contain the Component.
@@ -458,6 +588,16 @@ func (eicr *imageComponentResolver) LayerIndex() *int32 {
 func (eicr *imageComponentResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
 	query := search.AddRawQueriesAsConjunction(args.String(), eicr.componentRawQuery())
 	return newPlottedVulnerabilitiesResolver(ctx, eicr.root, RawQuery{Query: &query})
+}
+
+// PlottedNodeVulnerabilities returns the data required by top risky component scatter-plot on vuln mgmt dashboard
+func (eicr *imageComponentResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "PlottedNodeVulnerabilities")
+	if !features.PostgresDatastore.Enabled() {
+		return eicr.PlottedVulns(ctx, args)
+	}
+	// TODO : Add postgres support
+	return nil, errors.New("Sub-resolver PlottedNodeVulnerabilities in NodeComponent does not support postgres yet")
 }
 
 // UnusedVarSink represents a query sink

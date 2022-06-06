@@ -12,11 +12,13 @@ go_unit_tests() {
     else
         export ROX_IMAGE_FLAVOR=development_build
     fi
-    make go-unit-tests GOTAGS="${GOTAGS}"
+    make go-unit-tests GOTAGS="${GOTAGS}" || touch FAIL
     
     info "Saving junit XML report"
-    make generate-junit-reports
+    make generate-junit-reports || touch FAIL
     store_test_results junit-reports reports
+
+    [[ ! -f FAIL ]] || die "Unit tests failed"
 }
 
 go_unit_tests "$*"
