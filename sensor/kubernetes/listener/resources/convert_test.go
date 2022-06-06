@@ -360,6 +360,7 @@ func TestPopulateImageMetadata(t *testing.T) {
 
 			var registryStore *registry.Store
 			if c.isClusterLocal {
+				registryStore = registry.NewRegistryStore(alwaysInsecureCheckTLS)
 				require.NoError(t, registryStore.UpsertRegistry(context.Background(), "testdev", "image-registry.openshift-image-registry.svc:5000", config.DockerConfigEntry{}))
 			}
 
