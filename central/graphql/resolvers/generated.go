@@ -866,14 +866,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"scanTime: Time",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Note(0)))
-	utils.Must(builder.AddType("NodeVulnerability", []string{
-		"cveBaseInfo: CVEInfo",
-		"cvss: Float!",
-		"severity: VulnerabilitySeverity!",
-		"snoozeExpiry: Time",
-		"snoozeStart: Time",
-		"snoozed: Boolean!",
-	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Node_Note(0)))
 	utils.Must(builder.AddType("Notifier", []string{
 		"awsSecurityHub: AWSSecurityHub",
@@ -7975,60 +7967,6 @@ func toNodeScan_Notes(values *[]string) []storage.NodeScan_Note {
 		output[i] = toNodeScan_Note(&v)
 	}
 	return output
-}
-
-type nodeVulnerabilityResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.NodeVulnerability
-}
-
-func (resolver *Resolver) wrapNodeVulnerability(value *storage.NodeVulnerability, ok bool, err error) (*nodeVulnerabilityResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &nodeVulnerabilityResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapNodeVulnerabilities(values []*storage.NodeVulnerability, err error) ([]*nodeVulnerabilityResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*nodeVulnerabilityResolver, len(values))
-	for i, v := range values {
-		output[i] = &nodeVulnerabilityResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *nodeVulnerabilityResolver) CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error) {
-	value := resolver.data.GetCveBaseInfo()
-	return resolver.root.wrapCVEInfo(value, true, nil)
-}
-
-func (resolver *nodeVulnerabilityResolver) Cvss(ctx context.Context) float64 {
-	value := resolver.data.GetCvss()
-	return float64(value)
-}
-
-func (resolver *nodeVulnerabilityResolver) Severity(ctx context.Context) string {
-	value := resolver.data.GetSeverity()
-	return value.String()
-}
-
-func (resolver *nodeVulnerabilityResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetSnoozeExpiry()
-	return timestamp(value)
-}
-
-func (resolver *nodeVulnerabilityResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetSnoozeStart()
-	return timestamp(value)
-}
-
-func (resolver *nodeVulnerabilityResolver) Snoozed(ctx context.Context) bool {
-	value := resolver.data.GetSnoozed()
-	return value
 }
 
 func toNode_Note(value *string) storage.Node_Note {

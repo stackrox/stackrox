@@ -89,12 +89,6 @@ func (s *NodesStoreSuite) TestStore() {
 
 	// Reconcile the timestamps that are set during upsert.
 	cloned.LastUpdated = foundNode.LastUpdated
-	for _, component := range cloned.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulnerabilities() {
-			vuln.CveBaseInfo.CreatedAt = node.GetLastUpdated()
-		}
-	}
-
 	s.Equal(cloned, foundNode)
 
 	s.NoError(store.Delete(ctx, node.GetId()))
