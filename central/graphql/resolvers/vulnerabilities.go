@@ -57,13 +57,13 @@ func init() {
 		schema.AddQuery("vulnerabilityCount(query: String): Int! "+
 			"@deprecated(reason: \"use 'imageVulnerabilityCount' or 'nodeVulnerabilityCount'\")"),
 		schema.AddQuery("k8sVulnerability(id: ID): EmbeddedVulnerability "+
-			"@deprecated(reason: \"use 'clusterVulnerability'\")"),
+			"@deprecated(reason: \"use 'k8sClusterVulnerability'\")"),
 		schema.AddQuery("k8sVulnerabilities(query: String, pagination: Pagination): [EmbeddedVulnerability!]! "+
-			"@deprecated(reason: \"use 'clusterVulnerabilities'\")"),
+			"@deprecated(reason: \"use 'k8sClusterVulnerabilities'\")"),
 		schema.AddQuery("istioVulnerability(id: ID): EmbeddedVulnerability "+
-			"@deprecated(reason: \"use 'clusterVulnerability'\")"),
+			"@deprecated(reason: \"use 'istioClusterVulnerability'\")"),
 		schema.AddQuery("istioVulnerabilities(query: String, pagination: Pagination): [EmbeddedVulnerability!]! "+
-			"@deprecated(reason: \"use 'clusterVulnerabilities'\")"),
+			"@deprecated(reason: \"use 'istioClusterVulnerabilities'\")"),
 		schema.AddExtraResolver("EmbeddedVulnerability", `unusedVarSink(query: String): Int`),
 	)
 }
