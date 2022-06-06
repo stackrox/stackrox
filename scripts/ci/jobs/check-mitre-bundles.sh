@@ -5,13 +5,10 @@ source "$ROOT/scripts/ci/lib.sh"
 
 set -xveou pipefail
 
-#          name: Determine whether to skip MITRE ATT&CK bundle check
-#          command: |
-#            if [[ -z "${CIRCLE_TAG}" ]]; then
-#              echo "Not a tagged build, skipping MITRE ATT&CK bundle check"
-#              circleci step halt
-#            fi
-set
+if ! is_release_version "$(make --quiet tag)"; then
+    echo "Not a tagged build, skipping MITRE ATT&CK bundle check"
+    exit 0
+fi
 
 # shellcheck disable=SC2016
 echo 'Ensure MITRE ATT&CK bundle at "./pkg/mitre/files/mitre.json" is up-to-date. (If this fails, run `mitreutil fetch` and commit the result.)'
