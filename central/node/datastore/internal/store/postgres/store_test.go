@@ -1,3 +1,6 @@
+//go:build sql_integration
+// +build sql_integration
+
 package postgres
 
 import (
@@ -48,6 +51,7 @@ func (s *NodesStoreSuite) TestStore() {
 	defer pool.Close()
 
 	Destroy(ctx, pool)
+
 	gormDB := pgtest.OpenGormDB(s.T(), source)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
 	store := CreateTableAndNewStore(ctx, s.T(), pool, gormDB, false)
