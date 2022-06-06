@@ -48,13 +48,8 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-<<<<<<< HEAD
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_COMPONENT_CVE_EDGE, "componentcveedge", (*storage.ComponentCVEEdge)(nil)))
-		RegisterTable(schema, CreateTableNodeComponentsCvesEdgesStmt)
-=======
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_COMPONENT_CVE_EDGE, "nodecomponentcveedge", (*storage.NodeComponentCVEEdge)(nil)))
-		RegisterTable(schema)
->>>>>>> e121a030c (new node cve proto)
+		RegisterTable(schema, CreateTableNodeComponentsCvesEdgesStmt)
 		return schema
 	}()
 )

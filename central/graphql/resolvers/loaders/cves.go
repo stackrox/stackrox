@@ -73,7 +73,7 @@ func enrich(distro string, value *storage.CVE) {
 		value.CvssV3 = specifics.GetCvssV3()
 		value.Severity = specifics.GetSeverity()
 	} else {
-		value.Severity = cvss.VulnToSeverity(value)
+		value.Severity = cvss.VulnToSeverity(cvss.NewFromCVE(value))
 	}
 }
 

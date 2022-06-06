@@ -37,15 +37,9 @@ var (
 		if schema != nil {
 			return schema
 		}
-<<<<<<< HEAD
-		schema = walker.Walk(reflect.TypeOf((*storage.ImageComponent)(nil)), "node_components")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_COMPONENTS, "imagecomponent", (*storage.ImageComponent)(nil)))
-		RegisterTable(schema, CreateTableNodeComponentsStmt)
-=======
 		schema = walker.Walk(reflect.TypeOf((*storage.NodeComponent)(nil)), "node_components")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_COMPONENTS, "nodecomponent", (*storage.NodeComponent)(nil)))
-		RegisterTable(schema)
->>>>>>> e121a030c (new node cve proto)
+		RegisterTable(schema, CreateTableNodeComponentsStmt)
 		return schema
 	}()
 )

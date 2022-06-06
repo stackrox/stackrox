@@ -42,15 +42,9 @@ var (
 		if schema != nil {
 			return schema
 		}
-<<<<<<< HEAD
-		schema = walker.Walk(reflect.TypeOf((*storage.CVE)(nil)), "node_cves")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_VULNERABILITIES, "cve", (*storage.CVE)(nil)))
-		RegisterTable(schema, CreateTableNodeCvesStmt)
-=======
 		schema = walker.Walk(reflect.TypeOf((*storage.NodeCVE)(nil)), "node_cves")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_VULNERABILITIES, "nodecve", (*storage.NodeCVE)(nil)))
-		RegisterTable(schema)
->>>>>>> e121a030c (new node cve proto)
+		RegisterTable(schema, CreateTableNodeCvesStmt)
 		return schema
 	}()
 )
