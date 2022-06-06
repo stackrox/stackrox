@@ -14,9 +14,8 @@ metrics_of_interest=\
 'rox_central_sensor_event_duration,'\
 'process_cpu_seconds_total,'\
 'rox_central_index_op_duration,'\
-'rox_central_badger_op_duration,'\
-'rox_central_rocksdb_op_duration,' \
-'rox_central_function_segment_duration_bucket,' \
+'rox_central_rocksdb_op_duration,'\
+'rox_central_function_segment_duration_bucket,'\
 'k8s_event_processing_duration'
 
 main() {
