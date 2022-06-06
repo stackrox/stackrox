@@ -67,7 +67,7 @@ type localSensorConfig struct {
 	ReplayK8sTraceFile  string
 	Verbose             bool
 	ResyncPeriod        time.Duration
-	CreateMode          CreateMode
+	CreateMode          k8s.CreateMode
 	Delay               time.Duration
 }
 
@@ -107,7 +107,7 @@ func mustGetCommandLineArgs() localSensorConfig {
 	fsc.Verbose = *verboseFlag
 	fsc.ResyncPeriod = *resyncPeriod
 	fsc.Delay = *delay
-	fsc.CreateMode = Delay
+	fsc.CreateMode = k8s.Delay
 	return fsc
 }
 
@@ -161,20 +161,20 @@ func main() {
 	defer shutdownFakeServer()
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
-	traceRec := &traceWriter{
-		destination: path.Clean(fsc.RecordK8sFile),
-		enabled:     fsc.ShallRecordK8sInput,
+	traceRec := &k8s.TraceWriter{
+		Destination: path.Clean(fsc.RecordK8sFile),
+		Enabled:     fsc.ShallRecordK8sInput,
 	}
 	_ = traceRec.Init()
 
-	trReader := &traceReader{
-		source:  path.Clean(fsc.ReplayK8sTraceFile),
-		enabled: fsc.ShallReplayK8sTrace,
+	trReader := &k8s.TraceReader{
+		Source:  path.Clean(fsc.ReplayK8sTraceFile),
+		Enabled: fsc.ShallReplayK8sTrace,
 	}
 	_ = trReader.Init()
 
-	if trReader.enabled {
-		fm := FakeEventsManager{
+	if trReader.Enabled {
+		fm := k8s.FakeEventsManager{
 			Delay:  fsc.Delay,
 			Mode:   fsc.CreateMode,
 			Client: fakeClient,

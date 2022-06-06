@@ -1,4 +1,4 @@
-package main
+package k8s
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/rox/sensor/debugger/k8s"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -62,13 +61,15 @@ var minimumResources = map[string]int{
 	NodeKind:      1,
 }
 
+// FakeEventsManager reads k8s events from a jsonl file and creates reproduces them
 type FakeEventsManager struct {
 	Delay  time.Duration
 	Mode   CreateMode
-	Client *k8s.ClientSet
-	Reader *traceReader
+	Client *ClientSet
+	Reader *TraceReader
 }
 
+// WaitForMinimumResources waits for a minimum number of resources to be created or once all the events have been processed
 func WaitForMinimumResources(ch chan string, done chan int) error {
 	count := 0
 	for {
@@ -89,6 +90,7 @@ func WaitForMinimumResources(ch chan string, done chan int) error {
 	}
 }
 
+// executeAction executes an action and waits depending on the Mode
 func (f *FakeEventsManager) executeAction(action string, kind string, ch chan string, create, update, delete func() error) error {
 	switch action {
 	case "CREATE_RESOURCE":
@@ -98,7 +100,7 @@ func (f *FakeEventsManager) executeAction(action string, kind string, ch chan st
 			if err != nil {
 				return err
 			}
-			waitOnMode(f.Mode, f.Delay)
+			f.waitOnMode()
 			return nil
 		}
 		if err != nil {
@@ -108,7 +110,7 @@ func (f *FakeEventsManager) executeAction(action string, kind string, ch chan st
 		case ch <- kind:
 		default:
 		}
-		waitOnMode(f.Mode, f.Delay)
+		f.waitOnMode()
 		return nil
 	case "UPDATE_RESOURCE":
 		err := update()
@@ -121,25 +123,26 @@ func (f *FakeEventsManager) executeAction(action string, kind string, ch chan st
 			case ch <- kind:
 			default:
 			}
-			waitOnMode(f.Mode, f.Delay)
+			f.waitOnMode()
 			return nil
 		}
 		if err != nil {
 			return err
 		}
-		waitOnMode(f.Mode, f.Delay)
+		f.waitOnMode()
 		return nil
 	case "DELETE_RESOURCE":
 		err := delete()
 		if err != nil {
 			return err
 		}
-		waitOnMode(f.Mode, f.Delay)
+		f.waitOnMode()
 		return nil
 	}
 	return errors.New("unknown action")
 }
 
+// CreateEvents creates the k8s events from a given jsonl file
 func (f *FakeEventsManager) CreateEvents() error {
 	ch := make(chan string)
 	done := make(chan int)
@@ -156,6 +159,7 @@ func (f *FakeEventsManager) CreateEvents() error {
 	return WaitForMinimumResources(ch, done)
 }
 
+// createEvent creates a single k8s event
 func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan string) error {
 	obj := &unstructured.Unstructured{}
 	objType := strings.Split(msg.ObjectType, ".")
@@ -444,10 +448,11 @@ func (f *FakeEventsManager) createEvent(msg resources.InformerK8sMsg, ch chan st
 	}
 }
 
-func waitOnMode(mode CreateMode, delay time.Duration) {
-	switch mode {
+// waitOnMode waits depending on the mode
+func (f *FakeEventsManager) waitOnMode() {
+	switch f.Mode {
 	case Delay:
-		time.Sleep(delay)
+		time.Sleep(f.Delay)
 		break
 	case Timestamps:
 		break
