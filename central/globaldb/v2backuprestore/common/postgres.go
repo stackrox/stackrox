@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/logging"
@@ -45,4 +46,19 @@ func SetPostgresCmdEnv(cmd *exec.Cmd, sourceMap map[string]string, config *pgxpo
 		cmd.Env = append(cmd.Env, fmt.Sprintf("PGSSLROOTCERT=%s", sourceMap["sslrootcert"]))
 	}
 	cmd.Env = append(cmd.Env, fmt.Sprintf("PGPASSWORD=%s", config.ConnConfig.Password))
+}
+
+// GetConnectionOptions - returns a string slice with the common postgres connection options
+func GetConnectionOptions(config *pgxpool.Config) []string {
+	// Set the options for pg_dump from the connection config
+	options := []string{
+		"-U",
+		config.ConnConfig.User,
+		"-h",
+		config.ConnConfig.Host,
+		"-p",
+		strconv.FormatUint(uint64(config.ConnConfig.Port), 10),
+	}
+
+	return options
 }
