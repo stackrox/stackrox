@@ -10,10 +10,10 @@ if ! is_tagged; then
     exit 0
 fi
 
+echo 'Skipping until ROX-8486 is resolved' && exit 0
+
 # shellcheck disable=SC2016
 echo 'Ensure MITRE ATT&CK bundle at "./pkg/mitre/files/mitre.json" is up-to-date. (If this fails, run `mitreutil fetch` and commit the result.)'
-
-# echo 'Skipping until ROX-8486 is resolved' && exit 0
 
 function check_mitre_attach_bundle_up_to_date() {
     make deps
