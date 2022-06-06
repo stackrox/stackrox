@@ -44,17 +44,16 @@ func (s *PostgresRestoreSuite) SetupTest() {
 
 	s.pool = pool
 	s.config = config
-	s.sourceMap, _ = globaldb.ParseSource(source)
-
-	// Drop the restore DB if it is lingering from a previous test.
-	// Clean up any databases that were created
-	dropDB(s.sourceMap, s.config, restoreDB)
+	s.sourceMap, err = globaldb.ParseSource(source)
+	if err != nil {
+		log.Infof("Unable to parse source %q", source)
+	}
 }
 
 func (s *PostgresRestoreSuite) TearDownTest() {
 
 	// Clean up any databases that were created
-	dropDB(s.sourceMap, s.config, restoreDB)
+	_ = dropDB(s.sourceMap, s.config, restoreDB)
 
 	if s.pool != nil {
 		s.pool.Close()
@@ -63,6 +62,10 @@ func (s *PostgresRestoreSuite) TearDownTest() {
 }
 
 func (s *PostgresRestoreSuite) TestRestoreUtilities() {
+	// Drop the restore DB if it is lingering from a previous test.
+	// Clean up any databases that were created
+	_ = dropDB(s.sourceMap, s.config, restoreDB)
+
 	// Everything fresh.  A restor database should not exist.
 	s.False(CheckIfRestoreDBExists(s.config))
 
