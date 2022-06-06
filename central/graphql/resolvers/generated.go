@@ -162,6 +162,23 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: CVE_CVEType!",
 		"types: [CVE_CVEType!]!",
 	}))
+	utils.Must(builder.AddType("CVEInfo", []string{
+		"createdAt: Time",
+		"cve: String!",
+		"cvssV2: CVSSV2",
+		"cvssV3: CVSSV3",
+		"lastModified: Time",
+		"link: String!",
+		"publishedOn: Time",
+		"references: [CVEInfo_Reference]!",
+		"scoreVersion: CVEInfo_ScoreVersion!",
+		"summary: String!",
+	}))
+	utils.Must(builder.AddType("CVEInfo_Reference", []string{
+		"tags: [String!]!",
+		"uRI: String!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVEInfo_ScoreVersion(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVE_CVEType(0)))
 	utils.Must(builder.AddType("CVE_Reference", []string{
 		"tags: [String!]!",
@@ -849,6 +866,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"scanTime: Time",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Note(0)))
+	utils.Must(builder.AddType("NodeVulnerability", []string{
+		"cveBaseInfo: CVEInfo",
+		"cvss: Float!",
+		"severity: VulnerabilitySeverity!",
+		"snoozeExpiry: Time",
+		"snoozeStart: Time",
+		"snoozed: Boolean!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Node_Note(0)))
 	utils.Must(builder.AddType("Notifier", []string{
 		"awsSecurityHub: AWSSecurityHub",
@@ -2485,6 +2510,132 @@ func (resolver *cVEResolver) Type(ctx context.Context) string {
 func (resolver *cVEResolver) Types(ctx context.Context) []string {
 	value := resolver.data.GetTypes()
 	return stringSlice(value)
+}
+
+type cVEInfoResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CVEInfo
+}
+
+func (resolver *Resolver) wrapCVEInfo(value *storage.CVEInfo, ok bool, err error) (*cVEInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVEInfoResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCVEInfos(values []*storage.CVEInfo, err error) ([]*cVEInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVEInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &cVEInfoResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *cVEInfoResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetCreatedAt()
+	return timestamp(value)
+}
+
+func (resolver *cVEInfoResolver) Cve(ctx context.Context) string {
+	value := resolver.data.GetCve()
+	return value
+}
+
+func (resolver *cVEInfoResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, error) {
+	value := resolver.data.GetCvssV2()
+	return resolver.root.wrapCVSSV2(value, true, nil)
+}
+
+func (resolver *cVEInfoResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error) {
+	value := resolver.data.GetCvssV3()
+	return resolver.root.wrapCVSSV3(value, true, nil)
+}
+
+func (resolver *cVEInfoResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetLastModified()
+	return timestamp(value)
+}
+
+func (resolver *cVEInfoResolver) Link(ctx context.Context) string {
+	value := resolver.data.GetLink()
+	return value
+}
+
+func (resolver *cVEInfoResolver) PublishedOn(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetPublishedOn()
+	return timestamp(value)
+}
+
+func (resolver *cVEInfoResolver) References(ctx context.Context) ([]*cVEInfo_ReferenceResolver, error) {
+	value := resolver.data.GetReferences()
+	return resolver.root.wrapCVEInfo_References(value, nil)
+}
+
+func (resolver *cVEInfoResolver) ScoreVersion(ctx context.Context) string {
+	value := resolver.data.GetScoreVersion()
+	return value.String()
+}
+
+func (resolver *cVEInfoResolver) Summary(ctx context.Context) string {
+	value := resolver.data.GetSummary()
+	return value
+}
+
+type cVEInfo_ReferenceResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CVEInfo_Reference
+}
+
+func (resolver *Resolver) wrapCVEInfo_Reference(value *storage.CVEInfo_Reference, ok bool, err error) (*cVEInfo_ReferenceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVEInfo_ReferenceResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCVEInfo_References(values []*storage.CVEInfo_Reference, err error) ([]*cVEInfo_ReferenceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVEInfo_ReferenceResolver, len(values))
+	for i, v := range values {
+		output[i] = &cVEInfo_ReferenceResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *cVEInfo_ReferenceResolver) Tags(ctx context.Context) []string {
+	value := resolver.data.GetTags()
+	return value
+}
+
+func (resolver *cVEInfo_ReferenceResolver) URI(ctx context.Context) string {
+	value := resolver.data.GetURI()
+	return value
+}
+
+func toCVEInfo_ScoreVersion(value *string) storage.CVEInfo_ScoreVersion {
+	if value != nil {
+		return storage.CVEInfo_ScoreVersion(storage.CVEInfo_ScoreVersion_value[*value])
+	}
+	return storage.CVEInfo_ScoreVersion(0)
+}
+
+func toCVEInfo_ScoreVersions(values *[]string) []storage.CVEInfo_ScoreVersion {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CVEInfo_ScoreVersion, len(*values))
+	for i, v := range *values {
+		output[i] = toCVEInfo_ScoreVersion(&v)
+	}
+	return output
 }
 
 func toCVE_CVEType(value *string) storage.CVE_CVEType {
@@ -7824,6 +7975,60 @@ func toNodeScan_Notes(values *[]string) []storage.NodeScan_Note {
 		output[i] = toNodeScan_Note(&v)
 	}
 	return output
+}
+
+type nodeVulnerabilityResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NodeVulnerability
+}
+
+func (resolver *Resolver) wrapNodeVulnerability(value *storage.NodeVulnerability, ok bool, err error) (*nodeVulnerabilityResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeVulnerabilityResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeVulnerabilities(values []*storage.NodeVulnerability, err error) ([]*nodeVulnerabilityResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeVulnerabilityResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeVulnerabilityResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *nodeVulnerabilityResolver) CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error) {
+	value := resolver.data.GetCveBaseInfo()
+	return resolver.root.wrapCVEInfo(value, true, nil)
+}
+
+func (resolver *nodeVulnerabilityResolver) Cvss(ctx context.Context) float64 {
+	value := resolver.data.GetCvss()
+	return float64(value)
+}
+
+func (resolver *nodeVulnerabilityResolver) Severity(ctx context.Context) string {
+	value := resolver.data.GetSeverity()
+	return value.String()
+}
+
+func (resolver *nodeVulnerabilityResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSnoozeExpiry()
+	return timestamp(value)
+}
+
+func (resolver *nodeVulnerabilityResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSnoozeStart()
+	return timestamp(value)
+}
+
+func (resolver *nodeVulnerabilityResolver) Snoozed(ctx context.Context) bool {
+	value := resolver.data.GetSnoozed()
+	return value
 }
 
 func toNode_Note(value *string) storage.Node_Note {
