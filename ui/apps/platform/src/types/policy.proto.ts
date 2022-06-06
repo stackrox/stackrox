@@ -30,6 +30,9 @@ type BasePolicy = {
     exclusions: PolicyExclusion[];
     scope: PolicyScope[];
     enforcementActions: EnforcementAction[];
+    SORTName: string; // For internal use only.
+    SORTLifecycleStage: string; // For internal use only.
+    SORTEnforcement: boolean; // For internal use only.
     policyVersion: string;
     mitreAttackVectors: PolicyMitreAttackVector[];
     readonly criteriaLocked: boolean; // If true, the policy's criteria fields are rendered read-only.
@@ -40,9 +43,6 @@ type BasePolicy = {
 export type ClientPolicy = {
     excludedImageNames: string[]; // For internal use only.
     excludedDeploymentScopes: PolicyExcludedDeployment[]; // For internal use only.
-    SORT_name: string; // For internal use only.
-    SORT_lifecycleStage: string; // For internal use only.
-    SORT_enforcement: boolean; // For internal use only.
     serverPolicySections: PolicySection[]; // For internal use only.
     policySections: ClientPolicySection[]; // value strings converted into objects
 } & BasePolicy;
