@@ -1,3 +1,4 @@
+import { ViolationState } from 'types/alert.proto';
 import { EnforcementAction, LifecycleStage, ListPolicy, Policy } from 'types/policy.proto';
 
 export type { EnforcementAction, LifecycleStage, Policy };
@@ -15,7 +16,7 @@ interface ListBaseAlert {
     enforcementCount: number;
     lifecycleStage: LifecycleStage;
     policy: ListPolicy;
-    state: 'ACTIVE' | 'INACTIVE';
+    state: ViolationState;
     tags: string[];
     time: string;
 }
@@ -138,7 +139,7 @@ export type Alert = {
     firstOccurred: string;
     lifecycleStage: LifecycleStage;
     policy: Policy;
-    state: 'ACTIVE' | 'INACTIVE';
+    state: ViolationState;
     tags: string[];
     time: string;
     violations: Violation[];
