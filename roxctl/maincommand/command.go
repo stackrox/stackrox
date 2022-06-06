@@ -2,7 +2,6 @@ package maincommand
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -24,7 +23,7 @@ import (
 	"github.com/stackrox/rox/roxctl/sensor"
 )
 
-func versionCommand() *cobra.Command {
+func versionCommand(cliEnvironment common.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:  "version",
 		Args: cobra.NoArgs,
@@ -38,7 +37,7 @@ func versionCommand() *cobra.Command {
 				}
 				return errors.Wrap(enc.Encode(versions), "could not encode version")
 			}
-			fmt.Println(version.GetMainVersion())
+			cliEnvironment.Logger().PrintfLn(version.GetMainVersion())
 			return nil
 		},
 	}
@@ -77,13 +76,13 @@ func Command() *cobra.Command {
 		cluster.Command(cliEnvironment),
 		collector.Command(cliEnvironment),
 		deployment.Command(cliEnvironment),
-		logconvert.Command(),
+		logconvert.Command(cliEnvironment),
 		image.Command(cliEnvironment),
 		scanner.Command(cliEnvironment),
 		sensor.Command(cliEnvironment),
 		helm.Command(cliEnvironment),
-		versionCommand(),
-		completion.Command(),
+		versionCommand(cliEnvironment),
+		completion.Command(cliEnvironment),
 	)
 
 	return c

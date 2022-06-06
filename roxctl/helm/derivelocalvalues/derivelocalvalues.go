@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/maputil"
+	env "github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"gopkg.in/yaml.v3"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -19,16 +20,16 @@ var (
 	supportedCharts = []string{common.ChartCentralServices}
 )
 
-func deriveLocalValuesForChart(namespace, chartName, input, output string, useDirectory bool) error {
+func deriveLocalValuesForChart(logger env.Logger, namespace, chartName, input, output string, useDirectory bool) error {
 	var err error
 	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancel()
 	switch chartName {
 	case common.ChartCentralServices:
-		err = deriveLocalValuesForCentralServices(ctx, namespace, input, output, useDirectory)
+		err = deriveLocalValuesForCentralServices(ctx, logger, namespace, input, output, useDirectory)
 	default:
-		fmt.Fprintf(os.Stderr, "Deriving local values for chart %q is currently unsupported.\n", chartName)
-		fmt.Fprintf(os.Stderr, "Supported charts: %s\n", strings.Join(supportedCharts, ", "))
+		logger.ErrfLn("Deriving local values for chart %q is currently unsupported.", chartName)
+		logger.ErrfLn("Supported charts: %s", strings.Join(supportedCharts, ", "))
 		err = errors.Errorf("unsupported chart %q", chartName)
 	}
 
@@ -116,7 +117,7 @@ func writeValuesToOutput(publicValues, privateValues map[string]interface{}, out
 }
 
 // Implementation for command `helm derive-local-values`.
-func deriveLocalValuesForCentralServices(ctx context.Context, namespace, input, output string, useDirectory bool) error {
+func deriveLocalValuesForCentralServices(ctx context.Context, logger env.Logger, namespace, input, output string, useDirectory bool) error {
 	var k8s k8sObjectDescription
 
 	if input == "" {
@@ -145,9 +146,9 @@ func deriveLocalValuesForCentralServices(ctx context.Context, namespace, input, 
 		return errors.Wrap(err, "writing configuration")
 	}
 
-	printWarnings(k8s.getWarnings())
+	printWarnings(logger, k8s.getWarnings())
 
-	fmt.Fprintln(os.Stderr,
+	logger.InfofLn(
 		`Important: Please verify the correctness of the produced Helm configuration carefully prior to using it.`)
 
 	return nil
@@ -345,13 +346,13 @@ func retrieveCustomEnvVars(envVars map[string]interface{}) map[string]interface{
 	return filterMap(envVars, []string{"ROX_OFFLINE_MODE", "ROX_INIT_TELEMETRY_ENABLED"})
 }
 
-func printWarnings(warnings []string) {
+func printWarnings(logger env.Logger, warnings []string) {
 	if len(warnings) == 0 {
 		return
 	}
-	fmt.Fprintln(os.Stderr, "The following warnings occured:")
+	logger.WarnfLn("The following warnings occured:")
 	for _, msg := range warnings {
-		fmt.Fprintf(os.Stderr, "  WARNING: %s\n", msg)
+		logger.WarnfLn("%s", msg)
 	}
-	fmt.Fprintln(os.Stderr)
+	logger.WarnfLn("")
 }
