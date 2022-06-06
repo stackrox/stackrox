@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
@@ -24,7 +23,7 @@ type scannerUploadDbCommand struct {
 	timeout  time.Duration
 
 	// Properties that are injected or constructed.
-	env environment.Environment
+	env common.Environment
 }
 
 func (cmd *scannerUploadDbCommand) construct(c *cobra.Command) {
@@ -55,7 +54,7 @@ func (cmd *scannerUploadDbCommand) uploadDd() error {
 }
 
 // Command represents the command.
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	scannerUploadDbCmd := &scannerUploadDbCommand{env: cliEnvironment}
 
 	c := &cobra.Command{

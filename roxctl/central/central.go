@@ -12,11 +12,11 @@ import (
 	"github.com/stackrox/rox/roxctl/central/license"
 	"github.com/stackrox/rox/roxctl/central/userpki"
 	"github.com/stackrox/rox/roxctl/central/whoami"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 )
 
 // Command defines the central command tree
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "central",
 	}

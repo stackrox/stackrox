@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
 type output struct {
@@ -19,7 +18,7 @@ type output struct {
 	filename string
 }
 
-func generateInitBundle(cliEnvironment environment.Environment, name string, outputs []output) error {
+func generateInitBundle(cliEnvironment common.Environment, name string, outputs []output) error {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), contextTimeout)
 	defer cancel()
 
@@ -92,7 +91,7 @@ func generateInitBundle(cliEnvironment environment.Environment, name string, out
 }
 
 // generateCommand implements the command for generating new init bundles.
-func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
+func generateCommand(cliEnvironment common.Environment) *cobra.Command {
 	var outputFile string
 	var secretsOutputFile string
 

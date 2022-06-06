@@ -13,7 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"google.golang.org/grpc/codes"
@@ -25,7 +25,7 @@ const (
 )
 
 // authzTraceCommand allows to download authz trace from Central.
-func authzTraceCommand(cliEnvironment environment.Environment) *cobra.Command {
+func authzTraceCommand(cliEnvironment common.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use: "authz-trace",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
@@ -37,7 +37,7 @@ func authzTraceCommand(cliEnvironment environment.Environment) *cobra.Command {
 	return c
 }
 
-func writeAuthzTraces(cliEnvironment environment.Environment, timeout time.Duration) error {
+func writeAuthzTraces(cliEnvironment common.Environment, timeout time.Duration) error {
 	// Write traces directly to stdout without buffering. Sync iff supported,
 	// e.g., stdout is redirected to a file and not attached to the console.
 	traceOutput := os.Stdout
@@ -59,7 +59,7 @@ func writeAuthzTraces(cliEnvironment environment.Environment, timeout time.Durat
 	return multierror.Append(streamErr, syncErr).ErrorOrNil()
 }
 
-func streamAuthzTraces(cliEnvironment environment.Environment, timeout time.Duration, traceOutput io.Writer) error {
+func streamAuthzTraces(cliEnvironment common.Environment, timeout time.Duration, traceOutput io.Writer) error {
 	// pkgCommon.Context() is canceled on SIGINT, we will use that to stop on Ctrl-C.
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()

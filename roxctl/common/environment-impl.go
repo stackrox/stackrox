@@ -1,11 +1,10 @@
-package environment
+package common
 
 import (
 	"io"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"google.golang.org/grpc"
@@ -27,14 +26,14 @@ func NewCLIEnvironment(io IO, c printer.ColorfulPrinter) Environment {
 }
 
 // HTTPClient returns the common.RoxctlHTTPClient associated with the CLI Environment
-func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error) {
-	client, err := common.GetRoxctlHTTPClient(timeout, flags.ForceHTTP1(), flags.UseInsecure())
+func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (RoxctlHTTPClient, error) {
+	client, err := GetRoxctlHTTPClient(timeout, flags.ForceHTTP1(), flags.UseInsecure())
 	return client, errors.WithStack(err)
 }
 
 // GRPCConnection returns the common.GetGRPCConnection
 func (c *cliEnvironmentImpl) GRPCConnection() (*grpc.ClientConn, error) {
-	connection, err := common.GetGRPCConnection()
+	connection, err := GetGRPCConnection()
 	return connection, errors.WithStack(err)
 }
 
@@ -50,13 +49,13 @@ func (c *cliEnvironmentImpl) Logger() Logger {
 func (c *cliEnvironmentImpl) ColorWriter() io.Writer {
 	return colorWriter{
 		colorfulPrinter: c.colorfulPrinter,
-		out:             c.InputOutput().Out,
+		out:             c.InputOutput().Out(),
 	}
 }
 
 // ConnectNames returns the endpoint and (SNI) server name
 func (c *cliEnvironmentImpl) ConnectNames() (string, string, error) {
-	names, s, err := common.ConnectNames()
+	names, s, err := ConnectNames()
 	return names, s, errors.Wrap(err, "could not get endpoint")
 }
 

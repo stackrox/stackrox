@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
@@ -66,7 +66,7 @@ func orchestratorCommand(shortName, longName string) *cobra.Command {
 	return c
 }
 
-func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *renderer.K8sConfig, shortName, longName string, getClusterType func() (storage.ClusterType, error)) *cobra.Command {
+func k8sBasedOrchestrator(cliEnvironment common.Environment, k8sConfig *renderer.K8sConfig, shortName, longName string, getClusterType func() (storage.ClusterType, error)) *cobra.Command {
 	c := orchestratorCommand(shortName, longName)
 	c.PersistentPreRunE = func(*cobra.Command, []string) error {
 		clusterType, err := getClusterType()
@@ -106,7 +106,7 @@ func newK8sConfig() *renderer.K8sConfig {
 	return &renderer.K8sConfig{}
 }
 
-func k8s(cliEnvironment environment.Environment) *cobra.Command {
+func k8s(cliEnvironment common.Environment) *cobra.Command {
 	k8sConfig := newK8sConfig()
 	c := k8sBasedOrchestrator(cliEnvironment, k8sConfig, "k8s", "Kubernetes", func() (storage.ClusterType, error) { return storage.ClusterType_KUBERNETES_CLUSTER, nil })
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
@@ -130,7 +130,7 @@ func k8s(cliEnvironment environment.Environment) *cobra.Command {
 	return c
 }
 
-func openshift(cliEnvironment environment.Environment) *cobra.Command {
+func openshift(cliEnvironment common.Environment) *cobra.Command {
 	k8sConfig := newK8sConfig()
 
 	var openshiftVersion int

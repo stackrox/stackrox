@@ -11,12 +11,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
 // Command removes a Sensor from Central without deleting any orchestrator objects.
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	clusterDeleteCmd := &clusterDeleteCommand{env: cliEnvironment}
 
 	cbr := &cobra.Command{
@@ -42,7 +41,7 @@ type clusterDeleteCommand struct {
 	name string
 
 	// Properties that are injected or constructed.
-	env     environment.Environment
+	env     common.Environment
 	timeout time.Duration
 }
 

@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/pflag/autobool"
 	"github.com/stackrox/rox/roxctl/sensor/util"
@@ -52,7 +51,7 @@ type sensorGenerateCommand struct {
 
 	// injected or constructed values
 	cluster     storage.Cluster
-	env         environment.Environment
+	env         common.Environment
 	getBundleFn util.GetBundleFn
 }
 
@@ -190,7 +189,7 @@ func (s *sensorGenerateCommand) createCluster(ctx context.Context, svc v1.Cluste
 }
 
 // Command defines the sensor generate command tree
-func Command(cliEnvironment environment.Environment) *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	generateCmd := &sensorGenerateCommand{env: cliEnvironment, cluster: defaultCluster()}
 	c := &cobra.Command{
 		Use: "generate",
