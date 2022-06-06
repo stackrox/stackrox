@@ -54,7 +54,7 @@ function TableModal({
     return (
         <>
             <TextInput
-                id="table-modal-text-input"
+                data-testid="table-modal-text-input"
                 isDisabled
                 value={
                     value.arrayValue?.length > 0
@@ -67,6 +67,7 @@ function TableModal({
             />
             <Button
                 key="open-select-modal"
+                data-testid="table-modal-open-button"
                 variant={ButtonVariant.primary}
                 onClick={() => {
                     setIsModalOpen(true);
@@ -79,7 +80,6 @@ function TableModal({
                 isOpen={isModalOpen}
                 variant={ModalVariant.large}
                 onClose={onCloseModalHandler}
-                data-testid="select-table-modal"
                 aria-label={`Select ${typeText}s modal`}
                 hasNoBodyWrapper
             >
@@ -88,7 +88,11 @@ function TableModal({
                         {!!rows.length && (
                             <>
                                 Select {typeText}s from the table below.
-                                <TableComposable variant="compact" isStickyHeader>
+                                <TableComposable
+                                    variant="compact"
+                                    isStickyHeader
+                                    data-testid="table-modal-table"
+                                >
                                     <Thead>
                                         <Tr>
                                             <Th
@@ -157,7 +161,9 @@ function TableModal({
                             </>
                         )}
                         {!rows.length && (
-                            <div>Please configure {typeText}s to add them as policy criteria.</div>
+                            <div data-testid="table-modal-empty-state">
+                                Please configure {typeText}s to add them as policy criteria.
+                            </div>
                         )}
                     </PageSection>
                 </ModalBoxBody>
@@ -165,6 +171,7 @@ function TableModal({
                     <Button
                         key="save"
                         variant="primary"
+                        data-testid="table-modal-save-btn"
                         onClick={onSaveHandler}
                         isDisabled={
                             readOnly || isEqual(value.arrayValue, getSelectedIds()) || !rows.length
@@ -172,7 +179,12 @@ function TableModal({
                     >
                         Save
                     </Button>
-                    <Button key="cancel" variant="secondary" onClick={onCloseModalHandler}>
+                    <Button
+                        key="cancel"
+                        variant="secondary"
+                        data-testid="table-modal-cancel-btn"
+                        onClick={onCloseModalHandler}
+                    >
                         Cancel
                     </Button>
                 </ModalBoxFooter>
