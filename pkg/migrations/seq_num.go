@@ -13,9 +13,9 @@ import (
 func CurrentDBVersionSeqNum() int {
 	// If PostgresDatastore is enabled, we consider all migrations to Postgres are following
 	// the current migrations.
-	if features.PostgresDatastore.Enabled() {
-		return internal.CurrentDBVersionSeqNum + internal.PostgresDBVersionPlus
-	}
+	// if features.PostgresDatastore.Enabled() {
+	//	return internal.CurrentDBVersionSeqNum + internal.PostgresDBVersionPlus
+	// }
 	return internal.CurrentDBVersionSeqNum
 }
 

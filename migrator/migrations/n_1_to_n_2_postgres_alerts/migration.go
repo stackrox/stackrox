@@ -13,6 +13,8 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/tecbot/gorocksdb"
 	"gorm.io/gorm"
 )
@@ -30,6 +32,8 @@ var (
 		},
 	}
 	rocksdbBucket = []byte("alerts")
+	batchSize     = 10000
+	schema        = pkgSchema.AlertsSchema
 )
 
 func moveAlerts(rocksDB *gorocksdb.DB, gormDB *gorm.DB, postgresDB *pgxpool.Pool) error {
@@ -62,6 +66,30 @@ func moveAlerts(rocksDB *gorocksdb.DB, gormDB *gorm.DB, postgresDB *pgxpool.Pool
 		}
 	}
 	return nil
+}
+
+type storeImpl struct {
+	db *pgxpool.Pool
+}
+
+// newStore returns a new Store instance using the provided sql instance.
+func newStore(db *pgxpool.Pool) *storeImpl {
+	return &storeImpl{
+		db: db,
+	}
+}
+
+func (s *storeImpl) acquireConn(ctx context.Context) (*pgxpool.Conn, func(), error) {
+	conn, err := s.db.Acquire(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	return conn, conn.Release, nil
+}
+
+func (s *storeImpl) deleteMany(_ context.Context, ids []string) error {
+	q := search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery()
+	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }
 
 func init() {

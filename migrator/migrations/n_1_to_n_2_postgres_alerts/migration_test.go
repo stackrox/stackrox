@@ -88,9 +88,15 @@ func (s *postgresMigrationSuite) TestMigration() {
 		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(rocksdbBucket, []byte(obj.Id)), bytes)
 		objs = append(objs, obj)
 	}
-
 	s.NoError(s.db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch))
+	// Test migration
 	s.NoError(moveAlerts(s.rocksDB.DB, s.gormDB, s.pool))
+	s.verify(objs)
+	// Test re-entry
+	s.NoError(moveAlerts(s.rocksDB.DB, s.gormDB, s.pool))
+	s.verify(objs)
+}
+func (s *postgresMigrationSuite) verify(objs []*storage.Alert) {
 	var count int64
 	s.gormDB.Model(pkgSchema.CreateTableAlertsStmt.GormModel).Count(&count)
 	s.Equal(int64(len(objs)), count)

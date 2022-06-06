@@ -4,30 +4,9 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
 )
-
-type storeImpl struct {
-	db *pgxpool.Pool
-}
-
-var (
-	batchSize = 10000
-	schema    = pkgSchema.AlertsSchema
-)
-
-// newStore returns a new Store instance using the provided sql instance.
-func newStore(db *pgxpool.Pool) *storeImpl {
-	return &storeImpl{
-		db: db,
-	}
-}
 
 func (s *storeImpl) copyFromAlerts(ctx context.Context, tx pgx.Tx, objs ...*storage.Alert) error {
 
@@ -191,7 +170,7 @@ func (s *storeImpl) copyFromAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
 			// delete for the top level parent
 
-			if err := s.DeleteMany(ctx, deletes); err != nil {
+			if err := s.deleteMany(ctx, deletes); err != nil {
 				return err
 			}
 			// clear the inserts and vals for the next batch
@@ -212,7 +191,7 @@ func (s *storeImpl) copyFromAlerts(ctx context.Context, tx pgx.Tx, objs ...*stor
 }
 
 func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Alert) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Alert")
+	conn, release, err := s.acquireConn(ctx)
 	if err != nil {
 		return err
 	}
@@ -233,17 +212,4 @@ func (s *storeImpl) copyFrom(ctx context.Context, objs ...*storage.Alert) error 
 		return err
 	}
 	return nil
-}
-
-func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*pgxpool.Conn, func(), error) {
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
-}
-
-func (s *storeImpl) DeleteMany(_ context.Context, ids []string) error {
-	q := search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery()
-	return postgres.RunDeleteRequestForSchema(schema, q, s.db)
 }

@@ -605,10 +605,13 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Alert
 	return elems, missingIndices, nil
 }
 
-// Delete removes the specified IDs from the store
+// DeleteMany removes the specified IDs from the store
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "Alert")
+	return s.DeleteMany(ctx, ids)
+}
 
+func (s *storeImpl) deleteMany(ctx context.Context, ids []string) error {
 	var sacQueryFilter *v1.Query
 
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
