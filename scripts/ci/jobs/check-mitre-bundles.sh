@@ -5,7 +5,7 @@ source "$ROOT/scripts/ci/lib.sh"
 
 set -xveou pipefail
 
-if ! is_release_version "$(make --quiet tag)"; then
+if ! is_tagged; then
     echo "Not a tagged build, skipping MITRE ATT&CK bundle check"
     exit 0
 fi
