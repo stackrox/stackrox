@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"testing"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -24,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+	"gorm.io/gorm"
 )
 
 const (
@@ -70,14 +72,7 @@ type storeImpl struct {
 }
 
 // New returns a new Store instance using the provided sql instance.
-func New(ctx context.Context, db *pgxpool.Pool, noUpdateTimestamps bool) Store {
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableClustersStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNodesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNodeComponentsStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNodeCvesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNodeComponentEdgesStmt)
-	pgutils.CreateTable(ctx, db, pkgSchema.CreateTableNodeComponentsCvesEdgesStmt)
-
+func New(db *pgxpool.Pool, noUpdateTimestamps bool) Store {
 	return &storeImpl{
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
@@ -904,6 +899,17 @@ func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 }
 
 //// Used for testing
+
+// CreateTableAndNewStore returns a new Store instance for testing
+func CreateTableAndNewStore(ctx context.Context, t *testing.T, db *pgxpool.Pool, gormDB *gorm.DB, noUpdateTimestamps bool) Store {
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableClustersStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeCvesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentEdgesStmt)
+	pgutils.CreateTableFromModel(ctx, gormDB, pkgSchema.CreateTableNodeComponentsCvesEdgesStmt)
+	return New(db, noUpdateTimestamps)
+}
 
 func dropTableNodes(ctx context.Context, db *pgxpool.Pool) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes CASCADE")

@@ -48,7 +48,9 @@ func (s *NodesStoreSuite) TestStore() {
 	defer pool.Close()
 
 	Destroy(ctx, pool)
-	store := New(ctx, pool, false)
+	gormDB := pgtest.OpenGormDB(s.T(), source)
+	defer pgtest.CloseGormDB(s.T(), gormDB)
+	store := CreateTableAndNewStore(ctx, s.T(), pool, gormDB, false)
 
 	node := &storage.Node{}
 	s.NoError(testutils.FullInit(node, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
