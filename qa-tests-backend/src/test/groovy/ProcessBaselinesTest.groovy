@@ -229,8 +229,7 @@ class ProcessBaselinesTest extends BaseSpecification {
             }
             return tmpBaseline
         }
-//         ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
-//                  getProcessBaseline(clusterId, deployment, containerName)
+
         assert (baseline != null)
         log.info "Baseline Before locking: ${baseline}"
         assert ((baseline.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
@@ -240,7 +239,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessBaselines = ProcessBaselineService.
                  lockProcessBaselines(clusterId, deployment, containerName, true)
         assert (!StringUtils.isEmpty(lockProcessBaselines.get(0).getElements(0).getElement().processName))
-        log.info "Locked Process Baseline before pwd: ${lockProcessBaselines}"
+
         // sleep 5 seconds to allow for propagation to sensor
         sleep 5000
         orchestrator.execInContainer(deployment, "pwd")
