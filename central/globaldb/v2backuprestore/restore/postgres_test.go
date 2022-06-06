@@ -27,12 +27,13 @@ func TestRestore(t *testing.T) {
 
 func (s *PostgresRestoreSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
 	if !features.PostgresDatastore.Enabled() {
 		s.T().Skip("Skip postgres store tests")
 		s.T().SkipNow()
 	}
+
+	s.envIsolator.Setenv(features.PostgresDatastore.EnvVar(), "true")
 
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -51,9 +52,6 @@ func (s *PostgresRestoreSuite) SetupTest() {
 }
 
 func (s *PostgresRestoreSuite) TearDownTest() {
-
-	// Clean up any databases that were created
-	_ = dropDB(s.sourceMap, s.config, restoreDB)
 
 	if s.pool != nil {
 		s.pool.Close()
