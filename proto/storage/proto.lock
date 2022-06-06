@@ -3560,6 +3560,22 @@
             ]
           },
           {
+            "name": "CVEInfo.ScoreVersion",
+            "enum_fields": [
+              {
+                "name": "V2"
+              },
+              {
+                "name": "V3",
+                "integer": 1
+              },
+              {
+                "name": "UNKNOWN",
+                "integer": 2
+              }
+            ]
+          },
+          {
             "name": "CVSSV2.Impact",
             "enum_fields": [
               {
@@ -3993,6 +4009,184 @@
                     "name": "tags",
                     "type": "string",
                     "is_repeated": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "CVEInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cve",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"CVE,store\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "summary",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "link",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "published_on",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"CVE Published On\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "created_at",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"CVE Created Time\""
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "last_modified",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "score_version",
+                "type": "ScoreVersion"
+              },
+              {
+                "id": 8,
+                "name": "cvss_v2",
+                "type": "CVSSV2"
+              },
+              {
+                "id": 9,
+                "name": "cvss_v3",
+                "type": "CVSSV3"
+              },
+              {
+                "id": 10,
+                "name": "references",
+                "type": "Reference",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "Reference",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "URI",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "tags",
+                    "type": "string",
+                    "is_repeated": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "NodeCVE",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"CVE ID,hidden\"sql:\"pk,id\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "cve_base_info",
+                "type": "CVEInfo"
+              },
+              {
+                "id": 3,
+                "name": "operating_system",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "cvss",
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"CVSS,store\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "severity",
+                "type": "VulnerabilitySeverity",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Severity\""
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "impact_score",
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Impact Score\""
+                  }
+                ]
+              },
+              {
+                "id": 7,
+                "name": "snoozed",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"CVE Snoozed\""
+                  }
+                ]
+              },
+              {
+                "id": 8,
+                "name": "snooze_start",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 9,
+                "name": "snooze_expiry",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"CVE Snooze Expiry,hidden\""
                   }
                 ]
               }
@@ -6817,12 +7011,24 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"unique\""
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -9195,6 +9401,12 @@
                 "is_repeated": true
               },
               {
+                "id": 7,
+                "name": "vulnerabilities",
+                "type": "NodeVulnerability",
+                "is_repeated": true
+              },
+              {
                 "id": 4,
                 "name": "priority",
                 "type": "int64"
@@ -9225,6 +9437,91 @@
           {
             "path": "storage/vulnerability.proto"
           },
+          {
+            "path": "gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "node_component.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "NodeComponent",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Component ID,store,hidden\"sql:\"pk,id\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Component,store\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "version",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Component Version,store\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "priority",
+                "type": "int64"
+              },
+              {
+                "id": 7,
+                "name": "risk_score",
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Component Risk Score,hidden\""
+                  }
+                ]
+              },
+              {
+                "id": 8,
+                "name": "top_cvss",
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Component Top CVSS,store\""
+                  }
+                ]
+              },
+              {
+                "id": 9,
+                "name": "operating_system",
+                "type": "string"
+              }
+            ]
+          }
+        ],
+        "imports": [
           {
             "path": "gogoproto/gogo.proto"
           }
@@ -11797,7 +12094,67 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk,fk(ImageComponent:id),no-fk-constraint\""
+                    "value": "sql:\"pk,fk(NodeComponent:id),no-fk-constraint\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "NodeComponentCVEEdge",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,id\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "is_fixable",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Fixable,store\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "fixed_by",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Fixed By,store,hidden\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "node_component_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,fk(NodeComponent:id)\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "node_cve_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,fk(NodeCVE:id),no-fk-constraint\""
                   }
                 ]
               }
@@ -13925,7 +14282,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\""
+                    "value": "sql:\"pk\"search:\"Test Key 2,store,hidden\""
                   }
                 ]
               },
@@ -15321,6 +15678,70 @@
             ],
             "reserved_ids": [
               17
+            ]
+          },
+          {
+            "name": "NodeVulnerability",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cve_base_info",
+                "type": "CVEInfo"
+              },
+              {
+                "id": 2,
+                "name": "cvss",
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "policy:\"CVSS\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "severity",
+                "type": "VulnerabilitySeverity",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "policy:\"Severity\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "fixed_by",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "policy:\"Fixed By\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "snoozed",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "policy:\"CVE Snoozed\""
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "snooze_start",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "snooze_expiry",
+                "type": "google.protobuf.Timestamp"
+              }
             ]
           }
         ],

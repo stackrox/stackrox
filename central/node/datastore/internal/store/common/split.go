@@ -4,9 +4,7 @@ import (
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scancomponent"
-	"github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -69,14 +67,10 @@ func splitCVEs(os string, component *ComponentParts, embedded *storage.EmbeddedN
 
 func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, convertedCVE *storage.CVE, embedded *storage.EmbeddedVulnerability) *storage.ComponentCVEEdge {
 	ret := &storage.ComponentCVEEdge{
+		Id:               edges.EdgeID{ParentID: convertedComponent.GetId(), ChildID: convertedCVE.GetId()}.ToString(),
 		IsFixable:        embedded.GetFixedBy() != "",
 		ImageCveId:       convertedCVE.GetId(),
 		ImageComponentId: convertedComponent.GetId(),
-	}
-	if features.PostgresDatastore.Enabled() {
-		ret.Id = postgres.IDFromPks([]string{convertedComponent.GetId(), convertedCVE.GetId()})
-	} else {
-		ret.Id = edges.EdgeID{ParentID: convertedComponent.GetId(), ChildID: convertedCVE.GetId()}.ToString()
 	}
 
 	if ret.IsFixable {
@@ -105,13 +99,9 @@ func generateNodeComponent(os string, from *storage.EmbeddedNodeScanComponent) *
 
 func generateNodeComponentEdge(node *storage.Node, convertedComponent *storage.ImageComponent) *storage.NodeComponentEdge {
 	ret := &storage.NodeComponentEdge{
+		Id:              edges.EdgeID{ParentID: node.GetId(), ChildID: convertedComponent.GetId()}.ToString(),
 		NodeId:          node.GetId(),
 		NodeComponentId: convertedComponent.GetId(),
-	}
-	if features.PostgresDatastore.Enabled() {
-		ret.Id = postgres.IDFromPks([]string{node.GetId(), convertedComponent.GetId()})
-	} else {
-		ret.Id = edges.EdgeID{ParentID: node.GetId(), ChildID: convertedComponent.GetId()}.ToString()
 	}
 	return ret
 }
