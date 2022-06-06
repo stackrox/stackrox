@@ -3,7 +3,6 @@ package dbs
 import (
 	"context"
 	"os/exec"
-	"strconv"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/globaldb"
@@ -57,12 +56,6 @@ func (bu *PostgresBackup) WriteDirectory(ctx context.Context) (string, error) {
 
 	// Set the options for pg_dump from the connection config
 	options := []string{
-		"-U",
-		config.ConnConfig.User,
-		"-h",
-		config.ConnConfig.Host,
-		"-p",
-		strconv.FormatUint(uint64(config.ConnConfig.Port), 10),
 		"-d",
 		config.ConnConfig.Database,
 		"-Fd", // Custom format.  Compressed files written to a directory.
@@ -71,6 +64,9 @@ func (bu *PostgresBackup) WriteDirectory(ctx context.Context) (string, error) {
 		"-j", // Allows for work to be spread across jobs
 		"5",  // The number of jobs
 	}
+
+	// Get the common DB connection info
+	options = append(options, common.GetConnectionOptions(config)...)
 
 	cmd := exec.Command("pg_dump", options...)
 

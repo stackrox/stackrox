@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/globaldb/metrics"
 	"github.com/stackrox/rox/pkg/config"
@@ -113,19 +114,34 @@ func GetPostgresConfig() (map[string]string, *pgxpool.Config, error) {
 		return nil, nil, err
 	}
 
-	return parseSource(source), config, nil
-}
-
-// parseSource - parses source string into a map for easier use
-func parseSource(source string) map[string]string {
-	sourceSlice := strings.Split(source, " ")
-	sourceMap := make(map[string]string)
-	for _, pair := range sourceSlice {
-		configSetting := strings.Split(pair, "=")
-		sourceMap[configSetting[0]] = configSetting[1]
+	sourceMap, err := ParseSource(source)
+	if err != nil {
+		log.Fatalf("Could not parse postgres config: %v", err)
+		return nil, nil, err
 	}
 
-	return sourceMap
+	return sourceMap, config, nil
+}
+
+// ParseSource - parses source string into a map for easier use
+func ParseSource(source string) (map[string]string, error) {
+	if source == "" {
+		return nil, errors.New("source string is empty")
+	}
+
+	sourceSlice := strings.Fields(source)
+	sourceMap := make(map[string]string)
+	for _, pair := range sourceSlice {
+		// Due to the possibility that the password could potentially have an = we
+		// need to ensure that we get the entire password
+		configSetting := strings.SplitN(pair, "=", 2)
+		if len(configSetting[0]) < 2 || len(strings.TrimSpace(configSetting[1])) < 1 {
+			return nil, errors.Errorf("field %s has no value", configSetting[0])
+		}
+		sourceMap[configSetting[0]] = strings.TrimSpace(configSetting[1])
+	}
+
+	return sourceMap, nil
 }
 
 func collectPostgresStats(db *pgxpool.Pool) {

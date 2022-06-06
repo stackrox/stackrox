@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -20,6 +19,9 @@ const (
 	// createTemplate - template DB to base the temporary DB off of.
 	createTemplate = "template0"
 	// connectDB - database we can connect to in order to perform the rename
+	// TODO: ROX-11272 We should reserve a database for admin type functionality
+	// such as what we are doing with a restore.  This will need to be updated
+	// with that change.
 	connectDB = "template1"
 )
 
@@ -35,16 +37,13 @@ var (
 func dropDB(sourceMap map[string]string, config *pgxpool.Config, databaseName string) error {
 	// Set the options for pg_dump from the connection config
 	options := []string{
-		"-U",
-		config.ConnConfig.User,
-		"-h",
-		config.ConnConfig.Host,
-		"-p",
-		strconv.FormatUint(uint64(config.ConnConfig.Port), 10),
 		"-f",
 		"--if-exists",
 		databaseName,
 	}
+
+	// Get the common DB connection info
+	options = append(options, common.GetConnectionOptions(config)...)
 
 	cmd := exec.Command("dropdb", options...)
 
@@ -62,16 +61,13 @@ func dropDB(sourceMap map[string]string, config *pgxpool.Config, databaseName st
 func createDB(sourceMap map[string]string, config *pgxpool.Config) error {
 	// Set the options for pg_dump from the connection config
 	options := []string{
-		"-U",
-		config.ConnConfig.User,
-		"-h",
-		config.ConnConfig.Host,
-		"-p",
-		strconv.FormatUint(uint64(config.ConnConfig.Port), 10),
 		"-T",
 		createTemplate,
 		restoreDB,
 	}
+
+	// Get the common DB connection info
+	options = append(options, common.GetConnectionOptions(config)...)
 
 	cmd := exec.Command("createdb", options...)
 
@@ -83,12 +79,6 @@ func createDB(sourceMap map[string]string, config *pgxpool.Config) error {
 func runRestore(dumpPath string, sourceMap map[string]string, config *pgxpool.Config) error {
 	// Set the options for pg_dump from the connection config
 	options := []string{
-		"-U",
-		config.ConnConfig.User,
-		"-h",
-		config.ConnConfig.Host,
-		"-p",
-		strconv.FormatUint(uint64(config.ConnConfig.Port), 10),
 		"-d",
 		restoreDB,
 		"--no-owner",
@@ -101,6 +91,9 @@ func runRestore(dumpPath string, sourceMap map[string]string, config *pgxpool.Co
 		"-vvv",
 		dumpPath,
 	}
+
+	// Get the common DB connection info
+	options = append(options, common.GetConnectionOptions(config)...)
 
 	cmd := exec.Command("pg_restore", options...)
 
@@ -153,20 +146,15 @@ func renameRestoreDB(connectPool *pgxpool.Pool, updatedDB, primaryDB string) err
 }
 
 // SwitchToRestoredDB - switches the restore DB to be the active DB
-func SwitchToRestoredDB() error {
+func SwitchToRestoredDB(sourceMap map[string]string, config *pgxpool.Config) error {
 	log.Info("Switching to restored database")
-	sourceMap, config, err := globaldb.GetPostgresConfig()
-	if err != nil {
-		log.Fatalf("Could not parse postgres config: %v", err)
-		return err
-	}
 
-	// connect on template1
+	// Connect to different database for admin functions
 	connectPool := adminPool(config)
 
 	// Restore succeeded to the separate DB, so we need to drop the original in order to rename
 	// the new one.
-	err = dropDB(sourceMap, config, config.ConnConfig.Database)
+	err := dropDB(sourceMap, config, config.ConnConfig.Database)
 	if err != nil {
 		log.Errorf("Could not drop the DB: %v", err)
 		return err
@@ -179,7 +167,7 @@ func SwitchToRestoredDB() error {
 		return err
 	}
 
-	// Close the connection pool on template1
+	// Close the admin connection pool
 	connectPool.Close()
 
 	return nil
@@ -210,14 +198,10 @@ func adminPool(config *pgxpool.Config) *pgxpool.Pool {
 }
 
 // CheckIfRestoreDBExists - checks to see if a restore database exists
-func CheckIfRestoreDBExists() bool {
+func CheckIfRestoreDBExists(config *pgxpool.Config) bool {
 	log.Info("CheckIfRestoreDBExists")
-	_, config, err := globaldb.GetPostgresConfig()
-	if err != nil {
-		log.Fatalf("Could not parse postgres config: %v", err)
-		return false
-	}
-	// connect on template1
+
+	// Connect to different database for admin functions
 	connectPool := adminPool(config)
 
 	existsStmt := "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_database WHERE datname = $1)"
@@ -228,7 +212,7 @@ func CheckIfRestoreDBExists() bool {
 		return false
 	}
 
-	// Close the connection pool on template1
+	// Close the admin connection pool
 	connectPool.Close()
 
 	log.Infof("Restore database exists => %t", exists)
