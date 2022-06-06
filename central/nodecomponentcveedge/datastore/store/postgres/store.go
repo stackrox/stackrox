@@ -26,11 +26,17 @@ import (
 const (
 	baseTable = "node_components_cves_edges"
 
+<<<<<<< HEAD
 <<<<<<< HEAD:central/relations/nodecomponenttocve/datastore/store/postgres/store.go
 =======
 	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_components_cves_edges WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3)"
 	getStmt    = "SELECT serialized FROM node_components_cves_edges WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3"
 	deleteStmt = "DELETE FROM node_components_cves_edges WHERE Id = $1 AND ImageComponentId = $2 AND ImageCveId = $3"
+=======
+	existsStmt = "SELECT EXISTS(SELECT 1 FROM node_components_cves_edges WHERE Id = $1 AND NodeComponentId = $2 AND NodeCveId = $3)"
+	getStmt    = "SELECT serialized FROM node_components_cves_edges WHERE Id = $1 AND NodeComponentId = $2 AND NodeCveId = $3"
+	deleteStmt = "DELETE FROM node_components_cves_edges WHERE Id = $1 AND NodeComponentId = $2 AND NodeCveId = $3"
+>>>>>>> 4c894d363 (new node cve proto)
 
 >>>>>>> 0d272c5ab (Postgres store for nodes):central/nodecomponentcveedge/datastore/store/postgres/store.go
 	batchAfter = 100
@@ -48,12 +54,12 @@ var (
 
 type Store interface {
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, id string, imageComponentId string, imageCveId string) (bool, error)
-	Get(ctx context.Context, id string, imageComponentId string, imageCveId string) (*storage.ComponentCVEEdge, bool, error)
+	Exists(ctx context.Context, id string, nodeComponentId string, nodeCveId string) (bool, error)
+	Get(ctx context.Context, id string, nodeComponentId string, nodeCveId string) (*storage.NodeComponentCVEEdge, bool, error)
 	GetIDs(ctx context.Context) ([]string, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.ComponentCVEEdge, []int, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.NodeComponentCVEEdge, []int, error)
 
-	Walk(ctx context.Context, fn func(obj *storage.ComponentCVEEdge) error) error
+	Walk(ctx context.Context, fn func(obj *storage.NodeComponentCVEEdge) error) error
 
 	AckKeysIndexed(ctx context.Context, keys ...string) error
 	GetKeysToIndex(ctx context.Context) ([]string, error)
@@ -73,7 +79,7 @@ func New(db *pgxpool.Pool) Store {
 
 // Count returns the number of objects in the store
 func (s *storeImpl) Count(ctx context.Context) (int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "ComponentCVEEdge")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "NodeComponentCVEEdge")
 
 	var sacQueryFilter *v1.Query
 
@@ -81,9 +87,10 @@ func (s *storeImpl) Count(ctx context.Context) (int, error) {
 }
 
 // Exists returns if the id exists in the store
-func (s *storeImpl) Exists(ctx context.Context, id string, imageComponentId string, imageCveId string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "ComponentCVEEdge")
+func (s *storeImpl) Exists(ctx context.Context, id string, nodeComponentId string, nodeCveId string) (bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "NodeComponentCVEEdge")
 
+<<<<<<< HEAD
 <<<<<<< HEAD:central/relations/nodecomponenttocve/datastore/store/postgres/store.go
 	var sacQueryFilter *v1.Query
 
@@ -98,6 +105,9 @@ func (s *storeImpl) Exists(ctx context.Context, id string, imageComponentId stri
 	return count == 1, err
 =======
 	row := s.db.QueryRow(ctx, existsStmt, id, imageComponentId, imageCveId)
+=======
+	row := s.db.QueryRow(ctx, existsStmt, id, nodeComponentId, nodeCveId)
+>>>>>>> 4c894d363 (new node cve proto)
 	var exists bool
 	if err := row.Scan(&exists); err != nil {
 		return false, pgutils.ErrNilIfNoRows(err)
@@ -107,9 +117,10 @@ func (s *storeImpl) Exists(ctx context.Context, id string, imageComponentId stri
 }
 
 // Get returns the object, if it exists from the store
-func (s *storeImpl) Get(ctx context.Context, id string, imageComponentId string, imageCveId string) (*storage.ComponentCVEEdge, bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ComponentCVEEdge")
+func (s *storeImpl) Get(ctx context.Context, id string, nodeComponentId string, nodeCveId string) (*storage.NodeComponentCVEEdge, bool, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeComponentCVEEdge")
 
+<<<<<<< HEAD
 <<<<<<< HEAD:central/relations/nodecomponenttocve/datastore/store/postgres/store.go
 	var sacQueryFilter *v1.Query
 
@@ -124,19 +135,22 @@ func (s *storeImpl) Get(ctx context.Context, id string, imageComponentId string,
 	if err != nil {
 =======
 	conn, release, err := s.acquireConn(ctx, ops.Get, "ComponentCVEEdge")
+=======
+	conn, release, err := s.acquireConn(ctx, ops.Get, "NodeComponentCVEEdge")
+>>>>>>> 4c894d363 (new node cve proto)
 	if err != nil {
 		return nil, false, err
 	}
 	defer release()
 
-	row := conn.QueryRow(ctx, getStmt, id, imageComponentId, imageCveId)
+	row := conn.QueryRow(ctx, getStmt, id, nodeComponentId, nodeCveId)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 >>>>>>> 0d272c5ab (Postgres store for nodes):central/nodecomponentcveedge/datastore/store/postgres/store.go
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.ComponentCVEEdge
+	var msg storage.NodeComponentCVEEdge
 	if err := proto.Unmarshal(data, &msg); err != nil {
 		return nil, false, err
 	}
@@ -154,7 +168,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 
 // GetIDs returns all the IDs for the store
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.ComponentCVEEdgeIDs")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "storage.NodeComponentCVEEdgeIDs")
 	var sacQueryFilter *v1.Query
 
 	result, err := postgres.RunSearchRequestForSchema(schema, sacQueryFilter, s.db)
@@ -171,8 +185,8 @@ func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
-func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.ComponentCVEEdge, []int, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ComponentCVEEdge")
+func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.NodeComponentCVEEdge, []int, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentCVEEdge")
 
 	if len(ids) == 0 {
 		return nil, nil, nil
@@ -196,9 +210,9 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Compo
 		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]*storage.ComponentCVEEdge)
+	resultsByID := make(map[string]*storage.NodeComponentCVEEdge)
 	for _, data := range rows {
-		msg := &storage.ComponentCVEEdge{}
+		msg := &storage.NodeComponentCVEEdge{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, nil, err
 		}
@@ -207,7 +221,7 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Compo
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
 	// It is important that the elems are populated in the same order as the input ids
 	// slice, since some calling code relies on that to maintain order.
-	elems := make([]*storage.ComponentCVEEdge, 0, len(resultsByID))
+	elems := make([]*storage.NodeComponentCVEEdge, 0, len(resultsByID))
 	for i, id := range ids {
 		if result, ok := resultsByID[id]; !ok {
 			missingIndices = append(missingIndices, i)
@@ -219,14 +233,14 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Compo
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.ComponentCVEEdge) error) error {
+func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NodeComponentCVEEdge) error) error {
 	var sacQueryFilter *v1.Query
 	rows, err := postgres.RunGetManyQueryForSchema(ctx, schema, sacQueryFilter, s.db)
 	if err != nil {
 		return pgutils.ErrNilIfNoRows(err)
 	}
 	for _, data := range rows {
-		var msg storage.ComponentCVEEdge
+		var msg storage.NodeComponentCVEEdge
 		if err := proto.Unmarshal(data, &msg); err != nil {
 			return err
 		}

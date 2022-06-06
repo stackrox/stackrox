@@ -53,5 +53,16 @@ message NodeComponentEdge {
   // base 64 encoded Node:Component ids.
   string id                = 1 [(gogoproto.moretags) = 'sql:"pk,id"'];
   string node_id           = 2 [(gogoproto.moretags) = 'sql:"pk,fk(Node:id)"'];
-  string node_component_id = 3 [(gogoproto.moretags) = 'sql:"pk,fk(ImageComponent:id),no-fk-constraint"'];
+  string node_component_id = 3 [(gogoproto.moretags) = 'sql:"pk,fk(NodeComponent:id),no-fk-constraint"'];
+}
+
+message NodeComponentCVEEdge {
+  string     id                 = 1 [(gogoproto.moretags) = 'sql:"pk,id"'];
+  bool       is_fixable         = 2 [(gogoproto.moretags) = 'search:"Fixable,store"'];
+  // Whether there is a version the CVE is fixed in the component.
+  oneof has_fixed_by {
+    string  fixed_by            = 3 [(gogoproto.moretags) = 'search:"Fixed By,store,hidden"'];
+  }
+  string    node_component_id   = 4 [(gogoproto.moretags) = 'sql:"pk,fk(NodeComponent:id)"'];
+  string    node_cve_id         = 5 [(gogoproto.moretags) = 'sql:"pk,fk(NodeCVE:id),no-fk-constraint"'];
 }

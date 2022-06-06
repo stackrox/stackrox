@@ -88,6 +88,44 @@ message CVE {
     VulnerabilitySeverity       severity            = 20 [(gogoproto.moretags) = "search:\"Severity\""];
 }
 
+message CVEInfo {
+    message Reference {
+        string          URI  = 1;
+        repeated string tags = 2;
+    }
+    enum ScoreVersion {
+        V2      = 0; // No unset for automatic backwards compatibility
+        V3      = 1;
+        UNKNOWN = 2;
+    }
+    string                    cve                   = 1 [(gogoproto.moretags) = 'search:"CVE,store"'];
+    string                    summary               = 2;
+    string                    link                  = 3;
+    // This indicates the timestamp when the cve was first published in the cve feeds.
+    google.protobuf.Timestamp published_on          = 4 [(gogoproto.moretags) = 'search:"CVE Published On"'];
+    // Time when the CVE was first seen in the system.
+    google.protobuf.Timestamp created_at            = 5 [(gogoproto.moretags) = 'search:"CVE Created Time"'];
+    google.protobuf.Timestamp last_modified         = 6;
+    ScoreVersion              score_version         = 7;
+    CVSSV2                    cvss_v2               = 8;
+    CVSSV3                    cvss_v3               = 9;
+    repeated Reference        references            = 10;
+}
+
+message NodeCVE {
+    string                    id                    = 1 [(gogoproto.moretags) = 'search:"CVE ID,hidden" sql:"pk,id"'];  // This field is composite of cve and operating system.
+    CVEInfo                   cve_base_info         = 2;
+    string                    operating_system      = 3;
+
+    float                     cvss                  = 4 [(gogoproto.moretags) = 'search:"CVSS,store"'];
+    VulnerabilitySeverity     severity              = 5 [(gogoproto.moretags) = 'search:"Severity"'];
+    float                     impact_score          = 6 [(gogoproto.moretags) = 'search:"Impact Score"'];
+
+    bool                      snoozed               = 7 [(gogoproto.moretags) = 'search:"CVE Snoozed"'];
+    google.protobuf.Timestamp snooze_start          = 8;
+    google.protobuf.Timestamp snooze_expiry         = 9 [(gogoproto.moretags) = 'search:"CVE Snooze Expiry,hidden"'];
+}
+
 message CVSSV2 {
     enum Impact {
         IMPACT_NONE     = 0;

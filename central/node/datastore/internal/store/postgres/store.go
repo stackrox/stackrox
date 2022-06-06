@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/node/datastore/internal/store/common"
+	"github.com/stackrox/rox/central/node/datastore/internal/store/common/v2"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -152,11 +152,11 @@ func insertIntoNodes(ctx context.Context, tx pgx.Tx, obj *storage.Node, scanUpda
 	return copyFromNodeComponentCVEEdges(ctx, tx, componentCVEEdges...)
 }
 
-func getPartsAsSlice(parts *common.NodeParts) ([]*storage.ImageComponent, []*storage.CVE, []*storage.NodeComponentEdge, []*storage.ComponentCVEEdge) {
-	components := make([]*storage.ImageComponent, 0, len(parts.Children))
+func getPartsAsSlice(parts *common.NodeParts) ([]*storage.NodeComponent, []*storage.NodeCVE, []*storage.NodeComponentEdge, []*storage.NodeComponentCVEEdge) {
+	components := make([]*storage.NodeComponent, 0, len(parts.Children))
 	nodeComponentEdges := make([]*storage.NodeComponentEdge, 0, len(parts.Children))
-	vulnMap := make(map[string]*storage.CVE)
-	var componentCVEEdges []*storage.ComponentCVEEdge
+	vulnMap := make(map[string]*storage.NodeCVE)
+	var componentCVEEdges []*storage.NodeComponentCVEEdge
 	for _, child := range parts.Children {
 		components = append(components, child.Component)
 		nodeComponentEdges = append(nodeComponentEdges, child.Edge)
@@ -165,7 +165,7 @@ func getPartsAsSlice(parts *common.NodeParts) ([]*storage.ImageComponent, []*sto
 			vulnMap[gChild.CVE.GetId()] = gChild.CVE
 		}
 	}
-	vulns := make([]*storage.CVE, 0, len(vulnMap))
+	vulns := make([]*storage.NodeCVE, 0, len(vulnMap))
 	for _, vuln := range vulnMap {
 		vulns = append(vulns, vuln)
 	}
@@ -192,7 +192,7 @@ func insertIntoNodesTaints(ctx context.Context, tx pgx.Tx, obj *storage.Taint, n
 	return nil
 }
 
-func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.ImageComponent) error {
+func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponent) error {
 	inputRows := [][]interface{}{}
 	var err error
 	var deletes []string
@@ -200,7 +200,6 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Ima
 		"id",
 		"name",
 		"version",
-		"source",
 		"riskscore",
 		"topcvss",
 		"serialized",
@@ -216,7 +215,6 @@ func copyFromNodeComponents(ctx context.Context, tx pgx.Tx, objs ...*storage.Ima
 			obj.GetId(),
 			obj.GetName(),
 			obj.GetVersion(),
-			obj.GetSource(),
 			obj.GetRiskScore(),
 			obj.GetTopCvss(),
 			serialized,
@@ -295,7 +293,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx pgx.Tx, objs ...*storage
 	return err
 }
 
-func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, objs ...*storage.CVE) error {
+func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestamp, objs ...*storage.NodeCVE) error {
 	inputRows := [][]interface{}{}
 
 	var err error
@@ -305,14 +303,14 @@ func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestam
 
 	copyCols := []string{
 		"id",
-		"cve",
+		"cvebaseinfo_cve",
+		"cvebaseinfo_publishedon",
+		"cvebaseinfo_createdat",
 		"cvss",
-		"impactscore",
-		"publishedon",
-		"createdat",
-		"suppressed",
-		"suppressexpiry",
 		"severity",
+		"impactscore",
+		"snoozed",
+		"snoozeexpiry",
 		"serialized",
 	}
 
@@ -323,15 +321,13 @@ func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestam
 	existingCVEs, err := getCVEs(ctx, tx, ids.AsSlice())
 
 	for idx, obj := range objs {
-		obj.Type = storage.CVE_NODE_CVE
-		obj.Types = []storage.CVE_CVEType{storage.CVE_NODE_CVE}
 		if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
-			obj.Suppressed = storedCVE.GetSuppressed()
-			obj.CreatedAt = storedCVE.GetCreatedAt()
-			obj.SuppressActivation = storedCVE.GetSuppressActivation()
-			obj.SuppressExpiry = storedCVE.GetSuppressExpiry()
+			obj.Snoozed = storedCVE.GetSnoozed()
+			obj.CveBaseInfo.CreatedAt = storedCVE.GetCveBaseInfo().GetCreatedAt()
+			obj.SnoozeStart = storedCVE.GetSnoozeStart()
+			obj.SnoozeExpiry = storedCVE.GetSnoozeExpiry()
 		} else {
-			obj.CreatedAt = iTime
+			obj.CveBaseInfo.CreatedAt = iTime
 		}
 
 		serialized, marshalErr := obj.Marshal()
@@ -341,14 +337,14 @@ func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestam
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			obj.GetCve(),
+			obj.GetCveBaseInfo().GetCve(),
+			pgutils.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
+			pgutils.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
 			obj.GetCvss(),
-			obj.GetImpactScore(),
-			pgutils.NilOrTime(obj.GetPublishedOn()),
-			pgutils.NilOrTime(obj.GetCreatedAt()),
-			obj.GetSuppressed(),
-			pgutils.NilOrTime(obj.GetSuppressExpiry()),
 			obj.GetSeverity(),
+			obj.GetImpactScore(),
+			obj.GetSnoozed(),
+			pgutils.NilOrTime(obj.GetSnoozeExpiry()),
 			serialized,
 		})
 
@@ -377,7 +373,7 @@ func copyFromNodeCves(ctx context.Context, tx pgx.Tx, iTime *protoTypes.Timestam
 	return err
 }
 
-func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.ComponentCVEEdge) error {
+func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*storage.NodeComponentCVEEdge) error {
 	inputRows := [][]interface{}{}
 	var err error
 	componentIDsToDelete := set.NewStringSet()
@@ -385,8 +381,8 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*stor
 		"id",
 		"isfixable",
 		"fixedby",
-		"imagecomponentid",
-		"imagecveid",
+		"nodecomponentid",
+		"nodecveid",
 		"serialized",
 	}
 
@@ -400,18 +396,18 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx pgx.Tx, objs ...*stor
 			obj.GetId(),
 			obj.GetIsFixable(),
 			obj.GetFixedBy(),
-			obj.GetImageComponentId(),
-			obj.GetImageCveId(),
+			obj.GetNodeComponentId(),
+			obj.GetNodeCveId(),
 			serialized,
 		})
 
 		// Add the id to be deleted.
-		componentIDsToDelete.Add(obj.GetImageComponentId())
+		componentIDsToDelete.Add(obj.GetNodeComponentId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
 			// Copy does not upsert so have to delete first.
-			_, err = tx.Exec(ctx, "DELETE FROM "+componentCVEEdgesTable+" WHERE imagecomponentid = ANY($1::text[])", componentIDsToDelete.AsSlice())
+			_, err = tx.Exec(ctx, "DELETE FROM "+componentCVEEdgesTable+" WHERE nodecomponentid = ANY($1::text[])", componentIDsToDelete.AsSlice())
 			if err != nil {
 				return err
 			}
@@ -645,7 +641,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 	cveIDs := set.NewStringSet()
 	for _, edges := range componentCVEEdgeMap {
 		for _, edge := range edges {
-			cveIDs.Add(edge.GetImageCveId())
+			cveIDs.Add(edge.GetNodeCveId())
 		}
 	}
 
@@ -668,7 +664,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx pgx.Tx, nodeID string) (
 		for _, edge := range componentCVEEdgeMap[componentID] {
 			child.Children = append(child.Children, &common.CVEParts{
 				Edge: edge,
-				CVE:  cveMap[edge.GetImageCveId()],
+				CVE:  cveMap[edge.GetNodeCveId()],
 			})
 		}
 		nodeParts.Children = append(nodeParts.Children, child)
@@ -699,7 +695,7 @@ func getNodeComponentEdges(ctx context.Context, tx pgx.Tx, nodeID string) (map[s
 	return componentIDToEdgeMap, nil
 }
 
-func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string]*storage.ImageComponent, error) {
+func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "NodeComponent")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentsTable+" WHERE id = ANY($1::text[])", componentIDs)
@@ -707,13 +703,13 @@ func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (m
 		return nil, err
 	}
 	defer rows.Close()
-	idToComponentMap := make(map[string]*storage.ImageComponent)
+	idToComponentMap := make(map[string]*storage.NodeComponent)
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, err
 		}
-		msg := &storage.ImageComponent{}
+		msg := &storage.NodeComponent{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
@@ -722,25 +718,25 @@ func getNodeComponents(ctx context.Context, tx pgx.Tx, componentIDs []string) (m
 	return idToComponentMap, nil
 }
 
-func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string][]*storage.ComponentCVEEdge, error) {
+func getComponentCVEEdges(ctx context.Context, tx pgx.Tx, componentIDs []string) (map[string][]*storage.NodeComponentCVEEdge, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentCVERelations")
 
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+componentCVEEdgesTable+" WHERE imagecomponentid = ANY($1::text[])", componentIDs)
+	rows, err := tx.Query(ctx, "SELECT serialized FROM "+componentCVEEdgesTable+" WHERE nodecomponentid = ANY($1::text[])", componentIDs)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	componentIDToEdgesMap := make(map[string][]*storage.ComponentCVEEdge)
+	componentIDToEdgesMap := make(map[string][]*storage.NodeComponentCVEEdge)
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, err
 		}
-		msg := &storage.ComponentCVEEdge{}
+		msg := &storage.NodeComponentCVEEdge{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
-		componentIDToEdgesMap[msg.GetImageComponentId()] = append(componentIDToEdgesMap[msg.GetImageComponentId()], msg)
+		componentIDToEdgesMap[msg.GetNodeComponentId()] = append(componentIDToEdgesMap[msg.GetNodeComponentId()], msg)
 	}
 	return componentIDToEdgesMap, nil
 }
@@ -797,7 +793,7 @@ func (s *storeImpl) deleteNodeTree(ctx context.Context, conn *pgxpool.Conn, node
 	// Component-CVE edges have ON DELETE CASCADE referential constraint on component id, therefore, no need to explicitly trigger deletion.
 
 	// Delete orphaned cves.
-	if _, err := conn.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+nodeCVEsTable+".id FROM "+nodeCVEsTable+", "+componentCVEEdgesTable+" WHERE "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".imagecveid)"); err != nil {
+	if _, err := conn.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+nodeCVEsTable+".id FROM "+nodeCVEsTable+", "+componentCVEEdgesTable+" WHERE "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid)"); err != nil {
 		return err
 	}
 	return nil
@@ -955,7 +951,7 @@ func (s *storeImpl) GetKeysToIndex(ctx context.Context) ([]string, error) {
 	return nil, nil
 }
 
-func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.CVE, error) {
+func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeCVEs")
 
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeCVEsTable+" WHERE id = ANY($1::text[])", cveIDs)
@@ -963,13 +959,13 @@ func getCVEs(ctx context.Context, tx pgx.Tx, cveIDs []string) (map[string]*stora
 		return nil, err
 	}
 	defer rows.Close()
-	idToCVEMap := make(map[string]*storage.CVE)
+	idToCVEMap := make(map[string]*storage.NodeCVE)
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
 			return nil, err
 		}
-		msg := &storage.CVE{}
+		msg := &storage.NodeCVE{}
 		if err := proto.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}

@@ -21,11 +21,11 @@ var (
                    Id varchar,
                    IsFixable bool,
                    FixedBy varchar,
-                   ImageComponentId varchar,
-                   ImageCveId varchar,
+                   NodeComponentId varchar,
+                   NodeCveId varchar,
                    serialized bytea,
-                   PRIMARY KEY(Id, ImageComponentId, ImageCveId),
-                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (ImageComponentId) REFERENCES node_components(Id) ON DELETE CASCADE
+                   PRIMARY KEY(Id, NodeComponentId, NodeCveId),
+                   CONSTRAINT fk_parent_table_0 FOREIGN KEY (NodeComponentId) REFERENCES node_components(Id) ON DELETE CASCADE
                )
                `,
 		GormModel: (*NodeComponentsCvesEdges)(nil),
@@ -39,17 +39,22 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComponentCVEEdge)(nil)), "node_components_cves_edges")
+		schema = walker.Walk(reflect.TypeOf((*storage.NodeComponentCVEEdge)(nil)), "node_components_cves_edges")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.ImageComponent": NodeComponentsSchema,
-			"storage.CVE":            NodeCvesSchema,
+			"storage.NodeComponent": NodeComponentsSchema,
+			"storage.NodeCVE":       NodeCvesSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
+<<<<<<< HEAD
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_COMPONENT_CVE_EDGE, "componentcveedge", (*storage.ComponentCVEEdge)(nil)))
 		RegisterTable(schema, CreateTableNodeComponentsCvesEdgesStmt)
+=======
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NODE_COMPONENT_CVE_EDGE, "nodecomponentcveedge", (*storage.NodeComponentCVEEdge)(nil)))
+		RegisterTable(schema)
+>>>>>>> e121a030c (new node cve proto)
 		return schema
 	}()
 )
@@ -63,8 +68,8 @@ type NodeComponentsCvesEdges struct {
 	Id                string         `gorm:"column:id;type:varchar;primaryKey"`
 	IsFixable         bool           `gorm:"column:isfixable;type:bool"`
 	FixedBy           string         `gorm:"column:fixedby;type:varchar"`
-	ImageComponentId  string         `gorm:"column:imagecomponentid;type:varchar;primaryKey"`
-	ImageCveId        string         `gorm:"column:imagecveid;type:varchar;primaryKey"`
+	NodeComponentId   string         `gorm:"column:nodecomponentid;type:varchar;primaryKey"`
+	NodeCveId         string         `gorm:"column:nodecveid;type:varchar;primaryKey"`
 	Serialized        []byte         `gorm:"column:serialized;type:bytea"`
-	NodeComponentsRef NodeComponents `gorm:"foreignKey:imagecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	NodeComponentsRef NodeComponents `gorm:"foreignKey:nodecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

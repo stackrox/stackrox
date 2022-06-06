@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package postgres
 
 import (
@@ -55,14 +53,8 @@ func (s *NodesStoreSuite) TestStore() {
 	node := &storage.Node{}
 	s.NoError(testutils.FullInit(node, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 	for _, comp := range node.GetScan().GetComponents() {
-		for _, vuln := range comp.GetVulns() {
-			vuln.FirstImageOccurrence = nil
-			vuln.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
-			vuln.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
-		}
+		comp.Vulns = nil
 	}
-
-	// node := fixtures.GetNodeWithUniqueComponents()
 
 	foundNode, exists, err := store.Get(ctx, node.GetId())
 	s.NoError(err)
@@ -74,9 +66,10 @@ func (s *NodesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.True(exists)
 	cloned := node.Clone()
+
 	for _, component := range cloned.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			vuln.FirstSystemOccurrence = foundNode.GetLastUpdated()
+		for _, vuln := range component.GetVulnerabilities() {
+			vuln.CveBaseInfo.CreatedAt = node.GetLastUpdated()
 		}
 	}
 	s.Equal(cloned, foundNode)
@@ -96,6 +89,12 @@ func (s *NodesStoreSuite) TestStore() {
 
 	// Reconcile the timestamps that are set during upsert.
 	cloned.LastUpdated = foundNode.LastUpdated
+	for _, component := range cloned.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulnerabilities() {
+			vuln.CveBaseInfo.CreatedAt = node.GetLastUpdated()
+		}
+	}
+
 	s.Equal(cloned, foundNode)
 
 	s.NoError(store.Delete(ctx, node.GetId()))

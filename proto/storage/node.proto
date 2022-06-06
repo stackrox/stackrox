@@ -84,12 +84,13 @@ message NodeScan {
 }
 
 message EmbeddedNodeScanComponent {
-    string                         name       = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
-    string                         version    = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
-    repeated EmbeddedVulnerability vulns      = 3;
-    int64                          priority   = 4;
+    string                         name             = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
+    string                         version          = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
+    repeated EmbeddedVulnerability vulns            = 3;
+    repeated NodeVulnerability     vulnerabilities  = 7;
+    int64                          priority         = 4;
     oneof set_top_cvss {
-        float                      top_cvss   = 5;
+        float                      top_cvss         = 5;
     }
-    float                          risk_score = 6;
+    float                          risk_score       = 6;
 }

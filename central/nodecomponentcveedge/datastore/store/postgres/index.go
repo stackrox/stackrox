@@ -19,7 +19,7 @@ func init() {
 	mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_COMPONENT_CVE_EDGE, schema)
 }
 
-// NewIndexer returns new indexer for `storage.ComponentCVEEdge`.
+// NewIndexer returns new indexer for `storage.NodeComponentCVEEdge`.
 func NewIndexer(db *pgxpool.Pool) *indexerImpl {
 	return &indexerImpl{
 		db: db,
@@ -31,32 +31,32 @@ type indexerImpl struct {
 }
 
 func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ComponentCVEEdge")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "NodeComponentCVEEdge")
 
 	return postgres.RunCountRequest(v1.SearchCategory_NODE_COMPONENT_CVE_EDGE, q, b.db)
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ComponentCVEEdge")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "NodeComponentCVEEdge")
 
 	return postgres.RunSearchRequest(v1.SearchCategory_NODE_COMPONENT_CVE_EDGE, q, b.db)
 }
 
 //// Stubs for satisfying interfaces
 
-func (b *indexerImpl) AddComponentCVEEdge(deployment *storage.ComponentCVEEdge) error {
+func (b *indexerImpl) AddNodeComponentCVEEdge(deployment *storage.NodeComponentCVEEdge) error {
 	return nil
 }
 
-func (b *indexerImpl) AddComponentCVEEdges(_ []*storage.ComponentCVEEdge) error {
+func (b *indexerImpl) AddNodeComponentCVEEdges(_ []*storage.NodeComponentCVEEdge) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteComponentCVEEdge(id string) error {
+func (b *indexerImpl) DeleteNodeComponentCVEEdge(id string) error {
 	return nil
 }
 
-func (b *indexerImpl) DeleteComponentCVEEdges(_ []string) error {
+func (b *indexerImpl) DeleteNodeComponentCVEEdges(_ []string) error {
 	return nil
 }
 

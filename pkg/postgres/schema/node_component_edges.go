@@ -39,8 +39,8 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NodeComponentEdge)(nil)), "node_component_edges")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Node":           NodesSchema,
-			"storage.ImageComponent": NodeComponentsSchema,
+			"storage.Node":          NodesSchema,
+			"storage.NodeComponent": NodeComponentsSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
