@@ -59,7 +59,7 @@ type NodeComponentResolver interface {
 	NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error)
 	NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error)
 	NodeVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error)
-	PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error)
+	PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error)
 	Priority(ctx context.Context) int32
 	RiskScore(ctx context.Context) float64
 	Source(ctx context.Context) string

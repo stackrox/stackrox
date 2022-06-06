@@ -24,7 +24,8 @@ type PlottedNodeVulnerabilitiesResolver struct {
 }
 
 func newPlottedNodeVulnerabilitiesResolver(ctx context.Context, root *Resolver, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
-	allCveIds, fixableCount, err := getPlottedVulnsIdsAndFixableCount(ctx, root, args)
+	query := withNodeCveTypeFiltering(args.String())
+	allCveIds, fixableCount, err := getPlottedVulnsIdsAndFixableCount(ctx, root, RawQuery{Query: &query})
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +47,8 @@ func (pvr *PlottedNodeVulnerabilitiesResolver) BasicNodeVulnerabilityCounter(ctx
 	}, nil
 }
 
-// NodesVulnerabilities returns the node vulnerabilities for top risky nodes scatter-plot
-func (pvr *PlottedNodeVulnerabilitiesResolver) NodesVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+// NodeVulnerabilities returns the node vulnerabilities for top risky nodes scatter-plot
+func (pvr *PlottedNodeVulnerabilitiesResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	vulnResolvers, err := unwrappedPlottedVulnerabilities(ctx, pvr.root, pvr.all, args)
 	if err != nil {
 		return nil, err

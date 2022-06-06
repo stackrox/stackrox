@@ -1096,12 +1096,12 @@ func (resolver *clusterResolver) PlottedVulns(ctx context.Context, args RawQuery
 	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }
 
+// PlottedNodeVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *clusterResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PlottedNodeVulnerabilities")
 
 	if !features.PostgresDatastore.Enabled() {
 		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
-		query = withNodeTypeFiltering(query)
 		return newPlottedNodeVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support

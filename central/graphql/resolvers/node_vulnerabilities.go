@@ -55,7 +55,7 @@ func (resolver *Resolver) NodeVulnerability(ctx context.Context, args IDQuery) (
 func (resolver *Resolver) NodeVulnerabilities(ctx context.Context, q PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilities")
 	if !features.PostgresDatastore.Enabled() {
-		query := withNodeTypeFiltering(q.String())
+		query := withNodeCveTypeFiltering(q.String())
 		return resolver.nodeVulnerabilitiesV2(ctx, PaginatedQuery{Query: &query, Pagination: q.Pagination})
 	}
 	// TODO : Add postgres support
@@ -66,7 +66,7 @@ func (resolver *Resolver) NodeVulnerabilities(ctx context.Context, q PaginatedQu
 func (resolver *Resolver) NodeVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilityCount")
 	if !features.PostgresDatastore.Enabled() {
-		query := withNodeTypeFiltering(args.String())
+		query := withNodeCveTypeFiltering(args.String())
 		return resolver.vulnerabilityCountV2(ctx, RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
@@ -77,15 +77,15 @@ func (resolver *Resolver) NodeVulnerabilityCount(ctx context.Context, args RawQu
 func (resolver *Resolver) NodeVulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerabilityCounter")
 	if !features.PostgresDatastore.Enabled() {
-		query := withNodeTypeFiltering(args.String())
+		query := withNodeCveTypeFiltering(args.String())
 		return resolver.vulnCounterV2(ctx, RawQuery{Query: &query})
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Resolver NodeVulnCounter does not support postgres yet")
 }
 
-// withNodeTypeFiltering adds a conjunction as a raw query to filter vulns by CVEType Node
-func withNodeTypeFiltering(q string) string {
+// withNodeCveTypeFiltering adds a conjunction as a raw query to filter vulns by CVEType Node
+func withNodeCveTypeFiltering(q string) string {
 	return search.AddRawQueriesAsConjunction(q,
 		search.NewQueryBuilder().AddExactMatches(search.CVEType, storage.CVE_NODE_CVE.String()).Query())
 }

@@ -43,7 +43,6 @@ func init() {
 			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"passingControls(query: String): [ComplianceControl!]!",
 			"plottedNodeVulnerabilities(query: String): PlottedNodeVulnerabilities!",
-			"plottedVulns(query: String): PlottedVulnerabilities!",
 			"topNodeVulnerability(query: String): NodeVulnerability",
 			"unusedVarSink(query: String): Int",
 		}),
@@ -61,6 +60,8 @@ func init() {
 				"@deprecated(reason: \"use 'nodeVulnerabilityCount'\")",
 			"vulnCounter(query: String): VulnerabilityCounter!" +
 				"@deprecated(reason: \"use 'nodeVulnerabilityCounter'\")",
+			"plottedVulns(query: String): PlottedVulnerabilities!" +
+				"@deprecated(reason: \"use 'plottedNodeVulnerabilities'\")",
 		}),
 	)
 }
@@ -523,16 +524,11 @@ func (resolver *nodeResolver) PlottedVulns(ctx context.Context, args RawQuery) (
 	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }
 
+// PlottedNodeVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *nodeResolver) PlottedNodeVulnerabilities(ctx context.Context, args RawQuery) (*PlottedNodeVulnerabilitiesResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "PlottedVulnerabilities")
-	if err := readNodes(ctx); err != nil {
-		return nil, err
-	}
-
-	ctx = resolver.nodeScopeContext(ctx)
-
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "PlottedNodeVulnerabilities")
 	if !features.PostgresDatastore.Enabled() {
-		return newPlottedNodeVulnerabilitiesResolver(ctx, resolver.root, args)
+		return newPlottedNodeVulnerabilitiesResolver(resolver.nodeScopeContext(ctx), resolver.root, args)
 	}
 	// TODO : Add postgres support
 	return nil, errors.New("Sub-resolver PlottedNodeVulnerabilities in Node does not support postgres yet")
