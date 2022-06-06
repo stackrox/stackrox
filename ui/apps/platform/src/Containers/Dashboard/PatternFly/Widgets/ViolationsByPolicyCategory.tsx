@@ -140,7 +140,7 @@ function ViolationsByPolicyCategory() {
     return (
         <Card>
             <Title headingLevel="h2" className="pf-u-p-md">
-                Policy Violations by Category
+                Policy violations by category
             </Title>
             {cardContent}
         </Card>
