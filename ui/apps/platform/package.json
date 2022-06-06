@@ -148,7 +148,6 @@
         "eslint-plugin-react-hooks": "^4.3.0",
         "eslint-plugin-testing-library": "^5.0.5",
         "http-proxy-middleware": "^2.0.1",
-        "istanbul-lib-coverage": "^3.0.0",
         "jest-junit": "^12.0.0",
         "levenary": "^1.1.1",
         "mocha": "^9.1.1",
