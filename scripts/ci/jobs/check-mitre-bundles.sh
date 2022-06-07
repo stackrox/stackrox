@@ -3,7 +3,7 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
 source "$ROOT/scripts/ci/lib.sh"
 
-set -xveou pipefail
+set -euo pipefail
 
 if ! is_tagged; then
     echo "Not a tagged build, skipping MITRE ATT&CK bundle check"
