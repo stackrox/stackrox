@@ -3,6 +3,7 @@ package types
 import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
 	"gorm.io/gorm"
@@ -13,6 +14,7 @@ import (
 type Databases struct {
 	BoltDB     *bolt.DB
 	RocksDB    *gorocksdb.DB
+	PkgRocksDB *rocksdb.RocksDB
 	GormDB     *gorm.DB
 	PostgresDB *pgxpool.Pool
 }

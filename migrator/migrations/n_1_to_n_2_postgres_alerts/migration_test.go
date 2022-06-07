@@ -90,12 +90,13 @@ func (s *postgresMigrationSuite) TestMigration() {
 	}
 	s.NoError(s.db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch))
 	// Test migration
-	s.NoError(moveAlerts(s.rocksDB.DB, s.gormDB, s.pool))
+	s.NoError(moveAlerts(s.rocksDB, s.gormDB, s.pool))
 	s.verify(objs)
 	// Test re-entry
-	s.NoError(moveAlerts(s.rocksDB.DB, s.gormDB, s.pool))
+	s.NoError(moveAlerts(s.rocksDB, s.gormDB, s.pool))
 	s.verify(objs)
 }
+
 func (s *postgresMigrationSuite) verify(objs []*storage.Alert) {
 	var count int64
 	s.gormDB.Model(pkgSchema.CreateTableAlertsStmt.GormModel).Count(&count)
