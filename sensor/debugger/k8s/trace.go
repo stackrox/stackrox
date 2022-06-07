@@ -47,8 +47,6 @@ var _ io.Reader = (*TraceReader)(nil)
 type TraceReader struct {
 	// Source file from which the lines are read
 	Source string
-	// mode defines whether to wait between replaying the consecutive k8s events
-	mode string
 	// lineNo is the pointer marking which line from the file has been read recently
 	lineNo int64
 	// Enabled defines whether this reader should do anything at all (can be removed maybe)
@@ -69,16 +67,17 @@ func (tw *TraceReader) Init() error {
 }
 
 // ReadFile reads the file line by line and executes the handle function
-func (tw *TraceReader) ReadFile(mode CreateMode, done chan int, handle func([]byte, CreateMode)) error {
+func (tw *TraceReader) ReadFile(mode CreateMode, done chan int, readerError chan error, handle func([]byte, CreateMode)) {
 	if !tw.Enabled {
-		return nil
+		return
 	}
 	for {
 		buf := make([]byte, 8*4096)
 		n, err := tw.Read(buf)
 		if err != nil {
 			done <- 0
-			return err
+			readerError <- err
+			return
 		}
 		handle(buf[:n], mode)
 	}
@@ -133,6 +132,9 @@ func (tw *TraceReader) ReadFileBlocking(mode CreateMode, done chan int, handle f
 	for {
 		line, err := buf.ReadBytes('\n')
 		if err != nil {
+			if err == io.EOF && len(line) > 0 {
+				handle(line, mode)
+			}
 			done <- 0
 			return err
 		}

@@ -21,13 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-var clusterResources = []string{
-	"Namespace",
-	"ClusterRole",
-	"ClusterRoleBinding",
-	"Node",
-}
-
 type CreateMode int
 
 const (
@@ -70,7 +63,7 @@ type FakeEventsManager struct {
 }
 
 // WaitForMinimumResources waits for a minimum number of resources to be created or once all the events have been processed
-func WaitForMinimumResources(ch chan string, done chan int) error {
+func WaitForMinimumResources(ch chan string, done chan int, readerError chan error) error {
 	count := 0
 	for {
 		select {
@@ -84,6 +77,8 @@ func WaitForMinimumResources(ch chan string, done chan int) error {
 					return nil
 				}
 			}
+		case err := <-readerError:
+			return err
 		case <-done:
 			return errors.New("the events file did not contain the minimum resources required to start sensor")
 		}
@@ -146,7 +141,8 @@ func (f *FakeEventsManager) executeAction(action string, kind string, ch chan st
 func (f *FakeEventsManager) CreateEvents() error {
 	ch := make(chan string)
 	done := make(chan int)
-	go f.Reader.ReadFile(f.Mode, done, func(line []byte, m CreateMode) {
+	readerError := make(chan error)
+	go f.Reader.ReadFile(f.Mode, done, readerError, func(line []byte, m CreateMode) {
 		obj := resources.InformerK8sMsg{}
 		if err := json.Unmarshal(line, &obj); err != nil {
 			log.Fatalf("cannot unmarshal: %s\n", err)
@@ -156,7 +152,7 @@ func (f *FakeEventsManager) CreateEvents() error {
 			log.Fatalf("cannot create event for %s %s", obj.ObjectType, err)
 		}
 	})
-	return WaitForMinimumResources(ch, done)
+	return WaitForMinimumResources(ch, done, readerError)
 }
 
 // createEvent creates a single k8s event
