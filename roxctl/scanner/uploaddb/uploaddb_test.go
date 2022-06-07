@@ -11,8 +11,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	io2 "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,8 +28,8 @@ func executeUpdateDbCommand(t *testing.T, serverURL string) (*bytes.Buffer, *byt
 		return os.Remove(tmpFile.Name())
 	})
 
-	testIO, _, stdOut, stdErr := common.TestIO()
-	env := common.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
+	testIO, _, stdOut, stdErr := io2.TestIO()
+	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
 
 	cmd := Command(env)
 	flags.AddTimeout(cmd)

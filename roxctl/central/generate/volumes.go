@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/renderer"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
 func volumeCommand(name string) *cobra.Command {
@@ -21,7 +21,7 @@ Output is a zip file printed to stdout.`, name),
 	}
 }
 
-func externalVolume(cliEnvironment common.Environment) *cobra.Command {
+func externalVolume(cliEnvironment environment.Environment) *cobra.Command {
 	external := new(renderer.ExternalPersistence)
 	c := volumeCommand("pvc")
 	c.RunE = func(c *cobra.Command, args []string) error {
@@ -38,7 +38,7 @@ func externalVolume(cliEnvironment common.Environment) *cobra.Command {
 	return c
 }
 
-func noVolume(cliEnvironment common.Environment) *cobra.Command {
+func noVolume(cliEnvironment environment.Environment) *cobra.Command {
 	c := volumeCommand("none")
 	c.RunE = func(c *cobra.Command, args []string) error {
 		if err := validateConfig(&cfg); err != nil {
@@ -50,7 +50,7 @@ func noVolume(cliEnvironment common.Environment) *cobra.Command {
 	return c
 }
 
-func hostPathVolume(cliEnvironment common.Environment) *cobra.Command {
+func hostPathVolume(cliEnvironment environment.Environment) *cobra.Command {
 	hostpath := new(renderer.HostPathPersistence)
 	c := volumeCommand("hostpath")
 	c.RunE = func(c *cobra.Command, args []string) error {

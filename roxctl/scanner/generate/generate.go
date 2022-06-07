@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
 	"github.com/stackrox/rox/roxctl/scanner/clustertype"
@@ -32,7 +32,7 @@ type scannerGenerateCommand struct {
 	timeout   time.Duration
 
 	// Properties that are injected or constructed.
-	env common.Environment
+	env environment.Environment
 }
 
 func (cmd *scannerGenerateCommand) construct(c *cobra.Command) {
@@ -72,13 +72,13 @@ func (cmd *scannerGenerateCommand) generate() error {
 		BundleType: "scanner",
 		ExpandZip:  true,
 		OutputDir:  cmd.outputDir,
-	})
+	}, cmd.env.Logger())
 
 	return errors.Wrap(err, "could not get scanner bundle")
 }
 
 // Command represents the generate command.
-func Command(cliEnvironment common.Environment) *cobra.Command {
+func Command(cliEnvironment environment.Environment) *cobra.Command {
 	scannerGenerateCmd := &scannerGenerateCommand{env: cliEnvironment}
 
 	c := &cobra.Command{

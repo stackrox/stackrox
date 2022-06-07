@@ -11,16 +11,17 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
 // ResolveClusterID returns the cluster ID corresponding to the given id or name,
 // or an error if no matching cluster was found.
-func ResolveClusterID(idOrName string, timeout time.Duration) (string, error) {
+func ResolveClusterID(idOrName string, timeout time.Duration, logger logger.Logger) (string, error) {
 	if _, err := uuid.FromString(idOrName); err == nil {
 		return idOrName, nil
 	}
 
-	conn, err := common.GetGRPCConnection()
+	conn, err := common.GetGRPCConnection(logger)
 	if err != nil {
 		return "", err
 	}

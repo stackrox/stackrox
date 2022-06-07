@@ -17,6 +17,8 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/download"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
 const (
@@ -24,7 +26,7 @@ const (
 )
 
 var (
-	log = common.CLIEnvironment().Logger()
+	log = environment.CLIEnvironment().Logger()
 )
 
 func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, outputDir string) error {
@@ -108,8 +110,8 @@ func storeZipFile(respBody io.Reader, fileName, outputDir, bundleType string) er
 
 // GetZip downloads a zip from the given endpoint.
 // bundleType is used for logging.
-func GetZip(opts GetZipOptions) error {
-	resp, err := common.DoHTTPRequestAndCheck200(opts.Path, opts.Timeout, opts.Method, bytes.NewBuffer(opts.Body))
+func GetZip(opts GetZipOptions, logger logger.Logger) error {
+	resp, err := common.DoHTTPRequestAndCheck200(opts.Path, opts.Timeout, opts.Method, bytes.NewBuffer(opts.Body), logger)
 	if err != nil {
 		return errors.Wrap(err, "could not download zip")
 	}
@@ -124,7 +126,7 @@ func GetZip(opts GetZipOptions) error {
 
 	// If containerized, then write a zip file to stdout
 	if roxctl.InMainImage() {
-		if _, err := io.Copy(common.CLIEnvironment().InputOutput().Out(), resp.Body); err != nil {
+		if _, err := io.Copy(environment.CLIEnvironment().InputOutput().Out(), resp.Body); err != nil {
 			return errors.Wrap(err, "Error writing out zip file")
 		}
 		log.InfofLn("Successfully wrote %s zip file", opts.BundleType)
