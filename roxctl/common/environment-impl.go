@@ -2,9 +2,12 @@ package common
 
 import (
 	"io"
+	"os"
+	"testing"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"google.golang.org/grpc"
@@ -16,13 +19,40 @@ type cliEnvironmentImpl struct {
 	colorfulPrinter printer.ColorfulPrinter
 }
 
-// NewCLIEnvironment creates a new CLI environment with the given IO and common.RoxctlHTTPClient
-func NewCLIEnvironment(io IO, c printer.ColorfulPrinter) Environment {
+var (
+	singleton Environment
+	once      sync.Once
+)
+
+// NewTestCLIEnvironment creates a new CLI environment with the given IO and common.RoxctlHTTPClient.
+// It should be only used within tests.
+func NewTestCLIEnvironment(_ *testing.T, io IO, c printer.ColorfulPrinter) Environment {
 	return &cliEnvironmentImpl{
 		io:              io,
 		colorfulPrinter: c,
 		logger:          NewLogger(io, c),
 	}
+}
+
+// CLIEnvironment creates a new default CLI environment.
+func CLIEnvironment() Environment {
+	// We have chicken and egg problem here. We need to parse flags to know if --no-color was set
+	// but at the same time we need to set printer to handle possible flags parsing errors.
+	// Instead of using native cobra flags mechanism we can just check if os.Args contains --no-color.
+	once.Do(func() {
+		var colorPrinter printer.ColorfulPrinter
+		if flags.HasNoColor(os.Args) {
+			colorPrinter = printer.NoColorPrinter()
+		} else {
+			colorPrinter = printer.DefaultColorPrinter()
+		}
+		singleton = &cliEnvironmentImpl{
+			io:              DefaultIO(),
+			colorfulPrinter: colorPrinter,
+			logger:          NewLogger(DefaultIO(), colorPrinter),
+		}
+	})
+	return singleton
 }
 
 // HTTPClient returns the common.RoxctlHTTPClient associated with the CLI Environment

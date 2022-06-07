@@ -26,7 +26,7 @@ type helmOutputTestSuite struct {
 func (suite *helmOutputTestSuite) SetupTest() {
 	testIO, _, _, errOut := env.TestIO()
 	suite.helmOutputCommand = helmOutputCommand{}
-	suite.helmOutputCommand.env = env.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+	suite.helmOutputCommand.env = env.NewTestCLIEnvironment(suite.T(), testIO, printer.DefaultColorPrinter())
 	suite.errOur = errOut
 }
 

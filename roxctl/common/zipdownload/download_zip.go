@@ -23,6 +23,10 @@ const (
 	inMemFileSizeThreshold = 1 << 20 // 1MB
 )
 
+var (
+	log = common.CLIEnvironment().Logger()
+)
+
 func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, outputDir string) error {
 	reader, err := zip.NewReader(contents, contentsLength)
 	if err != nil {
@@ -39,7 +43,7 @@ func extractZipToFolder(contents io.ReaderAt, contentsLength int64, bundleType, 
 		}
 	}
 
-	printf("Successfully wrote %s folder %q\n", bundleType, outputDir)
+	log.InfofLn("Successfully wrote %s folder %q", bundleType, outputDir)
 	return nil
 }
 
@@ -66,10 +70,6 @@ func extractFile(f *zip.File, outputDir string) error {
 		return errors.Wrapf(err, "Unable to write file %q", f.Name)
 	}
 	return nil
-}
-
-func printf(val string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, val, args...)
 }
 
 // GetZipOptions specifies a request to download a zip file
@@ -101,7 +101,7 @@ func storeZipFile(respBody io.Reader, fileName, outputDir, bundleType string) er
 	if err := file.Close(); err != nil {
 		return errors.Wrap(err, "error writing to ZIP file")
 	}
-	printf("Successfully wrote %s zip file to %q \n", bundleType, filepath.Join(outputDir, fileName))
+	log.InfofLn("Successfully wrote %s zip file to %q", bundleType, filepath.Join(outputDir, fileName))
 
 	return nil
 }
@@ -118,16 +118,16 @@ func GetZip(opts GetZipOptions) error {
 	zipFileName, err := download.ParseFilenameFromHeader(resp.Header)
 	if err != nil {
 		zipFileName = fmt.Sprintf("%s.zip", opts.BundleType)
-		printf("Warning: could not obtain output file name from HTTP response: %v.", err)
-		printf("Defaulting to filename %q", zipFileName)
+		log.WarnfLn("could not obtain output file name from HTTP response: %v.", err)
+		log.InfofLn("Defaulting to filename %q", zipFileName)
 	}
 
 	// If containerized, then write a zip file to stdout
 	if roxctl.InMainImage() {
-		if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
+		if _, err := io.Copy(common.CLIEnvironment().InputOutput().Out(), resp.Body); err != nil {
 			return errors.Wrap(err, "Error writing out zip file")
 		}
-		printf("Successfully wrote %s zip file\n", opts.BundleType)
+		log.InfofLn("Successfully wrote %s zip file", opts.BundleType)
 		return nil
 	}
 

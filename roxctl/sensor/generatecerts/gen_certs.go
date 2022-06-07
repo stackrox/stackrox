@@ -20,7 +20,7 @@ import (
 	"github.com/stackrox/rox/roxctl/sensor/util"
 )
 
-func downloadCerts(outputDir, clusterIDOrName string, timeout time.Duration) error {
+func downloadCerts(logger common.Logger, outputDir, clusterIDOrName string, timeout time.Duration) error {
 	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout)
 	if err != nil {
 		return err
@@ -40,7 +40,7 @@ func downloadCerts(outputDir, clusterIDOrName string, timeout time.Duration) err
 	fileName, err := download.ParseFilenameFromHeader(resp.Header)
 	if err != nil {
 		fileName = fmt.Sprintf("cluster-%s-certs.yaml", clusterIDOrName)
-		fmt.Fprintf(os.Stderr, "WARNING: could not obtain output file name from HTTP Response: %v. Defaulting to %q\n", err, fileName)
+		logger.WarnfLn("could not obtain output file name from HTTP Response: %v. Defaulting to %q", err, fileName)
 	}
 
 	outputFileNameWithDir := filepath.Join(outputDir, fileName)
@@ -65,19 +65,19 @@ func downloadCerts(outputDir, clusterIDOrName string, timeout time.Duration) err
 	if err != nil {
 		return errors.Wrapf(err, "failed to close file at %s", outputFileNameWithDir)
 	}
-	fmt.Fprintf(os.Stderr, "Successfully downloaded new certs. Use kubectl apply -f %s to apply them.\n", outputFileNameWithDir)
+	logger.InfofLn("Successfully downloaded new certs. Use kubectl apply -f %s to apply them.", outputFileNameWithDir)
 	return nil
 }
 
 // Command defines the command.
-func Command() *cobra.Command {
+func Command(cliEnvironment common.Environment) *cobra.Command {
 	var outputDir string
 
 	c := &cobra.Command{
 		Use:  "generate-certs <cluster-name-or-id>",
 		Args: common.ExactArgsWithCustomErrMessage(1, "No cluster name or ID specified"),
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := downloadCerts(outputDir, args[0], flags.Timeout(c)); err != nil {
+			if err := downloadCerts(cliEnvironment.Logger(), outputDir, args[0], flags.Timeout(c)); err != nil {
 				return errors.Wrap(err, "error downloading regenerated certs")
 			}
 			return nil

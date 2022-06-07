@@ -3,7 +3,6 @@ package initbundles
 import (
 	"context"
 	"fmt"
-	"os"
 	"sort"
 	"text/tabwriter"
 
@@ -27,7 +26,7 @@ func listInitBundles(cliEnvironment common.Environment) error {
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)
 
-	tabWriter := tabwriter.NewWriter(os.Stdout, 4, 8, 2, '\t', 0)
+	tabWriter := tabwriter.NewWriter(cliEnvironment.InputOutput().Out(), 4, 8, 2, '\t', 0)
 
 	rsp, err := svc.GetInitBundles(ctx, &v1.Empty{})
 	if err != nil {
