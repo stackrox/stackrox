@@ -40,10 +40,10 @@ run_ui_e2e_tests() {
         local hostname
         hostname=$("$ROOT/tests/e2e/get_hostname.py" "${API_HOSTNAME}")
         # echo "central-lb ${API_HOSTNAME}" > /tmp/hostaliases
-        # echo "central-lb ${hostname}" > /tmp/hostaliases
-        # export HOSTALIASES=/tmp/hostaliases
-        # export UI_BASE_URL="https://central-lb:443"
-        export UI_BASE_URL="https://${hostname}:443"
+        echo "central-lb ${hostname}" > /tmp/hostaliases
+        export HOSTALIASES=/tmp/hostaliases
+        export UI_BASE_URL="https://central-lb:443"
+        # export UI_BASE_URL="https://${hostname}:443"
     else
         export UI_BASE_URL="https://localhost:${LOCAL_PORT}"
     fi
