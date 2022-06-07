@@ -344,7 +344,7 @@ jobs:
     name: Create k8s cluster
     needs: cut-rc
     if: github.event.inputs.dry-run == 'false'
-    uses: stackrox/stackrox/.github/workflows/create-cluster.yml@main
+    uses: stackrox/stackrox/.github/workflows/create-cluster.yml@master
     with:
       flavor: qa-demo
       name: qa-k8s-${{needs.variables.outputs.milestone}}
@@ -355,7 +355,7 @@ jobs:
     name: Create OS4 cluster
     needs: cut-rc
     if: github.event.inputs.dry-run == 'false'
-    uses: stackrox/stackrox/.github/workflows/create-cluster.yml@main
+    uses: stackrox/stackrox/.github/workflows/create-cluster.yml@master
     with:
       flavor: openshift-4-demo
       name: openshift-4-demo-${{needs.variables.outputs.milestone}}
@@ -419,7 +419,7 @@ jobs:
     if: >-
       github.event.inputs.dry-run == 'false' &&
       needs.variables.outputs.rc == '1'
-    uses: stackrox/stackrox/.github/workflows/create-cluster.yml@main
+    uses: stackrox/stackrox/.github/workflows/create-cluster.yml@master
     with:
       flavor: gke-default
       name: gke-long-running-${{needs.variables.outputs.milestone}}
