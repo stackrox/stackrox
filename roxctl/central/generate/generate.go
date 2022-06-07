@@ -162,10 +162,6 @@ func createBundle(logger logger.Logger, config renderer.Config) (*zip.Wrapper, e
 		return nil, err
 	}
 
-	if len(config.LicenseData) > 0 {
-		config.SecretsByteMap["central-license"] = config.LicenseData
-	}
-
 	if len(config.DefaultTLSCertPEM) > 0 {
 		config.SecretsByteMap["default-tls.crt"] = config.DefaultTLSCertPEM
 		config.SecretsByteMap["default-tls.key"] = config.DefaultTLSKeyPEM
@@ -196,13 +192,6 @@ func createBundle(logger logger.Logger, config renderer.Config) (*zip.Wrapper, e
 	}
 	if config.K8sConfig != nil {
 		config.Environment[env.OfflineModeEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.OfflineMode)
-
-		if config.K8sConfig.EnableTelemetry {
-			logger.InfofLn(`Unless run in offline mode,
- StackRox Kubernetes Security Platform collects and transmits aggregated usage and system health information.
-  If you want to OPT OUT from this, re-generate the deployment bundle with the '--enable-telemetry=false' flag`)
-		}
-		config.Environment[env.InitialTelemetryEnabledEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.EnableTelemetry)
 	}
 
 	config.SecretsByteMap["htpasswd"] = htpasswd

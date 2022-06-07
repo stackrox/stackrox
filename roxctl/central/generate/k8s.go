@@ -96,7 +96,8 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	flagWrap.StringVar(&k8sConfig.ScannerImage, flags.FlagNameScannerImage, "", "scanner image to use"+defaultImageHelp, "scanner")
 	flagWrap.StringVar(&k8sConfig.ScannerDBImage, flags.FlagNameScannerDBImage, "", "scanner-db image to use"+defaultImageHelp, "scanner")
 
-	flagWrap.BoolVar(&k8sConfig.EnableTelemetry, "enable-telemetry", true, "whether to enable telemetry", "central")
+	flagWrap.BoolVar(&k8sConfig.EnableTelemetry, "enable-telemetry", false, "(DEPRECATED) whether to enable telemetry", "central")
+	utils.Must(flagWrap.MarkHidden("enable-telemetry"))
 
 	k8sConfig.EnableCentralDB = features.PostgresDatastore.Enabled()
 
