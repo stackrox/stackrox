@@ -21,7 +21,7 @@ Please upgrade Central if slim collector images shall be used.`
 	errorWhenCallingGetClusterDefaults        = "error obtaining default cluster settings from GetClusterDefaultValues Central gRPC method"
 )
 
-// CentralEnv contains information about Central's runtime common.
+// CentralEnv contains information about Central's runtime environment.
 type CentralEnv struct {
 	// KernelSupportAvailable will be fetched from ClusterDefaults API. If talking to a legacy central, the data will
 	// be fetched from legacy API GetKernelSupportAvailable. If both calls fail, false is returned and the error is
