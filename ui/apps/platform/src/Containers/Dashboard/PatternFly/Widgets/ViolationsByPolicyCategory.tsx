@@ -23,6 +23,8 @@ import { getQueryString } from 'utils/queryStringUtils';
 import { violationsBasePath } from 'routePaths';
 import useResizeObserver from 'hooks/useResizeObserver';
 import { Title } from '@patternfly/react-core';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import useURLSearch from 'hooks/useURLSearch';
 import useAlertGroups from '../hooks/useAlertGroups';
 import WidgetCard from './WidgetCard';
 
@@ -126,6 +128,7 @@ function ViolationsByPolicyCategoryChart({ alertGroups }: ViolationsByPolicyCate
             <Chart
                 ariaDesc="Number of violation by policy category, grouped by severity"
                 ariaTitle="Policy Violations by Category"
+                animate={{ duration: 300 }}
                 domainPadding={{ x: [30, 25] }}
                 legendData={[
                     { name: 'Low' },
@@ -154,7 +157,9 @@ function ViolationsByPolicyCategoryChart({ alertGroups }: ViolationsByPolicyCate
 }
 
 function ViolationsByPolicyCategory() {
-    const { alertGroups, loading, error } = useAlertGroups('CATEGORY', ''); // TODO Implement query filtering
+    const { searchFilter } = useURLSearch();
+    const query = getRequestQueryStringForSearchFilter(searchFilter);
+    const { alertGroups, loading, error } = useAlertGroups('CATEGORY', query);
 
     return (
         <WidgetCard

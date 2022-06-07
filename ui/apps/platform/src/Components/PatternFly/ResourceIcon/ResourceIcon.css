@@ -1,0 +1,14 @@
+.resource-icon {
+  color: var(--pf-global--Color--light-100);
+  border-radius: 30em;
+  padding: 0 4px;
+  font-size: var(--pf-global--FontSize--xs);
+}
+
+.resource-icon-cluster {
+  background-color: #6752ae;
+}
+
+.resource-icon-namespace {
+  background-color: #184e11;
+}
