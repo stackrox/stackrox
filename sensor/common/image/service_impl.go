@@ -13,7 +13,7 @@ import (
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
-	"github.com/stackrox/rox/sensor/common/imageutil"
+	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"google.golang.org/grpc"
 )
@@ -55,7 +55,9 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 
 	// Note: The Admission Controller does NOT know if the image is cluster-local,
 	// so we determine it here.
-	req.Image.IsClusterLocal = imageutil.IsInternalImage(req.GetImage().GetName(), nil)
+	// If Sensor's registry store has an entry for the given image's registry,
+	// it is considered cluster-local.
+	req.Image.IsClusterLocal = registry.Singleton().HasRegistryForImage(req.GetImage().GetName())
 
 	// Ask Central to scan the image if the image is not internal.
 	if !features.LocalImageScanning.Enabled() || !req.GetImage().GetIsClusterLocal() {

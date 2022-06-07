@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/common/imageutil"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -274,14 +273,15 @@ func (w *deploymentWrap) getPods(hierarchy references.ParentHierarchy, labelSele
 
 func (w *deploymentWrap) populateDataFromPods(pods ...*v1.Pod) {
 	w.pods = pods
-	w.populateImageMetadata(nil, pods...)
+	// Sensor must already know about the OpenShift internal registries to determine if an image is cluster-local,
+	// which is ok because Sensor listens for Secrets before it starts listening for Deployment-like resources.
+	w.populateImageMetadata(registry.Singleton(), pods...)
 }
 
 // populateImageMetadata populates metadata for each image in the deployment.
 // This metadata includes: ImageID, NotPullable, and IsClusterLocal.
 // Note: NotPullable and IsClusterLocal are only determined if the image's ID can be determined.
 // The registryStore is the image registry store to use when determining if an image is cluster-local.
-// A registryStore of nil will use registry.Singleton() as per imageutil.IsInternalImage.
 func (w *deploymentWrap) populateImageMetadata(registryStore *registry.Store, pods ...*v1.Pod) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
@@ -324,9 +324,7 @@ func (w *deploymentWrap) populateImageMetadata(registryStore *registry.Store, po
 				// Use the image ID from the pod's ContainerStatus.
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
 				if features.LocalImageScanning.Enabled() {
-					// imageutil.IsInternalImage requires Sensor to already know about the OpenShift internal registries,
-					// which is ok because Sensor listens for Secrets before it starts listening for Deployment-like resources.
-					image.IsClusterLocal = imageutil.IsInternalImage(image.GetName(), registryStore)
+					image.IsClusterLocal = registryStore.HasRegistryForImage(image.GetName())
 				}
 				continue
 			}
@@ -347,9 +345,7 @@ func (w *deploymentWrap) populateImageMetadata(registryStore *registry.Store, po
 				image.Id = digest
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
 				if features.LocalImageScanning.Enabled() {
-					// imageutil.IsInternalImage requires Sensor to already know about the OpenShift internal registries,
-					// which is ok because Sensor listens for Secrets before it starts listening for Deployment-like resources.
-					image.IsClusterLocal = imageutil.IsInternalImage(image.GetName(), registryStore)
+					image.IsClusterLocal = registryStore.HasRegistryForImage(image.GetName())
 				}
 			}
 		}
