@@ -99,3 +99,18 @@ func namespaceGetter(prefix string, schema *walker.Schema) string {
 	}
 	panic(schema.TypeName + " has no namespace. Is it directly and namespace scoped?")
 }
+
+func searchFieldNameInOtherSchema(f walker.Field) string {
+	if searchFieldName(f) != "" {
+		return searchFieldName(f)
+	}
+	fieldInOtherSchema, err := f.Options.Reference.FieldInOtherSchema()
+	if err != nil {
+		panic(err)
+	}
+	return searchFieldName(fieldInOtherSchema)
+}
+
+func searchFieldName(f walker.Field) string {
+	return f.Search.FieldName
+}
