@@ -47,5 +47,23 @@ func getEmbeddedBasePasswd_3_5_46() *storage.EmbeddedImageScanComponent {
 }
 
 func getEmbeddedAdduser_3_118() *storage.EmbeddedImageScanComponent {
-	return &storage.EmbeddedImageScanComponent{}
+	return &storage.EmbeddedImageScanComponent{
+		Name:          "adduser",
+		Version:       "3.118",
+		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
+		Executables: []*storage.EmbeddedImageScanComponent_Executable{
+			{
+				Path: "/usr/sbin/adduser",
+				Dependencies: []string{
+					"YWRkdXNlcg:My4xMTg",
+				},
+			},
+			{
+				Path: "/usr/sbin/deluser",
+				Dependencies: []string{
+					"YWRkdXNlcg:My4xMTg",
+				},
+			},
+		},
+	}
 }
