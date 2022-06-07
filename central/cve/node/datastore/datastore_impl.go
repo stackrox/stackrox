@@ -6,9 +6,9 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/common"
-	"github.com/stackrox/rox/central/cve/image/datastore/internal/search"
-	"github.com/stackrox/rox/central/cve/image/datastore/internal/store"
-	"github.com/stackrox/rox/central/cve/index"
+	"github.com/stackrox/rox/central/cve/node/datastore/internal/index"
+	"github.com/stackrox/rox/central/cve/node/datastore/internal/search"
+	"github.com/stackrox/rox/central/cve/node/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -46,8 +46,8 @@ func (ds *datastoreImpl) buildSuppressedCache() error {
 	defer ds.cveSuppressionLock.Unlock()
 	for _, cve := range suppressedCVEs {
 		ds.cveSuppressionCache[cve.GetId()] = common.SuppressionCacheEntry{
-			SuppressActivation: cve.GetSuppressActivation(),
-			SuppressExpiry:     cve.GetSuppressExpiry(),
+			SuppressActivation: cve.GetSnoozeStart(),
+			SuppressExpiry:     cve.GetSnoozeExpiry(),
 		}
 	}
 	return nil
@@ -61,7 +61,7 @@ func (ds *datastoreImpl) SearchCVEs(ctx context.Context, q *v1.Query) ([]*v1.Sea
 	return ds.searcher.SearchCVEs(ctx, q)
 }
 
-func (ds *datastoreImpl) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.CVE, error) {
+func (ds *datastoreImpl) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.NodeCVE, error) {
 	cves, err := ds.searcher.SearchRawCVEs(ctx, q)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.searcher.Count(ctx, q)
 }
 
-func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.CVE, bool, error) {
+func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.NodeCVE, bool, error) {
 	cve, found, err := ds.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
@@ -92,7 +92,7 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return true, nil
 }
 
-func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.CVE, error) {
+func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.NodeCVE, error) {
 	cves, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
@@ -118,9 +118,9 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, d
 	}
 
 	for _, vuln := range vulns {
-		vuln.Suppressed = true
-		vuln.SuppressActivation = start
-		vuln.SuppressExpiry = expiry
+		vuln.Snoozed = true
+		vuln.SnoozeStart = start
+		vuln.SnoozeExpiry = expiry
 	}
 	if err := ds.storage.UpsertMany(ctx, vulns); err != nil {
 		return err
@@ -143,9 +143,9 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, cves ...string) error {
 	}
 
 	for _, vuln := range vulns {
-		vuln.Suppressed = false
-		vuln.SuppressActivation = nil
-		vuln.SuppressExpiry = nil
+		vuln.Snoozed = false
+		vuln.SnoozeStart = nil
+		vuln.SnoozeExpiry = nil
 	}
 	if err := ds.storage.UpsertMany(ctx, vulns); err != nil {
 		return err
@@ -155,17 +155,16 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, cves ...string) error {
 	return nil
 }
 
-func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
+func (ds *datastoreImpl) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
 	ds.cveSuppressionLock.RLock()
 	defer ds.cveSuppressionLock.RUnlock()
 
-	for _, component := range image.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			if entry, ok := ds.cveSuppressionCache[vuln.GetCve()]; ok {
-				vuln.Suppressed = true
-				vuln.SuppressActivation = entry.SuppressActivation
-				vuln.SuppressExpiry = entry.SuppressExpiry
-				vuln.State = storage.VulnerabilityState_DEFERRED
+	for _, component := range node.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulnerabilities() {
+			if entry, ok := ds.cveSuppressionCache[vuln.GetCveBaseInfo().GetCve()]; ok {
+				vuln.Snoozed = true
+				vuln.SnoozeStart = entry.SuppressActivation
+				vuln.SnoozeExpiry = entry.SuppressExpiry
 			}
 		}
 	}
@@ -179,24 +178,24 @@ func getSuppressExpiry(start *types.Timestamp, duration *types.Duration) (*types
 	return &types.Timestamp{Seconds: start.GetSeconds() + int64(d.Seconds())}, nil
 }
 
-func (ds *datastoreImpl) updateCache(vulns ...*storage.CVE) {
+func (ds *datastoreImpl) updateCache(cves ...*storage.NodeCVE) {
 	ds.cveSuppressionLock.Lock()
 	defer ds.cveSuppressionLock.Unlock()
 
-	for _, vuln := range vulns {
-		// Vulnerabilities are snoozed by cve (name) and not by ID for backward compatibility purpose (when cve name and id were same).
-		ds.cveSuppressionCache[vuln.GetCve()] = common.SuppressionCacheEntry{
-			SuppressActivation: vuln.SuppressActivation,
-			SuppressExpiry:     vuln.SuppressExpiry,
+	for _, cve := range cves {
+		// Vulnerabilities are snoozed by cve (name) and not by ID field to for backward compatibility purpose (when cve name and id were same).
+		ds.cveSuppressionCache[cve.GetCveBaseInfo().GetCve()] = common.SuppressionCacheEntry{
+			SuppressActivation: cve.SnoozeStart,
+			SuppressExpiry:     cve.SnoozeExpiry,
 		}
 	}
 }
 
-func (ds *datastoreImpl) deleteFromCache(vulns ...*storage.CVE) {
+func (ds *datastoreImpl) deleteFromCache(cves ...*storage.NodeCVE) {
 	ds.cveSuppressionLock.Lock()
 	defer ds.cveSuppressionLock.Unlock()
 
-	for _, vuln := range vulns {
-		delete(ds.cveSuppressionCache, vuln.GetCve())
+	for _, cve := range cves {
+		delete(ds.cveSuppressionCache, cve.GetCveBaseInfo().GetCve())
 	}
 }

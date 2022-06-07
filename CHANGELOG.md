@@ -22,6 +22,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - These endpoints are deprecated as license files are not required to run the platform
 - `firstNodeOccurrence` field of `storage.Node` object, which is in the response of Node endpoints, has been removed.
 - `vulns` fields of `storage.Node` object, which is in the response payload of `v1/nodes` is deprecated and will be removed in 72.0.
+- `/v1/cves/suppress` and `/v1/cves/unsuppress` has been deprecated and will be removed 72.0. 
+  - Use `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` to snooze and unsnooze image  vulnerabilities.
+  - Use `/v1/nodecves/suppress` and `/v1/nodecves/unsuppress` to snooze and unsnooze node/host vulnerabilities.
+  - Use `/v1/platformcves/suppress` and `/v1/platformcves/unsuppress` to snooze and unsnooze platform (k8s, istio, and openshift) vulnerabilities.
 
 ## [70.0]
 

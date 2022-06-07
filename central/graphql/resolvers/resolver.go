@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
+	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -76,6 +77,7 @@ type Resolver struct {
 	clusterCVEEdgeDataStore     clusterCVEEdgeDataStore.DataStore
 	ComponentCVEEdgeDataStore   componentCVEEdgeDataStore.DataStore
 	CVEDataStore                imageCVEDataStore.DataStore
+	NodeCVEDataStore            nodeCVEDataStore.DataStore
 	DeploymentDataStore         deploymentDatastore.DataStore
 	PodDataStore                podDatastore.DataStore
 	ImageDataStore              imageDatastore.DataStore
@@ -112,8 +114,10 @@ type Resolver struct {
 // New returns a Resolver wired into the relevant data stores
 func New() *Resolver {
 	var imageCVEDS imageCVEDataStore.DataStore
+	var nodeCVEDS nodeCVEDataStore.DataStore
 	if features.PostgresDatastore.Enabled() {
 		imageCVEDS = imageCVEDataStore.Singleton()
+		nodeCVEDS = nodeCVEDataStore.Singleton()
 	} else {
 		imageCVEDS = legacyImageCVEDataStore.Singleton()
 	}
@@ -131,6 +135,7 @@ func New() *Resolver {
 		clusterCVEEdgeDataStore:     clusterCVEEdgeDataStore.Singleton(),
 		ComponentCVEEdgeDataStore:   componentCVEEdgeDataStore.Singleton(),
 		CVEDataStore:                imageCVEDS,
+		NodeCVEDataStore:            nodeCVEDS,
 		DeploymentDataStore:         deploymentDatastore.Singleton(),
 		PodDataStore:                podDatastore.Singleton(),
 		ImageDataStore:              imageDatastore.Singleton(),

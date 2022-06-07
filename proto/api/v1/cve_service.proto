@@ -47,17 +47,35 @@ service CVEService {
 
 // ImageCVEService APIs can be used to manage image cves.
 service ImageCVEService {
-    // SuppressCVE suppresses cves.
+    // SuppressCVE suppresses image cves.
     rpc SuppressCVEs (SuppressCVERequest) returns (Empty) {
         option (google.api.http) = {
             patch: "/v1/imagecves/suppress"
             body: "*"
         };
     }
-    // UnsuppressCVE unsuppresse    s cves.
+    // UnsuppressCVE unsuppresse image cves.
     rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
         option (google.api.http) = {
             patch: "/v1/imagecves/unsuppress"
+            body: "*"
+        };
+    }
+}
+
+// NodeCVEService APIs can be used to manage node cves.
+service NodeCVEService {
+    // SuppressCVE suppresses node cves.
+    rpc SuppressCVEs (SuppressCVERequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/nodecves/suppress"
+            body: "*"
+        };
+    }
+    // UnsuppressCVE unsuppresse node cves.
+    rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/nodecves/unsuppress"
             body: "*"
         };
     }
