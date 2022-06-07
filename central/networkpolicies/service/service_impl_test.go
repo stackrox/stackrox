@@ -560,8 +560,8 @@ func (suite *ServiceTestSuite) TestGetAllNetworkPoliciesForNamespace() {
 
 	// Make the request to the service and check that it did not err.
 	request := &v1.GetNetworkPoliciesRequest{
-		ClusterId:   fakeClusterID,
-		NamespaceId: "my-namespace",
+		ClusterId: fakeClusterID,
+		Namespace: "my-namespace",
 	}
 	actualResp, err := suite.tested.GetNetworkPolicies(suite.requestContext, request)
 

@@ -145,7 +145,7 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 	}
 
 	// Get the policies in the cluster
-	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, request.GetClusterId(), request.GetNamespaceId())
+	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, request.GetClusterId(), request.GetNamespace())
 	if err != nil {
 		return nil, err
 	}

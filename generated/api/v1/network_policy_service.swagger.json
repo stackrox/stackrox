@@ -42,7 +42,7 @@
             "type": "string"
           },
           {
-            "name": "namespaceId",
+            "name": "namespace",
             "in": "query",
             "required": false,
             "type": "string"
